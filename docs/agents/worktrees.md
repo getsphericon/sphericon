@@ -11,7 +11,7 @@ primary checkout (gitignored; Vite ignores it).
   create (`worktree-<name>`); git allows a branch in one worktree only, and the primary checkout
   holds `main`. Create no branch in the primary checkout, which is shared and stays on `main`.
   `mise run land` refuses `main` and a detached `HEAD`, pushes the branch and opens the pull request;
-  nothing is pushed to `main` (the `agent-guard` hook refuses it).
+  nothing is pushed to `main` (the repository ruleset requires a pull request).
 - Never use `git worktree add ../sphericon-<name>` or any other sibling directory.
 - The directory name feeds the checkout's database and origin (`sphericon_<dir>`,
   `<dir>.sphericon.localhost`), so keep `<name>` short and unique.
@@ -20,6 +20,6 @@ primary checkout (gitignored; Vite ignores it).
   primary checkout; `ExitWorktree` with `remove` and a plain `git worktree remove` leave the
   worktree's databases behind. `--force` removes a worktree with uncommitted changes.
 - `worktrees:rm` and `worktrees:prune` delete the local branch once it is merged. A pull request is
-  squashed, so its commits are not in `origin/main` under their own SHAs: `mise/scripts/branch-merged.ts`
-  also accepts a merged pull request whose head is exactly the branch's tip. A branch with later
-  commits, or one GitHub cannot be asked about, is kept.
+  squashed, so its commits are not in `origin/main` under their own SHAs: the branch counts as merged
+  when its remote branch is gone after `git fetch --prune`, which GitHub does on merge (the repository
+  setting "Automatically delete head branches"). Until that setting is on, a squashed branch is kept.

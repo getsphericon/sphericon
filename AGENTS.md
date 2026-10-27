@@ -129,14 +129,15 @@ The rest of this file is for maintainers and the agents they run: how work lands
   `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>]
   [--skip-test] [<issue>...]` does the first half in one go: rebase onto a freshly fetched
   `origin/main`, `check`, `test`, the title and body checks CI will run, push of the worktree's branch
-  and `gh pr create` (an open pull request of the branch is updated instead). A Claude Code hook
-  (`.claude/settings.json`, `mise/scripts/agent-guard.ts`) refuses any `git push` that names `main`,
-  `gh pr merge --admin` and any `--no-verify`.
+  and `gh pr create` (an open pull request of the branch is updated instead). The repository ruleset
+  enforces the rest on GitHub: a pull request, the CI checks and, for the paths in `CODEOWNERS`, the
+  owner's review. `--no-verify` only moves a failure to CI, where the same checks are required.
 - **Land every change from its worktree, then clean up.** When the user says to land or finish
   ("заливай", "завершай", "land it"): run `mise run land`, wait for CI (`gh pr checks --watch`) and
   merge with `gh pr merge --squash`. The repository squashes with the pull request title, which is a
-  Conventional Commit, and release-please reads it. Never merge with `--admin`: a red or missing check
-  is fixed, not bypassed. Then remove the worktree with `mise run worktrees:rm <path>` right away,
+  Conventional Commit, and release-please reads it. A pull request that touches a `CODEOWNERS` path
+  needs the owner's review, which its author cannot give: merge it with `gh pr merge --squash --admin`
+  only when the user says so. A red or missing check is fixed, never bypassed. Then remove the worktree with `mise run worktrees:rm <path>` right away,
   without asking: it also drops the worktree's databases, which `git worktree remove` leaves on the
   shared Postgres, and deletes the local branch once it is merged. Only the worktree made for that
   change.
