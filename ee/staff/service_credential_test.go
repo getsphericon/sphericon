@@ -115,13 +115,13 @@ func TestTheInternalListenerServesNothingButTheServiceEndpoints(t *testing.T) {
 
 func TestAnUnknownMalformedRevokedOrExpiredCredentialIsRefused(t *testing.T) {
 	h := newHarness(t)
-	wrongSecret := testhelper.ServiceCredentialValue(fixtures.ServiceCredentialPrimaryPrefix, "not-the-secret")
+	wrongSecret := testhelper.ServiceCredentialValue(fixtures.ServiceCredentialPrimaryPrefix, fixtures.ServiceCredentialSecondSecret)
 	anAPIToken := "omtk_" + fixtures.AnchorTokenPrefix + "_" + fixtures.AnchorTokenSecret
 
 	for name, bearer := range map[string]string{
 		"none":          "",
 		"malformed":     "garbage",
-		"unknown":       testhelper.ServiceCredentialValue("nosuchprefix", "whatever"),
+		"unknown":       testhelper.ServiceCredentialValue("nosuchprefix", fixtures.ServiceCredentialPrimarySecret),
 		"wrong secret":  wrongSecret,
 		"revoked":       revoked,
 		"expired":       expired,

@@ -33,7 +33,7 @@ func TestMintStoresAHashedTokenAndReturnsTheValueOnce(t *testing.T) {
 	parsed := credentials.ParseToken(got.Value)
 	require.NotNil(t, parsed, "the value is a well-formed token")
 	assert.Equal(t, got.Token.Prefix, parsed.Prefix)
-	assert.True(t, credentials.VerifyTokenSecret(parsed.Secret, got.Token.SecretHash))
+	assert.True(t, credentials.VerifySecret(parsed.Secret, got.Token.SecretHash))
 	assert.NotContains(t, got.Token.SecretHash, parsed.Secret)
 }
 

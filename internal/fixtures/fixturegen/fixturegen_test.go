@@ -43,7 +43,7 @@ func TestGenerateEmitsConstantsForAnnotatedRowsOnly(t *testing.T) {
 func TestGenerateExtractsPlaintextOfCredentialTemplateCalls(t *testing.T) {
 	dir := writeFixtures(t, map[string]string{
 		"users.yml": "- id: 1 # fixture: Owner\n  email: o@example.com\n  password_hash: '{{argonHash \"owner-pw\"}}'\n",
-		"tokens.yml": "- id: 1 # fixture: Tok\n  prefix: abc\n  secret_hash: '{{ bcryptHash \"tok-secret\" }}'\n" +
+		"tokens.yml": "- id: 1 # fixture: Tok\n  prefix: abc\n  secret_hash: '{{ secretHash \"tok-secret\" }}'\n" +
 			"- id: 2 # fixture: Static\n  prefix: def\n  secret_hash: $2a$12$staticstatichash\n",
 	})
 

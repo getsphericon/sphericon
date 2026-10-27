@@ -41,7 +41,7 @@ func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokens
 }
 
 // SiteTokensCreate mints a workspace API token. The full secret is returned once;
-// only its bcrypt hash and public prefix are stored.
+// only its SHA-256 hash and public prefix are stored.
 func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreateTokenInput, params siteapi.SiteTokensCreateParams) (siteapi.SiteTokensCreateRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if ent.IsNotFound(err) {

@@ -148,7 +148,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, _ externalap
 	if token.ExpiresAt != nil && token.ExpiresAt.Before(time.Now()) {
 		return ctx, ErrUnauthorized
 	}
-	if !credentials.VerifyTokenSecret(parsed.Secret, token.SecretHash) {
+	if !credentials.VerifySecret(parsed.Secret, token.SecretHash) {
 		return ctx, ErrUnauthorized
 	}
 

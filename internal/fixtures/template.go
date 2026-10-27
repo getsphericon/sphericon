@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-crypt/crypt/algorithm/argon2"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -80,13 +79,12 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 		// Anchor credentials: the fixture states the plaintext and the hash is derived
 		// at load time, so hash and secret cannot drift apart. The fixture generator
 		// lifts the plaintext literal into the catalog (e.g. fixtures.OwnerJohnPassword).
-		// Both hash at minimum cost: the production verify code reads the cost back
-		// from the stored hash, so verification still works and loading stays fast.
-		"argonHash":  hashPasswordMinCost,
-		"bcryptHash": hashTokenSecretMinCost,
-		// A Service credential's secret is stored as the SHA-256 the Staff member module
-		// computes when it issues one (credentials.HashServiceSecret).
-		"serviceSecretHash": credentials.HashServiceSecret,
+		// A password hashes at minimum cost: the production verify code reads the cost
+		// back from the stored hash, so verification still works and loading stays fast.
+		"argonHash": hashPasswordMinCost,
+		// An API token's or a Service credential's secret is stored as the SHA-256 the
+		// production code computes when it issues one (credentials.HashSecret).
+		"secretHash": credentials.HashSecret,
 		// A fixture Passkey states its credential id (base64url) and its private key (base64
 		// PKCS8); the columns hold the raw id and the derived COSE public key.
 		"passkeyCredentialID": passkeyCredentialID,
@@ -111,14 +109,4 @@ func hashPasswordMinCost(password string) (string, error) {
 		return "", err
 	}
 	return digest.Encode(), nil
-}
-
-// hashTokenSecretMinCost is a bcrypt hash at bcrypt.MinCost
-// (credentials.VerifyTokenSecret reads the cost from the hash).
-func hashTokenSecretMinCost(secret string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(secret), bcrypt.MinCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hash), nil
 }

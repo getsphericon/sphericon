@@ -114,8 +114,9 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 	for name, token := range map[string]string{
 		"empty":            "",
 		"malformed":        "not-a-token",
-		"unknown prefix":   credentials.TokenValue("nosuchprefix", "whatever"),
-		"wrong secret":     credentials.TokenValue(fixtures.AnchorTokenPrefix, "not-the-secret"),
+		"unknown prefix":   credentials.TokenValue("nosuchprefix", fixtures.AnchorTokenSecret),
+		"wrong secret":     credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.ContractTokenSecret),
+		"short secret":     credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret[1:]),
 		"revoked":          revoked,
 		"expired":          expired,
 		"valid prefix cut": valid[:len(valid)-len(fixtures.AnchorTokenSecret)-1],

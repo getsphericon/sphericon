@@ -92,10 +92,8 @@ func (env *TestEnv) ScopedBearerFor(t *testing.T, workspaceID int64, scopes ...s
 	require.NoError(t, err)
 	secret, err := credentials.GenerateTokenSecret()
 	require.NoError(t, err)
-	hash, err := credentials.HashTokenSecret(secret)
-	require.NoError(t, err)
 	_, err = env.DB.ApiToken.Create().
-		SetName("actor-token").SetPrefix(prefix).SetSecretHash(hash).SetScopes(scopes).
+		SetName("actor-token").SetPrefix(prefix).SetSecretHash(credentials.HashSecret(secret)).SetScopes(scopes).
 		SetWorkspaceID(workspaceID).
 		Save(t.Context())
 	require.NoError(t, err)

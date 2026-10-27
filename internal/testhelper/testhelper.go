@@ -40,7 +40,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/erasure"
@@ -101,7 +100,6 @@ var (
 
 func initBaseline() {
 	once.Do(func() {
-		credentials.UseMinTokenHashCost()
 		_, file, _, _ := runtime.Caller(0)
 		projectRoot := filepath.Join(filepath.Dir(file), "..", "..")
 

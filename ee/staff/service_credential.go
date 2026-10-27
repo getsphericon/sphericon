@@ -84,7 +84,7 @@ func (m *Module) IssueServiceCredential(ctx context.Context, in IssueInput) (*Is
 	create := m.ent.ServiceCredential.Create().
 		SetName(name).
 		SetPrefix(prefix).
-		SetSecretHash(credentials.HashServiceSecret(secret)).
+		SetSecretHash(credentials.HashSecret(secret)).
 		SetScopes(scopeStrings(scopes))
 	if in.ExpiresAt != nil {
 		create.SetExpiresAt(*in.ExpiresAt)
@@ -182,7 +182,7 @@ func (m *Module) AuthenticateService(ctx context.Context, value string) (*ent.Se
 		return nil, err
 	}
 	now := m.now()
-	if !credentials.VerifyServiceSecret(parsed.Secret, row.SecretHash) || !active(row, now) {
+	if !credentials.VerifySecret(parsed.Secret, row.SecretHash) || !active(row, now) {
 		return nil, ErrUnauthorized
 	}
 	if row.LastUsedAt == nil || now.Sub(*row.LastUsedAt) >= lastUsedGranularity {

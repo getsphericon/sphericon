@@ -129,10 +129,7 @@ func (s *Server) exchangeCode(ctx context.Context, code, clientID, redirectURI, 
 	if err != nil {
 		return nil, err
 	}
-	hash, err := credentials.HashTokenSecret(secret)
-	if err != nil {
-		return nil, err
-	}
+	hash := credentials.HashSecret(secret)
 
 	var refresh string
 	err = s.inTx(ctx, func(tx *ent.Tx) error {
@@ -207,10 +204,7 @@ func (s *Server) refresh(ctx context.Context, presented, clientID, scope string)
 	if err != nil {
 		return nil, err
 	}
-	hash, err := credentials.HashTokenSecret(secret)
-	if err != nil {
-		return nil, err
-	}
+	hash := credentials.HashSecret(secret)
 
 	var next string
 	err = s.inTx(ctx, func(tx *ent.Tx) error {

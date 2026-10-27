@@ -10,9 +10,9 @@ import (
 // User passwords are hashed with argon2id via go-crypt/crypt. The algorithm
 // parameters are encoded into the hash string itself (PHC format), so there is
 // no cost constant to keep in sync and Verify reads them back from the stored
-// hash. API token secrets are deliberately NOT hashed this way — they are
-// verified on every request, where argon2id's memory cost is prohibitive; see
-// HashTokenSecret/VerifyTokenSecret.
+// hash. Generated secrets (API tokens, Service credentials) are deliberately NOT
+// hashed this way — they are random and verified on every request, where a slow
+// hash is a cost with no gain; see HashSecret/VerifySecret.
 var (
 	passwordHasher  = newPasswordHasher()
 	passwordDecoder = newPasswordDecoder()
