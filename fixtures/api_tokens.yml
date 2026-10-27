@@ -5,7 +5,7 @@
 - id: 1 # fixture: AnchorToken
   name: Test Token
   prefix: testprefix01
-  secret_hash: '{{bcryptHash "test-anchor-token-secret"}}'
+  secret_hash: '{{secretHash "test-anchor-token-secret-000000000000000"}}'
   scopes: '["contacts:read","contacts:write","tokens:read","tokens:write","events:read","events:write"]'
   workspace_id: 1
   created_at: '2026-01-01 00:00:00'
@@ -13,7 +13,7 @@
 - id: 103 # fixture: ContractToken
   name: Contract fuzzing token
   prefix: contractfz01
-  secret_hash: '{{bcryptHash "contract-token-secret"}}'
+  secret_hash: '{{secretHash "contract-token-secret-000000000000000000"}}'
   scopes: '["contacts:read","contacts:write","contacts:erase","segments:read","segments:write","events:read","events:write","broadcasts:read","broadcasts:write","automations:read","automations:write","enrollments:read","templates:read","templates:write","webhooks:read","webhooks:write","webhooks:regenerate","webhooks:test","custom_fields:read","sending_domains:read","sending_domains:write","integrations:read","integrations:write","emails:send","broadcasts:send","automations:activate","mcp:send","tokens:read","tokens:write","audit:read"]'
   workspace_id: 1
   created_at: '2026-01-01 00:00:00'
@@ -61,7 +61,7 @@
 - id: 20001
   name: 'Claude (MCP)'
   prefix: 'bp_mcp_claude01'
-  secret_hash: '{{bcryptHash "demo-token-secret"}}'
+  secret_hash: '{{secretHash "demo-token-secret-0000000000000000000000"}}'
   scopes: '["contacts:read","segments:read","segments:write","broadcasts:read","broadcasts:write","automations:read","templates:read","templates:write","mcp:send"]'
   workspace_id: 20
   last_used_at: '{{hoursAgo 24}}'
@@ -70,7 +70,7 @@
 - id: 20002
   name: 'Cursor (MCP)'
   prefix: 'bp_mcp_cursor01'
-  secret_hash: '{{bcryptHash "demo-token-secret"}}'
+  secret_hash: '{{secretHash "demo-token-secret-0000000000000000000000"}}'
   scopes: '["contacts:read","segments:read","broadcasts:read","templates:read","mcp:send"]'
   workspace_id: 20
   last_used_at: '{{hoursAgo 96}}'
@@ -79,7 +79,7 @@
 - id: 20003
   name: 'Production API key'
   prefix: 'bp_live_prod01'
-  secret_hash: '{{bcryptHash "demo-token-secret"}}'
+  secret_hash: '{{secretHash "demo-token-secret-0000000000000000000000"}}'
   scopes: '["contacts:read","contacts:write","events:read","events:write","emails:send"]'
   workspace_id: 20
   last_used_at: '{{hoursAgo 0}}'
@@ -88,7 +88,7 @@
 - id: 20004
   name: 'Zapier sync'
   prefix: 'bp_live_zap001'
-  secret_hash: '{{bcryptHash "demo-token-secret"}}'
+  secret_hash: '{{secretHash "demo-token-secret-0000000000000000000000"}}'
   scopes: '["contacts:read","contacts:write","events:write"]'
   workspace_id: 20
   last_used_at: '{{hoursAgo 48}}'
@@ -98,7 +98,7 @@
 - id: 20005
   name: 'Demo site'
   prefix: 'demosite0001'
-  secret_hash: '{{bcryptHash "demo-token-secret"}}'
+  secret_hash: '{{secretHash "demo-token-secret-0000000000000000000000"}}'
   scopes: '["contacts:write","events:write"]'
   workspace_id: 20
   created_at: '{{hoursAgo 24}}'
@@ -110,7 +110,7 @@
 - id: 20006 # fixture: BrightpathDevMcpToken
   name: 'Dev MCP'
   prefix: 'devmcp000001'
-  secret_hash: '{{bcryptHash "dev-mcp-token-secret"}}'
+  secret_hash: '{{secretHash "dev-mcp-token-secret-0000000000000000000"}}'
   scopes: '["contacts:read","contacts:write","segments:read","segments:write","broadcasts:read","broadcasts:write","templates:read","templates:write"]'
   workspace_id: 20
   created_at: '{{hoursAgo 24}}'

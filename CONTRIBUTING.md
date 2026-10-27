@@ -143,7 +143,7 @@ the stack running (`mise run dev`) and Caddy trusted (`caddy trust`):
 
 ```sh
 claude mcp add --transport http sphericon https://sphericon.localhost/mcp \
-  --header "Authorization: Bearer omtk_devmcp000001_dev-mcp-token-secret"
+  --header "Authorization: Bearer omtk_devmcp000001_dev-mcp-token-secret-0000000000000000000"
 ```
 
 In a linked worktree use its origin instead (`mise env | grep SPHERICON_APP_URL`), plus `/mcp`.

@@ -25,18 +25,58 @@ func TestAPITokenRoundTripsThroughItsValueAndParses(t *testing.T) {
 }
 
 func TestParseTokenRejectsMalformedValues(t *testing.T) {
-	for _, bad := range []string{"", "omtk", "omtk_prefix", "xxxx_prefix_secret", "omtk_UPPER_secret", "omtk_prefix_sec ret", "omtk__secret"} {
+	prefix, secret := strings.Repeat("p", 12), strings.Repeat("s", 40)
+	require.NotNil(t, credentials.ParseToken("omtk_"+prefix+"_"+secret), "the well-formed base of the cases below")
+	for _, bad := range []string{
+		"", "omtk", "omtk_" + prefix, "xxxx_" + prefix + "_" + secret, "omtk__" + secret,
+		"omtk_" + strings.ToUpper(prefix) + "_" + secret,
+		"omtk_" + prefix + "_" + secret[1:] + " ",
+		"omtk_" + prefix[1:] + "_" + secret, "omtk_" + prefix + "p_" + secret,
+		"omtk_" + prefix + "_" + secret[1:], "omtk_" + prefix + "_" + secret + "s",
+	} {
 		assert.Nil(t, credentials.ParseToken(bad), "%q", bad)
 	}
 }
 
-func TestTokenSecretHashVerifiesOnlyTheOriginal(t *testing.T) {
-	hash, err := credentials.HashTokenSecret("s3cret")
+func TestGeneratedPrefixesAndSecretsDrawFromTheWholeAlphabetOnly(t *testing.T) {
+	prefixChars, secretChars := map[rune]bool{}, map[rune]bool{}
+	for range 300 {
+		prefix, err := credentials.GenerateTokenPrefix()
+		require.NoError(t, err)
+		secret, err := credentials.GenerateTokenSecret()
+		require.NoError(t, err)
+		assert.Regexp(t, `^[a-z0-9]{12}$`, prefix)
+		assert.Regexp(t, `^[A-Za-z0-9_-]{40}$`, secret)
+		for _, c := range prefix {
+			prefixChars[c] = true
+		}
+		for _, c := range secret {
+			secretChars[c] = true
+		}
+	}
+	assert.Len(t, prefixChars, 36, "every prefix character turns up")
+	assert.Len(t, secretChars, 64, "every secret character turns up")
+}
+
+func TestAPITokenAndServiceCredentialDoNotParseAsEachOther(t *testing.T) {
+	prefix, secret, value, err := credentials.GenerateServiceCredential()
 	require.NoError(t, err)
+	parsed := credentials.ParseServiceCredential(value)
+	require.NotNil(t, parsed)
+	assert.Equal(t, prefix, parsed.Prefix)
+	assert.Equal(t, secret, parsed.Secret)
+
+	assert.Nil(t, credentials.ParseToken(value))
+	assert.Nil(t, credentials.ParseServiceCredential(credentials.TokenValue(prefix, secret)))
+}
+
+func TestSecretHashVerifiesOnlyTheOriginal(t *testing.T) {
+	hash := credentials.HashSecret("s3cret")
 	assert.NotEqual(t, "s3cret", hash)
-	assert.True(t, credentials.VerifyTokenSecret("s3cret", hash))
-	assert.False(t, credentials.VerifyTokenSecret("other", hash))
-	assert.False(t, credentials.VerifyTokenSecret("s3cret", "not-a-bcrypt-hash"))
+	assert.True(t, credentials.VerifySecret("s3cret", hash))
+	assert.False(t, credentials.VerifySecret("other", hash))
+	assert.False(t, credentials.VerifySecret("s3cret", "not-a-sha256-hex"))
+	assert.False(t, credentials.VerifySecret("s3cret", ""))
 }
 
 func TestWorkspaceKeysAreTypedAndUnique(t *testing.T) {

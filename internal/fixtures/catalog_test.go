@@ -34,8 +34,8 @@ func TestCatalogPlaintextSecretsVerifyAgainstLoadedHashes(t *testing.T) {
 	}
 
 	tok := env.DB.ApiToken.GetX(ctx, fixtures.AnchorTokenID)
-	require.True(t, credentials.VerifyTokenSecret(fixtures.AnchorTokenSecret, tok.SecretHash))
-	require.False(t, credentials.VerifyTokenSecret(fixtures.AnchorTokenSecret+"x", tok.SecretHash))
+	require.True(t, credentials.VerifySecret(fixtures.AnchorTokenSecret, tok.SecretHash))
+	require.False(t, credentials.VerifySecret(fixtures.AnchorTokenSecret+"x", tok.SecretHash))
 
 	parsed := credentials.ParseToken(credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret))
 	require.NotNil(t, parsed)

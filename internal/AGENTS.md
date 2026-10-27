@@ -69,9 +69,9 @@ down in the test (see `ee/abuse/detector_test.go`, whose scenarios are day offse
 ### Credentials and anchor identities
 
 Anchor credentials state their plaintext in the fixture and are hashed at load time by
-the `argonHash` (user passwords, PHC argon2id) and `bcryptHash` (API token secrets)
-template funcs, both at minimum cost (production verify code reads the cost from the
-stored hash). The generator lifts the quoted literal into `<Name>Password` /
+the `argonHash` (user passwords, PHC argon2id at minimum cost; production verify code reads
+the cost from the stored hash) and `secretHash` (API token and Service credential secrets,
+SHA-256) template funcs. The generator lifts the quoted literal into `<Name>Password` /
 `<Name>Secret`, so `fixtures.OwnerJohnPassword`, `fixtures.AnchorTokenSecret` etc. can
 authenticate as that identity; the full token is
 `credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)`. Use them

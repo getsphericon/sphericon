@@ -666,7 +666,7 @@ depends_post = ["check:contract:stop"]
 # operation answers 403. The omtk_ token format is omtk_<prefix>_<secret>.
 run = [
   "mise daemons start contract",
-  '''uvx schemathesis run openapi/external.openapi.json --url "http://localhost:$CONTRACT_PORT/api" -H "Authorization: Bearer omtk_contractfz01_contract-token-secret" --max-examples 25 --workers 2''',
+  '''uvx schemathesis run openapi/external.openapi.json --url "http://localhost:$CONTRACT_PORT/api" -H "Authorization: Bearer omtk_contractfz01_contract-token-secret-000000000000000000" --max-examples 25 --workers 2''',
 ]
 
 ["check:contract:prepare"]

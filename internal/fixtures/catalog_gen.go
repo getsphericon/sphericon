@@ -44,7 +44,7 @@ const (
 	// AnchorTokenPrefix is from fixtures/api_tokens.
 	AnchorTokenPrefix = "testprefix01"
 	// AnchorTokenSecret is from fixtures/api_tokens.
-	AnchorTokenSecret = "test-anchor-token-secret"
+	AnchorTokenSecret = "test-anchor-token-secret-000000000000000"
 	// AnnSurveyResponseID is from fixtures/signup_survey_responses.
 	AnnSurveyResponseID = 1
 	// AutomationArchivedID is from fixtures/automations.
@@ -240,7 +240,7 @@ const (
 	// BrightpathDevMcpTokenPrefix is from fixtures/api_tokens.
 	BrightpathDevMcpTokenPrefix = "devmcp000001"
 	// BrightpathDevMcpTokenSecret is from fixtures/api_tokens.
-	BrightpathDevMcpTokenSecret = "dev-mcp-token-secret"
+	BrightpathDevMcpTokenSecret = "dev-mcp-token-secret-0000000000000000000"
 	// BroadcastArchivedID is from fixtures/broadcasts.
 	BroadcastArchivedID = 107
 	// BroadcastArchivedName is from fixtures/broadcasts.
@@ -500,7 +500,7 @@ const (
 	// ContractTokenPrefix is from fixtures/api_tokens.
 	ContractTokenPrefix = "contractfz01"
 	// ContractTokenSecret is from fixtures/api_tokens.
-	ContractTokenSecret = "contract-token-secret"
+	ContractTokenSecret = "contract-token-secret-000000000000000000"
 	// CustomFieldGlobexID is from fixtures/custom_fields.
 	CustomFieldGlobexID = 900
 	// CustomFieldGlobexKey is from fixtures/custom_fields.
@@ -1700,9 +1700,9 @@ const (
 	// ServiceCredentialExpiredName is from fixtures/service_credentials.
 	ServiceCredentialExpiredName = "service-a"
 	// ServiceCredentialExpiredPrefix is from fixtures/service_credentials.
-	ServiceCredentialExpiredPrefix = "svcexpired005"
+	ServiceCredentialExpiredPrefix = "svcexpired05"
 	// ServiceCredentialExpiredSecret is from fixtures/service_credentials.
-	ServiceCredentialExpiredSecret = "service-expired-secret"
+	ServiceCredentialExpiredSecret = "service-expired-secret-00000000000000000"
 	// ServiceCredentialPrimaryID is from fixtures/service_credentials.
 	ServiceCredentialPrimaryID = 1
 	// ServiceCredentialPrimaryName is from fixtures/service_credentials.
@@ -1710,23 +1710,23 @@ const (
 	// ServiceCredentialPrimaryPrefix is from fixtures/service_credentials.
 	ServiceCredentialPrimaryPrefix = "svcprimary01"
 	// ServiceCredentialPrimarySecret is from fixtures/service_credentials.
-	ServiceCredentialPrimarySecret = "service-primary-secret"
+	ServiceCredentialPrimarySecret = "service-primary-secret-00000000000000000"
 	// ServiceCredentialReadOnlyID is from fixtures/service_credentials.
 	ServiceCredentialReadOnlyID = 3
 	// ServiceCredentialReadOnlyName is from fixtures/service_credentials.
 	ServiceCredentialReadOnlyName = "service-b"
 	// ServiceCredentialReadOnlyPrefix is from fixtures/service_credentials.
-	ServiceCredentialReadOnlyPrefix = "svcreadonly03"
+	ServiceCredentialReadOnlyPrefix = "svcrdonly003"
 	// ServiceCredentialReadOnlySecret is from fixtures/service_credentials.
-	ServiceCredentialReadOnlySecret = "service-readonly-secret"
+	ServiceCredentialReadOnlySecret = "service-readonly-secret-0000000000000000"
 	// ServiceCredentialRevokedID is from fixtures/service_credentials.
 	ServiceCredentialRevokedID = 4
 	// ServiceCredentialRevokedName is from fixtures/service_credentials.
 	ServiceCredentialRevokedName = "service-a"
 	// ServiceCredentialRevokedPrefix is from fixtures/service_credentials.
-	ServiceCredentialRevokedPrefix = "svcrevoked004"
+	ServiceCredentialRevokedPrefix = "svcrevoked04"
 	// ServiceCredentialRevokedSecret is from fixtures/service_credentials.
-	ServiceCredentialRevokedSecret = "service-revoked-secret"
+	ServiceCredentialRevokedSecret = "service-revoked-secret-00000000000000000"
 	// ServiceCredentialSecondID is from fixtures/service_credentials.
 	ServiceCredentialSecondID = 2
 	// ServiceCredentialSecondName is from fixtures/service_credentials.
@@ -1734,7 +1734,7 @@ const (
 	// ServiceCredentialSecondPrefix is from fixtures/service_credentials.
 	ServiceCredentialSecondPrefix = "svcsecond002"
 	// ServiceCredentialSecondSecret is from fixtures/service_credentials.
-	ServiceCredentialSecondSecret = "service-second-secret"
+	ServiceCredentialSecondSecret = "service-second-secret-000000000000000000"
 	// SoleOwnerDoraEmail is from fixtures/users.
 	SoleOwnerDoraEmail = "dora@piedpiper.test"
 	// SoleOwnerDoraID is from fixtures/users.

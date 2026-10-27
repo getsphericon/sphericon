@@ -43,7 +43,7 @@ type Input struct {
 }
 
 // Minted is a created token and its full secret value, shown to the caller once;
-// only a bcrypt hash and the public prefix are stored.
+// only a SHA-256 hash and the public prefix are stored.
 type Minted struct {
 	Token *ent.ApiToken
 	Value string
@@ -72,15 +72,11 @@ func Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
 	if err != nil {
 		return Minted{}, err
 	}
-	hash, err := credentials.HashTokenSecret(secret)
-	if err != nil {
-		return Minted{}, err
-	}
 
 	create := s.ApiToken().Create().
 		SetName(name).
 		SetPrefix(prefix).
-		SetSecretHash(hash).
+		SetSecretHash(credentials.HashSecret(secret)).
 		SetScopes(scopes)
 	if in.ExpiresAt != nil {
 		create = create.SetExpiresAt(*in.ExpiresAt)
