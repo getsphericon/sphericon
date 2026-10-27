@@ -36,6 +36,8 @@ type Config struct {
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 	From            string `json:"from"`
 	FromName        string `json:"fromName,omitempty"`
+	// ReplyTo is the default Reply-To of a message that names none; empty sets no header.
+	ReplyTo string `json:"replyTo,omitempty"`
 	// Endpoint targets an SES-compatible API (e.g. Yandex Cloud Postbox) instead
 	// of AWS. Empty ⇒ AWS default endpoint for Region. Not a secret.
 	Endpoint string `json:"endpoint,omitempty"`
@@ -121,6 +123,7 @@ func (s *sender) DefaultFrom() (address, name string) { return s.cfg.From, s.cfg
 func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	msg.From = cmp.Or(msg.From, s.cfg.From)
 	msg.FromName = cmp.Or(msg.FromName, s.cfg.FromName)
+	msg.ReplyTo = cmp.Or(msg.ReplyTo, s.cfg.ReplyTo)
 
 	m, err := messaging.BuildSignedMIME(ctx, msg, s.signer)
 	if err != nil {

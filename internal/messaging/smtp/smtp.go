@@ -25,6 +25,8 @@ type Config struct {
 	Password string `json:"password,omitempty"`
 	From     string `json:"from"`
 	FromName string `json:"fromName,omitempty"`
+	// ReplyTo is the default Reply-To of a message that names none; empty sets no header.
+	ReplyTo string `json:"replyTo,omitempty"`
 }
 
 // Descriptor registers the SMTP provider with the messaging catalog, for tenant-supplied
@@ -94,6 +96,7 @@ func (s *sender) DefaultFrom() (address, name string) { return s.cfg.From, s.cfg
 func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	msg.From = cmp.Or(msg.From, s.cfg.From)
 	msg.FromName = cmp.Or(msg.FromName, s.cfg.FromName)
+	msg.ReplyTo = cmp.Or(msg.ReplyTo, s.cfg.ReplyTo)
 
 	m, err := messaging.BuildSignedMIME(ctx, msg, s.signer)
 	if err != nil {

@@ -235,6 +235,54 @@ func TestConfigLoadRejectsATestInboxThatKeepsNothing(t *testing.T) {
 	}
 }
 
+func TestConfigLoadSystemEmailReplyTo(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	cfg, err := Load("test")
+	require.NoError(t, err)
+	require.Empty(t, cfg.SystemEmailReplyTo, "unset by default")
+
+	t.Setenv("SPHERICON_SYSTEM_EMAIL_REPLY_TO", " replies@example.com ")
+	cfg, err = Load("test")
+	require.NoError(t, err)
+	require.Equal(t, "replies@example.com", cfg.SystemEmailReplyTo)
+}
+
+func TestConfigLoadRejectsAnInvalidSystemEmailReplyTo(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	for _, value := range []string{"not an address", "Support <help@example.com>", "a@example.com, b@example.com", "help@"} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv("SPHERICON_SYSTEM_EMAIL_REPLY_TO", value)
+			_, err := Load("test")
+			require.ErrorContains(t, err, "SPHERICON_SYSTEM_EMAIL_REPLY_TO")
+		})
+	}
+}
+
+func TestConfigLoadSystemEmailFromAcceptsADisplayName(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	cfg, err := Load("test")
+	require.NoError(t, err)
+	require.Equal(t, "noreply@sphericon.localhost", cfg.SystemEmailFrom)
+	require.Empty(t, cfg.SystemEmailFromName, "no name unless one is given")
+
+	t.Setenv("SPHERICON_SYSTEM_EMAIL_FROM", `Example Mail <noreply@example.com>`)
+	cfg, err = Load("test")
+	require.NoError(t, err)
+	require.Equal(t, "noreply@example.com", cfg.SystemEmailFrom, "the bare address, for the envelope and identity checks")
+	require.Equal(t, "Example Mail", cfg.SystemEmailFromName)
+}
+
+func TestConfigLoadRejectsAnInvalidSystemEmailFrom(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	for _, value := range []string{"not an address", "a@example.com, b@example.com", "help@"} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv("SPHERICON_SYSTEM_EMAIL_FROM", value)
+			_, err := Load("test")
+			require.ErrorContains(t, err, "SPHERICON_SYSTEM_EMAIL_FROM")
+		})
+	}
+}
+
 type addrCase struct {
 	name string
 	port string

@@ -31,6 +31,11 @@ func BuildMIME(msg EmailMessage) (*mail.Msg, error) {
 	if err := m.To(msg.To); err != nil {
 		return nil, fmt.Errorf("messaging: invalid to address: %w", err)
 	}
+	if msg.ReplyTo != "" {
+		if err := m.ReplyTo(msg.ReplyTo); err != nil {
+			return nil, fmt.Errorf("messaging: invalid reply-to address: %w", err)
+		}
+	}
 	m.Subject(msg.Subject)
 	m.SetMessageID()
 

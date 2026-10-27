@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"net/mail"
 	"net/netip"
 	"net/url"
 	"os"
@@ -283,10 +284,14 @@ type Config struct {
 	// values); prod uses ses (the SES_* values). Sent via the same messaging
 	// Catalog, not a separate sender.
 	SystemEmailProvider string // "smtp" | "ses"
-	SystemEmailFrom     string
-	SESRegion           string
-	SESAccessKeyID      string
-	SESSecretAccessKey  string
+	SystemEmailFrom     string // the bare address; SPHERICON_SYSTEM_EMAIL_FROM may also carry a display name
+	SystemEmailFromName string // that display name, empty when none was given
+	// SystemEmailReplyTo is the Reply-To of the Instance's own mail (verification, reset,
+	// invitations, the System sender's Test send); empty sets no header.
+	SystemEmailReplyTo string
+	SESRegion          string
+	SESAccessKeyID     string
+	SESSecretAccessKey string
 }
 
 // environment is every variable Load reads, with the defaults that do not depend on
@@ -389,6 +394,7 @@ type environment struct {
 
 	SystemEmailProvider string `env:"SPHERICON_SYSTEM_EMAIL_PROVIDER" envDefault:"smtp"`
 	SystemEmailFrom     string `env:"SPHERICON_SYSTEM_EMAIL_FROM" envDefault:"noreply@sphericon.localhost"`
+	SystemEmailReplyTo  string `env:"SPHERICON_SYSTEM_EMAIL_REPLY_TO"`
 	SESRegion           string `env:"SPHERICON_SES_REGION"`
 	SESAccessKeyID      string `env:"SPHERICON_SES_ACCESS_KEY_ID"`
 	SESSecretAccessKey  string `env:"SPHERICON_SES_SECRET_ACCESS_KEY"`
@@ -460,6 +466,11 @@ func Load(envName string) (*Config, error) {
 	outboundAllow, err := webhook.ParseAllowlist(e.OutboundAllow)
 	if err != nil {
 		return nil, fmt.Errorf("SPHERICON_OUTBOUND_ALLOW: %w", err)
+	}
+
+	systemFrom, err := parseSystemEmailFrom(e.SystemEmailFrom)
+	if err != nil {
+		return nil, err
 	}
 
 	// Idle defaults to the open cap so connections are reused, not churned.
@@ -575,7 +586,9 @@ func Load(envName string) (*Config, error) {
 		TrackingEdgeCIDRs:   edgeCIDRs,
 
 		SystemEmailProvider: e.SystemEmailProvider,
-		SystemEmailFrom:     e.SystemEmailFrom,
+		SystemEmailFrom:     systemFrom.Address,
+		SystemEmailFromName: systemFrom.Name,
+		SystemEmailReplyTo:  strings.TrimSpace(e.SystemEmailReplyTo),
 		SESRegion:           e.SESRegion,
 		SESAccessKeyID:      e.SESAccessKeyID,
 		SESSecretAccessKey:  e.SESSecretAccessKey,
@@ -728,6 +741,9 @@ func (c *Config) validate(envName string) error {
 	if err := firstViolation(c.requirements()); err != nil {
 		return err
 	}
+	if err := c.validateSystemEmailReplyTo(); err != nil {
+		return err
+	}
 	if err := c.validateMetricsAddr(); err != nil {
 		return err
 	}
@@ -817,6 +833,34 @@ func (c *Config) requirements() []requirement {
 		{pool.ConnMaxLifetime > 0, "SPHERICON_DB_CONN_MAX_LIFETIME must be positive"},
 		{pool.RiverMaxConns > 0, "SPHERICON_RIVER_DB_MAX_CONNS must be positive"},
 	}
+}
+
+// parseSystemEmailFrom splits SPHERICON_SYSTEM_EMAIL_FROM into its address and optional display
+// name ("Name <noreply@example.com>"); an empty value is the zero address.
+func parseSystemEmailFrom(value string) (mail.Address, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return mail.Address{}, nil
+	}
+	parsed, err := mail.ParseAddress(value)
+	if err != nil {
+		return mail.Address{}, errors.New("SPHERICON_SYSTEM_EMAIL_FROM must be one email address, optionally with a display name: Name <noreply@example.com>")
+	}
+	return *parsed, nil
+}
+
+// validateSystemEmailReplyTo rejects a SPHERICON_SYSTEM_EMAIL_REPLY_TO that is not one bare
+// email address (no display name, no list), so a bad value stops the start rather than every
+// mail of the Instance.
+func (c *Config) validateSystemEmailReplyTo() error {
+	if c.SystemEmailReplyTo == "" {
+		return nil
+	}
+	addr, err := mail.ParseAddress(c.SystemEmailReplyTo)
+	if err != nil || addr.Address != c.SystemEmailReplyTo {
+		return errors.New("SPHERICON_SYSTEM_EMAIL_REPLY_TO must be a single email address such as replies@example.com")
+	}
+	return nil
 }
 
 // validateMetricsAddr rejects a malformed SPHERICON_METRICS_ADDR and one sharing the public

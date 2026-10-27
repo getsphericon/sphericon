@@ -80,3 +80,16 @@ func TestBuildMIMENoListUnsubscribeByDefault(t *testing.T) {
 	})
 	require.NotContains(t, raw, "List-Unsubscribe")
 }
+
+func TestBuildMIMEReplyTo(t *testing.T) {
+	msg := messaging.EmailMessage{From: "sender@example.com", To: "rcpt@example.com", Subject: "Hi", Text: "hi"}
+
+	require.NotContains(t, render(t, msg), "Reply-To:", "no Reply-To unless one is set")
+
+	msg.ReplyTo = "replies@example.com"
+	require.Contains(t, render(t, msg), "Reply-To: <replies@example.com>")
+
+	msg.ReplyTo = "not an address"
+	_, err := messaging.BuildMIME(msg)
+	require.ErrorContains(t, err, "reply-to")
+}

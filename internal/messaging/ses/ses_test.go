@@ -254,3 +254,18 @@ func TestSendRefusesPrivateEndpoint(t *testing.T) {
 	require.Error(t, err, "the production client must not dial a loopback endpoint")
 	assert.Empty(t, api.auth, "no signed request reached the endpoint")
 }
+
+func TestSendPutsTheConfiguredReplyToOnTheMessage(t *testing.T) {
+	api := newSESAPI(t, http.StatusOK, okBody)
+	raw := fmt.Sprintf(`{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com","replyTo":"help@acme.com","endpoint":%q}`, api.srv.URL)
+	built, err := ses.NewDescriptor(http.DefaultClient).Build([]byte(raw), messaging.Deps{})
+	require.NoError(t, err)
+
+	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+	require.NoError(t, err)
+
+	data := api.body["Content"].(map[string]any)["Raw"].(map[string]any)["Data"].(string)
+	mime, err := base64.StdEncoding.DecodeString(data)
+	require.NoError(t, err)
+	assert.Contains(t, string(mime), "Reply-To: <help@acme.com>")
+}

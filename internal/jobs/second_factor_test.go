@@ -32,8 +32,9 @@ func remind(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 
 func recipients(env *testhelper.TestEnv) []string {
 	to := make([]string, 0, len(env.SystemMail.Messages()))
-	for _, m := range env.SystemMail.Messages() {
-		to = append(to, m.To)
+	msgs := env.SystemMail.Messages()
+	for i := range msgs {
+		to = append(to, msgs[i].To)
 	}
 	return to
 }
