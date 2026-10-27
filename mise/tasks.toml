@@ -121,21 +121,24 @@ run = "go run ./cmd/server genkey"
 # --- worktrees ----------------------------------------------------------------------
 
 ["land"]
-description = "Land the work of this worktree on main: rebase onto origin/main, mise run check and test, push HEAD to main, close the tickets. `mise run land -- [--skip-test] [<issue>...]`; a detached HEAD with a clean tree"
+description = "Open the pull request for the work of this worktree: rebase onto origin/main, mise run check and test, the title and body checks, push the branch, gh pr create. `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>] [--skip-test] [<issue>...]`; a branch with a clean tree"
 run = "node mise/scripts/land.ts"
 
 ["worktrees:prune"]
-description = "Remove clean worktrees whose branch is already in origin/main, then run worktrees:gc; dry run unless --apply"
+description = "Remove clean worktrees whose branch is already on main (merged, squashed ones too), then run worktrees:gc; dry run unless --apply"
 usage = 'flag "--apply" help="actually remove, instead of listing"'
 run = '''
-git fetch -q origin main
+git fetch -q --prune origin
+# Merged: in origin/main, or its remote branch is gone (GitHub deletes it on merge, and a squash
+# leaves the commits in origin/main under other SHAs).
+merged() { git merge-base --is-ancestor "$1" origin/main 2>/dev/null || [ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$1")" = "[gone]" ]; }
 main_wt=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
 git worktree list --porcelain | awk '/^worktree /{p=substr($0,10)} /^branch /{b=substr($0,8)} /^$/{if(p&&b)print p"\t"b; p="";b=""} END{if(p&&b)print p"\t"b}' |
 while IFS=$'\t' read -r path ref; do
   [ "$path" = "$main_wt" ] && continue
   branch=${ref#refs/heads/}
   [ -n "$(git -C "$path" status --porcelain)" ] && { echo "keep    $path ($branch): uncommitted changes"; continue; }
-  git merge-base --is-ancestor "$ref" origin/main || { echo "keep    $path ($branch): not in origin/main"; continue; }
+  merged "$branch" || { echo "keep    $path ($branch): not merged"; continue; }
   if [ -z "${usage_apply:-}" ]; then echo "would remove $path ($branch)"; continue; fi
   git worktree unlock "$path" 2>/dev/null || true
   git worktree remove "$path" && git branch -D "$branch" >/dev/null && echo "removed $path ($branch)"
@@ -193,9 +196,11 @@ git worktree unlock "$path" 2>/dev/null || true
 git worktree remove ${force:+--force} "$path"
 git worktree prune
 echo "removed $path"
-# A branch only when it is already in origin/main: a worktree made by EnterWorktree has one.
+# The branch only once it is merged: in origin/main, or its remote branch is gone (GitHub deletes it
+# on merge, and a squash leaves the commits in origin/main under other SHAs). An unmerged one is kept.
+git fetch -q --prune origin 2>/dev/null || true
 if [ -n "$branch" ]; then
-  if git merge-base --is-ancestor "$branch" origin/main 2>/dev/null; then git branch -D "$branch" >/dev/null && echo "deleted branch $branch"; else echo "kept branch $branch: not in origin/main"; fi
+  if git merge-base --is-ancestor "$branch" origin/main 2>/dev/null || [ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$branch")" = "[gone]" ]; then git branch -D "$branch" >/dev/null && echo "deleted branch $branch"; else echo "kept branch $branch: not merged"; fi
 fi
 mise daemons prune --yes
 '''

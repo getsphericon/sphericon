@@ -5,7 +5,7 @@ Guidance for coding agents working in this repository.
 ## Outside contributors: read this first
 
 If you work from a fork and are not a maintainer of this repository, this block overrides the
-maintainer rules further down (worktrees, no branches, pushing to `main`, closing tickets).
+maintainer rules further down (worktrees, `mise run land`, merging, closing tickets).
 
 - Fork the repository, work on a branch of your fork and open a pull request against `main`. A
   change that is more than a typo or a doc line starts from an issue a maintainer has accepted
@@ -125,25 +125,31 @@ The rest of this file is for maintainers and the agents they run: how work lands
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory. Auto memory is off for this project (`autoMemoryEnabled: false` in
   `.claude/settings.json`), so what an agent needs to know is written down in a Markdown file.
-- **`mise run land -- [--skip-test] [<issue>...]` does the landing below in one go** (rebase, check, test, push,
-  ticket check); a hand-typed push of `HEAD` to `main` skips the checks it runs, so a Claude Code hook
-  (`.claude/settings.json`, `mise/scripts/agent-guard.ts`) refuses that push and any `--no-verify`.
-- **Land every change from its worktree, then clean up.** A change made in a worktree reaches
-  `main` with `git push origin HEAD:main` once the checks pass and the work is rebased onto a freshly fetched `origin/main` (a
-  detached `HEAD`, never a branch). Then remove that worktree with `mise run worktrees:rm <path>` right
-  away, without asking: it also drops the worktree's databases, which `git worktree remove` leaves on
-  the shared Postgres. Only the worktree made for that change.
+- **Nothing is pushed to `main`: every change reaches it through a pull request.**
+  `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>]
+  [--skip-test] [<issue>...]` does the first half in one go: rebase onto a freshly fetched
+  `origin/main`, `check`, `test`, the title and body checks CI will run, push of the worktree's branch
+  and `gh pr create` (an open pull request of the branch is updated instead). The repository ruleset
+  enforces the rest on GitHub: a pull request, the CI checks and, for the paths in `CODEOWNERS`, the
+  owner's review. `--no-verify` only moves a failure to CI, where the same checks are required.
+- **Land every change from its worktree, then clean up.** When the user says to land or finish
+  ("заливай", "завершай", "land it"): run `mise run land`, wait for CI (`gh pr checks --watch`) and
+  merge with `gh pr merge --squash`. The repository squashes with the pull request title, which is a
+  Conventional Commit, and release-please reads it. A pull request that touches a `CODEOWNERS` path
+  needs the owner's review, which its author cannot give: merge it with `gh pr merge --squash --admin`
+  only when the user says so. A red or missing check is fixed, never bypassed. Then remove the worktree with `mise run worktrees:rm <path>` right away,
+  without asking: it also drops the worktree's databases, which `git worktree remove` leaves on the
+  shared Postgres, and deletes the local branch once it is merged. Only the worktree made for that
+  change.
   **After the work is on `main`, update the primary checkout, which stays on a clean `main`:** `git
   fetch origin && git rebase origin/main` (never `git merge`), so the next worktree starts from the
   merged state.
-  **Landing also closes the ticket.** When the user says to land or finish ("заливай", "завершай",
-  "land it"), that covers the issue the work was for: put `Closes #<n>` in the footer of the
-  commit that reaches `main` (one per ticket), then confirm with `gh issue view <n> --json state`
-  that it is closed after the push. If GitHub did not close it (the push lacked the keyword, or the work came through a PR), run `gh issue close <n> --comment
-  "Implemented on main in <sha>."`. A ticket that stays open after its work is on `main` is
-  taken as unfinished by the next agent, who then redoes it. The push prints
-  `Required status check "license/cla" is expected` and still succeeds: that is how the
-  repository is set up, so it is expected. Do not mention it, flag it or call it a bypass.
+  **Landing also closes the ticket.** The issue the work was for goes into the pull request as
+  `Closes #<n>` (one per ticket; `land` takes the numbers), and GitHub closes it on the merge.
+  Confirm with `gh issue view <n> --json state` that it is closed. If it is not, run `gh issue close <n>
+  --comment "Implemented on main in <sha>."`. A ticket that stays open after its work is on `main` is
+  taken as unfinished by the next agent, who then redoes it. A required check that is red or missing,
+  `license/cla` included, is a failure to fix.
 - **The open app stays neutral about the hosted offering.** No plans, prices, trials, payment
   providers, billing or the words that describe them in code, docs, UI strings or contracts. A Staff hold carries a free-form reason code, a
   message and an optional action URL, and the core attaches no meaning to the code.
@@ -173,7 +179,7 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/a
 
 ### Worktrees
 
-Every change, however small, is made in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Nothing is edited or committed in the primary checkout: it stays on a clean `main` that tracks `origin/main`. Never create a branch, in the primary checkout or in a worktree. See `docs/agents/worktrees.md`.
+Every change, however small, is made in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Nothing is edited or committed in the primary checkout: it stays on a clean `main` that tracks `origin/main`. A worktree works on its own branch, which `mise run land` pushes and opens as a pull request; no branch is created in the primary checkout. See `docs/agents/worktrees.md`.
 
 ### Advisor before /to-spec
 
