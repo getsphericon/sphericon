@@ -23,7 +23,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -246,7 +245,7 @@ func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, f Fields) error {
 		}
 	}
 	if f.IntegrationID != nil {
-		ok, err := s.Integration().Query().Where(integration.ID(*f.IntegrationID)).Exist(ctx)
+		ok, err := messaging.IntegrationKept(ctx, s, *f.IntegrationID)
 		if err != nil {
 			return err
 		}

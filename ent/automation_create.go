@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -100,6 +101,20 @@ func (_c *AutomationCreate) SetTriggerEvent(v string) *AutomationCreate {
 	return _c
 }
 
+// SetIntegrationID sets the "integration_id" field.
+func (_c *AutomationCreate) SetIntegrationID(v int64) *AutomationCreate {
+	_c.mutation.SetIntegrationID(v)
+	return _c
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (_c *AutomationCreate) SetNillableIntegrationID(v *int64) *AutomationCreate {
+	if v != nil {
+		_c.SetIntegrationID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationCreate) SetID(v int64) *AutomationCreate {
 	_c.mutation.SetID(v)
@@ -154,6 +169,11 @@ func (_c *AutomationCreate) AddOutboundMessages(v ...*OutboundMessage) *Automati
 		ids[i] = v[i].ID
 	}
 	return _c.AddOutboundMessageIDs(ids...)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_c *AutomationCreate) SetIntegration(v *Integration) *AutomationCreate {
+	return _c.SetIntegrationID(v.ID)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -365,6 +385,23 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.IntegrationTable,
+			Columns: []string{automation.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.IntegrationID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -492,6 +529,24 @@ func (u *AutomationUpsert) SetTriggerEvent(v string) *AutomationUpsert {
 // UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
 func (u *AutomationUpsert) UpdateTriggerEvent() *AutomationUpsert {
 	u.SetExcluded(automation.FieldTriggerEvent)
+	return u
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (u *AutomationUpsert) SetIntegrationID(v int64) *AutomationUpsert {
+	u.Set(automation.FieldIntegrationID, v)
+	return u
+}
+
+// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
+func (u *AutomationUpsert) UpdateIntegrationID() *AutomationUpsert {
+	u.SetExcluded(automation.FieldIntegrationID)
+	return u
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (u *AutomationUpsert) ClearIntegrationID() *AutomationUpsert {
+	u.SetNull(automation.FieldIntegrationID)
 	return u
 }
 
@@ -634,6 +689,27 @@ func (u *AutomationUpsertOne) SetTriggerEvent(v string) *AutomationUpsertOne {
 func (u *AutomationUpsertOne) UpdateTriggerEvent() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
 		s.UpdateTriggerEvent()
+	})
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (u *AutomationUpsertOne) SetIntegrationID(v int64) *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetIntegrationID(v)
+	})
+}
+
+// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
+func (u *AutomationUpsertOne) UpdateIntegrationID() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateIntegrationID()
+	})
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (u *AutomationUpsertOne) ClearIntegrationID() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.ClearIntegrationID()
 	})
 }
 
@@ -942,6 +1018,27 @@ func (u *AutomationUpsertBulk) SetTriggerEvent(v string) *AutomationUpsertBulk {
 func (u *AutomationUpsertBulk) UpdateTriggerEvent() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
 		s.UpdateTriggerEvent()
+	})
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (u *AutomationUpsertBulk) SetIntegrationID(v int64) *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetIntegrationID(v)
+	})
+}
+
+// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
+func (u *AutomationUpsertBulk) UpdateIntegrationID() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateIntegrationID()
+	})
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (u *AutomationUpsertBulk) ClearIntegrationID() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.ClearIntegrationID()
 	})
 }
 

@@ -44,7 +44,7 @@ func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.Creat
 		return &res, nil
 	}
 
-	in := automations.CreateInput{Name: req.Name, TriggerEvent: req.TriggerEvent}
+	in := automations.CreateInput{Name: req.Name, TriggerEvent: req.TriggerEvent, IntegrationID: convert.Int64Ptr(req.IntegrationId)}
 	if req.Steps != nil {
 		in.Steps = resources.AutomationSteps(req.Steps)
 	}
@@ -88,6 +88,9 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 	in := automations.UpdateInput{
 		Name:         convert.StringPtr(req.Name),
 		TriggerEvent: convert.StringPtr(req.TriggerEvent),
+		// JSON Merge Patch: an explicit null clears the Integration, an absent key keeps it.
+		IntegrationID:    convert.Int64Ptr(req.IntegrationId),
+		ClearIntegration: req.IntegrationId.IsNull(),
 	}
 	if req.Steps != nil {
 		steps := resources.AutomationSteps(req.Steps)

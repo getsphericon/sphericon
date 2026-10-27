@@ -11,15 +11,19 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/inuse"
 )
 
 // EmailAutomations returns the active, unarchived Automations whose current steps send an email, as users.
-// Such an Automation sends through the Workspace's default email Integration with its
-// configured From, so the Integration and the Sending domain of that From are in use by it.
-func EmailAutomations(ctx context.Context, s *ent.Scoped) ([]inuse.User, error) {
+// Such an Automation sends through the Integration it names (the Workspace's default email
+// Integration when it names none) with its configured From, so that Integration and the Sending
+// domain of that From are in use by it. The where predicates narrow the Automations further, for
+// a caller that asks about one Integration.
+func EmailAutomations(ctx context.Context, s *ent.Scoped, where ...predicate.Automation) ([]inuse.User, error) {
+	live := append([]predicate.Automation{automation.StatusEQ(automation.StatusActive), automation.DiscardedAtIsNil()}, where...)
 	versions, err := s.AutomationVersion().Query().
-		Where(automationversion.HasAutomationWith(automation.StatusEQ(automation.StatusActive), automation.DiscardedAtIsNil())).
+		Where(automationversion.HasAutomationWith(live...)).
 		WithAutomation().
 		Order(ent.Asc(automationversion.FieldAutomationID), ent.Desc(automationversion.FieldVersion)).
 		All(ctx)

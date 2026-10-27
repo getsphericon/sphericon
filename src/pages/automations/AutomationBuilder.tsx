@@ -1,6 +1,15 @@
-import { Box, Button, Group, Modal, Paper, TextInput, useComputedColorScheme } from '@mantine/core'
+import {
+  Box,
+  Button,
+  Group,
+  Modal,
+  Paper,
+  Select,
+  TextInput,
+  useComputedColorScheme,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   closeSnackbar,
   registerComponentDecorator,
@@ -24,6 +33,7 @@ import {
   siteAutomationsGetQueryKey,
   siteAutomationsListQueryKey,
   siteAutomationsUpdateMutation,
+  siteIntegrationsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
@@ -83,15 +93,19 @@ function QuietRestore() {
 const isValidConnection: WorkflowBuilderIsValidConnection = ({ targetNode }) =>
   !targetNode.data.isStartNode
 
-interface AutomationNameValues {
-  name: string
-}
-type AutomationNameForm = ReturnType<typeof useAutomationNameForm>
+// The picker's value for "no Integration named", which sends through the Workspace default.
+const DEFAULT_INTEGRATION = 'default'
 
-function useAutomationNameForm(name: string) {
+interface AutomationBarValues {
+  name: string
+  integrationId: string | null
+}
+type AutomationBarForm = ReturnType<typeof useAutomationBarForm>
+
+function useAutomationBarForm(name: string, integrationId: string | null) {
   const { t } = useTranslation()
-  return useForm<AutomationNameValues>({
-    initialValues: { name },
+  return useForm<AutomationBarValues>({
+    initialValues: { name, integrationId },
     validate: { name: (value) => (value.trim() === '' ? t(($) => $.validation.required) : null) },
   })
 }
@@ -129,12 +143,21 @@ function BuilderBar({
   automationId,
   onSave,
 }: {
-  form: AutomationNameForm
+  form: AutomationBarForm
   workspaceId: string
   automationId: string
   onSave: (graph: AutomationGraph) => Promise<DidSaveStatus>
 }) {
   const { t } = useTranslation()
+  const integrationsQuery = useQuery(
+    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
+  )
+  const integrations = [
+    { value: DEFAULT_INTEGRATION, label: t(($) => $.automations.integrationDefault) },
+    ...(integrationsQuery.data ?? [])
+      .filter((integration) => integration.channel === 'email')
+      .map((integration) => ({ value: integration.id, label: integration.name })),
+  ]
   const saveMutation = useMutation({
     mutationFn: async () => {
       const { nodes, edges } = useStore.getState()
@@ -159,6 +182,19 @@ function BuilderBar({
           />
         </Group>
         <Group wrap="nowrap" flex="none">
+          <Select
+            aria-label={t(($) => $.automations.integrationLabel)}
+            placeholder={t(($) => $.automations.integrationLabel)}
+            data={integrations}
+            allowDeselect={false}
+            value={form.values.integrationId ?? DEFAULT_INTEGRATION}
+            onChange={(value) =>
+              form.setFieldValue(
+                'integrationId',
+                value === null || value === DEFAULT_INTEGRATION ? null : value,
+              )
+            }
+          />
           <FailedEnrollments workspaceId={workspaceId} automationId={automationId} />
           <Button
             loading={saveMutation.isPending}
@@ -197,7 +233,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     return () => style.remove()
   }, [])
 
-  const form = useAutomationNameForm(automation.name)
+  const form = useAutomationBarForm(automation.name, automation.integrationId ?? null)
 
   const initialGraph = useMemo(() => {
     const labels = Object.fromEntries(
@@ -206,7 +242,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     return stepsToGraph(automation.triggerEvent, automation.steps, labels)
   }, [automation.triggerEvent, automation.steps, nodeTypes])
 
-  const [saved, setSaved] = useState(() => automationSnapshot(automation.name, initialGraph))
+  const [saved, setSaved] = useState(() =>
+    automationSnapshot(automation.name, automation.integrationId ?? null, initialGraph),
+  )
 
   const updateMutation = useMutation({
     ...siteAutomationsUpdateMutation(),
@@ -246,9 +284,10 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
             name: values.name.trim(),
             triggerEvent,
             steps,
+            integrationId: values.integrationId,
           },
         })
-        setSaved(automationSnapshot(values.name, graph))
+        setSaved(automationSnapshot(values.name, values.integrationId, graph))
         notify({
           color: 'teal',
           title: t(($) => $.notifications.successTitle),
@@ -314,7 +353,11 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
         >
           <ThemeSync />
           <QuietRestore />
-          <LeaveGuard name={form.values.name} saved={saved} />
+          <LeaveGuard
+            name={form.values.name}
+            integrationId={form.values.integrationId}
+            saved={saved}
+          />
           <Box pos="relative" w="100%" h="100dvh">
             <WorkflowBuilder.Canvas />
             <I18nextProvider i18n={i18n}>

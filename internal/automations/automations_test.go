@@ -247,3 +247,48 @@ func TestUsingTagIncludesArchivedAutomations(t *testing.T) {
 	names := lo.Map(using, func(a *ent.Automation, _ int) string { return a.Name })
 	assert.Equal(t, []string{fixtures.AutomationTagOnEngagementName}, names)
 }
+
+func TestAnAutomationSavesAndClearsTheIntegrationItSendsThrough(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := automations.New(env.Cipher, env.Bus)
+	ctx := context.Background()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+
+	a, err := m.Create(ctx, acme, automations.CreateInput{
+		Name: "Onboarding", TriggerEvent: "signup", IntegrationID: new(int64(fixtures.IntegrationAcmeMailgunID)),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, a.IntegrationID)
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, *a.IntegrationID)
+
+	renamed, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Name: new("Renamed")})
+	require.NoError(t, err)
+	require.NotNil(t, renamed.IntegrationID, "an update that does not name an Integration keeps it")
+
+	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{IntegrationID: new(int64(fixtures.IntegrationAcmeDefaultID))})
+	require.NoError(t, err)
+	require.NotNil(t, moved.IntegrationID)
+	assert.EqualValues(t, fixtures.IntegrationAcmeDefaultID, *moved.IntegrationID)
+
+	cleared, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{ClearIntegration: true})
+	require.NoError(t, err)
+	assert.Nil(t, cleared.IntegrationID, "cleared, the Automation sends through the default")
+}
+
+func TestAnAutomationRefusesAnIntegrationThatIsMissingOrArchived(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := automations.New(env.Cipher, env.Bus)
+	ctx := context.Background()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID))
+	before := automationNames(t, env)
+
+	for name, id := range map[string]int64{"unknown": 999999, "archived": fixtures.IntegrationAcmeMailgunID} {
+		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", TriggerEvent: "signup", IntegrationID: &id})
+		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
+
+		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{IntegrationID: &id})
+		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
+	}
+	assert.Equal(t, before, automationNames(t, env), "a refused save stores nothing")
+}

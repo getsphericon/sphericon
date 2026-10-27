@@ -132,6 +132,7 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "active"}, Default: "draft"},
 		{Name: "trigger_event", Type: field.TypeString},
+		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// AutomationsTable holds the schema information for the "automations" table.
@@ -141,8 +142,14 @@ var (
 		PrimaryKey: []*schema.Column{AutomationsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "automations_workspaces_automations",
+				Symbol:     "automations_integrations_integration",
 				Columns:    []*schema.Column{AutomationsColumns[7]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "automations_workspaces_automations",
+				Columns:    []*schema.Column{AutomationsColumns[8]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -151,7 +158,12 @@ var (
 			{
 				Name:    "automation_workspace_id_status_trigger_event",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[7], AutomationsColumns[5], AutomationsColumns[6]},
+				Columns: []*schema.Column{AutomationsColumns[8], AutomationsColumns[5], AutomationsColumns[6]},
+			},
+			{
+				Name:    "automation_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationsColumns[7]},
 			},
 		},
 	}
@@ -2193,7 +2205,8 @@ func init() {
 	AuthAttemptsTable.Annotation.Checks = map[string]string{
 		"auth_attempts_kind_check": "kind IN ('login', 'staff_login', 'password_reset', 'register', 'email_change', 'test_send_user', 'test_send_workspace')",
 	}
-	AutomationsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	AutomationsTable.ForeignKeys[0].RefTable = IntegrationsTable
+	AutomationsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	AutomationsTable.Annotation = &entsql.Annotation{
 		Table: "automations",
 	}

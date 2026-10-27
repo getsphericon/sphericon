@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -115,6 +116,26 @@ func (_u *AutomationUpdate) SetNillableTriggerEvent(v *string) *AutomationUpdate
 	return _u
 }
 
+// SetIntegrationID sets the "integration_id" field.
+func (_u *AutomationUpdate) SetIntegrationID(v int64) *AutomationUpdate {
+	_u.mutation.SetIntegrationID(v)
+	return _u
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (_u *AutomationUpdate) SetNillableIntegrationID(v *int64) *AutomationUpdate {
+	if v != nil {
+		_u.SetIntegrationID(*v)
+	}
+	return _u
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (_u *AutomationUpdate) ClearIntegrationID() *AutomationUpdate {
+	_u.mutation.ClearIntegrationID()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationUpdate) SetWorkspace(v *Workspace) *AutomationUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -163,6 +184,11 @@ func (_u *AutomationUpdate) AddOutboundMessages(v ...*OutboundMessage) *Automati
 		ids[i] = v[i].ID
 	}
 	return _u.AddOutboundMessageIDs(ids...)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_u *AutomationUpdate) SetIntegration(v *Integration) *AutomationUpdate {
+	return _u.SetIntegrationID(v.ID)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -237,6 +263,12 @@ func (_u *AutomationUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *Autom
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOutboundMessageIDs(ids...)
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (_u *AutomationUpdate) ClearIntegration() *AutomationUpdate {
+	_u.mutation.ClearIntegration()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -498,6 +530,35 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.IntegrationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.IntegrationTable,
+			Columns: []string{automation.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.IntegrationTable,
+			Columns: []string{automation.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -602,6 +663,26 @@ func (_u *AutomationUpdateOne) SetNillableTriggerEvent(v *string) *AutomationUpd
 	return _u
 }
 
+// SetIntegrationID sets the "integration_id" field.
+func (_u *AutomationUpdateOne) SetIntegrationID(v int64) *AutomationUpdateOne {
+	_u.mutation.SetIntegrationID(v)
+	return _u
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (_u *AutomationUpdateOne) SetNillableIntegrationID(v *int64) *AutomationUpdateOne {
+	if v != nil {
+		_u.SetIntegrationID(*v)
+	}
+	return _u
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (_u *AutomationUpdateOne) ClearIntegrationID() *AutomationUpdateOne {
+	_u.mutation.ClearIntegrationID()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationUpdateOne) SetWorkspace(v *Workspace) *AutomationUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -650,6 +731,11 @@ func (_u *AutomationUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *Autom
 		ids[i] = v[i].ID
 	}
 	return _u.AddOutboundMessageIDs(ids...)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_u *AutomationUpdateOne) SetIntegration(v *Integration) *AutomationUpdateOne {
+	return _u.SetIntegrationID(v.ID)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -724,6 +810,12 @@ func (_u *AutomationUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *Au
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOutboundMessageIDs(ids...)
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (_u *AutomationUpdateOne) ClearIntegration() *AutomationUpdateOne {
+	_u.mutation.ClearIntegration()
+	return _u
 }
 
 // Where appends a list predicates to the AutomationUpdate builder.
@@ -1008,6 +1100,35 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.IntegrationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.IntegrationTable,
+			Columns: []string{automation.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.IntegrationTable,
+			Columns: []string{automation.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

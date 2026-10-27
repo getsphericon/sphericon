@@ -51,7 +51,7 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 		return nil, err
 	}
 
-	in := automations.CreateInput{Name: req.Name, TriggerEvent: req.TriggerEvent}
+	in := automations.CreateInput{Name: req.Name, TriggerEvent: req.TriggerEvent, IntegrationID: convert.Int64Ptr(req.IntegrationId)}
 	if req.Steps != nil {
 		in.Steps = resources.AutomationSteps(req.Steps)
 	}
@@ -104,6 +104,9 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 	in := automations.UpdateInput{
 		Name:         convert.StringPtr(req.Name),
 		TriggerEvent: convert.StringPtr(req.TriggerEvent),
+		// JSON Merge Patch: an explicit null clears the Integration, an absent key keeps it.
+		IntegrationID:    convert.Int64Ptr(req.IntegrationId),
+		ClearIntegration: req.IntegrationId.IsNull(),
 	}
 	if req.Steps != nil {
 		steps := resources.AutomationSteps(req.Steps)

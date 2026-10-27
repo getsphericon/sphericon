@@ -844,6 +844,8 @@ type AutomationResource struct {
 	TriggerEvent string `json:"triggerEvent"`
 	// The automation's ordered, linear steps.
 	Steps []AutomationStep `json:"steps"`
+	// Sending integration of the email steps; null means the workspace default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 	// When the automation was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
@@ -875,6 +877,11 @@ func (s *AutomationResource) GetTriggerEvent() string {
 // GetSteps returns the value of Steps.
 func (s *AutomationResource) GetSteps() []AutomationStep {
 	return s.Steps
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *AutomationResource) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
 }
 
 // GetArchivedAt returns the value of ArchivedAt.
@@ -915,6 +922,11 @@ func (s *AutomationResource) SetTriggerEvent(val string) {
 // SetSteps sets the value of Steps.
 func (s *AutomationResource) SetSteps(val []AutomationStep) {
 	s.Steps = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *AutomationResource) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // SetArchivedAt sets the value of ArchivedAt.
@@ -4880,6 +4892,8 @@ type CreateAutomationInput struct {
 	Name         string           `json:"name"`
 	TriggerEvent string           `json:"triggerEvent"`
 	Steps        []AutomationStep `json:"steps"`
+	// Sending integration of the email steps; null/omitted means the workspace default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -4897,6 +4911,11 @@ func (s *CreateAutomationInput) GetSteps() []AutomationStep {
 	return s.Steps
 }
 
+// GetIntegrationId returns the value of IntegrationId.
+func (s *CreateAutomationInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetName sets the value of Name.
 func (s *CreateAutomationInput) SetName(val string) {
 	s.Name = val
@@ -4910,6 +4929,11 @@ func (s *CreateAutomationInput) SetTriggerEvent(val string) {
 // SetSteps sets the value of Steps.
 func (s *CreateAutomationInput) SetSteps(val []AutomationStep) {
 	s.Steps = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *CreateAutomationInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // Request body for creating a broadcast (always created as a draft).
@@ -15367,6 +15391,8 @@ type UpdateAutomationInput struct {
 	Name         OptString        `json:"name"`
 	TriggerEvent OptString        `json:"triggerEvent"`
 	Steps        []AutomationStep `json:"steps"`
+	// Sending integration of the email steps; null means the workspace default, omitted keeps it.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -15384,6 +15410,11 @@ func (s *UpdateAutomationInput) GetSteps() []AutomationStep {
 	return s.Steps
 }
 
+// GetIntegrationId returns the value of IntegrationId.
+func (s *UpdateAutomationInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetName sets the value of Name.
 func (s *UpdateAutomationInput) SetName(val OptString) {
 	s.Name = val
@@ -15397,6 +15428,11 @@ func (s *UpdateAutomationInput) SetTriggerEvent(val OptString) {
 // SetSteps sets the value of Steps.
 func (s *UpdateAutomationInput) SetSteps(val []AutomationStep) {
 	s.Steps = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *UpdateAutomationInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // Request body for updating a draft broadcast.

@@ -7649,6 +7649,8 @@ type SiteAutomationResource struct {
 	TriggerEvent string `json:"triggerEvent"`
 	// The automation's ordered, linear steps.
 	Steps []SiteAutomationStep `json:"steps"`
+	// Sending integration of the email steps; null means the workspace default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 	// When the automation was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
@@ -7680,6 +7682,11 @@ func (s *SiteAutomationResource) GetTriggerEvent() string {
 // GetSteps returns the value of Steps.
 func (s *SiteAutomationResource) GetSteps() []SiteAutomationStep {
 	return s.Steps
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteAutomationResource) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
 }
 
 // GetArchivedAt returns the value of ArchivedAt.
@@ -7720,6 +7727,11 @@ func (s *SiteAutomationResource) SetTriggerEvent(val string) {
 // SetSteps sets the value of Steps.
 func (s *SiteAutomationResource) SetSteps(val []SiteAutomationStep) {
 	s.Steps = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteAutomationResource) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // SetArchivedAt sets the value of ArchivedAt.
@@ -10540,6 +10552,8 @@ type SiteCreateAutomationInput struct {
 	Name         string               `json:"name"`
 	TriggerEvent string               `json:"triggerEvent"`
 	Steps        []SiteAutomationStep `json:"steps"`
+	// Sending integration of the email steps; null/omitted means the workspace default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -10557,6 +10571,11 @@ func (s *SiteCreateAutomationInput) GetSteps() []SiteAutomationStep {
 	return s.Steps
 }
 
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteCreateAutomationInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetName sets the value of Name.
 func (s *SiteCreateAutomationInput) SetName(val string) {
 	s.Name = val
@@ -10570,6 +10589,11 @@ func (s *SiteCreateAutomationInput) SetTriggerEvent(val string) {
 // SetSteps sets the value of Steps.
 func (s *SiteCreateAutomationInput) SetSteps(val []SiteAutomationStep) {
 	s.Steps = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteCreateAutomationInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // Site request body for creating a broadcast.
@@ -20848,6 +20872,8 @@ type SiteUpdateAutomationInput struct {
 	Name         OptString            `json:"name"`
 	TriggerEvent OptString            `json:"triggerEvent"`
 	Steps        []SiteAutomationStep `json:"steps"`
+	// Sending integration of the email steps; null means the workspace default, omitted keeps it.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -20865,6 +20891,11 @@ func (s *SiteUpdateAutomationInput) GetSteps() []SiteAutomationStep {
 	return s.Steps
 }
 
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteUpdateAutomationInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetName sets the value of Name.
 func (s *SiteUpdateAutomationInput) SetName(val OptString) {
 	s.Name = val
@@ -20878,6 +20909,11 @@ func (s *SiteUpdateAutomationInput) SetTriggerEvent(val OptString) {
 // SetSteps sets the value of Steps.
 func (s *SiteUpdateAutomationInput) SetSteps(val []SiteAutomationStep) {
 	s.Steps = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteUpdateAutomationInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // Site request body for updating a broadcast.

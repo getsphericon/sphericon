@@ -263,6 +263,8 @@ export default interface Resources {
       "httpSecretLabel": "Signing secret",
       "httpUrlHint": "https://hooks.example.com/... (leave empty to keep the saved URL)",
       "httpUrlLabel": "URL",
+      "integrationDefault": "Workspace default",
+      "integrationLabel": "Integration",
       "leaveDiscard": "Leave",
       "leaveMessage": "Your changes to this automation are not saved.",
       "leaveStay": "Keep editing",

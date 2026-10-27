@@ -6,6 +6,7 @@ import {
   handleSiteAutomationsGet,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
+  handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
@@ -18,12 +19,14 @@ import { AutomationEditPage } from './edit.tsx'
 const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
 const NOW = '2026-01-01T00:00:00Z'
 
-// The page also asks for the failed Enrollments: none unless a test says otherwise.
+// The page also asks for the failed Enrollments and the Integrations to pick from: none unless a
+// test says otherwise.
 beforeEach(() => {
   worker.use(
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
     }),
+    handleSiteIntegrationsList({ body: [] }),
   )
 })
 
@@ -98,6 +101,7 @@ test('saving from the builder sends the edited name, the trigger and the canvas 
           { type: 'wait', seconds: 60 },
           { type: 'apply_tag', tag: 'vip' },
         ],
+        integrationId: null,
       },
     ])
   await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
@@ -160,6 +164,7 @@ test('saving an email step written in the editor sends its document and no body'
         name: 'Welcome flow',
         triggerEvent: 'email.clicked',
         steps: [{ type: 'email', subject: 'Hi', doc: AUTHORED_DOC }],
+        integrationId: null,
       },
     ])
 })

@@ -545,7 +545,8 @@ export const zSiteContactHoldings = z.object({
 export const zSiteCreateAutomationInput = z.object({
   name: z.string(),
   triggerEvent: z.string(),
-  steps: z.exactOptional(z.array(zSiteAutomationStep))
+  steps: z.exactOptional(z.array(zSiteAutomationStep)),
+  integrationId: z.exactOptional(zEntityId.nullable())
 });
 
 /**
@@ -1617,7 +1618,8 @@ export const zSiteTransactionalEmailStatus = z.enum([
 export const zSiteUpdateAutomationInput = z.object({
   name: z.exactOptional(z.string()),
   triggerEvent: z.exactOptional(z.string()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep))
+  steps: z.exactOptional(z.array(zSiteAutomationStep)),
+  integrationId: z.exactOptional(zEntityId.nullable())
 });
 
 /**
@@ -1996,6 +1998,7 @@ export const zSiteAutomationResource = z.object({
   status: zSiteAutomationStatus,
   triggerEvent: z.string(),
   steps: z.array(zSiteAutomationStep),
+  integrationId: z.exactOptional(zEntityId.nullable()),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp

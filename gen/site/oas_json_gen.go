@@ -11362,6 +11362,12 @@ func (s *SiteAutomationResource) encodeFields(e *jx.Encoder) {
 		e.ArrEnd()
 	}
 	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
+	{
 		if s.ArchivedAt.Set {
 			e.FieldStart("archivedAt")
 			s.ArchivedAt.Encode(e)
@@ -11377,15 +11383,16 @@ func (s *SiteAutomationResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteAutomationResource = [8]string{
+var jsonFieldsNameOfSiteAutomationResource = [9]string{
 	0: "id",
 	1: "name",
 	2: "status",
 	3: "triggerEvent",
 	4: "steps",
-	5: "archivedAt",
-	6: "createdAt",
-	7: "updatedAt",
+	5: "integrationId",
+	6: "archivedAt",
+	7: "createdAt",
+	8: "updatedAt",
 }
 
 // Decode decodes SiteAutomationResource from json.
@@ -11393,7 +11400,7 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteAutomationResource to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -11459,6 +11466,16 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"steps\"")
 			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
 		case "archivedAt":
 			if err := func() error {
 				s.ArchivedAt.Reset()
@@ -11470,7 +11487,7 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -11480,7 +11497,7 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -11498,8 +11515,9 @@ func (s *SiteAutomationResource) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b11011111,
+	for i, mask := range [2]uint8{
+		0b10011111,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -19540,12 +19558,19 @@ func (s *SiteCreateAutomationInput) encodeFields(e *jx.Encoder) {
 			e.ArrEnd()
 		}
 	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteCreateAutomationInput = [3]string{
+var jsonFieldsNameOfSiteCreateAutomationInput = [4]string{
 	0: "name",
 	1: "triggerEvent",
 	2: "steps",
+	3: "integrationId",
 }
 
 // Decode decodes SiteCreateAutomationInput from json.
@@ -19597,6 +19622,16 @@ func (s *SiteCreateAutomationInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"steps\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
 			return d.Skip()
@@ -49068,12 +49103,19 @@ func (s *SiteUpdateAutomationInput) encodeFields(e *jx.Encoder) {
 			e.ArrEnd()
 		}
 	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteUpdateAutomationInput = [3]string{
+var jsonFieldsNameOfSiteUpdateAutomationInput = [4]string{
 	0: "name",
 	1: "triggerEvent",
 	2: "steps",
+	3: "integrationId",
 }
 
 // Decode decodes SiteUpdateAutomationInput from json.
@@ -49120,6 +49162,16 @@ func (s *SiteUpdateAutomationInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"steps\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
 			return d.Skip()

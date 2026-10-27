@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -74,6 +75,8 @@ var (
 	// ErrInvalidTrigger: the trigger is an infrastructure Event (a send or a delivery notice)
 	// that no Automation may start from (ADR 0053).
 	ErrInvalidTrigger = validation.Refuse("automations: invalid trigger", "errors.automation_trigger_invalid")
+	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
+	ErrIntegrationNotFound = validation.Refuse("automations: integration not found", "errors.automation_integration_not_found")
 
 	// ErrNoVersion: the Automation has no version yet. Only an Automation made before versions
 	// existed can be in that state, until the backfill job (internal/jobs) has run.
@@ -184,10 +187,10 @@ type Module struct {
 // opens the transaction that saves an Automation together with its steps.
 func New(cipher *secrets.Cipher, bus *events.Bus) *Module { return &Module{cipher: cipher, bus: bus} }
 
-// IsInvalid reports whether err refuses the Automation's input (a step or the trigger), which an
-// API surface renders as 422.
+// IsInvalid reports whether err refuses the Automation's input (a step, the trigger or the
+// Integration), which an API surface renders as 422.
 func IsInvalid(err error) bool {
-	return errors.Is(err, ErrInvalidStep) || errors.Is(err, ErrInvalidTrigger)
+	return errors.Is(err, ErrInvalidStep) || errors.Is(err, ErrInvalidTrigger) || errors.Is(err, ErrIntegrationNotFound)
 }
 
 // engagementTriggers are the `email.` Events an Automation may start from: what a recipient does.
@@ -210,6 +213,8 @@ type CreateInput struct {
 	Name         string
 	TriggerEvent string
 	Steps        []Step
+	// IntegrationID is the email Integration the steps send through; nil is the Workspace default.
+	IntegrationID *int64
 }
 
 // UpdateInput changes an Automation; nil fields are left alone.
@@ -217,6 +222,10 @@ type UpdateInput struct {
 	Name         *string
 	TriggerEvent *string
 	Steps        *[]Step
+	// IntegrationID moves the Automation to that Integration; ClearIntegration goes back to
+	// the Workspace default. Neither leaves it alone.
+	IntegrationID    *int64
+	ClearIntegration bool
 }
 
 // latest narrows the versions an Automation query loads to the newest one of each Automation:
@@ -306,6 +315,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if err := validate(in.Steps); err != nil {
 		return nil, err
 	}
+	if err := checkIntegration(ctx, s, in.IntegrationID); err != nil {
+		return nil, err
+	}
 	def := "[]"
 	if in.Steps != nil {
 		sealed, err := m.sealSteps(in.Steps, nil)
@@ -322,6 +334,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 			SetName(in.Name).
 			SetTriggerEvent(in.TriggerEvent).
 			SetStatus(automation.StatusDraft).
+			SetNillableIntegrationID(in.IntegrationID).
 			Save(ctx)
 		if err != nil {
 			return err
@@ -354,11 +367,18 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		steps = built
 	}
+	if err := checkIntegration(ctx, s, in.IntegrationID); err != nil {
+		return nil, err
+	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		if _, err := ts.Automation().UpdateOneID(id).
+		upd := ts.Automation().UpdateOneID(id).
 			SetNillableName(in.Name).
 			SetNillableTriggerEvent(in.TriggerEvent).
-			Save(ctx); err != nil {
+			SetNillableIntegrationID(in.IntegrationID)
+		if in.ClearIntegration {
+			upd.ClearIntegrationID()
+		}
+		if _, err := upd.Save(ctx); err != nil {
 			return err
 		}
 		if in.Steps == nil {
@@ -370,6 +390,23 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return nil, notFound(err)
 	}
 	return m.Get(ctx, s, id)
+}
+
+// checkIntegration refuses an Integration that is missing or archived, the rule a Broadcast
+// save applies too (messaging.IntegrationKept). An Automation already pointing at one keeps it
+// as history.
+func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
+	if id == nil {
+		return nil
+	}
+	ok, err := messaging.IntegrationKept(ctx, s, *id)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrIntegrationNotFound
+	}
+	return nil
 }
 
 // saveSteps stores steps as the Automation's current ones (ADR 0049). The latest version is

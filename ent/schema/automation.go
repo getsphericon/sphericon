@@ -42,6 +42,10 @@ func (Automation) Fields() []ent.Field {
 		// "email.opened", a custom collect event).
 		field.String("trigger_event").
 			NotEmpty(),
+		// Nil integration_id means "the workspace default email integration".
+		field.Int64("integration_id").
+			Optional().
+			Nillable(),
 	}
 }
 
@@ -60,6 +64,12 @@ func (Automation) Edges() []ent.Edge {
 		// the predicate (HasOutboundMessages); the key stays on OutboundMessage.
 		edge.From("outbound_messages", OutboundMessage.Type).
 			Ref("automation"),
+		// An Integration is discarded, never deleted (ADR 0049), so the reference always
+		// resolves. Only Workspace erasure purges it, after the Automations.
+		edge.To("integration", Integration.Type).
+			Field("integration_id").
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Restrict)),
 	}
 }
 
@@ -67,5 +77,6 @@ func (Automation) Indexes() []ent.Index {
 	return []ent.Index{
 		// Trigger lookup: active automations for a given event action.
 		index.Fields("workspace_id", "status", "trigger_event"),
+		index.Fields("integration_id"),
 	}
 }

@@ -121,6 +121,9 @@ model SiteAutomationResource {
   /** The automation's ordered, linear steps */
   steps: SiteAutomationStep[];
 
+  /** Sending integration of the email steps; null means the workspace default */
+  integrationId?: EntityId | null;
+
   /** When the automation was archived; null while it is kept */
   archivedAt?: Timestamp | null;
 
@@ -136,6 +139,9 @@ model SiteCreateAutomationInput {
   name: string;
   triggerEvent: string;
   steps?: SiteAutomationStep[];
+
+  /** Sending integration of the email steps; null/omitted means the workspace default */
+  integrationId?: EntityId | null;
 }
 
 /** Site request body for updating an automation */
@@ -143,6 +149,9 @@ model SiteUpdateAutomationInput {
   name?: string;
   triggerEvent?: string;
   steps?: SiteAutomationStep[];
+
+  /** Sending integration of the email steps; null means the workspace default, omitted keeps it */
+  integrationId?: EntityId | null;
 }
 
 /** Filter of the automation list */

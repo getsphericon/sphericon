@@ -131,6 +131,7 @@
   "errors.event_not_found": "event not found",
   "errors.segment_condition_invalid": "invalid condition",
   "errors.segment_not_found": "segment not found",
+  "errors.automation_integration_not_found": "integration not found",
   "errors.automation_not_found": "automation not found",
   "errors.automation_step_invalid": "invalid step",
   "errors.automation_trigger_invalid": "invalid trigger",
