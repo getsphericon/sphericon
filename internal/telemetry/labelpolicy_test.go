@@ -156,8 +156,9 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 
 	require.NoError(t, client.EnqueueWelcome(ctx, contactEmail, "Policy"))
 	require.Eventually(t, func() bool {
-		for _, m := range env.SystemMail.Messages() {
-			if m.To == contactEmail {
+		msgs := env.SystemMail.Messages()
+		for i := range msgs {
+			if msgs[i].To == contactEmail {
 				return true
 			}
 		}

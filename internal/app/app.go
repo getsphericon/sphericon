@@ -1655,6 +1655,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 // customer sends, just sphericon's own provider.
 func buildSystemSender(cfg *config.Config, catalog *messaging.Catalog) (messaging.EmailSender, error) {
 	from := cmp.Or(cfg.SystemEmailFrom, cfg.SMTPFrom)
+	fromName := cmp.Or(cfg.SystemEmailFromName, "sphericon")
 	switch cfg.SystemEmailProvider {
 	case "ses":
 		blob, err := json.Marshal(map[string]any{
@@ -1662,7 +1663,8 @@ func buildSystemSender(cfg *config.Config, catalog *messaging.Catalog) (messagin
 			"accessKeyId":     cfg.SESAccessKeyID,
 			"secretAccessKey": cfg.SESSecretAccessKey,
 			"from":            from,
-			"fromName":        "sphericon",
+			"fromName":        fromName,
+			"replyTo":         cfg.SystemEmailReplyTo,
 		})
 		if err != nil {
 			return nil, err
@@ -1676,7 +1678,8 @@ func buildSystemSender(cfg *config.Config, catalog *messaging.Catalog) (messagin
 			"username": cfg.SMTPUser,
 			"password": cfg.SMTPPass,
 			"from":     from,
-			"fromName": "sphericon",
+			"fromName": fromName,
+			"replyTo":  cfg.SystemEmailReplyTo,
 		})
 		if err != nil {
 			return nil, err

@@ -46,6 +46,9 @@ type EmailMessage struct {
 	Subject  string
 	HTML     string
 	Text     string
+	// ReplyTo, when set, is the address a reply goes to instead of From. A provider fills it
+	// from its configured default when the message carries none.
+	ReplyTo string
 	// ListUnsubscribeURL, when set, emits the RFC 8058 one-click unsubscribe
 	// headers (List-Unsubscribe + List-Unsubscribe-Post). Set only on marketing
 	// surfaces (Broadcast, Automation); never on Transactional (ADR 0012).

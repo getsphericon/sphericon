@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -421,6 +422,37 @@ func TestBuildSystemSender(t *testing.T) {
 		_, err := buildSystemSender(&cfg, messaging.NewCatalog())
 		assert.Error(t, err)
 	})
+}
+
+func TestBuildSystemSenderPassesTheReplyToToTheProvider(t *testing.T) {
+	for _, provider := range []messaging.Provider{messaging.ProviderSMTP, messaging.ProviderSES} {
+		t.Run(string(provider), func(t *testing.T) {
+			var blob []byte
+			catalog := messaging.NewCatalog(messaging.ProviderDescriptor{
+				Channel:  messaging.ChannelEmail,
+				Provider: provider,
+				Build: func(raw []byte, _ messaging.Deps) (any, error) {
+					blob = raw
+					return struct{ messaging.EmailSender }{}, nil
+				},
+			})
+			cfg := &config.Config{SystemEmailProvider: string(provider), SystemEmailFrom: "noreply@example.test", SystemEmailReplyTo: "replies@example.test"}
+			_, err := buildSystemSender(cfg, catalog)
+			require.NoError(t, err)
+			var got map[string]any
+			require.NoError(t, json.Unmarshal(blob, &got))
+			assert.Equal(t, "replies@example.test", got["replyTo"])
+		})
+	}
+}
+
+func TestBuildSystemSenderSendsTheConfiguredFromName(t *testing.T) {
+	cfg := &config.Config{SystemEmailFrom: "noreply@example.test", SystemEmailFromName: "Example Mail", SMTPHost: "h", SMTPPort: 25}
+	sender, err := buildSystemSender(cfg, registry.Default())
+	require.NoError(t, err)
+	addr, name := sender.(messaging.DefaultFromer).DefaultFrom()
+	assert.Equal(t, "noreply@example.test", addr)
+	assert.Equal(t, "Example Mail", name)
 }
 
 func TestSystemSenderRejectsAnUnknownProviderViaTheCatalogOnly(t *testing.T) {

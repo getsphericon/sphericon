@@ -143,8 +143,8 @@ func (s *session) Logout() error { return nil }
 
 func build(t *testing.T, cfg smtp.Config) messaging.EmailSender {
 	t.Helper()
-	raw := fmt.Sprintf(`{"host":%q,"port":%d,"username":%q,"password":%q,"from":%q,"fromName":%q}`,
-		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
+	raw := fmt.Sprintf(`{"host":%q,"port":%d,"username":%q,"password":%q,"from":%q,"fromName":%q,"replyTo":%q}`,
+		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName, cfg.ReplyTo)
 	built, err := smtp.NewDescriptor(true).Build([]byte(raw), messaging.Deps{})
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)
@@ -319,4 +319,22 @@ func TestSendRefusesAPrivateHostUnlessAllowed(t *testing.T) {
 	_, err = built.(messaging.EmailSender).Send(context.Background(), messaging.EmailMessage{To: "r@example.com", Subject: "s", Text: "t"})
 	require.ErrorContains(t, err, "non-public address")
 	assert.Empty(t, srv.captured())
+}
+
+func TestSendPutsTheConfiguredReplyToOnTheMessage(t *testing.T) {
+	srv := newTestServer(t.Context(), t, false)
+	sender := build(t, smtp.Config{Host: "127.0.0.1", Port: srv.port, From: "noreply@acme.com", ReplyTo: "help@acme.com"})
+
+	_, err := sender.Send(context.Background(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"})
+	require.NoError(t, err)
+	_, err = sender.Send(context.Background(), messaging.EmailMessage{
+		To: "rcpt@example.com", Subject: "s", Text: "x", ReplyTo: "other@acme.com",
+	})
+	require.NoError(t, err)
+
+	got := srv.captured()
+	require.Len(t, got, 2)
+	assert.Contains(t, got[0].data, "Reply-To: <help@acme.com>")
+	assert.Contains(t, got[1].data, "Reply-To: <other@acme.com>", "a message's own Reply-To wins")
+	assert.NotContains(t, got[1].data, "help@acme.com")
 }
