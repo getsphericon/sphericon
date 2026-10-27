@@ -310,7 +310,7 @@ func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *test
 
 	// The Contact unsubscribes while the step is already running: the provider lookup
 	// is inside the step, after the run was read.
-	resolver := &SendersMock{EmailSenderFunc: func(ctx context.Context, sc *ent.Scoped) (messaging.EmailSender, error) {
+	resolver := &SendersMock{EmailSenderFunc: func(ctx context.Context, sc *ent.Scoped, _ *ent.Integration) (messaging.EmailSender, error) {
 		_, err := automations.Exit(ctx, sc, run.AutomationID, run.ContactID)
 		require.NoError(t, err)
 		return &fakeSender{}, nil

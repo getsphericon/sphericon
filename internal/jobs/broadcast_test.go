@@ -52,14 +52,14 @@ func (erroringSender) Send(context.Context, messaging.EmailMessage) (messaging.R
 
 // resolvingTo is the Workspace's email provider lookup answering with sender.
 func resolvingTo(sender messaging.EmailSender) *SendersMock {
-	return &SendersMock{EmailSenderFunc: func(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
+	return &SendersMock{EmailSenderFunc: func(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
 		return sender, nil
 	}}
 }
 
 // failingResolver is the provider lookup failing with err (no usable Integration).
 func failingResolver(err error) *SendersMock {
-	return &SendersMock{EmailSenderFunc: func(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
+	return &SendersMock{EmailSenderFunc: func(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
 		return nil, err
 	}}
 }

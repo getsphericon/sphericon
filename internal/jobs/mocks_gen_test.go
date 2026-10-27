@@ -21,7 +21,7 @@ var _ outbound.Senders = &SendersMock{}
 //
 //		// make and configure a mocked outbound.Senders
 //		mockedSenders := &SendersMock{
-//			EmailSenderFunc: func(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error) {
+//			EmailSenderFunc: func(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error) {
 //				panic("mock out the EmailSender method")
 //			},
 //		}
@@ -32,7 +32,7 @@ var _ outbound.Senders = &SendersMock{}
 //	}
 type SendersMock struct {
 	// EmailSenderFunc mocks the EmailSender method.
-	EmailSenderFunc func(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error)
+	EmailSenderFunc func(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -42,27 +42,31 @@ type SendersMock struct {
 			Ctx context.Context
 			// S is the s argument value.
 			S *ent.Scoped
+			// Integ is the integ argument value.
+			Integ *ent.Integration
 		}
 	}
 	lockEmailSender sync.RWMutex
 }
 
 // EmailSender calls EmailSenderFunc.
-func (mock *SendersMock) EmailSender(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error) {
+func (mock *SendersMock) EmailSender(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error) {
 	if mock.EmailSenderFunc == nil {
 		panic("SendersMock.EmailSenderFunc: method is nil but Senders.EmailSender was just called")
 	}
 	callInfo := struct {
-		Ctx context.Context
-		S   *ent.Scoped
+		Ctx   context.Context
+		S     *ent.Scoped
+		Integ *ent.Integration
 	}{
-		Ctx: ctx,
-		S:   s,
+		Ctx:   ctx,
+		S:     s,
+		Integ: integ,
 	}
 	mock.lockEmailSender.Lock()
 	mock.calls.EmailSender = append(mock.calls.EmailSender, callInfo)
 	mock.lockEmailSender.Unlock()
-	return mock.EmailSenderFunc(ctx, s)
+	return mock.EmailSenderFunc(ctx, s, integ)
 }
 
 // EmailSenderCalls gets all the calls that were made to EmailSender.
@@ -70,12 +74,14 @@ func (mock *SendersMock) EmailSender(ctx context.Context, s *ent.Scoped) (messag
 //
 //	len(mockedSenders.EmailSenderCalls())
 func (mock *SendersMock) EmailSenderCalls() []struct {
-	Ctx context.Context
-	S   *ent.Scoped
+	Ctx   context.Context
+	S     *ent.Scoped
+	Integ *ent.Integration
 } {
 	var calls []struct {
-		Ctx context.Context
-		S   *ent.Scoped
+		Ctx   context.Context
+		S     *ent.Scoped
+		Integ *ent.Integration
 	}
 	mock.lockEmailSender.RLock()
 	calls = mock.calls.EmailSender

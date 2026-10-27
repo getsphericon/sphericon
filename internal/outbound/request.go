@@ -38,6 +38,7 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 	if b.FromName != nil {
 		req.FromName = *b.FromName
 	}
+	req.IntegrationID = b.IntegrationID
 	return req
 }
 

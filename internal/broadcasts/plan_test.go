@@ -213,6 +213,35 @@ func TestPaceSpreadsSendsAtTheEffectiveRate(t *testing.T) {
 	assert.Equal(t, broadcast.StatusSending, b.Status, "pacing adds no status")
 }
 
+// A Broadcast that names an Integration is paced by that Integration's limit, not the default's.
+func TestPaceUsesTheBroadcastsOwnIntegration(t *testing.T) {
+	d := newDelivery(t)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetMaxPerSecond(2).ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
+
+	sched, err := d.run(fixtures.BroadcastDraftID)
+	require.NoError(t, err)
+
+	times := sched.times()
+	require.Greater(t, len(times), 2, "paced by the Broadcast's own Integration")
+	gap := times[1].Sub(times[0])
+	assert.Equal(t, 500*time.Millisecond, gap)
+}
+
+// The plan's Preflight asks about the Broadcast's own Integration: one that is disabled holds
+// the plan rather than falling back to the default.
+func TestPlanIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
+	d := newDelivery(t)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
+
+	_, err := d.run(fixtures.BroadcastDraftID)
+
+	var held *broadcasts.HeldError
+	require.ErrorAs(t, err, &held)
+	assert.Equal(t, "no_integration", held.Reason)
+}
+
 // A ceiling discovered from the provider paces a Broadcast just like a manual one: the
 // effective rate is the lower of the two (ADR 0023).
 func TestPaceByTheProviderDiscoveredRate(t *testing.T) {
@@ -286,6 +315,22 @@ func TestProgressEstimateUsesThePlannersInterval(t *testing.T) {
 	p := detail.Progress
 	require.NotNil(t, p.EstimatedCompletion)
 	assert.Equal(t, 2*500*time.Millisecond, p.EstimatedCompletion.Sub(now))
+}
+
+// The estimate follows the Broadcast's own Integration too, not the default's.
+func TestProgressEstimateUsesTheBroadcastsOwnIntegration(t *testing.T) {
+	d := newDelivery(t)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetMaxPerSecond(2).ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
+	d.recipient(fixtures.ContactAliceID)
+	d.recipient(fixtures.ContactBobID)
+
+	detail, err := broadcasts.DetailOf(d.t.Context(), d.s, d.broadcastRow(), fixedNow)
+
+	require.NoError(t, err)
+	require.NotNil(t, detail.Progress.EstimatedCompletion)
+	eta := detail.Progress.EstimatedCompletion.Sub(fixedNow)
+	assert.Equal(t, 2*500*time.Millisecond, eta)
 }
 
 // A delayed job outlives an unschedule: a Broadcast back in draft is not due, a scheduled

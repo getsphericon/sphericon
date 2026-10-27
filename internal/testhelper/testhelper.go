@@ -551,7 +551,7 @@ func (systemMailFrom) DefaultFrom() (address, name string) { return SystemFrom, 
 // broadcast sends work without a configured integration.
 type fixedResolver struct{ sender messaging.EmailSender }
 
-func (r fixedResolver) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
+func (r fixedResolver) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
 	return r.sender, nil
 }
 
@@ -564,12 +564,11 @@ type inboxResolver struct {
 	real  *messaging.Resolver
 }
 
-func (r inboxResolver) EmailSender(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error) {
-	integ, err := messaging.DefaultEmailIntegration(ctx, s)
-	if err == nil && messaging.Provider(integ.Provider) == messaging.ProviderInbox {
-		return r.real.EmailSender(ctx, s)
+func (r inboxResolver) EmailSender(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error) {
+	if integ != nil && messaging.Provider(integ.Provider) == messaging.ProviderInbox {
+		return r.real.EmailSender(ctx, s, integ)
 	}
-	return r.fixed.EmailSender(ctx, s)
+	return r.fixed.EmailSender(ctx, s, integ)
 }
 
 // Transport returns an ogen http.Client that dispatches in-memory to the

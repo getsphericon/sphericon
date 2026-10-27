@@ -138,7 +138,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	if b.FromEmail != nil {
 		from = *b.FromEmail
 	}
-	hold, err := d.out.Preflight(ctx, s, from)
+	hold, err := d.out.Preflight(ctx, s, from, b.IntegrationID)
 	if err != nil {
 		return nil, fmt.Errorf("preflight broadcast %d: %w", b.ID, err)
 	}
@@ -230,11 +230,11 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	return ids, nil
 }
 
-// interval is the step between two sends of the Workspace's default Integration at its
-// effective Send rate limit (ADR 0023): zero when nothing limits it (or there is no
-// Integration). The planner and the progress estimate both pace by it.
-func interval(ctx context.Context, s *ent.Scoped) (time.Duration, error) {
-	integ, err := messaging.DefaultEmailIntegration(ctx, s)
+// interval is the step between two sends of the Broadcast's Integration (the Workspace's
+// default when it names none) at its effective Send rate limit (ADR 0023): zero when nothing
+// limits it (or there is no Integration). The planner and the progress estimate both pace by it.
+func interval(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (time.Duration, error) {
+	integ, err := messaging.EmailIntegration(ctx, s, b.IntegrationID)
 	if errors.Is(err, messaging.ErrNoProvider) {
 		return 0, nil
 	}
@@ -265,7 +265,7 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, n int, now
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
 	}
-	step, err := interval(ctx, s)
+	step, err := interval(ctx, s, b)
 	if err != nil {
 		return nil, err
 	}

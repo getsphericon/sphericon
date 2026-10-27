@@ -173,11 +173,13 @@ func TestResolverErrors(t *testing.T) {
 
 	canceled, cancel := context.WithCancel(ctx)
 	cancel()
-	_, err := resolver.EmailSender(canceled, env.DB.Scoped(fixtures.AcmeID))
+	_, err := messaging.EmailIntegration(canceled, env.DB.Scoped(fixtures.AcmeID), nil)
 	require.Error(t, err)
 	require.NotErrorIs(t, err, messaging.ErrNoProvider)
 
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetConfigEncrypted("not-a-ciphertext").SetIsDefault(true).ExecX(ctx)
-	_, err = resolver.EmailSender(ctx, env.DB.Scoped(fixtures.GlobexID))
+	integ, err := messaging.EmailIntegration(ctx, env.DB.Scoped(fixtures.GlobexID), nil)
+	require.NoError(t, err)
+	_, err = resolver.EmailSender(ctx, env.DB.Scoped(fixtures.GlobexID), integ)
 	assert.ErrorContains(t, err, "decrypt integration")
 }

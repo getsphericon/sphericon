@@ -36,7 +36,7 @@ type senders struct {
 	err    error
 }
 
-func (s senders) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
+func (s senders) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
 	return s.sender, s.err
 }
 
@@ -360,10 +360,10 @@ func TestPreflightReportsHoldsWithoutRecording(t *testing.T) {
 	m := newModule(env)
 
 	before := env.DB.OutboundMessage.Query().CountX(ctx)
-	hold, err := m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "")
+	hold, err := m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "", nil)
 	require.NoError(t, err)
 	assert.Empty(t, hold)
-	hold, err = m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "x@news.acme.com")
+	hold, err = m.Preflight(ctx, env.DB.Scoped(fixtures.AcmeID), "x@news.acme.com", nil)
 	require.NoError(t, err)
 	assert.Equal(t, outbound.HoldUnverifiedDomain, hold)
 	assert.Equal(t, before, env.DB.OutboundMessage.Query().CountX(ctx), "a preflight records nothing")

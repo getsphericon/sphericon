@@ -55,7 +55,7 @@ type cancelingSenders struct {
 	sender messaging.EmailSender
 }
 
-func (s cancelingSenders) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
+func (s cancelingSenders) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
 	s.cancel()
 	return s.sender, nil
 }
@@ -139,7 +139,7 @@ func TestSendAndPreflightAgreeOnAStaffHold(t *testing.T) {
 	m := newModule(env)
 	agree := func(key, want string) {
 		t.Helper()
-		hold, err := m.Preflight(ctx, s, "")
+		hold, err := m.Preflight(ctx, s, "", nil)
 		require.NoError(t, err)
 		res, err := m.Send(ctx, s, transactional(key, "a@example.com"))
 		require.NoError(t, err)
@@ -591,12 +591,12 @@ func TestPreflightErrors(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := newModule(env).Preflight(ctx, env.DB.Scoped(987654), "")
+	_, err := newModule(env).Preflight(ctx, env.DB.Scoped(987654), "", nil)
 	require.ErrorContains(t, err, "freeze check")
 
 	canceled, cancel := context.WithCancel(ctx)
 	cancel()
-	_, err = newModule(env).Preflight(canceled, env.DB.Scoped(fixtures.AcmeID), "")
+	_, err = newModule(env).Preflight(canceled, env.DB.Scoped(fixtures.AcmeID), "", nil)
 	assert.ErrorContains(t, err, "freeze check")
 }
 

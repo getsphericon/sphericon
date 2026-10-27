@@ -45,7 +45,7 @@ type provider struct {
 	err    error
 }
 
-func (p *provider) EmailSender(context.Context, *ent.Scoped) (messaging.EmailSender, error) {
+func (p *provider) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
 	return p.sender, p.err
 }
 
@@ -179,6 +179,36 @@ func TestRecipientThatCannotRenderFails(t *testing.T) {
 	assert.NotNil(t, msg.Reason)
 }
 
+// The message goes out through the Integration the Broadcast names, not the default.
+func TestRecipientIsSentThroughTheBroadcastsOwnIntegration(t *testing.T) {
+	d := newDelivery(t)
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
+	id := d.recipient(fixtures.ContactAliceID)
+
+	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))
+
+	msg := d.messageOf(id)
+	require.NotNil(t, msg.IntegrationID)
+	stamped := *msg.IntegrationID
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, stamped)
+}
+
+// A named Integration that cannot send holds the recipient: nothing falls back to the default.
+func TestRecipientIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
+	d := newDelivery(t)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
+	id := d.recipient(fixtures.ContactAliceID)
+
+	err := d.del.SendRecipient(d.t.Context(), d.s, id)
+
+	var held *broadcasts.HeldError
+	require.ErrorAs(t, err, &held)
+	assert.Equal(t, "no_integration", held.Reason)
+	assert.Empty(t, d.box.sent)
+	assert.True(t, d.pending(id))
+}
+
 func TestHeldRecipientStaysPendingAndRecordsTheHold(t *testing.T) {
 	d := newDelivery(t)
 	id := d.recipient(fixtures.ContactAliceID)
@@ -220,6 +250,30 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	assert.True(t, d.pending(second))
 	assert.NotNil(t, d.recipientRow(second).DeferredUntil)
 	assert.Nil(t, d.broadcastRow().HoldReason, "busy is not a hold")
+}
+
+// The Send rate limit that defers a recipient is the Broadcast's own Integration's: the
+// default is unlimited, the named one has its capacity spent.
+func TestDeferralFollowsTheBroadcastsOwnIntegration(t *testing.T) {
+	d := newDelivery(t)
+	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetMaxPerSecond(1).ExecX(d.t.Context())
+	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
+	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
+		res, err := d.out.Send(d.t.Context(), d.s, outbound.Request{
+			Kind: outboundmessage.KindTransactional, Key: key, Destination: "a@example.com",
+			Subject: "Receipt", Body: "<p>Hi</p>", IntegrationID: &mailgun,
+		})
+		require.NoError(t, err)
+		require.Equal(t, outbound.Sent, res.Outcome)
+	}
+	id := d.recipient(fixtures.ContactAliceID)
+
+	err := d.del.SendRecipient(d.t.Context(), d.s, id)
+
+	var deferred *broadcasts.DeferredError
+	require.ErrorAs(t, err, &deferred)
+	assert.True(t, d.pending(id))
 }
 
 func TestUnknownRecipientIsNothingToSend(t *testing.T) {

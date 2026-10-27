@@ -41,12 +41,11 @@ func NewResolver(cipher *secrets.Cipher, catalog *Catalog, opts ...ResolverOptio
 	return r
 }
 
-// EmailSender resolves the workspace's default, enabled email provider, decrypts
-// its config and builds a ready sender. Returns ErrNoProvider when none exists.
-func (r *Resolver) EmailSender(ctx context.Context, s *ent.Scoped) (EmailSender, error) {
-	row, err := DefaultEmailIntegration(ctx, s)
-	if err != nil {
-		return nil, err
+// EmailSender decrypts the config of row, an Integration the caller resolved with
+// EmailIntegration, and builds a ready sender. Returns ErrNoProvider when row is nil.
+func (r *Resolver) EmailSender(_ context.Context, s *ent.Scoped, row *ent.Integration) (EmailSender, error) {
+	if row == nil {
+		return nil, ErrNoProvider
 	}
 
 	config, err := r.cipher.Decrypt(row.ConfigEncrypted)
@@ -63,10 +62,21 @@ func (r *Resolver) EmailSender(ctx context.Context, s *ent.Scoped) (EmailSender,
 // DefaultEmailIntegration is the Workspace's default, enabled email Integration: the
 // one Outbound send goes through. It returns ErrNoProvider when there is none.
 func DefaultEmailIntegration(ctx context.Context, s *ent.Scoped) (*ent.Integration, error) {
+	return EmailIntegration(ctx, s, nil)
+}
+
+// EmailIntegration is the enabled email Integration a send goes through: the one named by
+// id, or the Workspace's default when id is nil. A named Integration that is disabled or
+// discarded is ErrNoProvider, never the default in its place.
+func EmailIntegration(ctx context.Context, s *ent.Scoped, id *int64) (*ent.Integration, error) {
+	which := integration.IsDefault(true)
+	if id != nil {
+		which = integration.ID(*id)
+	}
 	row, err := s.Integration().Query().
 		Where(
 			integration.ChannelEQ(integration.ChannelEmail),
-			integration.IsDefault(true),
+			which,
 			integration.Enabled(true),
 		).
 		Only(ctx)

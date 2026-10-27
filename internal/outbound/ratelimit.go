@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
-// reserve takes one token from the default Integration's Send rate limit (ADR 0023).
+// reserve takes one token from the Integration's Send rate limit (ADR 0023).
 // It returns the wait until capacity returns when the limit is spent, and zero when
 // the message may go (also when the Integration is not limited, which costs no write).
 // Transactional is never delayed by the limit, but it is spent from both buckets

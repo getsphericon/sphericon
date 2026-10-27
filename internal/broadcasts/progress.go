@@ -58,7 +58,7 @@ func progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, st Stats, 
 		p.EstimatedCompletion = b.LastScheduledAt
 		return p, nil
 	}
-	step, err := interval(ctx, s)
+	step, err := interval(ctx, s, b)
 	if err != nil {
 		return nil, err
 	}

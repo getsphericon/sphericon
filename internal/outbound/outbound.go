@@ -163,10 +163,10 @@ type Result struct {
 	Captured bool
 }
 
-// Senders resolves a Workspace's email provider adapter (its default Integration).
-// *messaging.Resolver satisfies it.
+// Senders builds the email provider adapter for an Integration the caller already resolved
+// (messaging.EmailIntegration); a nil one is ErrNoProvider. *messaging.Resolver satisfies it.
 type Senders interface {
-	EmailSender(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error)
+	EmailSender(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error)
 }
 
 // Asker is the User who asks for a Test send. Only they may receive one from the System
@@ -275,6 +275,11 @@ type Request struct {
 	FromEmail string
 	FromName  string
 
+	// IntegrationID is the Integration the message goes through; nil is the Workspace's
+	// default. One that cannot send holds the message (no_integration): it never falls
+	// back to the default.
+	IntegrationID *int64
+
 	// Track turns on open/click tracking for this message: the tracking token names the
 	// Outbound message (ADR 0053).
 	Track bool
@@ -327,7 +332,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if err != nil {
 		return Result{}, err
 	}
-	g, err := m.gate(ctx, s, req.FromEmail, req.FromName)
+	g, err := m.gate(ctx, s, req.FromEmail, req.FromName, req.IntegrationID)
 	if err != nil {
 		return Result{}, err
 	}
@@ -417,11 +422,12 @@ func (m *Module) contactErased(ctx context.Context, s *ent.Scoped, req Request) 
 }
 
 // Preflight reports whether a Workspace could send right now from fromEmail (""
-// uses the Integration's configured sender), without sending or recording anything.
+// uses the Integration's configured sender) through the Integration integrationID names (nil
+// is the default), without sending or recording anything.
 // Planning code (Broadcast) calls it to fail or pause fast instead of finding out
 // per recipient; the answer is the same gate Send applies.
-func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, fromEmail string) (hold string, err error) {
-	g, err := m.gate(ctx, s, fromEmail, "")
+func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, fromEmail string, integrationID *int64) (hold string, err error) {
+	g, err := m.gate(ctx, s, fromEmail, "", integrationID)
 	if err != nil {
 		return "", err
 	}
@@ -516,8 +522,8 @@ func (m *Module) workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, 
 // gateResult is the outcome of the source-level checks plus what they resolved.
 type gateResult struct {
 	hold string
-	// integration is the default Integration the message goes through; nil when the
-	// sender has no Integration row (a test double).
+	// integration is the Integration the message goes through (the Request's, else the
+	// default); nil when the sender has no Integration row (a test double).
 	integration *ent.Integration
 	sender      messaging.EmailSender
 	from        string
@@ -531,13 +537,23 @@ type gateResult struct {
 // deletion, suspension, Staff hold, in that priority; a Test send from the System sender
 // passes it too), an Integration to
 // send through, and a verified Sending domain for the effective From address.
-func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName string) (gateResult, error) {
+func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName string, integrationID *int64) (gateResult, error) {
 	hold, err := m.holds.Reason(ctx, s)
 	if err != nil || hold != "" {
 		return gateResult{hold: hold}, err
 	}
 
-	sender, err := m.senders.EmailSender(ctx, s)
+	// The one Integration this send goes through, resolved once: the sender is built for
+	// it, and the limiter and the stamped integration_id come from it. Without a row (a test
+	// double), a default send still goes on.
+	integ, err := messaging.EmailIntegration(ctx, s, integrationID)
+	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
+		return gateResult{}, fmt.Errorf("outbound: load integration: %w", err)
+	}
+	if integ == nil && integrationID != nil {
+		return gateResult{hold: HoldNoIntegration}, nil
+	}
+	sender, err := m.senders.EmailSender(ctx, s, integ)
 	if errors.Is(err, messaging.ErrNoProvider) {
 		return gateResult{hold: HoldNoIntegration}, nil
 	}
@@ -560,10 +576,6 @@ func (m *Module) gate(ctx context.Context, s *ent.Scoped, fromEmail, fromName st
 		if !verified {
 			return gateResult{hold: HoldUnverifiedDomain}, nil
 		}
-	}
-	integ, err := messaging.DefaultEmailIntegration(ctx, s)
-	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
-		return gateResult{}, fmt.Errorf("outbound: load integration: %w", err)
 	}
 	return gateResult{sender: sender, integration: integ, from: from, fromName: name, domain: messaging.DomainOf(from), captured: !messaging.DeliversOutside(sender)}, nil
 }
@@ -845,6 +857,20 @@ func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Br
 	return report
 }
 
+// defaultSender is the sender of the Workspace's default Integration: messaging.ErrNoProvider
+// when it has none.
+func (m *Module) defaultSender(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error) {
+	integ, err := messaging.DefaultEmailIntegration(ctx, s)
+	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
+		return nil, fmt.Errorf("outbound: load integration: %w", err)
+	}
+	sender, err := m.senders.EmailSender(ctx, s, integ)
+	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
+		return nil, fmt.Errorf("outbound: resolve sender: %w", err)
+	}
+	return sender, err
+}
+
 // SendTest sends one message for an author to preview. The author names the
 // address, so it skips Send-eligibility and carries no unsubscribe or tracking, and
 // it records no Outbound message and no email.sent Event — but it still passes the
@@ -872,16 +898,16 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 			// The System sender stands in only where no Integration of the Workspace
 			// would deliver outside; a sender that keeps its mail takes the Test send
 			// itself, so it is captured (ADR 0041, ADR 0058).
-			sender, err := m.senders.EmailSender(ctx, s)
+			sender, err := m.defaultSender(ctx, s)
 			if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
-				return Result{}, fmt.Errorf("outbound: resolve sender: %w", err)
+				return Result{}, err
 			}
 			if err != nil || messaging.DeliversOutside(sender) {
 				return m.sendTestFromSystem(ctx, s, ws, req)
 			}
 		}
 	}
-	g, err := m.gate(ctx, s, req.FromEmail, req.FromName)
+	g, err := m.gate(ctx, s, req.FromEmail, req.FromName, nil)
 	if err != nil {
 		return Result{}, err
 	}
