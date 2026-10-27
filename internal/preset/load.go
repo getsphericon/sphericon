@@ -28,7 +28,7 @@ var Schema []byte
 //go:embed builtin/*.yaml
 var builtinFS embed.FS
 
-const fileSchemaURL = "https://getsphericon.app/schemas/preset-1.schema.json"
+const fileSchemaURL = "https://sphericon.app/schemas/preset-1.schema.json"
 
 // file is the decoded Preset file.
 type file struct {

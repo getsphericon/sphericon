@@ -46,7 +46,7 @@ func TestPresetSchemaPrintsThePublishedSchema(t *testing.T) {
 
 	var schema map[string]any
 	require.NoError(t, json.Unmarshal(out.Bytes(), &schema))
-	assert.Equal(t, "https://getsphericon.app/schemas/preset-1.schema.json", schema["$id"])
+	assert.Equal(t, "https://sphericon.app/schemas/preset-1.schema.json", schema["$id"])
 }
 
 func TestPresetTestPrintsPassForEachCaseOfACustomFile(t *testing.T) {

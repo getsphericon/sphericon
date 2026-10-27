@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://getsphericon.app/schemas/preset-1.schema.json",
+  "$id": "https://sphericon.app/schemas/preset-1.schema.json",
   "title": "Sphericon Preset",
   "description": "A Preset describes one provider's inbound callbacks: how a request is verified and how its payload becomes Delivery notices. Format version 1.",
   "type": "object",
