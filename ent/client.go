@@ -1254,6 +1254,22 @@ func (c *AutomationClient) QueryOutboundMessages(_m *Automation) *OutboundMessag
 	return query
 }
 
+// QueryIntegration queries the integration edge of a Automation.
+func (c *AutomationClient) QueryIntegration(_m *Automation) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automation.IntegrationTable, automation.IntegrationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationClient) Hooks() []Hook {
 	return c.hooks.Automation

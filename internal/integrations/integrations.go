@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -378,8 +379,8 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 
 // Archive discards an Integration (ADR 0049), unless live work uses it: then it returns an
 // *inuse.Error naming that work. A scheduled or sending Broadcast uses the Integration it names,
-// and the default one when it names none; an active Automation that sends email uses the default
-// one, which is where its email steps go. A sent or failed Broadcast is history and does not
+// and the default one when it names none; an active Automation that sends email uses the one it
+// names, and the default one when it names none. A sent or failed Broadcast is history and does not
 // block. An archived Integration gives up the default: its channel has none until another is
 // picked. Archiving an archived Integration changes nothing. An unknown id is ErrNotFound.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
@@ -428,10 +429,14 @@ func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inus
 		return nil, err
 	}
 	users := inuse.Broadcasts(live)
-	if !row.IsDefault || row.Channel != integration.ChannelEmail {
+	if row.Channel != integration.ChannelEmail {
 		return users, nil
 	}
-	sending, err := liveuse.EmailAutomations(ctx, s)
+	sendsThrough := automation.IntegrationID(row.ID)
+	if row.IsDefault {
+		sendsThrough = automation.Or(sendsThrough, automation.IntegrationIDIsNil())
+	}
+	sending, err := liveuse.EmailAutomations(ctx, s, sendsThrough)
 	if err != nil {
 		return nil, err
 	}

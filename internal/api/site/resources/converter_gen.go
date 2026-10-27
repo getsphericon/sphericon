@@ -40,6 +40,7 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAu
 		siteapiSiteAutomationResource.Status = site.SiteAutomationStatus((*source).Status)
 		siteapiSiteAutomationResource.TriggerEvent = (*source).TriggerEvent
 		siteapiSiteAutomationResource.Steps = automationSteps(source)
+		siteapiSiteAutomationResource.IntegrationId = optNilEntityID((*source).IntegrationID)
 		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)

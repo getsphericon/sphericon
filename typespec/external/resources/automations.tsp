@@ -121,6 +121,9 @@ model AutomationResource {
   /** The automation's ordered, linear steps */
   steps: AutomationStep[];
 
+  /** Sending integration of the email steps; null means the workspace default */
+  integrationId?: EntityId | null;
+
   /** When the automation was archived; null while it is kept */
   archivedAt?: Timestamp | null;
 
@@ -136,6 +139,9 @@ model CreateAutomationInput {
   name: string;
   triggerEvent: string;
   steps?: AutomationStep[];
+
+  /** Sending integration of the email steps; null/omitted means the workspace default */
+  integrationId?: EntityId | null;
 }
 
 /** Request body for updating an automation */
@@ -143,6 +149,9 @@ model UpdateAutomationInput {
   name?: string;
   triggerEvent?: string;
   steps?: AutomationStep[];
+
+  /** Sending integration of the email steps; null means the workspace default, omitted keeps it */
+  integrationId?: EntityId | null;
 }
 
 /** Filter of the automation list */

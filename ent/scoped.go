@@ -2302,6 +2302,18 @@ func (x *AutomationScopedCreate) SetTriggerEvent(v string) *AutomationScopedCrea
 	return x
 }
 
+// SetIntegrationID sets the "integration_id" field.
+func (x *AutomationScopedCreate) SetIntegrationID(v int64) *AutomationScopedCreate {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableIntegrationID(v *int64) *AutomationScopedCreate {
+	x.b.SetNillableIntegrationID(v)
+	return x
+}
+
 // AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
 func (x *AutomationScopedCreate) AddRunIDs(ids ...int64) *AutomationScopedCreate {
 	x.b.AddRunIDs(ids...)
@@ -2338,6 +2350,12 @@ func (x *AutomationScopedCreate) AddOutboundMessages(v ...*OutboundMessage) *Aut
 	return x
 }
 
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *AutomationScopedCreate) SetIntegration(v *Integration) *AutomationScopedCreate {
+	x.b.SetIntegration(v)
+	return x
+}
+
 func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -2349,6 +2367,9 @@ func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
 		return fmt.Errorf("outbound_messages: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -2507,6 +2528,18 @@ func (u *AutomationScopedUpsert) SetTriggerEvent(v string) *AutomationScopedUpse
 // UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
 func (u *AutomationScopedUpsert) UpdateTriggerEvent() *AutomationScopedUpsert {
 	u.u.SetExcluded(automation.FieldTriggerEvent)
+	return u
+}
+
+// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateIntegrationID() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldIntegrationID)
+	return u
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (u *AutomationScopedUpsert) ClearIntegrationID() *AutomationScopedUpsert {
+	u.u.SetNull(automation.FieldIntegrationID)
 	return u
 }
 
@@ -2748,6 +2781,24 @@ func (x *AutomationScopedUpdateOne) SetNillableTriggerEvent(v *string) *Automati
 	return x
 }
 
+// SetIntegrationID sets the "integration_id" field.
+func (x *AutomationScopedUpdateOne) SetIntegrationID(v int64) *AutomationScopedUpdateOne {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableIntegrationID(v *int64) *AutomationScopedUpdateOne {
+	x.b.SetNillableIntegrationID(v)
+	return x
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (x *AutomationScopedUpdateOne) ClearIntegrationID() *AutomationScopedUpdateOne {
+	x.b.ClearIntegrationID()
+	return x
+}
+
 // AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
 func (x *AutomationScopedUpdateOne) AddRunIDs(ids ...int64) *AutomationScopedUpdateOne {
 	x.b.AddRunIDs(ids...)
@@ -2838,6 +2889,18 @@ func (x *AutomationScopedUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage
 	return x
 }
 
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *AutomationScopedUpdateOne) SetIntegration(v *Integration) *AutomationScopedUpdateOne {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (x *AutomationScopedUpdateOne) ClearIntegration() *AutomationScopedUpdateOne {
+	x.b.ClearIntegration()
+	return x
+}
+
 func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -2849,6 +2912,9 @@ func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
 		return fmt.Errorf("outbound_messages: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -2979,6 +3045,24 @@ func (x *AutomationScopedUpdate) SetNillableTriggerEvent(v *string) *AutomationS
 	return x
 }
 
+// SetIntegrationID sets the "integration_id" field.
+func (x *AutomationScopedUpdate) SetIntegrationID(v int64) *AutomationScopedUpdate {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableIntegrationID(v *int64) *AutomationScopedUpdate {
+	x.b.SetNillableIntegrationID(v)
+	return x
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (x *AutomationScopedUpdate) ClearIntegrationID() *AutomationScopedUpdate {
+	x.b.ClearIntegrationID()
+	return x
+}
+
 // AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
 func (x *AutomationScopedUpdate) AddRunIDs(ids ...int64) *AutomationScopedUpdate {
 	x.b.AddRunIDs(ids...)
@@ -3069,6 +3153,18 @@ func (x *AutomationScopedUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *
 	return x
 }
 
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *AutomationScopedUpdate) SetIntegration(v *Integration) *AutomationScopedUpdate {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (x *AutomationScopedUpdate) ClearIntegration() *AutomationScopedUpdate {
+	x.b.ClearIntegration()
+	return x
+}
+
 func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -3080,6 +3176,9 @@ func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
 		return fmt.Errorf("outbound_messages: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }

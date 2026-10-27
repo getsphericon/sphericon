@@ -85,6 +85,11 @@ func TriggerEvent(v string) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldTriggerEvent, v))
 }
 
+// IntegrationID applies equality check predicate on the "integration_id" field. It's identical to IntegrationIDEQ.
+func IntegrationID(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldIntegrationID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldCreatedAt, v))
@@ -385,6 +390,36 @@ func TriggerEventContainsFold(v string) predicate.Automation {
 	return predicate.Automation(sql.FieldContainsFold(FieldTriggerEvent, v))
 }
 
+// IntegrationIDEQ applies the EQ predicate on the "integration_id" field.
+func IntegrationIDEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldIntegrationID, v))
+}
+
+// IntegrationIDNEQ applies the NEQ predicate on the "integration_id" field.
+func IntegrationIDNEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNEQ(FieldIntegrationID, v))
+}
+
+// IntegrationIDIn applies the In predicate on the "integration_id" field.
+func IntegrationIDIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldIn(FieldIntegrationID, vs...))
+}
+
+// IntegrationIDNotIn applies the NotIn predicate on the "integration_id" field.
+func IntegrationIDNotIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNotIn(FieldIntegrationID, vs...))
+}
+
+// IntegrationIDIsNil applies the IsNil predicate on the "integration_id" field.
+func IntegrationIDIsNil() predicate.Automation {
+	return predicate.Automation(sql.FieldIsNull(FieldIntegrationID))
+}
+
+// IntegrationIDNotNil applies the NotNil predicate on the "integration_id" field.
+func IntegrationIDNotNil() predicate.Automation {
+	return predicate.Automation(sql.FieldNotNull(FieldIntegrationID))
+}
+
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
@@ -469,6 +504,29 @@ func HasOutboundMessages() predicate.Automation {
 func HasOutboundMessagesWith(preds ...predicate.OutboundMessage) predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
 		step := newOutboundMessagesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasIntegration applies the HasEdge predicate on the "integration" edge.
+func HasIntegration() predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasIntegrationWith applies the HasEdge predicate on the "integration" edge with a given conditions (other predicates).
+func HasIntegrationWith(preds ...predicate.Integration) predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := newIntegrationStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

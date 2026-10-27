@@ -1335,6 +1335,10 @@ export type SiteAutomationResource = {
    */
   steps: Array<SiteAutomationStep>;
   /**
+   * Sending integration of the email steps; null means the workspace default
+   */
+  integrationId?: EntityId | null;
+  /**
    * When the automation was archived; null while it is kept
    */
   archivedAt?: Timestamp | null;
@@ -2066,6 +2070,10 @@ export type SiteCreateAutomationInput = {
   name: string;
   triggerEvent: string;
   steps?: Array<SiteAutomationStep>;
+  /**
+   * Sending integration of the email steps; null/omitted means the workspace default
+   */
+  integrationId?: EntityId | null;
 };
 
 /**
@@ -4742,6 +4750,10 @@ export type SiteUpdateAutomationInput = {
   name?: string;
   triggerEvent?: string;
   steps?: Array<SiteAutomationStep>;
+  /**
+   * Sending integration of the email steps; null means the workspace default, omitted keeps it
+   */
+  integrationId?: EntityId | null;
 };
 
 /**

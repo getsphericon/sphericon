@@ -47,15 +47,16 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 // source; the unsubscribe click exits the enrollment (ADR 0001).
 func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, c *ent.Contact, subject, body string) Request {
 	return Request{
-		Kind:        outboundmessage.KindAutomation,
-		Key:         fmt.Sprintf("automation:%d:%d", run.ID, step),
-		Destination: *c.Email,
-		Contact:     c,
-		Source:      eligibility.AutomationSource(a.ID),
-		Subject:     subject,
-		Body:        body,
-		Track:       true,
-		Ref:         Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
+		Kind:          outboundmessage.KindAutomation,
+		Key:           fmt.Sprintf("automation:%d:%d", run.ID, step),
+		Destination:   *c.Email,
+		Contact:       c,
+		Source:        eligibility.AutomationSource(a.ID),
+		Subject:       subject,
+		Body:          body,
+		Track:         true,
+		Ref:           Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
+		IntegrationID: a.IntegrationID,
 	}
 }
 

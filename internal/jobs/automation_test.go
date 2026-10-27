@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -297,6 +298,77 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 	env.UnsuspendWorkspace(ctx, fixtures.AcmeID)
 	env.RunQueuedSteps(t, mod)
 	assert.Len(t, fs.sent, 1, "after the unfreeze the step sends")
+}
+
+// Every email an Automation sends goes through the Integration it names, not the default.
+func TestAnAutomationSendsThroughItsOwnIntegration(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.DB.Automation.UpdateOneID(fixtures.AutomationJobsGreetingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
+	enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
+
+	var through []int64
+	fs := &fakeSender{}
+	resolver := &SendersMock{EmailSenderFunc: func(_ context.Context, _ *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error) {
+		through = append(through, integ.ID)
+		return fs, nil
+	}}
+	env.RunQueuedSteps(t, stepperOf(env, resolver))
+
+	require.Len(t, fs.sent, 2)
+	assert.Equal(t, []int64{fixtures.IntegrationAcmeMailgunID, fixtures.IntegrationAcmeMailgunID}, through)
+	sent := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationID(fixtures.AutomationJobsGreetingID)).AllX(ctx)
+	require.Len(t, sent, 2)
+	for _, msg := range sent {
+		require.NotNil(t, msg.IntegrationID)
+		assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, *msg.IntegrationID)
+	}
+}
+
+// Naming no Integration is the Workspace default, the one every Automation used before.
+func TestAnAutomationWithoutAnIntegrationSendsThroughTheDefault(t *testing.T) {
+	env := testhelper.Setup(t)
+	enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
+
+	var through []int64
+	resolver := &SendersMock{EmailSenderFunc: func(_ context.Context, _ *ent.Scoped, integ *ent.Integration) (messaging.EmailSender, error) {
+		through = append(through, integ.ID)
+		return &fakeSender{}, nil
+	}}
+	env.RunQueuedSteps(t, stepperOf(env, resolver))
+
+	assert.Equal(t, []int64{fixtures.IntegrationAcmeDefaultID, fixtures.IntegrationAcmeDefaultID}, through)
+}
+
+// A named Integration that cannot send, because it is disabled or archived, holds the step,
+// which asks again later: nothing falls back to the default, and the Enrollment does not move.
+func TestAnAutomationStepIsHeldWhenItsIntegrationCannotSend(t *testing.T) {
+	unusable := map[string]func(env *testhelper.TestEnv){
+		"disabled": func(env *testhelper.TestEnv) {
+			env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetEnabled(false).ExecX(context.Background())
+		},
+		"archived": func(env *testhelper.TestEnv) {
+			require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().Discard(context.Background(), fixtures.IntegrationAcmeMailgunID))
+		},
+	}
+	for name, makeUnusable := range unusable {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := context.Background()
+			env.DB.Automation.UpdateOneID(fixtures.AutomationJobsGreetingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
+			makeUnusable(env)
+			runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
+
+			fs := &fakeSender{}
+			require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(fs))))
+
+			run := env.DB.AutomationRun.GetX(ctx, runID)
+			assert.Equal(t, automationrun.StatusActive, run.Status)
+			assert.Zero(t, run.CurrentStep, "a hold does not advance the enrollment")
+			assert.Equal(t, []map[string]any{stepJob(runID, 0)}, queuedSteps(t, env), "the worker reschedules the same step")
+			assert.Empty(t, fs.sent)
+		})
+	}
 }
 
 // An Enrollment exited while a step is in flight stays exited: the late step's own

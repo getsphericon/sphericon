@@ -230,6 +230,10 @@ export type AutomationResource = {
    */
   steps: Array<AutomationStep>;
   /**
+   * Sending integration of the email steps; null means the workspace default
+   */
+  integrationId?: EntityId | null;
+  /**
    * When the automation was archived; null while it is kept
    */
   archivedAt?: Timestamp | null;
@@ -1312,6 +1316,10 @@ export type CreateAutomationInput = {
   name: string;
   triggerEvent: string;
   steps?: Array<AutomationStep>;
+  /**
+   * Sending integration of the email steps; null/omitted means the workspace default
+   */
+  integrationId?: EntityId | null;
 };
 
 /**
@@ -3514,6 +3522,10 @@ export type UpdateAutomationInput = {
   name?: string;
   triggerEvent?: string;
   steps?: Array<AutomationStep>;
+  /**
+   * Sending integration of the email steps; null means the workspace default, omitted keeps it
+   */
+  integrationId?: EntityId | null;
 };
 
 /**

@@ -233,6 +233,9 @@ func ScopedEntities() []ScopedEntity {
 				b.SetName(src.Name)
 				b.SetStatus(src.Status)
 				b.SetTriggerEvent(src.TriggerEvent)
+				if src.IntegrationID != nil {
+					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -256,6 +259,12 @@ func ScopedEntities() []ScopedEntity {
 					Name: "outbound_messages", Target: "OutboundMessage",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Automation().UpdateOneID(id).AddOutboundMessageIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "integration", Target: "Integration",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Automation().UpdateOneID(id).SetIntegrationID(target).Exec(ctx)
 					},
 				},
 			},

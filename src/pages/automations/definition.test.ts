@@ -284,19 +284,22 @@ test('stepsToGraph names each node by its kind', () => {
   expect(nodes.map((n) => n.data.properties.label)).toEqual(['Trigger', 'Wait'])
 })
 
-test('the saved snapshot changes with the name, the trigger or the steps, and not with a re-layout', () => {
+test('the saved snapshot changes with the name, the Integration, the trigger or the steps, and not with a re-layout', () => {
   const graph = stepsToGraph('contact.created', STEPS, {})
-  const saved = automationSnapshot('Welcome', graph)
+  const saved = automationSnapshot('Welcome', null, graph)
 
-  expect(automationSnapshot('  Welcome ', graph)).toBe(saved)
-  expect(automationSnapshot('Welcome 2', graph)).not.toBe(saved)
-  expect(automationSnapshot('Welcome', stepsToGraph('email.opened', STEPS, {}))).not.toBe(saved)
+  expect(automationSnapshot('  Welcome ', null, graph)).toBe(saved)
+  expect(automationSnapshot('Welcome 2', null, graph)).not.toBe(saved)
+  expect(automationSnapshot('Welcome', '21', graph)).not.toBe(saved)
+  expect(automationSnapshot('Welcome', null, stepsToGraph('email.opened', STEPS, {}))).not.toBe(
+    saved,
+  )
   expect(
-    automationSnapshot('Welcome', stepsToGraph('contact.created', STEPS.slice(1), {})),
+    automationSnapshot('Welcome', null, stepsToGraph('contact.created', STEPS.slice(1), {})),
   ).not.toBe(saved)
   const moved = {
     ...graph,
     nodes: graph.nodes.map((n) => ({ ...n, position: { x: 50, y: n.position.y } })),
   }
-  expect(automationSnapshot('Welcome', moved)).toBe(saved)
+  expect(automationSnapshot('Welcome', null, moved)).toBe(saved)
 })

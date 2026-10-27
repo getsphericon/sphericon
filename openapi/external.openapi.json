@@ -12397,6 +12397,16 @@
             },
             "description": "The automation's ordered, linear steps"
           },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Sending integration of the email steps; null means the workspace default"
+          },
           "archivedAt": {
             "type": "string",
             "allOf": [
@@ -14011,6 +14021,16 @@
             "items": {
               "$ref": "#/components/schemas/AutomationStep"
             }
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Sending integration of the email steps; null/omitted means the workspace default"
           }
         },
         "description": "Request body for creating an automation (always created as a draft)"
@@ -17063,6 +17083,16 @@
             "items": {
               "$ref": "#/components/schemas/AutomationStep"
             }
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Sending integration of the email steps; null means the workspace default, omitted keeps it"
           }
         },
         "description": "Request body for updating an automation"

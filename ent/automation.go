@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -32,6 +33,8 @@ type Automation struct {
 	Status automation.Status `json:"status,omitempty"`
 	// TriggerEvent holds the value of the "trigger_event" field.
 	TriggerEvent string `json:"trigger_event,omitempty"`
+	// IntegrationID holds the value of the "integration_id" field.
+	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationQuery when eager-loading is set.
 	Edges        AutomationEdges `json:"edges"`
@@ -48,9 +51,11 @@ type AutomationEdges struct {
 	Versions []*AutomationVersion `json:"versions,omitempty"`
 	// OutboundMessages holds the value of the outbound_messages edge.
 	OutboundMessages []*OutboundMessage `json:"outbound_messages,omitempty"`
+	// Integration holds the value of the integration edge.
+	Integration *Integration `json:"integration,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -91,12 +96,23 @@ func (e AutomationEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 	return nil, &NotLoadedError{edge: "outbound_messages"}
 }
 
+// IntegrationOrErr returns the Integration value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AutomationEdges) IntegrationOrErr() (*Integration, error) {
+	if e.Integration != nil {
+		return e.Integration, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: integration.Label}
+	}
+	return nil, &NotLoadedError{edge: "integration"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Automation) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automation.FieldID, automation.FieldWorkspaceID:
+		case automation.FieldID, automation.FieldWorkspaceID, automation.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
 		case automation.FieldName, automation.FieldStatus, automation.FieldTriggerEvent:
 			values[i] = new(sql.NullString)
@@ -166,6 +182,13 @@ func (_m *Automation) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TriggerEvent = value.String
 			}
+		case automation.FieldIntegrationID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field integration_id", values[i])
+			} else if value.Valid {
+				_m.IntegrationID = new(int64)
+				*_m.IntegrationID = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -197,6 +220,11 @@ func (_m *Automation) QueryVersions() *AutomationVersionQuery {
 // QueryOutboundMessages queries the "outbound_messages" edge of the Automation entity.
 func (_m *Automation) QueryOutboundMessages() *OutboundMessageQuery {
 	return NewAutomationClient(_m.config).QueryOutboundMessages(_m)
+}
+
+// QueryIntegration queries the "integration" edge of the Automation entity.
+func (_m *Automation) QueryIntegration() *IntegrationQuery {
+	return NewAutomationClient(_m.config).QueryIntegration(_m)
 }
 
 // Update returns a builder for updating this Automation.
@@ -244,6 +272,11 @@ func (_m *Automation) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("trigger_event=")
 	builder.WriteString(_m.TriggerEvent)
+	builder.WriteString(", ")
+	if v := _m.IntegrationID; v != nil {
+		builder.WriteString("integration_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }
