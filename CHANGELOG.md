@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.5](https://github.com/getsphericon/sphericon/compare/v0.3.4...v0.3.5) (2026-10-27)
+
+
+### Features
+
+* **automations:** let an Automation name the Integration its email steps send through ([#667](https://github.com/getsphericon/sphericon/issues/667)) ([916c67c](https://github.com/getsphericon/sphericon/commit/916c67c791a3a8db148c9034e26ecbb3438e217f)), closes [#662](https://github.com/getsphericon/sphericon/issues/662)
+* **email:** add SPHERICON_SYSTEM_EMAIL_REPLY_TO and accept a display name in SPHERICON_SYSTEM_EMAIL_FROM ([#666](https://github.com/getsphericon/sphericon/issues/666)) ([784ca4d](https://github.com/getsphericon/sphericon/commit/784ca4dd3e76e9a13a9a09fcb68b303a57f7f412))
+
+
+### Bug Fixes
+
+* **broadcasts:** send and pace a Broadcast through its own Integration ([e548e60](https://github.com/getsphericon/sphericon/commit/e548e6056e31e9a9b0293b23f443c1036e0c9d23)), closes [#661](https://github.com/getsphericon/sphericon/issues/661)
+* make the test suite independent of the machine's time zone and personal .env ([#658](https://github.com/getsphericon/sphericon/issues/658)) ([16ba5b4](https://github.com/getsphericon/sphericon/commit/16ba5b419f8b8b77d4fc8781e7fca4d43e448829))
+
+
+### Performance Improvements
+
+* **credentials:** hash token secrets with SHA-256 and parse tokens by their exact length ([#660](https://github.com/getsphericon/sphericon/issues/660)) ([4834d78](https://github.com/getsphericon/sphericon/commit/4834d785c09853bd55bb349a2c77eab2f7c723d6))
+
 ## [0.3.4](https://github.com/getsphericon/sphericon/compare/v0.3.3...v0.3.4) (2026-10-26)
 
 
