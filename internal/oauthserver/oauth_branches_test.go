@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
@@ -28,8 +29,13 @@ import (
 // token management, no erasure, no bulk export, no audit log (ADR 0016, ADR 0022).
 func TestScopesThatStayTokenOnlyAreNotOAuthScopes(t *testing.T) {
 	supported := oauthserver.SupportedScopes()
-	for _, scope := range []string{"tokens:read", "tokens:write", "contacts:erase", "audit:read", "export:read"} {
-		assert.NotContains(t, supported, scope)
+	for _, scope := range []externalapi.ApiTokenScope{
+		externalapi.ApiTokenScopeTokensRead, externalapi.ApiTokenScopeTokensWrite,
+		externalapi.ApiTokenScopeContactsErase, externalapi.ApiTokenScopeAuditRead,
+		externalapi.ApiTokenScopeExportRead,
+		externalapi.ApiTokenScopeCapturedMessagesRead, externalapi.ApiTokenScopeCapturedMessagesWrite,
+	} {
+		assert.NotContains(t, supported, string(scope))
 	}
 }
 

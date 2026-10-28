@@ -6,7 +6,8 @@ import {
   handleSiteOAuthDescribe,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SendScope, SetupScope } from '../../generated/site/types.gen.ts'
+import { SetupScope } from '../../generated/site/types.gen.ts'
+import type { SendScope } from '../../generated/site/types.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -188,12 +189,9 @@ test('offers the setup opt-in only when the app asked for setup scopes, off by d
 
 test('the setup opt-in is carried to the decision apart from the send opt-in', async () => {
   const decisions: unknown[] = []
-  mockConsentApi(
-    (body) => {
-      decisions.push(body)
-    },
-    ['sending_domains:write', 'integrations:write'],
-  )
+  mockConsentApi((body) => {
+    decisions.push(body)
+  }, Object.values(SetupScope))
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 
   await screen.getByLabelText(/Also allow changing sending setup/).click()
