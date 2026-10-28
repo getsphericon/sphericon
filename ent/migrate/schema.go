@@ -810,7 +810,7 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{EventsColumns[1]},
 				Annotation: &entsql.IndexAnnotation{
-					Where: "action NOT IN ('marketing.confirmed', 'email.complained', 'email.unsubscribed') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'permanent')",
+					Where: "action NOT IN ('marketing.confirmed', 'email.complained', 'email.unsubscribed') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')",
 				},
 			},
 		},

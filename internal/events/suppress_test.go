@@ -84,7 +84,7 @@ func TestPublishDeliveryFailureWithLongDedupID(t *testing.T) {
 			Action:      events.NameEmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "recipient@example.com",
-			BounceKind:  events.BounceKindPermanent,
+			BounceKind:  events.BounceKindHard,
 			Provider:    "ses",
 			// SNS messageId (36-char UUID) + "/" + email — well over 36 chars.
 			DedupID: "9c8e1f2a-3b4d-4e5f-8a9b-0c1d2e3f4a5b/recipient@example.com",
@@ -107,7 +107,7 @@ func TestPersistDedupesOnDedupKey(t *testing.T) {
 		DedupKey:    "sns-msg-1/bounce@example.com",
 		Data: dataFor(t, &events.EmailDelivery{
 			Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID,
-			Email: "bounce@example.com", BounceKind: events.BounceKindPermanent,
+			Email: "bounce@example.com", BounceKind: events.BounceKindHard,
 		}),
 	}
 	// Same DedupKey, different envelope ID (a redelivery) → one persisted row.
@@ -120,8 +120,8 @@ func TestPersistDedupesOnDedupKey(t *testing.T) {
 	assert.Equal(t, 1, n, "same DedupKey must persist at most once")
 }
 
-// A permanent bounce suppresses the address with reason "bounce".
-func TestSuppressOnPermanentBounce(t *testing.T) {
+// A hard bounce suppresses the address with reason "bounce".
+func TestSuppressOnHardBounce(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
@@ -135,7 +135,7 @@ func TestSuppressOnPermanentBounce(t *testing.T) {
 			Action:      events.NameEmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "hardbounce@example.com",
-			BounceKind:  events.BounceKindPermanent,
+			BounceKind:  events.BounceKindHard,
 			Provider:    "ses",
 		}),
 	}
@@ -150,8 +150,8 @@ func TestSuppressOnPermanentBounce(t *testing.T) {
 	assert.Equal(t, suppression.ReasonBounce, s.Reason)
 }
 
-// A transient (soft) bounce does NOT suppress — it is temporary.
-func TestSuppressIgnoresTransientBounce(t *testing.T) {
+// A soft bounce does NOT suppress — it is temporary.
+func TestSuppressIgnoresSoftBounce(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
@@ -165,7 +165,7 @@ func TestSuppressIgnoresTransientBounce(t *testing.T) {
 			Action:      events.NameEmailBounced,
 			WorkspaceID: fixtures.AcmeID,
 			Email:       "softbounce@example.com",
-			BounceKind:  events.BounceKindTransient,
+			BounceKind:  events.BounceKindSoft,
 			Provider:    "ses",
 		}),
 	}

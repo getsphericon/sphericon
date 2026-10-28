@@ -64,8 +64,8 @@ func signedPost(t *testing.T, env *testhelper.TestEnv, key, secret, id, body str
 	return rec
 }
 
-func failureBody(id, destination string, permanent bool) string {
-	return `{"id":"` + id + `","destination":"` + destination + `","kind":"bounce","permanent":` + strconv.FormatBool(permanent) + `,"sending_domain":"Codebasics.dev"}`
+func failureBody(id, destination string, hard bool) string {
+	return `{"id":"` + id + `","destination":"` + destination + `","kind":"bounce","hard":` + strconv.FormatBool(hard) + `,"sending_domain":"Codebasics.dev"}`
 }
 
 // applySuppression plays the suppression consumer over everything published so far.
@@ -126,7 +126,7 @@ func TestTwoIntegrationsOfAWorkspaceEachAcceptOnlyTheirOwnSecret(t *testing.T) {
 	require.Len(t, got, 2)
 	for _, f := range got {
 		assert.Equal(t, events.NameEmailBounced, f.Action)
-		assert.Equal(t, events.BounceKindPermanent, f.BounceKind)
+		assert.Equal(t, events.BounceKindHard, f.BounceKind)
 		assert.EqualValues(t, fixtures.ContactAliceID, f.ContactID)
 		assert.Equal(t, "generic", f.Provider, "the Preset's name is the provider")
 		assert.Equal(t, "codebasics.dev", f.SendingDomain)
@@ -171,7 +171,7 @@ func TestHookSuppressesAHardBounceAndOnlyRecordsASoftOne(t *testing.T) {
 
 	soft := outboxEvents(t, env, "soft@example.com")
 	require.Len(t, soft, 1)
-	assert.Equal(t, events.BounceKindTransient, soft[0].BounceKind)
+	assert.Equal(t, events.BounceKindSoft, soft[0].BounceKind)
 
 	applySuppression(t, env)
 	assert.True(t, suppressed(t, env, "hard@example.com"))

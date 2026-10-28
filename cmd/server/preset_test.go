@@ -19,7 +19,7 @@ const headerHMACPreset = "../../internal/preset/testdata/custom/header-hmac.yaml
 var genericSecret = "secret=whsec_" + base64.StdEncoding.EncodeToString([]byte("sphericon-test-secret-0123456789"))
 
 const (
-	genericPayload = `{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","permanent":true,"sending_domain":"News.Example.com"}`
+	genericPayload = `{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","hard":true,"sending_domain":"News.Example.com"}`
 )
 
 func genericArgs(payload string, extra ...string) []string {
@@ -93,11 +93,11 @@ func TestPresetTestReportsAFileThatDoesNotLoad(t *testing.T) {
 
 func TestPresetTestPayloadPrintsTheDeliveryNotices(t *testing.T) {
 	var out bytes.Buffer
-	args := genericArgs(samplePayload(t, genericPayload), "--header", "webhook-signature=v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=")
+	args := genericArgs(samplePayload(t, genericPayload), "--header", "webhook-signature=v1,o8DDYiIohO1Z+Or1krVV/dGfR+sT1Gi6NDRUuQ/GbNs=")
 
 	require.NoError(t, execute(nil, &out, args...))
 
-	assert.Contains(t, out.String(), "bounce permanent alice@example.com")
+	assert.Contains(t, out.String(), "bounce hard alice@example.com")
 	assert.Contains(t, out.String(), "evt_1")
 	assert.Contains(t, out.String(), "news.example.com")
 }

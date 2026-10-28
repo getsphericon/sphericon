@@ -147,7 +147,7 @@ func runPresetSample(ctx context.Context, cmd *cli.Command, p *preset.Preset) er
 	for _, f := range res.Notices {
 		kind := string(f.Kind)
 		if f.Kind == preset.Bounce {
-			kind += map[bool]string{true: " permanent", false: " transient"}[f.Permanent]
+			kind += map[bool]string{true: " hard", false: " soft"}[f.Hard]
 		}
 		_, _ = fmt.Fprintf(out(cmd), "%s %s id=%s sending_domain=%s message_id=%s reason=%q\n",
 			kind, f.Destination, f.ID, f.SendingDomain, f.MessageID, f.Reason)

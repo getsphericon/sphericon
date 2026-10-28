@@ -42,7 +42,7 @@ type DomainRates struct {
 	// Complaint is complaints / delivered (ADR 0053): undefined with no email.delivered Event in
 	// the window, as for a Preset that reports no delivery.
 	Complaint Rate
-	// Bounce is hard bounces / sent. Soft (transient) bounces are not counted.
+	// Bounce is hard bounces / sent. Soft bounces are not counted.
 	Bounce Rate
 }
 
@@ -126,6 +126,6 @@ func onDomain(domain string) predicate.Event {
 
 func hardBounce() predicate.Event {
 	return func(s *sql.Selector) {
-		s.Where(sqljson.ValueEQ(event.FieldProperties, events.BounceKindPermanent, sqljson.Path("bounceKind")))
+		s.Where(sqljson.ValueEQ(event.FieldProperties, events.BounceKindHard, sqljson.Path("bounceKind")))
 	}
 }

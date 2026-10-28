@@ -122,7 +122,7 @@ _Avoid_: Backup, dump, contact export (that is the bulk list export)
 
 **Retention**:
 How long an Event is kept before it is deleted. Events split by purpose: **evidentiary** Events
-(consent proof such as `marketing.confirmed`, permanent bounces and complaints, unsubscribes)
+(consent proof such as `marketing.confirmed`, hard bounces and complaints, unsubscribes)
 are the audit and dispute record and are never deleted by age; **analytical** Events (opens, clicks,
 deliveries, customer-tracked actions) are deleted once older than the instance's retention window,
 so segment conditions cannot look back past it.
@@ -493,13 +493,13 @@ that reports no delivery.
 _Avoid_: Spam score, sender score, reputation score (we expose honest ratios, not a black-box score)
 
 **Bounce rate**:
-The sibling reputation ratio `permanent_bounces / sent`, same (Workspace, Sending domain) grain
-and trailing-window flow semantics as **Complaint rate**. Only **permanent** (hard) bounces —
+The sibling reputation ratio `hard_bounces / sent`, same (Workspace, Sending domain) grain
+and trailing-window flow semantics as **Complaint rate**. Only **hard bounces** —
 the same ones that suppress and that mailbox providers penalize — count in the numerator;
-**transient** (soft) bounces are excluded from the headline (at most a secondary counter), so
+**soft bounces** are excluded from the headline (at most a secondary counter), so
 the metric measures list hygiene, not temporary blips. One hard bounce is thus used two
 coherent ways: it suppresses (Suppression) and it is the Bounce-rate numerator.
-_Avoid_: Delivery-failure rate (that would fold in transient bounces)
+_Avoid_: Delivery-failure rate (that would fold in soft bounces)
 
 **Engagement rates**:
 The open, click and click-to-open ratios of the analytics reports over a chosen window (7, 30 or 90 **Report days**).
@@ -617,11 +617,22 @@ _Avoid_: Adapter, plugin, provider (alone)
 
 **Delivery notice**:
 The one normalized shape every Preset produces: a Destination, its kind (bounce, complaint,
-delivery, delayed or dropped), for a bounce whether it is permanent, and, when the provider
+delivery, delayed or dropped), for a bounce whether it is hard or soft, and, when the provider
 returns it, the provider's message id, which links the notice to the Outbound message it is
-about. Only permanent bounces and complaints enter Suppression. A notice with no message id stays
+about. Only hard bounces and complaints enter Suppression. A notice with no message id stays
 at the level of the address.
 _Avoid_: Delivery failure (delivery and delay are not failures), Bounce event (it also covers complaints)
+
+**Hard bounce**:
+A bounce the receiving side reports as permanent: the Destination does not exist or refuses mail
+for good. It suppresses at once (Suppression) and is the numerator of the **Bounce rate**.
+_Avoid_: Permanent bounce, permanent failure (the industry says hard; one word for one thing)
+
+**Soft bounce**:
+A bounce the receiving side reports as temporary: a full mailbox, a server that is down, a
+message that is too large. It does not suppress and does not count in the **Bounce rate**, but
+the Outbound message still carries it as a bounce.
+_Avoid_: Transient bounce, temporary failure (the industry says soft; one word for one thing)
 
 **Machine engagement**:
 An open or click made by software rather than the recipient: a mail client's privacy proxy (Apple

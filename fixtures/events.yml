@@ -231,14 +231,14 @@
 - id: 208
   email: rates208@example.com
   action: email.bounced
-  properties: '{"sendingDomain":"mail.acme.com","bounceKind":"permanent"}'
+  properties: '{"sendingDomain":"mail.acme.com","bounceKind":"hard"}'
   workspace_id: 1
   occurred_at: '{{daysAgo 2}}'
   created_at: '{{daysAgo 2}}'
 - id: 209
   email: rates209@example.com
   action: email.bounced
-  properties: '{"sendingDomain":"mail.acme.com","bounceKind":"transient"}'
+  properties: '{"sendingDomain":"mail.acme.com","bounceKind":"soft"}'
   workspace_id: 1
   occurred_at: '{{daysAgo 2}}'
   created_at: '{{daysAgo 2}}'
@@ -343,7 +343,7 @@
 
 # --- Event retention (ADR 0019): rows far past the 400-day default window. The
 # analytical ones expire; the evidentiary ones (consent, complaint, unsubscribe,
-# permanent bounce) are kept regardless of age. ---
+# hard bounce) are kept regardless of age. ---
 - id: 300 # fixture: EventOldAnalytical
   email: old300@example.com
   action: page_view
@@ -356,10 +356,10 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 500}}'
   created_at: '{{daysAgo 500}}'
-- id: 302 # fixture: EventOldAnalyticalTransientBounce
+- id: 302 # fixture: EventOldAnalyticalSoftBounce
   email: old302@example.com
   action: email.bounced
-  properties: '{"bounceKind":"transient"}'
+  properties: '{"bounceKind":"soft"}'
   workspace_id: 1
   occurred_at: '{{daysAgo 500}}'
   created_at: '{{daysAgo 500}}'
@@ -381,10 +381,10 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 500}}'
   created_at: '{{daysAgo 500}}'
-- id: 306 # fixture: EventOldPermanentBounce
+- id: 306 # fixture: EventOldHardBounce
   email: old306@example.com
   action: email.bounced
-  properties: '{"bounceKind":"permanent"}'
+  properties: '{"bounceKind":"hard"}'
   workspace_id: 1
   occurred_at: '{{daysAgo 500}}'
   created_at: '{{daysAgo 500}}'
@@ -474,7 +474,7 @@
   subject_id: erin@initech.test
   email: erin@initech.test
   action: email.bounced
-  properties: '{"sendingDomain":"mail.initech.test","bounceKind":"permanent","provider":"ses"}'
+  properties: '{"sendingDomain":"mail.initech.test","bounceKind":"hard","provider":"ses"}'
   workspace_id: 3
   occurred_at: '2026-01-02 03:00:00'
   created_at: '2026-01-02 03:00:00'
@@ -668,14 +668,14 @@
 - id: 408
   email: soylent408@example.com
   action: email.bounced
-  properties: '{"sendingDomain":"mail.soylent.test","bounceKind":"permanent"}'
+  properties: '{"sendingDomain":"mail.soylent.test","bounceKind":"hard"}'
   workspace_id: 6
   occurred_at: '{{hoursAgo 2}}'
   created_at: '{{hoursAgo 2}}'
 - id: 409
   email: soylent409@example.com
   action: email.bounced
-  properties: '{"sendingDomain":"mail.soylent.test","bounceKind":"transient"}'
+  properties: '{"sendingDomain":"mail.soylent.test","bounceKind":"soft"}'
   workspace_id: 6
   occurred_at: '{{hoursAgo 2}}'
   created_at: '{{hoursAgo 2}}'
@@ -4392,7 +4392,7 @@
 - id: '{{$i}}'
   email: 'bounced-{{$i}}@example.com'
   action: email.bounced
-  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"hard"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 145}}'
   created_at: '{{hoursAgo 145}}'
@@ -4528,7 +4528,7 @@
 - id: '{{$i}}'
   email: 'bounced-{{$i}}@example.com'
   action: email.bounced
-  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"hard"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 505}}'
   created_at: '{{hoursAgo 505}}'
@@ -4557,7 +4557,7 @@
 - id: '{{$i}}'
   email: 'bounced-{{$i}}@example.com'
   action: email.bounced
-  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"hard"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 577}}'
   created_at: '{{hoursAgo 577}}'
@@ -4586,7 +4586,7 @@
 - id: '{{$i}}'
   email: 'bounced-{{$i}}@example.com'
   action: email.bounced
-  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"hard"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 649}}'
   created_at: '{{hoursAgo 649}}'
@@ -4615,7 +4615,7 @@
 - id: '{{$i}}'
   email: 'bounced-{{$i}}@example.com'
   action: email.bounced
-  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"permanent"}'
+  properties: '{"sendingDomain":"mail.vandelay.test","bounceKind":"hard"}'
   workspace_id: 7
   occurred_at: '{{hoursAgo 721}}'
   created_at: '{{hoursAgo 721}}'

@@ -27,21 +27,21 @@ tests:
       headers:
         webhook-id: msg_1
         webhook-timestamp: '1767225600'
-        webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
-      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","permanent":true,"sending_domain":"News.Example.com"}'
+        webhook-signature: v1,o8DDYiIohO1Z+Or1krVV/dGfR+sT1Gi6NDRUuQ/GbNs=
+      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","hard":true,"sending_domain":"News.Example.com"}'
     expect:
       notices:
         - id: evt_1
           destination: alice@example.com
           kind: bounce
-          permanent: true
+          hard: true
           sending_domain: news.example.com
   - name: an unsigned request is refused
     now: '2026-01-01T00:00:00Z'
     params:
       secret: whsec_c3BoZXJpY29uLXRlc3Qtc2VjcmV0LTAxMjM0NTY3ODk=
     request:
-      body: '{"id":"evt_1","destination":"alice@example.com","kind":"bounce","permanent":true}'
+      body: '{"id":"evt_1","destination":"alice@example.com","kind":"bounce","hard":true}'
     expect:
       refused: unauthentic
   - name: a signature over another body is refused
@@ -52,7 +52,7 @@ tests:
       headers:
         webhook-id: msg_1
         webhook-timestamp: '1767225600'
-        webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
+        webhook-signature: v1,o8DDYiIohO1Z+Or1krVV/dGfR+sT1Gi6NDRUuQ/GbNs=
       body: '{"id":"evt_1","destination":"victim@example.com","kind":"complaint"}'
     expect:
       refused: unauthentic
@@ -64,8 +64,8 @@ tests:
       headers:
         webhook-id: msg_1
         webhook-timestamp: '1767225600'
-        webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
-      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","permanent":true,"sending_domain":"News.Example.com"}'
+        webhook-signature: v1,o8DDYiIohO1Z+Or1krVV/dGfR+sT1Gi6NDRUuQ/GbNs=
+      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","hard":true,"sending_domain":"News.Example.com"}'
     expect:
       refused: unauthentic
   - name: another Integration's secret is refused
@@ -76,7 +76,7 @@ tests:
       headers:
         webhook-id: msg_1
         webhook-timestamp: '1767225600'
-        webhook-signature: v1,iasTRX51zsWZMikELc3A1LcI3NQUrVXBpWWg+/Hp82I=
-      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","permanent":true,"sending_domain":"News.Example.com"}'
+        webhook-signature: v1,o8DDYiIohO1Z+Or1krVV/dGfR+sT1Gi6NDRUuQ/GbNs=
+      body: '{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","hard":true,"sending_domain":"News.Example.com"}'
     expect:
       refused: unauthentic

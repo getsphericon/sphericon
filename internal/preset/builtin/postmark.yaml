@@ -31,9 +31,9 @@ verify:
 # Mapping, a decision of ours (Postmark documents only HardBounce as hard and SoftBounce and
 # Transient as soft):
 #   delivery          RecordType Delivery.
-#   permanent bounce  HardBounce, BadEmailAddress (the address is not an address).
+#   hard bounce       HardBounce, BadEmailAddress (the address is not an address).
 #   delay             Transient: Postmark's own words are a temporary issue it keeps retrying.
-#   transient bounce  SoftBounce, DnsError (temporary by Postmark's own words), Blocked and
+#   soft bounce       SoftBounce, DnsError (temporary by Postmark's own words), Blocked and
 #                     DMARCPolicy (the sender is refused, not the address) and Unknown
 #                     (cannot be classified, so it never suppresses an address).
 #   ignored           everything else: not a Delivery notice of the address (Unsubscribe,
@@ -56,7 +56,7 @@ transform: |
       {id: (($b.ID // $b.MessageID) | if . == null then null else tostring end),
        destination: ($b.Email // $b.Recipient), kind: $kind, sending_domain: $domain,
        message_id: $b.MessageID, reason: ($b.Details // $b.Description)} | keep;
-  def bounce($permanent): [notice("bounce") + {permanent: $permanent}];
+  def bounce($hard): [notice("bounce") + {hard: $hard}];
   if $b.RecordType == "SpamComplaint" then [notice("complaint")]
   elif $b.RecordType == "Delivery" then [notice("delivery")]
   elif $b.RecordType == "Bounce" then
@@ -66,7 +66,7 @@ transform: |
     else [] end
   else [] end
 tests:
-  - name: a hard bounce is a permanent bounce
+  - name: a HardBounce is a hard bounce
     params:
       user: postmark-user
       secret: postmark-test-token-0123456789
@@ -79,11 +79,11 @@ tests:
         - id: '4323372036854775807'
           destination: alice@example.com
           kind: bounce
-          permanent: true
+          hard: true
           sending_domain: news.example.com
           message_id: pm-msg-alice-1
           reason: 'smtp; 550 5.1.1 user unknown'
-  - name: a soft bounce is a transient bounce
+  - name: a SoftBounce is a soft bounce
     params:
       user: postmark-user
       secret: postmark-test-token-0123456789
@@ -96,9 +96,9 @@ tests:
         - id: '2'
           destination: bob@example.com
           kind: bounce
-          permanent: false
+          hard: false
           sending_domain: news.example.com
-  - name: a transient bounce is a delay
+  - name: a Transient bounce is a delay
     params:
       user: postmark-user
       secret: postmark-test-token-0123456789
@@ -142,7 +142,7 @@ tests:
         - id: '6'
           destination: carol@example.com
           kind: bounce
-          permanent: true
+          hard: true
           sending_domain: news.example.com
   - name: a spam complaint is a complaint
     params:
@@ -157,7 +157,7 @@ tests:
         - id: '692560174'
           destination: margareth@nasa.com
           kind: complaint
-          permanent: false
+          hard: false
           sending_domain: computers.com
   - name: an unsubscribe request yields no notice
     params:

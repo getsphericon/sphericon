@@ -98,8 +98,8 @@ func CheckAction(action string) error {
 // Bounce kinds carried by EmailDelivery; what each means for Suppression is the
 // suppression module's rule.
 const (
-	BounceKindPermanent = suppression.BounceKindPermanent
-	BounceKindTransient = suppression.BounceKindTransient
+	BounceKindHard = suppression.BounceKindHard
+	BounceKindSoft = suppression.BounceKindSoft
 )
 
 // Envelope is the generic bus message. It carries transport metadata plus the
@@ -335,17 +335,16 @@ func (e *EmailEngagement) Project() Projection {
 
 // EmailDelivery is emitted when a provider reports what became of one of our sends: a
 // Delivery notice (ADR 0053) ingested from a provider callback, e.g. SES via SNS. Action is
-// the specific name. BounceKind distinguishes a permanent (hard) bounce from a transient
-// (soft) one and is empty for the other kinds; only permanent bounces and complaints
-// suppress the address. ContactID is 0 when the address has no contact in the workspace;
-// OutboundMessageID is 0 when the notice named no message or none matched, and the Event then
-// stays at the level of the address.
+// the specific name. BounceKind distinguishes a hard bounce from a soft one and is empty for
+// the other kinds; only hard bounces and complaints suppress the address. ContactID is 0 when
+// the address has no contact in the workspace; OutboundMessageID is 0 when the notice named no
+// message or none matched, and the Event then stays at the level of the address.
 type EmailDelivery struct {
 	Action      string `json:"action"` // email.delivered|email.delayed|email.dropped|email.bounced|email.complained
 	WorkspaceID int64  `json:"workspaceId"`
 	ContactID   int64  `json:"contactId,omitempty"`
 	Email       string `json:"email"`
-	BounceKind  string `json:"bounceKind,omitempty"` // permanent|transient (bounces only)
+	BounceKind  string `json:"bounceKind,omitempty"` // hard|soft (bounces only)
 	Provider    string `json:"provider,omitempty"`   // ses, ...
 	// SendingDomain is the domain the failed message was sent from (ADR 0011), so the
 	// complaint/bounce rate can be grained per Sending domain.

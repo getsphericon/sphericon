@@ -751,12 +751,12 @@ const (
 	EventOldAnalyticalSentEmail = "old301@example.com"
 	// EventOldAnalyticalSentID is from fixtures/events.
 	EventOldAnalyticalSentID = 301
-	// EventOldAnalyticalTransientBounceAction is from fixtures/events.
-	EventOldAnalyticalTransientBounceAction = "email.bounced"
-	// EventOldAnalyticalTransientBounceEmail is from fixtures/events.
-	EventOldAnalyticalTransientBounceEmail = "old302@example.com"
-	// EventOldAnalyticalTransientBounceID is from fixtures/events.
-	EventOldAnalyticalTransientBounceID = 302
+	// EventOldAnalyticalSoftBounceAction is from fixtures/events.
+	EventOldAnalyticalSoftBounceAction = "email.bounced"
+	// EventOldAnalyticalSoftBounceEmail is from fixtures/events.
+	EventOldAnalyticalSoftBounceEmail = "old302@example.com"
+	// EventOldAnalyticalSoftBounceID is from fixtures/events.
+	EventOldAnalyticalSoftBounceID = 302
 	// EventOldComplainedAction is from fixtures/events.
 	EventOldComplainedAction = "email.complained"
 	// EventOldComplainedEmail is from fixtures/events.
@@ -787,12 +787,12 @@ const (
 	EventOldDroppedEmail = "old309@example.com"
 	// EventOldDroppedID is from fixtures/events.
 	EventOldDroppedID = 309
-	// EventOldPermanentBounceAction is from fixtures/events.
-	EventOldPermanentBounceAction = "email.bounced"
-	// EventOldPermanentBounceEmail is from fixtures/events.
-	EventOldPermanentBounceEmail = "old306@example.com"
-	// EventOldPermanentBounceID is from fixtures/events.
-	EventOldPermanentBounceID = 306
+	// EventOldHardBounceAction is from fixtures/events.
+	EventOldHardBounceAction = "email.bounced"
+	// EventOldHardBounceEmail is from fixtures/events.
+	EventOldHardBounceEmail = "old306@example.com"
+	// EventOldHardBounceID is from fixtures/events.
+	EventOldHardBounceID = 306
 	// EventOldUnsubscribedAction is from fixtures/events.
 	EventOldUnsubscribedAction = "email.unsubscribed"
 	// EventOldUnsubscribedEmail is from fixtures/events.

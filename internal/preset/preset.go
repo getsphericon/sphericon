@@ -64,8 +64,8 @@ const (
 // contract-copy: cap of the reason an email delivery Event keeps; not in the contract
 const MaxReasonChars = 500
 
-// DeliveryNotice is the one normalized shape every Preset produces. Only a permanent
-// bounce or a complaint enters Suppression; a transient bounce still counts in the
+// DeliveryNotice is the one normalized shape every Preset produces. Only a hard
+// bounce or a complaint enters Suppression; a soft bounce still counts in the
 // deliverability rates.
 type DeliveryNotice struct {
 	// ID is the provider's event id; with Destination it dedupes a redelivery.
@@ -73,8 +73,8 @@ type DeliveryNotice struct {
 	// Destination is the normalized (trimmed, lower-cased) address.
 	Destination string `json:"destination"`
 	Kind        Kind   `json:"kind"`
-	// Permanent is meaningful for a bounce only.
-	Permanent bool `json:"permanent"`
+	// Hard is meaningful for a bounce only: a soft bounce is the temporary kind.
+	Hard bool `json:"hard"`
 	// SendingDomain is the lower-cased domain the message was sent from, "" when unknown.
 	SendingDomain string `json:"sending_domain,omitempty"`
 	// MessageID is the provider's id of the message the notice is about, "" when the

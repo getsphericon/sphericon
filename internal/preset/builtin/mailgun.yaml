@@ -27,7 +27,7 @@ verify:
   encoding: hex
 # Mailgun events and what they become:
 #   delivered         delivery.
-#   failed permanent  bounce, permanent; except when the reason names a suppression list
+#   failed permanent  hard bounce; except when the reason names a suppression list
 #                     (suppress-bounce, suppress-unsubscribe, suppress-complaint) Mailgun
 #                     refused to attempt the message: that is a drop.
 #   failed temporary  delay: Mailgun keeps retrying, and the final outcome arrives as a later
@@ -50,7 +50,7 @@ transform: |
       if $to | contains("@")
       then [{id: $e.id, destination: $to, kind: $kind, sending_domain: $domain, message_id: $mid, reason: $reason} | keep]
       else [] end;
-  def bounce($permanent): notice("bounce"; $why) | map(. + {permanent: $permanent});
+  def bounce($hard): notice("bounce"; $why) | map(. + {hard: $hard});
   if $e.event == "complained" then notice("complaint"; null)
   elif $e.event == "delivered" then notice("delivery"; null)
   elif $e.event == "rejected" then notice("drop"; $e.reject.reason)
@@ -62,7 +62,7 @@ transform: |
     else [] end
   else [] end
 tests:
-  - name: a permanent failure is a permanent bounce
+  - name: a permanent failure is a hard bounce
     params:
       signing_key: mailgun-test-signing-key-0123456789
     request:
@@ -72,7 +72,7 @@ tests:
         - id: 2kFItcrLQuKTdp-Ia2Xr7w
           destination: badrecipient@sample.mailgun.com
           kind: bounce
-          permanent: true
+          hard: true
           sending_domain: sample.mailgun.com
           message_id: '<mg-msg-1@sample.mailgun.com>'
           reason: No such mailbox
@@ -98,7 +98,7 @@ tests:
         - id: rIVDlyk8SY-mJauQoYmNFA
           destination: recipient@sample.mailgun.com
           kind: complaint
-          permanent: false
+          hard: false
           sending_domain: sample.mailgun.com
   - name: a delivered event is a delivery with the message id
     params:
