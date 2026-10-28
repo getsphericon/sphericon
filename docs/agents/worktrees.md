@@ -10,8 +10,10 @@ primary checkout (gitignored; Vite ignores it).
 - Every worktree works on its own branch, which is what `EnterWorktree` and `claude --worktree`
   create (`worktree-<name>`); git allows a branch in one worktree only, and the primary checkout
   holds `main`. Create no branch in the primary checkout, which is shared and stays on `main`.
-  `mise run land` refuses `main` and a detached `HEAD`, pushes the branch and opens the pull request;
-  nothing is pushed to `main` (the repository ruleset requires a pull request).
+  `mise run land` refuses `main` and a detached `HEAD`, pushes the branch and opens the pull request.
+  A maintainer may instead push the worktree's commits straight to `main` (`git fetch origin && git
+  rebase origin/main && git push origin HEAD:main`): the repository ruleset lets the admin role
+  bypass the pull request. Nothing is pushed from the primary checkout, which stays on a clean `main`.
 - Never use `git worktree add ../sphericon-<name>` or any other sibling directory.
 - The directory name feeds the checkout's database and origin (`sphericon_<dir>`,
   `<dir>.sphericon.localhost`), so keep `<name>` short and unique.

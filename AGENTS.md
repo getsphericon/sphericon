@@ -125,15 +125,23 @@ The rest of this file is for maintainers and the agents they run: how work lands
   developers: a rule an agent should follow goes here (or in `docs/`), never into one person's
   memory. Auto memory is off for this project (`autoMemoryEnabled: false` in
   `.claude/settings.json`), so what an agent needs to know is written down in a Markdown file.
-- **Nothing is pushed to `main`: every change reaches it through a pull request.**
+- **A maintainer may push straight to `main`; a pull request is the default for anything sizeable.**
+  The repository ruleset lets the admin role bypass the pull request and the status checks, so a
+  small, low-risk change (a doc line, a typo, a config tweak, a one-file fix the pre-push hook
+  passes) goes from its worktree as `git fetch origin && git rebase origin/main && git push origin
+  HEAD:main`. History stays linear: rebase, never merge. A change that touches several areas, a
+  contract, a schema or a `CODEOWNERS` path, or that CI should see first, goes through a pull request.
+  An agent pushes to `main` only when the user asks for it in that session ("push", "залей в main");
+  otherwise it opens a pull request.
   `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>]
-  [--skip-test] [<issue>...]` does the first half in one go: rebase onto a freshly fetched
-  `origin/main`, `check`, `test`, the title and body checks CI will run, push of the worktree's branch
-  and `gh pr create` (an open pull request of the branch is updated instead). The repository ruleset
-  enforces the rest on GitHub: a pull request, the CI checks and, for the paths in `CODEOWNERS`, the
-  owner's review. `--no-verify` only moves a failure to CI, where the same checks are required.
+  [--skip-test] [<issue>...]` does the pull request's first half in one go: rebase onto a freshly
+  fetched `origin/main`, `check`, `test`, the title and body checks CI will run, push of the worktree's
+  branch and `gh pr create` (an open pull request of the branch is updated instead). On a pull request
+  the ruleset enforces the CI checks and, for the paths in `CODEOWNERS`, the owner's review.
+  `--no-verify` only moves a failure to CI, where the same checks are required.
 - **Land every change from its worktree, then clean up.** When the user says to land or finish
-  ("заливай", "завершай", "land it"): run `mise run land`, wait for CI (`gh pr checks --watch`) and
+  ("заливай", "завершай", "land it"): push to `main` as above if they asked for that, otherwise run
+  `mise run land`, wait for CI (`gh pr checks --watch`) and
   merge with `gh pr merge --squash`. The repository squashes with the pull request title, which is a
   Conventional Commit, and release-please reads it. A pull request of the maintainer that touches a
   `CODEOWNERS` path merges with plain `gh pr merge --squash`, no bypass (#664 did). If GitHub refuses
@@ -179,7 +187,7 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/a
 
 ### Worktrees
 
-Every change, however small, is made in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Nothing is edited or committed in the primary checkout: it stays on a clean `main` that tracks `origin/main`. A worktree works on its own branch, which `mise run land` pushes and opens as a pull request; no branch is created in the primary checkout. See `docs/agents/worktrees.md`.
+Every change, however small, is made in a worktree, created in Claude's default `.claude/worktrees/<name>`, never in a sibling directory. Nothing is edited or committed in the primary checkout: it stays on a clean `main` that tracks `origin/main`. A worktree works on its own branch, which a maintainer pushes to `main` directly or `mise run land` opens as a pull request; no branch is created in the primary checkout. See `docs/agents/worktrees.md`.
 
 ### Advisor before /to-spec
 
