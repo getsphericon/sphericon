@@ -23,7 +23,7 @@
     },
     "verify": { "$ref": "#/$defs/verify" },
     "transform": {
-      "description": "A gojq program. Input {body, headers}; output an array of Delivery notices {id, destination, kind (bounce, complaint, delivery, delay or drop), permanent (bounces), sending_domain, message_id (the provider's id of the message, when it returns one), reason (at most 500 characters)}.",
+      "description": "A gojq program. Input {body, headers}; output an array of Delivery notices {id, destination, kind (bounce, complaint, delivery, delay or drop), hard (bounces: true for a hard bounce, false for a soft one), sending_domain, message_id (the provider's id of the message, when it returns one), reason (at most 500 characters)}.",
       "type": "string",
       "minLength": 1,
       "maxLength": 16384
@@ -168,7 +168,7 @@
         "id": { "type": "string" },
         "destination": { "type": "string" },
         "kind": { "enum": ["bounce", "complaint", "delivery", "delay", "drop"] },
-        "permanent": { "type": "boolean" },
+        "hard": { "type": "boolean" },
         "sending_domain": { "type": "string" },
         "message_id": { "type": "string" },
         "reason": { "type": "string" }

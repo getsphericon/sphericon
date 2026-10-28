@@ -68,18 +68,18 @@ func persistOutbox(t *testing.T, env *testhelper.TestEnv) {
 	}
 }
 
-// A permanent bounce for a known Contact publishes one failure linked to it, keyed by the
+// A hard bounce for a known Contact publishes one failure linked to it, keyed by the
 // SNS message id plus the recipient, with the From domain echoed, and suppresses it.
-func TestSESHookSuppressesAPermanentBounce(t *testing.T) {
+func TestSESHookSuppressesAHardBounce(t *testing.T) {
 	env := setupHooks(t)
 
-	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "permanent-bounce"))
+	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "hard-bounce"))
 	require.Equal(t, http.StatusOK, rec.Code)
 
 	got := outboxEvents(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
 	assert.Equal(t, events.NameEmailBounced, got[0].Action)
-	assert.Equal(t, events.BounceKindPermanent, got[0].BounceKind)
+	assert.Equal(t, events.BounceKindHard, got[0].BounceKind)
 	assert.EqualValues(t, fixtures.ContactAliceID, got[0].ContactID)
 	assert.Equal(t, "codebasics.dev", got[0].SendingDomain)
 	assert.Equal(t, "ses", got[0].Provider)
@@ -89,15 +89,15 @@ func TestSESHookSuppressesAPermanentBounce(t *testing.T) {
 	assert.True(t, suppressed(t, env, fixtures.ContactAliceEmail))
 }
 
-// A transient bounce is published (the rates read it) and never suppresses.
-func TestSESHookRecordsATransientBounceWithoutSuppressing(t *testing.T) {
+// A soft bounce is published (the rates read it) and never suppresses.
+func TestSESHookRecordsASoftBounceWithoutSuppressing(t *testing.T) {
 	env := setupHooks(t)
 
-	require.Equal(t, http.StatusOK, postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "transient-bounce")).Code)
+	require.Equal(t, http.StatusOK, postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "soft-bounce")).Code)
 
 	got := outboxEvents(t, env, "soft@example.com")
 	require.Len(t, got, 1)
-	assert.Equal(t, events.BounceKindTransient, got[0].BounceKind)
+	assert.Equal(t, events.BounceKindSoft, got[0].BounceKind)
 	applySuppression(t, env)
 	assert.False(t, suppressed(t, env, "soft@example.com"))
 }
@@ -135,7 +135,7 @@ func TestSESHookRefusesANotificationFromAnotherTopic(t *testing.T) {
 func TestSESHookFailsClosedWithoutATopic(t *testing.T) {
 	env := setupHooks(t)
 
-	rec := postSNS(t, env, fixtures.IntegrationGlobexSesNoTopicIngestKey, snsNotification(t, "permanent-bounce"))
+	rec := postSNS(t, env, fixtures.IntegrationGlobexSesNoTopicIngestKey, snsNotification(t, "hard-bounce"))
 
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
@@ -147,7 +147,7 @@ func TestSESHookRefusesAnUnsignedOrUnreadableRequest(t *testing.T) {
 	key := fixtures.IntegrationAcmeSesIngestKey
 
 	var notification map[string]string
-	require.NoError(t, json.Unmarshal([]byte(snsNotification(t, "permanent-bounce")), &notification))
+	require.NoError(t, json.Unmarshal([]byte(snsNotification(t, "hard-bounce")), &notification))
 	notification["Signature"] = "Ym9ndXM="
 	forged, err := json.Marshal(notification)
 	require.NoError(t, err)
@@ -177,7 +177,7 @@ func TestSESHookCountsOutcomesAndDedupesRedelivery(t *testing.T) {
 	env := setupHooks(t)
 	metricstest.StartMetrics(t)
 	key := fixtures.IntegrationAcmeSesIngestKey
-	bounce := snsNotification(t, "permanent-bounce")
+	bounce := snsNotification(t, "hard-bounce")
 
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, bounce).Code)
 	require.Equal(t, http.StatusOK, postSNS(t, env, key, bounce).Code)
@@ -196,7 +196,7 @@ func TestSESHookCountsOutcomesAndDedupesRedelivery(t *testing.T) {
 func TestSESHookIsImpliedForAnSESIntegrationWithNoPreset(t *testing.T) {
 	env := setupHooks(t)
 
-	rec := postSNS(t, env, fixtures.IntegrationAcmeSesImpliedIngestKey, snsNotification(t, "permanent-bounce"))
+	rec := postSNS(t, env, fixtures.IntegrationAcmeSesImpliedIngestKey, snsNotification(t, "hard-bounce"))
 	require.Equal(t, http.StatusOK, rec.Code)
 
 	got := outboxEvents(t, env, fixtures.ContactAliceEmail)
@@ -211,7 +211,7 @@ func TestSESHookAnswers5xxWhenTheCertificateIsUnavailable(t *testing.T) {
 		return nil, errors.New("certificate host unreachable")
 	}))
 
-	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "permanent-bounce"))
+	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "hard-bounce"))
 
 	assert.Equal(t, http.StatusBadGateway, rec.Code)
 	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
@@ -224,7 +224,7 @@ func TestSESHookRefusesACertificateOnAnotherHost(t *testing.T) {
 		return nil, errors.New("must not be fetched")
 	}))
 	var notification map[string]string
-	require.NoError(t, json.Unmarshal([]byte(snsNotification(t, "permanent-bounce")), &notification))
+	require.NoError(t, json.Unmarshal([]byte(snsNotification(t, "hard-bounce")), &notification))
 	notification["SigningCertURL"] = "https://evil.example.com/SimpleNotificationService.pem"
 	forged, err := json.Marshal(notification)
 	require.NoError(t, err)
@@ -241,11 +241,11 @@ func TestSESAndGenericIntegrationsRefuseEachOthersCallbacks(t *testing.T) {
 	generic := fixtures.IntegrationAcmeGenericAIngestKey
 	ses := fixtures.IntegrationAcmeSesIngestKey
 
-	assert.Equal(t, http.StatusForbidden, postSNS(t, env, generic, snsNotification(t, "permanent-bounce")).Code)
+	assert.Equal(t, http.StatusForbidden, postSNS(t, env, generic, snsNotification(t, "hard-bounce")).Code)
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, ses, secretA, "msg_1", failureBody("evt_1", fixtures.ContactAliceEmail, true)).Code)
 	assert.Empty(t, outboxEvents(t, env, fixtures.ContactAliceEmail))
 
-	require.Equal(t, http.StatusOK, postSNS(t, env, ses, snsNotification(t, "permanent-bounce")).Code)
+	require.Equal(t, http.StatusOK, postSNS(t, env, ses, snsNotification(t, "hard-bounce")).Code)
 	require.Equal(t, http.StatusOK, signedPost(t, env, generic, secretA, "msg_2", failureBody("evt_2", fixtures.ContactAliceEmail, true)).Code)
 	assert.Len(t, outboxEvents(t, env, fixtures.ContactAliceEmail), 2)
 }

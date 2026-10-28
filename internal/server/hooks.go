@@ -184,7 +184,7 @@ func resultOf(action string) (outbound.DeliveryResult, bool) {
 // delivery result of each Outbound message a notice is linked to by the provider's message
 // id. A redelivery of the same provider event dedupes downstream on its DedupID (the
 // provider's event id plus the Destination), and a stamp is set only while it is empty, so
-// it never changes. Every kind is published; only a permanent bounce and a complaint enter
+// it never changes. Every kind is published; only a hard bounce and a complaint enter
 // Suppression, which is the suppression consumer's rule.
 func (h *hook) publish(ctx context.Context, s *ent.Scoped, provider string, notices []preset.DeliveryNotice) error {
 	if len(notices) == 0 {
@@ -218,9 +218,9 @@ func (h *hook) publish(ctx context.Context, s *ent.Scoped, provider string, noti
 			DedupID:           n.ID + "/" + email,
 		}
 		if n.Kind == preset.Bounce {
-			ev.BounceKind = events.BounceKindTransient
-			if n.Permanent {
-				ev.BounceKind = events.BounceKindPermanent
+			ev.BounceKind = events.BounceKindSoft
+			if n.Hard {
+				ev.BounceKind = events.BounceKindHard
 			}
 		}
 		msg, err := outbound.FindByProviderMessageID(ctx, s, n.MessageID)

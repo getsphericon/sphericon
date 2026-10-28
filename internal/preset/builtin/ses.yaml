@@ -35,9 +35,9 @@ transform: |
       | ($m.mail.source | domain) as $d
       | def notice($kind): {id: $n.MessageId, destination: .address, kind: $kind, sending_domain: $d, message_id: $m.mail.messageId, reason: .reason} | keep;
         if $type == "Bounce" then
-          (($m.bounce.bounceType == "Permanent") as $permanent
+          (($m.bounce.bounceType == "Permanent") as $hard
           | [($m.bounce.bouncedRecipients // []) | map({address: .emailAddress, reason: .diagnosticCode}) | recipients[]
-             | notice("bounce") + {permanent: $permanent}])
+             | notice("bounce") + {hard: $hard}])
         elif $type == "Complaint" then
           [($m.complaint.complainedRecipients // []) | map({address: .emailAddress}) | recipients[] | notice("complaint")]
         elif $type == "Delivery" then
@@ -52,7 +52,7 @@ transform: |
         else [] end
     end
 tests:
-  - name: a permanent bounce suppresses every recipient, carries the sending domain, the message id and the reason
+  - name: a hard bounce suppresses every recipient, carries the sending domain, the message id and the reason
     now: '2026-01-01T00:00:00Z'
     params:
       topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
@@ -64,7 +64,7 @@ tests:
             id: sns-msg-1,
             destination: alice@example.com,
             kind: bounce,
-            permanent: true,
+            hard: true,
             sending_domain: codebasics.dev,
             message_id: ses-msg-alice-1,
             reason: 'smtp; 550 5.1.1 user unknown',
@@ -73,7 +73,7 @@ tests:
             id: sns-msg-1,
             destination: b@example.com,
             kind: bounce,
-            permanent: true,
+            hard: true,
             sending_domain: codebasics.dev,
             message_id: ses-msg-alice-1,
           }
@@ -89,17 +89,17 @@ tests:
             id: sns-msg-1b,
             destination: alice@example.com,
             kind: bounce,
-            permanent: true,
+            hard: true,
             sending_domain: codebasics.dev,
           }
         - {
             id: sns-msg-1b,
             destination: b@example.com,
             kind: bounce,
-            permanent: true,
+            hard: true,
             sending_domain: codebasics.dev,
           }
-  - name: a transient bounce is not permanent
+  - name: a soft bounce is not hard
     now: '2026-01-01T00:00:00Z'
     params:
       topic_arn: arn:aws:sns:eu-west-1:123456789012:acme-ses-events
@@ -107,7 +107,7 @@ tests:
       body: '{"Message":"{\"notificationType\":\"Bounce\",\"bounce\":{\"bounceType\":\"Transient\",\"bouncedRecipients\":[{\"emailAddress\":\"soft@example.com\"}]}}","MessageId":"sns-msg-2","Signature":"nzbz6GNk3lRpJ39hLjHG1EFCaO01qq9h+M776U+UBpu5amosiEflH9VkUiGnwe7vnKTkd6Z/L3KNMgMRWTJ3cq4vAgxFPYF0/0ir3JMviATJEhrBvfGRMh0lyhVg1ueT2TS0I2f1dWB4BoPeMDqBXH6L/bt6PEgtf4EJWWVxYEcQRk84r9/YYMXTm0E4qH5/QHE0ubqFSm06fOl0s6Y5uSSsVQ9rhEgVzLXD9NXL/ji8XbhDYWBXLYJzkL/fOyATzXa04H4Tr8uYZJdqKn66jdZ8oVTO2fIbefP6bGoP9sdpFELROD8jAPFiSlWXNo1AYL9mlSd2tLYP9pHD7aALRQ==","SignatureVersion":"2","SigningCertURL":"https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-sphericon-test.pem","Timestamp":"2026-01-01T00:00:00.000Z","TopicArn":"arn:aws:sns:eu-west-1:123456789012:acme-ses-events","Type":"Notification"}'
     expect:
       notices:
-        - { id: sns-msg-2, destination: soft@example.com, kind: bounce, permanent: false }
+        - { id: sns-msg-2, destination: soft@example.com, kind: bounce, hard: false }
   - name: a complaint in the configuration-set form, with a blank recipient skipped
     now: '2026-01-01T00:00:00Z'
     params:

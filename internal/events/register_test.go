@@ -62,7 +62,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	require.NoError(t, events.New(sqlDB).WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		return pub.Publish(ctx, &events.EmailDelivery{
 			Action: events.NameEmailBounced, WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID,
-			Email: dest, BounceKind: events.BounceKindPermanent, DedupID: "registered-bounce-1",
+			Email: dest, BounceKind: events.BounceKindHard, DedupID: "registered-bounce-1",
 		})
 	}))
 

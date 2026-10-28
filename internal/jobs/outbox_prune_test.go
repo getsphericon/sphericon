@@ -32,7 +32,7 @@ func pruneEnv(t *testing.T, n int) (env *testhelper.TestEnv, ids []int64) {
 		require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 			return pub.Publish(ctx, &events.EmailDelivery{
 				Action: events.NameEmailBounced, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID,
-				Email: "prune@example.com", BounceKind: events.BounceKindPermanent,
+				Email: "prune@example.com", BounceKind: events.BounceKindHard,
 			})
 		}))
 	}

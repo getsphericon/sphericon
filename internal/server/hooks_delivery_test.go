@@ -113,7 +113,7 @@ func TestSESNoticeWithoutAMatchingMessageStaysAtTheAddress(t *testing.T) {
 	env := setupHooks(t)
 
 	postNotice(t, env, "delivery-unmatched")
-	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "permanent-bounce"))
+	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "hard-bounce"))
 	require.Equal(t, http.StatusOK, rec.Code)
 
 	got := outboxEvents(t, env, fixtures.ContactAliceEmail)
@@ -124,10 +124,10 @@ func TestSESNoticeWithoutAMatchingMessageStaysAtTheAddress(t *testing.T) {
 	assert.Equal(t, "ses-msg-unknown", got[0].ProviderMessageID)
 	assert.Nil(t, sesAliceMessage(t, env).DeliveredAt)
 	applySuppression(t, env)
-	assert.True(t, suppressed(t, env, fixtures.ContactAliceEmail), "the permanent bounce still suppresses")
+	assert.True(t, suppressed(t, env, fixtures.ContactAliceEmail), "the hard bounce still suppresses")
 }
 
-// A permanent bounce stamps the message as bounced and a complaint stamps it as
+// A hard bounce stamps the message as bounced and a complaint stamps it as
 // complained, both still suppress.
 func TestSESBounceAndComplaintStampTheirKindAndSuppress(t *testing.T) {
 	env := setupHooks(t)
@@ -140,7 +140,7 @@ func TestSESBounceAndComplaintStampTheirKindAndSuppress(t *testing.T) {
 	bounces := outboxEvents(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, bounces, 1)
 	assert.Equal(t, "smtp; 550 5.1.1 user unknown", bounces[0].Reason)
-	assert.Equal(t, events.BounceKindPermanent, bounces[0].BounceKind)
+	assert.Equal(t, events.BounceKindHard, bounces[0].BounceKind)
 
 	postNotice(t, env, "complaint-for-message")
 	assert.NotNil(t, sesAliceMessage(t, env).ComplainedAt)
@@ -149,11 +149,11 @@ func TestSESBounceAndComplaintStampTheirKindAndSuppress(t *testing.T) {
 	assert.True(t, suppressed(t, env, fixtures.ContactAliceEmail))
 }
 
-// Delivery, delay, drop and a transient bounce never suppress.
-func TestSESOnlyPermanentBouncesAndComplaintsSuppress(t *testing.T) {
+// Delivery, delay, drop and a soft bounce never suppress.
+func TestSESOnlyHardBouncesAndComplaintsSuppress(t *testing.T) {
 	env := setupHooks(t)
 
-	for _, name := range []string{"delivery", "delay", "drop", "transient-bounce"} {
+	for _, name := range []string{"delivery", "delay", "drop", "soft-bounce"} {
 		postNotice(t, env, name)
 	}
 	applySuppression(t, env)

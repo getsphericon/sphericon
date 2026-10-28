@@ -32,11 +32,11 @@ func NormalizeDestination(dest string) string {
 	return strings.ToLower(strings.TrimSpace(dest))
 }
 
-// Bounce kinds. Only a permanent (hard) bounce suppresses; a transient (soft) one, such
-// as a full mailbox, is temporary.
+// Bounce kinds. Only a hard bounce suppresses; a soft one, such as a full mailbox, is
+// temporary.
 const (
-	BounceKindPermanent = "permanent"
-	BounceKindTransient = "transient"
+	BounceKindHard = "hard"
+	BounceKindSoft = "soft"
 )
 
 // Names of the delivery events that can suppress; the bus's event names are these.
@@ -46,14 +46,14 @@ const (
 )
 
 // ForEvent is the rule that decides whether a delivery event suppresses its address, and
-// why: a complaint always does, a bounce only when permanent (bounceKind), anything else
+// why: a complaint always does, a bounce only when hard (bounceKind), anything else
 // never. Unsubscribe is not a Suppression (ADR 0001).
 func ForEvent(name, bounceKind string) (entsuppression.Reason, bool) {
 	switch name {
 	case EventComplained:
 		return entsuppression.ReasonComplaint, true
 	case EventBounced:
-		if bounceKind == BounceKindPermanent {
+		if bounceKind == BounceKindHard {
 			return entsuppression.ReasonBounce, true
 		}
 		return "", false

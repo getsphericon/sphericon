@@ -25,7 +25,7 @@ var (
 	expiring = []int64{
 		fixtures.EventOldAnalyticalID,
 		fixtures.EventOldAnalyticalSentID,
-		fixtures.EventOldAnalyticalTransientBounceID,
+		fixtures.EventOldAnalyticalSoftBounceID,
 		fixtures.EventOldDeliveredID,
 		fixtures.EventOldDelayedID,
 		fixtures.EventOldDroppedID,
@@ -35,7 +35,7 @@ var (
 		fixtures.EventOldConfirmedID,
 		fixtures.EventOldComplainedID,
 		fixtures.EventOldUnsubscribedID,
-		fixtures.EventOldPermanentBounceID,
+		fixtures.EventOldHardBounceID,
 	}
 )
 

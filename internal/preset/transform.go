@@ -122,7 +122,7 @@ type rawNotice struct {
 	ID            string  `json:"id"`
 	Destination   string  `json:"destination"`
 	Kind          string  `json:"kind"`
-	Permanent     *bool   `json:"permanent"`
+	Hard          *bool   `json:"hard"`
 	SendingDomain *string `json:"sending_domain"`
 	MessageID     *string `json:"message_id"`
 	Reason        *string `json:"reason"`
@@ -179,7 +179,7 @@ func validateNotice(item any) (DeliveryNotice, error) {
 		ID:          r.ID,
 		Destination: strings.ToLower(strings.TrimSpace(addr.Address)),
 		Kind:        kind,
-		Permanent:   r.Permanent != nil && *r.Permanent,
+		Hard:        r.Hard != nil && *r.Hard,
 	}
 	if r.SendingDomain != nil && *r.SendingDomain != "" {
 		domain := strings.ToLower(strings.TrimSpace(*r.SendingDomain))

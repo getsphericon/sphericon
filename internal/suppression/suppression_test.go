@@ -110,16 +110,16 @@ func TestNormalizeDestinationProperties(t *testing.T) {
 	})
 }
 
-func TestForEventSuppressesAComplaintAndAPermanentBounceOnly(t *testing.T) {
+func TestForEventSuppressesAComplaintAndAHardBounceOnly(t *testing.T) {
 	complaint, ok := suppression.ForEvent(suppression.EventComplained, "")
 	assert.True(t, ok)
 	assert.Equal(t, entsuppression.ReasonComplaint, complaint)
 
-	hard, ok := suppression.ForEvent(suppression.EventBounced, suppression.BounceKindPermanent)
+	hard, ok := suppression.ForEvent(suppression.EventBounced, suppression.BounceKindHard)
 	assert.True(t, ok)
 	assert.Equal(t, entsuppression.ReasonBounce, hard)
 
-	_, soft := suppression.ForEvent(suppression.EventBounced, suppression.BounceKindTransient)
+	_, soft := suppression.ForEvent(suppression.EventBounced, suppression.BounceKindSoft)
 	assert.False(t, soft)
 	_, other := suppression.ForEvent("email.opened", "")
 	assert.False(t, other)
