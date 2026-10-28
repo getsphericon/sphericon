@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -61,5 +62,28 @@ func run() error {
 	if err := loader.Load(); err != nil {
 		return fmt.Errorf("load fixtures: %w", err)
 	}
+	// raw sql: sequences are database state, which ent has no API for
+	if _, err := sqlDB.ExecContext(context.Background(), keepSequencesAheadOfRows); err != nil {
+		return fmt.Errorf("move sequences past existing rows: %w", err)
+	}
 	return nil
 }
+
+// keepSequencesAheadOfRows undoes what ResetSequencesTo does to a table the fixtures do not own, such as
+// River's job queue: a running dev stack has rows there that survive the load, and a sequence set back
+// to 100000 would hand out ids they already hold ("duplicate key river_job_pkey"), so no periodic job
+// could be enqueued. Every sequence ends up at the larger of 100000 and the highest id in its table.
+const keepSequencesAheadOfRows = `DO $$
+DECLARE r record;
+BEGIN
+	FOR r IN
+		SELECT t.relname AS tbl, a.attname AS col, s.relname AS seq
+		FROM pg_class s
+		JOIN pg_depend d ON d.objid = s.oid AND d.deptype IN ('a', 'i')
+		JOIN pg_class t ON t.oid = d.refobjid
+		JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
+		WHERE s.relkind = 'S'
+	LOOP
+		EXECUTE format('SELECT setval(%L, GREATEST(100000, COALESCE((SELECT MAX(%I) FROM %I), 0)))', r.seq, r.col, r.tbl);
+	END LOOP;
+END $$`
