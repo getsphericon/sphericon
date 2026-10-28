@@ -220,6 +220,12 @@ type Config struct {
 	// inferred from the SMTP settings.
 	RequireEmailVerification bool
 
+	// SentryDSN is the Sentry-compatible DSN the browser app reports its errors to
+	// (SPHERICON_SENTRY_DSN). Empty, the default, leaves the browser reporting off: the SPA
+	// sends nothing anywhere. The DSN reaches the page at serve time (internal/server/spa.go),
+	// never at build time, so one image serves every Instance.
+	SentryDSN string
+
 	// SignupOpen lets anyone who reaches the Instance register. Only an explicit
 	// SPHERICON_SIGNUP_OPEN=false closes it (ADR 0042): a new User then comes only through an
 	// Invitation or `sphericon user create-owner`.
@@ -373,6 +379,7 @@ type environment struct {
 	DoNotTrack               string `env:"DO_NOT_TRACK"`
 	ReleaseCheck             bool   `env:"SPHERICON_RELEASE_CHECK" envDefault:"true"`
 	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
+	SentryDSN                string `env:"SPHERICON_SENTRY_DSN"`
 	SignupOpen               string `env:"SPHERICON_SIGNUP_OPEN"`
 	SignupSurvey             string `env:"SPHERICON_SIGNUP_SURVEY"`
 
@@ -570,6 +577,7 @@ func Load(envName string) (*Config, error) {
 		ReleaseCheck:            e.ReleaseCheck,
 
 		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
+		SentryDSN:                strings.TrimSpace(e.SentryDSN),
 		SignupOpen:               !strings.EqualFold(strings.TrimSpace(e.SignupOpen), "false"),
 		SignupSurvey:             strings.EqualFold(strings.TrimSpace(e.SignupSurvey), "true"),
 		Signin:                   signin,

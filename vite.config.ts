@@ -28,6 +28,7 @@ function devLocalePlugin(): Plugin {
       return html
         .replaceAll('{{APP_LOCALE}}', locale)
         .replaceAll('{{REQUIRE_EMAIL_VERIFICATION}}', verification)
+        .replaceAll('{{SENTRY_DSN}}', '')
     },
   }
 }

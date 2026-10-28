@@ -1,10 +1,12 @@
 import { QueryClient } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import type { RootOptions } from 'react-dom/client'
 
 import { App } from './App.tsx'
 import { client } from './generated/site/client.gen.ts'
 import { client as staffClient } from './generated/staff/client.gen.ts'
+import { sentryDsn } from './instance.ts'
 import { createAppRouter } from './router.ts'
 
 client.setConfig({ baseUrl: '/site' })
@@ -31,7 +33,22 @@ if (!container) {
   throw new Error('Root element not found')
 }
 
-createRoot(container).render(
+// Reporting is opt-in: without a DSN the reporter is never fetched. A reporter that fails to
+// load (a content blocker may refuse it) must not keep the app from starting.
+async function loadRootOptions(): Promise<RootOptions> {
+  const dsn = sentryDsn()
+  if (dsn === '') {
+    return {}
+  }
+  try {
+    const { startReporting } = await import('./sentry.ts')
+    return startReporting(dsn)
+  } catch {
+    return {}
+  }
+}
+
+createRoot(container, await loadRootOptions()).render(
   <StrictMode>
     <App queryClient={queryClient} router={router} />
   </StrictMode>,
