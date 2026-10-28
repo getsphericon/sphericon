@@ -33,9 +33,9 @@ export const ApiTokenScope = {
   BROADCASTS_SEND: 'broadcasts:send',
   AUTOMATIONS_ACTIVATE: 'automations:activate',
   MCP_SEND: 'mcp:send',
-  CONTACTS_ERASE: 'contacts:erase',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
+  CONTACTS_ERASE: 'contacts:erase',
   CAPTURED_MESSAGES_READ: 'captured_messages:read',
   CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
   TOKENS_READ: 'tokens:read',
@@ -720,6 +720,22 @@ export const SendScope = {
  * tools are not listed over /mcp without it, so any send-class grant brings it along.
  */
 export type SendScope = typeof SendScope[keyof typeof SendScope];
+
+/**
+ * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
+ * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * gets them only when it asked for them and the user ticks a box of their own for them,
+ * apart from the send class: they are no send-class scope and bring no mcp:send.
+ */
+export const SetupScope = { SENDING_DOMAINS_WRITE: 'sending_domains:write', INTEGRATIONS_WRITE: 'integrations:write' } as const;
+
+/**
+ * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
+ * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * gets them only when it asked for them and the user ticks a box of their own for them,
+ * apart from the send class: they are no send-class scope and bring no mcp:send.
+ */
+export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
 
 /**
  * The metric of a Sending domain that is over a warning limit of the abuse detector
@@ -3292,6 +3308,10 @@ export type SiteOAuthAuthorizationRequest = {
    * Requested send-class scopes: granted only when the user opts in explicitly
    */
   sendScopes: Array<SendScope>;
+  /**
+   * Requested setup scopes (Sending domains, Integrations): granted only when the user opts in explicitly, apart from the send class
+   */
+  setupScopes: Array<SetupScope>;
 };
 
 /**
@@ -3324,6 +3344,10 @@ export type SiteOAuthDecisionInput = {
    * Opt in to the requested send-class scopes (default: not granted)
    */
   allowSend?: boolean;
+  /**
+   * Opt in to the requested setup scopes (default: not granted); independent of `allowSend`
+   */
+  allowSetup?: boolean;
 };
 
 /**
@@ -5289,8 +5313,6 @@ export type Timestamp = string;
  */
 export const TokenOnlyScope = {
   CONTACTS_ERASE: 'contacts:erase',
-  SENDING_DOMAINS_WRITE: 'sending_domains:write',
-  INTEGRATIONS_WRITE: 'integrations:write',
   CAPTURED_MESSAGES_READ: 'captured_messages:read',
   CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
   TOKENS_READ: 'tokens:read',

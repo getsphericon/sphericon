@@ -77,12 +77,12 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeAutomationsActivate
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
-	case ApiTokenScopeContactsErase:
-		*s = ApiTokenScopeContactsErase
 	case ApiTokenScopeSendingDomainsWrite:
 		*s = ApiTokenScopeSendingDomainsWrite
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
 	case ApiTokenScopeCapturedMessagesRead:
 		*s = ApiTokenScopeCapturedMessagesRead
 	case ApiTokenScopeCapturedMessagesWrite:
@@ -6376,6 +6376,46 @@ func (s SendScope) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SendScope) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SetupScope as json.
+func (s SetupScope) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SetupScope from json.
+func (s *SetupScope) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SetupScope to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SetupScope(v) {
+	case SetupScopeSendingDomainsWrite:
+		*s = SetupScopeSendingDomainsWrite
+	case SetupScopeIntegrationsWrite:
+		*s = SetupScopeIntegrationsWrite
+	default:
+		*s = SetupScope(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SetupScope) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SetupScope) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -31594,15 +31634,24 @@ func (s *SiteOAuthAuthorizationRequest) encodeFields(e *jx.Encoder) {
 		}
 		e.ArrEnd()
 	}
+	{
+		e.FieldStart("setupScopes")
+		e.ArrStart()
+		for _, elem := range s.SetupScopes {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
 }
 
-var jsonFieldsNameOfSiteOAuthAuthorizationRequest = [6]string{
+var jsonFieldsNameOfSiteOAuthAuthorizationRequest = [7]string{
 	0: "clientName",
 	1: "clientHost",
 	2: "redirectUri",
 	3: "localRedirect",
 	4: "scopes",
 	5: "sendScopes",
+	6: "setupScopes",
 }
 
 // Decode decodes SiteOAuthAuthorizationRequest from json.
@@ -31696,6 +31745,24 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sendScopes\"")
 			}
+		case "setupScopes":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				s.SetupScopes = make([]SetupScope, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SetupScope
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.SetupScopes = append(s.SetupScopes, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"setupScopes\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -31706,7 +31773,7 @@ func (s *SiteOAuthAuthorizationRequest) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00111101,
+		0b01111101,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -31913,9 +31980,15 @@ func (s *SiteOAuthDecisionInput) encodeFields(e *jx.Encoder) {
 			s.AllowSend.Encode(e)
 		}
 	}
+	{
+		if s.AllowSetup.Set {
+			e.FieldStart("allowSetup")
+			s.AllowSetup.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSiteOAuthDecisionInput = [8]string{
+var jsonFieldsNameOfSiteOAuthDecisionInput = [9]string{
 	0: "clientId",
 	1: "redirectUri",
 	2: "state",
@@ -31924,6 +31997,7 @@ var jsonFieldsNameOfSiteOAuthDecisionInput = [8]string{
 	5: "workspaceId",
 	6: "approve",
 	7: "allowSend",
+	8: "allowSetup",
 }
 
 // Decode decodes SiteOAuthDecisionInput from json.
@@ -31931,7 +32005,7 @@ func (s *SiteOAuthDecisionInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteOAuthDecisionInput to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -32023,6 +32097,16 @@ func (s *SiteOAuthDecisionInput) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"allowSend\"")
 			}
+		case "allowSetup":
+			if err := func() error {
+				s.AllowSetup.Reset()
+				if err := s.AllowSetup.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"allowSetup\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -32032,8 +32116,9 @@ func (s *SiteOAuthDecisionInput) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
+	for i, mask := range [2]uint8{
 		0b01101011,
+		0b00000000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

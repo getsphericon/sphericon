@@ -6,7 +6,7 @@ import {
   handleSiteOAuthDescribe,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SendScope } from '../../generated/site/types.gen.ts'
+import type { SendScope, SetupScope } from '../../generated/site/types.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -36,7 +36,7 @@ const workspace = {
 
 const describeHandler = (
   sendScopes: SendScope[],
-  extra: { clientHost?: string; localRedirect?: boolean } = {},
+  extra: { clientHost?: string; localRedirect?: boolean; setupScopes?: SetupScope[] } = {},
 ) =>
   handleSiteOAuthDescribe({
     body: {
@@ -46,13 +46,14 @@ const describeHandler = (
       ...(extra.clientHost ? { clientHost: extra.clientHost } : {}),
       scopes: ['contacts:read'],
       sendScopes,
+      setupScopes: extra.setupScopes ?? [],
     },
   })
 
-function mockConsentApi(onDecide: (body: unknown) => void) {
+function mockConsentApi(onDecide: (body: unknown) => void, setupScopes: SetupScope[] = []) {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
-    describeHandler(['emails:send']),
+    describeHandler(['emails:send'], { setupScopes }),
     handleSiteOAuthDecide(async ({ request: req }) => {
       onDecide(await req.json())
       // Stay on the page: the test only inspects the decision that was sent.
@@ -167,4 +168,54 @@ test('a plain member who is forbidden sees why, not a generic error', async () =
   await expect
     .element(screen.getByText(/Only workspace owners and admins can connect an application/))
     .toBeInTheDocument()
+})
+
+test('offers the setup opt-in only when the app asked for setup scopes, off by default', async () => {
+  mockConsentApi(vi.fn<() => void>())
+  const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
+  await expect
+    .element(screen.getByText('Connect Fixture Connector to Sphericon'))
+    .toBeInTheDocument()
+  expect(screen.getByLabelText(/Also allow changing sending setup/).elements()).toHaveLength(0)
+
+  worker.resetHandlers()
+  mockConsentApi(vi.fn<() => void>(), ['sending_domains:write'])
+  const asked = await renderWithRouter(<OAuthConsent request={request} />)
+  await expect
+    .element(asked.screen.getByLabelText(/Also allow changing sending setup/))
+    .not.toBeChecked()
+})
+
+test('the setup opt-in is carried to the decision apart from the send opt-in', async () => {
+  const decisions: unknown[] = []
+  mockConsentApi(
+    (body) => {
+      decisions.push(body)
+    },
+    ['sending_domains:write', 'integrations:write'],
+  )
+  const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
+
+  await screen.getByLabelText(/Also allow changing sending setup/).click()
+  await screen.getByRole('button', { name: 'Allow access' }).click()
+
+  await expect.poll(() => decisions).toHaveLength(1)
+  expect(decisions[0]).toMatchObject({ approve: true, allowSetup: true, allowSend: false })
+})
+
+test('denying never carries the setup opt-in', async () => {
+  const decisions: unknown[] = []
+  mockConsentApi(
+    (body) => {
+      decisions.push(body)
+    },
+    ['sending_domains:write'],
+  )
+  const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
+
+  await screen.getByLabelText(/Also allow changing sending setup/).click()
+  await screen.getByRole('button', { name: 'Deny' }).click()
+
+  await expect.poll(() => decisions).toHaveLength(1)
+  expect(decisions[0]).toMatchObject({ approve: false, allowSetup: false })
 })

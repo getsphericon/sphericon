@@ -24,9 +24,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
-// audit:read is never grantable to a connector (ADR 0016, ADR 0022).
-func TestAuditReadIsNotAnOAuthScope(t *testing.T) {
-	assert.NotContains(t, oauthserver.SupportedScopes(), "audit:read")
+// What cannot be undone or gives a standing way in is never grantable to a connector: no
+// token management, no erasure, no bulk export, no audit log (ADR 0016, ADR 0022).
+func TestScopesThatStayTokenOnlyAreNotOAuthScopes(t *testing.T) {
+	supported := oauthserver.SupportedScopes()
+	for _, scope := range []string{"tokens:read", "tokens:write", "contacts:erase", "audit:read", "export:read"} {
+		assert.NotContains(t, supported, scope)
+	}
 }
 
 func closedClient(t *testing.T) *ent.Client {

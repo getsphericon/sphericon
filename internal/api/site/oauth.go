@@ -32,6 +32,7 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 		LocalRedirect: req.LocalRedirect,
 		Scopes:        lo.Map(req.Scopes, func(s string, _ int) siteapi.GrantableScope { return siteapi.GrantableScope(s) }),
 		SendScopes:    lo.Map(req.SendScopes, func(s string, _ int) siteapi.SendScope { return siteapi.SendScope(s) }),
+		SetupScopes:   lo.Map(req.SetupScopes, func(s string, _ int) siteapi.SetupScope { return siteapi.SetupScope(s) }),
 	}
 	if req.ClientHost != "" {
 		out.ClientHost = siteapi.NewOptString(req.ClientHost)
@@ -65,6 +66,7 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 		WorkspaceID:   s.WorkspaceID(),
 		Approve:       req.Approve,
 		AllowSend:     req.AllowSend.Or(false),
+		AllowSetup:    req.AllowSetup.Or(false),
 	})
 	switch {
 	case errors.Is(err, oauthserver.ErrUnknownClient):

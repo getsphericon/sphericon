@@ -25,7 +25,7 @@ modelled and stay out.
   `unschedule`, `test-send`, segment, report), automations (CRUD, `activate`/`deactivate`),
   templates, events (+ batch), webhooks, and read-only custom fields and the
   complaint/bounce rates (ADR 0011), integrations and sending domains (ADR 0024: credentials and the DKIM
-  private key are never returned; `integrations:write` and `sending_domains:write` are not OAuth-grantable;
+  private key are never returned; `integrations:write` and `sending_domains:write` are the setup scopes, which an OAuth connector gets only behind a box of its own on the consent screen (see "Setup is a third lock");
   verification stays a live DKIM check that the API only triggers and reports). **Not exposed:** API tokens. Batches take up to 1000 items and
   return a per-item result; one failure does not roll back the rest.
 - **Use-case modules before the contract grows.** `/site` and `/api` re-implement contact
@@ -38,6 +38,15 @@ modelled and stay out.
   scope (`emails:send`, `broadcasts:send`, `automations:activate`) **and**, over MCP, the extra
   `mcp:send` scope; without `mcp:send` they are not even listed. This relaxes the backlog's
   "AI is an author, not a sender" from absolute to opt-in per token.
+- **Setup is a third lock.** `sending_domains:write` and `integrations:write` change how the
+  Workspace sends: the domains it authenticates and the provider credentials an Integration holds.
+  They were token-only, so an agent connected through OAuth could read a Sending domain but not fix
+  one, which the owner or admin who approved it may do in the app. They are now the `SetupScope`
+  group: an OAuth client gets them only when it asked for them **and** the user ticks a second box on
+  the consent screen, apart from the send box (neither brings the other, and they bring no `mcp:send`).
+  Everything that cannot be undone or gives a standing way in stays token-only: `tokens:*` (a connector
+  must never mint a credential), `contacts:erase`, `audit:read`, `export:read`. The role needs no check
+  of its own: consent already takes an owner or admin, and so do the two resources.
 - **Consent only narrows through the agent.** An agent may add a Suppression or record an
   Unsubscribe. Resubscribing and lifting a Suppression are not exposed on `/api` or MCP at all:
   they widen reach and assert consent, so a human (or the contact via link) does them.
@@ -67,8 +76,8 @@ Decisions taken while building it, so the contract and code are not the only rec
 - **Scopes.** The `ApiTokenScope` enum is the complete vocabulary and a test keeps it so (every
   scope an `/api` handler checks must be grantable): `contacts`, `events`, `segments`,
   `broadcasts`, `automations`, `templates`, `webhooks` each as `:read` / `:write`;
-  `custom_fields:read`, `sending_domains:read` / `sending_domains:write`, `integrations:read` / `integrations:write`; the send class `emails:send`, `broadcasts:send`,
-  `automations:activate`, `mcp:send`; and `tokens:read` / `tokens:write` for `/api` token
+  `custom_fields:read`, `sending_domains:read`, `integrations:read`; the send class `emails:send`, `broadcasts:send`,
+  `automations:activate`, `mcp:send`; the setup scopes `sending_domains:write`, `integrations:write`; and `tokens:read` / `tokens:write` for `/api` token
   management, which is hidden from MCP.
 - **`x-mcp`.** Declared in `typespec/external/mcp.tsp` with three keys: `name` (override of the
   snake_case operation id, e.g. `whoami`, `events_record`), `hidden` (token management is never a

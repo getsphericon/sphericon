@@ -46,6 +46,7 @@ function serve(
         localRedirect: false,
         scopes: ['contacts:read'],
         sendScopes: [],
+        setupScopes: [],
       },
     }),
     handleSiteOAuthDecide(decide),

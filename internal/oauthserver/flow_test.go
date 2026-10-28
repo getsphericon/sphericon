@@ -73,7 +73,7 @@ func TestConsentScreenDescribesTheRequest(t *testing.T) {
 	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
 		ClientId:    fixtureClientID,
 		RedirectUri: fixtureRedirectURI,
-		Scope:       siteapi.NewOptString("contacts:read emails:send bogus"),
+		Scope:       siteapi.NewOptString("contacts:read emails:send sending_domains:write bogus"),
 	})
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
@@ -81,6 +81,7 @@ func TestConsentScreenDescribesTheRequest(t *testing.T) {
 	assert.Equal(t, "Fixture Connector", got.ClientName)
 	assert.Equal(t, []siteapi.GrantableScope{"contacts:read"}, got.Scopes)
 	assert.Equal(t, []siteapi.SendScope{"emails:send", "mcp:send"}, got.SendScopes, "send-class scopes await an explicit opt-in, and bring the MCP send lock's key")
+	assert.Equal(t, []siteapi.SetupScope{"sending_domains:write"}, got.SetupScopes, "setup scopes await an opt-in of their own and bring no mcp:send")
 }
 
 func TestConsentScreenRejectsMismatchedRedirect(t *testing.T) {
@@ -189,6 +190,64 @@ func TestSendClassScopesNeedAnExplicitOptIn(t *testing.T) {
 		var tok map[string]any
 		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &tok))
 		assert.Equal(t, strings.Join(want, " "), tok["scope"], "allowSend=%v", allowSend)
+	}
+}
+
+// The setup scopes (Sending domains, Integrations) have a box of their own: only a client that
+// asked for them and a user who ticked it get them, and neither the send box nor a send-class
+// grant brings them or the other way round (ADR 0016).
+func TestSetupScopesNeedTheirOwnExplicitOptIn(t *testing.T) {
+	env := testhelper.Setup(t)
+	asked := "contacts:read sending_domains:write integrations:write"
+
+	for name, tc := range map[string]struct {
+		scope      string
+		allowSend  bool
+		allowSetup bool
+		want       string
+	}{
+		"no opt-in":                        {scope: asked, want: "contacts:read"},
+		"the send box is not it":           {scope: asked, allowSend: true, want: "contacts:read"},
+		"the setup box":                    {scope: asked, allowSetup: true, want: asked},
+		"not asked, not granted":           {scope: "contacts:read", allowSetup: true, want: "contacts:read"},
+		"setup beside send":                {scope: asked + " emails:send", allowSend: true, allowSetup: true, want: asked + " emails:send mcp:send"},
+		"the setup box brings no mcp:send": {scope: asked + " emails:send", allowSetup: true, want: asked},
+	} {
+		t.Run(name, func(t *testing.T) {
+			in := approval(tc.scope, tc.allowSend)
+			in.AllowSetup = siteapi.NewOptBool(tc.allowSetup)
+			back := consent(t, env, in)
+			rec := exchange(t, env, tokenForm(back.Query().Get("code")))
+			require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+			var tok map[string]any
+			require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &tok))
+			assert.ElementsMatch(t, strings.Fields(tc.want), strings.Fields(tok["scope"].(string)))
+		})
+	}
+}
+
+// A connector approved with the setup box can add a Sending domain through MCP; one approved
+// without it is refused when it calls the tool (the tool is listed either way: only the
+// send class is hidden without its key).
+func TestApprovedSetupScopeLetsAConnectorAddASendingDomain(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	for _, allowSetup := range []bool{false, true} {
+		in := approval("sending_domains:read sending_domains:write", false)
+		in.AllowSetup = siteapi.NewOptBool(allowSetup)
+		back := consent(t, env, in)
+		rec := exchange(t, env, tokenForm(back.Query().Get("code")))
+		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+		var tok map[string]any
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &tok))
+
+		session := env.MCPClient(t, tok["access_token"].(string))
+		res, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+			Name:      "sending_domains_create",
+			Arguments: map[string]any{"domain": "oauth.example.com"},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, !allowSetup, res.IsError, "allowSetup=%v", allowSetup)
 	}
 }
 

@@ -36,11 +36,18 @@ enum SendScope {
   mcpSend: "mcp:send",
 }
 
+/** Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
+ * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * gets them only when it asked for them and the user ticks a box of their own for them,
+ * apart from the send class: they are no send-class scope and bring no mcp:send. */
+enum SetupScope {
+  sendingDomainsWrite: "sending_domains:write",
+  integrationsWrite: "integrations:write",
+}
+
 /** Scopes only an API token can hold, never an OAuth grant */
 enum TokenOnlyScope {
   contactsErase: "contacts:erase",
-  sendingDomainsWrite: "sending_domains:write",
-  integrationsWrite: "integrations:write",
   capturedMessagesRead: "captured_messages:read",
   capturedMessagesWrite: "captured_messages:write",
   tokensRead: "tokens:read",
@@ -53,5 +60,6 @@ enum TokenOnlyScope {
 enum ApiTokenScope {
   ...GrantableScope,
   ...SendScope,
+  ...SetupScope,
   ...TokenOnlyScope,
 }

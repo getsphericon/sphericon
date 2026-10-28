@@ -150,9 +150,9 @@ const (
 	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
 	ApiTokenScopeAutomationsActivate   ApiTokenScope = "automations:activate"
 	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
-	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
+	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
 	ApiTokenScopeCapturedMessagesRead  ApiTokenScope = "captured_messages:read"
 	ApiTokenScopeCapturedMessagesWrite ApiTokenScope = "captured_messages:write"
 	ApiTokenScopeTokensRead            ApiTokenScope = "tokens:read"
@@ -188,9 +188,9 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeBroadcastsSend,
 		ApiTokenScopeAutomationsActivate,
 		ApiTokenScopeMcpSend,
-		ApiTokenScopeContactsErase,
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
+		ApiTokenScopeContactsErase,
 		ApiTokenScopeCapturedMessagesRead,
 		ApiTokenScopeCapturedMessagesWrite,
 		ApiTokenScopeTokensRead,
@@ -251,11 +251,11 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeMcpSend:
 		return []byte(s), nil
-	case ApiTokenScopeContactsErase:
-		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeIntegrationsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeContactsErase:
 		return []byte(s), nil
 	case ApiTokenScopeCapturedMessagesRead:
 		return []byte(s), nil
@@ -349,14 +349,14 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
 		return nil
-	case ApiTokenScopeContactsErase:
-		*s = ApiTokenScopeContactsErase
-		return nil
 	case ApiTokenScopeSendingDomainsWrite:
 		*s = ApiTokenScopeSendingDomainsWrite
 		return nil
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+		return nil
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
 		return nil
 	case ApiTokenScopeCapturedMessagesRead:
 		*s = ApiTokenScopeCapturedMessagesRead

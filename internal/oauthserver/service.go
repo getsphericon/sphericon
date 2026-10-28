@@ -64,9 +64,11 @@ type Request struct {
 	// on the user's machine can be listening.
 	LocalRedirect bool
 	RedirectURI   string
-	// Scopes are granted by default; SendScopes only on explicit opt-in.
-	Scopes     []string
-	SendScopes []string
+	// Scopes are granted by default; SendScopes and SetupScopes only on an explicit opt-in
+	// each (a box of its own on the consent screen).
+	Scopes      []string
+	SendScopes  []string
+	SetupScopes []string
 }
 
 // Decision is the signed-in user's answer to an authorization request. The
@@ -80,6 +82,7 @@ type Decision struct {
 	WorkspaceID   int64
 	Approve       bool
 	AllowSend     bool
+	AllowSetup    bool
 }
 
 // Describe validates the client and redirect URI of an authorization request and
@@ -89,13 +92,13 @@ func (s *Service) Describe(ctx context.Context, clientID, redirectURI, scope str
 	if err != nil {
 		return nil, err
 	}
-	granted, send := requestedScopes(scope)
-	if strings.TrimSpace(scope) != "" && len(granted) == 0 && len(send) == 0 {
+	granted, send, setup := requestedScopes(scope)
+	if strings.TrimSpace(scope) != "" && len(granted)+len(send)+len(setup) == 0 {
 		return nil, fmt.Errorf("%w: no supported scope requested", ErrInvalidRequest)
 	}
 	return &Request{
 		ClientName: client.Name, ClientHost: ClientHost(clientID), LocalRedirect: isLoopback(redirectURI),
-		RedirectURI: redirectURI, Scopes: granted, SendScopes: send,
+		RedirectURI: redirectURI, Scopes: granted, SendScopes: send, SetupScopes: setup,
 	}, nil
 }
 
@@ -112,12 +115,15 @@ func (s *Service) Decide(ctx context.Context, d Decision) (string, error) {
 	if !validPKCE(d.CodeChallenge) {
 		return "", fmt.Errorf("%w: code_challenge must be a PKCE S256 challenge", ErrInvalidRequest)
 	}
-	granted, send := requestedScopes(d.Scope)
-	if strings.TrimSpace(d.Scope) != "" && len(granted) == 0 && len(send) == 0 {
+	granted, send, setup := requestedScopes(d.Scope)
+	if strings.TrimSpace(d.Scope) != "" && len(granted)+len(send)+len(setup) == 0 {
 		return "", fmt.Errorf("%w: no supported scope requested", ErrInvalidRequest)
 	}
 	if d.AllowSend {
 		granted = append(granted, send...)
+	}
+	if d.AllowSetup {
+		granted = append(granted, setup...)
 	}
 
 	code := rand.Text()
