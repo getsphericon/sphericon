@@ -220,7 +220,9 @@ type Option func(*setup)
 // setup is what the options edit: a private copy of the test config, the clock the
 // account attempt module reads, and whether the instance has no EE license.
 type setup struct {
-	cfg        *config.Config
+	cfg *config.Config
+	// signupRule replaces the sign-up rule of the Mode when set (WithSignupRule).
+	signupRule *accounts.SignupRule
 	now        func() time.Time
 	unlicensed bool
 	// volumeFloor is the Staff console's rate floor; zero is the default.
@@ -281,6 +283,19 @@ func WithStaffVolumeFloor(n int) Option { return func(s *setup) { s.volumeFloor 
 
 // WithMode runs the test Instance in a Mode, with every setting the Mode decides.
 func WithMode(m config.Mode) Option { return func(s *setup) { s.cfg.ApplyMode(m) } }
+
+// WithSignupRule opens or closes registration whatever the Mode says. The fixtures already hold
+// Users, so a selfhosted test Instance is closed; a test of what a new person gets on such an
+// Instance (the Sign-up survey) opens it with accounts.SignupAlways.
+func WithSignupRule(rule accounts.SignupRule) Option { return func(s *setup) { s.signupRule = &rule } }
+
+// signupRuleOf is the sign-up rule of the test Instance: WithSignupRule's, else its Mode's.
+func (s *setup) signupRuleOf(cfg *config.Config) accounts.SignupRule {
+	if s.signupRule != nil {
+		return *s.signupRule
+	}
+	return accounts.SignupRuleOf(cfg.Mode.SaaS())
+}
 
 // WithConfig edits a private copy of the test config before the server is built.
 func WithConfig(edit func(*config.Config)) Option { return func(s *setup) { edit(s.cfg) } }
@@ -449,7 +464,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	automationsModule := automations.New(cipher, bus)
 	rulesModule := rules.New(cipher, bus)
 	broadcastsModule := broadcasts.New(bus)
-	acc := accounts.New(client, bus, accounts.WithSignupRule(accounts.SignupRuleOf(cfg.Mode.SaaS())))
+	acc := accounts.New(client, bus, accounts.WithSignupRule(st.signupRuleOf(&cfg)))
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),

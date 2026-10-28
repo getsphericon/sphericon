@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -24,7 +25,7 @@ func TestSigninANewPersonOwesTheSurveyWhenTheInstanceAsksIt(t *testing.T) {
 }
 
 func TestSigninANewPersonIsNotAskedWhenTheSurveyIsOff(t *testing.T) {
-	env, fake := signinEnv(t, testhelper.WithMode(config.ModeSelfHosted))
+	env, fake := signinEnv(t, testhelper.WithMode(config.ModeSelfHosted), testhelper.WithSignupRule(accounts.SignupAlways))
 
 	signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
 
