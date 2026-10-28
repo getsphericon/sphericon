@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Independent literal: the playbooks sphericon ships.
-var shippedPlaybooks = []string{"welcome", "win-back", "list-hygiene"}
+// Independent literal: the prompts sphericon ships.
+var shippedPrompts = []string{"welcome", "win-back", "list-hygiene", "set-up-sending-domain"}
 
 func listedPrompts(t *testing.T, s *mcp.ClientSession) map[string]*mcp.Prompt {
 	t.Helper()
@@ -35,27 +35,27 @@ func promptText(t *testing.T, s *mcp.ClientSession, name string) string {
 	return tc.Text
 }
 
-func TestMCPShippedPlaybooksAreListedAndRetrievable(t *testing.T) {
+func TestMCPShippedPromptsAreListedAndRetrievable(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
 
 	prompts := listedPrompts(t, s)
-	for _, name := range shippedPlaybooks {
+	for _, name := range shippedPrompts {
 		p, ok := prompts[name]
 		require.Truef(t, ok, "prompt %q is not listed", name)
 		assert.NotEmpty(t, p.Description)
 		assert.NotEmpty(t, promptText(t, s, name))
 	}
-	assert.Len(t, prompts, len(shippedPlaybooks))
+	assert.Len(t, prompts, len(shippedPrompts))
 
 	_, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: "nonexistent"})
 	assert.Error(t, err)
 }
 
-// A playbook names a tool as `tool_name()`. Every such reference must exist in the
+// A prompt names a tool as `tool_name()`. Every such reference must exist in the
 // tool surface projected from the contract, and none may be a send-class tool: the
 // agent authors, a human reviews and sends.
-func TestMCPPlaybooksOnlyReferenceAuthoringTools(t *testing.T) {
+func TestMCPPromptsOnlyReferenceAuthoringTools(t *testing.T) {
 	env := testhelper.Setup(t)
 	// mcp:send lists the whole generated surface, send-class tools included.
 	surface := listedTools(t, env.MCPClient(t, env.ScopedBearer(t, "mcp:send")))
@@ -65,7 +65,7 @@ func TestMCPPlaybooksOnlyReferenceAuthoringTools(t *testing.T) {
 	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
 	ref := regexp.MustCompile("`([a-z][a-z0-9_]*)\\(\\)`")
 
-	for _, name := range shippedPlaybooks {
+	for _, name := range shippedPrompts {
 		body := promptText(t, s, name)
 		refs := ref.FindAllStringSubmatch(body, -1)
 		assert.NotEmptyf(t, refs, "%s references no tools", name)
@@ -79,9 +79,9 @@ func TestMCPPlaybooksOnlyReferenceAuthoringTools(t *testing.T) {
 	}
 }
 
-// The playbooks that write mail tell an agent that the editor's document is the format and name
+// The prompts that write mail tell an agent that the editor's document is the format and name
 // where the Brand kit, the schema and the lint are (ADR 0040).
-func TestMCPPlaybooksThatWriteMailNameTheEditorTools(t *testing.T) {
+func TestMCPPromptsThatWriteMailNameTheEditorTools(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
 

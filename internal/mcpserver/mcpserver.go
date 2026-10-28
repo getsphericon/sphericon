@@ -64,9 +64,9 @@ func New(spec []byte, api http.Handler, auth Authenticator, opts ...Option) (htt
 			sendTools[op.tool.Name] = true
 		}
 	}
-	books, err := loadPlaybooks()
+	books, err := loadPrompts()
 	if err != nil {
-		return nil, fmt.Errorf("load playbooks: %w", err)
+		return nil, fmt.Errorf("load prompts: %w", err)
 	}
 	for _, book := range books {
 		srv.AddPrompt(book.prompt(), book.handler)

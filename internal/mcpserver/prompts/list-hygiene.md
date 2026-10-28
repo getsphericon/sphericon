@@ -2,7 +2,7 @@
 description: Audit audience health (sending domain rates, quiet and risky contacts) and propose cleanup. Only narrows reach; a human decides the rest.
 ---
 
-# Playbook: audience hygiene
+# audience hygiene
 
 Goal: report on the health of the audience and the sending setup, and propose a cleanup. You may only narrow reach; anything that widens it is the human's call.
 

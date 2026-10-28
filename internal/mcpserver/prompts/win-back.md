@@ -2,7 +2,7 @@
 description: Author a win-back Broadcast draft for contacts who went quiet. Left as a draft for a human to review and schedule.
 ---
 
-# Playbook: win back quiet contacts
+# win back quiet contacts
 
 Goal: prepare a Broadcast draft aimed at Contacts who used to engage and stopped. You author it; a human reviews and schedules it.
 
