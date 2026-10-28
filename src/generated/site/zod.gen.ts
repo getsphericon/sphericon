@@ -31,9 +31,9 @@ export const zApiTokenScope = z.enum([
   'broadcasts:send',
   'automations:activate',
   'mcp:send',
-  'contacts:erase',
   'sending_domains:write',
   'integrations:write',
+  'contacts:erase',
   'captured_messages:read',
   'captured_messages:write',
   'tokens:read',
@@ -178,6 +178,14 @@ export const zSendScope = z.enum([
   'automations:activate',
   'mcp:send'
 ]);
+
+/**
+ * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
+ * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * gets them only when it asked for them and the user ticks a box of their own for them,
+ * apart from the send class: they are no send-class scope and bring no mcp:send.
+ */
+export const zSetupScope = z.enum(['sending_domains:write', 'integrations:write']);
 
 /**
  * The metric of a Sending domain that is over a warning limit of the abuse detector
@@ -912,7 +920,8 @@ export const zSiteOAuthAuthorizationRequest = z.object({
   redirectUri: z.string(),
   localRedirect: z.boolean(),
   scopes: z.array(zGrantableScope),
-  sendScopes: z.array(zSendScope)
+  sendScopes: z.array(zSendScope),
+  setupScopes: z.array(zSetupScope)
 });
 
 /**
@@ -2479,8 +2488,6 @@ export const zSiteWorkspaceHold = z.object({
  */
 export const zTokenOnlyScope = z.enum([
   'contacts:erase',
-  'sending_domains:write',
-  'integrations:write',
   'captured_messages:read',
   'captured_messages:write',
   'tokens:read',
@@ -2561,7 +2568,8 @@ export const zSiteOAuthDecisionInput = z.object({
   scope: z.exactOptional(z.string()),
   workspaceId: zWorkspaceId,
   approve: z.boolean(),
-  allowSend: z.exactOptional(z.boolean())
+  allowSend: z.exactOptional(z.boolean()),
+  allowSetup: z.exactOptional(z.boolean())
 });
 
 /**

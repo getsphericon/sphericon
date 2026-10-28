@@ -139,11 +139,11 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "mcp:send":
 		return nil
-	case "contacts:erase":
-		return nil
 	case "sending_domains:write":
 		return nil
 	case "integrations:write":
+		return nil
+	case "contacts:erase":
 		return nil
 	case "captured_messages:read":
 		return nil

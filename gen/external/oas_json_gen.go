@@ -402,12 +402,12 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeAutomationsActivate
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
-	case ApiTokenScopeContactsErase:
-		*s = ApiTokenScopeContactsErase
 	case ApiTokenScopeSendingDomainsWrite:
 		*s = ApiTokenScopeSendingDomainsWrite
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
 	case ApiTokenScopeCapturedMessagesRead:
 		*s = ApiTokenScopeCapturedMessagesRead
 	case ApiTokenScopeCapturedMessagesWrite:

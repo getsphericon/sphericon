@@ -22,6 +22,9 @@ model SiteOAuthAuthorizationRequest {
 
   /** Requested send-class scopes: granted only when the user opts in explicitly */
   sendScopes: SendScope[];
+
+  /** Requested setup scopes (Sending domains, Integrations): granted only when the user opts in explicitly, apart from the send class */
+  setupScopes: SetupScope[];
 }
 
 /** The user's decision on an authorization request */
@@ -46,6 +49,9 @@ model SiteOAuthDecisionInput {
 
   /** Opt in to the requested send-class scopes (default: not granted) */
   allowSend?: boolean;
+
+  /** Opt in to the requested setup scopes (default: not granted); independent of `allowSend` */
+  allowSetup?: boolean;
 }
 
 /** Where to send the user's browser next (back to the client, with a code or an error) */

@@ -12186,9 +12186,9 @@
           "broadcasts:send",
           "automations:activate",
           "mcp:send",
-          "contacts:erase",
           "sending_domains:write",
           "integrations:write",
+          "contacts:erase",
           "captured_messages:read",
           "captured_messages:write",
           "tokens:read",
@@ -16735,6 +16735,11 @@
         },
         "description": "Request body for setting a broadcast's Segment"
       },
+      "SetupScope": {
+        "type": "string",
+        "enum": ["sending_domains:write", "integrations:write"],
+        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send."
+      },
       "SmtpConfig": {
         "type": "object",
         "required": ["kind", "host", "port", "from"],
@@ -16956,8 +16961,6 @@
         "type": "string",
         "enum": [
           "contacts:erase",
-          "sending_domains:write",
-          "integrations:write",
           "captured_messages:read",
           "captured_messages:write",
           "tokens:read",

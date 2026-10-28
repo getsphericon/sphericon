@@ -59,11 +59,11 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "mcp:send":
 		return nil
-	case "contacts:erase":
-		return nil
 	case "sending_domains:write":
 		return nil
 	case "integrations:write":
+		return nil
+	case "contacts:erase":
 		return nil
 	case "captured_messages:read":
 		return nil
@@ -619,6 +619,17 @@ func (s SendScope) Validate() error {
 	case "automations:activate":
 		return nil
 	case "mcp:send":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SetupScope) Validate() error {
+	switch s {
+	case "sending_domains:write":
+		return nil
+	case "integrations:write":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -5131,6 +5142,34 @@ func (s *SiteOAuthAuthorizationRequest) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "sendScopes",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.SetupScopes == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.SetupScopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "setupScopes",
 			Error: err,
 		})
 	}

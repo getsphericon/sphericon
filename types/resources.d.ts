@@ -882,6 +882,9 @@ export default interface Resources {
       "sendCheckbox": "Also allow sending ({{scopes}})",
       "sendDescription": "This app also asked to send email. That is off unless you allow it here.",
       "sendTitle": "Sending is opt-in",
+      "setupCheckbox": "Also allow changing sending setup ({{scopes}})",
+      "setupDescription": "This app also asked to add and change sending domains and integrations, including the provider credentials an integration holds. That is off unless you allow it here.",
+      "setupTitle": "Changing sending setup is opt-in",
       "title": "Connect {{client}} to Sphericon",
       "workspaceLabel": "Workspace"
     },

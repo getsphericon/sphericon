@@ -134,6 +134,8 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 	assert.NotEmpty(t, req.Scopes)
 	assert.NotNil(t, req.SendScopes)
 	assert.Empty(t, req.SendScopes)
+	assert.NotNil(t, req.SetupScopes)
+	assert.Empty(t, req.SetupScopes)
 
 	in := func() *siteapi.SiteOAuthDecisionInput {
 		return &siteapi.SiteOAuthDecisionInput{

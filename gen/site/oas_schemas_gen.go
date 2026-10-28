@@ -64,9 +64,9 @@ const (
 	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
 	ApiTokenScopeAutomationsActivate   ApiTokenScope = "automations:activate"
 	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
-	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
+	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
 	ApiTokenScopeCapturedMessagesRead  ApiTokenScope = "captured_messages:read"
 	ApiTokenScopeCapturedMessagesWrite ApiTokenScope = "captured_messages:write"
 	ApiTokenScopeTokensRead            ApiTokenScope = "tokens:read"
@@ -102,9 +102,9 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeBroadcastsSend,
 		ApiTokenScopeAutomationsActivate,
 		ApiTokenScopeMcpSend,
-		ApiTokenScopeContactsErase,
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
+		ApiTokenScopeContactsErase,
 		ApiTokenScopeCapturedMessagesRead,
 		ApiTokenScopeCapturedMessagesWrite,
 		ApiTokenScopeTokensRead,
@@ -165,11 +165,11 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeMcpSend:
 		return []byte(s), nil
-	case ApiTokenScopeContactsErase:
-		return []byte(s), nil
 	case ApiTokenScopeSendingDomainsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeIntegrationsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeContactsErase:
 		return []byte(s), nil
 	case ApiTokenScopeCapturedMessagesRead:
 		return []byte(s), nil
@@ -263,14 +263,14 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
 		return nil
-	case ApiTokenScopeContactsErase:
-		*s = ApiTokenScopeContactsErase
-		return nil
 	case ApiTokenScopeSendingDomainsWrite:
 		*s = ApiTokenScopeSendingDomainsWrite
 		return nil
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+		return nil
+	case ApiTokenScopeContactsErase:
+		*s = ApiTokenScopeContactsErase
 		return nil
 	case ApiTokenScopeCapturedMessagesRead:
 		*s = ApiTokenScopeCapturedMessagesRead
@@ -5839,6 +5839,52 @@ func (s *SendScope) UnmarshalText(data []byte) error {
 		return nil
 	case SendScopeMcpSend:
 		*s = SendScopeMcpSend
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it authenticates,
+// the Integrations and the provider credentials they hold). An OAuth client gets them only when it
+// asked for them and the user ticks a box of their own for them, apart from the send class: they are
+// no send-class scope and bring no mcp:send.
+// Ref: #/components/schemas/SetupScope
+type SetupScope string
+
+const (
+	SetupScopeSendingDomainsWrite SetupScope = "sending_domains:write"
+	SetupScopeIntegrationsWrite   SetupScope = "integrations:write"
+)
+
+// AllValues returns all SetupScope values.
+func (SetupScope) AllValues() []SetupScope {
+	return []SetupScope{
+		SetupScopeSendingDomainsWrite,
+		SetupScopeIntegrationsWrite,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SetupScope) MarshalText() ([]byte, error) {
+	switch s {
+	case SetupScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case SetupScopeIntegrationsWrite:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SetupScope) UnmarshalText(data []byte) error {
+	switch SetupScope(data) {
+	case SetupScopeSendingDomainsWrite:
+		*s = SetupScopeSendingDomainsWrite
+		return nil
+	case SetupScopeIntegrationsWrite:
+		*s = SetupScopeIntegrationsWrite
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -14736,6 +14782,9 @@ type SiteOAuthAuthorizationRequest struct {
 	Scopes []GrantableScope `json:"scopes"`
 	// Requested send-class scopes: granted only when the user opts in explicitly.
 	SendScopes []SendScope `json:"sendScopes"`
+	// Requested setup scopes (Sending domains, Integrations): granted only when the user opts in
+	// explicitly, apart from the send class.
+	SetupScopes []SetupScope `json:"setupScopes"`
 }
 
 // GetClientName returns the value of ClientName.
@@ -14768,6 +14817,11 @@ func (s *SiteOAuthAuthorizationRequest) GetSendScopes() []SendScope {
 	return s.SendScopes
 }
 
+// GetSetupScopes returns the value of SetupScopes.
+func (s *SiteOAuthAuthorizationRequest) GetSetupScopes() []SetupScope {
+	return s.SetupScopes
+}
+
 // SetClientName sets the value of ClientName.
 func (s *SiteOAuthAuthorizationRequest) SetClientName(val string) {
 	s.ClientName = val
@@ -14796,6 +14850,11 @@ func (s *SiteOAuthAuthorizationRequest) SetScopes(val []GrantableScope) {
 // SetSendScopes sets the value of SendScopes.
 func (s *SiteOAuthAuthorizationRequest) SetSendScopes(val []SendScope) {
 	s.SendScopes = val
+}
+
+// SetSetupScopes sets the value of SetupScopes.
+func (s *SiteOAuthAuthorizationRequest) SetSetupScopes(val []SetupScope) {
+	s.SetupScopes = val
 }
 
 func (*SiteOAuthAuthorizationRequest) siteOAuthDescribeRes() {}
@@ -14829,6 +14888,8 @@ type SiteOAuthDecisionInput struct {
 	Approve bool `json:"approve"`
 	// Opt in to the requested send-class scopes (default: not granted).
 	AllowSend OptBool `json:"allowSend"`
+	// Opt in to the requested setup scopes (default: not granted); independent of `allowSend`.
+	AllowSetup OptBool `json:"allowSetup"`
 }
 
 // GetClientId returns the value of ClientId.
@@ -14871,6 +14932,11 @@ func (s *SiteOAuthDecisionInput) GetAllowSend() OptBool {
 	return s.AllowSend
 }
 
+// GetAllowSetup returns the value of AllowSetup.
+func (s *SiteOAuthDecisionInput) GetAllowSetup() OptBool {
+	return s.AllowSetup
+}
+
 // SetClientId sets the value of ClientId.
 func (s *SiteOAuthDecisionInput) SetClientId(val string) {
 	s.ClientId = val
@@ -14909,6 +14975,11 @@ func (s *SiteOAuthDecisionInput) SetApprove(val bool) {
 // SetAllowSend sets the value of AllowSend.
 func (s *SiteOAuthDecisionInput) SetAllowSend(val OptBool) {
 	s.AllowSend = val
+}
+
+// SetAllowSetup sets the value of AllowSetup.
+func (s *SiteOAuthDecisionInput) SetAllowSetup(val OptBool) {
+	s.AllowSetup = val
 }
 
 // Where to send the user's browser next (back to the client, with a code or an error).

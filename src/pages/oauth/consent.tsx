@@ -58,6 +58,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
   const notify = useNotify()
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [allowSend, setAllowSend] = useState(false)
+  const [allowSetup, setAllowSetup] = useState(false)
 
   const describe = useQuery({
     ...siteOAuthDescribeOptions({
@@ -127,6 +128,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
         workspaceId: selected,
         approve,
         allowSend: approve && allowSend,
+        allowSetup: approve && allowSetup,
       },
     })
   }
@@ -176,6 +178,21 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
               checked={allowSend}
               onChange={(event) => setAllowSend(event.currentTarget.checked)}
               label={t(($) => $.oauthConsent.sendCheckbox, { scopes: info.sendScopes.join(', ') })}
+            />
+          </Stack>
+        </Alert>
+      ) : null}
+
+      {info.setupScopes.length > 0 ? (
+        <Alert color="yellow" title={t(($) => $.oauthConsent.setupTitle)}>
+          <Stack gap="xs">
+            <Text size="sm">{t(($) => $.oauthConsent.setupDescription)}</Text>
+            <Checkbox
+              checked={allowSetup}
+              onChange={(event) => setAllowSetup(event.currentTarget.checked)}
+              label={t(($) => $.oauthConsent.setupCheckbox, {
+                scopes: info.setupScopes.join(', '),
+              })}
             />
           </Stack>
         </Alert>

@@ -48,9 +48,9 @@ export const ApiTokenScope = {
   BROADCASTS_SEND: 'broadcasts:send',
   AUTOMATIONS_ACTIVATE: 'automations:activate',
   MCP_SEND: 'mcp:send',
-  CONTACTS_ERASE: 'contacts:erase',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
+  CONTACTS_ERASE: 'contacts:erase',
   CAPTURED_MESSAGES_READ: 'captured_messages:read',
   CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
   TOKENS_READ: 'tokens:read',
@@ -3263,6 +3263,22 @@ export type SetBroadcastSegmentInput = {
 };
 
 /**
+ * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
+ * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * gets them only when it asked for them and the user ticks a box of their own for them,
+ * apart from the send class: they are no send-class scope and bring no mcp:send.
+ */
+export const SetupScope = { SENDING_DOMAINS_WRITE: 'sending_domains:write', INTEGRATIONS_WRITE: 'integrations:write' } as const;
+
+/**
+ * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
+ * authenticates, the Integrations and the provider credentials they hold). An OAuth client
+ * gets them only when it asked for them and the user ticks a box of their own for them,
+ * apart from the send class: they are no send-class scope and bring no mcp:send.
+ */
+export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
+
+/**
  * SMTP config without the password
  */
 export type SmtpConfig = {
@@ -3410,8 +3426,6 @@ export type Timestamp = string;
  */
 export const TokenOnlyScope = {
   CONTACTS_ERASE: 'contacts:erase',
-  SENDING_DOMAINS_WRITE: 'sending_domains:write',
-  INTEGRATIONS_WRITE: 'integrations:write',
   CAPTURED_MESSAGES_READ: 'captured_messages:read',
   CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
   TOKENS_READ: 'tokens:read',

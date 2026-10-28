@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
@@ -24,9 +25,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
-// audit:read is never grantable to a connector (ADR 0016, ADR 0022).
-func TestAuditReadIsNotAnOAuthScope(t *testing.T) {
-	assert.NotContains(t, oauthserver.SupportedScopes(), "audit:read")
+// What cannot be undone or gives a standing way in is never grantable to a connector: no
+// token management, no erasure, no bulk export, no audit log (ADR 0016, ADR 0022).
+func TestScopesThatStayTokenOnlyAreNotOAuthScopes(t *testing.T) {
+	supported := oauthserver.SupportedScopes()
+	for _, scope := range []externalapi.ApiTokenScope{
+		externalapi.ApiTokenScopeTokensRead, externalapi.ApiTokenScopeTokensWrite,
+		externalapi.ApiTokenScopeContactsErase, externalapi.ApiTokenScopeAuditRead,
+		externalapi.ApiTokenScopeExportRead,
+		externalapi.ApiTokenScopeCapturedMessagesRead, externalapi.ApiTokenScopeCapturedMessagesWrite,
+	} {
+		assert.NotContains(t, supported, string(scope))
+	}
 }
 
 func closedClient(t *testing.T) *ent.Client {

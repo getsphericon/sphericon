@@ -12020,9 +12020,9 @@
           "broadcasts:send",
           "automations:activate",
           "mcp:send",
-          "contacts:erase",
           "sending_domains:write",
           "integrations:write",
+          "contacts:erase",
           "captured_messages:read",
           "captured_messages:write",
           "tokens:read",
@@ -12945,6 +12945,11 @@
         "type": "string",
         "enum": ["emails:send", "broadcasts:send", "automations:activate", "mcp:send"],
         "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along."
+      },
+      "SetupScope": {
+        "type": "string",
+        "enum": ["sending_domains:write", "integrations:write"],
+        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send."
       },
       "SiteAbuseMetric": {
         "type": "string",
@@ -16389,7 +16394,14 @@
       },
       "SiteOAuthAuthorizationRequest": {
         "type": "object",
-        "required": ["clientName", "redirectUri", "localRedirect", "scopes", "sendScopes"],
+        "required": [
+          "clientName",
+          "redirectUri",
+          "localRedirect",
+          "scopes",
+          "sendScopes",
+          "setupScopes"
+        ],
         "properties": {
           "clientName": {
             "type": "string",
@@ -16420,6 +16432,13 @@
               "$ref": "#/components/schemas/SendScope"
             },
             "description": "Requested send-class scopes: granted only when the user opts in explicitly"
+          },
+          "setupScopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetupScope"
+            },
+            "description": "Requested setup scopes (Sending domains, Integrations): granted only when the user opts in explicitly, apart from the send class"
           }
         },
         "description": "What an MCP client (dynamically registered) is asking permission for, as\nvalidated by the authorization server. Rendered on the consent screen."
@@ -16461,6 +16480,10 @@
           "allowSend": {
             "type": "boolean",
             "description": "Opt in to the requested send-class scopes (default: not granted)"
+          },
+          "allowSetup": {
+            "type": "boolean",
+            "description": "Opt in to the requested setup scopes (default: not granted); independent of `allowSend`"
           }
         },
         "description": "The user's decision on an authorization request"
@@ -19043,8 +19066,6 @@
         "type": "string",
         "enum": [
           "contacts:erase",
-          "sending_domains:write",
-          "integrations:write",
           "captured_messages:read",
           "captured_messages:write",
           "tokens:read",
