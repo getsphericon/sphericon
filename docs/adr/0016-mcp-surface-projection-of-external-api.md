@@ -58,7 +58,7 @@ modelled and stay out.
   outbound allowlist applies), must name its own URL as `client_id` and list every redirect URI, and
   is cached on the `oauth_clients` row for its `Cache-Control` max-age (default 1 hour, at most 24).
   The consent screen shows the client's host and warns about a localhost redirect. Phase 3: shipped
-  playbooks served as MCP prompts.
+  shipped prompts (Markdown files) served as MCP prompts.
 
 ## Implemented
 

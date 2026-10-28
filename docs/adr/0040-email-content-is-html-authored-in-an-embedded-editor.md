@@ -104,5 +104,5 @@ What shaped this decision:
 - Supersedes the MJML parts of ADR 0003 and ADR 0005 and the glossary entry of Message content (done).
   The copy-versus-reference rules of those ADRs are unchanged.
 - `emailrender` loses the MJML step; tracking and the unsubscribe footer still layer on the HTML after it.
-- The e2e helper `e2e.MJML`, the TypeSpec descriptions (`MJML body`), the playbooks, `docs/guide/sending.md`
+- The e2e helper `e2e.MJML`, the TypeSpec descriptions (`MJML body`), the shipped MCP prompts, `docs/guide/sending.md`
   and the fixtures change with it.

@@ -2,7 +2,7 @@
 description: Authenticate a Sending domain: find or add it, publish its DNS records when you can, verify it and report what is still missing.
 ---
 
-# Playbook: set up a Sending domain
+# set up a Sending domain
 
 Goal: get a Sending domain to `verified`, so the Workspace can send from it. DKIM is required; SPF, DMARC and the Tracking domain CNAME are recommended.
 

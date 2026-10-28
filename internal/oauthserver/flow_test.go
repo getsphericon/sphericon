@@ -368,7 +368,7 @@ func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 	assert.Contains(t, row.Scopes, "contacts:read")
 }
 
-// The default grant must cover the authoring tools the shipped playbooks use, so a
+// The default grant must cover the authoring tools the shipped prompts use, so a
 // connector that asks for no particular scope can author (never send).
 func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 	env := testhelper.Setup(t)

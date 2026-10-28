@@ -2,7 +2,7 @@
 description: Author a welcome Automation for new contacts. Inactive until a human reviews and activates it.
 ---
 
-# Playbook: welcome new contacts
+# welcome new contacts
 
 Goal: draft an Automation that greets every new Contact. You author it; a human
 reviews and activates it. Never start sending yourself.
