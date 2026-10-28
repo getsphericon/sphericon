@@ -4,6 +4,9 @@ status: accepted
 
 # Open-core boundary: gate on org-shape, not product value
 
+> **See also [[0060-an-instance-runs-in-one-mode]]:** an Instance's Mode (`selfhosted` or `saas`) is
+> independent of the License key and unlocks no EE feature; it only decides how the deployment behaves.
+
 The free/paid line is drawn along **who the buyer is**, not **how much product they get**.
 Everything one company needs to run marketing to its own audience is AGPL core and free —
 automation, `/collect` tracking, unified identity, segments, broadcasts, transactional, forms,

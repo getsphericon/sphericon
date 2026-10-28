@@ -90,7 +90,7 @@ confirmed email change, and an Invitation accepted by a User whose address was n
   are the cost of "proving the address is the event".
 - ADR 0048's sentence "The Instance has no other registration gate (no domain restriction)" is
   amended: a Workspace may now admit by domain, while the Instance itself still has no registration
-  gate beyond `SPHERICON_SIGNUP_OPEN`, so provider sign-up has none either.
+  gate beyond the sign-up rule of the Mode ([[0060-an-instance-runs-in-one-mode]]), so provider sign-up has none either.
 - Out of scope, on purpose: approval-based joining, a Role other than `member`, subdomain or
   wildcard domains, adding existing Users when the switch is turned on, blocking people with a
   matching address from creating their own Workspaces, and any exposure through the external API.

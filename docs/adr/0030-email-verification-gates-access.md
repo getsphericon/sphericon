@@ -1,5 +1,9 @@
 # Email verification gates access
 
+> **Amended by [[0060-an-instance-runs-in-one-mode]]:** `SPHERICON_REQUIRE_EMAIL_VERIFICATION` is gone.
+> The gate is on in `saas` and not required in `selfhosted`, where the only sign-up is the first
+> Owner's and an Invitation link proves its address. The text below is the decision as first taken.
+
 A registration takes a name, an email and a password. It creates an Unverified User that cannot
 log in and owns no Workspace until its email is proven by a link sent to it. The password given
 at registration is trusted only when the link is opened in the browser that registered (the

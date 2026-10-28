@@ -70,7 +70,7 @@ Avoid list for this concept.
   count, and a Workspace's Two-factor requirement is enforced as for any session.
 
 - **Gates and Invitations.** A provider sign-up of a new address obeys the registration gate
-  (`SPHERICON_SIGNUP_OPEN`, ADR 0042: `signup_closed`); a Linked identity or a matching Verified
+  (the Mode's sign-up rule, ADR 0060: `signup_closed`); a Linked identity or a matching Verified
   User still signs in. The Instance has no other registration gate, so provider sign-up has
   none either. A Workspace may admit by domain (ADR 0051) once an address is proven, but that
   never opens or closes registration: it adds a Membership, not a User. An Invitation link carries its token into the flow
