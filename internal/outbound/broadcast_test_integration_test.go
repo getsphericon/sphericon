@@ -49,15 +49,17 @@ func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string
 		&outbound.Asker{UserID: fixtures.OwnerJaneID, Email: fixtures.OwnerJaneEmail})
 }
 
+// missingIntegrationID names no Integration of any Workspace.
+const missingIntegrationID = 987654
+
 func idOf(id int) *int64 { v := int64(id); return &v }
 
 func TestBroadcastTestSendGoesThroughTheBroadcastsOwnIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	own, byDefault := &testhelper.CapturingSender{}, &testhelper.CapturingSender{}
 	via := perIntegration{fixtures.IntegrationAcmePostmarkID: own, fixtures.IntegrationAcmeDefaultID: byDefault}
-	ownID := int64(fixtures.IntegrationAcmePostmarkID)
 
-	report := broadcastTestVia(env, via, &ownID)
+	report := broadcastTestVia(env, via, idOf(fixtures.IntegrationAcmePostmarkID))
 
 	require.Empty(t, report.Detail)
 	assert.Equal(t, outbound.Sent, report.Outcome)
@@ -107,7 +109,7 @@ func TestBroadcastTestSendOfAnIntegrationThatCannotSendIsHeldNotSentThroughTheDe
 	cases := map[string]*int64{
 		"disabled": idOf(fixtures.IntegrationAcmeSesID),
 		"archived": idOf(fixtures.IntegrationAcmeArchivedID),
-		"unknown":  idOf(987654),
+		"unknown":  idOf(missingIntegrationID),
 	}
 	for name, id := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -156,7 +158,7 @@ func TestBroadcastTestSendWithoutAVerifiedDomainIsCapturedByATestInboxOfTheBroad
 func TestBroadcastTestSendWithoutAVerifiedDomainDoesNotFallBackToTheSystemSenderForAnIntegrationThatCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	report := globexBroadcastTestVia(env, fixtures.OwnerJaneEmail, perIntegration{}, idOf(987654))
+	report := globexBroadcastTestVia(env, fixtures.OwnerJaneEmail, perIntegration{}, idOf(missingIntegrationID))
 
 	assert.Equal(t, outbound.Held, report.Outcome)
 	assert.Equal(t, outbound.HoldNoIntegration, report.Reason)

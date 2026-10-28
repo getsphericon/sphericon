@@ -912,7 +912,9 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 			}
 			// A named Integration that cannot send is no reason for the System sender: the gate
 			// holds the Test send, as it holds a real one.
-			if err == nil && messaging.DeliversOutside(sender) || err != nil && req.IntegrationID == nil {
+			deliversOutside := err == nil && messaging.DeliversOutside(sender)
+			noneToSendThrough := err != nil && req.IntegrationID == nil
+			if deliversOutside || noneToSendThrough {
 				return m.sendTestFromSystem(ctx, s, ws, req)
 			}
 		}
