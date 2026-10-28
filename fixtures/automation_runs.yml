@@ -896,3 +896,39 @@
   current_step: 1
   created_at: '{{hoursAgo 840}}'
   updated_at: '{{hoursAgo 816}}'
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  automation_id: 20003
+  version_id: 20003
+  contact_id: 20004
+  status: 'failed'
+  current_step: 2
+  failure_kind: 'http_status'
+  failure_status: 502
+  failure_excerpt: 'HTTP 502 Bad Gateway from https://crm.brightpath.example/hooks/contacts'
+  workspace_id: 20
+  created_at: '{{hoursAgo 71}}'
+  updated_at: '{{hoursAgo 70}}'
+- id: 21002
+  automation_id: 20003
+  version_id: 20003
+  contact_id: 20005
+  status: 'failed'
+  current_step: 2
+  failure_kind: 'timeout'
+  failure_excerpt: 'The request to https://crm.brightpath.example/hooks/contacts timed out after 10s'
+  workspace_id: 20
+  created_at: '{{hoursAgo 51}}'
+  updated_at: '{{hoursAgo 50}}'
+- id: 21003
+  automation_id: 20003
+  version_id: 20003
+  contact_id: 20007
+  status: 'failed'
+  current_step: 2
+  failure_kind: 'network'
+  failure_excerpt: 'dial tcp: lookup crm.brightpath.example: no such host'
+  workspace_id: 20
+  created_at: '{{hoursAgo 21}}'
+  updated_at: '{{hoursAgo 20}}'

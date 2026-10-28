@@ -113,3 +113,4 @@ mise.local.toml
 /dev/dns/db.*
 !/dev/dns/db.brightpath.localhost
 !/dev/dns/db..
+!/dev/dns/db.brightpath.example

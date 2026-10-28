@@ -90,3 +90,98 @@
   workspace_id: 4
   created_at: '{{daysAgo 9}}'
   updated_at: '{{daysAgo 9}}'
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  integration_id: 21001
+  surface: transactional
+  recipient: aiko.sato@proseware.example
+  from_email: hello@mail.brightpath.localhost
+  from_name: Brightpath
+  subject: 'Your Brightpath receipt'
+  html: '<p>Receipt: <a href="https://brightpath.example/courses">open Brightpath</a>.</p>'
+  text: 'Receipt: https://brightpath.example/courses'
+  headers: '[{"name":"From","value":"Brightpath <hello@mail.brightpath.localhost>"},{"name":"To","value":"aiko.sato@proseware.example"},{"name":"Subject","value":"Your Brightpath receipt"}]'
+  links: '["https://brightpath.example/courses"]'
+  from_unverified: false
+  workspace_id: 20
+  created_at: '{{hoursAgo 3}}'
+  updated_at: '{{hoursAgo 3}}'
+- id: 21002
+  integration_id: 21001
+  surface: broadcast
+  sending_source: spring-launch
+  recipient: sofia.marino@northwind.example
+  from_email: hello@mail.brightpath.localhost
+  from_name: Brightpath
+  subject: 'Spring launch: three new courses'
+  html: '<p>News: <a href="https://brightpath.example/courses">open Brightpath</a>.</p>'
+  text: 'News: https://brightpath.example/courses'
+  headers: '[{"name":"From","value":"Brightpath <hello@mail.brightpath.localhost>"},{"name":"To","value":"sofia.marino@northwind.example"},{"name":"Subject","value":"Spring launch: three new courses"}]'
+  links: '["https://brightpath.example/courses"]'
+  from_unverified: false
+  workspace_id: 20
+  created_at: '{{hoursAgo 20}}'
+  updated_at: '{{hoursAgo 20}}'
+- id: 21003
+  integration_id: 21001
+  surface: automation
+  sending_source: welcome-series
+  recipient: liam.chen@adatum.example
+  from_email: hello@mail.brightpath.localhost
+  from_name: Brightpath
+  subject: 'Welcome to Brightpath'
+  html: '<p>Welcome: <a href="https://brightpath.example/courses">open Brightpath</a>.</p>'
+  text: 'Welcome: https://brightpath.example/courses'
+  headers: '[{"name":"From","value":"Brightpath <hello@mail.brightpath.localhost>"},{"name":"To","value":"liam.chen@adatum.example"},{"name":"Subject","value":"Welcome to Brightpath"}]'
+  links: '["https://brightpath.example/courses"]'
+  from_unverified: false
+  workspace_id: 20
+  created_at: '{{hoursAgo 30}}'
+  updated_at: '{{hoursAgo 30}}'
+- id: 21004
+  integration_id: 21001
+  surface: test
+  recipient: maya@brightpath.example
+  from_email: hello@mail.brightpath.localhost
+  from_name: Brightpath
+  subject: '[Test] Black Friday countdown'
+  html: '<p>Test: <a href="https://brightpath.example/courses">open Brightpath</a>.</p>'
+  text: 'Test: https://brightpath.example/courses'
+  headers: '[{"name":"From","value":"Brightpath <hello@mail.brightpath.localhost>"},{"name":"To","value":"maya@brightpath.example"},{"name":"Subject","value":"[Test] Black Friday countdown"}]'
+  links: '["https://brightpath.example/courses"]'
+  from_unverified: false
+  workspace_id: 20
+  created_at: '{{hoursAgo 52}}'
+  updated_at: '{{hoursAgo 52}}'
+- id: 21005
+  integration_id: 21001
+  surface: transactional
+  recipient: emma.dubois@proseware.example
+  from_email: hello@mail.brightpath.localhost
+  from_name: Brightpath
+  subject: 'Reset your Brightpath password'
+  html: '<p>Reset: <a href="https://brightpath.example/courses">open Brightpath</a>.</p>'
+  text: 'Reset: https://brightpath.example/courses'
+  headers: '[{"name":"From","value":"Brightpath <hello@mail.brightpath.localhost>"},{"name":"To","value":"emma.dubois@proseware.example"},{"name":"Subject","value":"Reset your Brightpath password"}]'
+  links: '["https://brightpath.example/courses"]'
+  from_unverified: false
+  workspace_id: 20
+  created_at: '{{hoursAgo 76}}'
+  updated_at: '{{hoursAgo 76}}'
+- id: 21006
+  integration_id: 21001
+  surface: broadcast
+  sending_source: weekly-digest
+  recipient: pavel.novak@adatum.example
+  from_email: hello@mail.brightpath.localhost
+  from_name: Brightpath
+  subject: 'This week at Brightpath'
+  html: '<p>Digest: <a href="https://brightpath.example/courses">open Brightpath</a>.</p>'
+  text: 'Digest: https://brightpath.example/courses'
+  headers: '[{"name":"From","value":"Brightpath <hello@mail.brightpath.localhost>"},{"name":"To","value":"pavel.novak@adatum.example"},{"name":"Subject","value":"This week at Brightpath"}]'
+  links: '["https://brightpath.example/courses"]'
+  from_unverified: false
+  workspace_id: 20
+  created_at: '{{hoursAgo 110}}'
+  updated_at: '{{hoursAgo 110}}'

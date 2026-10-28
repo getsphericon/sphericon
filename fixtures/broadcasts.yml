@@ -403,3 +403,16 @@
   workspace_id: 61
   created_at: '2026-01-02 00:00:00'
   updated_at: '2026-03-08 05:00:00+00'
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  name: 'Spring launch (SES outage)'
+  subject: 'Spring launch: three new courses'
+  from_name: 'Brightpath'
+  from_email: 'hello@mail.brightpath.localhost'
+  body: '<h1>Spring launch</h1><p>Three new courses are live.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  status: 'failed'
+  integration_id: 20001
+  workspace_id: 20
+  created_at: '{{hoursAgo 300}}'
+  updated_at: '{{hoursAgo 299}}'

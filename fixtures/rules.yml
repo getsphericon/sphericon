@@ -119,3 +119,28 @@
   workspace_id: 3
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
+
+# --- Brightpath (workspace 20): rules react to the storefront's events (ids 21001+) ---
+- id: 21001
+  name: 'Tag who looks at pricing'
+  status: active
+  activated_at: '{{daysAgo 40}}'
+  actions: '[{"type":"apply_tag","tag":"pricing-interest"}]'
+  workspace_id: 20
+  created_at: '{{daysAgo 50}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 21002
+  name: 'Welcome series after sign-up'
+  status: active
+  activated_at: '{{daysAgo 40}}'
+  actions: '[{"type":"enroll_automation","automation_id":20001}]'
+  workspace_id: 20
+  created_at: '{{daysAgo 50}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 21003
+  name: 'Tag a buyer, drop the trial tag'
+  status: draft
+  actions: '[{"type":"apply_tag","tag":"customer"},{"type":"remove_tag","tag":"trial"}]'
+  workspace_id: 20
+  created_at: '{{daysAgo 6}}'
+  updated_at: '{{daysAgo 6}}'

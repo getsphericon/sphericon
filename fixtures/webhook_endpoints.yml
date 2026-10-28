@@ -66,3 +66,45 @@
   workspace_id: 3
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  url: https://hooks.brightpath.example/sphericon
+  secret_encrypted: '{{ encrypt "whsec_QnJpZ2h0cGF0aF9kZW1vX3NlY3JldF8wMDAwMDAwMDA=" }}'
+  event_types: '["segment.deleted"]'
+  workspace_id: 20
+  created_at: '{{daysAgo 90}}'
+  updated_at: '{{daysAgo 90}}'
+- id: 21002
+  url: https://crm.brightpath.example/hooks/contacts
+  secret_encrypted: '{{ encrypt "whsec_QnJpZ2h0cGF0aF9kZW1vX3NlY3JldF8wMDAwMDAwMDA=" }}'
+  event_types: '["contact.created","contact.updated"]'
+  consecutive_failures: 5
+  failing_since: '{{hoursAgo 30}}'
+  last_error_kind: http_status
+  last_error_status: 502
+  last_failure_at: '{{hoursAgo 3}}'
+  workspace_id: 20
+  created_at: '{{daysAgo 60}}'
+  updated_at: '{{daysAgo 60}}'
+- id: 21003
+  url: https://old.brightpath.example/hooks/legacy
+  secret_encrypted: '{{ encrypt "whsec_QnJpZ2h0cGF0aF9kZW1vX3NlY3JldF8wMDAwMDAwMDA=" }}'
+  event_types: '["email.opened"]'
+  disabled_at: '{{daysAgo 12}}'
+  disabled_reason: owner
+  workspace_id: 20
+  created_at: '{{daysAgo 100}}'
+  updated_at: '{{daysAgo 100}}'
+- id: 21004
+  url: https://slow.brightpath.example/hooks/events
+  secret_encrypted: '{{ encrypt "whsec_QnJpZ2h0cGF0aF9kZW1vX3NlY3JldF8wMDAwMDAwMDA=" }}'
+  consecutive_failures: 12
+  failing_since: '{{daysAgo 6}}'
+  last_error_kind: timeout
+  last_failure_at: '{{daysAgo 4}}'
+  disabled_at: '{{daysAgo 4}}'
+  disabled_reason: persistent_failure
+  workspace_id: 20
+  created_at: '{{daysAgo 80}}'
+  updated_at: '{{daysAgo 80}}'

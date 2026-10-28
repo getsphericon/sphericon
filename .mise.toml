@@ -165,7 +165,9 @@ ready_cmd = "nc -z 127.0.0.1 $MAILPIT_PORT"
 proxy = false
 
 # The DNS server that verifies Sending domains and Join domains in dev (dev/Corefile). The backend
-# reaches it through SPHERICON_DNS_ADDR, set on that daemon only: the tests and CI keep their stubs.
+# reaches it through SPHERICON_DNS_ADDR, set on that daemon only: the tests and CI keep their stubs. The
+# same daemon turns Tracking domains on (SPHERICON_TRACKING_CNAME_TARGET): a Sending domain's
+# track.<domain> CNAME to that target verifies against the zone.
 [daemons.dns]
 run = "DNS_PORT=$DNS_PORT exec coredns -conf dev/Corefile"
 port = { auto = true, base = 15353 }
@@ -173,7 +175,7 @@ ready_cmd = "nc -z 127.0.0.1 $DNS_PORT"
 proxy = false
 
 [daemons.backend]
-run = "SPHERICON_DNS_ADDR=127.0.0.1:$DNS_PORT exec air"
+run = "SPHERICON_DNS_ADDR=127.0.0.1:$DNS_PORT SPHERICON_TRACKING_CNAME_TARGET=edge.sphericon.localhost exec air"
 port = { auto = true, base = 3300 }
 ready_cmd = "nc -z 127.0.0.1 $BACKEND_PORT"
 depends = ["mailpit", "dns"]

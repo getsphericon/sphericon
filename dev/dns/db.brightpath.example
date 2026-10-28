@@ -1,0 +1,7 @@
+;; Brightpath members sign in with @brightpath.example addresses, so the Workspace holds a Join domain on it
+;; (fixtures/join_domains.yml): this is its proof record. learn.brightpath.example has none, so it stays pending.
+$ORIGIN brightpath.example.
+$TTL 60
+@ IN SOA ns.brightpath.example. hostmaster.brightpath.example. 1 3600 600 86400 60
+@ IN NS ns.brightpath.example.
+_sphericon-join IN TXT "sphericon-join=brightpath-verified-token"

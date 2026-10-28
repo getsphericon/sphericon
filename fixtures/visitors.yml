@@ -79,3 +79,38 @@
   last_seen_at: '2026-02-03 00:00:00'
   created_at: '2026-02-01 00:00:00'
   updated_at: '2026-02-03 00:00:00'
+
+# --- Brightpath (workspace 20): visitors, bound to a contact or anonymous (ids 21001+) ---
+- id: 21001
+  visitor_id: vis-sofia-laptop
+  contact_id: 20001
+  workspace_id: 20
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 1}}'
+  last_seen_at: '{{daysAgo 1}}'
+- id: 21002
+  visitor_id: vis-liam-phone
+  contact_id: 20002
+  workspace_id: 20
+  created_at: '{{daysAgo 4}}'
+  updated_at: '{{daysAgo 2}}'
+  last_seen_at: '{{daysAgo 2}}'
+- id: 21003
+  visitor_id: vis-aiko-laptop
+  contact_id: 20003
+  workspace_id: 20
+  created_at: '{{daysAgo 6}}'
+  updated_at: '{{daysAgo 4}}'
+  last_seen_at: '{{daysAgo 4}}'
+- id: 21004
+  visitor_id: anon-brightpath-1
+  workspace_id: 20
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 1}}'
+  last_seen_at: '{{daysAgo 1}}'
+- id: 21005
+  visitor_id: anon-brightpath-2
+  workspace_id: 20
+  created_at: '{{daysAgo 5}}'
+  updated_at: '{{daysAgo 3}}'
+  last_seen_at: '{{daysAgo 3}}'

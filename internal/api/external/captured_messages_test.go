@@ -64,6 +64,7 @@ func TestExternalCapturedMessagesAreDeletedOneAndAllWithinTheWorkspace(t *testin
 	env := testhelper.Setup(t)
 	c := globexClient(t, env, "captured_messages:read", "captured_messages:write")
 	welcome := externalapi.EntityId(fixtures.CapturedMessageGlobexWelcomeID)
+	others := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceIDNEQ(fixtures.GlobexID)).CountX(t.Context())
 
 	one, err := c.CapturedMessagesDelete(t.Context(), externalapi.CapturedMessagesDeleteParams{ID: welcome})
 	require.NoError(t, err)
@@ -82,7 +83,7 @@ func TestExternalCapturedMessagesAreDeletedOneAndAllWithinTheWorkspace(t *testin
 	list, err := c.CapturedMessagesList(t.Context(), externalapi.CapturedMessagesListParams{})
 	require.NoError(t, err)
 	assert.Empty(t, list.(*externalapi.CapturedMessagesListOK).Items)
-	assert.Equal(t, 4, env.DB.CapturedMessage.Query().CountX(t.Context()), "the other Workspaces' messages are untouched")
+	assert.Equal(t, others, env.DB.CapturedMessage.Query().CountX(t.Context()), "the other Workspaces' messages are untouched")
 }
 
 func TestExternalCapturedMessageOfAnotherWorkspaceIsNeitherListedNorDeleted(t *testing.T) {

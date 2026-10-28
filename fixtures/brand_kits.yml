@@ -44,3 +44,18 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  accent_color: '#ff6b35'
+  text_color: '#1f2430'
+  background_color: '#fff8f3'
+  heading_font: Georgia, serif
+  body_font: Verdana, sans-serif
+  logo_url: ''
+  button_text_color: '#ffffff'
+  button_radius: 10
+  footer_text: Brightpath, an online course school
+  workspace_id: 20
+  created_at: '{{daysAgo 100}}'
+  updated_at: '{{daysAgo 30}}'

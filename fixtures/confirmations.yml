@@ -68,3 +68,37 @@
   workspace_id: 55
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  channel: email
+  destination: sofia.marino@northwind.example
+  provenance: double_opt_in
+  contact_id: 20001
+  workspace_id: 20
+  created_at: '{{daysAgo 90}}'
+  updated_at: '{{daysAgo 90}}'
+- id: 21002
+  channel: email
+  destination: daniel.okafor@fabrikam.example
+  provenance: grandfathered
+  contact_id: 20002
+  workspace_id: 20
+  created_at: '{{daysAgo 100}}'
+  updated_at: '{{daysAgo 100}}'
+- id: 21003
+  channel: email
+  destination: hana.kobayashi@contoso.example
+  provenance: imported
+  contact_id: 20003
+  workspace_id: 20
+  created_at: '{{daysAgo 110}}'
+  updated_at: '{{daysAgo 110}}'
+- id: 21004
+  channel: email
+  destination: lucas.ferreira@tailspin.example
+  provenance: double_opt_in
+  contact_id: 20004
+  workspace_id: 20
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
