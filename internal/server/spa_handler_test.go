@@ -22,7 +22,7 @@ func TestSPAFileHandler(t *testing.T) {
 		"index.html":    {Data: []byte(`<html lang="{{APP_LOCALE}}"></html>`)},
 		"assets/app.js": {Data: []byte(`console.log(1)`)},
 	}
-	h := spaFileHandler(sub, "en", true)
+	h := spaFileHandler(sub, spaSettings{Locale: "en", RequireEmailVerification: true})
 
 	// Real files are served as-is.
 	rec := serveSPA(t, h, "/assets/app.js")
@@ -39,6 +39,6 @@ func TestSPAFileHandler(t *testing.T) {
 }
 
 func TestSPAFileHandlerWithoutIndexIsAnError(t *testing.T) {
-	rec := serveSPA(t, spaFileHandler(fstest.MapFS{"assets/app.js": {Data: []byte("x")}}, "en", true), "/deep/link")
+	rec := serveSPA(t, spaFileHandler(fstest.MapFS{"assets/app.js": {Data: []byte("x")}}, spaSettings{Locale: "en", RequireEmailVerification: true}), "/deep/link")
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }

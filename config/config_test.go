@@ -43,6 +43,19 @@ func TestConfigLoadRequireEmailVerificationIgnoresSMTPSettings(t *testing.T) {
 	require.True(t, cfg.RequireEmailVerification, "an unset SMTP host must not turn the gate off")
 }
 
+func TestConfigLoadSentryDSNIsOffUnlessSet(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_SENTRY_DSN", "")
+	cfg, err := Load("test")
+	require.NoError(t, err)
+	require.Empty(t, cfg.SentryDSN, "browser reporting must be off by default")
+
+	t.Setenv("SPHERICON_SENTRY_DSN", "  https://key@o1.ingest.sentry.io/2 ")
+	cfg, err = Load("test")
+	require.NoError(t, err)
+	require.Equal(t, "https://key@o1.ingest.sentry.io/2", cfg.SentryDSN)
+}
+
 type jwtSecretCase struct {
 	name      string
 	env       string

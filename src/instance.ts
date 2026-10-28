@@ -5,3 +5,11 @@
 export function requiresEmailVerification(): boolean {
   return Reflect.get(window, '__REQUIRE_EMAIL_VERIFICATION__') !== false
 }
+
+// The DSN browser errors are reported to, from SPHERICON_SENTRY_DSN (substituted into
+// index.html as window.__SENTRY_DSN__, see internal/server/spa.go). Empty, the default and
+// whatever is not a string, means reporting is off.
+export function sentryDsn(): string {
+  const dsn: unknown = Reflect.get(window, '__SENTRY_DSN__')
+  return typeof dsn === 'string' ? dsn.trim() : ''
+}

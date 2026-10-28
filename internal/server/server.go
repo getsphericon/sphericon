@@ -132,7 +132,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 
 	// Catch-all: the embedded SPA (release builds with -tags embed_spa). Most
 	// specific pattern wins, so this never shadows the API prefixes above.
-	mux.Handle("/", spaHandler(cfg.Locale, cfg.RequireEmailVerification))
+	mux.Handle("/", spaHandler(spaSettings{Locale: cfg.Locale, RequireEmailVerification: cfg.RequireEmailVerification, SentryDSN: cfg.SentryDSN}))
 
 	guard, err := crossOriginGuard(cfg.AppURL, cfg.CORSOrigins)
 	if err != nil {

@@ -22,6 +22,17 @@ const localeSentinel = "{{APP_LOCALE}}"
 // registration collects a password (window.__REQUIRE_EMAIL_VERIFICATION__).
 const verificationSentinel = "{{REQUIRE_EMAIL_VERIFICATION}}"
 
+// sentryDSNSentinel is the placeholder for the browser error reporter's DSN: empty when
+// SPHERICON_SENTRY_DSN is unset, which keeps the reporter off (window.__SENTRY_DSN__).
+const sentryDSNSentinel = "{{SENTRY_DSN}}"
+
+// spaSettings is what the app shell carries from the Instance's configuration to the SPA at boot.
+type spaSettings struct {
+	Locale                   string
+	RequireEmailVerification bool
+	SentryDSN                string
+}
+
 // spaHandler serves the embedded single-page app. Real files (the hashed
 // /assets/* bundles) are served directly; index.html — served for "/" and as
 // the deep-link/refresh fallback — always goes through the injected app shell
@@ -34,7 +45,7 @@ const verificationSentinel = "{{REQUIRE_EMAIL_VERIFICATION}}"
 //
 // When the SPA is not embedded (default build, no embed_spa tag) it returns a
 // hint instead; the frontend is served by Vite in dev.
-func spaHandler(locale string, requireEmailVerification bool) http.Handler {
+func spaHandler(settings spaSettings) http.Handler {
 	sub, ok := spaFS()
 	if !ok {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -43,15 +54,15 @@ func spaHandler(locale string, requireEmailVerification bool) http.Handler {
 			_, _ = w.Write([]byte("frontend not embedded in this build (build with -tags embed_spa); in dev it is served by Vite\n"))
 		})
 	}
-	return spaFileHandler(sub, locale, requireEmailVerification)
+	return spaFileHandler(sub, settings)
 }
 
 // spaFileHandler serves the built frontend from sub (split out of spaHandler so
 // the serving logic is testable without an embed_spa build).
-func spaFileHandler(sub fs.FS, locale string, requireEmailVerification bool) http.Handler {
-	// The locale is fixed for the process, so substitute it into the shell once
+func spaFileHandler(sub fs.FS, settings spaSettings) http.Handler {
+	// The settings are fixed for the process, so substitute them into the shell once
 	// at startup rather than per request. shell is nil if index.html is missing.
-	shell := buildIndexShell(sub, locale, requireEmailVerification)
+	shell := buildIndexShell(sub, settings)
 	fileServer := http.FileServerFS(sub)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -77,15 +88,26 @@ func spaFileHandler(sub fs.FS, locale string, requireEmailVerification bool) htt
 	})
 }
 
-// buildIndexShell reads index.html and substitutes the instance locale and the email
-// verification gate for their sentinels. Returns nil if index.html cannot be read.
-func buildIndexShell(sub fs.FS, locale string, requireEmailVerification bool) []byte {
+// buildIndexShell reads index.html and substitutes the instance locale, the email
+// verification gate and the browser reporter's DSN for their sentinels. Returns nil if
+// index.html cannot be read.
+func buildIndexShell(sub fs.FS, settings spaSettings) []byte {
 	b, err := fs.ReadFile(sub, "index.html")
 	if err != nil {
 		return nil
 	}
 	return []byte(strings.NewReplacer(
-		localeSentinel, locale,
-		verificationSentinel, strconv.FormatBool(requireEmailVerification),
+		localeSentinel, settings.Locale,
+		verificationSentinel, strconv.FormatBool(settings.RequireEmailVerification),
+		sentryDSNSentinel, jsStringContent(settings.SentryDSN),
 	).Replace(string(b)))
+}
+
+// jsStringContent escapes s for the inside of a single-quoted JavaScript string in an inline
+// <script>, so an operator's value can end neither the string nor the script element.
+func jsStringContent(s string) string {
+	return strings.NewReplacer(
+		`\`, `\\`, `'`, `\'`, `<`, `\x3c`, `>`, `\x3e`, "\n", `\n`, "\r", `\r`,
+		" ", ` `, " ", ` `,
+	).Replace(s)
 }
