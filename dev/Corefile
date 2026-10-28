@@ -1,0 +1,12 @@
+# The dev stack's DNS server (mise daemon `dns`). It answers the proof records of the Brightpath
+# demo Workspace's Sending domains and of any zone in dev/dns/ named db.<domain>, reloaded within
+# seconds; the root zone (db..) makes every other name NXDOMAIN, so a domain stays unverified until
+# its record is published here.
+.:{$DNS_PORT} {
+	bind 127.0.0.1
+	auto {
+		directory dev/dns db\.(.*) {1}
+		reload 5s
+	}
+	errors
+}

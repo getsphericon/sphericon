@@ -108,3 +108,8 @@ mise.local.toml
 
 # The golangci-lint build with our analyzers (mise run build:lint)
 /.bin/
+
+# Dev DNS zones of a developer's own domains (CONTRIBUTING.md, "Domain verification"); the two committed ones stay
+/dev/dns/db.*
+!/dev/dns/db.brightpath.localhost
+!/dev/dns/db..

@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/foxcpp/go-mockdns"
 	"github.com/samber/do/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -511,4 +512,20 @@ func TestE2EDKIMLookupOptionIsRefusedOutsideTheE2EProfile(t *testing.T) {
 		require.ErrorIs(t, err, ErrE2EOnly, env)
 		assert.Nil(t, a)
 	}
+}
+
+// With SPHERICON_DNS_ADDR set, verification reads the proof records from that DNS server instead of
+// the host resolver; unset, it is the host resolver.
+func TestDNSResolver(t *testing.T) {
+	srv, err := mockdns.NewServer(map[string]mockdns.Zone{
+		"sphericon._domainkey.mail.brightpath.localhost.": {TXT: []string{"v=DKIM1; k=rsa; p=abc"}},
+	}, false)
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Report("stop the mock DNS server", srv.Close()) })
+
+	records, err := dnsResolver(srv.LocalAddr().String()).LookupTXT(t.Context(), "sphericon._domainkey.mail.brightpath.localhost.")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"v=DKIM1; k=rsa; p=abc"}, records)
+
+	assert.Same(t, net.DefaultResolver, dnsResolver(""))
 }

@@ -862,6 +862,53 @@ checksum = "sha256:0a1edc0b799512051c57071ce0e798d3f2cf67dc98171366f1d2b326072e3
 url = "https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_windows_amd64.zip"
 url_api = "https://api.github.com/repos/caddyserver/caddy/releases/assets/607244987"
 
+[[tools.coredns]]
+version = "1.15.0"
+backend = "github:coredns/coredns"
+specifiers = ["latest"]
+
+[tools.coredns."platforms.linux-arm64"]
+checksum = "sha256:73a5bf107c9791d57741ccd59ad138ab00bcd5bb3f62e2e28c999f5c047334a4"
+checksum_source = "mise-versions"
+url = "https://github.com/coredns/coredns/releases/download/v1.15.0/coredns_1.15.0_linux_arm64.tgz"
+url_api = "https://api.github.com/repos/coredns/coredns/releases/assets/661218358"
+
+[tools.coredns."platforms.linux-arm64-musl"]
+checksum = "sha256:73a5bf107c9791d57741ccd59ad138ab00bcd5bb3f62e2e28c999f5c047334a4"
+checksum_source = "mise-versions"
+url = "https://github.com/coredns/coredns/releases/download/v1.15.0/coredns_1.15.0_linux_arm64.tgz"
+url_api = "https://api.github.com/repos/coredns/coredns/releases/assets/661218358"
+
+[tools.coredns."platforms.linux-x64"]
+checksum = "sha256:2495c5b8f3fab6d0a336c397f1227b75406d86e6ec7125744a29df9e936ab8cd"
+checksum_source = "mise-versions"
+url = "https://github.com/coredns/coredns/releases/download/v1.15.0/coredns_1.15.0_linux_amd64.tgz"
+url_api = "https://api.github.com/repos/coredns/coredns/releases/assets/661218351"
+
+[tools.coredns."platforms.linux-x64-musl"]
+checksum = "sha256:2495c5b8f3fab6d0a336c397f1227b75406d86e6ec7125744a29df9e936ab8cd"
+checksum_source = "mise-versions"
+url = "https://github.com/coredns/coredns/releases/download/v1.15.0/coredns_1.15.0_linux_amd64.tgz"
+url_api = "https://api.github.com/repos/coredns/coredns/releases/assets/661218351"
+
+[tools.coredns."platforms.macos-arm64"]
+checksum = "sha256:fd2836620676aa0c86f003e4ac7eebe0caa89eba6b0ca9ee82242ec39237eb4c"
+checksum_source = "mise-versions"
+url = "https://github.com/coredns/coredns/releases/download/v1.15.0/coredns_1.15.0_darwin_arm64.tgz"
+url_api = "https://api.github.com/repos/coredns/coredns/releases/assets/661218353"
+
+[tools.coredns."platforms.macos-x64"]
+checksum = "sha256:bfafe4fb4dceefee74473b48db74cc449a46036af938c9cf5bc2b292a331dade"
+checksum_source = "mise-versions"
+url = "https://github.com/coredns/coredns/releases/download/v1.15.0/coredns_1.15.0_darwin_amd64.tgz"
+url_api = "https://api.github.com/repos/coredns/coredns/releases/assets/661218365"
+
+[tools.coredns."platforms.windows-x64"]
+checksum = "sha256:873a0a73edba0930c05ec58f4c62cf1e6d19a4564a38e7914bd305e15912f52b"
+checksum_source = "mise-versions"
+url = "https://github.com/coredns/coredns/releases/download/v1.15.0/coredns_1.15.0_windows_amd64.zip"
+url_api = "https://api.github.com/repos/coredns/coredns/releases/assets/661218355"
+
 [[tools."github:daveshanley/vacuum"]]
 version = "0.35.4"
 backend = "github:daveshanley/vacuum"

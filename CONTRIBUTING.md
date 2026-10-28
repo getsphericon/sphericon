@@ -98,8 +98,8 @@ installs the git hooks.
 mise install # install the pinned toolchain (also installs the git hooks)
 mise run setup   # install deps, start Postgres, create dev/test/diff DBs, migrate, seed
 mise run dev     # start the whole dev stack (mise daemons)
-mise run test    # creates test DB, then `go test ./...` (packages in parallel)
-mise run check   # tsc, oxlint, oxfmt --check, knip, golangci-lint, gitleaks, jactionlint, zizmor
+mise run test    # creates test DB, then `go test ./...` (packages in parallel); never run a bare `go test`
+mise run check   # tsc, oxlint, oxfmt --check, knip, golangci-lint (+ our analyzers), easement, gitleaks, jactionlint, zizmor, links
 mise run generate # regenerate TypeSpec → OpenAPI → Go + TS
 ```
 
@@ -199,14 +199,15 @@ The local stack is a set of [mise daemons](https://mise.jdx.dev) (`[daemons]` in
 The entry point is **https://sphericon.localhost** (Caddy terminates TLS with its internal CA).
 Daemons:
 
-| Daemon   | URL / port                | Notes                                                                  |
-| -------- | ------------------------- | ---------------------------------------------------------------------- |
-| caddy    | `:443`                    | TLS + routing, see `Caddyfile`                                         |
-| frontend | `:5173` (Vite)            | proxied by Caddy                                                       |
-| backend  | `:3300`                   | proxied by Caddy under `/site`, `/api`, `/collect`, `/auth`            |
-| demo     | `:5373` (Vite)            | Brightpath storefront on https://brightpath.localhost, sends events    |
-| db       | `127.0.0.1:15432`         | one mise `postgres` preset server for all checkouts (`mise run db:up`) |
-| mailpit  | https://mailpit.localhost | captured outbound email (UI `:8025` behind Caddy, SMTP `:1025`)        |
+| Daemon   | URL / port                   | Notes                                                                           |
+| -------- | ---------------------------- | ------------------------------------------------------------------------------- |
+| caddy    | `:443`                       | TLS + routing, see `Caddyfile`                                                  |
+| frontend | `:5173` (Vite)               | proxied by Caddy                                                                |
+| backend  | `:3300`                      | proxied by Caddy under `/site`, `/api`, `/collect`, `/auth`                     |
+| demo     | `:5373` (Vite)               | Brightpath storefront on https://brightpath.localhost, sends events             |
+| db       | `127.0.0.1:15432`            | one mise `postgres` preset server for all checkouts (`mise run db:up`)          |
+| mailpit  | https://mailpit.localhost    | captured outbound email (UI `:8025` behind Caddy, SMTP `:1025`)                 |
+| dns      | `127.0.0.1:15353` (UDP, TCP) | CoreDNS, the proof records of Sending domains and Join domains (`dev/Corefile`) |
 
 > These are the primary checkout's ports. A linked git worktree gets offset ports and its own origin
 > (`https://<dir>.sphericon.localhost:<port>`, printed by `mise env`), so stacks never collide; there
@@ -223,14 +224,82 @@ Daemons:
 > `SPHERICON_METRICS_ADDR`; see [ADR 0018](docs/adr/0018-metrics-opt-in-internal-listener.md)) or point it
 > at your own collector.
 
+### The Brightpath demo
+
+Development is built around one demo Workspace, **Brightpath**, that `mise run setup` seeds from
+`fixtures/*.yml`: contacts in several lifecycle states, events and visits, segments, tags, custom
+fields, templates, broadcasts and automations with their runs and recipients, and Sending domains
+in different states, so the lists, the analytics and every settings page have something to show
+the moment you sign in. To see what a person does on a site, open the demo storefront at
+https://brightpath.localhost (a linked worktree prints its own origin in `mise env`): it is a
+customer site with the tracker installed, so what you click there arrives as events through the
+`collect.` host and shows up in the app. Sign in to the app as the Brightpath owner, admin or
+member (see the table above) in one browser profile and browse the storefront in another to play
+different people at once.
+
+When a fixture lacks a case you need, add a row to `fixtures/` rather than creating it by hand
+every time: the same rows feed the tests and `mise run db:seed` reloads them.
+
+### Sending mail in development
+
+Nothing leaves your machine. There are two ways to send:
+
+- **Test inbox.** A Workspace's built-in provider that delivers nowhere and keeps a copy of each
+  message ([ADR 0058](docs/adr/0058-a-test-inbox-is-a-provider-the-send-path-does-not-know.md)).
+  Use it when you only need to see a message.
+- **SMTP through Mailpit.** Brightpath's default Integration already points at the dev Mailpit.
+  To add the same Integration to any other Workspace, use these SMTP settings:
+
+  | Setting        | Value                                                                    |
+  | -------------- | ------------------------------------------------------------------------ |
+  | Host           | `127.0.0.1`                                                              |
+  | Port           | `1025` (`SPHERICON_SMTP_PORT`; a linked worktree's is offset, see below) |
+  | Username, pass | empty: Mailpit takes any message without authentication                  |
+  | Encryption     | none (no TLS, no STARTTLS)                                               |
+
+  Every message shows up in the Mailpit UI at https://mailpit.localhost. A private host and any
+  port are allowed in development (`SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS`).
+
+The send gate needs a verified Sending domain for the From address; the next section says how
+one gets verified.
+
 ### Domain verification
 
-The dev stack verifies Sending domains and Join domains against real DNS, as production does: a
-domain stays unverified until its DKIM or `_sphericon-join` TXT record is published. The one
-exception is **`getsphericon.io`**, which verifies at once in every development Instance, so you
-can try the flow without touching DNS. Only that exact domain: `mail.getsphericon.io` goes
-through real DNS. A production Instance has no shortcut. The end-to-end suite verifies every
-domain it adds.
+A Sending domain or a Join domain is verified against real DNS, as in production, and the dev
+stack has its own DNS server for it: a [CoreDNS](https://coredns.io) daemon (`dns`) that the
+backend reads through `SPHERICON_DNS_ADDR`, set on the backend daemon only, so the tests and CI
+keep their stubs. It answers the zones in `dev/dns/`, one file `db.<domain>` per zone, and
+every other name is NXDOMAIN. Nothing reaches the internet.
+
+**Brightpath's domains need nothing from you.** `dev/dns/db.brightpath.localhost` publishes the DKIM
+record of `mail.`, `news.` and `send.brightpath.localhost`, the key the fixtures give them. The first two
+are verified and stay so under the background re-check; `send.brightpath.localhost` is `pending`, so
+**Verify** on it is the flow to try.
+
+**A domain you create yourself** gets a fresh DKIM key (or Join token), which no zone can know
+ahead, so it stays unverified until you publish its record:
+
+1. Add the domain in the app (any name, for example `blabla.localhost`) and copy the record it
+   shows: the name and the TXT value.
+2. Create `dev/dns/db.blabla.localhost` (gitignored, like every `db.*` file but Brightpath's):
+
+   ```
+   $ORIGIN blabla.localhost.
+   $TTL 60
+   @ IN SOA ns.blabla.localhost. hostmaster.blabla.localhost. 1 3600 600 86400 60
+   @ IN NS ns.blabla.localhost.
+   sphericon._domainkey IN TXT "v=DKIM1; k=rsa; p=<the key>"
+   ```
+
+   A Join domain's record goes the same way: `_sphericon-join IN TXT "<token>"`. A TXT string
+   holds 255 bytes at most, so split a long key into several quoted strings on one line.
+
+3. CoreDNS reloads the zone within seconds. Check it with
+   `dig +short @127.0.0.1 -p "$DNS_PORT" TXT sphericon._domainkey.blabla.localhost`, then press
+   **Verify**.
+
+The end-to-end suite does not use this server: it verifies every domain it adds through its own
+resolver.
 
 ### Building
 
