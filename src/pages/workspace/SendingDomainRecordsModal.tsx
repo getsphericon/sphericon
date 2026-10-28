@@ -1,21 +1,63 @@
-import { Badge, Button, Code, CopyButton, Group, Modal, Stack, Table, Text } from '@mantine/core'
+import {
+  Badge,
+  Button,
+  Code,
+  CopyButton,
+  Group,
+  Modal,
+  Stack,
+  Tabs,
+  Text,
+  Textarea,
+} from '@mantine/core'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-  siteSendingDomainsListQueryKey,
-  siteSendingDomainsVerifyMutation,
-} from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteSendingDomainResource,
   SiteTrackingReason,
   SiteTrackingState,
 } from '../../generated/site/types.gen.ts'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 
-// DnsRecordRow shows one DNS record (host + value) with a copy button for the
-// value — what the user pastes into their DNS provider.
-function DnsRecordRow({
+// ReadOnlyValue is a value to copy, in a read-only box that wraps its lines (a DKIM key has no
+// spaces to break at, so a plain block would scroll sideways), selectable, with a copy button at
+// its top right.
+function ReadOnlyValue({
+  value,
+  ariaLabel,
+  maxRows,
+}: {
+  value: string
+  ariaLabel: string
+  maxRows?: number
+}) {
+  return (
+    <Group gap="xs" wrap="nowrap" align="flex-start">
+      <Textarea
+        readOnly
+        autosize
+        minRows={1}
+        {...(maxRows === undefined ? {} : { maxRows })}
+        flex={1}
+        miw={0}
+        value={value}
+        aria-label={ariaLabel}
+      />
+      <CopyButton value={value}>
+        {({ copied, copy }) => (
+          <Button size="compact-xs" variant="light" aria-label={ariaLabel} onClick={copy}>
+            {copied ? '✓' : '⧉'}
+          </Button>
+        )}
+      </CopyButton>
+    </Group>
+  )
+}
+
+// DnsRecord shows one DNS record as a block, type and host above the value, so nothing scrolls
+// sideways; the value wraps and has a copy button, what the user pastes into their DNS provider.
+function DnsRecord({
   label,
   record,
   hint,
@@ -26,9 +68,10 @@ function DnsRecordRow({
   hint?: string
   status?: ReactNode
 }) {
+  const { t } = useTranslation()
   return (
-    <Table.Tr>
-      <Table.Td>
+    <Stack gap={6}>
+      <div>
         <Text fw={600} size="sm">
           {label}
         </Text>
@@ -38,26 +81,22 @@ function DnsRecordRow({
           </Text>
         ) : null}
         {status}
-      </Table.Td>
-      <Table.Td>{record.type}</Table.Td>
-      <Table.Td>
+      </div>
+      <Group gap="xs" wrap="wrap">
+        <Text c="dimmed" size="xs">
+          {t(($) => $.settings.sendingDomains.recordType)}
+        </Text>
+        <Code>{record.type}</Code>
+        <Text c="dimmed" size="xs">
+          {t(($) => $.settings.sendingDomains.recordHost)}
+        </Text>
         <Code>{record.host}</Code>
-      </Table.Td>
-      <Table.Td>
-        <Group gap="xs" wrap="nowrap" align="flex-start">
-          <Code block maw={420}>
-            {record.value}
-          </Code>
-          <CopyButton value={record.value}>
-            {({ copied, copy }) => (
-              <Button size="compact-xs" variant="light" onClick={copy}>
-                {copied ? '✓' : '⧉'}
-              </Button>
-            )}
-          </CopyButton>
-        </Group>
-      </Table.Td>
-    </Table.Tr>
+      </Group>
+      <ReadOnlyValue
+        value={record.value}
+        ariaLabel={`${label}: ${t(($) => $.settings.sendingDomains.recordValue)}`}
+      />
+    </Stack>
   )
 }
 
@@ -102,54 +141,40 @@ function TrackingStatus({
 function SendingDomainRecords({ record }: { record: SiteSendingDomainResource }) {
   const { t } = useTranslation()
   return (
-    <Stack p="md" gap="xs">
+    <Stack p="md" gap="md">
       <Text size="sm">{t(($) => $.settings.sendingDomains.recordsHint)}</Text>
-      <Table.ScrollContainer minWidth={480}>
-        <Table>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>{t(($) => $.settings.sendingDomains.recordName)}</Table.Th>
-              <Table.Th>{t(($) => $.settings.sendingDomains.recordType)}</Table.Th>
-              <Table.Th>{t(($) => $.settings.sendingDomains.recordHost)}</Table.Th>
-              <Table.Th>{t(($) => $.settings.sendingDomains.recordValue)}</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            <DnsRecordRow
-              label={t(($) => $.settings.sendingDomains.dkim)}
-              hint={t(($) => $.settings.sendingDomains.dkimHint)}
-              record={record.dkimRecord}
+      <DnsRecord
+        label={t(($) => $.settings.sendingDomains.dkim)}
+        hint={t(($) => $.settings.sendingDomains.dkimHint)}
+        record={record.dkimRecord}
+      />
+      <DnsRecord
+        label={t(($) => $.settings.sendingDomains.spf)}
+        hint={t(($) => $.settings.sendingDomains.spfHint)}
+        record={record.spfRecord}
+      />
+      <DnsRecord
+        label={t(($) => $.settings.sendingDomains.dmarc)}
+        hint={t(($) => $.settings.sendingDomains.dmarcHint)}
+        record={record.dmarcRecord}
+      />
+      {record.trackingRecord ? (
+        <DnsRecord
+          label={t(($) => $.settings.sendingDomains.tracking)}
+          hint={t(($) => $.settings.sendingDomains.trackingHint)}
+          record={{
+            type: record.trackingRecord.type,
+            host: record.trackingRecord.host,
+            value: record.trackingRecord.target,
+          }}
+          status={
+            <TrackingStatus
+              state={record.trackingRecord.state}
+              reason={record.trackingRecord.reason}
             />
-            <DnsRecordRow
-              label={t(($) => $.settings.sendingDomains.spf)}
-              hint={t(($) => $.settings.sendingDomains.spfHint)}
-              record={record.spfRecord}
-            />
-            <DnsRecordRow
-              label={t(($) => $.settings.sendingDomains.dmarc)}
-              hint={t(($) => $.settings.sendingDomains.dmarcHint)}
-              record={record.dmarcRecord}
-            />
-            {record.trackingRecord ? (
-              <DnsRecordRow
-                label={t(($) => $.settings.sendingDomains.tracking)}
-                hint={t(($) => $.settings.sendingDomains.trackingHint)}
-                record={{
-                  type: record.trackingRecord.type,
-                  host: record.trackingRecord.host,
-                  value: record.trackingRecord.target,
-                }}
-                status={
-                  <TrackingStatus
-                    state={record.trackingRecord.state}
-                    reason={record.trackingRecord.reason}
-                  />
-                }
-              />
-            ) : null}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+          }
+        />
+      ) : null}
     </Stack>
   )
 }
@@ -195,12 +220,7 @@ export function SendingDomainRecordsModal({
 }) {
   const { t } = useTranslation()
 
-  const verifyMutation = useResourceMutation({
-    mutation: siteSendingDomainsVerifyMutation(),
-    invalidate: [siteSendingDomainsListQueryKey({ path: { workspaceId } })],
-    successMessage: t(($) => $.settings.sendingDomains.verifyQueued),
-    errorTitle: t(($) => $.settings.sendingDomains.verifyError),
-  })
+  const verifyMutation = useVerifySendingDomain(workspaceId)
 
   return (
     <Modal opened={record !== undefined} onClose={onClose} size="xl" title={record?.domain ?? ''}>
@@ -221,18 +241,31 @@ export function SendingDomainRecordsModal({
               </Badge>
             )}
           </Group>
-          <SendingDomainRecords record={record} />
+          <Tabs defaultValue="records">
+            <Tabs.List>
+              <Tabs.Tab value="records">{t(($) => $.settings.sendingDomains.showRecords)}</Tabs.Tab>
+              {record.archivedAt ? null : (
+                <Tabs.Tab value="agent">{t(($) => $.settings.sendingDomains.agentTab)}</Tabs.Tab>
+              )}
+            </Tabs.List>
+            <Tabs.Panel value="records">
+              <SendingDomainRecords record={record} />
+            </Tabs.Panel>
+            {record.archivedAt ? null : (
+              <Tabs.Panel value="agent">
+                <Stack p="md" gap="xs">
+                  <Text size="sm">{t(($) => $.settings.sendingDomains.agentHint)}</Text>
+                  <ReadOnlyValue
+                    value={agentPrompt(record)}
+                    ariaLabel={t(($) => $.settings.sendingDomains.copyAgentPrompt)}
+                    maxRows={16}
+                  />
+                </Stack>
+              </Tabs.Panel>
+            )}
+          </Tabs>
           {record.archivedAt ? null : (
             <Group justify="flex-end">
-              <CopyButton value={agentPrompt(record)}>
-                {({ copied, copy }) => (
-                  <Button variant="light" onClick={copy}>
-                    {copied
-                      ? t(($) => $.settings.copied)
-                      : t(($) => $.settings.sendingDomains.copyAgentPrompt)}
-                  </Button>
-                )}
-              </CopyButton>
               <Button
                 loading={verifyMutation.isPending}
                 onClick={() => verifyMutation.mutate({ path: { workspaceId, id: record.id } })}

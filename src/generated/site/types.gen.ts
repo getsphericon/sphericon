@@ -11667,9 +11667,9 @@ export type SiteSendingDomainsVerifyError = SiteSendingDomainsVerifyErrors[keyof
 
 export type SiteSendingDomainsVerifyResponses = {
   /**
-   * There is no content to send for this request, but the headers may be useful.
+   * The request has succeeded.
    */
-  204: void;
+  200: SiteSendingDomainResource;
 };
 
 export type SiteSendingDomainsVerifyResponse = SiteSendingDomainsVerifyResponses[keyof SiteSendingDomainsVerifyResponses];

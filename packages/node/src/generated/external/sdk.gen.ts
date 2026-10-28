@@ -967,7 +967,7 @@ export const sendingDomainsUnarchive = <ThrowOnError extends boolean = false>(op
 });
 
 /**
- * Trigger a live DKIM DNS check. The check runs in the background: the response is the domain as it stands now, 202 Accepted; read it again for the outcome (`verified`, `lastCheckedAt`). Verification is never set by the caller.
+ * Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller.
  */
 export const sendingDomainsVerify = <ThrowOnError extends boolean = false>(options: Options<SendingDomainsVerifyData, ThrowOnError>): RequestResult<SendingDomainsVerifyResponses, SendingDomainsVerifyErrors, ThrowOnError> => (options.client ?? client).post<SendingDomainsVerifyResponses, SendingDomainsVerifyErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

@@ -10601,7 +10601,7 @@ func encodeSendingDomainsVerifyResponse(response SendingDomainsVerifyRes, w http
 	switch response := response.(type) {
 	case *SendingDomainResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(202)
+		w.WriteHeader(200)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

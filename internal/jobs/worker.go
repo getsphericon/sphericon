@@ -47,6 +47,8 @@ const QueueWebhooks = "webhooks"
 type Client struct {
 	river *river.Client[*sql.Tx]
 	ent   *ent.Client
+	// domains runs the checks a person waits for (the Verify button of a Sending domain).
+	domains *domainverify.Module
 	// appURL builds the links of account emails (rehearsed resets render one).
 	appURL string
 }
@@ -148,7 +150,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	if err != nil {
 		return nil, err
 	}
-	return &Client{river: rc, ent: entClient, appURL: appURL}, nil
+	return &Client{river: rc, ent: entClient, domains: domains, appURL: appURL}, nil
 }
 
 // River job retention, explicit rather than river's defaults: bounds the
@@ -313,8 +315,14 @@ func (c *Client) EnqueueIntegrationQuotaRefresh(ctx context.Context, integration
 	return err
 }
 
+// VerifySendingDomain runs both checks of one Sending domain now (the "Verify" button) and
+// returns once they are done: the result is on the row.
+func (c *Client) VerifySendingDomain(ctx context.Context, sendingDomainID int64) error {
+	return c.domains.Verify(ctx, sendingDomainID)
+}
+
 // EnqueueSendingDomainVerify schedules an immediate DKIM re-check of one Sending
-// domain (the "Verify" button). Fire-and-forget: the result lands on the row.
+// domain (after a restore). Fire-and-forget: the result lands on the row.
 func (c *Client) EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID int64) error {
 	_, err := c.river.Insert(ctx, VerifySendingDomainArgs{SendingDomainID: sendingDomainID}, nil)
 	return err

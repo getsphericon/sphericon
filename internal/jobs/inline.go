@@ -89,6 +89,11 @@ func (i *Inline) EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID
 	return err
 }
 
+// VerifySendingDomain runs both checks of the domain now.
+func (i *Inline) VerifySendingDomain(ctx context.Context, sendingDomainID int64) error {
+	return i.domains.Verify(ctx, sendingDomainID)
+}
+
 // EnqueueIntegrationQuotaRefresh reads the Integration's provider send quota now.
 func (i *Inline) EnqueueIntegrationQuotaRefresh(ctx context.Context, integrationID int64) error {
 	return RefreshIntegrationQuotaByID(ctx, i.ent, i.cipher, i.catalog, integrationID)

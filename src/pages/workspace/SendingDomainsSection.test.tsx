@@ -99,13 +99,13 @@ test('adds a domain', async () => {
   await expect.poll(() => bodies).toEqual([{ domain: 'mail.acme.com' }])
 })
 
-test('starts verification', async () => {
+test('waits for the check, then says the domain is verified', async () => {
   let verified = false
   worker.use(
     list([domain()]),
     handleSiteSendingDomainsVerify(() => {
       verified = true
-      return new HttpResponse(null, { status: 204 })
+      return HttpResponse.json(domain({ verified: true }))
     }),
   )
   const { screen } = await renderWithRouter(
@@ -116,7 +116,22 @@ test('starts verification', async () => {
   await screen.getByRole('menuitem', { name: 'Verify' }).click()
 
   await expect.poll(() => verified).toBe(true)
-  await expect.element(screen.getByText('Verification started')).toBeInTheDocument()
+  await expect.element(screen.getByText('Domain verified')).toBeInTheDocument()
+})
+
+test('says the domain is not verified yet when the check finds no record', async () => {
+  worker.use(
+    list([domain()]),
+    handleSiteSendingDomainsVerify(() => HttpResponse.json(domain())),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await screen.getByRole('menuitem', { name: 'Verify' }).click()
+
+  await expect.element(screen.getByText('Not verified yet')).toBeInTheDocument()
 })
 
 test('archives a domain', async () => {
@@ -237,7 +252,9 @@ test('clicking a domain row opens its DNS records in a modal', async () => {
   await screen.getByText('mail.acme.com').click()
 
   await expect.element(screen.getByText('om1._domainkey.mail.acme.com')).toBeInTheDocument()
-  await expect.element(screen.getByText('v=DMARC1; p=none')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('textbox', { name: 'DMARC (recommended): Value' }))
+    .toHaveValue('v=DMARC1; p=none')
 })
 
 test('lists the tracking CNAME with its state when the instance has a target', async () => {
@@ -260,7 +277,9 @@ test('lists the tracking CNAME with its state when the instance has a target', a
   await screen.getByText('mail.acme.com').click()
 
   await expect.element(screen.getByText('track.mail.acme.com')).toBeInTheDocument()
-  await expect.element(screen.getByText('edge.example.com')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('textbox', { name: 'Tracking domain (optional): Value' }))
+    .toHaveValue('edge.example.com')
   await expect.element(screen.getByText('DNS verified')).toBeInTheDocument()
 })
 
@@ -314,7 +333,7 @@ test('verifies a domain from its records modal and offers the agent prompt', asy
     list([domain()]),
     handleSiteSendingDomainsVerify(() => {
       verified = true
-      return new HttpResponse(null, { status: 204 })
+      return HttpResponse.json(domain())
     }),
   )
   const { screen } = await renderWithRouter(
@@ -322,6 +341,10 @@ test('verifies a domain from its records modal and offers the agent prompt', asy
   )
 
   await screen.getByText('mail.acme.com').click()
+  await screen.getByRole('tab', { name: 'Prompt for agent' }).click()
+  await expect
+    .element(screen.getByRole('textbox', { name: 'Copy prompt for agent' }))
+    .toHaveValue(expect.stringContaining('Set up the Sending domain mail.acme.com'))
   await expect
     .element(screen.getByRole('button', { name: 'Copy prompt for agent' }))
     .toBeInTheDocument()

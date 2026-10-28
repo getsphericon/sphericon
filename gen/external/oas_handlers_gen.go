@@ -16722,9 +16722,8 @@ func (s *Server) handleSendingDomainsUpdateRequest(args [1]string, argsEscaped b
 
 // handleSendingDomainsVerifyRequest handles SendingDomains_verify operation.
 //
-// Trigger a live DKIM DNS check. The check runs in the background: the response is the domain as it
-// stands now, 202 Accepted; read it again for the outcome (`verified`, `lastCheckedAt`). Verification
-// is never set by the caller.
+// Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`,
+// `lastCheckedAt`). Verification is never set by the caller.
 //
 // POST /sending-domains/{id}/verify
 func (s *Server) handleSendingDomainsVerifyRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

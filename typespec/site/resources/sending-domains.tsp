@@ -191,11 +191,14 @@ interface SiteSendingDomains {
     | NotFoundProblem
     | ConflictProblem;
 
-  /** Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only. */
+  /**
+   * Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of
+   * the returned domain are the outcome. Owners and admins only.
+   */
   @action("verify")
   @autoRoute
   verify(...ResourceParameters<SiteSendingDomainResource>):
-    | NoContentResponse
+    | SiteSendingDomainResource
     | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;

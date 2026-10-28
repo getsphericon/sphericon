@@ -200,7 +200,7 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 	}
 
 	id := int64(params.ID)
-	err = h.sendingDomains.Verify(ctx, s, id)
+	d, err := h.sendingDomains.Verify(ctx, s, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsVerifyNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &v, nil
@@ -208,5 +208,6 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteSendingDomainsVerifyNoContent{}, nil
+	res := h.sendingDomainResource(d)
+	return &res, nil
 }

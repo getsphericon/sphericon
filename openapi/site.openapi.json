@@ -9819,7 +9819,7 @@
     "/workspaces/{workspaceId}/sending-domains/{id}/verify": {
       "post": {
         "operationId": "SiteSendingDomains_verify",
-        "description": "Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only.",
+        "description": "Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of\nthe returned domain are the outcome. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSendingDomainResourceKey.workspaceId"
@@ -9829,8 +9829,15 @@
           }
         ],
         "responses": {
-          "204": {
-            "description": "There is no content to send for this request, but the headers may be useful."
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSendingDomainResource"
+                }
+              }
+            }
           },
           "400": {
             "description": "RFC 7807 bad request response",

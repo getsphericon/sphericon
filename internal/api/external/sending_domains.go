@@ -168,8 +168,8 @@ func (h *Handlers) SendingDomainsUnarchive(ctx context.Context, params externala
 	return &res, nil
 }
 
-// SendingDomainsVerify triggers the live DKIM check and returns the domain as it stands;
-// the outcome shows on a later read (`verified`, `lastCheckedAt`).
+// SendingDomainsVerify runs the live DNS check and returns the domain as the check left it
+// (`verified`, `lastCheckedAt`).
 func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.SendingDomainsVerifyParams) (externalapi.SendingDomainsVerifyRes, error) {
 	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsWrite) {
 		res := externalapi.SendingDomainsVerifyUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
@@ -177,15 +177,11 @@ func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.
 	}
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
-	err := h.sendingDomains.Verify(ctx, s, id)
+	row, err := h.sendingDomains.Verify(ctx, s, id)
 	if ent.IsNotFound(err) {
 		res := externalapi.SendingDomainsVerifyNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &res, nil
 	}
-	if err != nil {
-		return nil, err
-	}
-	row, err := s.SendingDomain().Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}

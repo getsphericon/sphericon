@@ -8436,9 +8436,9 @@ export type SendingDomainsVerifyError = SendingDomainsVerifyErrors[keyof Sending
 
 export type SendingDomainsVerifyResponses = {
   /**
-   * The request has been accepted for processing, but processing has not yet completed.
+   * The request has succeeded.
    */
-  202: SendingDomainResource;
+  200: SendingDomainResource;
 };
 
 export type SendingDomainsVerifyResponse = SendingDomainsVerifyResponses[keyof SendingDomainsVerifyResponses];

@@ -52,5 +52,5 @@ func TestSiteSendingDomainsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	ok, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteSendingDomainsVerify(ctx,
 		siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteSendingDomainsVerifyNoContent), ok)
+	assert.IsType(t, new(siteapi.SiteSendingDomainResource), ok)
 }

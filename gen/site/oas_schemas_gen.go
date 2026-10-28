@@ -18461,6 +18461,7 @@ func (*SiteSendingDomainResource) siteSendingDomainsArchiveRes()   {}
 func (*SiteSendingDomainResource) siteSendingDomainsCreateRes()    {}
 func (*SiteSendingDomainResource) siteSendingDomainsGetRes()       {}
 func (*SiteSendingDomainResource) siteSendingDomainsUnarchiveRes() {}
+func (*SiteSendingDomainResource) siteSendingDomainsVerifyRes()    {}
 
 type SiteSendingDomainsArchiveBadRequest ProblemDetails
 
@@ -18599,11 +18600,6 @@ func (*SiteSendingDomainsVerifyBadRequest) siteSendingDomainsVerifyRes() {}
 type SiteSendingDomainsVerifyForbidden ProblemDetails
 
 func (*SiteSendingDomainsVerifyForbidden) siteSendingDomainsVerifyRes() {}
-
-// SiteSendingDomainsVerifyNoContent is response for SiteSendingDomainsVerify operation.
-type SiteSendingDomainsVerifyNoContent struct{}
-
-func (*SiteSendingDomainsVerifyNoContent) siteSendingDomainsVerifyRes() {}
 
 type SiteSendingDomainsVerifyNotFound ProblemDetails
 

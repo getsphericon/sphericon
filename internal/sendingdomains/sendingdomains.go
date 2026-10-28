@@ -47,22 +47,24 @@ var ErrAlreadyExists = errors.New("this domain is already added")
 // selectorPattern is a DNS label sequence: letters, digits and hyphens, dot-separated.
 var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$`)
 
-// VerifyEnqueuer schedules an immediate DKIM re-check of one Sending domain.
-type VerifyEnqueuer interface {
+// Verifier checks the DNS of one Sending domain: in the background after a restore, and
+// at once when a person asks for it.
+type Verifier interface {
 	EnqueueSendingDomainVerify(ctx context.Context, sendingDomainID int64) error
+	VerifySendingDomain(ctx context.Context, sendingDomainID int64) error
 }
 
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
 	bus    *events.Bus
 	cipher *secrets.Cipher
-	verify VerifyEnqueuer
+	verify Verifier
 	// trackingTarget is the edge host the Tracking domain CNAME points at
 	// (SPHERICON_TRACKING_CNAME_TARGET); empty turns the feature off (ADR 0038).
 	trackingTarget string
 }
 
-func New(bus *events.Bus, cipher *secrets.Cipher, verify VerifyEnqueuer, trackingTarget string) *Module {
+func New(bus *events.Bus, cipher *secrets.Cipher, verify Verifier, trackingTarget string) *Module {
 	return &Module{bus: bus, cipher: cipher, verify: verify, trackingTarget: trackingTarget}
 }
 
@@ -315,13 +317,17 @@ func (m *Module) configuredFromDomain(ctx context.Context, s *ent.Scoped) (strin
 	return messaging.DomainOf(cfg.From), nil
 }
 
-// Verify schedules a live DKIM check of the domain. It confirms the domain is in the
-// Workspace first, and reports nothing about the outcome: the check sets `verified`.
-func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) error {
+// Verify runs the live DNS check of the domain now and returns the domain as the check left
+// it: `verified` and `lastCheckedAt` are the outcome. It confirms the domain is in the
+// Workspace first.
+func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	if _, err := s.SendingDomain().Get(ctx, id); err != nil {
-		return err
+		return nil, err
 	}
-	return m.verify.EnqueueSendingDomainVerify(ctx, id)
+	if err := m.verify.VerifySendingDomain(ctx, id); err != nil {
+		return nil, err
+	}
+	return s.SendingDomain().Get(ctx, id)
 }
 
 // Record is one DNS TXT record to publish.

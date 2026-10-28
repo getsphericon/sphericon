@@ -4797,8 +4797,8 @@ export function handleSiteSendingDomainsUnarchive(response?: HandleSiteSendingDo
 }
 
 export type HandleSiteSendingDomainsVerifyResponse = {
-  body: SiteSendingDomainsVerifyResponses[204];
-  status?: 204;
+  body: SiteSendingDomainsVerifyResponses[200];
+  status?: 200;
 };
 
 /**
@@ -4817,7 +4817,7 @@ export function handleSiteSendingDomainsVerify(response?: HandleSiteSendingDomai
     }
     const body = response?.body;
     if (body !== undefined) {
-      return new HttpResponse(body, { status: response?.status ?? 204 });
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
     }
     if (options?.responseFallback === 'passthrough') {
       return;

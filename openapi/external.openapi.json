@@ -9954,15 +9954,15 @@
     "/sending-domains/{id}/verify": {
       "post": {
         "operationId": "SendingDomains_verify",
-        "description": "Trigger a live DKIM DNS check. The check runs in the background: the response is the domain as it stands now, 202 Accepted; read it again for the outcome (`verified`, `lastCheckedAt`). Verification is never set by the caller.",
+        "description": "Run a live DNS check now and answer once it is done: the domain as the check left it (`verified`, `lastCheckedAt`). Verification is never set by the caller.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SendingDomainResourceKey"
           }
         ],
         "responses": {
-          "202": {
-            "description": "The request has been accepted for processing, but processing has not yet completed.",
+          "200": {
+            "description": "The request has succeeded.",
             "content": {
               "application/json": {
                 "schema": {

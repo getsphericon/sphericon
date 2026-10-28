@@ -4,15 +4,15 @@ import { useTranslation } from 'react-i18next'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteSetupProgress, SiteSetupStepStatus } from '../../generated/site/types.gen.ts'
+import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { Route as apiKeysRoute } from '../../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { Route as trackingRoute } from '../../routes/workspaces/$workspaceId/settings/tracking.tsx'
-import { SetupDomainStep } from './SetupDomainStep.tsx'
 
 type StepKey = keyof SiteSetupProgress['steps']
-type LinkedStepKey = Exclude<StepKey, 'contact'>
+type LinkedStepKey = Exclude<StepKey, 'contact' | 'sentEmail'>
 
 // The steps in the order the checklist shows them, each with the existing page where it is done.
 // A step with no single page (`to: null`) renders its own actions.
@@ -20,7 +20,7 @@ const STEPS = [
   { key: 'integration', to: emailsRoute.to },
   { key: 'sendingDomain', to: emailsRoute.to },
   { key: 'contact', to: null },
-  { key: 'sentEmail', to: broadcastsCreateRoute.to },
+  { key: 'sentEmail', to: null },
 ] as const satisfies readonly { key: StepKey; to: string | null }[]
 
 const STATUS_ICON = {
@@ -74,6 +74,27 @@ function ContactActions({ workspaceId }: { workspaceId: string }) {
   )
 }
 
+// SendActions offers every surface that sends email: a real send from any of them completes the
+// step, which the server reads off the Outbound messages themselves.
+function SendActions({ workspaceId }: { workspaceId: string }) {
+  const { t } = useTranslation()
+  return (
+    <Group gap="xs" wrap="wrap">
+      <ButtonLink
+        to={broadcastsCreateRoute.to}
+        params={{ workspaceId }}
+        variant="default"
+        size="xs"
+      >
+        {t(($) => $.setupChecklist.steps.sentEmail.actions.broadcast)}
+      </ButtonLink>
+      <ButtonLink to={automationsRoute.to} params={{ workspaceId }} variant="default" size="xs">
+        {t(($) => $.setupChecklist.steps.sentEmail.actions.automation)}
+      </ButtonLink>
+    </Group>
+  )
+}
+
 // SetupChecklist shows the steps of the Workspace's path to its first sent email, each
 // with its status as the server read it and a link to the page where it is done. No step
 // blocks another, so every undone step keeps its link.
@@ -117,14 +138,15 @@ export function SetupChecklist({
                   <Text size="sm" c="dimmed">
                     {t(($) => $.setupChecklist.steps[step].description)}
                   </Text>
-                  {step === 'sendingDomain' && status === 'pending' && (
-                    <SetupDomainStep workspaceId={workspaceId} />
-                  )}
                 </Stack>
               </Group>
               {status !== 'done' &&
                 (to === null ? (
-                  <ContactActions workspaceId={workspaceId} />
+                  step === 'contact' ? (
+                    <ContactActions workspaceId={workspaceId} />
+                  ) : (
+                    <SendActions workspaceId={workspaceId} />
+                  )
                 ) : (
                   <StepLink step={step} to={to} workspaceId={workspaceId} />
                 ))}

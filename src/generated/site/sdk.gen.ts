@@ -3153,7 +3153,8 @@ export const siteSendingDomainsUnarchive = <ThrowOnError extends boolean = false
 });
 
 /**
- * Trigger an immediate DKIM re-check (fire-and-forget). Owners and admins only.
+ * Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of
+ * the returned domain are the outcome. Owners and admins only.
  */
 export const siteSendingDomainsVerify = <ThrowOnError extends boolean = false>(options: Options<SiteSendingDomainsVerifyData, ThrowOnError>): RequestResult<SiteSendingDomainsVerifyResponses, SiteSendingDomainsVerifyErrors, ThrowOnError> => (options.client ?? client).post<SiteSendingDomainsVerifyResponses, SiteSendingDomainsVerifyErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

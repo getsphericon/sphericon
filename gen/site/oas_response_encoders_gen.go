@@ -7497,8 +7497,15 @@ func encodeSiteSendingDomainsUnarchiveResponse(response SiteSendingDomainsUnarch
 
 func encodeSiteSendingDomainsVerifyResponse(response SiteSendingDomainsVerifyRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *SiteSendingDomainsVerifyNoContent:
-		w.WriteHeader(204)
+	case *SiteSendingDomainResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 

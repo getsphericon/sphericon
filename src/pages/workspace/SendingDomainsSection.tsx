@@ -28,11 +28,11 @@ import {
   siteSendingDomainsListOptions,
   siteSendingDomainsListQueryKey,
   siteSendingDomainsUnarchiveMutation,
-  siteSendingDomainsVerifyMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 import { SendingDomainRecordsModal } from './SendingDomainRecordsModal.tsx'
 
 interface DomainFormValues {
@@ -72,12 +72,7 @@ export function SendingDomainsSection({
     },
   })
 
-  const verifyMutation = useResourceMutation({
-    mutation: siteSendingDomainsVerifyMutation(),
-    invalidate: [queryKey],
-    successMessage: t(($) => $.settings.sendingDomains.verifyQueued),
-    errorTitle: t(($) => $.settings.sendingDomains.verifyError),
-  })
+  const verifyMutation = useVerifySendingDomain(workspaceId)
 
   const archiveMutation = useResourceMutation({
     mutation: siteSendingDomainsArchiveMutation(),

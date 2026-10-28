@@ -1398,6 +1398,8 @@
     "sendEventsGuideLink": "How to send events",
     "sendEventsTitle": "Send events from your code",
     "sendingDomains": {
+      "agentHint": "Paste this into an agent connected to this workspace; select the text or use the button.",
+      "agentTab": "Prompt for agent",
       "archived": "Domain archived",
       "archiveError": "Failed to archive domain",
       "archiveServingDescription": "{{host}} stops serving the tracker and the links in mail. A tracker snippet installed on it stops collecting events until the domain is restored and verified again.",
@@ -1414,9 +1416,10 @@
       "empty": "No sending domains yet",
       "loadError": "Failed to load sending domains",
       "lost": "Verification lost",
+      "notVerifiedTitle": "Not verified yet",
+      "notVerifiedYet": "The DKIM record was not found. DNS can take a while to update; check again later.",
       "pending": "Pending",
       "recordHost": "Host",
-      "recordName": "Record",
       "recordsHint": "Add these TXT records at your DNS provider, then click Verify.",
       "recordType": "Type",
       "recordValue": "Value",
@@ -1440,10 +1443,10 @@
         "serving": "Serving"
       },
       "verified": "Verified",
+      "verifiedNow": "Domain verified",
       "verify": "Verify",
-      "verifyError": "Failed to start verification",
-      "verifyNow": "Verify now",
-      "verifyQueued": "Verification started"
+      "verifyError": "Could not check the domain",
+      "verifyNow": "Verify now"
     },
     "testEventDescription": "Send a test event from your terminal, then watch it appear in the activity feed.",
     "testEventTitle": "Send a test event",
@@ -1524,15 +1527,9 @@
     "webhooksTitle": "Webhooks"
   },
   "setupChecklist": {
-    "checkError": "Could not check the domain",
-    "checkNow": "Check now",
-    "copied": "Copied",
-    "copy": "Copy",
-    "copyDkim": "Copy DKIM value",
     "description": "Your path to your first email. Each turns done by itself when the thing exists, in any order.",
     "done": "Done",
     "loadError": "Failed to load the setup checklist",
-    "recordHint": "Add this DNS record for {{domain}} at your DNS provider:",
     "steps": {
       "contact": {
         "actions": {
@@ -1550,12 +1547,15 @@
       },
       "sendingDomain": {
         "action": "Open Sending domains",
-        "description": "Publish the DKIM record at your DNS provider; verification can take a while and blocks nothing else.",
+        "description": "Verification can take a while and blocks nothing else.",
         "title": "Verify a Sending domain"
       },
       "sentEmail": {
-        "action": "Create a Broadcast",
-        "description": "Create a Broadcast. A test send does not count.",
+        "actions": {
+          "automation": "Build an Automation",
+          "broadcast": "Create a Broadcast"
+        },
+        "description": "Any real send completes this step, from a Broadcast or an Automation. A test send does not count.",
         "title": "Send your first email"
       }
     },

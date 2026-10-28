@@ -65,10 +65,13 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	require.Truef(t, ok, "got %T", got)
 	assert.Equal(t, res.ID, gotRes.ID)
 
-	// Verify enqueues the DKIM re-check (inline: NXDOMAIN stub → stays unverified).
+	// Verify answers once the DKIM check is done (NXDOMAIN stub → stays unverified).
 	ver, err := c.SiteSendingDomainsVerify(ctx, siteapi.SiteSendingDomainsVerifyParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteSendingDomainsVerifyNoContent{}, ver)
+	verRes, ok := ver.(*siteapi.SiteSendingDomainResource)
+	require.Truef(t, ok, "got %T", ver)
+	assert.False(t, verRes.Verified)
+	assert.True(t, verRes.LastCheckedAt.IsSet())
 
 	// Archive; a fetch by id still opens it, an unknown id is a 404.
 	archived, err := c.SiteSendingDomainsArchive(ctx, siteapi.SiteSendingDomainsArchiveParams{WorkspaceId: workspaceID, ID: res.ID})

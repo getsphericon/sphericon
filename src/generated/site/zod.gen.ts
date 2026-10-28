@@ -4475,9 +4475,9 @@ export const zSiteSendingDomainsVerifyPath = z.object({
 });
 
 /**
- * There is no content to send for this request, but the headers may be useful.
+ * The request has succeeded.
  */
-export const zSiteSendingDomainsVerifyResponse = z.void();
+export const zSiteSendingDomainsVerifyResponse = zSiteSendingDomainResource;
 
 export const zSiteSetupChecklistGetPath = z.object({
   workspaceId: zWorkspaceId
