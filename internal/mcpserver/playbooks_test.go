@@ -12,7 +12,7 @@ import (
 )
 
 // Independent literal: the playbooks sphericon ships.
-var shippedPlaybooks = []string{"welcome", "win-back", "list-hygiene"}
+var shippedPlaybooks = []string{"welcome", "win-back", "list-hygiene", "set-up-sending-domain"}
 
 func listedPrompts(t *testing.T, s *mcp.ClientSession) map[string]*mcp.Prompt {
 	t.Helper()
