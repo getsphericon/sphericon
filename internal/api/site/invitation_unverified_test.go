@@ -44,7 +44,7 @@ func TestAnInvitationToAnUnverifiedAddressIsLikeOneToANewAddress(t *testing.T) {
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptUnprocessableEntity{}, res)
 
 	res, err = env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Victim")},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Victim")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptUnprocessableEntity{}, res, "a password is required too")
@@ -58,7 +58,7 @@ func TestPreHijackingAnAttackerWhoRegisteredTheInviteesAddressGainsNothing(t *te
 	token := inviteToAcme(t, env, "victim@example.com")
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Victim"), Password: siteapi.NewOptString("victim-password-1")},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Victim"), Password: siteapi.NewOptString("victim-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
@@ -98,7 +98,7 @@ func TestAcceptingAnInvitationThatVerifiesTheAddressIsAuditedAsEmailVerified(t *
 			token := inviteToAcme(t, env, "invitee@example.com")
 
 			res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-				&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Invitee"), Password: siteapi.NewOptString("invitee-password-1")},
+				&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Invitee"), Password: siteapi.NewOptString("invitee-password-1")},
 				siteapi.SitePublicInvitationsAcceptParams{Token: token})
 			require.NoError(t, err)
 			require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)

@@ -196,16 +196,6 @@ export const zSiteAbuseWarning = z.object({
 });
 
 /**
- * Accept an invite. For an address with no User or an Unverified User, name + password
- * are required (422 otherwise). For a Verified User the body is not read: the session of
- * that same User is the proof.
- */
-export const zSiteAcceptInvitationInput = z.object({
-  name: z.exactOptional(z.string()),
-  password: z.exactOptional(z.string())
-});
-
-/**
  * Request body for adding a Join domain
  */
 export const zSiteAddJoinDomainInput = z.object({
@@ -1121,17 +1111,6 @@ export const zSiteRecoveryCodesInput = z.object({
 });
 
 /**
- * Register with a name, an email and a password. The User stays Unverified until the
- * address is proven (ADR 0030); the password is trusted only when the verification link
- * is opened in the browser that registered.
- */
-export const zSiteRegisterInput = z.object({
-  name: z.string(),
-  email: zEmailAddress,
-  password: z.exactOptional(z.string())
-});
-
-/**
  * Ask for the verification link again (always accepted; no account enumeration)
  */
 export const zSiteResendVerificationInput = z.object({
@@ -1658,16 +1637,6 @@ export const zSiteUpdateIntegrationInput = z.object({
   preset: z.exactOptional(z.string().nullable()),
   params: z.exactOptional(z.record(z.string(), z.unknown())),
   retireSecrets: z.exactOptional(z.boolean())
-});
-
-/**
- * Update the authenticated user's profile. To change the password, provide
- * both currentPassword and newPassword.
- */
-export const zSiteUpdateMeInput = z.object({
-  name: z.exactOptional(z.string()),
-  currentPassword: z.exactOptional(z.string()),
-  newPassword: z.exactOptional(z.string())
 });
 
 /**
@@ -2530,6 +2499,44 @@ export const zInUseProblemDetails = z.object({
   retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   debug: z.exactOptional(zProblemDebug),
   usedBy: z.array(zUsedBy)
+});
+
+/**
+ * What a User is called, as a person sets it: at most 100 characters. Surrounding spaces are
+ * trimmed; an empty name, or one with a control, line-breaking or invisible character, is refused
+ * by the handler (422), which applies the same limit to a Sign-in provider's name.
+ */
+export const zUserName = z.string().max(100);
+
+/**
+ * Accept an invite. For an address with no User or an Unverified User, name + password
+ * are required (422 otherwise). For a Verified User the body is not read: the session of
+ * that same User is the proof.
+ */
+export const zSiteAcceptInvitationInput = z.object({
+  name: z.exactOptional(zUserName),
+  password: z.exactOptional(z.string())
+});
+
+/**
+ * Register with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the browser that registered.
+ */
+export const zSiteRegisterInput = z.object({
+  name: zUserName,
+  email: zEmailAddress,
+  password: z.exactOptional(z.string())
+});
+
+/**
+ * Update the authenticated user's profile. To change the password, provide
+ * both currentPassword and newPassword.
+ */
+export const zSiteUpdateMeInput = z.object({
+  name: z.exactOptional(zUserName),
+  currentPassword: z.exactOptional(z.string()),
+  newPassword: z.exactOptional(z.string())
 });
 
 /**

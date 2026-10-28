@@ -93,3 +93,10 @@ func fieldMessage(f validator.FieldError) string {
 	}
 	return i18n.T(ruleMessages[f.Tag()], passwordLength)
 }
+
+// nameInvalidProblem is the 422 for a name internal/accounts refuses (accounts.ErrNameInvalid).
+func nameInvalidProblem() siteapi.ProblemDetails {
+	return fieldsProblem(map[string][]string{
+		fieldName: {i18n.T("errors.name_invalid", map[string]any{"Max": validation.NameMaxLength})},
+	})
+}

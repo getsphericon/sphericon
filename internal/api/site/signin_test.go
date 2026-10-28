@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -110,6 +111,29 @@ func TestSigninWithoutANameUsesTheLocalPartOfTheEmail(t *testing.T) {
 	u, err := env.DB.User.Query().Where(entuser.Email(newcomer.Email)).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, "nina", u.Name)
+}
+
+func TestSigninANameNoUserMayHaveIsDroppedForTheLocalPartOfTheEmail(t *testing.T) {
+	for label, name := range map[string]string{
+		"a line break":   "Nina\r\nBcc: all@example.com",
+		"a bidi control": "Nina \u202eetisoppo",
+		"too long":       strings.Repeat("n", 101),
+		"invisible":      "\u200b",
+	} {
+		t.Run(label, func(t *testing.T) {
+			env, fake := signinEnv(t)
+			who := newcomer
+			who.Name = name
+			b := env.NewRedirectBrowser(t)
+
+			resp := signInWith(t, fake, b, who, "")
+
+			assert.Equal(t, "/", resp.Header.Get("Location"), "a third party's name refuses no sign-in")
+			u, err := env.DB.User.Query().Where(entuser.Email(newcomer.Email)).Only(t.Context())
+			require.NoError(t, err)
+			assert.Equal(t, "nina", u.Name)
+		})
+	}
 }
 
 func TestSigninTheSamePersonSignsInAgainBySubjectAlsoAfterChangingTheEmail(t *testing.T) {

@@ -317,6 +317,7 @@ run = [
   "go test ./ee/licensekey -run '^$' -fuzz '^FuzzParseOf' -fuzztime $FUZZTIME",
   "go test ./internal/validation -run '^$' -fuzz '^FuzzAccountEmail$' -fuzztime $FUZZTIME",
   "go test ./internal/validation -run '^$' -fuzz '^FuzzPassword$' -fuzztime $FUZZTIME",
+  "go test ./internal/validation -run '^$' -fuzz '^FuzzDisplayName$' -fuzztime $FUZZTIME",
 ]
 
 ["test:cover"]

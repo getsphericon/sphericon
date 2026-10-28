@@ -196,7 +196,8 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	name, _ := req.Name.Get()
 	password, _ := req.Password.Get()
 	// Whether a name and a password are needed at all is the transaction's to say (a Verified
-	// User's address needs neither); one that is sent must pass the password rule.
+	// User's address needs neither, and the name's rule is the transaction's too); a password
+	// that is sent must pass its rule.
 	fieldErrors, err := checkFields(acceptForm{Password: password})
 	if err != nil {
 		return nil, err
@@ -206,13 +207,17 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		return &v, nil
 	}
 
-	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)
+	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(string(name)), password, sessionEmail)
 	if errors.Is(err, accounts.ErrSignInRequired) || errors.Is(err, accounts.ErrAlreadyVerified) {
 		v := siteapi.SitePublicInvitationsAcceptUnauthorized(problem(http.StatusUnauthorized, "sign in to accept this invitation"))
 		return &v, nil
 	}
 	if errors.Is(err, accounts.ErrWrongAccount) {
 		v := siteapi.SitePublicInvitationsAcceptForbidden(problem(http.StatusForbidden, "this invitation is for another account"))
+		return &v, nil
+	}
+	if errors.Is(err, accounts.ErrNameInvalid) {
+		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(nameInvalidProblem())
 		return &v, nil
 	}
 	if errors.Is(err, accounts.ErrCredentialsRequired) {

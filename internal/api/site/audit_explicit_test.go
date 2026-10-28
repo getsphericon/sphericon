@@ -77,7 +77,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 func TestAuditInvitationAcceptIsAttributedToTheNewMember(t *testing.T) {
 	env := testhelper.Setup(t)
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(context.Background(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
@@ -135,7 +135,7 @@ func TestAuditPasswordChangeDuplicatesIntoEachOfTheUsersWorkspaces(t *testing.T)
 	assert.NotContains(t, string(diff), "brand-new-pass-1")
 
 	// A name-only edit is not a password change.
-	_, err = mary.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptString("Maria")})
+	_, err = mary.SiteUserUpdateMe(ctx, &siteapi.SiteUpdateMeInput{Name: siteapi.NewOptUserName("Maria")})
 	require.NoError(t, err)
 	assert.Len(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionUserPasswordChange), 1)
 }
@@ -235,7 +235,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 		WorkspaceId: fixtures.AcmePublicID, ID: created.(*siteapi.SiteCreateInvitationResponse).Resource.ID})
 	require.NoError(t, err)
 	_, err = env.SiteAnonymous(t).SitePublicInvitationsAccept(ctx, // invitation.accept
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Ivy"), Password: siteapi.NewOptString("ivy-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})
 	require.NoError(t, err)
 	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")              // user.email_verify

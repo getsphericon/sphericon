@@ -12979,7 +12979,7 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/UserName"
           },
           "password": {
             "type": "string"
@@ -16899,7 +16899,7 @@
         "required": ["name", "email"],
         "properties": {
           "name": {
-            "type": "string"
+            "$ref": "#/components/schemas/UserName"
           },
           "email": {
             "$ref": "#/components/schemas/EmailAddress"
@@ -18530,7 +18530,11 @@
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserName"
+              }
+            ],
             "description": "New display name"
           },
           "currentPassword": {
@@ -19090,6 +19094,11 @@
         "type": "string",
         "enum": ["broadcast", "automation", "segment", "rule", "enrollment", "firing", "message"],
         "description": "What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind\nof live user a removal can find, so a client branches on it without parsing text."
+      },
+      "UserName": {
+        "type": "string",
+        "maxLength": 100,
+        "description": "What a User is called, as a person sets it: at most 100 characters. Surrounding spaces are\ntrimmed; an empty name, or one with a control, line-breaking or invisible character, is refused\nby the handler (422), which applies the same limit to a Sign-in provider's name."
       },
       "WorkspaceId": {
         "type": "string",

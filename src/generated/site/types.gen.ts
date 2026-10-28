@@ -757,7 +757,7 @@ export type SiteAbuseWarning = {
  * that same User is the proof.
  */
 export type SiteAcceptInvitationInput = {
-  name?: string;
+  name?: UserName;
   password?: string;
 };
 
@@ -3651,7 +3651,7 @@ export type SiteRecoveryCodesInput = {
  * is opened in the browser that registered.
  */
 export type SiteRegisterInput = {
-  name: string;
+  name: UserName;
   email: EmailAddress;
   /**
    * Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated
@@ -4892,7 +4892,7 @@ export type SiteUpdateMeInput = {
   /**
    * New display name
    */
-  name?: string;
+  name?: UserName;
   /**
    * Current password — required when changing the password
    */
@@ -5348,6 +5348,13 @@ export const UsedByKind = {
  * of live user a removal can find, so a client branches on it without parsing text.
  */
 export type UsedByKind = typeof UsedByKind[keyof typeof UsedByKind];
+
+/**
+ * What a User is called, as a person sets it: at most 100 characters. Surrounding spaces are
+ * trimmed; an empty name, or one with a control, line-breaking or invisible character, is refused
+ * by the handler (422), which applies the same limit to a Sign-in provider's name.
+ */
+export type UserName = string;
 
 /**
  * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the

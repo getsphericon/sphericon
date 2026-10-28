@@ -174,7 +174,7 @@ func TestAnInvitedUserIsNeverAsked(t *testing.T) {
 	env := surveyOn(t)
 	token := inviteToAcme(t, env, surveyEmail)
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Newcomer"), Password: siteapi.NewOptString(formPassword)},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString(formPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)
@@ -264,7 +264,7 @@ func TestAnUnverifiedRegistrantWhoAcceptsAnInvitationIsNeverAsked(t *testing.T) 
 	token := inviteToAcme(t, env, surveyEmail)
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Newcomer"), Password: siteapi.NewOptString(formPassword)},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString(formPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 
 	require.NoError(t, err)

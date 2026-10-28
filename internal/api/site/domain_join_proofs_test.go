@@ -163,7 +163,7 @@ func inviteTo(t *testing.T, owner *siteapi.Client, ws siteapi.WorkspaceId, email
 func acceptAnonymously(t *testing.T, env *testhelper.TestEnv, token string) {
 	t.Helper()
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Colleague"), Password: siteapi.NewOptString(joinerPassword)},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Colleague"), Password: siteapi.NewOptString(joinerPassword)},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)

@@ -236,6 +236,17 @@ func TestSigninAnUnverifiedUserIsTakenOverAndItsPendingPasswordRejected(t *testi
 	assert.Equal(t, 1, workspaces, "the first Workspace is made as a verify link makes it")
 }
 
+func TestSigninATakeoverWithANameNoUserMayHaveKeepsTheRegisteredName(t *testing.T) {
+	env, fake := signinEnv(t)
+	registerPending(t, env, "Victor", "victim@gmail.com", "squatter-password-1")
+	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim\nBcc: all@example.com"}
+
+	resp := signInWith(t, fake, env.NewRedirectBrowser(t), victim, "")
+
+	assert.Equal(t, "/", resp.Header.Get("Location"))
+	assert.Equal(t, "Victor", userByEmail(t, env, "victim@gmail.com").Name)
+}
+
 func TestSigninATakenOverRegistrationKeepsThePendingInvitation(t *testing.T) {
 	env, fake := signinEnv(t)
 	registerPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
@@ -288,7 +299,7 @@ func TestTheAddressIsProvenByEveryLinkItIsMailedTo(t *testing.T) {
 		env := testhelper.Setup(t)
 		token := inviteToAcme(t, env, "newbie@example.com")
 		res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-			&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Newbie"), Password: siteapi.NewOptString("newbie-password-1")},
+			&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newbie"), Password: siteapi.NewOptString("newbie-password-1")},
 			siteapi.SitePublicInvitationsAcceptParams{Token: token})
 		require.NoError(t, err)
 		require.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)

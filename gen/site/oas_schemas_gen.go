@@ -5395,6 +5395,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptUserName returns new OptUserName with value set to v.
+func NewOptUserName(v UserName) OptUserName {
+	return OptUserName{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUserName is optional UserName.
+type OptUserName struct {
+	Value UserName
+	Set   bool
+}
+
+// IsSet returns true if OptUserName was set.
+func (o OptUserName) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUserName) Reset() {
+	var v UserName
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUserName) SetTo(v UserName) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUserName) Get() (v UserName, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUserName) Or(d UserName) UserName {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 type PasskeyName string
 
 // A machine-readable reason a client branches on, beyond the HTTP status.
@@ -5936,12 +5982,12 @@ func (s *SiteAbuseWarning) SetRate(val float64) {
 // proof.
 // Ref: #/components/schemas/SiteAcceptInvitationInput
 type SiteAcceptInvitationInput struct {
-	Name     OptString `json:"name"`
-	Password OptString `json:"password"`
+	Name     OptUserName `json:"name"`
+	Password OptString   `json:"password"`
 }
 
 // GetName returns the value of Name.
-func (s *SiteAcceptInvitationInput) GetName() OptString {
+func (s *SiteAcceptInvitationInput) GetName() OptUserName {
 	return s.Name
 }
 
@@ -5951,7 +5997,7 @@ func (s *SiteAcceptInvitationInput) GetPassword() OptString {
 }
 
 // SetName sets the value of Name.
-func (s *SiteAcceptInvitationInput) SetName(val OptString) {
+func (s *SiteAcceptInvitationInput) SetName(val OptUserName) {
 	s.Name = val
 }
 
@@ -16339,7 +16385,7 @@ func (s *SiteRecoveryCodesInput) SetCurrentPassword(val OptString) {
 // registered.
 // Ref: #/components/schemas/SiteRegisterInput
 type SiteRegisterInput struct {
-	Name  string       `json:"name"`
+	Name  UserName     `json:"name"`
 	Email EmailAddress `json:"email"`
 	// Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated registration of
 	// the address replaces it.
@@ -16347,7 +16393,7 @@ type SiteRegisterInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteRegisterInput) GetName() string {
+func (s *SiteRegisterInput) GetName() UserName {
 	return s.Name
 }
 
@@ -16362,7 +16408,7 @@ func (s *SiteRegisterInput) GetPassword() OptString {
 }
 
 // SetName sets the value of Name.
-func (s *SiteRegisterInput) SetName(val string) {
+func (s *SiteRegisterInput) SetName(val UserName) {
 	s.Name = val
 }
 
@@ -21328,7 +21374,7 @@ func (s *SiteUpdateIntegrationInputParams) init() SiteUpdateIntegrationInputPara
 // Ref: #/components/schemas/SiteUpdateMeInput
 type SiteUpdateMeInput struct {
 	// New display name.
-	Name OptString `json:"name"`
+	Name OptUserName `json:"name"`
 	// Current password — required when changing the password.
 	CurrentPassword OptString `json:"currentPassword"`
 	// New password.
@@ -21336,7 +21382,7 @@ type SiteUpdateMeInput struct {
 }
 
 // GetName returns the value of Name.
-func (s *SiteUpdateMeInput) GetName() OptString {
+func (s *SiteUpdateMeInput) GetName() OptUserName {
 	return s.Name
 }
 
@@ -21351,7 +21397,7 @@ func (s *SiteUpdateMeInput) GetNewPassword() OptString {
 }
 
 // SetName sets the value of Name.
-func (s *SiteUpdateMeInput) SetName(val OptString) {
+func (s *SiteUpdateMeInput) SetName(val OptUserName) {
 	s.Name = val
 }
 
@@ -22833,5 +22879,7 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type UserName string
 
 type WorkspaceId string

@@ -39,7 +39,7 @@ func TestAClosedInstanceStillAcceptsAnInvitation(t *testing.T) {
 	token := inviteToAcme(t, env, "newcomer@example.com")
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptString("Newcomer"), Password: siteapi.NewOptString("newcomer-password-1")},
+		&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newcomer"), Password: siteapi.NewOptString("newcomer-password-1")},
 		siteapi.SitePublicInvitationsAcceptParams{Token: token})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptOK{}, res)

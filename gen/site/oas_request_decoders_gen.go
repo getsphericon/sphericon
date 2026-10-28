@@ -2574,6 +2574,14 @@ func (s *Server) decodeSitePublicInvitationsAcceptRequest(r *http.Request) (
 			}
 			return req, rawBody, close, err
 		}
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
+		}
 		return &request, rawBody, close, nil
 	default:
 		return req, rawBody, close, validate.InvalidContentType(ct)
@@ -4223,6 +4231,14 @@ func (s *Server) decodeSiteUserUpdateMeRequest(r *http.Request) (
 				Err:         err,
 			}
 			return req, rawBody, close, err
+		}
+		if err := func() error {
+			if err := request.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			return req, rawBody, close, errors.Wrap(err, "validate")
 		}
 		return &request, rawBody, close, nil
 	default:

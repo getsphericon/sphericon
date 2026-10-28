@@ -103,7 +103,7 @@ model SiteInvitationLookupResult {
  * are required (422 otherwise). For a Verified User the body is not read: the session of
  * that same User is the proof. */
 model SiteAcceptInvitationInput {
-  name?: string;
+  name?: UserName;
   password?: string;
 }
 

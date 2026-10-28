@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -60,8 +61,8 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 
 	var newName, newHash *string
 
-	if name, ok := req.Name.Get(); ok {
-		name = strings.TrimSpace(name)
+	if sent, ok := req.Name.Get(); ok {
+		name := strings.TrimSpace(string(sent))
 		if name == "" {
 			v := siteapi.SiteUserUpdateMeUnprocessableEntity(problemWithErrors(
 				http.StatusUnprocessableEntity,
@@ -107,6 +108,10 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 
 	if newName != nil || newHash != nil {
 		u, err = h.accounts.UpdateProfile(ctx, u.ID, newName, newHash)
+		if errors.Is(err, accounts.ErrNameInvalid) {
+			v := siteapi.SiteUserUpdateMeUnprocessableEntity(nameInvalidProblem())
+			return &v, nil
+		}
 		if err != nil {
 			return nil, err
 		}
