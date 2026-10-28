@@ -22,6 +22,10 @@ used.
 (Amended by ADR 0058: the fallback applies while the default Integration delivers outside, or there is none.
 Through a Test inbox, which sends nothing outside, the Test send goes through the Integration and is captured.)
 
+(Amended by #663: "the default Integration" is the Integration the Broadcast sends through, its own
+else the Workspace's default. A Broadcast whose Integration cannot send gets no System sender: the
+Test send is held, as a real send is.)
+
 ## Considered options
 
 - **Keep the gate on Test send (ADR 0015 as written).** No exception, but the first email waits on DNS
