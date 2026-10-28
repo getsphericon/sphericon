@@ -113,3 +113,15 @@ func TestParseRefusesAKeyThatIsNotValidYet(t *testing.T) {
 
 	assert.ErrorIs(t, err, licensekey.ErrInvalid)
 }
+
+func TestDevKeyIsTrustedOnlyWhenTheCallerSaysSo(t *testing.T) {
+	key, err := licensekey.IssueDev()
+	require.NoError(t, err)
+
+	l, err := licensekey.Parse(key, licensekey.VerifyingKey(true), time.Now())
+	require.NoError(t, err)
+	assert.True(t, l.Has(licensekey.FeatureStaff), "a development build accepts the dev key")
+
+	_, err = licensekey.Parse(key, licensekey.VerifyingKey(false), time.Now())
+	assert.ErrorIs(t, err, licensekey.ErrInvalid, "a release must refuse the dev key")
+}

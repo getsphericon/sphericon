@@ -25,12 +25,13 @@ const stateID int64 = 1
 // ErrTelemetryLocked is returned when the Owner tries to change a setting the environment decides.
 var ErrTelemetryLocked = errors.New("the telemetry setting is decided by the environment")
 
-// Environment is what the deployment says about the Instance: SPHERICON_TELEMETRY when set
-// to true or false, DO_NOT_TRACK=1, SPHERICON_RELEASE_CHECK and the version that runs.
+// Environment is what the deployment says about the Instance: its Mode's say over the Telemetry
+// report (ADR 0060), DO_NOT_TRACK=1, whether the Mode makes the Release check and the version
+// that runs.
 type Environment struct {
 	Telemetry  *bool
 	DoNotTrack bool
-	// ReleaseCheck is SPHERICON_RELEASE_CHECK; it never depends on the two above.
+	// ReleaseCheck is whether the Mode makes the Release check; it never depends on the two above.
 	ReleaseCheck bool
 	// Dev is a development or test environment: neither the Telemetry report nor the
 	// Release check ever runs there.
@@ -51,7 +52,7 @@ type Lock string
 const (
 	// LockNone means the Owner decides.
 	LockNone Lock = ""
-	// LockEnvironment means SPHERICON_TELEMETRY decides.
+	// LockEnvironment means the deployment (the saas Mode) decides.
 	LockEnvironment Lock = "environment"
 	// LockDoNotTrack means DO_NOT_TRACK=1 decides (always off).
 	LockDoNotTrack Lock = "do_not_track"
@@ -66,8 +67,8 @@ type Setting struct {
 }
 
 // Effective applies ADR 0032 to the environment and the stored in-app setting (on until
-// an Owner switches it off): off if SPHERICON_TELEMETRY is false or DO_NOT_TRACK=1; on and
-// locked if SPHERICON_TELEMETRY is true; otherwise the stored setting decides. DO_NOT_TRACK
+// an Owner switches it off): off if the Mode says so (saas) or DO_NOT_TRACK=1; on and
+// locked if the Mode says so; otherwise the stored setting decides. DO_NOT_TRACK
 // only ever switches off. The sender of the report reuses it.
 func Effective(env Environment, stored bool) Setting {
 	switch {

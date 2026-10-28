@@ -4,7 +4,7 @@ namespace Sphericon;
 
 /** Why the environment, not the Owner, decides the Telemetry report */
 enum SiteInstanceTelemetryLock {
-  /** `SPHERICON_TELEMETRY` is set to true or false */
+  /** The Instance's Mode keeps the report off (the saas Mode) */
   environment: "environment",
 
   /** `DO_NOT_TRACK=1` switches the report off */
@@ -34,7 +34,7 @@ model SiteInstanceState {
 
   /** The newest stable release (a bare version such as `0.4.0`) when the Release check found
    * one newer than the running version; absent otherwise, and always absent for a build whose
-   * version is not a release or when `SPHERICON_RELEASE_CHECK` is off. */
+   * version is not a release or in the saas Mode, which makes no Release check. */
   latestRelease?: string;
 
   /** When the Instance's license key expired, set only while it has lapsed: the Instance then

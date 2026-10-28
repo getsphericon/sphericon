@@ -41,7 +41,7 @@ func requireInstanceForbidden(t *testing.T, c *siteapi.Client) {
 }
 
 func TestSiteInstanceStateDefaultsToOnAndUnacknowledged(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 
 	state := instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail))
 
@@ -70,7 +70,7 @@ func TestSiteInstanceKeepsOneInstanceIDAcrossReads(t *testing.T) {
 }
 
 func TestSiteInstanceOwnerSwitchesTelemetryOffAndOn(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	res, err := john.SiteInstanceSetTelemetry(t.Context(), &siteapi.SiteInstanceTelemetryInput{Enabled: false})
@@ -129,7 +129,7 @@ func TestSiteInstanceRefusesEveryoneButOwnersOfTheOldestWorkspace(t *testing.T) 
 }
 
 func TestSiteInstanceEveryOwnerOfTheOldestWorkspaceMayDecideAndATransferFollowsTheRole(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	_, err := john.SiteMembershipsUpdate(t.Context(), &siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleOwner},

@@ -178,6 +178,8 @@ type Config struct {
 	// production-only behaviour locally — e.g. the sending-domain DKIM re-check
 	// trusts seeded domains instead of hitting real DNS (ADR 0010).
 	IsDev bool
+	// IsE2E is true for the end-to-end profile (EnvE2E), a non-production env of its own.
+	IsE2E bool
 	// SMTPAllowPrivateHosts lets a Workspace's SMTP Integration point at a loopback or
 	// private address and any port (SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS). Off in production by
 	// default, so a tenant cannot use the server to reach internal hosts; on in
@@ -194,9 +196,12 @@ type Config struct {
 	// system emails and validation messages (internal/i18n).
 	Locale string
 
-	// Telemetry is SPHERICON_TELEMETRY when it is set to true or false: the environment
-	// then decides the Telemetry report (ADR 0032). Nil (unset, or any other value) leaves
-	// the decision to the Instance's Owner.
+	// Mode is the kind of deployment this Instance is (SPHERICON_MODE, ADR 0060). The settings
+	// below it that the Mode decides are derived from it in Load and have no variable of their own.
+	Mode Mode
+
+	// Telemetry is false in the saas Mode, which sends no Telemetry report and locks the setting
+	// off (ADR 0032, 0060). Nil in selfhosted leaves the decision to the Instance's Owner.
 	Telemetry *bool
 	// DoNotTrack is DO_NOT_TRACK=1: it switches the Telemetry report off and never on.
 	DoNotTrack bool
@@ -206,18 +211,16 @@ type Config struct {
 	// TelemetrySchemaURL is the page that documents the Telemetry report's schema; the SPA
 	// links to it. A constant of the binary with no environment variable.
 	TelemetrySchemaURL string
-	// ReleaseCheck is SPHERICON_RELEASE_CHECK (default on): the daily Release check for a
-	// newer release (ADR 0032). It sends nothing about the Instance and is independent of
-	// the Telemetry report and DO_NOT_TRACK.
+	// ReleaseCheck is the daily Release check for a newer release (ADR 0032): on in selfhosted,
+	// off in saas (ADR 0060). It sends nothing about the Instance and is independent of the
+	// Telemetry report and DO_NOT_TRACK.
 	ReleaseCheck bool
 	// GitHubAPIURL is the API root the Release check asks; empty is api.github.com. It has
 	// no environment variable: tests point it at a server of their own.
 	GitHubAPIURL string
 
-	// RequireEmailVerification keeps the email verification gate on (ADR 0030). Only an
-	// explicit SPHERICON_REQUIRE_EMAIL_VERIFICATION=false turns it off, for a self-hosted install
-	// without outbound mail; the default and any other value keep it on. It is never
-	// inferred from the SMTP settings.
+	// RequireEmailVerification is the email verification gate (ADR 0030): on in saas, not
+	// required in selfhosted (ADR 0060). It is never inferred from the SMTP settings.
 	RequireEmailVerification bool
 
 	// SentryDSN is the Sentry-compatible DSN the browser app reports its errors to
@@ -226,14 +229,11 @@ type Config struct {
 	// never at build time, so one image serves every Instance.
 	SentryDSN string
 
-	// SignupOpen lets anyone who reaches the Instance register. Only an explicit
-	// SPHERICON_SIGNUP_OPEN=false closes it (ADR 0042): a new User then comes only through an
-	// Invitation or `sphericon user create-owner`.
+	// SignupOpen lets anyone who reaches the Instance register (ADR 0042, 0060).
 	SignupOpen bool
 
-	// SignupSurvey asks a User who signed up the Sign-up survey once. Only an explicit
-	// SPHERICON_SIGNUP_SURVEY=true turns it on (as ADR 0030 and 0042); it also needs the
-	// `staff` license, and without it the survey stays off (signupsurvey.Enabled).
+	// SignupSurvey asks a User who signed up the Sign-up survey once: on in saas, off in
+	// selfhosted (ADR 0055, 0060).
 	SignupSurvey bool
 
 	// Signin holds the credentials of the Sign-in providers the Instance enabled, by registry
@@ -372,16 +372,12 @@ type environment struct {
 	DBConnMaxLifetime time.Duration `env:"SPHERICON_DB_CONN_MAX_LIFETIME" envDefault:"30m"`
 	RiverMaxConns     int32         `env:"SPHERICON_RIVER_DB_MAX_CONNS" envDefault:"25"`
 
-	SMTPAllowPrivateHosts    bool   `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
-	OutboundAllow            string `env:"SPHERICON_OUTBOUND_ALLOW"`
-	Locale                   string `env:"SPHERICON_APP_LOCALE" envDefault:"en"`
-	Telemetry                string `env:"SPHERICON_TELEMETRY"`
-	DoNotTrack               string `env:"DO_NOT_TRACK"`
-	ReleaseCheck             bool   `env:"SPHERICON_RELEASE_CHECK" envDefault:"true"`
-	RequireEmailVerification string `env:"SPHERICON_REQUIRE_EMAIL_VERIFICATION"`
-	SentryDSN                string `env:"SPHERICON_SENTRY_DSN"`
-	SignupOpen               string `env:"SPHERICON_SIGNUP_OPEN"`
-	SignupSurvey             string `env:"SPHERICON_SIGNUP_SURVEY"`
+	SMTPAllowPrivateHosts bool   `env:"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS"`
+	OutboundAllow         string `env:"SPHERICON_OUTBOUND_ALLOW"`
+	Locale                string `env:"SPHERICON_APP_LOCALE" envDefault:"en"`
+	DoNotTrack            string `env:"DO_NOT_TRACK"`
+	Mode                  string `env:"SPHERICON_MODE"`
+	SentryDSN             string `env:"SPHERICON_SENTRY_DSN"`
 
 	SigninGoogleClientID     string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_ID"`
 	SigninGoogleClientSecret string `env:"SPHERICON_SIGNIN_GOOGLE_CLIENT_SECRET"`
@@ -468,6 +464,11 @@ func Load(envName string) (*Config, error) {
 	var e environment
 	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
 		return nil, fmt.Errorf("read environment: %w", err)
+	}
+
+	mode, err := ParseMode(e.Mode)
+	if err != nil {
+		return nil, err
 	}
 
 	outboundAllow, err := webhook.ParseAllowlist(e.OutboundAllow)
@@ -567,19 +568,17 @@ func Load(envName string) (*Config, error) {
 		TestInboxRetention:      time.Duration(e.TestInboxRetentionDays) * 24 * time.Hour,
 		TestInboxMaxMessages:    e.TestInboxMaxMessages,
 		IsDev:                   isDevEnv(envName),
+		IsE2E:                   isE2E(envName),
 		SMTPAllowPrivateHosts:   e.SMTPAllowPrivateHosts,
 		OutboundAllow:           outboundAllow,
 		Locale:                  i18n.Normalize(e.Locale),
-		Telemetry:               parseExplicitBool(e.Telemetry),
 		DoNotTrack:              strings.TrimSpace(e.DoNotTrack) == "1",
 		TelemetryReceiverURL:    telemetryReceiverURL,
 		TelemetrySchemaURL:      telemetrySchemaURL,
-		ReleaseCheck:            e.ReleaseCheck,
 
-		RequireEmailVerification: strings.TrimSpace(e.RequireEmailVerification) != "false",
+		RequireEmailVerification: false,
 		SentryDSN:                strings.TrimSpace(e.SentryDSN),
-		SignupOpen:               !strings.EqualFold(strings.TrimSpace(e.SignupOpen), "false"),
-		SignupSurvey:             strings.EqualFold(strings.TrimSpace(e.SignupSurvey), "true"),
+		SignupOpen:               true,
 		Signin:                   signin,
 		LogLevel:                 e.LogLevel,
 		LogFormat:                e.LogFormat,
@@ -602,17 +601,30 @@ func Load(envName string) (*Config, error) {
 		SESSecretAccessKey:  e.SESSecretAccessKey,
 	}
 
-	if isE2E(envName) {
-		// The suite never scrapes metrics; a global SPHERICON_METRICS_ADDR (the dev stack's) would
-		// make concurrent runs, or a running dev stack, collide on the port.
-		cfg.MetricsAddr = ""
-		cfg.InternalAddr = "" // likewise a global SPHERICON_INTERNAL_ADDR
-	}
+	cfg.ApplyMode(mode)
+	cfg.isolateE2E(envName)
+	return cfg.validated(envName)
+}
 
-	if err := cfg.validate(envName); err != nil {
+// validated is the Config when it holds its invariants, nil and the refusal when it does not.
+func (c *Config) validated(envName string) (*Config, error) {
+	if err := c.validate(envName); err != nil {
 		return nil, err
 	}
-	return cfg, nil
+	return c, nil
+}
+
+// isolateE2E drops the listeners a global variable would point at, so a run of the end-to-end suite
+// never collides with a running dev stack on a port. The suite scrapes no metrics, and the internal
+// listener is its own only in the saas Mode, which sets one.
+func (c *Config) isolateE2E(envName string) {
+	if !isE2E(envName) {
+		return
+	}
+	c.MetricsAddr = ""
+	if !c.Mode.SaaS() {
+		c.InternalAddr = ""
+	}
 }
 
 // parseCIDRs reads a comma/space-separated list of CIDR prefixes.
@@ -747,6 +759,9 @@ func (c *Config) validate(envName string) error {
 		return err
 	}
 	if err := firstViolation(c.requirements()); err != nil {
+		return err
+	}
+	if err := c.validateMode(); err != nil {
 		return err
 	}
 	if err := c.validateSystemEmailReplyTo(); err != nil {
@@ -1004,20 +1019,6 @@ func envFiles(rootDir, envName string) []string {
 	}
 	files = append(files, filepath.Join(rootDir, ".env."+envName+".local"))
 	return files
-}
-
-// parseExplicitBool is nil unless v is "true" or "false" (case-insensitive): a typo must
-// not switch anything on or off.
-func parseExplicitBool(v string) *bool {
-	switch strings.ToLower(strings.TrimSpace(v)) {
-	case "true":
-		on := true
-		return &on
-	case "false":
-		off := false
-		return &off
-	}
-	return nil
 }
 
 // secretEnvNames are the variables whose values must never be printed.

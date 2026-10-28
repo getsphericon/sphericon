@@ -12,35 +12,68 @@ import (
 
 var strongSecret = strings.Repeat("k7", 16)
 
-func TestConfigLoadRequireEmailVerificationOnlyAnExplicitFalseTurnsItOff(t *testing.T) {
-	cases := map[string]bool{
-		"":      true,
-		"true":  true,
-		"false": false,
-		"0":     true,
-		"no":    true,
-		"off":   true,
-		"False": true,
-		"FALSE": true,
-		"junk":  true,
+func TestConfigLoadModeIsSelfHostedUnlessSaaS(t *testing.T) {
+	cases := map[string]Mode{
+		"":           ModeSelfHosted,
+		"selfhosted": ModeSelfHosted,
+		"SaaS":       ModeSaaS,
 	}
 	for value, want := range cases {
-		t.Run("value="+value, func(t *testing.T) {
-			t.Setenv("DATABASE_URL", "postgres://x")
-			t.Setenv("SPHERICON_REQUIRE_EMAIL_VERIFICATION", value)
-			cfg, err := Load("test")
-			require.NoError(t, err)
-			require.Equalf(t, want, cfg.RequireEmailVerification, "SPHERICON_REQUIRE_EMAIL_VERIFICATION=%q: RequireEmailVerification = %v, want %v", value, cfg.RequireEmailVerification, want)
-		})
+		got, err := ParseMode(value)
+		require.NoError(t, err, "SPHERICON_MODE=%q", value)
+		require.Equal(t, want, got, "SPHERICON_MODE=%q", value)
+	}
+
+	for _, junk := range []string{"self-hosted", "cloud", "true", "saass"} {
+		_, err := ParseMode(junk)
+		require.ErrorContains(t, err, "SPHERICON_MODE", "SPHERICON_MODE=%q must not start an Instance", junk)
 	}
 }
 
-func TestConfigLoadRequireEmailVerificationIgnoresSMTPSettings(t *testing.T) {
+func TestConfigLoadModeDecidesWhatDiffers(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_MODE", "")
+
+	selfHosted, err := Load("test")
+	require.NoError(t, err)
+	require.Equal(t, ModeSelfHosted, selfHosted.Mode)
+	require.False(t, selfHosted.RequireEmailVerification, "selfhosted does not require email verification")
+	require.False(t, selfHosted.SignupSurvey, "selfhosted has no Sign-up survey")
+	require.True(t, selfHosted.ReleaseCheck, "selfhosted checks for a release")
+	require.Nil(t, selfHosted.Telemetry, "selfhosted leaves the Telemetry report to the Owner")
+
+	selfHosted.ApplyMode(ModeSaaS)
+	require.True(t, selfHosted.RequireEmailVerification, "saas requires email verification")
+	require.True(t, selfHosted.SignupSurvey, "saas asks the Sign-up survey")
+	require.False(t, selfHosted.ReleaseCheck, "saas makes no Release check")
+	require.NotNil(t, selfHosted.Telemetry)
+	require.False(t, *selfHosted.Telemetry, "saas keeps the Telemetry report off")
+}
+
+func TestConfigLoadSaaSRequiresWhatOnlyADeploymentGives(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_MODE", "saas")
+	t.Setenv("PORT", "3000")
+	t.Setenv("SPHERICON_METRICS_ADDR", "")
+	t.Setenv("SPHERICON_STAFF_JWT_SECRET", "")
+	t.Setenv("SPHERICON_INTERNAL_ADDR", "")
+	t.Setenv("SPHERICON_TRACKING_CNAME_TARGET", "")
 	t.Setenv("SPHERICON_SMTP_HOST", "")
+
+	for _, step := range []struct{ name, value string }{
+		{"SPHERICON_STAFF_JWT_SECRET", "a-staff-secret-of-its-own"},
+		{"SPHERICON_INTERNAL_ADDR", "127.0.0.1:3100"},
+		{"SPHERICON_TRACKING_CNAME_TARGET", "edge.example.com"},
+		{"SPHERICON_SMTP_HOST", "smtp.example.com"},
+	} {
+		_, err := Load("test")
+		require.ErrorContains(t, err, step.name, "a saas Instance without %s must not start", step.name)
+		t.Setenv(step.name, step.value)
+	}
+
 	cfg, err := Load("test")
 	require.NoError(t, err)
-	require.True(t, cfg.RequireEmailVerification, "an unset SMTP host must not turn the gate off")
+	require.Equal(t, ModeSaaS, cfg.Mode)
 }
 
 func TestConfigLoadSentryDSNIsOffUnlessSet(t *testing.T) {
@@ -593,23 +626,4 @@ func TestConfigLoadEventLiveWindow(t *testing.T) {
 	t.Setenv("SPHERICON_EVENT_LIVE_WINDOW_HOURS", "0")
 	_, err = Load("test")
 	require.Error(t, err, "a live window under an hour must be rejected: it cannot be switched off")
-}
-
-func TestConfigLoadSignupSurveyIsOnOnlyWithAnExplicitTrue(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
-	cases := []struct {
-		value string
-		want  bool
-	}{
-		{"true", true}, {"TRUE", true}, {" true ", true},
-		{"", false}, {"false", false}, {"yes", false}, {"1", false}, {"treu", false},
-	}
-	for _, c := range cases {
-		t.Setenv("SPHERICON_SIGNUP_SURVEY", c.value)
-
-		cfg, err := Load("test")
-
-		require.NoError(t, err)
-		require.Equalf(t, c.want, cfg.SignupSurvey, "SPHERICON_SIGNUP_SURVEY=%q", c.value)
-	}
 }

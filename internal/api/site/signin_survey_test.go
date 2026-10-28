@@ -12,7 +12,7 @@ import (
 
 func surveySigninEnv(t *testing.T) (*testhelper.TestEnv, *testhelper.FakeSignin) {
 	t.Helper()
-	return signinEnv(t, testhelper.WithConfig(func(c *config.Config) { c.SignupSurvey = true }))
+	return signinEnv(t)
 }
 
 func TestSigninANewPersonOwesTheSurveyWhenTheInstanceAsksIt(t *testing.T) {
@@ -24,7 +24,7 @@ func TestSigninANewPersonOwesTheSurveyWhenTheInstanceAsksIt(t *testing.T) {
 }
 
 func TestSigninANewPersonIsNotAskedWhenTheSurveyIsOff(t *testing.T) {
-	env, fake := signinEnv(t)
+	env, fake := signinEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 
 	signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
 
@@ -69,7 +69,7 @@ func TestSigninANewPersonAdmittedThroughAJoinDomainIsNeverAsked(t *testing.T) {
 }
 
 func TestAPasswordSignUpAdmittedThroughAJoinDomainIsNeverAsked(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.SignupSurvey = true }))
+	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
 
 	joiner := signUp(t, env, "newbie@acme.com")
@@ -78,7 +78,7 @@ func TestAPasswordSignUpAdmittedThroughAJoinDomainIsNeverAsked(t *testing.T) {
 }
 
 func TestAPasswordSignUpOnAJoinDomainWithTheSwitchOffStaysDue(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.SignupSurvey = true }))
+	env := testhelper.Setup(t)
 
 	outsider := signUp(t, env, "newbie@acme.com")
 

@@ -39,10 +39,11 @@ other value stops the start.
   the Instance state, and the app shows it in a badge, so a developer sees which one they run (as
   only a development server sends the cause of a 500). Self-hosters' own metrics (Prometheus,
   VictoriaMetrics, OpenTelemetry) do not depend on the Mode.
-- **A development Instance trusts a development license key**, one signed by a key pair committed to
-  the repository, so `mise run dev:saas` can start `saas`. It does so only outside a release build
-  (`IsDev` and not `buildinfo.IsRelease`): an empty `SPHERICON_ENV` counts as development, so
-  `IsDev` alone would let a self-hoster who never set it unlock `ee/`.
+- **A development or end-to-end Instance trusts a development license key**, one signed by a key
+  pair committed to the repository, so `mise run dev:saas` and the end-to-end suite can start `saas`.
+  It does so only outside a release build (`Config.TrustsDevLicense`: a development or end-to-end
+  env and not `buildinfo.IsRelease`): an empty `SPHERICON_ENV` counts as development, so the env
+  alone would let a self-hoster who never set it unlock `ee/`.
 
 ## Considered Options
 
@@ -63,7 +64,9 @@ other value stops the start.
   introduced (`SPHERICON_SIGNUP_OPEN`, `SPHERICON_SIGNUP_SURVEY`,
   `SPHERICON_REQUIRE_EMAIL_VERIFICATION`, `SPHERICON_TELEMETRY`, `SPHERICON_RELEASE_CHECK`) are
   removed from the configuration, with no fallback (the project is greenfield).
-- The test harness defaults to `selfhosted`. A test that signs up several Users in one Instance, or
-  exercises the SaaS behaviour, sets the Mode (and the development License key it needs).
+- The test harness defaults to `saas`, since its test License carries every feature and the existing
+  tests exercise the gates the SaaS has on (verification, the Sign-up survey, open sign-up); a test
+  of `selfhosted` sets the Mode (`testhelper.WithMode`). The end-to-end suite runs `saas` too, with
+  the development License key.
 - ADR 0032 rejected "a this-is-the-SaaS flag" because it would only turn the report off. The Mode
   now decides much more than that, which is why it is accepted here.

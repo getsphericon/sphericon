@@ -700,7 +700,7 @@ export default interface Resources {
         "errorTitle": "Could not update the usage report",
         "forbidden": "Only the owners of the oldest workspace can change this.",
         "lockedDoNotTrack": "Switched off by the DO_NOT_TRACK environment variable.",
-        "lockedEnvironment": "Set by the SPHERICON_TELEMETRY environment variable, which decides for this instance.",
+        "lockedEnvironment": "Set by this instance's deployment, which decides for it.",
         "saved": "Usage report setting saved",
         "switchLabel": "Send the anonymous usage report",
         "title": "Usage report"
