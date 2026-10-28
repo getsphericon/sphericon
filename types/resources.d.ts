@@ -1526,9 +1526,13 @@ export default interface Resources {
       "recordHint": "Add this DNS record for {{domain}} at your DNS provider:",
       "steps": {
         "contact": {
-          "action": "Open Contacts",
-          "description": "Import, the API or the tracker: any one Contact completes this step.",
-          "title": "Add a Contact"
+          "actions": {
+            "api": "Use the API",
+            "manual": "Add one by hand",
+            "tracker": "Install the tracker"
+          },
+          "description": "Any one Contact completes this step, however it gets here.",
+          "title": "Add your first Contact"
         },
         "integration": {
           "action": "Add an Integration",
@@ -1544,14 +1548,8 @@ export default interface Resources {
           "action": "Create a Broadcast",
           "description": "Create a Broadcast. A test send does not count.",
           "title": "Send your first email"
-        },
-        "testInbox": {
-          "action": "Create a Test inbox",
-          "description": "See your mail go through before a provider exists: the inbox keeps every message and delivers none. It is never made your default Integration.",
-          "title": "Try it with a Test inbox"
         }
       },
-      "testInboxError": "Could not create the Test inbox",
       "title": "Set up Sphericon",
       "waitingForDns": "Waiting for DNS"
     },

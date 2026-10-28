@@ -1,8 +1,6 @@
-import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import {
-  handleSiteIntegrationsCreate,
   handleSiteSendingDomainsList,
   handleSiteSetupChecklistGet,
 } from '../../generated/site/msw.gen.ts'
@@ -15,7 +13,6 @@ import { OverviewPage } from './overview.tsx'
 const finished = {
   steps: {
     integration: 'done',
-    testInbox: 'todo',
     sendingDomain: 'done',
     contact: 'done',
     sentEmail: 'done',
@@ -34,7 +31,6 @@ test('an unfinished checklist is shown with its steps', async () => {
       body: {
         steps: {
           integration: 'done',
-          testInbox: 'done',
           sendingDomain: 'pending',
           contact: 'todo',
           sentEmail: 'todo',
@@ -58,46 +54,13 @@ test('a finished checklist is not shown', async () => {
   await expect.element(screen.getByText('Set up Sphericon')).not.toBeInTheDocument()
 })
 
-test('the Test inbox step creates the inbox without making it the default, and says so', async () => {
-  const bodies: unknown[] = []
-  worker.use(
-    handleSiteIntegrationsCreate(async ({ request }) => {
-      bodies.push(await request.json())
-      return HttpResponse.json({}, { status: 201 })
-    }),
-    handleSiteSetupChecklistGet({
-      body: {
-        steps: {
-          integration: 'todo',
-          testInbox: 'todo',
-          sendingDomain: 'todo',
-          contact: 'todo',
-          sentEmail: 'todo',
-        },
-        complete: false,
-      },
-    }),
-  )
-
-  const { screen } = await renderWithRouter(<OverviewPage />, mount)
-
-  await expect.element(screen.getByText('Try it with a Test inbox')).toBeInTheDocument()
-  await expect.element(screen.getByText(/never made your default/)).toBeInTheDocument()
-  await screen.getByRole('button', { name: 'Create a Test inbox' }).click()
-
-  await expect
-    .poll(() => bodies)
-    .toMatchObject([{ name: 'Test inbox', isDefault: false, config: { kind: 'inbox' } }])
-})
-
-test('a done Test inbox step offers no action', async () => {
+test('the contact step offers every way to add one and no single page', async () => {
   worker.use(
     handleSiteSetupChecklistGet({
       body: {
         steps: {
           integration: 'done',
-          testInbox: 'done',
-          sendingDomain: 'todo',
+          sendingDomain: 'done',
           contact: 'todo',
           sentEmail: 'todo',
         },
@@ -108,8 +71,37 @@ test('a done Test inbox step offers no action', async () => {
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
-  await expect.element(screen.getByText('Try it with a Test inbox')).toBeInTheDocument()
+  await expect.element(screen.getByText('Add your first Contact')).toBeInTheDocument()
   await expect
-    .element(screen.getByRole('button', { name: 'Create a Test inbox' }))
+    .element(screen.getByRole('link', { name: 'Install the tracker' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/tracking')
+  await expect
+    .element(screen.getByRole('link', { name: 'Use the API' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings/api-keys')
+  await expect
+    .element(screen.getByRole('link', { name: 'Add one by hand' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/contacts')
+})
+
+test('a done contact step offers no action', async () => {
+  worker.use(
+    handleSiteSetupChecklistGet({
+      body: {
+        steps: {
+          integration: 'todo',
+          sendingDomain: 'todo',
+          contact: 'done',
+          sentEmail: 'todo',
+        },
+        complete: false,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Add your first Contact')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Install the tracker' }))
     .not.toBeInTheDocument()
 })

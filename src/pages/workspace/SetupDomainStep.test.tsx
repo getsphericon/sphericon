@@ -25,7 +25,6 @@ const checklist = (sendingDomain: SiteSetupStepStatus) =>
   ({
     steps: {
       integration: 'done',
-      testInbox: 'todo',
       sendingDomain,
       contact: 'todo',
       sentEmail: 'todo',
@@ -61,7 +60,7 @@ test('a pending Sending domain step shows the DKIM record and keeps steps 3 and 
   await expect.element(screen.getByText('om1._domainkey.mail.acme.com')).toBeInTheDocument()
   await expect.element(screen.getByText('v=DKIM1; p=KEY')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Copy DKIM value' })).toBeInTheDocument()
-  await expect.element(screen.getByRole('link', { name: 'Open Contacts' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('link', { name: 'Add one by hand' })).toBeInTheDocument()
   await expect.element(screen.getByRole('link', { name: 'Create a Broadcast' })).toBeInTheDocument()
 })
 
