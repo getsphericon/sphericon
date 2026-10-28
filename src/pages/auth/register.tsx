@@ -147,8 +147,6 @@ export function RegisterPage() {
     <CenteredLayout>
       <Title order={3}>{t(($) => $.registration.title)}</Title>
 
-      <SigninProviders />
-
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
           <TextInput
@@ -185,6 +183,8 @@ export function RegisterPage() {
           </Group>
         </Stack>
       </form>
+
+      <SigninProviders separator="above" />
     </CenteredLayout>
   )
 }
