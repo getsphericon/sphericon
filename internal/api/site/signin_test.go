@@ -279,7 +279,7 @@ func TestSigninACallbackForAProviderThatIsNotEnabledLandsOnLogin(t *testing.T) {
 }
 
 func TestSigninClosedSignupRefusesANewPersonButNotAKnownOne(t *testing.T) {
-	env, fake := signinEnv(t, testhelper.WithConfig(func(c *config.Config) { c.SignupOpen = false }))
+	env, fake := signinEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 
 	refused := signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
 	allowed := signInWith(t, fake, env.NewRedirectBrowser(t), mary, "")

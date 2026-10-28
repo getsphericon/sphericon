@@ -229,9 +229,6 @@ type Config struct {
 	// never at build time, so one image serves every Instance.
 	SentryDSN string
 
-	// SignupOpen lets anyone who reaches the Instance register (ADR 0042, 0060).
-	SignupOpen bool
-
 	// SignupSurvey asks a User who signed up the Sign-up survey once: on in saas, off in
 	// selfhosted (ADR 0055, 0060).
 	SignupSurvey bool
@@ -578,7 +575,6 @@ func Load(envName string) (*Config, error) {
 
 		RequireEmailVerification: false,
 		SentryDSN:                strings.TrimSpace(e.SentryDSN),
-		SignupOpen:               true,
 		Signin:                   signin,
 		LogLevel:                 e.LogLevel,
 		LogFormat:                e.LogFormat,

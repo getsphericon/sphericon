@@ -1139,7 +1139,11 @@ func registerAccounts(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		return accounts.New(client.Client, bus.Bus), nil
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		return accounts.New(client.Client, bus.Bus, accounts.WithSignupRule(accounts.SignupRuleOf(cfg.Mode.SaaS()))), nil
 	})
 
 	// The Workspace deletion cycle (ADR 0043), over the raw client.
@@ -1657,8 +1661,8 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ, CapturedMessages: captured,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Passkeys: pk, Analytics: an,
-		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
-		Signin: signin.FromConfig(cfg, nil),
+		RequireEmailVerification: cfg.RequireEmailVerification,
+		Signin:                   signin.FromConfig(cfg, nil),
 	}, nil
 }
 

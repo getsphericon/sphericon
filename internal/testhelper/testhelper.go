@@ -449,7 +449,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	automationsModule := automations.New(cipher, bus)
 	rulesModule := rules.New(cipher, bus)
 	broadcastsModule := broadcasts.New(bus)
-	acc := accounts.New(client, bus)
+	acc := accounts.New(client, bus, accounts.WithSignupRule(accounts.SignupRuleOf(cfg.Mode.SaaS())))
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
@@ -489,8 +489,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SecondFactor:             secondFactor,
 		Passkeys:                 passkeys,
 		Clock:                    st.now,
-		RequireEmailVerification: cfg.RequireEmailVerification, SignupOpen: cfg.SignupOpen,
-		Signin: signin.FromConfig(&cfg, st.now, st.signinOpts...),
+		RequireEmailVerification: cfg.RequireEmailVerification,
+		Signin:                   signin.FromConfig(&cfg, st.now, st.signinOpts...),
 	}, detector, external, mcpHandler, staffHandler)
 	require.NoError(t, err, "build server")
 	internalHandler, err := server.NewInternal(&cfg, client, edition.Service(bus))
