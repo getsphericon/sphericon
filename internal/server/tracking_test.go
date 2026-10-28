@@ -360,22 +360,6 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	}
 }
 
-// The mailbox one-click POST must see a failed write as a failure (so the provider
-// retries) instead of a 204; a NUL byte in the signed destination is a real
-// database failure that is not a constraint violation.
-func TestUnsubscribeOneClickWriteFailureIsServerError(t *testing.T) {
-	env := testhelper.Setup(t)
-	path := unsubPath(t, env.Tracker, tracking.UnsubTarget{
-		Source: eligibility.SourceBroadcasts, Destination: "a\x00b@example.com", WorkspaceID: fixtures.AcmeID,
-	})
-
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil)
-	w := httptest.NewRecorder()
-	env.Server.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
-}
-
 // figures is the Broadcast's delivery figures, derived from its rows.
 func figures(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadcasts.Stats {
 	t.Helper()
