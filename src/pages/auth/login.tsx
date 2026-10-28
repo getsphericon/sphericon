@@ -22,7 +22,7 @@ import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { AuthLayout } from '../../components/AuthLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
@@ -182,7 +182,7 @@ export function LoginPage() {
 
   if (challenge) {
     return (
-      <CenteredLayout>
+      <AuthLayout>
         <Title order={3}>{t(($) => $.login.secondStepTitle)}</Title>
         <Text size="sm" c="dimmed">
           {t(($) => $.login.secondStepDescription)}
@@ -211,7 +211,7 @@ export function LoginPage() {
             </Group>
           </Stack>
         </form>
-      </CenteredLayout>
+      </AuthLayout>
     )
   }
 
@@ -226,7 +226,7 @@ export function LoginPage() {
   }
 
   return (
-    <CenteredLayout>
+    <AuthLayout>
       <Title order={3}>{t(($) => $.login.title)}</Title>
 
       {signinError ? (
@@ -294,6 +294,6 @@ export function LoginPage() {
           {t(($) => $.login.passkeyButton)}
         </Button>
       ) : null}
-    </CenteredLayout>
+    </AuthLayout>
   )
 }

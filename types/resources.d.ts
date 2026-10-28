@@ -215,6 +215,15 @@ export default interface Resources {
       "reload": "Reload",
       "title": "Something went wrong"
     },
+    "authLayout": {
+      "highlightAutomations": "Automations that react to events and run on their own",
+      "highlightContacts": "Contacts and segments built from the events you track",
+      "highlightEmail": "Email campaigns sent from your own domain",
+      "name": "Sphericon",
+      "tagline": "Open-source marketing automation: contacts, events, campaigns and email in one place.",
+      "websiteLabel": "Learn more about Sphericon",
+      "websiteUrl": "https://getsphericon.com"
+    },
     "automations": {
       "activate": "Activate",
       "addAutomation": "New automation",

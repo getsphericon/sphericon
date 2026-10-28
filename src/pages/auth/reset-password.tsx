@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { AuthLayout } from '../../components/AuthLayout.tsx'
 import { siteAuthResetPasswordMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -53,7 +53,7 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <CenteredLayout maw={420}>
+    <AuthLayout maw={420}>
       <Title order={3}>{t(($) => $.resetPassword.title)}</Title>
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -75,6 +75,6 @@ export function ResetPasswordPage() {
           </Group>
         </Stack>
       </form>
-    </CenteredLayout>
+    </AuthLayout>
   )
 }

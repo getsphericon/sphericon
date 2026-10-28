@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { AuthLayout } from '../../components/AuthLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
@@ -96,7 +96,7 @@ export function RegisterPage() {
 
   if (created) {
     return (
-      <CenteredLayout maw={460}>
+      <AuthLayout maw={460}>
         <Card withBorder padding="xl">
           <Stack align="center" gap="sm">
             <Title order={3}>{t(($) => $.registration.createdTitle)}</Title>
@@ -108,13 +108,13 @@ export function RegisterPage() {
             </AnchorLink>
           </Stack>
         </Card>
-      </CenteredLayout>
+      </AuthLayout>
     )
   }
 
   if (sentTo) {
     return (
-      <CenteredLayout maw={460}>
+      <AuthLayout maw={460}>
         <Card withBorder padding="xl">
           <Stack align="center" gap="sm">
             <Title order={3}>{t(($) => $.registration.checkEmailTitle)}</Title>
@@ -139,12 +139,12 @@ export function RegisterPage() {
             </AnchorLink>
           </Stack>
         </Card>
-      </CenteredLayout>
+      </AuthLayout>
     )
   }
 
   return (
-    <CenteredLayout>
+    <AuthLayout>
       <Title order={3}>{t(($) => $.registration.title)}</Title>
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -185,6 +185,6 @@ export function RegisterPage() {
       </form>
 
       <SigninProviders separator="above" />
-    </CenteredLayout>
+    </AuthLayout>
   )
 }
