@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="sphere" x1="12" y1="6" x2="52" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818cf8" />
+      <stop offset="1" stop-color="#4338ca" />
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#sphere)" />
+  <ellipse cx="32" cy="32" rx="30" ry="11" transform="rotate(-28 32 32)" stroke="#fff" stroke-opacity=".95" stroke-width="3.5" />
+  <circle cx="45.1" cy="15.5" r="6" fill="#fff" stroke="#4f46e5" stroke-width="2.5" />
+</svg>
