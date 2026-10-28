@@ -210,7 +210,7 @@
   name: 'Amazon SES · eu-west-1'
   channel: email
   provider: smtp
-  config_encrypted: '{{ encrypt "{\"host\":\"email-smtp.eu-west-1.amazonaws.com\",\"port\":587,\"from\":\"hello@mail.brightpath.example\",\"fromName\":\"Brightpath\"}" }}'
+  config_encrypted: '{{ encrypt "{\"host\":\"email-smtp.eu-west-1.amazonaws.com\",\"port\":587,\"from\":\"hello@mail.brightpath.localhost\",\"fromName\":\"Brightpath\"}" }}'
   enabled: true
   is_default: false
   max_per_second: 14
@@ -223,7 +223,7 @@
   name: 'Postmark · transactional'
   channel: email
   provider: smtp
-  config_encrypted: '{{ encrypt "{\"host\":\"smtp.postmarkapp.com\",\"port\":587,\"from\":\"hello@mail.brightpath.example\",\"fromName\":\"Brightpath\"}" }}'
+  config_encrypted: '{{ encrypt "{\"host\":\"smtp.postmarkapp.com\",\"port\":587,\"from\":\"hello@mail.brightpath.localhost\",\"fromName\":\"Brightpath\"}" }}'
   enabled: true
   is_default: false
   max_per_second: 10
@@ -239,7 +239,7 @@
   name: 'Mailpit (dev SMTP)'
   channel: email
   provider: smtp
-  config_encrypted: '{{ encrypt "{\"host\":\"127.0.0.1\",\"port\":1025,\"from\":\"hello@mail.brightpath.example\",\"fromName\":\"Brightpath\"}" }}'
+  config_encrypted: '{{ encrypt "{\"host\":\"127.0.0.1\",\"port\":1025,\"from\":\"hello@mail.brightpath.localhost\",\"fromName\":\"Brightpath\"}" }}'
   enabled: true
   is_default: true
   workspace_id: 20

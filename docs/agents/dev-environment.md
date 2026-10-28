@@ -105,7 +105,7 @@ rewrites `mise.lock`), run `mise run check`, commit as `build(deps):`.
 **https://api.sphericon.localhost** — Caddy rewrites `/*` → `/api/*` to the same backend, so
 the subdomain root mirrors the binary's `/api` path (RudderStack-style edge; the binary
 stays path-based). In prod the ingress in front of the binary does the same rewrite for
-`api.sphericon.app`. Daemons: `db`, `mailpit` (web UI at :8025, behind Caddy at **https://mailpit.localhost** (`MAIL_HOST`); SMTP :1025),
+`api.sphericon.app`. Daemons: `db`, `dns` (CoreDNS for Sending domain and Join domain verification: `dev/Corefile`, zones in `dev/dns/`, UDP and TCP on :15353, offset in a linked worktree; the backend reads it through `SPHERICON_DNS_ADDR`), `mailpit` (web UI at :8025, behind Caddy at **https://mailpit.localhost** (`MAIL_HOST`); SMTP :1025),
 `backend` (real Go server under air on `:3300`, hot reload), `frontend` (Vite on `:5173`),
 `demo` (Vite on `:5373`: the Brightpath demo storefront, `packages/storefront`, a customer site on its
 own origin `brightpath.localhost` that sends events through `@sphericon/analytics` and the

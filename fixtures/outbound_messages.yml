@@ -3905,8 +3905,8 @@
   contact_id: 20022
   template_id: 20001
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-0@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-0@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 3}}'
   claimed_at: '{{hoursAgo 3}}'
   workspace_id: 20
@@ -3920,8 +3920,8 @@
   contact_id: 20031
   template_id: 20002
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-1@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-1@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 5}}'
   claimed_at: '{{hoursAgo 5}}'
   workspace_id: 20
@@ -3935,8 +3935,8 @@
   contact_id: 20015
   template_id: 20004
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-2@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-2@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 9}}'
   claimed_at: '{{hoursAgo 9}}'
   workspace_id: 20
@@ -3950,8 +3950,8 @@
   contact_id: 20006
   template_id: 20003
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-3@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-3@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 14}}'
   claimed_at: '{{hoursAgo 14}}'
   workspace_id: 20
@@ -3965,8 +3965,8 @@
   contact_id: 20003
   template_id: 20001
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-4@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-4@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 20}}'
   claimed_at: '{{hoursAgo 20}}'
   workspace_id: 20
@@ -3980,8 +3980,8 @@
   contact_id: 20030
   template_id: 20002
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-5@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-5@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 27}}'
   claimed_at: '{{hoursAgo 27}}'
   workspace_id: 20
@@ -4008,8 +4008,8 @@
   contact_id: 20009
   template_id: 20001
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-7@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-7@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 41}}'
   claimed_at: '{{hoursAgo 41}}'
   workspace_id: 20
@@ -4036,8 +4036,8 @@
   contact_id: 20018
   template_id: 20003
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-9@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-9@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 58}}'
   claimed_at: '{{hoursAgo 58}}'
   workspace_id: 20
@@ -4051,8 +4051,8 @@
   contact_id: 20027
   template_id: 20004
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-10@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-10@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 71}}'
   claimed_at: '{{hoursAgo 71}}'
   workspace_id: 20
@@ -4066,8 +4066,8 @@
   contact_id: 20024
   template_id: 20002
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-11@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-11@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 80}}'
   claimed_at: '{{hoursAgo 80}}'
   workspace_id: 20
@@ -4081,8 +4081,8 @@
   contact_id: 20035
   template_id: 20001
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-12@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-12@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 95}}'
   claimed_at: '{{hoursAgo 95}}'
   workspace_id: 20
@@ -4096,8 +4096,8 @@
   contact_id: 20028
   template_id: 20002
   status: 'sent'
-  sending_domain: 'mail.brightpath.example'
-  provider_message_id: '<bp-13@mail.brightpath.example>'
+  sending_domain: 'mail.brightpath.localhost'
+  provider_message_id: '<bp-13@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 120}}'
   claimed_at: '{{hoursAgo 120}}'
   workspace_id: 20

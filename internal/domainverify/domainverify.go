@@ -186,25 +186,6 @@ func trackingRank(s sendingdomain.TrackingState) int {
 	}
 }
 
-// ShortcutDomain is the one domain that verifies without DNS in a non-production Instance:
-// a Sending domain or a Join domain on it is trusted at once, so a developer can try the
-// flow without publishing a record. Every other domain is resolved through real DNS.
-const ShortcutDomain = "getsphericon.io"
-
-// ShortcutTXTLookup is the resolver of a development Instance: the proof records of
-// ShortcutDomain are answered from what we stored for it (see DevTXTLookup), every other
-// name goes to upstream. Production uses upstream alone: this trust must never be wired outside a
-// dev env.
-func ShortcutTXTLookup(client *ent.Client, upstream sending.TXTLookup) sending.TXTLookup {
-	dev := DevTXTLookup(client)
-	return func(ctx context.Context, name string) ([]string, error) {
-		if domain, ok := recordDomain(name); ok && domain == ShortcutDomain {
-			return dev(ctx, name)
-		}
-		return upstream(ctx, name)
-	}
-}
-
 // recordDomain is the domain a proof record's name belongs to: a DKIM record
 // (<selector>._domainkey.<domain>.) or a Join domain's (_sphericon-join.<domain>.).
 func recordDomain(name string) (string, bool) {
@@ -226,7 +207,6 @@ const dkimMarker = "._domainkey."
 // stores, so a domain an Owner adds in the members settings verifies without DNS.
 // Because it answers every Workspace's token, two Workspaces claiming one domain both verify, so
 // a hand-over (the loser of a take-over) can never fire here.
-// A development Instance reaches it only for ShortcutDomain, through ShortcutTXTLookup.
 func DevTXTLookup(client *ent.Client) sending.TXTLookup {
 	return func(ctx context.Context, name string) ([]string, error) {
 		domain, ok := recordDomain(name)

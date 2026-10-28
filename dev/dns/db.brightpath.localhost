@@ -1,0 +1,11 @@
+;; Dev zone for the Brightpath demo Workspace (see "Domain verification" in CONTRIBUTING.md).
+;; The DKIM key is the one fixtures/sending_domains.yml gives every Brightpath Sending domain;
+;; a TXT string holds 255 bytes at most, so the value is split in 250-byte strings.
+$ORIGIN brightpath.localhost.
+$TTL 60
+@ IN SOA ns.brightpath.localhost. hostmaster.brightpath.localhost. 1 3600 600 86400 60
+@ IN NS ns.brightpath.localhost.
+ns IN A 127.0.0.1
+sphericon._domainkey.mail IN TXT "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNY" "rhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB"
+sphericon._domainkey.news IN TXT "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNY" "rhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB"
+sphericon._domainkey.send IN TXT "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAujnj+1IVTCVSB43rbzUmyy6G2Ke/c8tV3577MyovaNBSfFZpUZZbzrBkpksqc/a2RmFZB4fuO+FW4bcXmw3jN/EvHKuPotuySV9TsSWdEzMjleg4GGxVH3GdnHfpv6S7lLQ8WHZQA0pNzKiqL/6CUB8M3vPgvIrYgnGz8araOS/jqi4UiiAj1LzVpXNY" "rhMZiglmPrnaYumA0UcG9j/2j19NDC0N1uCWtEmfUlse55VEWSFV/OaPNShPhdeuPR9AoIoK0XXiHtdw4kyDgc3llHUb0KFzuRu7ZZghapB6SvnlN2OGuzJKyktc3EIj6+6DEZZL92y/zBSwiwiJmwL8SQIDAQAB"

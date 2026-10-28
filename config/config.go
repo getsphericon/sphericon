@@ -175,8 +175,7 @@ type Config struct {
 	TestInboxMaxMessages int
 	DBPool               DBPool
 	// IsDev is true for non-production envs (development/test). Used to relax
-	// production-only behaviour locally — e.g. the sending-domain DKIM re-check
-	// trusts seeded domains instead of hitting real DNS (ADR 0010).
+	// production-only behaviour locally.
 	IsDev bool
 	// IsE2E is true for the end-to-end profile (EnvE2E), a non-production env of its own.
 	IsE2E bool
@@ -252,6 +251,10 @@ type Config struct {
 	// (the default) means no listener; the public port never serves /metrics
 	// (ADR 0025).
 	MetricsAddr string
+	// DNSAddr (host:port) is the DNS server that verifies Sending domains and Join domains
+	// instead of the host's resolver (SPHERICON_DNS_ADDR). Empty by default; the dev stack
+	// points it at its own server, which publishes the Brightpath demo records.
+	DNSAddr string
 
 	// InternalAddr (host:port) is where the opt-in internal listener binds: the only
 	// place the service endpoints of the Staff surface are served (ADR 0026). Empty
@@ -385,6 +388,7 @@ type environment struct {
 	LogFormat       string `env:"SPHERICON_LOG_FORMAT"`
 	OtelServiceName string `env:"OTEL_SERVICE_NAME" envDefault:"sphericon"`
 	MetricsAddr     string `env:"SPHERICON_METRICS_ADDR"`
+	DNSAddr         string `env:"SPHERICON_DNS_ADDR"`
 	InternalAddr    string `env:"SPHERICON_INTERNAL_ADDR"`
 	PresetsDir      string `env:"SPHERICON_PRESETS_DIR"`
 
@@ -581,6 +585,7 @@ func Load(envName string) (*Config, error) {
 
 		OtelServiceName: e.OtelServiceName,
 		MetricsAddr:     e.MetricsAddr,
+		DNSAddr:         e.DNSAddr,
 		InternalAddr:    e.InternalAddr,
 		PresetsDir:      e.PresetsDir,
 

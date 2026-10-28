@@ -861,19 +861,17 @@ func registerMessaging(injector do.Injector, o options) {
 		if err != nil {
 			return nil, err
 		}
-		// Prod verifies against published DNS records (ADR 0010). Dev does too, except
-		// for domainverify.ShortcutDomain, which verifies at once; the e2e suite's domains all do.
-		if cfg.IsDev || o.e2eDKIMLookup {
+		// Every Instance verifies against published DNS records (ADR 0010); the e2e suite's
+		// domains self-verify through DevTXTLookup. A development stack points the resolver at
+		// its own DNS server (SPHERICON_DNS_ADDR) that publishes the Brightpath demo records.
+		if o.e2eDKIMLookup {
 			client, err := do.Invoke[*entClient](i)
 			if err != nil {
 				return nil, err
 			}
-			if o.e2eDKIMLookup {
-				return &dkimLookup{TXTLookup: domainverify.DevTXTLookup(client.Client)}, nil
-			}
-			return &dkimLookup{TXTLookup: domainverify.ShortcutTXTLookup(client.Client, net.DefaultResolver.LookupTXT)}, nil
+			return &dkimLookup{TXTLookup: domainverify.DevTXTLookup(client.Client)}, nil
 		}
-		return &dkimLookup{TXTLookup: net.DefaultResolver.LookupTXT}, nil
+		return &dkimLookup{TXTLookup: dnsResolver(cfg.DNSAddr).LookupTXT}, nil
 	})
 }
 
@@ -1716,4 +1714,19 @@ func (a *App) Reencrypt(ctx context.Context) ([]rekey.Count, error) {
 		return nil, err
 	}
 	return rekey.New(client.Client, cipher).Run(ctx)
+}
+
+// dnsResolver is the resolver of Sending domain and Join domain verification: the host's own
+// when addr is empty, otherwise the DNS server at addr (host:port), which a development stack
+// runs for its demo records.
+func dnsResolver(addr string) *net.Resolver {
+	if addr == "" {
+		return net.DefaultResolver
+	}
+	return &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, network, addr)
+		},
+	}
 }

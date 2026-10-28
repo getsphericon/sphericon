@@ -2,6 +2,7 @@
 air = "latest"
 ast-grep = "latest"
 caddy = "latest"
+coredns = "latest"
 gitleaks = "latest"
 go = "1.27.3"
 golangci-lint = "2"
@@ -163,11 +164,19 @@ port = { auto = true, base = 8025 }
 ready_cmd = "nc -z 127.0.0.1 $MAILPIT_PORT"
 proxy = false
 
+# The DNS server that verifies Sending domains and Join domains in dev (dev/Corefile). The backend
+# reaches it through SPHERICON_DNS_ADDR, set on that daemon only: the tests and CI keep their stubs.
+[daemons.dns]
+run = "DNS_PORT=$DNS_PORT exec coredns -conf dev/Corefile"
+port = { auto = true, base = 15353 }
+ready_cmd = "nc -z 127.0.0.1 $DNS_PORT"
+proxy = false
+
 [daemons.backend]
-run = "exec air"
+run = "SPHERICON_DNS_ADDR=127.0.0.1:$DNS_PORT exec air"
 port = { auto = true, base = 3300 }
 ready_cmd = "nc -z 127.0.0.1 $BACKEND_PORT"
-depends = ["mailpit"]
+depends = ["mailpit", "dns"]
 proxy = false
 
 [daemons.frontend]

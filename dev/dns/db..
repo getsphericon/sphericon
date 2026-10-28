@@ -1,0 +1,6 @@
+;; The root zone: it makes every name outside the other zones answer NXDOMAIN (not REFUSED), which a
+;; resolver reads as "no record yet". Its file name, db.., gives the origin ".".
+$ORIGIN .
+$TTL 60
+@ IN SOA ns.dev.invalid. hostmaster.dev.invalid. 1 3600 600 86400 60
+@ IN NS ns.dev.invalid.
