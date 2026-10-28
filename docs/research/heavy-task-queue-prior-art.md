@@ -246,7 +246,7 @@ already has:
 - **Skrates/morphe**, `Justfile` lines 135-138: heavy recipes "queue on the flock (up to 2 h)", run
   under `nice` or a scope, `MORPHE_HEAVY_GATE=off` bypasses for dedicated CI runners and
   `_MORPHE_GATE_HELD` "makes nested gated recipes reentrant". Source:
-  https://github.com/Skrates/morphe/blob/main/Justfile. This is our env-var nesting rule and CI skip
+  https://github.com/Skrates/morphe. This is our env-var nesting rule and CI skip
   verbatim.
 - **cromford-ai/cromford**, `bin/mc-keyed-pool.sh`: "take a free slot (locks/mc-keyed-slot-<i>.lock,
   flock -n, i < N)", written after a hub ran at load 171-238 with 26-112 jobs alive. Source:

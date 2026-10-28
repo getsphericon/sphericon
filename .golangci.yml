@@ -32,6 +32,9 @@ linters:
   #                     Workspace each, call t.Parallel.
   #   exhaustruct       3704: ogen DTOs and their Opt types, ent annotations and mixins, urfave/cli and
   #                     net/http structs, and our option structs whose zero values are the default.
+  #   nonamedreturns    104: named results document a pair of same-typed or positional results
+  #                     ((status int, body string), (address, name string), (wait, ok)), and the
+  #                     rule would turn each into an unlabeled tuple.
   #   wrapcheck         1607 findings; 1328 are errors of our own packages, ent and the container, which
   #                     already name their operation, or control-flow errors (river's snooze and
   #                     cancel, ctx.Err), and ignoring them leaves 279 stdlib and
@@ -115,6 +118,7 @@ linters:
     - goconst
     - cyclop
     - gocognit
+    - gomoddirectives
     - funlen
     - maintidx
     - nestif
