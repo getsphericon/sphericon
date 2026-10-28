@@ -439,7 +439,7 @@ func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteOAuthAuthorizationRequest)
 	require.Truef(t, ok, "got %T", res)
-	// contract-copy: the authoring scopes the shipped playbooks use, a chosen subset of the contract's list
+	// contract-copy: the authoring scopes the shipped prompts use, a chosen subset of the contract's list
 	assert.Subset(t, got.Scopes, []siteapi.GrantableScope{
 		"contacts:read", "contacts:write", "events:read", "events:write",
 		"segments:read", "segments:write", "broadcasts:read", "broadcasts:write",
