@@ -11,9 +11,8 @@ a new User's first sign-in, and keeps the answers on the Instance for a Staff me
 
 ## Decisions
 
-- **Off unless switched on.** `SPHERICON_SIGNUP_SURVEY` turns it on only with an explicit `true`, as
-  `SPHERICON_REQUIRE_EMAIL_VERIFICATION` (ADR 0030) and `SPHERICON_SIGNUP_OPEN` (ADR 0042) do, so a
-  typo never starts collecting. It also needs the `staff` license feature, because only the Staff
+- **Off unless the Mode is `saas`** ([[0060-an-instance-runs-in-one-mode]]; it was `SPHERICON_SIGNUP_SURVEY`, an
+  explicit `true`), so a typo never starts collecting. It also needs the `staff` license feature, because only the Staff
   console reads the answers. Without the feature it stays off and the server logs one warning at
   start; it is not a boot error. A Self-hoster is never asked.
 - **A marker says who is asked, not an inference.** Every new User already has a first Workspace and

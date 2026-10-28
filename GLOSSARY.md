@@ -868,6 +868,13 @@ processes serving it. The unit that is upgraded, backed up and counted in a Tele
 SaaS is an Instance too, but never reports on itself.
 _Avoid_: Installation, deployment, tenant (that is a Workspace), server
 
+**Mode**:
+Which kind of deployment an Instance is: `selfhosted` (the default) or `saas`. It alone decides
+what differs between them, such as who may sign up, whether the Instance reports to the project
+and whether the Staff surface exists; no separate setting does. It is not a License key and
+unlocks no Enterprise feature.
+_Avoid_: Edition (that is core or Enterprise, by License key), plan, tier, flavour
+
 **Instance id**:
 A random identifier an Instance generates for itself at first start. It is derived from nothing
 (no Workspace, User, host or address) and identifies no one, only lets reports from the same

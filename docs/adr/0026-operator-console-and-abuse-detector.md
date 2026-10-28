@@ -4,6 +4,9 @@ status: accepted
 
 # Staff console and abuse detector: one EE feature on the suspension mechanism
 
+> **Amended by [[0060-an-instance-runs-in-one-mode]]:** the Staff surface needs the `saas` Mode as
+> well as the `staff` license feature; in `selfhosted` it is off even with the key.
+
 [[0007-workspace-suspension-in-core]] left the Staff console and the automated detector as
 closed EE, and [[0008-operator-separate-identity]] fixed the Staff member as a separate identity. This
 ADR settles how both are built. It adds no new freeze path: both only set and clear the core

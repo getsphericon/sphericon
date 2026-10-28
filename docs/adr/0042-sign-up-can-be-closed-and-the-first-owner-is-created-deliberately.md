@@ -4,6 +4,10 @@ status: accepted
 
 # Sign-up can be closed and the first Owner is created deliberately
 
+> **Amended by [[0060-an-instance-runs-in-one-mode]]:** `SPHERICON_SIGNUP_OPEN` is gone. In `selfhosted`
+> sign-up is open only until the Instance has its first Owner, then closed; in `saas` it is always
+> open. The `create-owner` command stays. The text below is the decision as first taken.
+
 An Instance answers `signup` to anyone who reaches it, so a Self-hoster who exposes a fresh
 Instance hands the first Workspace to whoever arrives first. Four of the self-hosted projects read
 (`docs/research/self-hosted-deploy-prior-art.md`) have a deliberate first-admin step or a switch

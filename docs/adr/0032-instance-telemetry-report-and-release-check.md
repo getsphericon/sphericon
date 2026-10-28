@@ -1,5 +1,11 @@
 # An Instance sends an anonymous Telemetry report, opt-out, and checks for releases on a separate channel
 
+> **Amended by [[0060-an-instance-runs-in-one-mode]]:** `SPHERICON_TELEMETRY` and
+> `SPHERICON_RELEASE_CHECK` are gone. In `saas` the report and the Release check are off and the
+> setting shows as locked; in `selfhosted` the Release check is always on and the report is the
+> owner's choice in the app, or off with `DO_NOT_TRACK=1`. The "this is the SaaS flag" rejected below
+> is accepted in 0060. The text below is the decision as first taken.
+
 A self-hosted Instance sends the project one **Telemetry report** a day, on by default, so the
 project can see which versions, deploy shapes and features are in use. The report is anonymous and
 exactly documented: its schema is a TypeSpec contract (`typespec/telemetry`, compiled to an OpenAPI
