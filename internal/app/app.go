@@ -163,7 +163,7 @@ func trackingVerifier(cfg *config.Config, bus *events.Bus) *trackingdomain.Verif
 		return nil
 	}
 	return &trackingdomain.Verifier{
-		Lookup: net.DefaultResolver.LookupCNAME,
+		Lookup: dnsResolver(cfg.DNSAddr).LookupCNAME,
 		Target: cfg.TrackingCNAMETarget,
 		Now:    time.Now,
 		// The SSRF-guarded client: a customer's DNS names the host the probe dials.
@@ -1716,7 +1716,7 @@ func (a *App) Reencrypt(ctx context.Context) ([]rekey.Count, error) {
 	return rekey.New(client.Client, cipher).Run(ctx)
 }
 
-// dnsResolver is the resolver of Sending domain and Join domain verification: the host's own
+// dnsResolver is the resolver of Sending domain, Join domain and Tracking domain verification: the host's own
 // when addr is empty, otherwise the DNS server at addr (host:port), which a development stack
 // runs for its demo records.
 func dnsResolver(addr string) *net.Resolver {

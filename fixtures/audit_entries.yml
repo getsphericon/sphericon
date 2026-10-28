@@ -128,3 +128,112 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 # {{end}}
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  entry_key: fixture-brightpath-21001
+  occurred_at: '{{hoursAgo 2}}'
+  actor_kind: user
+  actor_id: '20000'
+  actor_name: Maya
+  action: integration.update
+  target_type: integration
+  target_id: '20003'
+  target_name: 'Mailpit (dev SMTP)'
+  diff: '{"enabled":{"from":false,"to":true}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 2}}'
+  updated_at: '{{hoursAgo 2}}'
+- id: 21002
+  entry_key: fixture-brightpath-21002
+  occurred_at: '{{hoursAgo 9}}'
+  actor_kind: user
+  actor_id: '20001'
+  actor_name: Ana
+  action: tag.create
+  target_type: tag
+  target_id: '20005'
+  target_name: 'webinar-attendee'
+  workspace_id: 20
+  created_at: '{{hoursAgo 9}}'
+  updated_at: '{{hoursAgo 9}}'
+- id: 21003
+  entry_key: fixture-brightpath-21003
+  occurred_at: '{{hoursAgo 31}}'
+  actor_kind: user
+  actor_id: '20000'
+  actor_name: Maya
+  action: webhook_endpoint.create
+  target_type: webhook_endpoint
+  target_id: '21002'
+  target_name: 'crm.brightpath.example'
+  workspace_id: 20
+  created_at: '{{hoursAgo 31}}'
+  updated_at: '{{hoursAgo 31}}'
+- id: 21004
+  entry_key: fixture-brightpath-21004
+  occurred_at: '{{hoursAgo 74}}'
+  actor_kind: user
+  actor_id: '20000'
+  actor_name: Maya
+  action: membership.update
+  target_type: membership
+  target_id: '20002'
+  target_name: 'Milo'
+  diff: '{"role":{"from":"admin","to":"member"}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 74}}'
+  updated_at: '{{hoursAgo 74}}'
+- id: 21005
+  entry_key: fixture-brightpath-21005
+  occurred_at: '{{hoursAgo 140}}'
+  actor_kind: user
+  actor_id: '20001'
+  actor_name: Ana
+  action: integration.update
+  target_type: integration
+  target_id: '20001'
+  target_name: 'Amazon SES · eu-west-1'
+  diff: '{"is_default":{"from":true,"to":false}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 140}}'
+  updated_at: '{{hoursAgo 140}}'
+- id: 21006
+  entry_key: fixture-brightpath-21006
+  occurred_at: '{{hoursAgo 260}}'
+  actor_kind: user
+  actor_id: '20000'
+  actor_name: Maya
+  action: integration.delete
+  target_type: integration
+  target_id: '20009'
+  target_name: 'Old SMTP relay'
+  workspace_id: 20
+  created_at: '{{hoursAgo 260}}'
+  updated_at: '{{hoursAgo 260}}'
+- id: 21007
+  entry_key: fixture-brightpath-21007
+  occurred_at: '{{hoursAgo 400}}'
+  actor_kind: user
+  actor_id: '20001'
+  actor_name: Ana
+  action: tag.create
+  target_type: tag
+  target_id: '20003'
+  target_name: 'trial'
+  workspace_id: 20
+  created_at: '{{hoursAgo 400}}'
+  updated_at: '{{hoursAgo 400}}'
+- id: 21008
+  entry_key: fixture-brightpath-21008
+  occurred_at: '{{hoursAgo 1900}}'
+  actor_kind: user
+  actor_id: '20000'
+  actor_name: Maya
+  action: webhook_endpoint.create
+  target_type: webhook_endpoint
+  target_id: '21004'
+  target_name: 'slow.brightpath.example'
+  workspace_id: 20
+  created_at: '{{hoursAgo 1900}}'
+  updated_at: '{{hoursAgo 1900}}'

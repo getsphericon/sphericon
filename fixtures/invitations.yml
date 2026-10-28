@@ -87,3 +87,23 @@
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  workspace_id: 20
+  email: new.mentor@brightpath.example
+  role: admin
+  token_hash: '{{ inviteHash "inv_fixture_token_brightpath_mentor" }}'
+  invited_by: 20000
+  expires_at: '{{daysAhead 5}}'
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 21002
+  workspace_id: 20
+  email: lapsed.guest@brightpath.example
+  role: member
+  token_hash: '{{ inviteHash "inv_fixture_token_brightpath_guest" }}'
+  invited_by: 20001
+  expires_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 10}}'
+  updated_at: '{{daysAgo 10}}'

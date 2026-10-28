@@ -142,5 +142,7 @@ func TestJoinDomainsDueAreTheVerifiedOnes(t *testing.T) {
 	ids, err := mod.Due(context.Background(), 100)
 
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []int64{fixtures.JoinDomainVerifiedID, fixtures.JoinDomainHooliID}, ids, "the pending domains are not due")
+	verified := env.DB.JoinDomain.Query().Where(joindomain.VerifiedAtNotNil()).IDsX(context.Background())
+	assert.ElementsMatch(t, verified, ids, "the pending domains are not due")
+	assert.Subset(t, ids, []int64{fixtures.JoinDomainVerifiedID, fixtures.JoinDomainHooliID})
 }

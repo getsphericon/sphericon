@@ -226,19 +226,52 @@ Daemons:
 
 ### The Brightpath demo
 
-Development is built around one demo Workspace, **Brightpath**, that `mise run setup` seeds from
-`fixtures/*.yml`: contacts in several lifecycle states, events and visits, segments, tags, custom
-fields, templates, broadcasts and automations with their runs and recipients, and Sending domains
-in different states, so the lists, the analytics and every settings page have something to show
-the moment you sign in. To see what a person does on a site, open the demo storefront at
-https://brightpath.localhost (a linked worktree prints its own origin in `mise env`): it is a
-customer site with the tracker installed, so what you click there arrives as events through the
-`collect.` host and shows up in the app. Sign in to the app as the Brightpath owner, admin or
-member (see the table above) in one browser profile and browse the storefront in another to play
-different people at once.
+Development is built around one demo Workspace, **Brightpath** (an online course school), that
+`mise run setup` seeds from `fixtures/*.yml`. Every page has something to show the moment you sign
+in, in more than one state:
 
-When a fixture lacks a case you need, add a row to `fixtures/` rather than creating it by hand
-every time: the same rows feed the tests and `mise run db:seed` reloads them.
+| Area            | What is seeded                                                                                                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| People          | 48 contacts: free, pro and team, with 0 to 7 completed courses, three sources, tags and custom fields of every type (string, number, bool, datetime); three visitors bound to a contact and two anonymous |
+| Segments        | six, from a plain filter to nested and event-based conditions                                                                                                                                             |
+| Analytics       | about 400 events over three months (viewed pricing, sign-ups, purchases, lessons and courses started or completed, email opens and clicks) behind every chart                                             |
+| Broadcasts      | draft, scheduled, sent (six, with recipients and engagement) and failed                                                                                                                                   |
+| Automations     | five active and one draft; their runs are active, completed, exited and failed (HTTP status, timeout, network)                                                                                            |
+| Rules           | two active (one tags who views pricing, one enrols a new signup in the Welcome series) and one draft; firings of both                                                                                     |
+| Messages        | sent, delivered, bounced, skipped and failed, from broadcasts, automations and transactional emails                                                                                                       |
+| Suppressions    | a bounce, a complaint and a manual one                                                                                                                                                                    |
+| Test inbox      | six captured messages (broadcast, automation, transactional and a test send), all inside the retention window                                                                                             |
+| Integrations    | the dev Mailpit (default), Amazon SES and Postmark SMTP, and the Test inbox                                                                                                                               |
+| Sending domains | `mail.`, `news.`, `send.brightpath.localhost` verified (mail's Tracking domain is `dns_verified`) and `launch.brightpath.localhost` pending                                                               |
+| Join domains    | `brightpath.example` verified, `learn.brightpath.example` pending                                                                                                                                         |
+| Webhooks        | one healthy, one failing, one disabled by the owner and one the platform disabled after repeated failures                                                                                                 |
+| Team            | owner, admin and member, a pending invitation and an expired one                                                                                                                                          |
+| Settings        | a Brand kit, six API tokens, an Audit log of eight entries (it needs a license key with the audit feature), four Confirmations of each provenance                                                         |
+
+To see what a person does on a site, open the demo storefront at https://brightpath.localhost (a
+linked worktree prints its own origin in `mise env`): a customer site with the tracker installed, so
+what you click there arrives as events through the `collect.` host and shows up in the app, and the
+two Rules react to it. The storefront has no login: it identifies whoever types an email in the
+sign-up form or the cart, and the events join the contact with that address. So **a different
+person is a different email**:
+
+| To play                       | Use                              |
+| ----------------------------- | -------------------------------- |
+| a new visitor                 | any address not in the fixtures  |
+| a free learner, nothing done  | `sofia.marino@northwind.example` |
+| a free learner with a course  | `lena.hoffmann@litware.example`  |
+| a pro learner                 | `zara.khan@northwind.example`    |
+| a team member                 | `omar.salem@tailspin.example`    |
+| a webinar attendee            | `layla.haddad@litware.example`   |
+| a suppressed address (bounce) | `pavel.novak@adatum.example`     |
+
+Sign in to the app as the Brightpath owner, admin or member (see the table above) in one browser
+profile and browse the storefront as someone else in another.
+
+When a fixture lacks a case you need, add a row to `fixtures/` rather than creating it by hand every
+time: the same rows feed the tests, and `mise run db:seed` reloads them. Keep a seeded row in a state
+no background job rewrites: a past-due scheduled Broadcast would be sent and a pending Outbound
+message claimed, and the Test inbox keeps a message for seven days only, so date it in hours.
 
 ### Sending mail in development
 
@@ -271,10 +304,15 @@ backend reads through `SPHERICON_DNS_ADDR`, set on the backend daemon only, so t
 keep their stubs. It answers the zones in `dev/dns/`, one file `db.<domain>` per zone, and
 every other name is NXDOMAIN. Nothing reaches the internet.
 
-**Brightpath's domains need nothing from you.** `dev/dns/db.brightpath.localhost` publishes the DKIM
-record of `mail.`, `news.` and `send.brightpath.localhost`, the key the fixtures give them. The first two
-are verified and stay so under the background re-check; `send.brightpath.localhost` is `pending`, so
-**Verify** on it is the flow to try.
+**Brightpath's domains need nothing from you.** `dev/dns/db.brightpath.localhost` publishes the
+DKIM record of `mail.`, `news.` and `send.brightpath.localhost` (the key the fixtures give them) and
+the Tracking domain CNAME of `mail.`; `dev/dns/db.brightpath.example` publishes the Join domain
+proof of `brightpath.example`. These domains are verified and stay so under the background re-check.
+`launch.brightpath.localhost` is `pending` and has no record on purpose: publish it as below and press
+**Verify** to see the flow, and a Tracking domain moves from `pending` to `dns_verified` the same way
+(its `track.<domain>` CNAME points at `edge.sphericon.localhost`, `SPHERICON_TRACKING_CNAME_TARGET`).
+`serving` needs the edge to answer an HTTPS probe, which a development stack cannot offer, so no
+fixture sits in it.
 
 **A domain you create yourself** gets a fresh DKIM key (or Join token), which no zone can know
 ahead, so it stays unverified until you publish its record:

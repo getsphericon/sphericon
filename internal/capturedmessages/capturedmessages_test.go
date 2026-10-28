@@ -97,11 +97,15 @@ func TestPurgeDeletesMessagesPastTheRetentionWindowAcrossWorkspaces(t *testing.T
 
 func TestPurgeFollowsTheWindowItIsGiven(t *testing.T) {
 	env := testhelper.Setup(t)
+	window := 2 * 24 * time.Hour
+	older := env.DB.CapturedMessage.Query().Where(capturedmessage.CreatedAtLT(time.Now().Add(-window))).CountX(t.Context())
+	require.Greater(t, older, 4, "the fixtures hold messages of more than two days old")
 
-	deleted, err := capturedmessages.Purge(t.Context(), env.DB, 2*24*time.Hour, 100)
+	deleted, err := capturedmessages.Purge(t.Context(), env.DB, window, 100)
 
 	require.NoError(t, err)
-	assert.EqualValues(t, 4, deleted, "the two expired, the 3 and 6 days old; one day old stay")
+	assert.EqualValues(t, older, deleted, "every message older than the window goes; the newer ones stay")
+	assert.Positive(t, env.DB.CapturedMessage.Query().CountX(t.Context()))
 }
 
 func TestPurgeWithAZeroWindowDeletesNothing(t *testing.T) {

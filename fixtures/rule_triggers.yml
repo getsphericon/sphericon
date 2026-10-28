@@ -112,3 +112,29 @@
     created_at: '{{daysAgo 40}}',
     updated_at: '{{daysAgo 40}}',
   }
+
+# --- Brightpath (workspace 20): rules react to the storefront's events (ids 21001+) ---
+- {
+    id: 21001,
+    rule_id: 21001,
+    action: viewed_pricing,
+    workspace_id: 20,
+    created_at: '{{daysAgo 50}}',
+    updated_at: '{{daysAgo 50}}',
+  }
+- {
+    id: 21002,
+    rule_id: 21002,
+    action: signup,
+    workspace_id: 20,
+    created_at: '{{daysAgo 50}}',
+    updated_at: '{{daysAgo 50}}',
+  }
+- {
+    id: 21003,
+    rule_id: 21003,
+    action: purchase,
+    workspace_id: 20,
+    created_at: '{{daysAgo 6}}',
+    updated_at: '{{daysAgo 6}}',
+  }

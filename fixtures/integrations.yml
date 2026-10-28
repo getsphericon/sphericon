@@ -245,3 +245,16 @@
   workspace_id: 20
   created_at: '{{daysAgo 110}}'
   updated_at: '{{daysAgo 110}}'
+
+# --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
+- id: 21001
+  ingest_key: omik_test_brightpath_21001
+  name: 'Test inbox'
+  channel: email
+  provider: inbox
+  config_encrypted: '{{ encrypt "{}" }}'
+  enabled: true
+  is_default: false
+  workspace_id: 20
+  created_at: '{{daysAgo 60}}'
+  updated_at: '{{daysAgo 60}}'

@@ -72,3 +72,38 @@
   workspace_id: 1
   created_at: '{{daysAgo 500}}'
   updated_at: '{{daysAgo 500}}'
+
+# --- Brightpath (workspace 20): rules react to the storefront's events (ids 21001+) ---
+- id: 21001
+  rule_id: 21001
+  contact_id: 20001
+  action: viewed_pricing
+  source_id: 'bp:pricing-1'
+  actions: '[{"type":"apply_tag","tag":"pricing-interest"}]'
+  results: '[{"type":"apply_tag","status":"succeeded"}]'
+  completed_at: '{{hoursAgo 30}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 31}}'
+  updated_at: '{{hoursAgo 30}}'
+- id: 21002
+  rule_id: 21001
+  contact_id: 20002
+  action: viewed_pricing
+  source_id: 'bp:pricing-2'
+  actions: '[{"type":"apply_tag","tag":"pricing-interest"}]'
+  results: '[{"type":"apply_tag","status":"succeeded"}]'
+  completed_at: '{{hoursAgo 12}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 13}}'
+  updated_at: '{{hoursAgo 12}}'
+- id: 21003
+  rule_id: 21002
+  contact_id: 20003
+  action: signup
+  source_id: 'bp:signup-1'
+  actions: '[{"type":"enroll_automation","automation_id":20001}]'
+  results: '[{"type":"enroll_automation","status":"succeeded"}]'
+  completed_at: '{{hoursAgo 90}}'
+  workspace_id: 20
+  created_at: '{{hoursAgo 91}}'
+  updated_at: '{{hoursAgo 90}}'
