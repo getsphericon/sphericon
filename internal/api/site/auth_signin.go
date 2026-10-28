@@ -104,7 +104,6 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 		Email:        profile.Email,
 		Name:         profile.Name,
 		TrustFailure: h.signin.Trust(params.Provider, profile),
-		SignupOpen:   h.signupOpen,
 		Invitation:   invite,
 		SurveyDue:    h.signupSurvey.Enabled(),
 	})

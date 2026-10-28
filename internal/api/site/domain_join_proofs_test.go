@@ -58,7 +58,7 @@ func TestAProviderSigninOfAKnownIdentityJoinsNobodyAgain(t *testing.T) {
 }
 
 func TestAProviderSigninOnAClosedInstanceCreatesNoUserAndJoinsNobody(t *testing.T) {
-	env, fake := githubEnv(t, testhelper.WithConfig(func(c *config.Config) { c.SignupOpen = false }))
+	env, fake := githubEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 	enableAcmeJoin(t, env)
 
 	signInWithGitHub(t, fake, env.NewRedirectBrowser(t), colleague)

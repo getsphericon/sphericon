@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -21,14 +22,12 @@ import (
 // the link trusts the password only when that browser opens it (SiteAuthVerifyEmail).
 // The Workspace and the welcome email follow the proof.
 func (h *Handlers) SiteAuthRegister(ctx context.Context, req *siteapi.SiteRegisterInput) (siteapi.SiteAuthRegisterRes, error) {
-	if !h.signupOpen {
-		v := siteapi.SiteAuthRegisterForbidden(siteapi.ProblemDetails{
-			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeSignupClosed),
-			Status: siteapi.NewOptInt32(http.StatusForbidden),
-			Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
-			Detail: siteapi.NewOptString(i18n.T("errors.signup_closed", nil)),
-		})
-		return &v, nil
+	open, err := h.accounts.SignupOpen(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !open {
+		return signupClosed(), nil
 	}
 	name := strings.TrimSpace(req.Name)
 	email := strings.TrimSpace(string(req.Email))
@@ -134,7 +133,10 @@ func (h *Handlers) registerVerified(ctx context.Context, name, email, password s
 	if err != nil {
 		return nil, err
 	}
-	u, err := h.accounts.RegisterVerified(ctx, name, email, hash, h.signupSurvey.Enabled())
+	u, err := h.accounts.SignUpVerified(ctx, name, email, hash, h.signupSurvey.Enabled())
+	if errors.Is(err, accounts.ErrSignupClosed) {
+		return signupClosed(), nil // another registration took the first place meanwhile
+	}
 	if db.IsUniqueViolation(err) {
 		return emailTaken(), nil
 	}
@@ -145,6 +147,18 @@ func (h *Handlers) registerVerified(ctx context.Context, name, email, password s
 		mailNotQueued(ctx, "Welcome", err)
 	}
 	return &siteapi.SiteAuthRegisterAccepted{}, nil
+}
+
+// signupClosed is the 403 answer to a registration the Instance's sign-up rule refuses
+// (ADR 0060); accepting an Invitation still works.
+func signupClosed() siteapi.SiteAuthRegisterRes {
+	v := siteapi.SiteAuthRegisterForbidden(siteapi.ProblemDetails{
+		Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeSignupClosed),
+		Status: siteapi.NewOptInt32(http.StatusForbidden),
+		Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
+		Detail: siteapi.NewOptString(i18n.T("errors.signup_closed", nil)),
+	})
+	return &v
 }
 
 // emailTaken is the 409 answer to a registration with an address already in use.

@@ -86,7 +86,7 @@ func TestSigninAnInvitationMatchesTheAddressWhateverItsCase(t *testing.T) {
 }
 
 func TestSigninAnInvitationOpensAClosedRegistrationForItsAddress(t *testing.T) {
-	env, fake := signinEnv(t, testhelper.WithConfig(func(c *config.Config) { c.SignupOpen = false }))
+	env, fake := signinEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 	token := inviteAdminToAcme(t, env, newcomer.Email)
 	other := testhelper.SigninIdentity{Subject: "google-subject-of-olga", Email: "olga@gmail.com", EmailVerified: true}
 

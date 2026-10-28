@@ -136,8 +136,6 @@ type Handlers struct {
 	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
 	// not required in selfhosted (ADR 0060).
 	requireVerification bool
-	// signupOpen is false on an Instance that closed public sign-up (ADR 0042).
-	signupOpen bool
 	// signupSurvey is the Sign-up survey: whether a public sign-up marks its User as owing it,
 	// and the submit.
 	signupSurvey *signupsurvey.Module
@@ -235,9 +233,6 @@ type Deps struct {
 	// registration takes a password and yields a Verified User at once, and login
 	// checks no verification.
 	RequireEmailVerification bool
-	// SignupOpen is whether the Instance lets new Users register (ADR 0042, 0060): when false,
-	// register answers 403.
-	SignupOpen bool
 	// SignupSurvey is the Sign-up survey module (built with signupsurvey.Enabled).
 	SignupSurvey *signupsurvey.Module
 	// Signin is the Sign-in providers the Instance enabled (ADR 0048); none enabled when
@@ -255,7 +250,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupOpen: d.SignupOpen, signupSurvey: d.SignupSurvey,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey,
 		signin:     d.Signin,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}

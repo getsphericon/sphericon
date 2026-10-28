@@ -25,8 +25,6 @@ type ProviderLogin struct {
 	Name  string
 	// TrustFailure is why the provider's proof of Email is not accepted ("" when it is).
 	TrustFailure signin.Reason
-	// SignupOpen is the Instance's sign-up switch (ADR 0042).
-	SignupOpen bool
 	// Invitation is the pending Invitation the sign-in is to accept, nil for a plain sign-in.
 	// It needs the provider's trusted email to be the invited address, and it opens a closed
 	// sign-up for that address, as accepting an Invitation by password does (ADR 0042).
@@ -34,6 +32,10 @@ type ProviderLogin struct {
 	// SurveyDue marks a User this sign-in creates as owing the Sign-up survey (the Instance asks
 	// it). An Invitation sign-in never marks it, nor does a sign-in that creates nobody.
 	SurveyDue bool
+
+	// invited is set by SignInWithIdentity for an Invitation sign-in: the Invitation opens a
+	// closed sign-up (ADR 0060), so neither the decision nor the transaction applies the rule.
+	invited bool
 }
 
 // SigninRefusedError is a sign-in the decision refused; Reason is what the person is told.
@@ -77,7 +79,7 @@ func (a *Accounts) SignInWithIdentity(ctx context.Context, in ProviderLogin) (*P
 	if in.TrustFailure == "" && !strings.EqualFold(strings.TrimSpace(in.Email), in.Invitation.Email) {
 		return nil, &SigninRefusedError{Reason: signin.ReasonInvitationEmailMismatch}
 	}
-	in.SignupOpen = true
+	in.invited = true
 	in.SurveyDue = false
 	signedIn, err := a.signIn(ctx, in)
 	if err != nil {
@@ -102,7 +104,13 @@ func (a *Accounts) signIn(ctx context.Context, in ProviderLogin) (*ProviderSigni
 		if err != nil {
 			return nil, err
 		}
-		facts := SigninFacts{KnownIdentity: known != nil, TrustFailure: in.TrustFailure, SignupOpen: in.SignupOpen}
+		open := in.invited
+		if !open {
+			if open, err = a.SignupOpen(ctx); err != nil {
+				return nil, err
+			}
+		}
+		facts := SigninFacts{KnownIdentity: known != nil, TrustFailure: in.TrustFailure, SignupOpen: open}
 		if holder != nil {
 			facts.EmailHolder = &EmailHolder{Verified: holder.EmailVerifiedAt != nil, Proven: holder.EmailProvenAt != nil}
 		}
@@ -116,6 +124,10 @@ func (a *Accounts) signIn(ctx context.Context, in ProviderLogin) (*ProviderSigni
 				// Two sign-ins of one person raced: read the facts again, where the winner's
 				// User and identity are now visible.
 				continue
+			}
+			if errors.Is(err, ErrSignupClosed) {
+				// Another registration took the first place between the facts and the write.
+				return nil, &SigninRefusedError{Reason: signin.ReasonSignupClosed}
 			}
 			if err != nil {
 				return nil, err
@@ -182,7 +194,12 @@ func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*e
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
 	}
-	u, _, err := a.verified(ctx, &proof{SignupPermits: in.SignupOpen}, func(tx *ent.Client) (*ent.User, error) {
+	u, _, err := a.verified(ctx, &proof{SignupPermits: true}, func(tx *ent.Client) (*ent.User, error) {
+		if !in.invited {
+			if err := a.permitSignup(ctx, tx); err != nil {
+				return nil, err
+			}
+		}
 		now := time.Now()
 		u, err := tx.User.Create().
 			SetName(name).

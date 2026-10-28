@@ -35,6 +35,7 @@ type Accounts struct {
 	ent         *ent.Client
 	bus         *events.Bus
 	newPublicID func() string
+	signup      SignupRule
 }
 
 // Option tunes Accounts.
@@ -453,13 +454,25 @@ func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *stri
 	})
 }
 
-// RegisterVerified is registration on an install that does not require email
-// verification (ADR 0030): in one transaction it creates a User that is Verified at
-// once with its password, and the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The
-// unique index on the email refuses a taken address (see db.IsUniqueViolation). surveyDue marks
-// the User as owing the Sign-up survey; create-owner, which is no public sign-up, passes false.
-func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
+// SignUpVerified is registration on an install that does not require email
+// verification (ADR 0030): in one transaction it checks the Instance's sign-up rule
+// (ErrSignupClosed, ADR 0060), creates a User that is Verified at once with its password, and
+// the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The unique index on the
+// email refuses a taken address (see db.IsUniqueViolation). surveyDue marks the User as owing
+// the Sign-up survey.
+func (a *Accounts) SignUpVerified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
+	return a.createVerified(ctx, true, name, email, passwordHash, surveyDue)
+}
+
+// createVerified is the transaction of SignUpVerified; gated says whether the sign-up rule applies.
+// `sphericon user create-owner` is no public sign-up and is not gated.
+func (a *Accounts) createVerified(ctx context.Context, gated bool, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
 	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client) (*ent.User, error) {
+		if gated {
+			if err := a.permitSignup(ctx, tx); err != nil {
+				return nil, err
+			}
+		}
 		return tx.User.Create().
 			SetName(name).
 			SetEmail(email).
@@ -473,7 +486,7 @@ func (a *Accounts) RegisterVerified(ctx context.Context, name, email, passwordHa
 
 // CreateOwner is the Instance operator's way to make a first Owner on an Instance that
 // closed sign-up (ADR 0042): a Verified User with a generated password and its first
-// Workspace, named FirstWorkspaceName, exactly as RegisterVerified makes them. The password
+// Workspace, named FirstWorkspaceName, exactly as SignUpVerified makes them. The password
 // is returned once; the unique index on the email refuses a taken address (see
 // db.IsUniqueViolation).
 func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (password string, err error) {
@@ -482,7 +495,7 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 	if err != nil {
 		return "", err
 	}
-	if _, err := a.RegisterVerified(ctx, name, email, hash, false); err != nil {
+	if _, err := a.createVerified(ctx, false, name, email, hash, false); err != nil {
 		return "", err
 	}
 	return password, nil
@@ -492,7 +505,7 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 // stamps only verified_at), so it takes no part in domain join (ADR 0051).
 var noJoin *proof
 
-// verified is what makes a User Verified, shared by VerifyEmail, RegisterVerified and the
+// verified is what makes a User Verified, shared by VerifyEmail, SignUpVerified and the
 // provider sign-in: write stores the User's verified state; then, when p is not nil (the
 // step stamped email_proven_at from empty), the domain-join step runs with it; then the User's first Workspace is created and
 // `user.email_verify` recorded in its Audit log, all in one transaction. landing is the

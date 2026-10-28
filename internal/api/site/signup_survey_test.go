@@ -142,7 +142,7 @@ func TestAUserWhoAnsweredIsNeverDueAndCannotSubmitAgain(t *testing.T) {
 }
 
 func TestAnInstanceInTheSelfHostedModeNeverAsks(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted), testhelper.WithSignupRule(accounts.SignupAlways))
 	newcomer := signUpForSurvey(t, env)
 
 	due := surveyDue(t, newcomer)
@@ -293,7 +293,7 @@ func TestAMarkedUserIsDueOnlyWhileTheInstanceAsks(t *testing.T) {
 }
 
 func TestASubmitIsRefusedWhenTheInstanceNoLongerAsks(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted), testhelper.WithSignupRule(accounts.SignupAlways))
 	dan := env.SiteActor(t, fixtures.SurveyDueDanEmail)
 
 	res := submitSurvey(t, dan, validAnswers())

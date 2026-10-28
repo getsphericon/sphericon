@@ -17,7 +17,7 @@ import (
 
 func closedInstance(t *testing.T) *testhelper.TestEnv {
 	t.Helper()
-	return testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.SignupOpen = false }))
+	return testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 }
 
 func TestAClosedInstanceRefusesSignupAndCreatesNoUser(t *testing.T) {

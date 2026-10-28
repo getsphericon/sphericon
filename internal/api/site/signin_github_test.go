@@ -121,7 +121,7 @@ func TestSigninGitHubADeniedConsentLandsOnLoginWithAnError(t *testing.T) {
 }
 
 func TestSigninGitHubClosedSignupRefusesANewPerson(t *testing.T) {
-	env, fake := githubEnv(t, testhelper.WithConfig(func(c *config.Config) { c.SignupOpen = false }))
+	env, fake := githubEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 
 	resp := signInWithGitHub(t, fake, env.NewRedirectBrowser(t), octo)
 
