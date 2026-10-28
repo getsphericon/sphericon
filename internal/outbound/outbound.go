@@ -812,6 +812,10 @@ type TestRequest struct {
 	Variables map[string]any
 	FromEmail string
 	FromName  string
+	// IntegrationID is the Integration the Test send goes through, as for a Request: nil is the
+	// Workspace's default, and one that cannot send holds the Test send (no_integration) without
+	// the System sender standing in.
+	IntegrationID *int64
 	// Asker is the User who asks. Set, it lets a Workspace with no verified Sending domain
 	// send from the System sender, to Asker.Email only (ADR 0041). Nil (an API token) keeps
 	// the Sending-domain gate for every Test send.
@@ -841,7 +845,9 @@ func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Br
 		Variables: map[string]any{"first_name": "Alex", "last_name": "Sample", "email": to},
 		FromEmail: lo.FromPtr(b.FromEmail),
 		FromName:  lo.FromPtr(b.FromName),
-		Asker:     asker,
+		// The Integration a real send of the Broadcast would go through.
+		IntegrationID: b.IntegrationID,
+		Asker:         asker,
 	})
 	report := TestReport{Result: res}
 	switch {
@@ -857,10 +863,10 @@ func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Br
 	return report
 }
 
-// defaultSender is the sender of the Workspace's default Integration: messaging.ErrNoProvider
-// when it has none.
-func (m *Module) defaultSender(ctx context.Context, s *ent.Scoped) (messaging.EmailSender, error) {
-	integ, err := messaging.DefaultEmailIntegration(ctx, s)
+// integrationSender is the sender of the Integration id names, else of the Workspace's default:
+// messaging.ErrNoProvider when it has none that can send.
+func (m *Module) integrationSender(ctx context.Context, s *ent.Scoped, id *int64) (messaging.EmailSender, error) {
+	integ, err := messaging.EmailIntegration(ctx, s, id)
 	if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
 		return nil, fmt.Errorf("outbound: load integration: %w", err)
 	}
@@ -878,12 +884,14 @@ func (m *Module) defaultSender(ctx context.Context, s *ent.Scoped) (messaging.Em
 // suspended Workspace sends nothing, test or not (ADR 0015). Outcomes are Sent,
 // Failed (the content did not render) or Held; there is no replay.
 //
-// With an Asker, no verified Sending domain in the Workspace and no default Integration
-// that delivers nowhere outside (a Test inbox) it goes from the System sender instead
-// (ADR 0041, ADR 0058): after the same freeze check, only to the Asker's own address,
-// within the per-User and per-Workspace caps, and Refused when the Instance has no System
-// sender. A Test inbox takes the Test send itself and the Result is Captured. The gate
-// stays here: no other module decides which sender a Test send uses.
+// The Test send goes through the Integration the request names, else the Workspace's default,
+// as a real send does (#663). With an Asker, no verified Sending domain in the Workspace and
+// that Integration neither delivering nowhere outside (a Test inbox) nor one that was named and
+// cannot send, it goes from the System sender instead (ADR 0041, ADR 0058): after the same
+// freeze check, only to the Asker's own address, within the per-User and per-Workspace caps,
+// and Refused when the Instance has no System sender. A Test inbox takes the Test send itself
+// and the Result is Captured; a named Integration that cannot send holds it (no_integration).
+// The gate stays here: no other module decides which sender a Test send uses.
 func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (Result, error) {
 	ws, err := m.workspace(ctx, s)
 	if err != nil {
@@ -898,16 +906,20 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, req TestRequest) (
 			// The System sender stands in only where no Integration of the Workspace
 			// would deliver outside; a sender that keeps its mail takes the Test send
 			// itself, so it is captured (ADR 0041, ADR 0058).
-			sender, err := m.defaultSender(ctx, s)
+			sender, err := m.integrationSender(ctx, s, req.IntegrationID)
 			if err != nil && !errors.Is(err, messaging.ErrNoProvider) {
 				return Result{}, err
 			}
-			if err != nil || messaging.DeliversOutside(sender) {
+			// A named Integration that cannot send is no reason for the System sender: the gate
+			// holds the Test send, as it holds a real one.
+			deliversOutside := err == nil && messaging.DeliversOutside(sender)
+			noneToSendThrough := err != nil && req.IntegrationID == nil
+			if deliversOutside || noneToSendThrough {
 				return m.sendTestFromSystem(ctx, s, ws, req)
 			}
 		}
 	}
-	g, err := m.gate(ctx, s, req.FromEmail, req.FromName, nil)
+	g, err := m.gate(ctx, s, req.FromEmail, req.FromName, req.IntegrationID)
 	if err != nil {
 		return Result{}, err
 	}

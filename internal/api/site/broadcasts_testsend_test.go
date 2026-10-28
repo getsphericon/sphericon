@@ -192,3 +192,17 @@ func TestSiteTestSendWithAVerifiedDomainKeepsTheOrdinaryPath(t *testing.T) {
 	assert.Equal(t, "anyone@example.com", env.CustomerMail.Messages()[0].To, "an address the author names")
 	assert.Empty(t, env.SystemMail.Messages())
 }
+
+func TestSiteTestSendOfABroadcastOnATestInboxIsCapturedEvenToAnotherAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastGlobexID).SetIntegrationID(fixtures.IntegrationGlobexInboxID).ExecX(t.Context())
+
+	res, err := testSendAsJane(env, c, "stranger@example.com")
+	require.NoError(t, err)
+
+	got, ok := res.(*siteapi.SiteTestSendBroadcastResult)
+	require.Truef(t, ok, "got %T", res)
+	assert.True(t, got.Captured, "the Broadcast's own Test inbox keeps it")
+	assert.Empty(t, env.SystemMail.Messages(), "not the System sender")
+}
