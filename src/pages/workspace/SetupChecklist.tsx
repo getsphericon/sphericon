@@ -1,27 +1,25 @@
-import { Badge, Button, Card, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
+import { Badge, Card, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import { IconCheck, IconCircle, IconClock } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
 import { ButtonLink } from '../../components/RouterLink.tsx'
-import {
-  siteIntegrationsCreateMutation,
-  siteSetupChecklistGetQueryKey,
-} from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSetupProgress, SiteSetupStepStatus } from '../../generated/site/types.gen.ts'
-import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
+import { Route as apiKeysRoute } from '../../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
+import { Route as trackingRoute } from '../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { SetupDomainStep } from './SetupDomainStep.tsx'
 
 type StepKey = keyof SiteSetupProgress['steps']
+type LinkedStepKey = Exclude<StepKey, 'contact'>
 
 // The steps in the order the checklist shows them, each with the existing page where it is done.
+// A step with no single page (`to: null`) renders its own actions.
 const STEPS = [
   { key: 'integration', to: emailsRoute.to },
-  { key: 'testInbox', to: null },
   { key: 'sendingDomain', to: emailsRoute.to },
-  { key: 'contact', to: contactsRoute.to },
+  { key: 'contact', to: null },
   { key: 'sentEmail', to: broadcastsCreateRoute.to },
 ] as const satisfies readonly { key: StepKey; to: string | null }[]
 
@@ -40,7 +38,15 @@ function StatusIcon({ status }: { status: SiteSetupStepStatus }) {
   )
 }
 
-function StepLink({ step, to, workspaceId }: { step: StepKey; to: string; workspaceId: string }) {
+function StepLink({
+  step,
+  to,
+  workspaceId,
+}: {
+  step: LinkedStepKey
+  to: string
+  workspaceId: string
+}) {
   const { t } = useTranslation()
   return (
     <ButtonLink to={to} params={{ workspaceId }} variant="default" size="xs">
@@ -49,34 +55,22 @@ function StepLink({ step, to, workspaceId }: { step: StepKey; to: string; worksp
   )
 }
 
-// TestInboxAction creates the Workspace's Test inbox in place, through the Integration create
-// endpoint. It is never the default: choosing it for the Workspace is a separate, explicit action
-// on the Integrations page, and the step's description says so.
-function TestInboxAction({ workspaceId }: { workspaceId: string }) {
+// ContactActions offers every way a Contact gets into the Workspace: any one of them completes the
+// step, which the server reads off the Contacts themselves, so none is marked here.
+function ContactActions({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const create = useResourceMutation({
-    mutation: siteIntegrationsCreateMutation(),
-    invalidate: [siteSetupChecklistGetQueryKey({ path: { workspaceId } })],
-    errorTitle: t(($) => $.setupChecklist.testInboxError),
-  })
   return (
-    <Button
-      variant="default"
-      size="xs"
-      loading={create.isPending}
-      onClick={() =>
-        create.mutate({
-          path: { workspaceId },
-          body: {
-            name: t(($) => $.settings.integrations.providers.inbox),
-            isDefault: false,
-            config: { kind: 'inbox' },
-          },
-        })
-      }
-    >
-      {t(($) => $.setupChecklist.steps.testInbox.action)}
-    </Button>
+    <Group gap="xs" wrap="wrap">
+      <ButtonLink to={trackingRoute.to} params={{ workspaceId }} variant="default" size="xs">
+        {t(($) => $.setupChecklist.steps.contact.actions.tracker)}
+      </ButtonLink>
+      <ButtonLink to={apiKeysRoute.to} params={{ workspaceId }} variant="default" size="xs">
+        {t(($) => $.setupChecklist.steps.contact.actions.api)}
+      </ButtonLink>
+      <ButtonLink to={contactsRoute.to} params={{ workspaceId }} variant="default" size="xs">
+        {t(($) => $.setupChecklist.steps.contact.actions.manual)}
+      </ButtonLink>
+    </Group>
   )
 }
 
@@ -130,7 +124,7 @@ export function SetupChecklist({
               </Group>
               {status !== 'done' &&
                 (to === null ? (
-                  <TestInboxAction workspaceId={workspaceId} />
+                  <ContactActions workspaceId={workspaceId} />
                 ) : (
                   <StepLink step={step} to={to} workspaceId={workspaceId} />
                 ))}

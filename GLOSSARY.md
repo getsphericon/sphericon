@@ -778,13 +778,11 @@ admin. An Enterprise concept, absent from a plain self-hosted install.
 _Avoid_: Event (that is a Contact/data-plane fact), activity, history, changelog
 
 **Setup checklist**:
-The Workspace's path to its first sent Broadcast, shown on the Overview until it is done: an Integration, a verified Sending domain, a Contact, a sent email (an Outbound message
+The Workspace's path to its first sent email, shown on the Overview until it is done: a real Integration (a Test inbox does not count), a verified Sending domain, a Contact (any one, from any source), a sent email (an Outbound message
 with a sent outcome, from any surface). Each step is
 read off the Workspace's own data, never ticked by hand, so it cannot disagree with the Workspace;
 a Sending domain still waiting for DNS is a step in progress and blocks no later step. A Test send
-does not complete the last step. An optional step, "Try it with a Test inbox", is done while a live
-Test inbox exists; its action creates one and never makes it the default, and it is not needed for
-the checklist to be complete.
+does not complete the last step.
 _Avoid_: Onboarding wizard, getting started, tour
 
 **Sign-up survey**:
