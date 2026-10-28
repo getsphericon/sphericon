@@ -5,7 +5,6 @@ import {
   handleSiteUserGetMe,
   handleSiteIntegrationsList,
   handleSiteSendingDomainsList,
-  handleSiteSuppressionsList,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
 import { Route as emailsRoute } from '../../../routes/workspaces/$workspaceId/settings/emails.tsx'
@@ -29,7 +28,7 @@ const workspace = {
   createdAt: '2026-01-01T00:00:00Z',
 }
 
-test('shows the providers, the sending domains and the suppression list', async () => {
+test('shows the providers and the sending domains', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteIntegrationsList({ body: [] }),
@@ -58,9 +57,6 @@ test('shows the providers, the sending domains and the suppression list', async 
     handleSiteSendingDomainsList({
       body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
     }),
-    handleSiteSuppressionsList({
-      body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
-    }),
   )
 
   const { screen } = await renderWithRouter(
@@ -70,7 +66,4 @@ test('shows the providers, the sending domains and the suppression list', async 
 
   await expect.element(screen.getByRole('heading', { name: 'Providers' })).toBeInTheDocument()
   await expect.element(screen.getByRole('heading', { name: 'Domains' })).toBeInTheDocument()
-  await expect
-    .element(screen.getByRole('heading', { name: 'Suppression list' }))
-    .toBeInTheDocument()
 })

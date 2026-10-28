@@ -10,6 +10,7 @@ import {
   IconMail,
   IconMailbox,
   IconMailFast,
+  IconMailOff,
   IconMailOpened,
   IconPalette,
   IconRobot,
@@ -43,6 +44,7 @@ import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.
 import { Route as rulesRoute } from '../routes/workspaces/$workspaceId/rules/index.tsx'
 import { Route as segmentsRoute } from '../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
+import { Route as suppressionsRoute } from '../routes/workspaces/$workspaceId/suppressions/index.tsx'
 import { Route as tagsRoute } from '../routes/workspaces/$workspaceId/tags/index.tsx'
 import { Route as templatesRoute } from '../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as transactionalEmailsRoute } from '../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
@@ -109,6 +111,11 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
       route: capturedMessagesRoute,
       label: t(($) => $.nav.capturedMessages),
       icon: <IconMailOpened size={18} />,
+    },
+    {
+      route: suppressionsRoute,
+      label: t(($) => $.nav.suppressions),
+      icon: <IconMailOff size={18} />,
     },
   ]
 
