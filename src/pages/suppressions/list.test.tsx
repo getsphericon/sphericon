@@ -7,12 +7,14 @@ import {
   handleSiteSuppressionsList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSuppressionResource } from '../../generated/site/types.gen.ts'
+import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
+import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
-import { SuppressionsSection } from './SuppressionsSection.tsx'
+import { SuppressionsListPage } from './list.tsx'
 
-const WORKSPACE_ID = 'TestWs01'
+const LIST_ROUTE = routeMount(suppressionsRoute, { workspaceId: 'TestWs01' })
 
 function suppression(over: Partial<SiteSuppressionResource> = {}): SiteSuppressionResource {
   return {
@@ -39,7 +41,7 @@ test('lists suppressed addresses with their reason', async () => {
       suppression({ id: '3', destination: 'manual@example.com', reason: 'manual' }),
     ]),
   )
-  const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
   await expect.element(screen.getByText('bounced@example.com')).toBeInTheDocument()
   await expect.element(screen.getByText('Bounced', { exact: true })).toBeInTheDocument()
@@ -56,7 +58,7 @@ test('adds a suppression', async () => {
       return HttpResponse.json(suppression({ reason: 'manual' }), { status: 201 })
     }),
   )
-  const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
   await screen.getByRole('button', { name: 'Suppress' }).click()
   const dialog = screen.getByRole('dialog')
@@ -75,7 +77,7 @@ test('lifts a suppression after confirmation', async () => {
       return new HttpResponse(null, { status: 204 })
     }),
   )
-  const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Lift' }).click()
@@ -97,7 +99,7 @@ test('shows the lifted suppressions on request, without a lift action', async ()
       return HttpResponse.json({ items, page: 1, pageSize: 20, totalItems: 1, totalPages: 1 })
     }),
   )
-  const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
   await expect.element(screen.getByText('bounced@example.com')).toBeInTheDocument()
   await screen.getByLabelText('Show lifted').click()
@@ -109,7 +111,7 @@ test('shows the lifted suppressions on request, without a lift action', async ()
 
 test('shows an error alert when the list fails to load', async () => {
   worker.use(handleSiteSuppressionsList(() => problem(500, { detail: 'boom' })))
-  const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
   await expect
     .element(screen.getByText('Failed to load suppression list').first())
@@ -130,7 +132,7 @@ test('requests the next page when paginating', async () => {
       })
     }),
   )
-  const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
   await expect.element(screen.getByText('bounced@example.com')).toBeInTheDocument()
   await screen.getByRole('button', { name: '2', exact: true }).click()
@@ -143,7 +145,7 @@ test('reports a create failure', async () => {
     list([]),
     handleSiteSuppressionsCreate(() => problem(422, { detail: 'bad address' })),
   )
-  const { screen } = await renderWithRouter(<SuppressionsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<SuppressionsListPage />, LIST_ROUTE)
 
   await screen.getByRole('button', { name: 'Suppress' }).click()
   const dialog = screen.getByRole('dialog')

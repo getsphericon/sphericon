@@ -800,6 +800,7 @@ export default interface Resources {
       "segments": "Segments",
       "settings": "Settings",
       "soon": "Soon",
+      "suppressions": "Suppression list",
       "tags": "Tags",
       "templates": "Templates",
       "transactionalEmails": "Transactional emails",
@@ -1415,29 +1416,6 @@ export default interface Resources {
         "verifyNow": "Verify now",
         "verifyQueued": "Verification started"
       },
-      "suppressions": {
-        "create": "Suppress",
-        "createError": "Failed to suppress address",
-        "emailColumn": "Email",
-        "emailHint": "Sends to this address will be skipped",
-        "emailLabel": "Email address",
-        "empty": "No suppressed addresses",
-        "lift": "Lift",
-        "liftConfirmDescription": "The address will receive mail again. The suppression stays in the list of lifted ones.",
-        "liftConfirmTitle": "Lift this suppression?",
-        "liftError": "Failed to lift suppression",
-        "liftedBadge": "Lifted",
-        "loadError": "Failed to load suppression list",
-        "reasonColumn": "Reason",
-        "reasons": {
-          "bounce": "Bounced",
-          "complaint": "Complaint",
-          "manual": "Manual",
-          "unsubscribed": "Unsubscribed"
-        },
-        "showLifted": "Show lifted",
-        "title": "Suppression list"
-      },
       "testEventDescription": "Send a test event from your terminal, then watch it appear in the activity feed.",
       "testEventTitle": "Send a test event",
       "timezoneDescription": "The time zone your reports count days and hours in. Only an Owner can change it; a change applies to all history at once.",
@@ -1633,6 +1611,29 @@ export default interface Resources {
       "active": "Active",
       "all": "All",
       "unsubscribed": "Unsubscribed"
+    },
+    "suppressions": {
+      "create": "Suppress",
+      "createError": "Failed to suppress address",
+      "emailColumn": "Email",
+      "emailHint": "Sends to this address will be skipped",
+      "emailLabel": "Email address",
+      "empty": "No suppressed addresses",
+      "lift": "Lift",
+      "liftConfirmDescription": "The address will receive mail again. The suppression stays in the list of lifted ones.",
+      "liftConfirmTitle": "Lift this suppression?",
+      "liftError": "Failed to lift suppression",
+      "liftedBadge": "Lifted",
+      "loadError": "Failed to load suppression list",
+      "reasonColumn": "Reason",
+      "reasons": {
+        "bounce": "Bounced",
+        "complaint": "Complaint",
+        "manual": "Manual",
+        "unsubscribed": "Unsubscribed"
+      },
+      "showLifted": "Show lifted",
+      "title": "Suppression list"
     },
     "table": {
       "actions": "Actions",

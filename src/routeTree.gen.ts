@@ -66,6 +66,7 @@ import { Route as WorkspacesWorkspaceIdSettingsPrivacyRouteImport } from './rout
 import { Route as WorkspacesWorkspaceIdSettingsTeamRouteImport } from './routes/workspaces/$workspaceId/settings/team'
 import { Route as WorkspacesWorkspaceIdSettingsTrackingRouteImport } from './routes/workspaces/$workspaceId/settings/tracking'
 import { Route as WorkspacesWorkspaceIdSettingsWebhooksRouteImport } from './routes/workspaces/$workspaceId/settings/webhooks'
+import { Route as WorkspacesWorkspaceIdSuppressionsIndexRouteImport } from './routes/workspaces/$workspaceId/suppressions/index'
 import { Route as WorkspacesWorkspaceIdTagsIndexRouteImport } from './routes/workspaces/$workspaceId/tags/index'
 import { Route as WorkspacesWorkspaceIdTemplatesIndexRouteImport } from './routes/workspaces/$workspaceId/templates/index'
 import { Route as WorkspacesWorkspaceIdTemplatesNewRouteImport } from './routes/workspaces/$workspaceId/templates/new'
@@ -540,6 +541,16 @@ const WorkspacesWorkspaceIdSettingsWebhooksRoute =
       (d) => d.Route,
     ),
   )
+const WorkspacesWorkspaceIdSuppressionsIndexRoute =
+  WorkspacesWorkspaceIdSuppressionsIndexRouteImport.update({
+    id: '/suppressions/',
+    path: '/suppressions/',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/suppressions/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdTagsIndexRoute =
   WorkspacesWorkspaceIdTagsIndexRouteImport.update({
     id: '/tags/',
@@ -759,6 +770,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/rules/': typeof WorkspacesWorkspaceIdRulesIndexRoute
   '/workspaces/$workspaceId/segments/': typeof WorkspacesWorkspaceIdSegmentsIndexRoute
   '/workspaces/$workspaceId/settings/': typeof WorkspacesWorkspaceIdSettingsIndexRoute
+  '/workspaces/$workspaceId/suppressions/': typeof WorkspacesWorkspaceIdSuppressionsIndexRoute
   '/workspaces/$workspaceId/tags/': typeof WorkspacesWorkspaceIdTagsIndexRoute
   '/workspaces/$workspaceId/templates/': typeof WorkspacesWorkspaceIdTemplatesIndexRoute
   '/workspaces/$workspaceId/transactional-emails/': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
@@ -828,6 +840,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/rules': typeof WorkspacesWorkspaceIdRulesIndexRoute
   '/workspaces/$workspaceId/segments': typeof WorkspacesWorkspaceIdSegmentsIndexRoute
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsIndexRoute
+  '/workspaces/$workspaceId/suppressions': typeof WorkspacesWorkspaceIdSuppressionsIndexRoute
   '/workspaces/$workspaceId/tags': typeof WorkspacesWorkspaceIdTagsIndexRoute
   '/workspaces/$workspaceId/templates': typeof WorkspacesWorkspaceIdTemplatesIndexRoute
   '/workspaces/$workspaceId/transactional-emails': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
@@ -904,6 +917,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/rules/': typeof WorkspacesWorkspaceIdRulesIndexRoute
   '/workspaces/$workspaceId/segments/': typeof WorkspacesWorkspaceIdSegmentsIndexRoute
   '/workspaces/$workspaceId/settings/': typeof WorkspacesWorkspaceIdSettingsIndexRoute
+  '/workspaces/$workspaceId/suppressions/': typeof WorkspacesWorkspaceIdSuppressionsIndexRoute
   '/workspaces/$workspaceId/tags/': typeof WorkspacesWorkspaceIdTagsIndexRoute
   '/workspaces/$workspaceId/templates/': typeof WorkspacesWorkspaceIdTemplatesIndexRoute
   '/workspaces/$workspaceId/transactional-emails/': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
@@ -980,6 +994,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/rules/'
     | '/workspaces/$workspaceId/segments/'
     | '/workspaces/$workspaceId/settings/'
+    | '/workspaces/$workspaceId/suppressions/'
     | '/workspaces/$workspaceId/tags/'
     | '/workspaces/$workspaceId/templates/'
     | '/workspaces/$workspaceId/transactional-emails/'
@@ -1049,6 +1064,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/rules'
     | '/workspaces/$workspaceId/segments'
     | '/workspaces/$workspaceId/settings'
+    | '/workspaces/$workspaceId/suppressions'
     | '/workspaces/$workspaceId/tags'
     | '/workspaces/$workspaceId/templates'
     | '/workspaces/$workspaceId/transactional-emails'
@@ -1124,6 +1140,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/rules/'
     | '/workspaces/$workspaceId/segments/'
     | '/workspaces/$workspaceId/settings/'
+    | '/workspaces/$workspaceId/suppressions/'
     | '/workspaces/$workspaceId/tags/'
     | '/workspaces/$workspaceId/templates/'
     | '/workspaces/$workspaceId/transactional-emails/'
@@ -1563,6 +1580,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsWebhooksRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdSettingsRouteRoute
     }
+    '/workspaces/$workspaceId/suppressions/': {
+      id: '/workspaces/$workspaceId/suppressions/'
+      path: '/suppressions'
+      fullPath: '/workspaces/$workspaceId/suppressions/'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdSuppressionsIndexRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
     '/workspaces/$workspaceId/tags/': {
       id: '/workspaces/$workspaceId/tags/'
       path: '/tags'
@@ -1815,6 +1839,7 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdCustomFieldsIndexRoute: typeof WorkspacesWorkspaceIdCustomFieldsIndexRoute
   WorkspacesWorkspaceIdRulesIndexRoute: typeof WorkspacesWorkspaceIdRulesIndexRoute
   WorkspacesWorkspaceIdSegmentsIndexRoute: typeof WorkspacesWorkspaceIdSegmentsIndexRoute
+  WorkspacesWorkspaceIdSuppressionsIndexRoute: typeof WorkspacesWorkspaceIdSuppressionsIndexRoute
   WorkspacesWorkspaceIdTagsIndexRoute: typeof WorkspacesWorkspaceIdTagsIndexRoute
   WorkspacesWorkspaceIdTemplatesIndexRoute: typeof WorkspacesWorkspaceIdTemplatesIndexRoute
   WorkspacesWorkspaceIdTransactionalEmailsIndexRoute: typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
@@ -1860,6 +1885,8 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
     WorkspacesWorkspaceIdRulesIndexRoute: WorkspacesWorkspaceIdRulesIndexRoute,
     WorkspacesWorkspaceIdSegmentsIndexRoute:
       WorkspacesWorkspaceIdSegmentsIndexRoute,
+    WorkspacesWorkspaceIdSuppressionsIndexRoute:
+      WorkspacesWorkspaceIdSuppressionsIndexRoute,
     WorkspacesWorkspaceIdTagsIndexRoute: WorkspacesWorkspaceIdTagsIndexRoute,
     WorkspacesWorkspaceIdTemplatesIndexRoute:
       WorkspacesWorkspaceIdTemplatesIndexRoute,

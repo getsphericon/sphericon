@@ -30,6 +30,7 @@ import {
 import type { SiteSuppressionReason } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
 
 const REASON_COLORS: Record<SiteSuppressionReason, string> = {
   bounce: 'orange',
@@ -41,13 +42,14 @@ const REASON_COLORS: Record<SiteSuppressionReason, string> = {
 // server-side rather than rendering only the first page.
 const PAGE_SIZE = 20
 
-// SuppressionsSection manages the workspace do-not-send list: hard bounces and
+// SuppressionsListPage manages the workspace do-not-send list: hard bounces and
 // complaints land here automatically; destinations can also be added manually.
 // The send path skips every active destination listed here; a lifted one stays as a record
 // and is shown on request. (Unsubscribes are a
 // separate, per-source opt-out, not a suppression.)
-export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
+export function SuppressionsListPage() {
   const { t } = useTranslation()
+  const { workspaceId } = suppressionsRoute.useParams()
   const confirmLift = useConfirmation()
   const [page, pageHandlers] = useCounter(1, { min: 1 })
   const [lifted, setLifted] = useState(false)
@@ -66,7 +68,7 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
   const createMutation = useResourceMutation({
     mutation: siteSuppressionsCreateMutation(),
     invalidate: [queryKey],
-    errorTitle: t(($) => $.settings.suppressions.createError),
+    errorTitle: t(($) => $.suppressions.createError),
     onDone: () => {
       form.reset()
       closeCreate()
@@ -77,14 +79,14 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
   const liftMutation = useResourceMutation({
     mutation: siteSuppressionsDeleteMutation(),
     invalidate: [queryKey],
-    errorTitle: t(($) => $.settings.suppressions.liftError),
+    errorTitle: t(($) => $.suppressions.liftError),
   })
 
   const onLift = (id: string) =>
     confirmLift({
-      title: t(($) => $.settings.suppressions.liftConfirmTitle),
-      description: t(($) => $.settings.suppressions.liftConfirmDescription),
-      confirmLabel: t(($) => $.settings.suppressions.lift),
+      title: t(($) => $.suppressions.liftConfirmTitle),
+      description: t(($) => $.suppressions.liftConfirmDescription),
+      confirmLabel: t(($) => $.suppressions.lift),
       onConfirm: () => liftMutation.mutate({ path: { workspaceId, id } }),
     })
 
@@ -94,15 +96,15 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
   return (
     <Box>
       <Group justify="space-between" mb="sm">
-        <Title order={4}>{t(($) => $.settings.suppressions.title)}</Title>
+        <Title order={2}>{t(($) => $.suppressions.title)}</Title>
         <Button size="xs" onClick={openCreate}>
-          {t(($) => $.settings.suppressions.create)}
+          {t(($) => $.suppressions.create)}
         </Button>
       </Group>
 
       <Switch
         mb="sm"
-        label={t(($) => $.settings.suppressions.showLifted)}
+        label={t(($) => $.suppressions.showLifted)}
         checked={lifted}
         onChange={(event) => {
           setLifted(event.currentTarget.checked)
@@ -111,8 +113,8 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
       />
 
       {suppressionsQuery.isError ? (
-        <Alert color="red" title={t(($) => $.settings.suppressions.loadError)} mb="md">
-          {t(($) => $.settings.suppressions.loadError)}
+        <Alert color="red" title={t(($) => $.suppressions.loadError)} mb="md">
+          {t(($) => $.suppressions.loadError)}
         </Alert>
       ) : null}
 
@@ -124,13 +126,13 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
         records={records}
         idAccessor="id"
         columns={[
-          { accessor: 'destination', title: t(($) => $.settings.suppressions.emailColumn) },
+          { accessor: 'destination', title: t(($) => $.suppressions.emailColumn) },
           {
             accessor: 'reason',
-            title: t(($) => $.settings.suppressions.reasonColumn),
+            title: t(($) => $.suppressions.reasonColumn),
             render: (record) => (
               <Badge variant="light" color={REASON_COLORS[record.reason]}>
-                {t(($) => $.settings.suppressions.reasons[record.reason])}
+                {t(($) => $.suppressions.reasons[record.reason])}
               </Badge>
             ),
           },
@@ -140,30 +142,26 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
             render: (record) =>
               record.liftedAt ? (
                 <Badge variant="light" color="gray">
-                  {t(($) => $.settings.suppressions.liftedBadge)}
+                  {t(($) => $.suppressions.liftedBadge)}
                 </Badge>
               ) : (
                 <Group justify="flex-end">
                   <RowActionsMenu>
                     <Menu.Item onClick={() => onLift(record.id)}>
-                      {t(($) => $.settings.suppressions.lift)}
+                      {t(($) => $.suppressions.lift)}
                     </Menu.Item>
                   </RowActionsMenu>
                 </Group>
               ),
           },
         ]}
-        emptyState={<EmptyState title={t(($) => $.settings.suppressions.empty)} />}
+        emptyState={<EmptyState title={t(($) => $.suppressions.empty)} />}
         totalRecords={totalItems}
         recordsPerPage={PAGE_SIZE}
         page={page}
         onPageChange={pageHandlers.set}
       />
-      <Modal
-        opened={createOpened}
-        onClose={closeCreate}
-        title={t(($) => $.settings.suppressions.create)}
-      >
+      <Modal opened={createOpened} onClose={closeCreate} title={t(($) => $.suppressions.create)}>
         <form
           onSubmit={form.onSubmit((values) =>
             createMutation.mutate({
@@ -174,8 +172,8 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
         >
           <Stack>
             <TextInput
-              label={t(($) => $.settings.suppressions.emailLabel)}
-              description={t(($) => $.settings.suppressions.emailHint)}
+              label={t(($) => $.suppressions.emailLabel)}
+              description={t(($) => $.suppressions.emailHint)}
               placeholder="blocked@example.com"
               type="email"
               required
@@ -183,7 +181,7 @@ export function SuppressionsSection({ workspaceId }: { workspaceId: string }) {
               {...form.getInputProps('destination')}
             />
             <Button type="submit" loading={createMutation.isPending}>
-              {t(($) => $.settings.suppressions.create)}
+              {t(($) => $.suppressions.create)}
             </Button>
           </Stack>
         </form>
