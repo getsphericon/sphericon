@@ -228,7 +228,7 @@ test('shows an error alert when the list fails to load', async () => {
     .toBeInTheDocument()
 })
 
-test('expanding a domain row shows its DNS records', async () => {
+test('clicking a domain row opens its DNS records in a modal', async () => {
   worker.use(list([domain()]))
   const { screen } = await renderWithRouter(
     <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
@@ -274,4 +274,58 @@ test('lists no tracking record when the instance has no target', async () => {
 
   await expect.element(screen.getByText('_dmarc.mail.acme.com')).toBeInTheDocument()
   await expect.element(screen.getByText('Tracking domain (optional)')).not.toBeInTheDocument()
+})
+
+test('shows the records of a domain right after it is added', async () => {
+  let created = false
+  worker.use(
+    handleSiteSendingDomainsList(() => {
+      const items = created ? [domain()] : []
+      return HttpResponse.json({
+        items,
+        page: 1,
+        pageSize: 20,
+        totalItems: items.length,
+        totalPages: 1,
+      })
+    }),
+    handleSiteSendingDomainsCreate(() => {
+      created = true
+      return HttpResponse.json(domain(), { status: 201 })
+    }),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await screen.getByRole('button', { name: 'Add domain' }).click()
+  await screen
+    .getByRole('dialog')
+    .getByLabelText(/^Domain/)
+    .fill('mail.acme.com')
+  await screen.getByRole('dialog').getByRole('button', { name: 'Add domain' }).click()
+
+  await expect.element(screen.getByText('om1._domainkey.mail.acme.com')).toBeInTheDocument()
+})
+
+test('verifies a domain from its records modal and offers the agent prompt', async () => {
+  let verified = false
+  worker.use(
+    list([domain()]),
+    handleSiteSendingDomainsVerify(() => {
+      verified = true
+      return new HttpResponse(null, { status: 204 })
+    }),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await screen.getByText('mail.acme.com').click()
+  await expect
+    .element(screen.getByRole('button', { name: 'Copy prompt for agent' }))
+    .toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Verify now' }).click()
+
+  await expect.poll(() => verified).toBe(true)
 })

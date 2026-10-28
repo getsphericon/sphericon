@@ -1372,6 +1372,7 @@ export default interface Resources {
         "archiveServingDescription": "{{host}} stops serving the tracker and the links in mail. A tracker snippet installed on it stops collecting events until the domain is restored and verified again.",
         "archiveServingTitle": "Archive this domain?",
         "archived": "Domain archived",
+        "copyAgentPrompt": "Copy prompt for agent",
         "create": "Add domain",
         "createError": "Failed to add domain",
         "description": "Authenticate the domains you send from. Sphericon signs your mail with DKIM; publish the records below at your DNS provider, then verify.",
@@ -1393,6 +1394,7 @@ export default interface Resources {
         "restored": "Domain restored; verify its DNS records again",
         "saved": "Domain added",
         "showArchived": "Show archived",
+        "showRecords": "DNS records",
         "spf": "SPF (recommended)",
         "spfHint": "Advisory — does not gate sending.",
         "statusColumn": "Status",
@@ -1410,6 +1412,7 @@ export default interface Resources {
         "verified": "Verified",
         "verify": "Verify",
         "verifyError": "Failed to start verification",
+        "verifyNow": "Verify now",
         "verifyQueued": "Verification started"
       },
       "suppressions": {

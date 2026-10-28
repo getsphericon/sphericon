@@ -1389,6 +1389,7 @@
       "archiveError": "Failed to archive domain",
       "archiveServingDescription": "{{host}} stops serving the tracker and the links in mail. A tracker snippet installed on it stops collecting events until the domain is restored and verified again.",
       "archiveServingTitle": "Archive this domain?",
+      "copyAgentPrompt": "Copy prompt for agent",
       "create": "Add domain",
       "createError": "Failed to add domain",
       "description": "Authenticate the domains you send from. Sphericon signs your mail with DKIM; publish the records below at your DNS provider, then verify.",
@@ -1410,6 +1411,7 @@
       "restoreError": "Failed to restore domain",
       "saved": "Domain added",
       "showArchived": "Show archived",
+      "showRecords": "DNS records",
       "spf": "SPF (recommended)",
       "spfHint": "Advisory — does not gate sending.",
       "statusColumn": "Status",
@@ -1427,6 +1429,7 @@
       "verified": "Verified",
       "verify": "Verify",
       "verifyError": "Failed to start verification",
+      "verifyNow": "Verify now",
       "verifyQueued": "Verification started"
     },
     "suppressions": {
