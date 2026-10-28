@@ -34,7 +34,7 @@ test('an owner switches the report off', async () => {
   await expect.poll(() => bodies).toEqual(['{"enabled":false}'])
 })
 
-test('a setting decided by SPHERICON_TELEMETRY is locked and says why', async () => {
+test('a setting decided by the deployment is locked and says why', async () => {
   const { screen } = await renderWithRouter(
     <TelemetrySection state={state({ enabled: true, locked: true, lockedBy: 'environment' })} />,
   )
@@ -42,9 +42,7 @@ test('a setting decided by SPHERICON_TELEMETRY is locked and says why', async ()
   const toggle = screen.getByRole('switch', { name: 'Send the anonymous usage report' })
   await expect.element(toggle).toBeDisabled()
   await expect.element(toggle).toBeChecked()
-  await expect
-    .element(screen.getByText(/SPHERICON_TELEMETRY environment variable/))
-    .toBeInTheDocument()
+  await expect.element(screen.getByText(/Set by this instance's deployment/)).toBeInTheDocument()
 })
 
 test('DO_NOT_TRACK locks the setting off and says why', async () => {

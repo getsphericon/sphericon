@@ -53,7 +53,7 @@ func (m *Module) LatestRelease(ctx context.Context) (string, error) {
 // CheckRelease asks the source for the newest release and stores it with the check time only
 // when it is strictly newer than the running version and not a prerelease. A source that
 // cannot be reached leaves the previous result and fails nothing. A build that is not a
-// release, or SPHERICON_RELEASE_CHECK=false, asks nobody.
+// release, or an Instance in the saas Mode, asks nobody.
 func (m *Module) CheckRelease(ctx context.Context) error {
 	if m.source == nil || !m.checking() {
 		return nil

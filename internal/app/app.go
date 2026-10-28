@@ -877,6 +877,15 @@ func registerMessaging(injector do.Injector, o options) {
 	})
 }
 
+// requireStaffLicenseForSaaS refuses a saas Instance without the `staff` license (ADR 0060): the
+// Mode unlocks nothing, so without the key the Instance would run with no Staff surface at all.
+func requireStaffLicenseForSaaS(mode config.Mode, lic *licensekey.License) error {
+	if mode.SaaS() && !lic.Has(licensekey.FeatureStaff) {
+		return errors.New("SPHERICON_MODE=saas needs a license key with the `staff` feature in SPHERICON_LICENSE_KEY")
+	}
+	return nil
+}
+
 // registerEvents provides the Enterprise Edition and the domain-event bus.
 func registerEvents(injector do.Injector) {
 	// The Enterprise Edition (ADR 0014): what the runtime license key switches on. An
@@ -890,8 +899,11 @@ func registerEvents(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		lic, err := licensekey.Load(cfg.LicenseKey, licensekey.ProductionKey, time.Now(), slog.Default())
+		lic, err := licensekey.Load(cfg.LicenseKey, licensekey.VerifyingKey(cfg.TrustsDevLicense()), time.Now(), slog.Default())
 		if err != nil {
+			return nil, err
+		}
+		if err := requireStaffLicenseForSaaS(cfg.Mode, lic); err != nil {
 			return nil, err
 		}
 		cipher, err := do.Invoke[*secrets.Cipher](i)

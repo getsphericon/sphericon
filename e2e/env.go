@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/app"
@@ -43,6 +44,17 @@ type Env struct {
 	brandKit *brandkit.Module
 	// sessions issues the cookie a signed-in User of the SPA carries.
 	sessions *apiauth.Sessions
+}
+
+// freeLoopbackAddr is a loopback host:port nothing listens on, for the internal listener.
+func freeLoopbackAddr(ctx context.Context) (string, error) {
+	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
+	if err != nil {
+		return "", fmt.Errorf("find a free port: %w", err)
+	}
+	addr := ln.Addr().String()
+	cleanup.Close(ln, "probe listener")
+	return addr, nil
 }
 
 // SystemSenderFrom is the From address of the Instance's System sender in the suite.
@@ -73,10 +85,28 @@ func Boot() (*Env, func(), error) {
 
 	// The Instance's System sender is Mailpit too: with no verified Sending domain a Test send
 	// goes from it (ADR 0041), and platform mail lands in the same catcher.
+	// The suite runs the SaaS: its flows (the verification mail, the Sign-up survey) are the ones
+	// the saas Mode switches on (ADR 0060), and the Mode needs a License key with `staff`, which
+	// the development key signs, and the values only a deployment gives.
+	licenseKey, err := licensekey.IssueDev()
+	if err != nil {
+		stopMailpit()
+		return nil, nil, fmt.Errorf("issue the development license key: %w", err)
+	}
+	internalAddr, err := freeLoopbackAddr(ctx)
+	if err != nil {
+		stopMailpit()
+		return nil, nil, err
+	}
 	for k, v := range map[string]string{
-		"SPHERICON_SMTP_HOST":         mp.SMTPHost,
-		"SPHERICON_SMTP_PORT":         strconv.Itoa(mp.SMTPPort),
-		"SPHERICON_SYSTEM_EMAIL_FROM": SystemSenderFrom,
+		"SPHERICON_SMTP_HOST":             mp.SMTPHost,
+		"SPHERICON_SMTP_PORT":             strconv.Itoa(mp.SMTPPort),
+		"SPHERICON_SYSTEM_EMAIL_FROM":     SystemSenderFrom,
+		"SPHERICON_MODE":                  "saas",
+		"SPHERICON_LICENSE_KEY":           licenseKey,
+		"SPHERICON_STAFF_JWT_SECRET":      "e2e-staff-secret-distinct-from-the-site-one",
+		"SPHERICON_INTERNAL_ADDR":         internalAddr,
+		"SPHERICON_TRACKING_CNAME_TARGET": "edge.sphericon.e2e.test",
 	} {
 		if err := os.Setenv(k, v); err != nil {
 			stopMailpit()

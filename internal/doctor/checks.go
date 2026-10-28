@@ -95,7 +95,7 @@ func checkSMTP(ctx context.Context, r *Report, in Input) {
 	if cfg.SMTPHost == "" {
 		if cfg.RequireEmailVerification {
 			r.add("system mail", Fail, "SPHERICON_SMTP_HOST is not set, and email verification needs mail",
-				"Set SPHERICON_SMTP_HOST (and port, user, password), or set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false for an Instance without outbound mail.")
+				"Set SPHERICON_SMTP_HOST (and port, user, password).")
 			return
 		}
 		r.add("system mail", Skip, "no SMTP host is set and email verification is off", "")

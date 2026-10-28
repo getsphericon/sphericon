@@ -1,6 +1,6 @@
 // Package signupsurvey is the Sign-up survey: four questions a User who signed up in public
-// answers once, stored on the Instance and read only by a Staff member. The Instance switch
-// (SPHERICON_SIGNUP_SURVEY, which also needs the `staff` license) is decided once, by Enabled.
+// answers once, stored on the Instance and read only by a Staff member. Whether the Instance asks it
+// (the saas Mode, which also needs the `staff` license) is decided once, by Enabled.
 // A public sign-up marks the User as owing the survey (users.signup_survey_due_at, set by
 // internal/accounts when Enabled is true); Submit stores the answers and clears the marker in
 // one transaction.
@@ -43,12 +43,12 @@ func (e *OtherTextError) Error() string {
 	return fmt.Sprintf("signupsurvey: %s is allowed only with the other choice", e.Field)
 }
 
-// Enabled is whether the Instance asks the survey: the operator asked for it (an explicit
-// `true`) and the `staff` license is held, since only the Staff console reads the answers. A
-// request without the license is logged once, here, and is not a boot error.
+// Enabled is whether the Instance asks the survey: its Mode asks for it (saas) and the `staff`
+// license is held, since only the Staff console reads the answers. A request without the license
+// is logged once, here, and is not a boot error.
 func Enabled(requested, licensed bool, log *slog.Logger) bool {
 	if requested && !licensed {
-		log.Warn("SPHERICON_SIGNUP_SURVEY is set but the staff license is missing: the Sign-up survey stays off")
+		log.Warn("the Mode asks for the Sign-up survey but the staff license is missing: the survey stays off")
 	}
 	return requested && licensed
 }

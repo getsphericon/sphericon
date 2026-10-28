@@ -64,7 +64,7 @@ func doctorCommand(d deps) *cli.Command {
 				DialSMTP:         d.doctor.dialSMTP,
 				HTTP:             d.doctor.client,
 				LookupTXT:        d.doctor.lookupTXT,
-				LicensePublicKey: licensekey.ProductionKey,
+				LicensePublicKey: licensekey.VerifyingKey(cfg != nil && cfg.TrustsDevLicense()),
 			}
 			if cfg != nil {
 				db, err := openProbe(ctx, cfg.DatabaseURL)

@@ -15,7 +15,8 @@
     <script>
       window.__APP_LOCALE__ = '{{APP_LOCALE}}'
       // Email verification gate (ADR 0030), substituted the same way: registration
-      // collects a password only when SPHERICON_REQUIRE_EMAIL_VERIFICATION=false (src/instance.ts).
+      // collects a password only when the Instance does not require verification, as a selfhosted
+      // Mode does not (src/instance.ts).
       window.__REQUIRE_EMAIL_VERIFICATION__ = '{{REQUIRE_EMAIL_VERIFICATION}}' !== 'false'
       // DSN of the browser error reporter, empty (reporting off) unless the Instance sets
       // SPHERICON_SENTRY_DSN; substituted the same way (see src/sentry.ts).

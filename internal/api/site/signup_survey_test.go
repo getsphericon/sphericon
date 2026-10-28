@@ -141,8 +141,8 @@ func TestAUserWhoAnsweredIsNeverDueAndCannotSubmitAgain(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSignupSurveySubmitConflict{}, res)
 }
 
-func TestAnInstanceWithTheSwitchOffNeverAsks(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.RequireEmailVerification = false }))
+func TestAnInstanceInTheSelfHostedModeNeverAsks(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 	newcomer := signUpForSurvey(t, env)
 
 	due := surveyDue(t, newcomer)
@@ -162,7 +162,7 @@ func TestAnInstanceWithoutTheStaffLicenseNeverAsks(t *testing.T) {
 }
 
 func TestAUserWhoVerifiesTheirAddressOwesTheSurveyToo(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.SignupSurvey = true }))
+	env := testhelper.Setup(t)
 	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", formPassword)
 
 	due := surveyDue(t, env.SiteActor(t, "grace@example.com"))
@@ -259,7 +259,7 @@ func TestDeletingTheUserRemovesTheirSurveyAnswers(t *testing.T) {
 }
 
 func TestAnUnverifiedRegistrantWhoAcceptsAnInvitationIsNeverAsked(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.SignupSurvey = true }))
+	env := testhelper.Setup(t)
 	register(t, env, "Newcomer", surveyEmail)
 	token := inviteToAcme(t, env, surveyEmail)
 
@@ -273,14 +273,13 @@ func TestAnUnverifiedRegistrantWhoAcceptsAnInvitationIsNeverAsked(t *testing.T) 
 }
 
 func TestAMarkedUserIsDueOnlyWhileTheInstanceAsks(t *testing.T) {
-	switchOn := testhelper.WithConfig(func(c *config.Config) { c.SignupSurvey = true })
 	cases := map[string]struct {
 		opts []testhelper.Option
 		due  bool
 	}{
-		"the switch is on":       {opts: []testhelper.Option{switchOn}, due: true},
-		"the switch is off":      {due: false},
-		"the license is missing": {opts: []testhelper.Option{switchOn, testhelper.WithoutLicense()}, due: false},
+		"the Mode is saas":       {due: true},
+		"the Mode is selfhosted": {opts: []testhelper.Option{testhelper.WithMode(config.ModeSelfHosted)}, due: false},
+		"the license is missing": {opts: []testhelper.Option{testhelper.WithoutLicense()}, due: false},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -294,7 +293,7 @@ func TestAMarkedUserIsDueOnlyWhileTheInstanceAsks(t *testing.T) {
 }
 
 func TestASubmitIsRefusedWhenTheInstanceNoLongerAsks(t *testing.T) {
-	env := testhelper.Setup(t)
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 	dan := env.SiteActor(t, fixtures.SurveyDueDanEmail)
 
 	res := submitSurvey(t, dan, validAnswers())

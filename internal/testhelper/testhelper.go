@@ -279,6 +279,9 @@ func WithoutLicense() Option { return func(s *setup) { s.unlicensed = true } }
 // rate to be defined, so a test crosses the floor with a handful of fixture Events.
 func WithStaffVolumeFloor(n int) Option { return func(s *setup) { s.volumeFloor = n } }
 
+// WithMode runs the test Instance in a Mode, with every setting the Mode decides.
+func WithMode(m config.Mode) Option { return func(s *setup) { s.cfg.ApplyMode(m) } }
+
 // WithConfig edits a private copy of the test config before the server is built.
 func WithConfig(edit func(*config.Config)) Option { return func(s *setup) { edit(s.cfg) } }
 
@@ -318,14 +321,23 @@ func WithLicenseKey(pub ed25519.PublicKey, key string) Option {
 	return func(s *setup) { s.licenseKey, s.licensePub = key, pub }
 }
 
+// testConfig is a private copy of the baseline config for one test. The test License carries every
+// feature, so the harness runs in the saas Mode and the existing tests keep the gates the SaaS has
+// on (verification, the Sign-up survey); a test of selfhosted says so with WithMode (ADR 0060).
+func testConfig() config.Config {
+	cfg := *baseCfg
+	cfg.ApplyMode(config.ModeSaaS)
+	cfg.RateLimits = config.RateLimits{}
+	cfg.TrackingCNAMETarget = TrackingCNAMETarget
+	return cfg
+}
+
 func Setup(t *testing.T, opts ...Option) *TestEnv {
 	t.Helper()
 	initBaseline()
 	require.NoError(t, errLoad, "init test baseline")
 
-	cfg := *baseCfg
-	cfg.RateLimits = config.RateLimits{}
-	cfg.TrackingCNAMETarget = TrackingCNAMETarget
+	cfg := testConfig()
 	st := &setup{cfg: &cfg, now: time.Now, version: buildinfo.Current().Version}
 	for _, opt := range opts {
 		opt(st)

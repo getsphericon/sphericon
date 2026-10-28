@@ -12969,7 +12969,7 @@ type SiteInstanceState struct {
 	NoticeAcknowledged bool `json:"noticeAcknowledged"`
 	// The newest stable release (a bare version such as `0.4.0`) when the Release check found one newer
 	// than the running version; absent otherwise, and always absent for a build whose version is not a
-	// release or when `SPHERICON_RELEASE_CHECK` is off.
+	// release or in the saas Mode, which makes no Release check.
 	LatestRelease OptString `json:"latestRelease"`
 	// When the Instance's license key expired, set only while it has lapsed: the Instance then runs the
 	// open-source core, and nothing Enterprise is deleted (ADR 0035).

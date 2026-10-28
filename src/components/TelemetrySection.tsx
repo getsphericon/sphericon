@@ -10,7 +10,7 @@ import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 
 // TelemetrySection is the switch of the anonymous Telemetry report (ADR 0032). When the
-// environment decides (SPHERICON_TELEMETRY or DO_NOT_TRACK), it is read-only and says why.
+// deployment decides (the saas Mode or DO_NOT_TRACK), it is read-only and says why.
 export function TelemetrySection({ state }: { state: SiteInstanceState }) {
   const { t } = useTranslation()
   const { telemetry } = state

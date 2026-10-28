@@ -133,8 +133,8 @@ type Handlers struct {
 	instance       *instance.Module
 	holds          *holds.Holds
 	origins        Origins
-	// requireVerification is the email verification gate (ADR 0030): off only on an
-	// install that set SPHERICON_REQUIRE_EMAIL_VERIFICATION=false.
+	// requireVerification is the email verification gate (ADR 0030): on in the saas Mode,
+	// not required in selfhosted (ADR 0060).
 	requireVerification bool
 	// signupOpen is false on an Instance that closed public sign-up (ADR 0042).
 	signupOpen bool
@@ -235,7 +235,8 @@ type Deps struct {
 	// registration takes a password and yields a Verified User at once, and login
 	// checks no verification.
 	RequireEmailVerification bool
-	// SignupOpen is SPHERICON_SIGNUP_OPEN (ADR 0042): when false, register answers 403.
+	// SignupOpen is whether the Instance lets new Users register (ADR 0042, 0060): when false,
+	// register answers 403.
 	SignupOpen bool
 	// SignupSurvey is the Sign-up survey module (built with signupsurvey.Enabled).
 	SignupSurvey *signupsurvey.Module

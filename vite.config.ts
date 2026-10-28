@@ -22,9 +22,8 @@ function devLocalePlugin(): Plugin {
     transformIndexHtml(html) {
       const env = process.env.SPHERICON_APP_LOCALE ?? 'en'
       const locale = SUPPORTED_LOCALES.has(env) ? env : 'en'
-      // Only an explicit `false` turns the gate off, as in the backend's config.
-      const verification =
-        process.env.SPHERICON_REQUIRE_EMAIL_VERIFICATION === 'false' ? 'false' : 'true'
+      // The gate is on in the saas Mode only, as in the backend's config (ADR 0060).
+      const verification = process.env.SPHERICON_MODE?.toLowerCase() === 'saas' ? 'true' : 'false'
       return html
         .replaceAll('{{APP_LOCALE}}', locale)
         .replaceAll('{{REQUIRE_EMAIL_VERIFICATION}}', verification)

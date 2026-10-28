@@ -134,10 +134,10 @@ type Invoker interface {
 	// a taken address gets a notice by mail instead. The answer always sets the registration cookie
 	// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
 	// link to this browser, so the header does not say whether the address is taken either. The password
-	// is required (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to
-	// carry that notice and no link: the request creates a Verified User with its first Workspace at once
-	// (202, no session and no cookie: the User signs in next), and a taken address answers 409. An
-	// Instance that closed sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code
+	// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
+	// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
+	// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
+	// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
 	// `signup_closed` before anything is read or created; accepting an Invitation still works.
 	//
 	// POST /auth/register
@@ -3544,10 +3544,10 @@ func (c *Client) sendSiteAuthLogout(ctx context.Context) (res *SiteAuthLogoutNoC
 // a taken address gets a notice by mail instead. The answer always sets the registration cookie
 // (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
 // link to this browser, so the header does not say whether the address is taken either. The password
-// is required (422 otherwise). With `SPHERICON_REQUIRE_EMAIL_VERIFICATION=false` there is no mail to
-// carry that notice and no link: the request creates a Verified User with its first Workspace at once
-// (202, no session and no cookie: the User signs in next), and a taken address answers 409. An
-// Instance that closed sign-up (`SPHERICON_SIGNUP_OPEN=false`, ADR 0042) answers 403 with code
+// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
+// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
+// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
+// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
 // `signup_closed` before anything is read or created; accepting an Invitation still works.
 //
 // POST /auth/register

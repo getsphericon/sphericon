@@ -2795,7 +2795,7 @@ export type SiteInstanceState = {
   /**
    * The newest stable release (a bare version such as `0.4.0`) when the Release check found
    * one newer than the running version; absent otherwise, and always absent for a build whose
-   * version is not a release or when `SPHERICON_RELEASE_CHECK` is off.
+   * version is not a release or in the saas Mode, which makes no Release check.
    */
   latestRelease?: string;
   /**
