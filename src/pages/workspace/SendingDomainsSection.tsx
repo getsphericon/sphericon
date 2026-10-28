@@ -4,14 +4,11 @@ import {
   Alert,
   Badge,
   Button,
-  Code,
-  CopyButton,
   Group,
   Menu,
   Modal,
   Stack,
   Switch,
-  Table,
   Text,
   TextInput,
   Title,
@@ -21,7 +18,6 @@ import { useDisclosure } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
-import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
@@ -34,163 +30,13 @@ import {
   siteSendingDomainsUnarchiveMutation,
   siteSendingDomainsVerifyMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type {
-  SiteSendingDomainResource,
-  SiteTrackingReason,
-  SiteTrackingState,
-} from '../../generated/site/types.gen.ts'
+import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { SendingDomainRecordsModal } from './SendingDomainRecordsModal.tsx'
 
 interface DomainFormValues {
   domain: string
-}
-
-// DnsRecordRow shows one DNS record (host + value) with a copy button for the
-// value — what the user pastes into their DNS provider.
-function DnsRecordRow({
-  label,
-  record,
-  hint,
-  status,
-}: {
-  label: string
-  record: { type: string; host: string; value: string }
-  hint?: string
-  status?: ReactNode
-}) {
-  return (
-    <Table.Tr>
-      <Table.Td>
-        <Text fw={600} size="sm">
-          {label}
-        </Text>
-        {hint ? (
-          <Text c="dimmed" size="xs">
-            {hint}
-          </Text>
-        ) : null}
-        {status}
-      </Table.Td>
-      <Table.Td>{record.type}</Table.Td>
-      <Table.Td>
-        <Code>{record.host}</Code>
-      </Table.Td>
-      <Table.Td>
-        <Group gap="xs" wrap="nowrap" align="flex-start">
-          <Code block maw={420}>
-            {record.value}
-          </Code>
-          <CopyButton value={record.value}>
-            {({ copied, copy }) => (
-              <Button size="compact-xs" variant="light" onClick={copy}>
-                {copied ? '✓' : '⧉'}
-              </Button>
-            )}
-          </CopyButton>
-        </Group>
-      </Table.Td>
-    </Table.Tr>
-  )
-}
-
-const trackingStateColor: Record<SiteTrackingState, string> = {
-  pending: 'gray',
-  dns_verified: 'yellow',
-  serving: 'teal',
-}
-
-// TrackingStatus shows where the Tracking domain stands and, when something holds it
-// back, why (ADR 0038).
-function TrackingStatus({
-  state,
-  reason,
-}: {
-  state: SiteTrackingState
-  reason?: SiteTrackingReason | undefined
-}) {
-  const { t } = useTranslation()
-  const labels: Record<SiteTrackingState, string> = {
-    pending: t(($) => $.settings.sendingDomains.trackingState.pending),
-    dns_verified: t(($) => $.settings.sendingDomains.trackingState.dnsVerified),
-    serving: t(($) => $.settings.sendingDomains.trackingState.serving),
-  }
-  const reasons: Record<SiteTrackingReason, string> = {
-    host_taken: t(($) => $.settings.sendingDomains.trackingReason.hostTaken),
-  }
-  return (
-    <>
-      <Badge mt={4} color={trackingStateColor[state]} variant="light">
-        {labels[state]}
-      </Badge>
-      {reason ? (
-        <Text c="red" size="xs" mt={4}>
-          {reasons[reason]}
-        </Text>
-      ) : null}
-    </>
-  )
-}
-
-// mantine-datatable calls `content` as a plain function, not as a component, so the hooks used by
-// SendingDomainRecords need this wrapper to get their own component boundary.
-function SendingDomainRowExpansion({ record }: { record: SiteSendingDomainResource }) {
-  return <SendingDomainRecords record={record} />
-}
-
-function SendingDomainRecords({ record }: { record: SiteSendingDomainResource }) {
-  const { t } = useTranslation()
-  return (
-    <Stack p="md" gap="xs">
-      <Text size="sm">{t(($) => $.settings.sendingDomains.recordsHint)}</Text>
-      <Table.ScrollContainer minWidth={480}>
-        <Table>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>{t(($) => $.settings.sendingDomains.recordName)}</Table.Th>
-              <Table.Th>{t(($) => $.settings.sendingDomains.recordType)}</Table.Th>
-              <Table.Th>{t(($) => $.settings.sendingDomains.recordHost)}</Table.Th>
-              <Table.Th>{t(($) => $.settings.sendingDomains.recordValue)}</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            <DnsRecordRow
-              label={t(($) => $.settings.sendingDomains.dkim)}
-              hint={t(($) => $.settings.sendingDomains.dkimHint)}
-              record={record.dkimRecord}
-            />
-            <DnsRecordRow
-              label={t(($) => $.settings.sendingDomains.spf)}
-              hint={t(($) => $.settings.sendingDomains.spfHint)}
-              record={record.spfRecord}
-            />
-            <DnsRecordRow
-              label={t(($) => $.settings.sendingDomains.dmarc)}
-              hint={t(($) => $.settings.sendingDomains.dmarcHint)}
-              record={record.dmarcRecord}
-            />
-            {record.trackingRecord ? (
-              <DnsRecordRow
-                label={t(($) => $.settings.sendingDomains.tracking)}
-                hint={t(($) => $.settings.sendingDomains.trackingHint)}
-                record={{
-                  type: record.trackingRecord.type,
-                  host: record.trackingRecord.host,
-                  value: record.trackingRecord.target,
-                }}
-                status={
-                  <TrackingStatus
-                    state={record.trackingRecord.state}
-                    reason={record.trackingRecord.reason}
-                  />
-                }
-              />
-            ) : null}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
-    </Stack>
-  )
 }
 
 export function SendingDomainsSection({
@@ -204,6 +50,7 @@ export function SendingDomainsSection({
   const confirmArchive = useConfirmation()
   const [archived, setArchived] = useState(false)
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
+  const [recordsId, setRecordsId] = useState<string | null>(null)
 
   const listQuery = { archived }
   const queryKey = siteSendingDomainsListQueryKey({ path: { workspaceId } })
@@ -218,9 +65,10 @@ export function SendingDomainsSection({
     invalidate: [queryKey],
     successMessage: t(($) => $.settings.sendingDomains.saved),
     errorTitle: t(($) => $.settings.sendingDomains.createError),
-    onDone: () => {
+    onDone: (created) => {
       form.reset()
       closeAdd()
+      setRecordsId(created.id)
     },
   })
 
@@ -265,6 +113,7 @@ export function SendingDomainsSection({
   })
 
   const records = domainsQuery.data?.items ?? []
+  const recordsDomain = records.find((record) => record.id === recordsId)
 
   return (
     <Box>
@@ -299,6 +148,7 @@ export function SendingDomainsSection({
         minHeight={records.length === 0 ? 200 : 0}
         withTableBorder
         highlightOnHover
+        onRowClick={({ record }) => setRecordsId(record.id)}
         records={records}
         idAccessor="id"
         emptyState={<EmptyState title={t(($) => $.settings.sendingDomains.empty)} />}
@@ -342,6 +192,9 @@ export function SendingDomainsSection({
                       </Menu.Item>
                     ) : (
                       <>
+                        <Menu.Item onClick={() => setRecordsId(record.id)}>
+                          {t(($) => $.settings.sendingDomains.showRecords)}
+                        </Menu.Item>
                         <Menu.Item
                           disabled={verifyMutation.isPending}
                           onClick={() =>
@@ -364,7 +217,6 @@ export function SendingDomainsSection({
               ) : null,
           },
         ]}
-        rowExpansion={{ content: SendingDomainRowExpansion }}
       />
 
       <Modal
@@ -394,6 +246,12 @@ export function SendingDomainsSection({
           </Stack>
         </form>
       </Modal>
+
+      <SendingDomainRecordsModal
+        workspaceId={workspaceId}
+        record={recordsDomain}
+        onClose={() => setRecordsId(null)}
+      />
     </Box>
   )
 }
