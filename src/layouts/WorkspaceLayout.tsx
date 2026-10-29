@@ -48,6 +48,8 @@ function WorkspaceSwitcher({
       data={data}
       value={workspaceId}
       allowDeselect={false}
+      // The closed select is narrow on a phone: the list sizes to its options, or they wrap and clip.
+      comboboxProps={{ width: 'max-content', position: 'bottom-end' }}
       renderOption={({ option }) =>
         option.value === CREATE_OPTION ? (
           <Group gap="xs" wrap="nowrap">
@@ -70,7 +72,9 @@ function WorkspaceSwitcher({
           void navigate({ to: overviewRoute.to, params: { workspaceId: value } })
         }
       }}
-      w={{ base: 88, sm: 220 }}
+      flex={1}
+      miw={0}
+      maw={220}
     />
   )
 }
@@ -216,7 +220,7 @@ export function WorkspaceLayout() {
         standing.kind === 'blocked' ? <SecondFactorBlocked workspace={current} /> : undefined
       }
       headerRight={
-        <Group gap="sm" wrap="nowrap">
+        <Group gap="sm" wrap="nowrap" flex={1} miw={0} justify="flex-end">
           <WorkspaceSwitcher workspaceId={workspaceId} workspaces={workspaces} />
           <UserMenu
             workspaceId={workspaceId}

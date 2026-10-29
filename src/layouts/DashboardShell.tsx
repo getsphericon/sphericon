@@ -62,7 +62,7 @@ export function DashboardShell({
               {t(($) => $.nav.docs)}
             </Button>
           </Group>
-          <Group gap="sm" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap" flex={1} miw={0} justify="flex-end">
             {headerRight}
             <ThemeToggle />
           </Group>
