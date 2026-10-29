@@ -104,20 +104,12 @@ jobs:
         with:
           scope: arch
 
-      # easement keeps each SCIP index under a key of the files its indexer reads, so a pull
-      # request that changes no Go file reads scip-go's output from main instead of running it.
-      # Saved on main only, as the Go cache is (.github/actions/go-cache).
+      # easement keeps each SCIP index under a key of the files its indexer reads, so a run that
+      # changes no Go file reads scip-go's output from an earlier one instead of running it. Saved
+      # by pull requests too, unlike the Go cache: the indexes are megabytes, not gigabytes, and a
+      # second push to a pull request finds those of its first.
       - name: Cache the SCIP indexes
-        if: github.ref == 'refs/heads/main'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/easement
-          key: easement-${{ runner.os }}-${{ github.sha }}
-          restore-keys: easement-${{ runner.os }}-
-
-      - name: Restore the SCIP indexes
-        if: github.ref != 'refs/heads/main'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/easement
           key: easement-${{ runner.os }}-${{ github.sha }}
