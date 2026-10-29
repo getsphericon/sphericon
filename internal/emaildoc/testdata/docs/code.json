@@ -1,0 +1,32 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [{ "type": "text", "text": "Install the client, then call it:" }]
+    },
+    {
+      "type": "codeBlock",
+      "attrs": { "language": "bash", "theme": "dracula" },
+      "content": [
+        { "type": "text", "text": "pip install sphericon\nexport SPHERICON_TOKEN=\"{{ token }}\"" }
+      ]
+    },
+    {
+      "type": "codeBlock",
+      "attrs": { "language": "python" },
+      "content": [
+        {
+          "type": "text",
+          "text": "from sphericon import Client\n\n# Send the welcome email.\nclient = Client(token=None)\nclient.track(\"signup\", email=\"{{ email }}\", plan=1)"
+        }
+      ]
+    },
+    {
+      "type": "codeBlock",
+      "content": [
+        { "type": "text", "text": "const sent = await client.send({ to: 'a@example.com' }) // 202" }
+      ]
+    }
+  ]
+}

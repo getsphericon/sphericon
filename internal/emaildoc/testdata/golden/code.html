@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="en">
+  <head>
+    <meta content="width=device-width" name="viewport" />
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta content="IE=edge" http-equiv="X-UA-Compatible" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta
+      content="telephone=no,address=no,email=no,date=no,url=no"
+      name="format-detection" />
+    <style>
+      @media (prefers-color-scheme: dark){li::marker{color:#c4c4c4}}
+    </style>
+  </head>
+  <body dir="ltr" lang="en" style="background-color:#ffffff">
+    <!--$--><!--html--><!--head--><!--body-->
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td
+            dir="ltr"
+            lang="en"
+            style="font-family:-apple-system, BlinkMacSystemFont, &#x27;Segoe UI&#x27;, &#x27;Roboto&#x27;, &#x27;Oxygen&#x27;, &#x27;Ubuntu&#x27;, &#x27;Cantarell&#x27;, &#x27;Fira Sans&#x27;, &#x27;Droid Sans&#x27;, &#x27;Helvetica Neue&#x27;, sans-serif;font-size:1em;min-height:100%;line-height:155%;background-color:#ffffff">
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="max-width:600px;align:center;width:100%;color:#000000;background-color:#ffffff;border-radius:0px;border-color:#000000;line-height:155%">
+              <tbody>
+                <tr style="width:100%">
+                  <td
+                    style="padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px">
+                    <p
+                      style="margin:0;padding:0;font-size:1em;padding-top:0.5em;padding-bottom:0.5em">
+                      Install the client, then call it:
+                    </p>
+                    <pre
+                      data-language="bash"
+                      data-theme="dracula"
+                      style="color:#f8f8f2;background:#f1f5f9;text-shadow:0 1px rgba(0, 0, 0, 0.3);font-family:monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;hyphens:none;padding:0.75rem 1rem;margin:.5em 0;overflow:auto;border-radius:4px;width:auto;padding-top:12px;padding-right:16px;padding-bottom:12px;padding-left:16px;overflow-x:auto;font-weight:500;font-size:.92em"><code><span>pip ‍​</span><span style="color:#f1fa8c">install</span><span> ‍​sphericon</span><br/><span style="color:#f1fa8c">export</span><span> ‍​</span><span style="color:#f8f8f2">SPHERICON_TOKEN</span><span style="color:#f8f8f2">=</span><span style="color:#50fa7b">&quot;{{ ‍​token ‍​}}&quot;</span><br/></code></pre>
+                    <pre
+                      data-language="python"
+                      data-theme="default"
+                      style="color:#1e293b;background:#f1f5f9;line-height:1.5;font-family:monospace;padding:0.75rem 1rem;border-radius:4px;width:auto;padding-top:12px;padding-right:16px;padding-bottom:12px;padding-left:16px;overflow-x:auto;font-weight:500;font-size:.92em"><code><span>from</span><span> ‍​sphericon ‍​</span><span>import</span><span> ‍​Client</span><br/><span></span><br/><span># Send the welcome email.</span><br/><span>client ‍​</span><span>=</span><span> ‍​Client</span><span>(</span><span>token</span><span>=</span><span>None</span><span>)</span><br/><span>client</span><span>.</span><span>track</span><span>(</span><span>&quot;signup&quot;</span><span>,</span><span> ‍​email</span><span>=</span><span>&quot;{{ email }}&quot;</span><span>,</span><span> ‍​plan</span><span>=</span><span>1</span><span>)</span><br/></code></pre>
+                    <pre
+                      data-language="javascript"
+                      data-theme="default"
+                      style="color:#1e293b;background:#f1f5f9;line-height:1.5;font-family:monospace;padding:0.75rem 1rem;border-radius:4px;width:auto;padding-top:12px;padding-right:16px;padding-bottom:12px;padding-left:16px;overflow-x:auto;font-weight:500;font-size:.92em"><code><span>const</span><span> ‍​sent ‍​</span><span>=</span><span> ‍​</span><span>await</span><span> ‍​client</span><span>.</span><span>send</span><span>(</span><span>{</span><span> ‍​</span><span>to</span><span>:</span><span> ‍​</span><span>&#x27;a@example.com&#x27;</span><span> ‍​</span><span>}</span><span>)</span><span> ‍​</span><span>// 202</span><br/></code></pre>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!--/$-->
+  </body>
+</html>
