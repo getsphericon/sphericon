@@ -15,9 +15,12 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
 
 - **The spec is the contract.** An Event whose `action` is `Order Completed`, `Order Updated`,
   `Order Refunded` or `Order Cancelled` is an order Event, and its properties keep the spec's names
-  (`order_id`, `total`, `currency`, `products`, `discount`, `tax`, `shipping`, `cancel_reason`). The
-  ingest paths of the tracker and the external API are not changed; the Event is read after it is
-  stored. A field the spec has and Sphericon does not use is kept in the Event's properties.
+  (`order_id`, `total`, `currency`, `products`, `discount`, `tax`, `shipping`, `cancel_reason`). No
+  name or field is translated. The four order Events are checked at ingest, on the tracker and the
+  external API alike: an amount with more places than its currency has, or an unknown currency code, is
+  refused with a reason in the response, so the shop learns at once and no order is lost silently.
+  Every other Event is ingested as before, and a valid order Event is stored like any Event and read
+  after it is stored. A field the spec has and Sphericon does not use is kept in the Event's properties.
 - **An Order is a read model of those Events**, one per (Workspace, `order_id`), and its revenue is
   a list of dated **movements**, never a figure that is rewritten. `Order Completed` creates it and
   adds its `total` on the day of its Event; a repeat of the same `order_id` is a no-op. `Order Updated`
