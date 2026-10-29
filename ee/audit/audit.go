@@ -104,13 +104,15 @@ func persist(ctx context.Context, client *ent.Client, env events.Envelope, e *ev
 	return nil
 }
 
-// Log is the read side of the Audit log. Its zero value is unlicensed.
+// Log is the read side of the Audit log, and the export, which records itself through the bus.
+// Its zero value is unlicensed.
 type Log struct {
 	lic *licensekey.License
+	bus *events.Bus
 }
 
-// NewLog builds the reader under a license.
-func NewLog(lic *licensekey.License) *Log { return &Log{lic: lic} }
+// NewLog builds the reader under a license, recording an export through bus.
+func NewLog(lic *licensekey.License, bus *events.Bus) *Log { return &Log{lic: lic, bus: bus} }
 
 // Licensed reports whether this instance may show an Audit log.
 func (l *Log) Licensed() bool { return l != nil && l.lic.Has(licensekey.FeatureAudit) }

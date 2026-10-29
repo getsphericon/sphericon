@@ -412,7 +412,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	if st.volumeFloor > 0 {
 		limits.VolumeFloor = st.volumeFloor
 	}
-	edition, err := ee.New(client, lic, cipher, cfg.JWTSecrets(), staff.Config{
+	edition, err := ee.New(client, bus, lic, cipher, cfg.JWTSecrets(), staff.Config{
 		Secret: newStaffSecret(), SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
 		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail,
 	})

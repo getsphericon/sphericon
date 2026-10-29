@@ -1,0 +1,14 @@
+id: one-way-to-record-audit
+snapshots:
+  "func export(ctx context.Context, s *ent.Scoped) error {\n\treturn s.RecordAudit(ctx, ent.AuditChange{Action: events.ActionAuditLogExport})\n}\n":
+    labels:
+      - source: 's.RecordAudit(ctx, ent.AuditChange{Action: events.ActionAuditLogExport})'
+        style: primary
+        start: 64
+        end: 136
+  "func record(ctx context.Context, m *Module, entry *events.AuditEntry) error {\n\treturn m.recorder.RecordAudit(ctx, entry)\n}\n":
+    labels:
+      - source: m.recorder.RecordAudit(ctx, entry)
+        style: primary
+        start: 86
+        end: 120

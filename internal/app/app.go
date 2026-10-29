@@ -899,14 +899,10 @@ func requireStaffLicenseForSaaS(mode config.Mode, lic *licensekey.License) error
 
 // registerEvents provides the Enterprise Edition and the domain-event bus.
 func registerEvents(injector do.Injector) {
-	// The Enterprise Edition (ADR 0014): what the runtime license key switches on. An
-	// empty or expired key is the plain core (ADR 0035); a malformed or forged one fails boot.
-	do.Provide(injector, func(i do.Injector) (*ee.Edition, error) {
+	// The runtime license key (ADR 0014). An empty or expired key is the plain core
+	// (ADR 0035); a malformed or forged one fails boot.
+	do.Provide(injector, func(i do.Injector) (*licensekey.License, error) {
 		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
 		if err != nil {
 			return nil, err
 		}
@@ -917,6 +913,27 @@ func registerEvents(injector do.Injector) {
 		if err := requireStaffLicenseForSaaS(cfg.Mode, lic); err != nil {
 			return nil, err
 		}
+		return lic, nil
+	})
+
+	// The Enterprise Edition (ADR 0014): what the license key switches on.
+	do.Provide(injector, func(i do.Injector) (*ee.Edition, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		lic, err := do.Invoke[*licensekey.License](i)
+		if err != nil {
+			return nil, err
+		}
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
 		cipher, err := do.Invoke[*secrets.Cipher](i)
 		if err != nil {
 			return nil, err
@@ -925,7 +942,7 @@ func registerEvents(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		edition, err := ee.New(client.Client, lic, cipher, cfg.JWTSecrets(), staff.Config{
+		edition, err := ee.New(client.Client, bus.Bus, lic, cipher, cfg.JWTSecrets(), staff.Config{
 			Abuse:        abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail: cfg.SupportEmail,
 			Secret:       cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
@@ -973,12 +990,14 @@ func registerEvents(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		edition, err := do.Invoke[*ee.Edition](i)
+		lic, err := do.Invoke[*licensekey.License](i)
 		if err != nil {
 			return nil, err
 		}
 		bus := events.New(database.DB)
-		bus.Use(edition.Hooks()...)
+		// The Edition's ent hooks on every transaction the bus opens; the Edition itself
+		// is built after the bus, which its Audit log records through.
+		bus.Use(ee.Hooks(lic, time.Now)...)
 		inserter, err := jobs.NewInserter(database.DB)
 		if err != nil {
 			return nil, err

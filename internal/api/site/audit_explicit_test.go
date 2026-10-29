@@ -216,8 +216,9 @@ func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 
 // Every explicit path is driven here and the actions that reached the log are compared
 // with events.ExplicitAuditActions, so a new explicit path cannot be forgotten: either
-// it is added to the list (and driven below) or this test fails. The call-site scan
-// catches a RecordAudit call in a file this list does not know about.
+// it is added to the list (and driven below) or this test fails. An explicit entry is
+// recorded one way, events.RecordAudit in the transaction of the change, and the call-site
+// scan catches such a call in a file this list does not know about.
 func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	env, fake := signinEnv(t)
 	ctx := context.Background()
@@ -308,7 +309,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	slices.Sort(want)
 	assert.Equal(t, want, seen)
 
-	assert.Equal(t, []string{"ee/audit/export.go", "internal/accounts/accounts.go", "internal/accounts/join.go", "internal/accounts/roles.go", "internal/contacts/contacts.go", "internal/events/audit.go", "internal/suspension/suspension.go", "internal/webhooks/webhooks.go", "internal/workspacedeletion/workspacedeletion.go"},
+	assert.Equal(t, []string{"ee/audit/export.go", "internal/accounts/accounts.go", "internal/accounts/join.go", "internal/accounts/roles.go", "internal/contacts/contacts.go", "internal/suspension/suspension.go", "internal/webhooks/webhooks.go", "internal/workspacedeletion/workspacedeletion.go"},
 		recordAuditCallSites(t), "a new explicit RecordAudit call site: list its actions and drive them above")
 }
 
@@ -330,9 +331,9 @@ func recordAuditCallSites(t *testing.T) []string {
 				return relErr
 			}
 			rel = filepath.ToSlash(rel)
-			// events/scoped.go is the automatic path (the generated scoped-client
-			// wrappers publish through it), not an explicit call.
-			if strings.Contains(string(src), "RecordAudit(") && rel != "internal/events/scoped.go" {
+			// Package events calls RecordAudit unqualified only on the automatic path (the
+			// generated scoped-client wrappers publish through it), never an explicit entry.
+			if strings.Contains(string(src), "events.RecordAudit(") {
 				sites = append(sites, rel)
 			}
 			return nil

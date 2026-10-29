@@ -100,16 +100,6 @@ func (s *Scoped) audited(ctx context.Context, fn func(ts *Scoped) error) error {
 	return s.opener.WithinAuditTx(ctx, s, fn)
 }
 
-// RecordAudit records an entry that no write of an audited entity produces (an export of
-// data) as the scope's actor, in the transaction the scope is bound to or one its opener
-// opens. A scope that is not audited records nothing.
-func (s *Scoped) RecordAudit(ctx context.Context, change AuditChange) error {
-	if !s.auditing() {
-		return nil
-	}
-	return s.audited(ctx, func(ts *Scoped) error { return ts.record(ctx, change) })
-}
-
 // record publishes the change in the scope's transaction.
 func (s *Scoped) record(ctx context.Context, change AuditChange) error {
 	change.Actor = s.actor
