@@ -103,7 +103,6 @@ type Renderer struct {
 	// discarded). A call takes a slot, so calls queue when every runtime is busy.
 	slots chan *vm
 
-	program programOnce
 	started atomic.Bool
 	// languages is set once a runtime has registered the code block's languages before a call.
 	languages atomic.Bool
@@ -306,7 +305,7 @@ func (r *Renderer) readyWithin(ctx context.Context, rt *vm, languages bool) (*vm
 // languages asks for them. A runtime whose registration failed is discarded.
 func (r *Renderer) ready(rt *vm, languages bool) (*vm, error) {
 	if rt == nil {
-		started, err := r.program.start()
+		started, err := startVM()
 		if err != nil {
 			return nil, err
 		}
