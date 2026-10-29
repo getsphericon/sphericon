@@ -5,7 +5,7 @@ import { mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } fro
 import { join } from 'node:path'
 import { runInThisContext } from 'node:vm'
 
-import { build } from 'esbuild'
+import { build, transformSync } from 'esbuild'
 
 const editorDist = realpathSync(join(import.meta.dirname, 'node_modules/@react-email/editor/dist'))
 
@@ -36,11 +36,13 @@ function imageChunk() {
 //   equivalent match over word and punctuation tokens does not.
 // - react-email's code block registers every Prism language (about 400 names, 14,000 lines) when
 //   its module loads. In goja that is nearly all of a runtime's start (3 to 7 seconds on a quiet
-//   machine, 15 or more on one a full test run shares), which a document without a code block
-//   never needs. The registration becomes `registerCodeLanguages`, which the host calls before
-//   it renders a code block (internal/emaildoc); the first read of `Prism.languages` still runs
-//   it, in case the host does not. The same languages register in the same order, so a code
-//   block exports as before, and a runtime without them starts in about 0.1 seconds.
+//   machine, 15 or more on one a full test run shares), and their regular expressions are nearly
+//   all of the bundle's compile (2 of its 2 seconds), which a document without a code block never
+//   needs. The registration becomes `registerCodeLanguages`, which the host calls before it
+//   renders a code block (internal/emaildoc), and its source a string that only that call
+//   compiles; the first read of `Prism.languages` still runs it, in case the host does not. The
+//   same languages register in the same order, so a code block exports as before, and the bundle
+//   compiles in about 0.2 seconds and starts a runtime in about 0.1.
 const rewrites = [
   {
     file: /@react-email[\\/]editor[\\/]dist[\\/].*\.mjs$/,
@@ -58,10 +60,13 @@ const rewrites = [
       /(const Prism\$1 = PrismImport\.default \?\? PrismImport;\n)([\s\S]*)\nexport \{ Prism\$1 as Prism \};/g,
     replacement: (_, head, languages) =>
       `${head}let languagesRegistered = false;
+const codeLanguagesSource = ${JSON.stringify(
+        transformSync(`'use strict';\n${languages}`, { minify: true, legalComments: 'none' }).code,
+      )};
 function registerCodeLanguages() {
   if (languagesRegistered) return;
   languagesRegistered = true;
-${languages}
+  new Function('Prism$1', codeLanguagesSource)(Prism$1);
 }
 globalThis.registerCodeLanguages = registerCodeLanguages;
 const Prism = {

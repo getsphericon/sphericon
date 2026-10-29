@@ -21,9 +21,9 @@ import (
 //go:embed assets/emaildoc.js
 var bundle string
 
-// program compiles the bundle once per process, on the first runtime start of any Renderer (1 to 2
-// seconds on a quiet machine, several times that on a busy one); every runtime then runs the same
-// read-only program.
+// program compiles the bundle once per process, on the first runtime start of any Renderer (about
+// 0.2 seconds on a quiet machine, several times that on a busy one); every runtime then runs the
+// same read-only program.
 var program = sync.OnceValues(func() (*goja.Program, error) {
 	return goja.Compile("emaildoc.js", bundle, false)
 })

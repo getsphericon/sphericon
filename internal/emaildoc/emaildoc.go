@@ -3,8 +3,9 @@
 //
 // A document is the JSON of @react-email/editor. The render is the editor's own export code (a
 // generated bundle, `mise run build:emaildoc`) run in an embedded JavaScript runtime (goja): no Node,
-// no sidecar, no cgo. The first runtime takes seconds to start and tens of megabytes, and the
-// languages a code block highlights take seconds more to register on a runtime, so a Renderer
+// no sidecar, no cgo. A runtime takes tens of megabytes and up to a second to start on a quiet
+// machine, many more on a busy one, and the languages a code block highlights take seconds more
+// to register on it, so a Renderer
 // starts nothing itself: Warm starts it in the background (the server does, at boot) or the first
 // call does, and a runtime registers the languages before its first code block; calls queue for
 // it. A call that runs past its time or memory limit is
