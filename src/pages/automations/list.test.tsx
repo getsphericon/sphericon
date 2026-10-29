@@ -18,6 +18,7 @@ import { worker } from '../../test/worker.ts'
 import { AutomationsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(automationsRoute, { workspaceId: 'TestWs01' })
+const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 const NOW = '2026-01-01T00:00:00Z'
 
 const WELCOME: SiteAutomationResource = {
@@ -164,6 +165,17 @@ test('an automation that sent mail is not deleted and the count of its messages 
   await expect.element(screen.getByText(/5 messages sent by "Welcome flow"/)).toBeInTheDocument()
 })
 
+test('the archived control opens the archived view through the URL', async () => {
+  worker.use(handleSiteAutomationsList(() => HttpResponse.json({ items: [], totalItems: 0 })))
+
+  const { screen, navigate } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByText('Archived', { exact: true }).click()
+
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({ search: { archived: true }, replace: true }),
+  )
+})
+
 test('the archived view lists archived automations and restores one', async () => {
   const flags: (string | null)[] = []
   const restored: string[] = []
@@ -178,9 +190,8 @@ test('the archived view lists archived automations and restores one', async () =
     }),
   )
 
-  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
-  await screen.getByRole('switch', { name: 'Show archived' }).click()
-  await expect.poll(() => flags).toEqual(['false', 'true'])
+  const { screen } = await renderWithRouter(<AutomationsListPage />, ARCHIVED_ROUTE)
+  await expect.poll(() => flags).toEqual(['true'])
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Restore' }).click()

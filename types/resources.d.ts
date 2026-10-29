@@ -32,6 +32,7 @@ export default interface Resources {
       "delete": "Delete",
       "edit": "Edit",
       "more": "More actions",
+      "remove": "Remove",
       "save": "Save",
       "unarchive": "Restore",
       "view": "View"
@@ -215,6 +216,11 @@ export default interface Resources {
       "reload": "Reload",
       "title": "Something went wrong"
     },
+    "archive": {
+      "active": "Current",
+      "archived": "Archived",
+      "view": "List view"
+    },
     "authLayout": {
       "highlightAutomations": "Automations that react to events and run on their own",
       "highlightContacts": "Contacts and segments built from the events you track",
@@ -284,7 +290,6 @@ export default interface Resources {
       "noRecords": "No automations yet",
       "opens": "Opens",
       "removeTagNodeDescription": "Take a tag off the contact.",
-      "showArchived": "Show archived",
       "statusActive": "Active",
       "statusDraft": "Draft",
       "statusLabel": "Status",
@@ -371,7 +376,6 @@ export default interface Resources {
       "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
       "sendNow": "Send now",
-      "showArchived": "Show archived",
       "stats": {
         "bounced": "Bounced",
         "captured": "Captured, not delivered",
@@ -1025,7 +1029,6 @@ export default interface Resources {
       "nameLabel": "Name",
       "noFirings": "This rule has not fired yet",
       "noRecords": "No rules yet",
-      "showArchived": "Show archived",
       "statusActive": "Active",
       "statusDraft": "Draft",
       "statusLabel": "Status",
@@ -1127,7 +1130,6 @@ export default interface Resources {
       "noRecords": "No segments yet",
       "previewButton": "Preview segment",
       "previewCount": "{{count}} matching contacts" | "{{count}} matching contact" | "{{count}} matching contacts",
-      "showArchived": "Show archived",
       "triggerKeyLabel": "Event property name"
     },
     "settings": {
@@ -1202,7 +1204,6 @@ export default interface Resources {
       "installStatusWaiting": "Waiting for the first event…",
       "integrations": {
         "advanced": "Advanced settings",
-        "archiveError": "Failed to archive provider",
         "back": "Back",
         "channel": "Channel",
         "create": "Connect provider",
@@ -1286,10 +1287,9 @@ export default interface Resources {
           "sesHint": "AWS SES. Needs a region and an access key.",
           "smtpHint": "Any SMTP server."
         },
-        "restoreError": "Failed to restore provider",
+        "removeError": "Failed to remove provider",
         "saved": "Provider saved",
         "secretKept": "Leave blank to keep the stored secret",
-        "showArchived": "Show archived providers",
         "title": "Providers"
       },
       "loadErrorTitle": "Failed to load workspace",
@@ -1383,10 +1383,6 @@ export default interface Resources {
       "sendingDomains": {
         "agentHint": "Paste this into an agent connected to this workspace; select the text or use the button.",
         "agentTab": "Prompt for agent",
-        "archiveError": "Failed to archive domain",
-        "archiveServingDescription": "{{host}} stops serving the tracker and the links in mail. A tracker snippet installed on it stops collecting events until the domain is restored and verified again.",
-        "archiveServingTitle": "Archive this domain?",
-        "archived": "Domain archived",
         "copyAgentPrompt": "Copy prompt for agent",
         "create": "Add domain",
         "createError": "Failed to add domain",
@@ -1406,10 +1402,11 @@ export default interface Resources {
         "recordType": "Type",
         "recordValue": "Value",
         "recordsHint": "Add these TXT records at your DNS provider, then click Verify.",
-        "restoreError": "Failed to restore domain",
-        "restored": "Domain restored; verify its DNS records again",
+        "removeError": "Failed to remove domain",
+        "removeServingDescription": "{{host}} stops serving the tracker and the links in mail. A tracker snippet installed on it stops collecting events.",
+        "removeServingTitle": "Remove this domain?",
+        "removed": "Domain removed",
         "saved": "Domain added",
-        "showArchived": "Show archived",
         "showRecords": "DNS records",
         "spf": "SPF (recommended)",
         "spfHint": "Advisory — does not gate sending.",

@@ -8,7 +8,6 @@ import {
   handleSiteIntegrationsCreate,
   handleSiteIntegrationsArchive,
   handleSiteIntegrationsList,
-  handleSiteIntegrationsUnarchive,
   handleSiteIntegrationsUpdate,
   handleSiteMembershipsList,
   handleSiteUserGetMe,
@@ -262,49 +261,24 @@ test('says why a second Test inbox is refused', async () => {
     .toBeInTheDocument()
 })
 
-test('archives a provider', async () => {
-  let archived = false
+test('removes a provider', async () => {
+  let removed = false
   worker.use(
     list([smtp]),
     handleSiteIntegrationsArchive(() => {
-      archived = true
+      removed = true
       return HttpResponse.json({ ...smtp, isDefault: false, archivedAt: '2026-02-01T00:00:00Z' })
     }),
   )
   const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Archive' }).click()
+  await screen.getByRole('menuitem', { name: 'Remove' }).click()
 
-  await expect.poll(() => archived).toBe(true)
+  await expect.poll(() => removed).toBe(true)
 })
 
-test('restores an archived provider from the archived view', async () => {
-  let restored = false
-  worker.use(
-    handleSiteIntegrationsList(({ request }) =>
-      HttpResponse.json(
-        new URL(request.url).searchParams.get('archived') === 'true'
-          ? [{ ...smtp, isDefault: false, archivedAt: '2026-02-01T00:00:00Z' }]
-          : [],
-      ),
-    ),
-    handleSiteIntegrationsUnarchive(() => {
-      restored = true
-      return HttpResponse.json({ ...smtp, isDefault: false })
-    }),
-  )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
-
-  await screen.getByLabelText('Show archived providers').click()
-  await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Restore' }).click()
-
-  await expect.poll(() => restored).toBe(true)
-})
-
-test('a provider that live work uses is not archived and the work is named', async () => {
+test('a provider that live work uses is not removed and the work is named', async () => {
   worker.use(
     list([smtp]),
     handleSiteIntegrationsArchive(() =>
@@ -314,9 +288,9 @@ test('a provider that live work uses is not archived and the work is named', asy
   const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Archive' }).click()
+  await screen.getByRole('menuitem', { name: 'Remove' }).click()
 
-  await expect.element(screen.getByText('Failed to archive provider')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed to remove provider')).toBeInTheDocument()
   await expect.element(screen.getByText(/Broadcast "Summer sale teaser"/)).toBeInTheDocument()
 })
 test('shows an error alert when providers fail to load', async () => {
@@ -453,7 +427,7 @@ test('a member can read the providers but not change them', async () => {
   await expect
     .element(screen.getByRole('button', { name: 'Connect provider' }))
     .not.toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Archive' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
 })
 
 const generic = {

@@ -1,9 +1,9 @@
-import { Badge, Button, Group, Menu, Stack, Switch, Title } from '@mantine/core'
+import { Badge, Button, Group, Menu, Stack, Title } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
@@ -66,7 +66,8 @@ export function AutomationsListPage() {
     errorTitle: t(($) => $.alerts.automationRestoreErrorTitle),
   })
 
-  const [archived, setArchived] = useState(false)
+  const { archived = false } = automationsRoute.useSearch()
+  const routeNavigate = automationsRoute.useNavigate()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
 
   return (
@@ -77,10 +78,15 @@ export function AutomationsListPage() {
         <Button onClick={openCreate}>{t(($) => $.automations.addAutomation)}</Button>
       </Group>
 
-      <Switch
-        label={t(($) => $.automations.showArchived)}
-        checked={archived}
-        onChange={(event) => setArchived(event.currentTarget.checked)}
+      <ArchiveViewControl
+        archived={archived}
+        onChange={(next) =>
+          void routeNavigate({
+            search: { archived: next || undefined },
+            replace: true,
+            viewTransition: false,
+          })
+        }
       />
 
       <PagedTable

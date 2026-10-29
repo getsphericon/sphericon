@@ -244,36 +244,30 @@ export function SendingDomainRecordsModal({
           <Tabs defaultValue="records">
             <Tabs.List>
               <Tabs.Tab value="records">{t(($) => $.settings.sendingDomains.showRecords)}</Tabs.Tab>
-              {record.archivedAt ? null : (
-                <Tabs.Tab value="agent">{t(($) => $.settings.sendingDomains.agentTab)}</Tabs.Tab>
-              )}
+              <Tabs.Tab value="agent">{t(($) => $.settings.sendingDomains.agentTab)}</Tabs.Tab>
             </Tabs.List>
             <Tabs.Panel value="records">
               <SendingDomainRecords record={record} />
             </Tabs.Panel>
-            {record.archivedAt ? null : (
-              <Tabs.Panel value="agent">
-                <Stack p="md" gap="xs">
-                  <Text size="sm">{t(($) => $.settings.sendingDomains.agentHint)}</Text>
-                  <ReadOnlyValue
-                    value={agentPrompt(record)}
-                    ariaLabel={t(($) => $.settings.sendingDomains.copyAgentPrompt)}
-                    maxRows={16}
-                  />
-                </Stack>
-              </Tabs.Panel>
-            )}
+            <Tabs.Panel value="agent">
+              <Stack p="md" gap="xs">
+                <Text size="sm">{t(($) => $.settings.sendingDomains.agentHint)}</Text>
+                <ReadOnlyValue
+                  value={agentPrompt(record)}
+                  ariaLabel={t(($) => $.settings.sendingDomains.copyAgentPrompt)}
+                  maxRows={16}
+                />
+              </Stack>
+            </Tabs.Panel>
           </Tabs>
-          {record.archivedAt ? null : (
-            <Group justify="flex-end">
-              <Button
-                loading={verifyMutation.isPending}
-                onClick={() => verifyMutation.mutate({ path: { workspaceId, id: record.id } })}
-              >
-                {t(($) => $.settings.sendingDomains.verifyNow)}
-              </Button>
-            </Group>
-          )}
+          <Group justify="flex-end">
+            <Button
+              loading={verifyMutation.isPending}
+              onClick={() => verifyMutation.mutate({ path: { workspaceId, id: record.id } })}
+            >
+              {t(($) => $.settings.sendingDomains.verifyNow)}
+            </Button>
+          </Group>
         </Stack>
       ) : null}
     </Modal>

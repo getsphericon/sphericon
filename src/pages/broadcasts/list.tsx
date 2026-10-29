@@ -1,9 +1,9 @@
-import { Badge, Group, Menu, Stack, Switch, Title } from '@mantine/core'
+import { Badge, Group, Menu, Stack, Title } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
@@ -64,7 +64,8 @@ export function BroadcastsListPage() {
     successMessage: t(($) => $.notifications.broadcastRestored),
     errorTitle: t(($) => $.alerts.broadcastRestoreErrorTitle),
   })
-  const [archived, setArchived] = useState(false)
+  const { archived = false } = broadcastsRoute.useSearch()
+  const routeNavigate = broadcastsRoute.useNavigate()
 
   return (
     <Stack>
@@ -75,10 +76,15 @@ export function BroadcastsListPage() {
         </ButtonLink>
       </Group>
 
-      <Switch
-        label={t(($) => $.broadcasts.showArchived)}
-        checked={archived}
-        onChange={(event) => setArchived(event.currentTarget.checked)}
+      <ArchiveViewControl
+        archived={archived}
+        onChange={(next) =>
+          void routeNavigate({
+            search: { archived: next || undefined },
+            replace: true,
+            viewTransition: false,
+          })
+        }
       />
 
       <PagedTable

@@ -5,7 +5,6 @@ import {
   handleSiteSendingDomainsCreate,
   handleSiteSendingDomainsArchive,
   handleSiteSendingDomainsList,
-  handleSiteSendingDomainsUnarchive,
   handleSiteSendingDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
@@ -134,12 +133,12 @@ test('says the domain is not verified yet when the check finds no record', async
   await expect.element(screen.getByText('Not verified yet')).toBeInTheDocument()
 })
 
-test('archives a domain', async () => {
-  let archived = false
+test('removes a domain', async () => {
+  let removed = false
   worker.use(
     list([domain()]),
     handleSiteSendingDomainsArchive(() => {
-      archived = true
+      removed = true
       return HttpResponse.json(domain({ archivedAt: '2026-02-01T00:00:00Z' }))
     }),
   )
@@ -148,14 +147,14 @@ test('archives a domain', async () => {
   )
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Archive' }).click()
+  await screen.getByRole('menuitem', { name: 'Remove' }).click()
 
-  await expect.poll(() => archived).toBe(true)
-  await expect.element(screen.getByText('Domain archived')).toBeInTheDocument()
+  await expect.poll(() => removed).toBe(true)
+  await expect.element(screen.getByText('Domain removed')).toBeInTheDocument()
 })
 
-test('archiving a domain whose Tracking host serves asks first and says the tracker stops', async () => {
-  let archived = false
+test('removing a domain whose Tracking host serves asks first and says the tracker stops', async () => {
+  let removed = false
   const serving = domain({
     trackingRecord: {
       type: 'CNAME',
@@ -167,7 +166,7 @@ test('archiving a domain whose Tracking host serves asks first and says the trac
   worker.use(
     list([serving]),
     handleSiteSendingDomainsArchive(() => {
-      archived = true
+      removed = true
       return HttpResponse.json({ ...serving, archivedAt: '2026-02-01T00:00:00Z' })
     }),
   )
@@ -176,18 +175,18 @@ test('archiving a domain whose Tracking host serves asks first and says the trac
   )
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Archive' }).click()
+  await screen.getByRole('menuitem', { name: 'Remove' }).click()
 
   await expect
     .element(screen.getByText(/track\.mail\.acme\.com stops serving the tracker/))
     .toBeInTheDocument()
-  expect(archived).toBe(false)
+  expect(removed).toBe(false)
 
-  await screen.getByRole('button', { name: 'Archive', exact: true }).click()
-  await expect.poll(() => archived).toBe(true)
+  await screen.getByRole('button', { name: 'Remove', exact: true }).click()
+  await expect.poll(() => removed).toBe(true)
 })
 
-test('a domain that live work sends from is not archived and the work is named', async () => {
+test('a domain that live work sends from is not removed and the work is named', async () => {
   worker.use(
     list([domain()]),
     handleSiteSendingDomainsArchive(() =>
@@ -199,37 +198,10 @@ test('a domain that live work sends from is not archived and the work is named',
   )
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Archive' }).click()
+  await screen.getByRole('menuitem', { name: 'Remove' }).click()
 
-  await expect.element(screen.getByText('Failed to archive domain')).toBeInTheDocument()
+  await expect.element(screen.getByText('Failed to remove domain')).toBeInTheDocument()
   await expect.element(screen.getByText(/Automation "Welcome series"/)).toBeInTheDocument()
-})
-
-test('lists archived domains with the switch and restores one', async () => {
-  const queries: (string | null)[] = []
-  let restored = false
-  worker.use(
-    handleSiteSendingDomainsList(({ request }) => {
-      queries.push(new URL(request.url).searchParams.get('archived'))
-      const items = [domain({ archivedAt: '2026-02-01T00:00:00Z' })]
-      return HttpResponse.json({ items, page: 1, pageSize: 20, totalItems: 1, totalPages: 1 })
-    }),
-    handleSiteSendingDomainsUnarchive(() => {
-      restored = true
-      return HttpResponse.json(domain())
-    }),
-  )
-  const { screen } = await renderWithRouter(
-    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
-  )
-
-  await screen.getByLabelText('Show archived').click()
-  await expect.poll(() => queries).toContain('true')
-
-  await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Restore' }).click()
-
-  await expect.poll(() => restored).toBe(true)
 })
 
 test('shows an error alert when the list fails to load', async () => {

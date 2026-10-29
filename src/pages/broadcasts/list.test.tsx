@@ -15,6 +15,7 @@ import { worker } from '../../test/worker.ts'
 import { BroadcastsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(broadcastsRoute, { workspaceId: 'TestWs01' })
+const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 
 const STATS = { recipientsTotal: 120, openedCount: 45 }
 const DRAFT = {
@@ -163,6 +164,17 @@ const SENT = {
   stats: STATS,
 }
 
+test('the archived control opens the archived view through the URL', async () => {
+  worker.use(handleSiteBroadcastsList(() => HttpResponse.json({ items: [], totalItems: 0 })))
+
+  const { screen, navigate } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+  await screen.getByText('Archived', { exact: true }).click()
+
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({ search: { archived: true }, replace: true }),
+  )
+})
+
 test('the archived view lists archived broadcasts and restores one', async () => {
   const flags: (string | null)[] = []
   const restored: string[] = []
@@ -180,9 +192,8 @@ test('the archived view lists archived broadcasts and restores one', async () =>
     }),
   )
 
-  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
-  await screen.getByRole('switch', { name: 'Show archived' }).click()
-  await expect.poll(() => flags).toEqual(['false', 'true'])
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, ARCHIVED_ROUTE)
+  await expect.poll(() => flags).toEqual(['true'])
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Restore' }).click()

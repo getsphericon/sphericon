@@ -16,6 +16,7 @@ import { SegmentsListPage } from './list.tsx'
 
 const WORKSPACE_ID = { workspaceId: 'TestWs01' }
 const LIST_ROUTE = routeMount(segmentsRoute, WORKSPACE_ID)
+const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 
 const VIPS = { id: '1', name: 'VIP customers', ...TIMESTAMPS }
 const TRIAL = { id: '2', name: 'Trial users', ...TIMESTAMPS }
@@ -117,6 +118,17 @@ test('a segment a live broadcast uses is not archived and the broadcast is named
   await expect.element(screen.getByText('VIP customers')).toBeInTheDocument()
 })
 
+test('the archived control opens the archived view through the URL', async () => {
+  worker.use(handleSiteSegmentsList(() => HttpResponse.json({ items: [], totalItems: 0 })))
+
+  const { screen, navigate } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
+  await screen.getByText('Archived', { exact: true }).click()
+
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({ search: { archived: true }, replace: true }),
+  )
+})
+
 test('the archived view lists archived segments and restores one', async () => {
   const flags: (string | null)[] = []
   const restored: string[] = []
@@ -134,9 +146,8 @@ test('the archived view lists archived segments and restores one', async () => {
     }),
   )
 
-  const { screen } = await renderWithRouter(<SegmentsListPage />, LIST_ROUTE)
-  await screen.getByRole('switch', { name: 'Show archived' }).click()
-  await expect.poll(() => flags).toEqual(['false', 'true'])
+  const { screen } = await renderWithRouter(<SegmentsListPage />, ARCHIVED_ROUTE)
+  await expect.poll(() => flags).toEqual(['true'])
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await screen.getByRole('menuitem', { name: 'Restore' }).click()

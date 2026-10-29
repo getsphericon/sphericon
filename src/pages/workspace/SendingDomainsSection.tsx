@@ -8,7 +8,6 @@ import {
   Menu,
   Modal,
   Stack,
-  Switch,
   Text,
   TextInput,
   Title,
@@ -27,7 +26,6 @@ import {
   siteSendingDomainsCreateMutation,
   siteSendingDomainsListOptions,
   siteSendingDomainsListQueryKey,
-  siteSendingDomainsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
@@ -47,12 +45,11 @@ export function SendingDomainsSection({
   canEdit: boolean
 }) {
   const { t } = useTranslation()
-  const confirmArchive = useConfirmation()
-  const [archived, setArchived] = useState(false)
+  const confirmRemove = useConfirmation()
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const [recordsId, setRecordsId] = useState<string | null>(null)
 
-  const listQuery = { archived }
+  const listQuery = { archived: false }
   const queryKey = siteSendingDomainsListQueryKey({ path: { workspaceId } })
   const domainsQuery = useQuery(
     siteSendingDomainsListOptions({ path: { workspaceId }, query: listQuery }),
@@ -74,38 +71,31 @@ export function SendingDomainsSection({
 
   const verifyMutation = useVerifySendingDomain(workspaceId)
 
-  const archiveMutation = useResourceMutation({
+  const removeMutation = useResourceMutation({
     mutation: siteSendingDomainsArchiveMutation(),
     invalidate: [queryKey],
-    successMessage: t(($) => $.settings.sendingDomains.archived),
-    errorTitle: t(($) => $.settings.sendingDomains.archiveError),
+    successMessage: t(($) => $.settings.sendingDomains.removed),
+    errorTitle: t(($) => $.settings.sendingDomains.removeError),
   })
 
-  // An archived domain stops serving its Tracking host, so a tracker snippet installed on it stops
-  // collecting (ADR 0059): a host that already answers is archived only after saying so.
-  const onArchive = (record: SiteSendingDomainResource) => {
-    const archive = () => archiveMutation.mutate({ path: { workspaceId, id: record.id } })
+  // A removed domain stops serving its Tracking host, so a tracker snippet installed on it stops
+  // collecting (ADR 0059): a host that already answers is removed only after saying so.
+  const onRemove = (record: SiteSendingDomainResource) => {
+    const remove = () => removeMutation.mutate({ path: { workspaceId, id: record.id } })
     const tracking = record.trackingRecord
     if (!tracking || tracking.state === 'pending') {
-      archive()
+      remove()
       return
     }
-    confirmArchive({
-      title: t(($) => $.settings.sendingDomains.archiveServingTitle),
-      description: t(($) => $.settings.sendingDomains.archiveServingDescription, {
+    confirmRemove({
+      title: t(($) => $.settings.sendingDomains.removeServingTitle),
+      description: t(($) => $.settings.sendingDomains.removeServingDescription, {
         host: tracking.host,
       }),
-      confirmLabel: t(($) => $.actions.archive),
-      onConfirm: archive,
+      confirmLabel: t(($) => $.actions.remove),
+      onConfirm: remove,
     })
   }
-
-  const restoreMutation = useResourceMutation({
-    mutation: siteSendingDomainsUnarchiveMutation(),
-    invalidate: [queryKey],
-    successMessage: t(($) => $.settings.sendingDomains.restored),
-    errorTitle: t(($) => $.settings.sendingDomains.restoreError),
-  })
 
   const records = domainsQuery.data?.items ?? []
   const recordsDomain = records.find((record) => record.id === recordsId)
@@ -123,13 +113,6 @@ export function SendingDomainsSection({
       <Text c="dimmed" size="sm" mb="md">
         {t(($) => $.settings.sendingDomains.description)}
       </Text>
-
-      <Switch
-        mb="md"
-        label={t(($) => $.settings.sendingDomains.showArchived)}
-        checked={archived}
-        onChange={(event) => setArchived(event.currentTarget.checked)}
-      />
 
       {domainsQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.sendingDomains.loadError)} mb="md">
@@ -176,37 +159,24 @@ export function SendingDomainsSection({
                 // A click in the cell must not toggle the row's expansion.
                 <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
                   <RowActionsMenu>
-                    {record.archivedAt ? (
-                      <Menu.Item
-                        disabled={restoreMutation.isPending}
-                        onClick={() =>
-                          restoreMutation.mutate({ path: { workspaceId, id: record.id } })
-                        }
-                      >
-                        {t(($) => $.actions.unarchive)}
-                      </Menu.Item>
-                    ) : (
-                      <>
-                        <Menu.Item onClick={() => setRecordsId(record.id)}>
-                          {t(($) => $.settings.sendingDomains.showRecords)}
-                        </Menu.Item>
-                        <Menu.Item
-                          disabled={verifyMutation.isPending}
-                          onClick={() =>
-                            verifyMutation.mutate({ path: { workspaceId, id: record.id } })
-                          }
-                        >
-                          {t(($) => $.settings.sendingDomains.verify)}
-                        </Menu.Item>
-                        <Menu.Item
-                          color="red"
-                          disabled={archiveMutation.isPending}
-                          onClick={() => onArchive(record)}
-                        >
-                          {t(($) => $.actions.archive)}
-                        </Menu.Item>
-                      </>
-                    )}
+                    <Menu.Item onClick={() => setRecordsId(record.id)}>
+                      {t(($) => $.settings.sendingDomains.showRecords)}
+                    </Menu.Item>
+                    <Menu.Item
+                      disabled={verifyMutation.isPending}
+                      onClick={() =>
+                        verifyMutation.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.settings.sendingDomains.verify)}
+                    </Menu.Item>
+                    <Menu.Item
+                      color="red"
+                      disabled={removeMutation.isPending}
+                      onClick={() => onRemove(record)}
+                    >
+                      {t(($) => $.actions.remove)}
+                    </Menu.Item>
                   </RowActionsMenu>
                 </Group>
               ) : null,

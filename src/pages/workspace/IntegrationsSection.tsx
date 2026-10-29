@@ -11,7 +11,6 @@ import {
   NumberInput,
   Paper,
   Stack,
-  Switch,
   Text,
   TextInput,
   ThemeIcon,
@@ -33,7 +32,6 @@ import {
   siteIntegrationsArchiveMutation,
   siteIntegrationsListOptions,
   siteIntegrationsListQueryKey,
-  siteIntegrationsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteIntegrationConfigInput,
@@ -135,12 +133,8 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
   const role = useCurrentRole(workspaceId)
   const canManageIntegrations = canManage(role)
 
-  const [archived, setArchived] = useState(false)
   const queryKey = siteIntegrationsListQueryKey({ path: { workspaceId } })
   const integrationsQuery = useQuery(
-    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived } }),
-  )
-  const activeQuery = useQuery(
     siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
   )
 
@@ -167,16 +161,10 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
     onDone: dismissCreate,
   })
 
-  const archiveMutation = useResourceMutation({
+  const removeMutation = useResourceMutation({
     mutation: siteIntegrationsArchiveMutation(),
     invalidate: [queryKey],
-    errorTitle: t(($) => $.settings.integrations.archiveError),
-  })
-
-  const restoreMutation = useResourceMutation({
-    mutation: siteIntegrationsUnarchiveMutation(),
-    invalidate: [queryKey],
-    errorTitle: t(($) => $.settings.integrations.restoreError),
+    errorTitle: t(($) => $.settings.integrations.removeError),
   })
 
   const providerLabels = {
@@ -204,7 +192,7 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
   const isSes = form.values.provider === 'ses'
   const compatible = tile === 'sesCompatible'
   // The first provider of a Workspace is its default; later ones ask.
-  const hasActive = (activeQuery.data ?? []).length > 0
+  const hasActive = (integrationsQuery.data ?? []).length > 0
   const records = integrationsQuery.data ?? []
   const unlimited = records.filter((record) => record.sendLimit.warnings.includes('unlimited'))
   const quotaUnavailable = records.filter((record) =>
@@ -224,13 +212,6 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
       <Text c="dimmed" size="sm" mb="md">
         {t(($) => $.settings.integrations.description)}
       </Text>
-
-      <Switch
-        mb="md"
-        label={t(($) => $.settings.integrations.showArchived)}
-        checked={archived}
-        onChange={(event) => setArchived(event.currentTarget.checked)}
-      />
 
       {integrationsQuery.isError ? (
         <Alert color="red" title={t(($) => $.settings.integrations.loadError)} mb="md">
@@ -302,24 +283,14 @@ export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
                     <Menu.Item onClick={() => setInbound(record)}>
                       {t(($) => $.settings.integrations.inbound.open)}
                     </Menu.Item>
-                    {record.archivedAt ? (
-                      <Menu.Item
-                        onClick={() =>
-                          restoreMutation.mutate({ path: { workspaceId, id: record.id } })
-                        }
-                      >
-                        {t(($) => $.actions.unarchive)}
-                      </Menu.Item>
-                    ) : (
-                      <Menu.Item
-                        color="red"
-                        onClick={() =>
-                          archiveMutation.mutate({ path: { workspaceId, id: record.id } })
-                        }
-                      >
-                        {t(($) => $.actions.archive)}
-                      </Menu.Item>
-                    )}
+                    <Menu.Item
+                      color="red"
+                      onClick={() =>
+                        removeMutation.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.actions.remove)}
+                    </Menu.Item>
                   </RowActionsMenu>
                 ) : null}
               </Group>

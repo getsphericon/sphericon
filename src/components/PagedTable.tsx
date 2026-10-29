@@ -52,23 +52,27 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
         <ApiErrorAlert error={list.error} title={loadErrorTitle} fallback={loadErrorTitle} />
       ) : null}
 
-      {list.isLoading ? <TableSkeleton /> : null}
-
-      <DataTable<TPage['items'][number]>
-        minHeight={list.data?.items.length ? 0 : 200}
-        withTableBorder
-        {...(onRowClick
-          ? { highlightOnHover: true, onRowClick: ({ record }) => onRowClick(record) }
-          : {})}
-        records={list.data?.items ?? []}
-        columns={columns}
-        totalRecords={totalItems}
-        recordsPerPage={pageSize}
-        page={page}
-        onPageChange={pageHandlers.set}
-        fetching={list.isFetching}
-        emptyState={<EmptyState title={noRecordsText} description={emptyState} />}
-      />
+      {/* While the first page loads only the skeleton shows: an empty table would flash its
+          empty state under it. */}
+      {list.isLoading ? (
+        <TableSkeleton />
+      ) : (
+        <DataTable<TPage['items'][number]>
+          minHeight={list.data?.items.length ? 0 : 200}
+          withTableBorder
+          {...(onRowClick
+            ? { highlightOnHover: true, onRowClick: ({ record }) => onRowClick(record) }
+            : {})}
+          records={list.data?.items ?? []}
+          columns={columns}
+          totalRecords={totalItems}
+          recordsPerPage={pageSize}
+          page={page}
+          onPageChange={pageHandlers.set}
+          fetching={list.isFetching}
+          emptyState={<EmptyState title={noRecordsText} description={emptyState} />}
+        />
+      )}
     </Stack>
   )
 }

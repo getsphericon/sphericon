@@ -424,7 +424,9 @@ _Avoid_: Theme, style guide
 **Discard**:
 Taking a row out of working lists while keeping it, by stamping `discarded_at`; **Undiscard**
 clears the stamp. It is the one mechanism behind what the UI calls Archive (a Broadcast, an
-Automation, a Segment, an Integration, a Sending domain) or Delete (a Workspace, restorable for its window). A discarded row is hidden from
+Automation, a Segment, a Rule: a list view of the archived ones restores them), Remove (an
+Integration, a Sending domain: no view of the removed, restorable through the API only) or Delete
+(a Workspace, restorable for its window). A discarded row is hidden from
 lists and from new work, but not from history: reports still count it. A row that other live
 work depends on cannot be discarded. **Purge** is the physical removal, allowed only for what
 has no history (a draft Broadcast, an Automation with no Enrollments) and for erasure. The

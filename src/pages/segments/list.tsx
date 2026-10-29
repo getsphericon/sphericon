@@ -1,8 +1,8 @@
-import { Group, Menu, Stack, Switch, Title } from '@mantine/core'
+import { Group, Menu, Stack, Title } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ArchiveViewControl } from '../../components/ArchiveViewControl.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
@@ -35,7 +35,8 @@ export function SegmentsListPage() {
     successMessage: t(($) => $.notifications.segmentRestored),
     errorTitle: t(($) => $.alerts.segmentRestoreErrorTitle),
   })
-  const [archived, setArchived] = useState(false)
+  const { archived = false } = segmentsRoute.useSearch()
+  const routeNavigate = segmentsRoute.useNavigate()
 
   return (
     <Stack>
@@ -46,10 +47,15 @@ export function SegmentsListPage() {
         </ButtonLink>
       </Group>
 
-      <Switch
-        label={t(($) => $.segments.showArchived)}
-        checked={archived}
-        onChange={(event) => setArchived(event.currentTarget.checked)}
+      <ArchiveViewControl
+        archived={archived}
+        onChange={(next) =>
+          void routeNavigate({
+            search: { archived: next || undefined },
+            replace: true,
+            viewTransition: false,
+          })
+        }
       />
 
       <PagedTable

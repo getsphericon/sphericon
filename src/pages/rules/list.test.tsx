@@ -19,6 +19,7 @@ import { worker } from '../../test/worker.ts'
 import { RulesListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(rulesRoute, { workspaceId: 'TestWs01' })
+const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 
 const WELCOME: SiteRuleResource = {
   id: '1',
@@ -171,6 +172,17 @@ test('archiving a rule calls archive and refreshes the list', async () => {
   await expect.poll(() => listFetches).toBe(2)
 })
 
+test('the archived control opens the archived view through the URL', async () => {
+  worker.use(handleSiteRulesList(() => HttpResponse.json({ items: [], totalItems: 0 })))
+
+  const { screen, navigate } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
+  await screen.getByText('Archived', { exact: true }).click()
+
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({ search: { archived: true }, replace: true }),
+  )
+})
+
 test('the archived view lists archived rules and restores one', async () => {
   const flags: (string | null)[] = []
   const restored: string[] = []
@@ -185,9 +197,8 @@ test('the archived view lists archived rules and restores one', async () => {
     }),
   )
 
-  const { screen } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
-  await screen.getByRole('switch', { name: 'Show archived' }).click()
-  await expect.poll(() => flags).toEqual(['false', 'true'])
+  const { screen } = await renderWithRouter(<RulesListPage />, ARCHIVED_ROUTE)
+  await expect.poll(() => flags).toEqual(['true'])
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
   await expect.element(screen.getByRole('menuitem', { name: 'Edit' })).not.toBeInTheDocument()
