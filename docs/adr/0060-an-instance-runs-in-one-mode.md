@@ -4,7 +4,7 @@ status: accepted
 
 # An Instance runs in one Mode, and the Mode, not a flag, decides what differs
 
-> **Amended by [[0061-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** the Mode
+> **Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** the Mode
 > no longer decides sign-up, which is always open, and the Staff member and the console no longer
 > need `saas`.
 

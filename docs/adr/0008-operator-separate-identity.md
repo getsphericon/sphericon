@@ -1,6 +1,6 @@
 # Platform Staff member is a separate identity, not a User
 
-> **Amended by [[0061-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** the Staff
+> **Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** the Staff
 > member is no longer EE or SaaS only; every Instance has one, the people who run it.
 
 The platform needs staff who act _across_ all Workspaces (suspend an abusive sender,

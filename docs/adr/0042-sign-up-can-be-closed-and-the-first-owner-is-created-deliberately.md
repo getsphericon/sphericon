@@ -8,7 +8,7 @@ status: accepted
 > sign-up is open only until the Instance has its first Owner, then closed; in `saas` it is always
 > open. The `create-owner` command stays. The text below is the decision as first taken.
 >
-> **Amended by [[0061-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** sign-up is
+> **Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** sign-up is
 > always open, in both Modes; nothing closes it and `create-owner` stays for automation.
 
 An Instance answers `signup` to anyone who reaches it, so a Self-hoster who exposes a fresh
