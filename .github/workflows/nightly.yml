@@ -1,10 +1,11 @@
 name: Nightly
 
 # Checks that do not need to run on every pull request: the Go coverage floor (with the real
-# document export on the save paths), the race detector, mutation testing, fuzzing, the contract
-# fuzz, the external links of the Markdown files, and the dependency scan, whose answer changes
-# with the advisory database rather than with our code. One scheduled run covers them; `workflow_dispatch` runs
-# them on demand. A scheduled workflow only runs from the default branch.
+# document export on the save paths), the frontend's UI tests and coverage floor, the race
+# detector, mutation testing, fuzzing, the contract fuzz, the external links of the Markdown files,
+# and the dependency scan, whose answer changes with the advisory database rather than with our
+# code. One scheduled run covers them; `workflow_dispatch` runs them on demand. A scheduled
+# workflow only runs from the default branch.
 on:
   schedule:
     - cron: '17 2 * * *'
@@ -41,6 +42,78 @@ jobs:
         run: mise run test:cover
         env:
           TEST_EMAIL_RENDERER: goja
+
+  # The whole frontend suite, the UI tests with the logic ones. It is CPU-bound (a real Chromium per
+  # test file, v8 coverage on top), so it is split over three runners. Each shard uploads a blob
+  # report that carries its coverage; frontend-coverage joins them and enforces the thresholds.
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Vitest Browser Mode needs a real Chromium. The browser download is cached per lockfile;
+      # `install` still runs for the system libraries and finds the browser already there.
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run frontend tests (shard ${{ matrix.shard }}/3)
+        run: mise run test:frontend:shard ${{ matrix.shard }}/3
+
+      - name: Upload the shard's report
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vitest-blob-${{ matrix.shard }}
+          path: .vitest/blob/
+          retention-days: 1
+          if-no-files-found: error
+
+  frontend-coverage:
+    needs: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download the shards' reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: vitest-blob-*
+          path: .vitest/blob
+          merge-multiple: true
+
+      - name: Join the reports and check coverage
+        run: mise run test:frontend:merge
 
   # The whole Go suite under the race detector: slow (the JavaScript runtime that renders email
   # documents is several times slower with it), so it runs here and not on a pull request.
