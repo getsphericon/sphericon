@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
@@ -942,7 +943,12 @@ func registerEvents(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
+		passwords, err := do.Invoke[*credentials.Hasher](i)
+		if err != nil {
+			return nil, err
+		}
 		edition, err := ee.New(client.Client, bus.Bus, lic, cipher, cfg.JWTSecrets(), staff.Config{
+			Passwords:    passwords,
 			Abuse:        abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail: cfg.SupportEmail,
 			Secret:       cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
@@ -1159,6 +1165,10 @@ func registerDelivery(injector do.Injector) {
 
 // registerAccounts provides Accounts, the Workspace and Instance modules and the second factor.
 func registerAccounts(injector do.Injector) {
+	// One password hasher for every password a User or a Staff member sets.
+	do.Provide(injector, func(do.Injector) (*credentials.Hasher, error) {
+		return credentials.NewHasher(), nil
+	})
 	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
 	do.Provide(injector, func(i do.Injector) (*accounts.Accounts, error) {
 		client, err := do.Invoke[*entClient](i)
@@ -1173,7 +1183,11 @@ func registerAccounts(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		return accounts.New(client.Client, bus.Bus, accounts.WithSignupRule(accounts.SignupRuleOf(cfg.Mode.SaaS()))), nil
+		passwords, err := do.Invoke[*credentials.Hasher](i)
+		if err != nil {
+			return nil, err
+		}
+		return accounts.New(client.Client, bus.Bus, passwords, accounts.WithSignupRule(accounts.SignupRuleOf(cfg.Mode.SaaS()))), nil
 	})
 
 	// The Workspace deletion cycle (ADR 0043), over the raw client.
@@ -1594,7 +1608,7 @@ func registerHandler(injector do.Injector) {
 			return nil, err
 		}
 
-		return server.New(cfg, database.DB, client.Client, site, detector, external.Handler, mcp.Handler, staffAPI)
+		return server.New(cfg, database.DB, db.NewSchemaWatch(database.DB), client.Client, site, detector, external.Handler, mcp.Handler, staffAPI)
 	})
 }
 
@@ -1688,6 +1702,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	an := invoke[*analytics.Module](r)
 	inst := invoke[*instance.Module](r)
 	deletion := invoke[*workspacedeletion.Module](r)
+	passwords := invoke[*credentials.Hasher](r)
 	if r.err != nil {
 		return apisite.Deps{}, r.err
 	}
@@ -1703,7 +1718,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Instance:     inst,
 		Deletion:     deletion,
 		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
-		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
+		Accounts: acc, Passwords: passwords, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ, CapturedMessages: captured,
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Passkeys: pk, Analytics: an,

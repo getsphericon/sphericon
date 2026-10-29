@@ -16,7 +16,7 @@ import (
 // who signed up as "Grace@Example.com" could never sign in.
 func TestUserByLoginAddressIgnoresTheCaseOfTheStoredEmail(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
 	u, err := acc.CreateUnverified(t.Context(), "Grace", "Grace@Example.com", "hash", false)
 	require.NoError(t, err)
 

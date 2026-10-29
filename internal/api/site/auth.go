@@ -91,9 +91,10 @@ type signUpMail struct {
 // newSignUp builds the signup module over the site's adapter (ADR 0030, 0031).
 func (h *Handlers) newSignUp() *signup.Module {
 	return signup.New(signup.Config{
-		Store:  signUpStore{h.accounts},
-		Budget: h.attempts.For(accounts.KindSignUp),
-		Mail:   signUpMail{h.sysmail, h.welcome},
+		Store:     signUpStore{h.accounts},
+		Budget:    h.attempts.For(accounts.KindSignUp),
+		Passwords: h.passwords,
+		Mail:      signUpMail{h.sysmail, h.welcome},
 		Mint: func(u *ent.User, browserHash string) (string, error) {
 			return h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, u.PasswordHash, verifyTokenTTL, auth.VerifyClaims(u.Email, browserHash))
 		},

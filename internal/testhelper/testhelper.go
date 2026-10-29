@@ -414,7 +414,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	}
 	edition, err := ee.New(client, bus, lic, cipher, cfg.JWTSecrets(), staff.Config{
 		Secret: newStaffSecret(), SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
-		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail,
+		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail, Passwords: Passwords(),
 	})
 	require.NoError(t, err, "build edition")
 	// The Edition's ent hooks, on the client and on every transaction the bus opens.
@@ -451,12 +451,12 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil)
 	// An `sns` Preset checks signatures against the test certificate, so a test posts a
-	// notification signed offline; confirmations are recorded, never fetched.
-	certs := st.certs
-	if certs == nil {
-		certs = preset.TestSNSCertificates
+	// notification signed offline; confirmations are recorded, never fetched. A test with
+	// certificates of its own loads the Presets over them.
+	presets, err := testPresets()
+	if st.certs != nil {
+		presets, err = preset.Load(nil, preset.WithSNSCertificates(st.certs))
 	}
-	presets, err := preset.Load(nil, preset.WithSNSCertificates(certs))
 	if err != nil {
 		t.Fatalf("load presets: %v", err)
 	}
@@ -467,7 +467,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	automationsModule := automations.New(cipher, bus, Renderer())
 	rulesModule := rules.New(cipher, bus)
 	broadcastsModule := broadcasts.New(bus, Renderer())
-	acc := accounts.New(client, bus, accounts.WithSignupRule(st.signupRuleOf(&cfg)))
+	acc := accounts.New(client, bus, Passwords(), accounts.WithSignupRule(st.signupRuleOf(&cfg)))
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
@@ -494,12 +494,12 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
 	relay := &FakeRelayRanges{}
 	detector := machine.New(client, relay)
-	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
+	handler, err := server.New(&cfg, txDB, migrated, client, apisite.Deps{
 		SignupSurvey: signupsurvey.New(bus, signupsurvey.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default())),
 		Deletion:     workspacedeletion.New(client, bus),
 		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
 		Instance: inst,
-		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
+		Accounts: acc, Passwords: Passwords(), Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule, CapturedMessages: capturedModule,
@@ -653,3 +653,14 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 	}
 	return fixtures.Load(ctx, sqlDB, cipher, filepath.Join(projectRoot, "fixtures"))
 }
+
+// migrated is the schema watch of the test server: every test database is cloned from the
+// migrated template, so none is ever behind. The guard's own answers are tested on it directly
+// (internal/server), and asking the database for every test cost a query each.
+var migrated = db.WatchSchema(func(context.Context) (int, error) { return 0, nil }, time.Now)
+
+// testPresets are the built-in Presets over the test SNS certificate, loaded once per process:
+// a Registry is read-only once loaded, and loading compiles every Preset's parameter schema.
+var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
+	return preset.Load(nil, preset.WithSNSCertificates(preset.TestSNSCertificates))
+})

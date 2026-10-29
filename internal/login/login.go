@@ -193,6 +193,9 @@ type Store[P any] interface {
 type Config[P any] struct {
 	Throttle Throttle
 	Store    Store[P]
+	// Passwords hashes the decoy a password is checked against when no account matches: the
+	// hasher the stored passwords were made with, so the check costs the same.
+	Passwords *credentials.Hasher
 	// Gate, when set, reports that an account may not sign in yet (an Unverified User,
 	// ADR 0030). It is consulted for every known account, before the password result is
 	// acted on.
@@ -217,7 +220,11 @@ type Config[P any] struct {
 }
 
 // Module is the password step.
-type Module[P any] struct{ cfg Config[P] }
+type Module[P any] struct {
+	cfg       Config[P]
+	decoyOnce sync.Once
+	decoy     string
+}
 
 // New builds the module over a surface's adapter.
 func New[P any](cfg Config[P]) *Module[P] { return &Module[P]{cfg: cfg} }
@@ -248,7 +255,7 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 	if err != nil {
 		return Result[P]{}, err
 	}
-	ok := verify(acc.PasswordHash, password)
+	ok := m.verify(acc.PasswordHash, password)
 
 	if found && m.cfg.Gate != nil && m.cfg.Gate(acc.Principal) {
 		return Result[P]{Outcome: Gated, Principal: acc.Principal}, nil
@@ -359,20 +366,25 @@ func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyRes
 }
 
 // verify checks the password; an empty hash (no account, or no password) is checked
-// against a throwaway hash so the work is the same.
-func verify(hash, password string) bool {
+// against a throwaway hash of the same cost so the work is the same.
+func (m *Module[P]) verify(hash, password string) bool {
 	if hash == "" {
-		credentials.VerifyPassword(decoyHash(), password)
+		credentials.VerifyPassword(m.decoyHash(), password)
 		return false
 	}
 	return credentials.VerifyPassword(hash, password)
 }
 
 // decoyHash is a real password hash nobody knows the password of, hashed once.
-var decoyHash = sync.OnceValue(func() string {
-	h, err := credentials.HashPassword("decoy password: no account matches")
-	if err != nil {
-		return ""
-	}
-	return h
-})
+func (m *Module[P]) decoyHash() string {
+	m.decoyOnce.Do(func() {
+		// A decoy that could not be hashed stays empty: it verifies nothing, and the login
+		// it guards is refused either way.
+		decoy, err := m.cfg.Passwords.Hash("decoy password: no account matches")
+		if err != nil {
+			return
+		}
+		m.decoy = decoy
+	})
+	return m.decoy
+}

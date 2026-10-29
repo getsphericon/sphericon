@@ -108,8 +108,9 @@ func newRig(t *testing.T, opts ...func(*login.Config[*ent.User])) rig {
 		accounts.WithRule(accounts.KindStaffLogin, accounts.LoginRule(2)))
 	r := rig{db: env.DB, clock: clk, login: counters.For(accounts.KindLogin), staff: counters.For(accounts.KindStaffLogin)}
 	cfg := login.Config[*ent.User]{
-		Throttle: r.login,
-		Store:    store{env.DB},
+		Throttle:  r.login,
+		Store:     store{env.DB},
+		Passwords: testhelper.Passwords(),
 		Challenge: func(_ context.Context, u *ent.User) (string, error) {
 			return "challenge-" + strconv.FormatInt(u.ID, 10), nil
 		},

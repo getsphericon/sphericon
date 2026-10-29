@@ -15,6 +15,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ogen-go/ogen/ogenerrors"
+	"github.com/oklog/ulid/v2"
+	"github.com/rs/cors"
+
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
@@ -37,19 +43,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/server/spa"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/ogen-go/ogen/ogenerrors"
-	"github.com/oklog/ulid/v2"
-	"github.com/rs/cors"
 )
 
 // New builds the top-level net/http handler wiring the three ogen-generated
 // API servers (site, external, collect) and the public endpoints.
 // New composes the HTTP handler. client is the raw ent client: only the pieces whose
 // Workspace is not known up front take it (auth, OAuth, tracking, provider hooks);
-// the site, external and collect handlers get none (ADR 0017).
-func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, detector *machine.Detector, external, mcp, staff http.Handler) (http.Handler, error) {
+// the site, external and collect handlers get none (ADR 0017). schema answers the development
+// schema guard (SchemaGuard).
+func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site apisite.Deps, detector *machine.Detector, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	mux := http.NewServeMux()
 
@@ -153,7 +155,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 		// Development only (ADR 0033): a database reset or rebuilt under the running process
 		// is named instead of answering bare 500s. A production Instance never answers 503 on
 		// a check of its own; the start guard is its whole protection.
-		outer = append(outer, SchemaGuard(dbpkg.NewSchemaWatch(db)))
+		outer = append(outer, SchemaGuard(schema))
 	}
 	inner := chi.Middlewares{clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
 	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil

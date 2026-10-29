@@ -66,6 +66,8 @@ type Config struct {
 	SecureCookies bool
 	// Clock is the clock of TOTP codes, challenges and session expiry; nil is time.Now.
 	Clock func() time.Time
+	// Passwords hashes the password a Staff member is created with, and the login's decoy.
+	Passwords *credentials.Hasher
 	// Attempts counts failed logins per address (ADR 0025), under the Staff member's own
 	// kind so a User of the same address never shares a counter. It is required with
 	// the staff license (Validate): a missing counter would leave the login
@@ -112,6 +114,7 @@ type Module struct {
 	login      *login.Module[*ent.StaffMember]
 	now        func() time.Time
 	watch      *abuse.Watch
+	passwords  *credentials.Hasher
 	support    string
 	holdMax    time.Duration
 	survey     *signupsurvey.Reader
@@ -128,7 +131,7 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 		holdMax = DefaultHoldMaxExpiry
 	}
 	m := &Module{
-		ent: client, lic: lic, audit: auditLog, cipher: cipher, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), support: cfg.SupportEmail, holdMax: holdMax, survey: signupsurvey.NewReader(client),
+		ent: client, lic: lic, audit: auditLog, cipher: cipher, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), passwords: cfg.Passwords, support: cfg.SupportEmail, holdMax: holdMax, survey: signupsurvey.NewReader(client),
 		challenges: authtoken.New(cfg.Secret).WithClock(now),
 	}
 	m.login = m.newLogin(cfg.Attempts.For(loginKind))
@@ -165,7 +168,7 @@ func (m *Module) Create(ctx context.Context, email string) (password string, err
 		return "", ErrDuplicate
 	}
 	password = rand.Text()
-	hash, err := credentials.HashPassword(password)
+	hash, err := m.passwords.Hash(password)
 	if err != nil {
 		return "", err
 	}

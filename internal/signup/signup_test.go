@@ -143,11 +143,11 @@ func newRacingRig(t *testing.T) rig {
 }
 
 func build(client *ent.Client, bus *events.Bus, budget int, signupRule accounts.SignupRule, opts ...option) rig {
-	acc := accounts.New(client, bus, accounts.WithSignupRule(signupRule))
+	acc := accounts.New(client, bus, testhelper.Passwords(), accounts.WithSignupRule(signupRule))
 	attempts := accounts.NewAttempts(client, accounts.WithRule(accounts.KindSignUp, accounts.ResetRule(budget)))
 	q := &queue{}
 	cfg := signup.Config{
-		Store: store{acc}, Budget: attempts.For(accounts.KindSignUp), Mail: q, Mint: mint,
+		Store: store{acc}, Budget: attempts.For(accounts.KindSignUp), Mail: q, Mint: mint, Passwords: testhelper.Passwords(),
 		RequireVerification: true, SurveyDue: func() bool { return false },
 	}
 	for _, o := range opts {

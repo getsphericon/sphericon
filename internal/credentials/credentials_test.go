@@ -95,7 +95,7 @@ func TestWorkspaceKeysAreTypedAndUnique(t *testing.T) {
 }
 
 func TestPasswordHashVerifiesOnlyTheOriginal(t *testing.T) {
-	hash, err := credentials.HashPassword("correct horse")
+	hash, err := credentials.NewHasher().Hash("correct horse")
 	require.NoError(t, err)
 	assert.True(t, strings.HasPrefix(hash, "$argon2id$"))
 	assert.True(t, credentials.VerifyPassword(hash, "correct horse"))

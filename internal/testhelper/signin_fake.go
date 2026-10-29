@@ -73,10 +73,16 @@ type grant struct {
 	redirectURI string
 }
 
+// fakeSigninKey signs the ID tokens of every fake in the process: a 2048-bit RSA key takes
+// tens of milliseconds to make, and no test tells two fakes apart by their key.
+var fakeSigninKey = sync.OnceValues(func() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, 2048)
+})
+
 // NewFakeSignin starts the fake and stops it when the test ends.
 func NewFakeSignin(t *testing.T) *FakeSignin {
 	t.Helper()
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	key, err := fakeSigninKey()
 	require.NoError(t, err)
 	f := &FakeSignin{ClientID: "fake-client-id", ClientSecret: "fake-client-secret", key: key, mux: http.NewServeMux(), grants: map[string]grant{}, accounts: map[string]SigninIdentity{}}
 	f.mux.HandleFunc("POST /token", f.token)

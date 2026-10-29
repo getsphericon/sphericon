@@ -38,6 +38,7 @@ func (s staffStore) Lookup(ctx context.Context, address string) (login.Account[*
 func (m *Module) newLogin(throttle login.Throttle) *login.Module[*ent.StaffMember] {
 	return login.New(login.Config[*ent.StaffMember]{
 		Throttle:  throttle,
+		Passwords: m.passwords,
 		Store:     staffStore{m},
 		Challenge: m.mintChallenge,
 		Parse:     m.parseChallenge,

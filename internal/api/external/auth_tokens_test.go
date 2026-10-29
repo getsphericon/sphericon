@@ -7,6 +7,9 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -14,8 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/external"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestExternalAuthMeDescribesTheCallingToken(t *testing.T) {
@@ -183,7 +184,7 @@ func TestExternalAuthTokensDeleteCannotTouchAnotherWorkspace(t *testing.T) {
 func TestExternalAuthTokensBootstrap(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	h := external.NewHandlers(external.Deps{Accounts: accounts.New(env.DB, env.Bus), BootstrapToken: "bootstrap-secret"})
+	h := external.NewHandlers(external.Deps{Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords()), BootstrapToken: "bootstrap-secret"})
 	in := &externalapi.CreateApiTokenInput{Name: "first", Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeTokensWrite}}
 
 	wrong, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "nope"})
@@ -206,7 +207,7 @@ func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T
 	in := &externalapi.CreateApiTokenInput{Name: "first"}
 
 	// Unconfigured: an empty header must not match the empty secret.
-	h := external.NewHandlers(external.Deps{Accounts: accounts.New(env.DB, env.Bus)})
+	h := external.NewHandlers(external.Deps{Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords())})
 	blank, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: ""})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.AuthTokensBootstrapUnauthorized{}, blank)

@@ -18,7 +18,7 @@ import (
 func TestCreateWorkspaceGivesItAnId(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	ws, err := accounts.New(env.DB, env.Bus).CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Fresh")
+	ws, err := accounts.New(env.DB, env.Bus, testhelper.Passwords()).CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Fresh")
 	require.NoError(t, err)
 
 	assert.Regexp(t, workspaceid.Pattern, ws.PublicID)
@@ -34,7 +34,7 @@ func TestCreateWorkspaceDrawsAnotherIdWhenOneIsTaken(t *testing.T) {
 		return "FreshId1"
 	}
 
-	ws, err := accounts.New(env.DB, env.Bus, accounts.WithWorkspaceIDs(generate)).
+	ws, err := accounts.New(env.DB, env.Bus, testhelper.Passwords(), accounts.WithWorkspaceIDs(generate)).
 		CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Fresh")
 	require.NoError(t, err)
 
@@ -56,7 +56,7 @@ func TestWorkspaceIDByPublicID(t *testing.T) {
 
 func TestBootstrapScopeNeverTargetsADeletedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	a := accounts.New(env.DB, env.Bus)
+	a := accounts.New(env.DB, env.Bus, testhelper.Passwords())
 	oldest, err := a.BootstrapScope(t.Context())
 	require.NoError(t, err)
 	require.EqualValues(t, fixtures.AcmeID, oldest.WorkspaceID())

@@ -25,7 +25,7 @@ func freshInstance(t *testing.T, rule accounts.SignupRule) *accounts.Accounts {
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 	_, err = db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	return accounts.New(db.NewEntClient(sqlDB), events.New(sqlDB), accounts.WithSignupRule(rule))
+	return accounts.New(db.NewEntClient(sqlDB), events.New(sqlDB), testhelper.Passwords(), accounts.WithSignupRule(rule))
 }
 
 func TestSelfHostedSignupIsOpenOnlyUntilTheFirstUser(t *testing.T) {
