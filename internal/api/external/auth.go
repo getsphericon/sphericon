@@ -10,7 +10,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/apitokens"
@@ -23,8 +22,8 @@ func (h *Handlers) AuthMeGet(ctx context.Context) (externalapi.AuthMeGetRes, err
 		return &res, nil
 	}
 
-	token, err := auth.TokenScoped(ctx).ApiToken().Get(ctx, a.TokenID)
-	if ent.IsNotFound(err) {
+	token, err := apitokens.Get(ctx, auth.TokenScoped(ctx), a.TokenID)
+	if errors.Is(err, apitokens.ErrNotFound) {
 		res := externalapi.AuthMeGetNotFound(problem(http.StatusNotFound, "token not found"))
 		return &res, nil
 	}

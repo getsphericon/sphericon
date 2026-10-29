@@ -69,7 +69,7 @@ func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.Sen
 		return &res, nil
 	}
 	id := int64(params.ID)
-	row, err := auth.TokenScoped(ctx).SendingDomain().Get(ctx, id)
+	row, err := h.sendingDomains.Get(ctx, auth.TokenScoped(ctx), id)
 	if ent.IsNotFound(err) {
 		res := externalapi.SendingDomainsGetNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &res, nil
@@ -119,7 +119,7 @@ func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi
 	if err != nil {
 		return nil, err
 	}
-	row, err := s.SendingDomain().Get(ctx, id)
+	row, err := h.sendingDomains.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (h *Handlers) SendingDomainsUnarchive(ctx context.Context, params externala
 	case err != nil:
 		return nil, err
 	}
-	row, err := s.SendingDomain().Get(ctx, id)
+	row, err := h.sendingDomains.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

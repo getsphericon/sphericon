@@ -23,11 +23,46 @@ var exportHeader = []string{
 	"target_type", "target_id", "target_name", "diff", "request_id", "ip", "user_agent",
 }
 
-// ExportCSV streams the scoped Workspace's Audit log entries matching the filter, newest first, to w as CSV: a
+// Export records the export of the scoped Workspace's Audit log as an `audit_log.export`
+// entry of the scope's actor, whose diff names the filters it is narrowed by (story 19), and
+// returns the function that writes the entries matching the filter as CSV. The entry is
+// recorded before any row leaves: an error here means nothing was exported. The caller
+// has already checked Licensed and the reader's role.
+func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error) {
+	change := ent.AuditChange{Action: events.ActionAuditLogExport, TargetType: "audit_log"}
+	if filters := exportFilters(f); len(filters) > 0 {
+		change.Diff = map[string]any{"filter": filters}
+	}
+	if err := s.RecordAudit(ctx, change); err != nil {
+		return nil, err
+	}
+	return func(w io.Writer) error { return l.exportCSV(ctx, s, f, w) }, nil
+}
+
+// exportFilters names the filters an export is narrowed by; an unset one is left out.
+func exportFilters(f events.AuditFilter) map[string]any {
+	filters := map[string]any{}
+	if !f.From.IsZero() {
+		filters["from"] = f.From.UTC().Format(time.RFC3339)
+	}
+	if !f.To.IsZero() {
+		filters["to"] = f.To.UTC().Format(time.RFC3339)
+	}
+	for k, v := range map[string]string{
+		"actor_kind": f.ActorKind, "actor_id": f.ActorID, "action": f.Action, "target_type": f.TargetType,
+		"target_id": f.TargetID, "ip": f.IP, "request_id": f.RequestID,
+	} {
+		if v != "" {
+			filters[k] = v
+		}
+	}
+	return filters
+}
+
+// exportCSV streams the scoped Workspace's Audit log entries matching the filter, newest first, to w as CSV: a
 // header row, then one row per entry. It pages through Entries, so a long log never
 // sits in memory, and it shows a Staff member as "Sphericon staff" like every read surface.
-// The caller has already checked Licensed and the reader's role.
-func (l *Log) ExportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter, w io.Writer) error {
+func (l *Log) exportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter, w io.Writer) error {
 	cw := csv.NewWriter(w)
 	if err := cw.Write(exportHeader); err != nil {
 		return err

@@ -188,6 +188,33 @@ func TestIngestAndAnonymousScopesAreNeverAudited(t *testing.T) {
 	assert.Equal(t, "by-system", got[0].TargetName)
 }
 
+// An entry no audited write produces (a data export) is recorded as the scope's actor, in a
+// transaction the scope's opener opens.
+func TestRecordAuditRecordsTheChangeAsTheScopeActor(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
+
+	err := s.RecordAudit(t.Context(), ent.AuditChange{Action: events.ActionAuditLogExport, TargetType: "audit_log"})
+	require.NoError(t, err)
+
+	got := auditEntries(t, env)
+	require.Len(t, got, 1)
+	assert.Equal(t, johnActor, got[0].Actor)
+	assert.Equal(t, acme, got[0].WorkspaceID)
+	assert.Equal(t, events.ActionAuditLogExport, got[0].Action)
+}
+
+// A scope that is not audited (a secret-built caller) records nothing and needs no opener.
+func TestRecordAuditOfAnIngestScopeRecordsNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := events.Ingest(env.DB.Scoped(acme))
+
+	err := s.RecordAudit(t.Context(), ent.AuditChange{Action: events.ActionAuditLogExport, TargetType: "audit_log"})
+	require.NoError(t, err)
+
+	assert.Empty(t, auditEntries(t, env))
+}
+
 // An upsert of an audited entity can only be DO NOTHING: an insert is audited, a conflict
 // writes and records nothing.
 func TestAuditedUpsertRecordsOnlyTheInsert(t *testing.T) {

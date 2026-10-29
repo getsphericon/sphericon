@@ -199,7 +199,8 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   its generated wrappers then run in their own transaction, or join the one the scope is bound
   to (`WithinScopedTx` keeps the actor), and publish the entry. Ingest and actor-less scopes take
   the plain path. Upserts of an audited entity must be `DoNothing`. Add the annotation, nothing
-  per handler.
+  per handler. An entry no audited write produces (the Audit log export, `audit.Log.Export`) is
+  `s.RecordAudit(ctx, change)`: the same actor and transaction, through the scope.
   Note `ee/licensekey`, not `ee/license`: the path is case-insensitive on macOS and would
   collide with `ee/LICENSE`.
 - **Owners and suspension are defined once.** `internal/accounts/owners.go` owns "Owner of a

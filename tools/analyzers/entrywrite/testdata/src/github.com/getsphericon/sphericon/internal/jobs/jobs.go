@@ -13,4 +13,6 @@ func run(ctx context.Context, client *ent.Client, s *ent.Scoped) {
 	_ = s.Tag().Create().SetName("x").Save(ctx)    // want `^rule 5: .*\(Create on Tag\)`
 	_ = s.Tag().Update().Exec(ctx)                 // want `^rule 5: .*\(Update on Tag\)`
 	_ = s.Tag().CreateBulk().Save(ctx)             // want `^rule 5: .*\(CreateBulk on Tag\)`
+	_, _ = s.Tag().Query().All(ctx)                // a job may read
+	_ = s.Tag().Get(ctx, 1)
 }
