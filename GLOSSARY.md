@@ -549,8 +549,16 @@ _Avoid_: UTC day
 A workspace-scoped, **scoped** bearer credential for the external `/api` surface — a public
 `prefix` plus a hashed secret, carrying scopes, optional expiry, and revocation. Distinct from
 a Key: a token is scoped, revocable, and expiring. It belongs to the Workspace and outlives the people
-who minted it; a User's own grant to an application is a Connection.
+who minted it; a User's own grant to an application is a Connection, and a User's own key is a
+Personal token.
 _Avoid_: API key, secret, password
+
+**Personal token**:
+A User's own bearer credential for the external `/api` surface in one Workspace, for the scripts
+and tools a person runs. It belongs to that User's Membership, carries scopes chosen within the
+User's Role, can do no more than the Role allows at the moment of each request, and ends with the
+Membership.
+_Avoid_: PAT, personal API key, API token (that is the Workspace's)
 
 **Connection**:
 The access a User gave an application (an MCP client such as Claude) to one Workspace by

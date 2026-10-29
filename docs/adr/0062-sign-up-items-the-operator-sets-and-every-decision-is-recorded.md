@@ -25,7 +25,8 @@ know the rules. It gives the operator a mechanism instead: **Sign-up items**, ea
   operator's mailings.
 - **A Legal document** is the item's text, Markdown kept in the Instance's database and served on a
   fixed public page of the app. A draft is edited freely; publishing makes an immutable version that
-  takes effect at once. A new text is a new version, never an edit of a published one.
+  takes effect at once. A new text is a new version, never an edit of a published one. A version
+  records the Staff member who published it and when; the per-Workspace Audit log is not the place.
 - **The app asks, the server checks.** The sign-up form, the Invitation form and the screen after a
   Sign-in provider show the items, and the server refuses a sign-up that lacks a required
   acceptance; the browser's checkbox is never the only check.
@@ -35,13 +36,17 @@ know the rules. It gives the operator a mechanism instead: **Sign-up items**, ea
   Workspace and the Consent records are created together on submit, and declining creates nothing. A
   known Linked identity signs in as before.
 - **A new version of a required item stops every User who has not accepted it**, on their next
-  request, at an accept-or-sign-out screen; their API tokens are refused until then. The same rule
-  covers an item added to an Instance that already has Users, and an Owner made by the CLI. A new
-  version of an optional item or a notice stops no one.
+  request, at an accept-or-sign-out screen, from which they may also delete their account. Their
+  Connections and Personal tokens are refused until then; an API token is the Workspace's and is never
+  stopped for one of its members
+  ([[0061-access-to-an-operation-is-declared-in-the-contract]]). What a stopped User may still call is
+  declared in the contract. The same rule covers an item
+  added to an Instance that already has Users, and an Owner made by the CLI. A new version of an
+  optional item or a notice stops no one.
 - **Optional consents are the User's to change** in their account settings. A User who signed up
   before an optional item existed is not asked.
-- **A Consent record** is one decision of a User on one version: accepted, declined or withdrawn,
-  with the time, where it was made (sign-up form, provider screen, Invitation, re-acceptance, account
+- **A Consent record** is one decision of a User on one version: accepted, declined or withdrawn, or
+  shown for a notice, with the time, where it was made (sign-up form, provider screen, Invitation, re-acceptance, account
   settings), the IP address and the user agent. Records are only ever added; the latest per item is
   the current state. They belong to the User, not to a Workspace, so a User who joins another
   Workspace answers nothing again, and they are deleted with the User
@@ -63,6 +68,10 @@ know the rules. It gives the operator a mechanism instead: **Sign-up items**, ea
   rejected for the records.
 - **A market per User**: one Instance serving several markets needs countries, sets per country and
   rules for a move; rejected while one Instance serves one market.
+
+- **Stop the Workspace's API tokens too**: one member who has not accepted would halt the sending
+  and syncing of the whole Workspace, and no product studied does it; rejected for stopping only the
+  User's own credentials.
 
 ## Consequences
 

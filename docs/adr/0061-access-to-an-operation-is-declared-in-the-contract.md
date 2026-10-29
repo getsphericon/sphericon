@@ -52,6 +52,12 @@ surface, and refused unless declared.
   with the Membership (removal, Leaving, User deletion). Each User sees and revokes their own
   Connections; `members:manage` sees and revokes anyone's. API tokens are minted by hand with
   `tokens:manage`, outlive the people who made them and are not shown with Connections.
+- **A Personal token is a Connection without the application.** A member mints one by hand for their
+  own scripts and tools, and it follows every rule of a Connection above: the scopes the User may
+  grant, the current Role on every request, the Two-factor requirement, the end with the Membership,
+  and who sees and revokes it. It has an API token's shape (a prefix, a hashed secret shown once, an
+  optional expiry). What a Personal token or a Connection does is recorded in the Audit log as done by
+  its User; an API token is recorded as itself.
 
 ## Permissions
 
@@ -103,4 +109,5 @@ Sending, Automations, Rules and imports stay a member's work.
 - ADRs 0016, 0051 and 0057 are amended in place to point here.
 - `docs/architecture.md`, list item 1 of the scoped-client construction points, moves from
   `Handlers.scopedFor` / `scopedWithRoleFor` to the middleware when it is built.
-- A Connection needs its Membership in the schema; an API token does not get one.
+- A Connection and a Personal token need their Membership in the schema; an API token does not get
+  one.
