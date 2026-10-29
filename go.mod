@@ -42,6 +42,7 @@ require (
 	github.com/lmittmann/tint v1.2.1
 	github.com/maypok86/otter/v2 v2.4.0
 	github.com/microcosm-cc/bluemonday v1.0.27
+	github.com/miekg/dns v1.1.73
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/mokevnin/dbcleaner v1.0.0
 	github.com/monperrus/crawler-user-agents v1.65.0
@@ -163,7 +164,6 @@ require (
 	github.com/mattn/go-colorable v0.1.16 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
-	github.com/miekg/dns v1.1.73 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect

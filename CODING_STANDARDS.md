@@ -162,6 +162,10 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   configured breakpoints. Do not add custom `.css`/CSS-module files, inline `style={{…}}`,
   hardcoded colors, or CSS-in-JS (styled-components/emotion). The only CSS imports are the
   library stylesheets in `src/main.tsx`.
+- **A pull request runs the logic tests; the UI tests run nightly (rule 12).** `*.test.ts` files
+  are logic and run on every pull request (`mise run test:frontend:logic`). `*.test.tsx` files
+  render pages in Chromium: they are written only for a critical path and run, sharded, with the
+  coverage floor, in the nightly workflow. `mise run test:frontend` runs both, locally.
 - **Theming & responsiveness.** Light and dark color schemes are supported via
   `MantineProvider` (`defaultColorScheme="auto"`) + `ColorSchemeScript` in `index.html`;
   the UI must be responsive using Mantine primitives (responsive props,

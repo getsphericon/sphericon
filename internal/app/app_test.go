@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/messaging"
@@ -517,13 +518,11 @@ func TestE2EDKIMLookupOptionIsRefusedOutsideTheE2EProfile(t *testing.T) {
 // With SPHERICON_DNS_ADDR set, verification reads the proof records from that DNS server instead of
 // the host resolver; unset, it is the host resolver.
 func TestDNSResolver(t *testing.T) {
-	srv, err := mockdns.NewServer(map[string]mockdns.Zone{
+	addr := dnstest.Addr(t, map[string]mockdns.Zone{
 		"sphericon._domainkey.mail.brightpath.localhost.": {TXT: []string{"v=DKIM1; k=rsa; p=abc"}},
-	}, false)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Report("stop the mock DNS server", srv.Close()) })
+	})
 
-	records, err := dnsResolver(srv.LocalAddr().String()).LookupTXT(t.Context(), "sphericon._domainkey.mail.brightpath.localhost.")
+	records, err := dnsResolver(addr).LookupTXT(t.Context(), "sphericon._domainkey.mail.brightpath.localhost.")
 	require.NoError(t, err)
 	assert.Equal(t, []string{"v=DKIM1; k=rsa; p=abc"}, records)
 

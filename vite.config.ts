@@ -97,7 +97,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.tsx'],
     coverage: {
       provider: 'v8',
-      include: ['src/**', 'packages/analytics/src/**'],
+      include: ['src/**/*.{ts,tsx}', 'packages/analytics/src/**/*.ts'],
       // The route files are declarations: the router plugin compiles each into lazy-loading
       // glue whose branches no test calls, and the guards in them delegate to src/guards.ts.
       exclude: [

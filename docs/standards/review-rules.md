@@ -85,7 +85,10 @@ or `AGENTS.md`.
 12. **Tests cover our logic only.** A test exercises a decision the code makes and checks what came
     out, not the behavior of a library, how long something takes, how much memory it uses, a timeout
     firing on the wall clock, a runtime limit, or the machine and the process around the code. A
-    test with only a library or component as its subject is deleted and none is added.
+    test with only a library or component as its subject is deleted and none is added. No load,
+    stress or soak test is written: no test repeats an action to provoke a race or a leak, or
+    measures throughput. A UI test (a page rendered and clicked in a browser) is written only for a
+    critical path; the logic behind a page is tested as logic, in a `*.test.ts` file.
 
 ## Process
 
