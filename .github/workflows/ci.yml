@@ -130,6 +130,7 @@ jobs:
         uses: $/.github/actions/go-cache
         with:
           scope: checks
+          fallback: generated
 
       # Regenerates everything and fails if the committed output differs. First: it needs a clean
       # tree, and the tracker build below writes (ignored) files.
@@ -193,6 +194,7 @@ jobs:
         uses: $/.github/actions/go-cache
         with:
           scope: test-${{ matrix.shard }}
+          fallback: test
 
       # The task starts the `db` mise daemon (Postgres preset) itself.
       - name: Run tests

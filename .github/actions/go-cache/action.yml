@@ -11,6 +11,10 @@ inputs:
   scope:
     description: Jobs build different things (tags, coverage); each keeps its own cache.
     required: true
+  fallback:
+    description: A scope whose entry is restored when this one has none (a new or renamed scope).
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -33,6 +37,7 @@ runs:
         restore-keys: |
           go-${{ inputs.scope }}-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock') }}-
           go-${{ inputs.scope }}-${{ runner.os }}-
+          go-${{ inputs.fallback || inputs.scope }}-${{ runner.os }}-
 
     - name: Restore Go modules and build outputs
       if: github.ref != 'refs/heads/main'
@@ -45,3 +50,4 @@ runs:
         restore-keys: |
           go-${{ inputs.scope }}-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock') }}-
           go-${{ inputs.scope }}-${{ runner.os }}-
+          go-${{ inputs.fallback || inputs.scope }}-${{ runner.os }}-
