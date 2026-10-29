@@ -894,6 +894,12 @@ export default interface Resources {
     },
     "overview": {
       "contactsCount": "Contacts",
+      "createAutomationDescription": "Send follow-up emails when a contact does something.",
+      "createBroadcastDescription": "Send a one-time email to a segment of your contacts.",
+      "createTitle": "Create a new…",
+      "createdLabel": "Created",
+      "openRateLabel": "Open rate",
+      "recentBroadcastsTitle": "Recently created broadcasts",
       "viewActivity": "View activity",
       "viewContacts": "View contacts",
       "viewSettings": "Settings"
