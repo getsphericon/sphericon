@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -18,7 +20,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/validation"
-	"github.com/samber/lo"
 )
 
 // withStats maps a Broadcast and attaches its delivery figures, which are derived from its
@@ -51,10 +52,6 @@ func broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (si
 
 func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBroadcastsListParams) (siteapi.SiteBroadcastsListRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -85,10 +82,6 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 
 func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCreateBroadcastInput, params siteapi.SiteBroadcastsCreateParams) (siteapi.SiteBroadcastsCreateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -131,10 +124,6 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 
 func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBroadcastsGetParams) (siteapi.SiteBroadcastsGetRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -157,10 +146,6 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 
 func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUpdateBroadcastInput, params siteapi.SiteBroadcastsUpdateParams) (siteapi.SiteBroadcastsUpdateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -216,10 +201,6 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 
 func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.SiteBroadcastsDeleteParams) (siteapi.SiteBroadcastsDeleteRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -243,10 +224,6 @@ func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.Site
 // keeps its report, tracking and figures.
 func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.SiteBroadcastsArchiveParams) (siteapi.SiteBroadcastsArchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -277,10 +254,6 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 // SiteBroadcastsUnarchive restores an archived broadcast to the list.
 func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.SiteBroadcastsUnarchiveParams) (siteapi.SiteBroadcastsUnarchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -309,10 +282,6 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 // machine lives in the broadcasts module; this is the HTTP adapter.
 func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBroadcastsSendParams) (siteapi.SiteBroadcastsSendRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsSendNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -340,10 +309,6 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 // SiteBroadcastsSchedule schedules a draft broadcast to send at a future time.
 func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.SiteScheduleBroadcastInput, params siteapi.SiteBroadcastsScheduleParams) (siteapi.SiteBroadcastsScheduleRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsScheduleNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -373,10 +338,6 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Site
 // at a nonexistent recipient). Used to preview the rendered email.
 func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.SiteTestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (siteapi.SiteBroadcastsTestSendRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBroadcastsTestSendNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -22,10 +21,6 @@ const errIntegrationsForbidden = "only owners and admins can manage integrations
 // with secrets redacted.
 func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.SiteIntegrationsListParams) (siteapi.SiteIntegrationsListRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := problem(http.StatusNotFound, "workspace not found")
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -54,10 +49,6 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.Site
 // encrypted at rest and never returned. Owners and admins only.
 func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.SiteCreateIntegrationInput, params siteapi.SiteIntegrationsCreateParams) (siteapi.SiteIntegrationsCreateRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +75,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 			Params:       inParams,
 		})
 	}
-	var verr *validation.Error
 	switch {
-	case errors.As(err, &verr):
-		v := siteapi.SiteIntegrationsCreateUnprocessableEntity(validationProblem(verr.Message, verr))
-		return &v, nil
 	case integrations.IsConflict(err):
 		v := siteapi.SiteIntegrationsCreateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &v, nil
@@ -105,10 +92,6 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 // SiteIntegrationsGet returns one integration with secrets redacted.
 func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteIntegrationsGetParams) (siteapi.SiteIntegrationsGetRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -136,10 +119,6 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 // back on read — so a partial edit cannot accidentally wipe a credential.
 func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.SiteUpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (siteapi.SiteIntegrationsUpdateRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -172,13 +151,9 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 		in.Params = inParams
 		updated, err = h.integrations.Update(ctx, s, id, in)
 	}
-	var verr *validation.Error
 	switch {
 	case errors.Is(err, integrations.ErrNotFound):
 		r := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &r, nil
-	case errors.As(err, &verr):
-		r := siteapi.SiteIntegrationsUpdateUnprocessableEntity(validationProblem(verr.Message, verr))
 		return &r, nil
 	case integrations.IsConflict(err):
 		r := siteapi.SiteIntegrationsUpdateConflict(problem(http.StatusConflict, validation.Message(err)))
@@ -197,10 +172,6 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 // stops working at once. Owners and admins only.
 func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params siteapi.SiteIntegrationsRegenerateKeyParams) (siteapi.SiteIntegrationsRegenerateKeyRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -241,10 +212,6 @@ func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResou
 // default, unless live work uses it (409). Owners and admins only.
 func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.SiteIntegrationsArchiveParams) (siteapi.SiteIntegrationsArchiveRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -255,10 +222,6 @@ func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.S
 
 	id := int64(params.ID)
 	err = h.integrations.Archive(ctx, s, id)
-	if refused, ok := inuse.As(err); ok {
-		v := inUseProblem(refused)
-		return &v, nil
-	}
 	if errors.Is(err, integrations.ErrNotFound) {
 		v := siteapi.SiteIntegrationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
@@ -281,10 +244,6 @@ func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.S
 // Owners and admins only.
 func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi.SiteIntegrationsUnarchiveParams) (siteapi.SiteIntegrationsUnarchiveRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteIntegrationsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

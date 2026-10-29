@@ -17,10 +17,6 @@ import (
 // SiteMembershipsList returns the workspace's members. Any member may view them.
 func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteMembershipsListParams) (siteapi.SiteMembershipsListRes, error) {
 	s, _, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := problem(http.StatusNotFound, "workspace not found")
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +37,6 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteM
 // may grant the owner role, and the last owner can never be demoted.
 func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteUpdateMembershipInput, params siteapi.SiteMembershipsUpdateParams) (siteapi.SiteMembershipsUpdateRes, error) {
 	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteMembershipsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -81,10 +73,6 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 // be removed.
 func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.SiteMembershipsDeleteParams) (siteapi.SiteMembershipsDeleteRes, error) {
 	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteMembershipsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -123,10 +111,6 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 // their own here (disabling takes a password and a code).
 func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params siteapi.SiteMembershipsResetSecondFactorParams) (siteapi.SiteMembershipsResetSecondFactorRes, error) {
 	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteMembershipsResetSecondFactorNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

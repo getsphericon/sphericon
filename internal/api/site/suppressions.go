@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -15,10 +14,6 @@ import (
 
 func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.SiteSuppressionsListParams) (siteapi.SiteSuppressionsListRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSuppressionsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +38,6 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 
 func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.SiteCreateSuppressionInput, params siteapi.SiteSuppressionsCreateParams) (siteapi.SiteSuppressionsCreateRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSuppressionsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +58,6 @@ func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.Site
 
 func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.SiteSuppressionsDeleteParams) (siteapi.SiteSuppressionsDeleteRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSuppressionsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

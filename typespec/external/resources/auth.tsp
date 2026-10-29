@@ -41,7 +41,8 @@ namespace Auth {
     | UnauthorizedProblem
     | TooManyRequestsProblem
     | ForbiddenProblem
-    | BadRequestProblem;
+    | BadRequestProblem
+    | UnprocessableEntityProblem;
 
   @get
   @route("/tokens")
@@ -83,5 +84,6 @@ namespace Auth {
     | UnauthorizedProblem
     | TooManyRequestsProblem
     | ForbiddenProblem
-    | BadRequestProblem;
+    | BadRequestProblem
+    | UnprocessableEntityProblem;
 }

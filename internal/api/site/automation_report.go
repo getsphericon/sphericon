@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -13,10 +12,6 @@ import (
 
 func (h *Handlers) SiteAutomationReportsGet(ctx context.Context, params siteapi.SiteAutomationReportsGetParams) (siteapi.SiteAutomationReportsGetRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationReportsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

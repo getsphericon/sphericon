@@ -11,11 +11,9 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The Sending domain operations are thin adapters over internal/sendingdomains, the
@@ -53,11 +51,7 @@ func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.Cr
 	row, err := h.sendingDomains.Create(ctx, auth.TokenScoped(ctx), sendingdomains.CreateInput{
 		Domain: req.Domain, Selector: req.DkimSelector.Or(""),
 	})
-	var verr *validation.Error
 	switch {
-	case errors.As(err, &verr):
-		res := externalapi.SendingDomainsCreateUnprocessableEntity(validationProblem(verr))
-		return &res, nil
 	case errors.Is(err, sendingdomains.ErrAlreadyExists):
 		res := externalapi.SendingDomainsCreateConflict(problem(http.StatusConflict, err.Error()))
 		return &res, nil
@@ -97,13 +91,9 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 	row, err := h.sendingDomains.Update(ctx, auth.TokenScoped(ctx), id, sendingdomains.UpdateInput{
 		Selector: convert.Ptr(req.DkimSelector),
 	})
-	var verr *validation.Error
 	switch {
 	case ent.IsNotFound(err):
 		res := externalapi.SendingDomainsUpdateNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &res, nil
-	case errors.As(err, &verr):
-		res := externalapi.SendingDomainsUpdateUnprocessableEntity(validationProblem(verr))
 		return &res, nil
 	case err != nil:
 		return nil, err
@@ -122,10 +112,6 @@ func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
 	err := h.sendingDomains.Archive(ctx, s, id)
-	if refused, ok := inuse.As(err); ok {
-		res := inUseProblem(refused)
-		return &res, nil
-	}
 	if ent.IsNotFound(err) {
 		res := externalapi.SendingDomainsArchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &res, nil

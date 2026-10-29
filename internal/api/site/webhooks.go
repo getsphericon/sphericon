@@ -7,7 +7,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -40,10 +39,6 @@ func webhookRuleProblem(err error) (siteapi.ProblemDetails, bool) {
 
 func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebhooksListParams) (siteapi.SiteWebhooksListRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +62,6 @@ func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebh
 
 func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCreateWebhookEndpointInput, params siteapi.SiteWebhooksCreateParams) (siteapi.SiteWebhooksCreateRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +89,6 @@ func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCrea
 
 func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebhooksGetParams) (siteapi.SiteWebhooksGetRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksGetNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -125,10 +112,6 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 
 func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpdateWebhookEndpointInput, params siteapi.SiteWebhooksUpdateParams) (siteapi.SiteWebhooksUpdateRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -163,10 +146,6 @@ func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpda
 
 func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWebhooksDeleteParams) (siteapi.SiteWebhooksDeleteRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

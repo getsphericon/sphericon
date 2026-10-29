@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -17,10 +16,6 @@ import (
 // endpoint with the new one.
 func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params siteapi.SiteWebhooksRegenerateSecretParams) (siteapi.SiteWebhooksRegenerateSecretRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksRegenerateSecretNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +39,6 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 // answered, at once.
 func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.SiteTestWebhookInput, params siteapi.SiteWebhooksTestParams) (siteapi.SiteWebhooksTestRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWebhooksTestNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

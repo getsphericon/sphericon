@@ -2,9 +2,7 @@ package site
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -16,10 +14,6 @@ import (
 // set is returned in a single page (the catalogue is small and unpaginated).
 func (h *Handlers) SiteCustomFieldsList(ctx context.Context, params siteapi.SiteCustomFieldsListParams) (siteapi.SiteCustomFieldsListRes, error) {
 	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteCustomFieldsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

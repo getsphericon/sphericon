@@ -724,6 +724,10 @@ type AuthTokensBootstrapUnauthorized ProblemDetails
 
 func (*AuthTokensBootstrapUnauthorized) authTokensBootstrapRes() {}
 
+type AuthTokensBootstrapUnprocessableEntity ProblemDetails
+
+func (*AuthTokensBootstrapUnprocessableEntity) authTokensBootstrapRes() {}
+
 type AuthTokensCreateBadRequest ProblemDetails
 
 func (*AuthTokensCreateBadRequest) authTokensCreateRes() {}
@@ -735,6 +739,10 @@ func (*AuthTokensCreateForbidden) authTokensCreateRes() {}
 type AuthTokensCreateUnauthorized ProblemDetails
 
 func (*AuthTokensCreateUnauthorized) authTokensCreateRes() {}
+
+type AuthTokensCreateUnprocessableEntity ProblemDetails
+
+func (*AuthTokensCreateUnprocessableEntity) authTokensCreateRes() {}
 
 type AuthTokensDeleteBadRequest ProblemDetails
 

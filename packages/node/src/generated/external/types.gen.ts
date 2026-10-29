@@ -4272,6 +4272,10 @@ export type AuthTokensCreateErrors = {
    */
   403: ProblemDetails;
   /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
@@ -4311,6 +4315,10 @@ export type AuthTokensBootstrapErrors = {
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */

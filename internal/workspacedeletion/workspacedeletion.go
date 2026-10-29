@@ -224,7 +224,7 @@ func (m *Module) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int64
 
 // Restore ends the deletion of the Workspace publicID for a User: it clears discarded_at, which
 // lifts only the pending-deletion Hold (a suspension or Staff hold stays). A Workspace the
-// User has no Owner Membership on, or one that is not deleted, is an ent NotFound error: a
+// User has no Owner Membership on, or one that is not deleted, is accounts.ErrWorkspaceNotFound: a
 // deleted Workspace is not exposed to anyone but its Owners. A Workspace past its window or
 // already erased is lifecycle.ErrInvalidTransition. Recorded as `workspace.restore` in the
 // same transaction. It returns the restored Workspace.
@@ -236,6 +236,9 @@ func (m *Module) Restore(ctx context.Context, userID int64, publicID string, act
 		Where(workspace.PublicID(publicID), workspace.DiscardedAtNotNil(),
 			workspace.HasMembershipsWith(membership.UserID(userID), accounts.OwnerMembership())).
 		OnlyID(ctx)
+	if ent.IsNotFound(err) {
+		return nil, accounts.ErrWorkspaceNotFound
+	}
 	if err != nil {
 		return nil, err
 	}

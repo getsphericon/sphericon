@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
@@ -79,11 +78,7 @@ func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.Crea
 			Params:       inParams,
 		})
 	}
-	var verr *validation.Error
 	switch {
-	case errors.As(err, &verr):
-		res := externalapi.IntegrationsCreateUnprocessableEntity(validationProblem(verr))
-		return &res, nil
 	case integrations.IsConflict(err):
 		res := externalapi.IntegrationsCreateConflict(problem(http.StatusConflict, validation.Message(err)))
 		return &res, nil
@@ -151,13 +146,9 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 		in.Params = inParams
 		row, err = h.integrations.Update(ctx, s, id, in)
 	}
-	var verr *validation.Error
 	switch {
 	case errors.Is(err, integrations.ErrNotFound):
 		res := externalapi.IntegrationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case errors.As(err, &verr):
-		res := externalapi.IntegrationsUpdateUnprocessableEntity(validationProblem(verr))
 		return &res, nil
 	case integrations.IsConflict(err):
 		res := externalapi.IntegrationsUpdateConflict(problem(http.StatusConflict, validation.Message(err)))
@@ -227,10 +218,6 @@ func (h *Handlers) IntegrationsArchive(ctx context.Context, params externalapi.I
 	s := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.integrations.Archive(ctx, s, id)
-	if refused, ok := inuse.As(err); ok {
-		res := inUseProblem(refused)
-		return &res, nil
-	}
 	if errors.Is(err, integrations.ErrNotFound) {
 		res := externalapi.IntegrationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil

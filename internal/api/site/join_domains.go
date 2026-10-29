@@ -12,16 +12,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // SiteJoinDomainsList lists the Workspace's Join domains. Owners only.
 func (h *Handlers) SiteJoinDomainsList(ctx context.Context, params siteapi.SiteJoinDomainsListParams) (siteapi.SiteJoinDomainsListRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteJoinDomainsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -42,10 +37,6 @@ func (h *Handlers) SiteJoinDomainsList(ctx context.Context, params siteapi.SiteJ
 // SiteJoinDomainsAdd adds a pending Join domain. Owners only.
 func (h *Handlers) SiteJoinDomainsAdd(ctx context.Context, req *siteapi.SiteAddJoinDomainInput, params siteapi.SiteJoinDomainsAddParams) (siteapi.SiteJoinDomainsAddRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteJoinDomainsAddNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -55,11 +46,7 @@ func (h *Handlers) SiteJoinDomainsAdd(ctx context.Context, req *siteapi.SiteAddJ
 	}
 
 	d, err := h.joinDomains.Add(ctx, s, req.Domain)
-	var verr *validation.Error
 	switch {
-	case errors.As(err, &verr):
-		v := siteapi.SiteJoinDomainsAddUnprocessableEntity(validationProblem(i18n.T("errors.validation_failed", nil), verr))
-		return &v, nil
 	case errors.Is(err, joindomains.ErrAlreadyExists):
 		v := siteapi.SiteJoinDomainsAddConflict(problem(http.StatusConflict, i18n.T("errors.join_domain_exists", nil)))
 		return &v, nil
@@ -73,10 +60,6 @@ func (h *Handlers) SiteJoinDomainsAdd(ctx context.Context, req *siteapi.SiteAddJ
 // SiteJoinDomainsVerify checks the TXT record live and verifies the domain. Owners only.
 func (h *Handlers) SiteJoinDomainsVerify(ctx context.Context, params siteapi.SiteJoinDomainsVerifyParams) (siteapi.SiteJoinDomainsVerifyRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteJoinDomainsVerifyNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -106,10 +89,6 @@ func (h *Handlers) SiteJoinDomainsVerify(ctx context.Context, params siteapi.Sit
 // SiteJoinDomainsRemove removes a Join domain claim. Owners only.
 func (h *Handlers) SiteJoinDomainsRemove(ctx context.Context, params siteapi.SiteJoinDomainsRemoveParams) (siteapi.SiteJoinDomainsRemoveRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteJoinDomainsRemoveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +111,6 @@ func (h *Handlers) SiteJoinDomainsRemove(ctx context.Context, params siteapi.Sit
 // SiteDomainJoinGet reads the Workspace's domain join switch. Owners only.
 func (h *Handlers) SiteDomainJoinGet(ctx context.Context, params siteapi.SiteDomainJoinGetParams) (siteapi.SiteDomainJoinGetRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteDomainJoinGetNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -154,10 +129,6 @@ func (h *Handlers) SiteDomainJoinGet(ctx context.Context, params siteapi.SiteDom
 // SiteDomainJoinSet switches the Workspace's domain join on or off. Owners only.
 func (h *Handlers) SiteDomainJoinSet(ctx context.Context, req *siteapi.SiteSetDomainJoinInput, params siteapi.SiteDomainJoinSetParams) (siteapi.SiteDomainJoinSetRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteDomainJoinSetNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

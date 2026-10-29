@@ -291,6 +291,18 @@ func encodeAuthTokensBootstrapResponse(response AuthTokensBootstrapRes, w http.R
 
 		return nil
 
+	case *AuthTokensBootstrapUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *ProblemDetailsHeaders:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
@@ -402,6 +414,18 @@ func encodeAuthTokensCreateResponse(response AuthTokensCreateRes, w http.Respons
 	case *AuthTokensCreateForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *AuthTokensCreateUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

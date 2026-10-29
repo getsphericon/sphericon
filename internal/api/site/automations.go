@@ -5,24 +5,20 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/validation"
-	"github.com/samber/lo"
 )
 
 func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteAutomationsListParams) (siteapi.SiteAutomationsListRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +39,6 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 
 func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, params siteapi.SiteAutomationsCreateParams) (siteapi.SiteAutomationsCreateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -69,10 +61,6 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 
 func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAutomationsGetParams) (siteapi.SiteAutomationsGetRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -92,10 +80,6 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 
 func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteUpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (siteapi.SiteAutomationsUpdateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -130,20 +114,12 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 
 func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.SiteAutomationsDeleteParams) (siteapi.SiteAutomationsDeleteRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
 
 	id := int64(params.ID)
 	err = h.automations.Delete(ctx, ws, id)
-	if refused, ok := inuse.As(err); ok {
-		v := inUseProblem(refused)
-		return &v, nil
-	}
 	switch {
 	case errors.Is(err, automations.ErrNotFound):
 		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
@@ -158,20 +134,12 @@ func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.Sit
 // nobody, and keeps its enrollments. Active enrollments refuse it with 409.
 func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.SiteAutomationsArchiveParams) (siteapi.SiteAutomationsArchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
 
 	id := int64(params.ID)
 	err = h.automations.Archive(ctx, ws, id)
-	if refused, ok := inuse.As(err); ok {
-		v := inUseProblem(refused)
-		return &v, nil
-	}
 	if errors.Is(err, automations.ErrNotFound) {
 		v := siteapi.SiteAutomationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
@@ -190,10 +158,6 @@ func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.Si
 // SiteAutomationsUnarchive restores an archived automation to the list.
 func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.SiteAutomationsUnarchiveParams) (siteapi.SiteAutomationsUnarchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -217,12 +181,8 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 
 func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.SiteAutomationsActivateParams) (siteapi.SiteAutomationsActivateRes, error) {
 	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, true)
-	switch {
-	case errors.Is(err, automations.ErrNotFound):
+	if errors.Is(err, automations.ErrNotFound) {
 		v := siteapi.SiteAutomationsActivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case ent.IsNotFound(err):
-		v := siteapi.SiteAutomationsActivateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {
@@ -234,12 +194,8 @@ func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.S
 
 func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (siteapi.SiteAutomationsDeactivateRes, error) {
 	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, false)
-	switch {
-	case errors.Is(err, automations.ErrNotFound):
+	if errors.Is(err, automations.ErrNotFound) {
 		v := siteapi.SiteAutomationsDeactivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case ent.IsNotFound(err):
-		v := siteapi.SiteAutomationsDeactivateNotFound(problem(http.StatusNotFound, "workspace not found"))
 		return &v, nil
 	}
 	if err != nil {

@@ -5,17 +5,17 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/validation"
-	"github.com/samber/lo"
 )
 
 func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.AutomationsListParams) (externalapi.AutomationsListRes, error) {
@@ -118,10 +118,6 @@ func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.Aut
 	}
 	id := int64(params.ID)
 	err := h.automations.Delete(ctx, auth.TokenScoped(ctx), id)
-	if refused, ok := inuse.As(err); ok {
-		res := inUseProblem(refused)
-		return &res, nil
-	}
 	switch {
 	case errors.Is(err, automations.ErrNotFound):
 		res := externalapi.AutomationsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
@@ -141,10 +137,6 @@ func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.Au
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.automations.Archive(ctx, ws, id)
-	if refused, ok := inuse.As(err); ok {
-		res := inUseProblem(refused)
-		return &res, nil
-	}
 	if errors.Is(err, automations.ErrNotFound) {
 		res := externalapi.AutomationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil

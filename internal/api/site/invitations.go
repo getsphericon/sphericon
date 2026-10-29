@@ -18,10 +18,6 @@ import (
 // SiteInvitationsList returns the workspace's pending (unaccepted) invitations.
 func (h *Handlers) SiteInvitationsList(ctx context.Context, params siteapi.SiteInvitationsListParams) (siteapi.SiteInvitationsListRes, error) {
 	s, _, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := problem(http.StatusNotFound, "workspace not found")
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +44,6 @@ type inviteForm struct {
 // is sent best-effort — a missing/failed mailer must not fail the invite.
 func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteCreateInvitationInput, params siteapi.SiteInvitationsCreateParams) (siteapi.SiteInvitationsCreateRes, error) {
 	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteInvitationsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -120,10 +112,6 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 // SiteInvitationsDelete revokes a pending invitation. Owner/admin only.
 func (h *Handlers) SiteInvitationsDelete(ctx context.Context, params siteapi.SiteInvitationsDeleteParams) (siteapi.SiteInvitationsDeleteRes, error) {
 	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteInvitationsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

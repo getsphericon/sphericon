@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/apitokens"
-	"github.com/samber/lo"
 )
 
 func (h *Handlers) AuthMeGet(ctx context.Context) (externalapi.AuthMeGetRes, error) {
@@ -66,9 +67,6 @@ func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.Create
 	case errors.Is(err, apitokens.ErrScopeEscalation):
 		res := externalapi.AuthTokensCreateForbidden(problem(http.StatusForbidden, "cannot grant a scope this token does not have"))
 		return &res, nil
-	case errors.Is(err, apitokens.ErrNameEmpty), errors.Is(err, apitokens.ErrUnknownScope):
-		res := externalapi.AuthTokensCreateBadRequest(problem(http.StatusBadRequest, err.Error()))
-		return &res, nil
 	case err != nil:
 		return nil, fmt.Errorf("create token: %w", err)
 	}
@@ -87,11 +85,7 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 		return nil, fmt.Errorf("bootstrap scope: %w", err)
 	}
 	minted, err := apitokens.Mint(ctx, s, mintInput(req))
-	switch {
-	case errors.Is(err, apitokens.ErrNameEmpty), errors.Is(err, apitokens.ErrUnknownScope):
-		res := externalapi.AuthTokensBootstrapBadRequest(problem(http.StatusBadRequest, err.Error()))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, fmt.Errorf("create token: %w", err)
 	}
 	return mintedResponse(minted), nil

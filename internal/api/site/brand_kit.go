@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 const errBrandKitForbidden = "only owners can change the Brand kit"
@@ -21,10 +20,6 @@ const errBrandKitForbidden = "only owners can change the Brand kit"
 // SiteBrandKitGet returns the Workspace's Brand kit; every member may read it.
 func (h *Handlers) SiteBrandKitGet(ctx context.Context, params siteapi.SiteBrandKitGetParams) (siteapi.SiteBrandKitGetRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := problem(http.StatusNotFound, "workspace not found")
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +35,6 @@ func (h *Handlers) SiteBrandKitGet(ctx context.Context, params siteapi.SiteBrand
 // only.
 func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBrandKitInput, params siteapi.SiteBrandKitSaveParams) (siteapi.SiteBrandKitSaveRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBrandKitSaveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +54,7 @@ func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBr
 		ButtonRadius:    int(req.ButtonRadius),
 		FooterText:      req.FooterText,
 	})
-	var verr *validation.Error
 	switch {
-	case errors.As(err, &verr):
-		v := siteapi.SiteBrandKitSaveUnprocessableEntity(validationProblem(verr.Message, verr))
-		return &v, nil
 	case errors.Is(err, emailrender.ErrInvalidContent):
 		v := siteapi.SiteBrandKitSaveUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
@@ -82,10 +69,6 @@ func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBr
 // kit. Owners only.
 func (h *Handlers) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params siteapi.SiteBrandKitRecreateStarterTemplatesParams) (siteapi.SiteBrandKitRecreateStarterTemplatesRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteBrandKitRecreateStarterTemplatesNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

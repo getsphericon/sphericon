@@ -30,6 +30,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
+// ErrWorkspaceNotFound is the refusal of a Workspace that does not exist, is not live, or that
+// the User is not a member of. The cases are one refusal, so the answer does not tell a caller
+// which Workspace ids exist. Every surface answers it alike (review rule 15).
+var ErrWorkspaceNotFound = errors.New("accounts: workspace not found")
+
 // Accounts reads and writes Users, Workspaces and Memberships over the raw client.
 type Accounts struct {
 	ent         *ent.Client
@@ -61,7 +66,7 @@ func New(client *ent.Client, bus *events.Bus, opts ...Option) *Accounts {
 // returns its scoped client with the User's Membership (its User and Workspace
 // loaded, for the Role and the Two-factor requirement). It is the site's construction
 // point of the scoped client: access is "does this User have a Membership on this
-// Workspace?". An ent NotFound error means the Workspace id does not exist or the User is
+// Workspace?". ErrWorkspaceNotFound means the Workspace id does not exist or the User is
 // not a member.
 func (a *Accounts) Scope(ctx context.Context, userID int64, publicID string) (*ent.Scoped, *ent.Membership, error) {
 	m, err := a.ent.Membership.Query().
@@ -69,6 +74,9 @@ func (a *Accounts) Scope(ctx context.Context, userID int64, publicID string) (*e
 		WithUser().
 		WithWorkspace().
 		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil, ErrWorkspaceNotFound
+	}
 	if err != nil {
 		return nil, nil, err
 	}

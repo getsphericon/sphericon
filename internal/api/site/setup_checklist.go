@@ -2,9 +2,7 @@ package site
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/setupchecklist"
 )
@@ -12,10 +10,6 @@ import (
 // SiteSetupChecklistGet maps the Workspace's Setup checklist onto the DTO.
 func (h *Handlers) SiteSetupChecklistGet(ctx context.Context, params siteapi.SiteSetupChecklistGetParams) (siteapi.SiteSetupChecklistGetRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := problem(http.StatusNotFound, "workspace not found")
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

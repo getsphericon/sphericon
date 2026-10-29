@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -21,10 +20,6 @@ import (
 
 func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesListParams) (siteapi.SiteRulesListRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -45,10 +40,6 @@ func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesLi
 // SiteRulesCreate always stores a draft.
 func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateRuleInput, params siteapi.SiteRulesCreateParams) (siteapi.SiteRulesCreateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -77,10 +68,6 @@ func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateR
 
 func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGetParams) (siteapi.SiteRulesGetRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesGetNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -99,10 +86,6 @@ func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGet
 
 func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateRuleInput, params siteapi.SiteRulesUpdateParams) (siteapi.SiteRulesUpdateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -138,19 +121,11 @@ func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateR
 // SiteRulesDelete purges a Rule that has no Firings; one with Firings is archived instead (409).
 func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRulesDeleteParams) (siteapi.SiteRulesDeleteRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
 
 	err = h.rules.Delete(ctx, ws, int64(params.ID))
-	if refused, ok := inuse.As(err); ok {
-		v := inUseProblem(refused)
-		return &v, nil
-	}
 	switch {
 	case errors.Is(err, rules.ErrNotFound):
 		v := siteapi.SiteRulesDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
@@ -164,10 +139,6 @@ func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRules
 // SiteRulesArchive archives a Rule (ADR 0049): it acts on nothing and keeps its Firings.
 func (h *Handlers) SiteRulesArchive(ctx context.Context, params siteapi.SiteRulesArchiveParams) (siteapi.SiteRulesArchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -192,10 +163,6 @@ func (h *Handlers) SiteRulesArchive(ctx context.Context, params siteapi.SiteRule
 // SiteRulesUnarchive restores an archived Rule to the list, as a draft.
 func (h *Handlers) SiteRulesUnarchive(ctx context.Context, params siteapi.SiteRulesUnarchiveParams) (siteapi.SiteRulesUnarchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -220,10 +187,6 @@ func (h *Handlers) SiteRulesUnarchive(ctx context.Context, params siteapi.SiteRu
 // SiteRulesActivate makes the Rule react to the Events recorded from now on.
 func (h *Handlers) SiteRulesActivate(ctx context.Context, params siteapi.SiteRulesActivateParams) (siteapi.SiteRulesActivateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesActivateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -245,10 +208,6 @@ func (h *Handlers) SiteRulesActivate(ctx context.Context, params siteapi.SiteRul
 
 func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteRulesDeactivateParams) (siteapi.SiteRulesDeactivateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesDeactivateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -268,10 +227,6 @@ func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteR
 // SiteRulesDryRun reports what a stored Event would do to the Rule, writing and running nothing.
 func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.SiteDryRunRuleInput, params siteapi.SiteRulesDryRunParams) (siteapi.SiteRulesDryRunRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRulesDryRunNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -294,10 +249,6 @@ func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.SiteDryRunR
 // SiteRuleFiringsList lists a Rule's Firings, newest first.
 func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteRuleFiringsListParams) (siteapi.SiteRuleFiringsListRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteRuleFiringsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

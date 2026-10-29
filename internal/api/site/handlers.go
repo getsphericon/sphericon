@@ -318,7 +318,7 @@ func (h *Handlers) membershipFor(ctx context.Context, publicID siteapi.Workspace
 func (h *Handlers) membershipEvenIfWithheld(ctx context.Context, publicID siteapi.WorkspaceId) (*ent.Scoped, *ent.Membership, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
-		return nil, nil, &ent.NotFoundError{}
+		return nil, nil, accounts.ErrWorkspaceNotFound
 	}
 	return h.accounts.Scope(ctx, a.UserID, string(publicID))
 }

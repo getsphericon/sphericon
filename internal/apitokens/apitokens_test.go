@@ -2,6 +2,7 @@ package apitokens_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func TestMintStoresAHashedTokenAndReturnsTheValueOnce(t *testing.T) {
@@ -43,10 +45,14 @@ func TestMintRefusesABlankNameAndUnknownScopes(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := apitokens.Mint(ctx, s, apitokens.Input{Name: "  ", Scopes: []string{"contacts:read"}})
-	require.ErrorIs(t, err, apitokens.ErrNameEmpty)
+	blank, ok := errors.AsType[*validation.Error](err)
+	require.True(t, ok, "got %v", err)
+	assert.Equal(t, "name", blank.Field)
 
 	_, err = apitokens.Mint(ctx, s, apitokens.Input{Name: "x", Scopes: []string{"contacts:read", "root:all"}})
-	assert.ErrorIs(t, err, apitokens.ErrUnknownScope)
+	unknown, ok := errors.AsType[*validation.Error](err)
+	require.True(t, ok, "got %v", err)
+	assert.Equal(t, "scopes", unknown.Field)
 }
 
 func TestMintWithinNeverGrantsAScopeTheMinterLacks(t *testing.T) {

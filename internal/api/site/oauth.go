@@ -3,11 +3,12 @@ package site
 import (
 	"context"
 	"errors"
-	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/samber/lo"
 	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/internal/accounts"
+
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 )
@@ -45,10 +46,6 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 // a member of with a role that may manage API tokens: consent mints one.
 func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDecisionInput) (siteapi.SiteOAuthDecideRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, req.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteOAuthDecideNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

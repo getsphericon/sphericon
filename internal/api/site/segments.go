@@ -11,7 +11,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -20,10 +19,6 @@ import (
 
 func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegmentsListParams) (siteapi.SiteSegmentsListRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -46,10 +41,6 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 
 func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCreateSegmentInput, params siteapi.SiteSegmentsCreateParams) (siteapi.SiteSegmentsCreateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +66,6 @@ func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCrea
 
 func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegmentsGetParams) (siteapi.SiteSegmentsGetRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +85,6 @@ func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegme
 
 func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpdateSegmentInput, params siteapi.SiteSegmentsUpdateParams) (siteapi.SiteSegmentsUpdateRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -132,20 +115,12 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 // sent Broadcast's report still names it. A draft or scheduled Broadcast refuses it with 409.
 func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteSegmentsArchiveParams) (siteapi.SiteSegmentsArchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsArchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
 
 	id := int64(params.ID)
 	err = h.segments.Archive(ctx, ws, id)
-	if refused, ok := inuse.As(err); ok {
-		v := inUseProblem(refused)
-		return &v, nil
-	}
 	if errors.Is(err, segments.ErrNotFound) {
 		v := siteapi.SiteSegmentsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &v, nil
@@ -164,10 +139,6 @@ func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteS
 // SiteSegmentsUnarchive restores an archived segment to the list.
 func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.SiteSegmentsUnarchiveParams) (siteapi.SiteSegmentsUnarchiveRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsUnarchiveNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -194,10 +165,6 @@ func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.Sit
 // uses, so the previewed number matches what a broadcast to this segment ships.
 func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePreviewSegmentInput, params siteapi.SiteSegmentsPreviewParams) (siteapi.SiteSegmentsPreviewRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentsPreviewNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -221,10 +188,6 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 // like the Segment's count; Send-eligibility is subtracted only at send (ADR 0001).
 func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.SiteSegmentContactsListParams) (siteapi.SiteSegmentContactsListRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSegmentContactsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
