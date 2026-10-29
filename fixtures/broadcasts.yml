@@ -291,7 +291,7 @@
   subject: 'Welcome to Brightpath, here is where to start'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>Welcome to Brightpath</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>Welcome to Brightpath</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'sent'
   sent_at: '{{hoursAgo 1872}}'
   workspace_id: 20
@@ -302,7 +302,7 @@
   subject: '5 study habits that actually stick'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>5 study habits that stick</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>5 study habits that stick</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'sent'
   sent_at: '{{hoursAgo 1248}}'
   workspace_id: 20
@@ -313,7 +313,7 @@
   subject: 'SQL for analysts is live'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>New course: SQL for analysts</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>New course: SQL for analysts</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'sent'
   sent_at: '{{hoursAgo 792}}'
   workspace_id: 20
@@ -324,7 +324,7 @@
   subject: 'Your autumn learning digest'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>Autumn learning digest #12</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>Autumn learning digest #12</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'sent'
   sent_at: '{{hoursAgo 456}}'
   workspace_id: 20
@@ -335,7 +335,7 @@
   subject: 'Your October progress report'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>October progress report</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>October progress report</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'sent'
   sent_at: '{{hoursAgo 216}}'
   workspace_id: 20
@@ -346,7 +346,7 @@
   subject: 'Intro to Data Science is live: 20% off this week'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>Intro to Data Science is live</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>Intro to Data Science is live</h1><p>Fresh lessons, new projects and one small nudge to keep going.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'sent'
   sent_at: '{{hoursAgo 72}}'
   workspace_id: 20
@@ -357,7 +357,7 @@
   subject: 'Early access starts Monday'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>Early access</h1><p>Annual plans, 30% off, a day before everyone else.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>Early access</h1><p>Annual plans, 30% off, a day before everyone else.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'scheduled'
   scheduled_at: '{{daysAhead 4}}'
   segment_id: 20004
@@ -369,7 +369,7 @@
   subject: 'Everything in Brightpath Pro'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>Go further with Pro</h1><p>Projects, mentor reviews and certificates.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>Go further with Pro</h1><p>Projects, mentor reviews and certificates.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'draft'
   segment_id: 20001
   workspace_id: 20
@@ -410,7 +410,7 @@
   subject: 'Spring launch: three new courses'
   from_name: 'Brightpath'
   from_email: 'hello@mail.brightpath.localhost'
-  body: '<h1>Spring launch</h1><p>Three new courses are live.</p><p><a href="https://brightpath.example/courses">Browse courses</a></p>'
+  body: '<h1>Spring launch</h1><p>Three new courses are live.</p><p><a href="https://brightpath.localhost/">Browse courses</a></p>'
   status: 'failed'
   integration_id: 20001
   workspace_id: 20
