@@ -17,6 +17,7 @@ import { formatDateTime } from '../../utils/datetime.ts'
 const LIMIT = 5
 
 interface Recent {
+  // contract-copy: which list a row came from, a UI tag that only shares SiteAnalyticsOwnerKind's values
   kind: 'broadcast' | 'automation'
   id: string
   name: string
