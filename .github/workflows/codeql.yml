@@ -1,14 +1,16 @@
 name: CodeQL
 
+# Weekly, not per pull request: the analysis takes minutes and its findings are reviewed in the
+# Security tab, not on a pull request. `workflow_dispatch` runs it on demand.
 on:
-  pull_request:
   schedule:
     - cron: '23 4 * * 1'
+  workflow_dispatch:
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
