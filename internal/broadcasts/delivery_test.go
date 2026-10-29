@@ -73,6 +73,22 @@ func newDelivery(t *testing.T) *delivery {
 	}
 }
 
+// newCoreDelivery is newDelivery on the core holds only, for a test inside a testing/synctest
+// bubble: the bubble's clock starts in 2000, before the fixture Staff holds lapsed, so the
+// Edition's holds would hold every send.
+func newCoreDelivery(t *testing.T) *delivery {
+	t.Helper()
+	env := testhelper.Setup(t)
+	box := &mailbox{}
+	res := &provider{sender: box}
+	out := outbound.New(env.Bus, env.CoreHolds(), res, tracking.New("test-secret", "http://local"))
+	return &delivery{
+		t: t, env: env, box: box, res: res,
+		out: out, del: broadcasts.NewDelivery(out),
+		s: env.DB.Scoped(fixtures.AcmeID),
+	}
+}
+
 // recipient adds a pending recipient row for a Contact to the sending Broadcast.
 func (d *delivery) recipient(contactID int64) int64 {
 	return d.env.PlaceRecipient(d.t.Context(), fixtures.BroadcastSendingID, contactID)
