@@ -10,6 +10,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -17,7 +18,9 @@ import (
 
 // The refusals every surface answers alike (review rule 15): a handler returns the module's error
 // and refusalProblem turns it into the problem, so no handler maps them itself. The core error
-// types know nothing of HTTP; this is where they meet a status. The bodies are the problem models
+// types know nothing of HTTP; this is where they meet a status. A module's sentinel refusal
+// (validation.RefusalError) carries its kind, and the kind decides the status: not found 404,
+// refused 422, conflict 409. The bodies are the problem models
 // of typespec/common, which every contract shares, so the site's generated types encode them for
 // every surface.
 
@@ -52,11 +55,42 @@ func refusalProblem(err error) (refusal, bool) {
 		return refusal{status: http.StatusConflict, body: inUseBody(used)}, true
 	}
 	if invalid, ok := errors.AsType[*validation.Error](err); ok {
-		p := problemBody(http.StatusUnprocessableEntity, invalid.Message)
-		p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors{invalid.Field: {invalid.Message}})
-		return refusal{status: http.StatusUnprocessableEntity, body: p}, true
+		return refusal{status: http.StatusUnprocessableEntity, body: fieldBody(http.StatusUnprocessableEntity, invalid.Field, invalid.Message)}, true
+	}
+	// A module's sentinel refusal: its kind decides the status. The detail is the message of the
+	// outermost refusal in the chain, so a refusal made With a detail shows it.
+	if refused, ok := errors.AsType[*validation.RefusalError](err); ok {
+		status := kindStatus(refused.Kind())
+		return refusal{status: status, body: fieldBody(status, refused.Field(), validation.Message(err))}, true
+	}
+	// Content that cannot render is the author's to fix; the error carries the reason.
+	if errors.Is(err, emailrender.ErrInvalidContent) {
+		return refusal{status: http.StatusUnprocessableEntity, body: problemBody(http.StatusUnprocessableEntity, err.Error())}, true
 	}
 	return refusal{}, false
+}
+
+// kindStatus is the status every surface answers a refusal of kind with.
+func kindStatus(kind validation.Kind) int {
+	switch kind {
+	case validation.KindNotFound:
+		return http.StatusNotFound
+	case validation.KindConflict:
+		return http.StatusConflict
+	case validation.KindRefused:
+		return http.StatusUnprocessableEntity
+	}
+	return http.StatusUnprocessableEntity
+}
+
+// fieldBody is the problem of a refusal that names the request field it is about, or the plain
+// problem when field is "".
+func fieldBody(status int, field, detail string) *siteapi.ProblemDetails {
+	p := problemBody(status, detail)
+	if field != "" {
+		p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors{field: {detail}})
+	}
+	return p
 }
 
 // problemBody is the plain problem of a refusal: its status, the status text as title, and detail.

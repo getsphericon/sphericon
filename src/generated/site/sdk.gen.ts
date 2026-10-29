@@ -3037,7 +3037,8 @@ export const siteSegmentsUnarchive = <ThrowOnError extends boolean = false>(opti
 });
 
 /**
- * List the contacts a segment matches right now, evaluated live, ascending by id
+ * List the contacts a segment matches right now, evaluated live, ascending by id. A stored
+ * condition that no longer fits the contact schema is a 422.
  */
 export const siteSegmentContactsList = <ThrowOnError extends boolean = false>(options: Options<SiteSegmentContactsListData, ThrowOnError>): RequestResult<SiteSegmentContactsListResponses, SiteSegmentContactsListErrors, ThrowOnError> => (options.client ?? client).get<SiteSegmentContactsListResponses, SiteSegmentContactsListErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

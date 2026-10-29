@@ -2,14 +2,11 @@ package site
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
-	"github.com/getsphericon/sphericon/internal/validation"
-	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
 // SiteWebhooksRegenerateSecret replaces the endpoint's signing secret and returns the
@@ -24,10 +21,6 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 		return &v, nil
 	}
 	e, err := h.webhooks.RegenerateSecret(ctx, scoped, int64(params.ID))
-	if errors.Is(err, webhooks.ErrNotFound) {
-		v := siteapi.SiteWebhooksRegenerateSecretNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -47,14 +40,6 @@ func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.SiteTestWe
 		return &v, nil
 	}
 	res, err := h.webhooks.TestSend(ctx, scoped, int64(params.ID), req.EventType)
-	if errors.Is(err, webhooks.ErrInvalidEventType) {
-		v := siteapi.SiteWebhooksTestUnprocessableEntity(fieldProblem(err, "eventType"))
-		return &v, nil
-	}
-	if errors.Is(err, webhooks.ErrNotFound) {
-		v := siteapi.SiteWebhooksTestNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

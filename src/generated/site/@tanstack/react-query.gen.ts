@@ -3193,7 +3193,8 @@ export const siteSegmentsUnarchiveMutation = (options?: Partial<Options<SiteSegm
 export const siteSegmentContactsListQueryKey = (options: Options<SiteSegmentContactsListData>) => createQueryKey('siteSegmentContactsList', options);
 
 /**
- * List the contacts a segment matches right now, evaluated live, ascending by id
+ * List the contacts a segment matches right now, evaluated live, ascending by id. A stored
+ * condition that no longer fits the contact schema is a 422.
  */
 export const siteSegmentContactsListOptions = (options: Options<SiteSegmentContactsListData>) => queryOptions<SiteSegmentContactsListResponse, SiteSegmentContactsListError, SiteSegmentContactsListResponse, ReturnType<typeof siteSegmentContactsListQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -3211,7 +3212,8 @@ export const siteSegmentContactsListOptions = (options: Options<SiteSegmentConta
 export const siteSegmentContactsListInfiniteQueryKey = (options: Options<SiteSegmentContactsListData>): QueryKey<Options<SiteSegmentContactsListData>> => createQueryKey('siteSegmentContactsList', options, true);
 
 /**
- * List the contacts a segment matches right now, evaluated live, ascending by id
+ * List the contacts a segment matches right now, evaluated live, ascending by id. A stored
+ * condition that no longer fits the contact schema is a 422.
  */
 export const siteSegmentContactsListInfiniteOptions = (options: Options<SiteSegmentContactsListData>) => {
   const opts = infiniteQueryOptions<SiteSegmentContactsListResponse, SiteSegmentContactsListError, InfiniteData<SiteSegmentContactsListResponse>, QueryKey<Options<SiteSegmentContactsListData>>, number | Pick<QueryKey<Options<SiteSegmentContactsListData>>[0], 'body' | 'headers' | 'path' | 'query'>>(

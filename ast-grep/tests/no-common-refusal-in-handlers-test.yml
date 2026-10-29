@@ -12,8 +12,8 @@ valid:
     	return &siteapi.SiteTagsDeleteNoContent{}, nil
     }
   - |
-    func notFound(err error) siteapi.ProblemDetails {
-    	return problem(http.StatusNotFound, validation.Message(err))
+    func forbidden() siteapi.ProblemDetails {
+    	return problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil))
     }
 invalid:
   - |
@@ -31,4 +31,13 @@ invalid:
     func invalid(err error) bool {
     	var verr *validation.Error
     	return errors.As(err, &verr)
+    }
+  - |
+    func templateNotFound(err error) siteapi.ProblemDetails {
+    	return problem(http.StatusNotFound, validation.Message(err))
+    }
+  - |
+    func sentinel(err error) bool {
+    	_, ok := errors.AsType[*validation.RefusalError](err)
+    	return ok
     }

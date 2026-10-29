@@ -19,7 +19,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {
@@ -146,12 +145,6 @@ func problemWithErrors(code int, detail string, fieldErrors map[string][]string)
 	p := problem(code, detail)
 	p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors(fieldErrors))
 	return p
-}
-
-// fieldProblem is the 422 for a refused input whose error carries its message, naming the field.
-func fieldProblem(err error, field string) siteapi.ProblemDetails {
-	msg := validation.Message(err)
-	return problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{field: {msg}})
 }
 
 // conflictProblem renders a contacts.ConflictError, with the field-level error.

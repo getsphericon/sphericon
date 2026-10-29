@@ -36,7 +36,7 @@ import (
 
 var (
 	// ErrNotFound: no such Broadcast in this Workspace.
-	ErrNotFound = validation.Refuse("broadcasts: broadcast not found", "errors.broadcast_not_found")
+	ErrNotFound = validation.NotFound("broadcasts: broadcast not found", "errors.broadcast_not_found")
 	// ErrNotSendable: the Broadcast is past draft/scheduled (sending, sent, failed).
 	ErrNotSendable = validation.Refuse("broadcasts: broadcast is not a draft or scheduled", "errors.broadcast_not_sendable")
 	// ErrNotArchivable: only a sent or failed Broadcast is archived; a draft is deleted and a

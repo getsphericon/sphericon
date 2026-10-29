@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 const errIntegrationsForbidden = "only owners and admins can manage integrations"
@@ -75,11 +74,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 			Params:       inParams,
 		})
 	}
-	switch {
-	case integrations.IsConflict(err):
-		v := siteapi.SiteIntegrationsCreateConflict(problem(http.StatusConflict, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res, err := h.integrationResource(ctx, s, row)
@@ -98,10 +93,6 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 
 	id := int64(params.ID)
 	row, err := h.integrations.Get(ctx, s, id)
-	if errors.Is(err, integrations.ErrNotFound) {
-		v := siteapi.SiteIntegrationsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -151,14 +142,7 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 		in.Params = inParams
 		updated, err = h.integrations.Update(ctx, s, id, in)
 	}
-	switch {
-	case errors.Is(err, integrations.ErrNotFound):
-		r := siteapi.SiteIntegrationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &r, nil
-	case integrations.IsConflict(err):
-		r := siteapi.SiteIntegrationsUpdateConflict(problem(http.StatusConflict, validation.Message(err)))
-		return &r, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res, err := h.integrationResource(ctx, s, updated)
@@ -180,10 +164,6 @@ func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params sit
 		return &v, nil
 	}
 	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
-	if errors.Is(err, integrations.ErrNotFound) {
-		v := siteapi.SiteIntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -222,10 +202,6 @@ func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.S
 
 	id := int64(params.ID)
 	err = h.integrations.Archive(ctx, s, id)
-	if errors.Is(err, integrations.ErrNotFound) {
-		v := siteapi.SiteIntegrationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -254,14 +230,7 @@ func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi
 
 	id := int64(params.ID)
 	err = h.integrations.Unarchive(ctx, s, id)
-	switch {
-	case errors.Is(err, integrations.ErrNotFound):
-		v := siteapi.SiteIntegrationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case integrations.IsConflict(err):
-		v := siteapi.SiteIntegrationsUnarchiveConflict(problem(http.StatusConflict, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	row, err := h.integrations.Get(ctx, s, id)

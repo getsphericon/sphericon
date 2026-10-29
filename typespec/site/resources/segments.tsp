@@ -144,11 +144,18 @@ interface SiteSegments
 @route("/workspaces/{workspaceId}/segments/{segmentId}/contacts")
 @tag("Site Segments")
 namespace SiteSegmentContacts {
-  /** List the contacts a segment matches right now, evaluated live, ascending by id */
+  /**
+   * List the contacts a segment matches right now, evaluated live, ascending by id. A stored
+   * condition that no longer fits the contact schema is a 422.
+   */
   @get
   op list(
     @path workspaceId: WorkspaceId,
     @path segmentId: EntityId,
     ...PageQuery,
-  ): Page<SiteContactResource> | BadRequestProblem | NotFoundProblem;
+  ):
+    | Page<SiteContactResource>
+    | BadRequestProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
 }

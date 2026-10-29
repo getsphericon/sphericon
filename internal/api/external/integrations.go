@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The Integration operations are thin adapters over internal/integrations, the module
@@ -78,11 +77,7 @@ func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.Crea
 			Params:       inParams,
 		})
 	}
-	switch {
-	case integrations.IsConflict(err):
-		res := externalapi.IntegrationsCreateConflict(problem(http.StatusConflict, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res, err := h.integrationOne(ctx, s, row)
@@ -101,10 +96,6 @@ func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.Integ
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
 	row, err := h.integrations.Get(ctx, s, id)
-	if errors.Is(err, integrations.ErrNotFound) {
-		res := externalapi.IntegrationsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -146,14 +137,7 @@ func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.Upda
 		in.Params = inParams
 		row, err = h.integrations.Update(ctx, s, id, in)
 	}
-	switch {
-	case errors.Is(err, integrations.ErrNotFound):
-		res := externalapi.IntegrationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case integrations.IsConflict(err):
-		res := externalapi.IntegrationsUpdateConflict(problem(http.StatusConflict, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res, err := h.integrationOne(ctx, s, row)
@@ -172,10 +156,6 @@ func (h *Handlers) IntegrationsRegenerateKey(ctx context.Context, params externa
 	}
 	s := auth.TokenScoped(ctx)
 	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
-	if errors.Is(err, integrations.ErrNotFound) {
-		res := externalapi.IntegrationsRegenerateKeyNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -218,10 +198,6 @@ func (h *Handlers) IntegrationsArchive(ctx context.Context, params externalapi.I
 	s := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.integrations.Archive(ctx, s, id)
-	if errors.Is(err, integrations.ErrNotFound) {
-		res := externalapi.IntegrationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -237,14 +213,7 @@ func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi
 	s := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.integrations.Unarchive(ctx, s, id)
-	switch {
-	case errors.Is(err, integrations.ErrNotFound):
-		res := externalapi.IntegrationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case integrations.IsConflict(err):
-		res := externalapi.IntegrationsUnarchiveConflict(problem(http.StatusConflict, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	return h.archivedOrRestored(ctx, s, id)

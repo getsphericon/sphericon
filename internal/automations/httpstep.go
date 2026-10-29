@@ -28,7 +28,7 @@ const ErrorKindInvalidBody = "invalid_body"
 
 var (
 	// ErrContactNotFound: no such Contact in this Workspace.
-	ErrContactNotFound = validation.Refuse("automations: contact not found", "errors.contact_not_found")
+	ErrContactNotFound = validation.NotFound("automations: contact not found", "errors.contact_not_found")
 	// ErrInvalidBody: the body did not render to valid JSON within the size limit.
 	ErrInvalidBody = httpcall.ErrInvalidBody
 )

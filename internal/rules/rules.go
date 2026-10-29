@@ -70,9 +70,9 @@ var (
 	// the Contact schema). The wrapped message is safe to show to the author.
 	ErrInvalid = validation.Refuse("rules: invalid rule", "errors.rule_invalid")
 	// ErrNotFound: no such Rule in this Workspace.
-	ErrNotFound = validation.Refuse("rules: rule not found", "errors.rule_not_found")
+	ErrNotFound = validation.NotFound("rules: rule not found", "errors.rule_not_found")
 	// ErrEventNotFound: no such Event in this Workspace (a dry run reads a stored Event).
-	ErrEventNotFound = validation.Refuse("rules: event not found", "errors.event_not_found")
+	ErrEventNotFound = validation.NotFound("rules: event not found", "errors.event_not_found")
 )
 
 // Action is one Action of a Rule as stored: its type and the parameters of that type.

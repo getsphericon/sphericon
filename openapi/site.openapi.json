@@ -9378,7 +9378,7 @@
     "/workspaces/{workspaceId}/segments/{segmentId}/contacts": {
       "get": {
         "operationId": "SiteSegmentContacts_list",
-        "description": "List the contacts a segment matches right now, evaluated live, ascending by id",
+        "description": "List the contacts a segment matches right now, evaluated live, ascending by id. A stored\ncondition that no longer fits the contact schema is a 422.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -9457,6 +9457,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {

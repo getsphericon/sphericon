@@ -37,18 +37,13 @@ import (
 )
 
 // ErrDefaultConflict means another default Integration already exists for the channel.
-var ErrDefaultConflict = validation.Refuse("a default provider already exists for this channel", "errors.integration_default_conflict")
+var ErrDefaultConflict = validation.Conflict("a default provider already exists for this channel", "errors.integration_default_conflict")
 
 // ErrNotFound means there is no such Integration in this Workspace.
-var ErrNotFound = validation.Refuse("integrations: integration not found", "errors.integration_not_found")
+var ErrNotFound = validation.NotFound("integrations: integration not found", "errors.integration_not_found")
 
 // ErrOneInbox means the Workspace already keeps a Test inbox: it has at most one (ADR 0058).
-var ErrOneInbox = validation.Refuse("a workspace has at most one Test inbox", "errors.integration_one_inbox")
-
-// IsConflict reports whether err is one of the refusals a handler answers with 409.
-func IsConflict(err error) bool {
-	return errors.Is(err, ErrDefaultConflict) || errors.Is(err, ErrOneInbox)
-}
+var ErrOneInbox = validation.Conflict("a workspace has at most one Test inbox", "errors.integration_one_inbox")
 
 // oneInboxIndex is the partial unique index that keeps at most one kept Test inbox per Workspace.
 const oneInboxIndex = "integrations_one_inbox_per_workspace"

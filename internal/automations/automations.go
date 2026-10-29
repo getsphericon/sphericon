@@ -69,7 +69,7 @@ type Step struct {
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrNotFound: no such Automation in this Workspace.
-	ErrNotFound = validation.Refuse("automations: automation not found", "errors.automation_not_found")
+	ErrNotFound = validation.NotFound("automations: automation not found", "errors.automation_not_found")
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = validation.Refuse("automations: invalid step", "errors.automation_step_invalid")
@@ -190,12 +190,6 @@ func (m *Module) build(ctx context.Context, steps []Step) ([]Step, error) {
 		out[i].Body, out[i].EditorVersion = c.Authored.Body, c.Authored.EditorVersion
 	}
 	return out, nil
-}
-
-// IsInvalid reports whether err refuses the Automation's input (a step, the trigger or the
-// Integration), which an API surface renders as 422.
-func IsInvalid(err error) bool {
-	return errors.Is(err, ErrInvalidStep) || errors.Is(err, ErrInvalidTrigger) || errors.Is(err, ErrIntegrationNotFound)
 }
 
 // engagementTriggers are the `email.` Events an Automation may start from: what a recipient does.

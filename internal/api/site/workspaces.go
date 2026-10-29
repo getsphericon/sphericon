@@ -78,12 +78,7 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	if a == nil {
 		return nil, &ent.NotFoundError{}
 	}
-	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		v := siteapi.SiteWorkspacesCreateUnprocessableEntity(nameEmptyProblem())
-		return &v, nil
-	}
-	ws, err := h.accounts.CreateWorkspace(ctx, a.UserID, name)
+	ws, err := h.accounts.CreateWorkspace(ctx, a.UserID, req.Name)
 	if errors.Is(err, accounts.ErrEmailNotVerified) {
 		v := siteapi.SiteWorkspacesCreateForbidden(siteapi.ProblemDetails{
 			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),
@@ -105,14 +100,6 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 		return nil, err
 	}
 	return &r, nil
-}
-
-func nameEmptyProblem() siteapi.ProblemDetails {
-	return problemWithErrors(
-		http.StatusUnprocessableEntity,
-		i18n.T("errors.name_empty", nil),
-		map[string][]string{fieldName: {i18n.T("errors.name_empty", nil)}},
-	)
 }
 
 // SiteWorkspacesAccountLink mints the Owner's Account link token. Without the
@@ -191,12 +178,6 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		return &v, nil
 	}
 
-	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		v := siteapi.SiteWorkspacesUpdateUnprocessableEntity(nameEmptyProblem())
-		return &v, nil
-	}
-
 	var postal *string
 	// postalAddress is optional in the contract: absent = leave unchanged, present
 	// (incl. empty string) = set/clear. Trimmed so a whitespace-only value clears it.
@@ -204,7 +185,7 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		v := strings.TrimSpace(req.PostalAddress.Value)
 		postal = &v
 	}
-	w, err := h.accounts.UpdateWorkspace(ctx, s, h.actor(ctx), name, postal)
+	w, err := h.accounts.UpdateWorkspace(ctx, s, h.actor(ctx), req.Name, postal)
 	if err != nil {
 		return nil, err
 	}

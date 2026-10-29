@@ -2,14 +2,11 @@ package external
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/narrow"
-	"github.com/getsphericon/sphericon/internal/validation"
-	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
 // WebhooksRegenerateSecret replaces the endpoint's signing secret. The new secret is
@@ -20,10 +17,6 @@ func (h *Handlers) WebhooksRegenerateSecret(ctx context.Context, params external
 		return &res, nil
 	}
 	e, err := h.webhooks.RegenerateSecret(ctx, auth.TokenScoped(ctx), int64(params.ID))
-	if errors.Is(err, webhooks.ErrNotFound) {
-		res := externalapi.WebhooksRegenerateSecretNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -39,14 +32,6 @@ func (h *Handlers) WebhooksTest(ctx context.Context, req *externalapi.TestWebhoo
 		return &res, nil
 	}
 	res, err := h.webhooks.TestSend(ctx, auth.TokenScoped(ctx), int64(params.ID), req.EventType)
-	if errors.Is(err, webhooks.ErrInvalidEventType) {
-		v := externalapi.WebhooksTestUnprocessableEntity(fieldProblem(err, "eventType"))
-		return &v, nil
-	}
-	if errors.Is(err, webhooks.ErrNotFound) {
-		v := externalapi.WebhooksTestNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

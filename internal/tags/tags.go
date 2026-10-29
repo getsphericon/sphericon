@@ -27,11 +27,11 @@ import (
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrContactNotFound: no such Contact in this Workspace.
-	ErrContactNotFound = validation.Refuse("tags: contact not found", "errors.contact_not_found")
+	ErrContactNotFound = validation.NotFound("tags: contact not found", "errors.contact_not_found")
 	// ErrInvalidName: the Tag name is blank.
 	ErrInvalidName = validation.Refuse("tags: name is required", "errors.name_required")
 	// ErrNotFound: no such Tag in this Workspace.
-	ErrNotFound = validation.Refuse("tags: tag not found", "errors.tag_not_found")
+	ErrNotFound = validation.NotFound("tags: tag not found", "errors.tag_not_found")
 )
 
 // Module is the tags module. It holds no state: every call receives the

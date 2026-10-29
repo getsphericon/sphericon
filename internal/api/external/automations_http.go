@@ -2,13 +2,10 @@ package external
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // AutomationsDryRunHttpStep renders an HTTP step's body for a Contact and validates
@@ -21,10 +18,6 @@ func (h *Handlers) AutomationsDryRunHttpStep(ctx context.Context, req *externala
 	}
 
 	res, err := h.automations.DryRun(ctx, auth.TokenScoped(ctx), int64(req.ContactId), req.Body)
-	if errors.Is(err, automations.ErrContactNotFound) {
-		v := externalapi.AutomationsDryRunHttpStepNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

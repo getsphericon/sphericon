@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/samber/lo"
@@ -11,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
 
@@ -23,18 +21,6 @@ func webhookResource(e webhooks.Endpoint) siteapi.SiteWebhookEndpointResource {
 	res := mapper.WebhookEndpointToResource(e.WebhookEndpoint)
 	res.Secret = e.Secret
 	return res
-}
-
-// webhookRuleProblem maps a webhooks rule sentinel to its 422; ok is false for any
-// other error.
-func webhookRuleProblem(err error) (siteapi.ProblemDetails, bool) {
-	switch {
-	case errors.Is(err, webhooks.ErrInvalidURL):
-		return fieldProblem(err, "url"), true
-	case errors.Is(err, webhooks.ErrAuditNeedsLicense):
-		return fieldProblem(err, "eventTypes"), true
-	}
-	return siteapi.ProblemDetails{}, false
 }
 
 func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebhooksListParams) (siteapi.SiteWebhooksListRes, error) {
@@ -76,10 +62,6 @@ func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCrea
 		EventTypes: req.EventTypes,
 		Enabled:    lo.Ternary(hasEnabled, &enabled, nil),
 	})
-	if p, ok := webhookRuleProblem(err); ok {
-		v := siteapi.SiteWebhooksCreateUnprocessableEntity(p)
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -99,10 +81,6 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 
 	id := int64(params.ID)
 	e, err := h.webhooks.Get(ctx, scoped, id)
-	if errors.Is(err, webhooks.ErrNotFound) {
-		v := siteapi.SiteWebhooksGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -129,14 +107,6 @@ func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpda
 		EventTypes: req.EventTypes,
 		Enabled:    lo.Ternary(hasEnabled, &enabled, nil),
 	})
-	if p, ok := webhookRuleProblem(err); ok {
-		v := siteapi.SiteWebhooksUpdateUnprocessableEntity(p)
-		return &v, nil
-	}
-	if errors.Is(err, webhooks.ErrNotFound) {
-		v := siteapi.SiteWebhooksUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -156,10 +126,6 @@ func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWe
 
 	id := int64(params.ID)
 	err = h.webhooks.Delete(ctx, scoped, id)
-	if errors.Is(err, webhooks.ErrNotFound) {
-		v := siteapi.SiteWebhooksDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

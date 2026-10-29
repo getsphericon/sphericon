@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
@@ -14,12 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // withStats maps a Broadcast and attaches its delivery figures, which are derived from its
@@ -99,16 +96,6 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 		SegmentID:     segmentID,
 		IntegrationID: integrationID,
 	})
-	if errors.Is(err, broadcasts.ErrBlankName) {
-		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
-	if errors.Is(err, broadcasts.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) ||
-		errors.Is(err, broadcasts.ErrSegmentNotFound) || errors.Is(err, broadcasts.ErrIntegrationNotFound) ||
-		errors.Is(err, broadcasts.ErrFromNotVerified) {
-		v := siteapi.SiteBroadcastsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -130,10 +117,6 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, ws, id)
-	if errors.Is(err, broadcasts.ErrNotFound) {
-		v := siteapi.SiteBroadcastsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -171,22 +154,7 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 		ClearSegment:     req.SegmentId.IsNull(),
 		ClearIntegration: req.IntegrationId.IsNull(),
 	})
-	switch {
-	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, broadcasts.ErrNotDraft):
-		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, broadcasts.ErrBlankName):
-		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, broadcasts.ErrBodyAndDoc), errors.Is(err, emailrender.ErrInvalidContent),
-		errors.Is(err, broadcasts.ErrSegmentNotFound), errors.Is(err, broadcasts.ErrIntegrationNotFound),
-		errors.Is(err, broadcasts.ErrFromNotVerified):
-		v := siteapi.SiteBroadcastsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res, err := withStats(ctx, ws, b)
@@ -207,14 +175,7 @@ func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.Site
 
 	id := int64(params.ID)
 	err = h.broadcasts.DeleteDraft(ctx, ws, id)
-	switch {
-	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, broadcasts.ErrNotDraft):
-		v := siteapi.SiteBroadcastsDeleteUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteBroadcastsDeleteNoContent{}, nil
@@ -230,14 +191,7 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 	err = h.broadcasts.Archive(ctx, ws, id)
-	switch {
-	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, broadcasts.ErrNotArchivable):
-		v := siteapi.SiteBroadcastsArchiveUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	b, err := h.broadcasts.Get(ctx, ws, id)
@@ -260,10 +214,6 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 
 	id := int64(params.ID)
 	err = h.broadcasts.Unarchive(ctx, ws, id)
-	if errors.Is(err, broadcasts.ErrNotFound) {
-		v := siteapi.SiteBroadcastsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -289,14 +239,7 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 	id := int64(params.ID)
 
 	b, err := h.broadcasts.Send(ctx, ws, id)
-	switch {
-	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsSendNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, broadcasts.ErrNotSendable):
-		v := siteapi.SiteBroadcastsSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res, err := broadcastResource(ctx, ws, b)
@@ -316,14 +259,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Site
 	id := int64(params.ID)
 
 	b, err := h.broadcasts.Schedule(ctx, ws, id, time.Time(req.ScheduledAt))
-	switch {
-	case errors.Is(err, broadcasts.ErrNotFound):
-		v := siteapi.SiteBroadcastsScheduleNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, broadcasts.ErrNotSendable):
-		v := siteapi.SiteBroadcastsScheduleUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res, err := withStats(ctx, ws, b)
@@ -344,10 +280,6 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Site
 
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, ws, id)
-	if errors.Is(err, broadcasts.ErrNotFound) {
-		v := siteapi.SiteBroadcastsTestSendNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
