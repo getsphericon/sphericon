@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func versionsOf(t *testing.T, env *testhelper.TestEnv, automationID int64) []int {
@@ -29,7 +30,7 @@ func versionsOf(t *testing.T, env *testhelper.TestEnv, automationID int64) []int
 // times is one version.
 func TestEditingTheStepsOfAnUnenrolledAutomationRewritesItsVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	a, err := m.Get(ctx, acme, fixtures.AutomationWinBackID)
@@ -49,7 +50,7 @@ func TestEditingTheStepsOfAnUnenrolledAutomationRewritesItsVersion(t *testing.T)
 // keeps its steps and its Enrollments; the next Enrollment stands on the new one.
 func TestEditingTheStepsUnderAnEnrollmentCreatesANewVersion(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	a, err := m.Get(ctx, acme, fixtures.AutomationWinBackID)

@@ -7,18 +7,20 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/emaildoc"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden HTML from the current render")
 
 // One runtime serves the whole test process: starting one takes seconds. Tests that must not
 // start a runtime use a Renderer of their own, which stays unstarted.
-func shared() *emaildoc.Renderer { return emaildoc.Default() }
+var shared = sync.OnceValue(func() *emaildoc.Renderer { return emaildoc.New() })
 
 type node = map[string]any
 

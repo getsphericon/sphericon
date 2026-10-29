@@ -15,6 +15,13 @@ template built once per schema or fixture change and drops it when the test ends
 cleans up by hand or resets state at its start. The test role is a superuser (the fixture
 loader disables foreign-key triggers), as on the shared test database.
 
+**A document is saved through a fake export.** A runtime of the editor's code takes seconds to
+start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Setup` and of a module a
+test builds itself (`templates.New(testhelper.Renderer())`), runs our own checks and fakes the
+editor's schema check and export: the body is the document's text as paragraphs. A test of what the
+export makes of a document takes `testhelper.RealRenderer()`, and asserts the brand or the markup
+only there. The nightly run sets `TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
+
 **Build test scenarios on the committed fixtures (review rules 10 and 11).** Reference fixture rows through the catalog constants below
 (`fixtures.BroadcastDraftID`, `fixtures.ContactAliceID`, `fixtures.SegmentActiveID`, …),
 never bare id literals (a deliberately missing id such as `999999` is fine). Query counts

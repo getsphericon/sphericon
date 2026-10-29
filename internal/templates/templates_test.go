@@ -16,7 +16,7 @@ import (
 
 func TestListIsAscendingByIDAndPaged(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := templates.New()
+	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
@@ -33,7 +33,7 @@ func TestListIsAscendingByIDAndPaged(t *testing.T) {
 
 func TestGetIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := templates.New()
+	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 
 	got, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID)
@@ -46,7 +46,7 @@ func TestGetIsWorkspaceScoped(t *testing.T) {
 
 func TestCreateStoresTheTemplate(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := templates.New()
+	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 
 	tpl, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), templates.CreateInput{Name: "New", Subject: new("Hi")})
@@ -59,7 +59,7 @@ func TestCreateStoresTheTemplate(t *testing.T) {
 // blank-name case gets its own environment.
 func TestCreateRefusesABlankName(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := templates.New()
+	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
@@ -70,7 +70,7 @@ func TestCreateRefusesABlankName(t *testing.T) {
 
 func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := templates.New()
+	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 
 	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: new("")})
@@ -80,7 +80,7 @@ func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 
 func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := templates.New()
+	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 
 	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Subject: new("Changed")})
@@ -96,7 +96,7 @@ func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 func TestDeleteLeavesTheSentMessageWithoutATemplate(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	require.NoError(t, templates.New().Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
+	require.NoError(t, templates.New(testhelper.Renderer()).Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
 
 	msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageWelcomeID)
 	assert.Nil(t, msg.TemplateID)
@@ -105,7 +105,7 @@ func TestDeleteLeavesTheSentMessageWithoutATemplate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := templates.New()
+	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 
 	require.NoError(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID))
@@ -117,7 +117,7 @@ func TestCreateRefusesAWhitespaceName(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := templates.New().Create(ctx, env.DB.Scoped(fixtures.AcmeID), templates.CreateInput{Name: "   "})
+	_, err := templates.New(testhelper.Renderer()).Create(ctx, env.DB.Scoped(fixtures.AcmeID), templates.CreateInput{Name: "   "})
 	require.ErrorIs(t, err, templates.ErrBlankName)
 }
 
@@ -125,7 +125,7 @@ func TestUpdateRefusesAWhitespaceName(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := templates.New().Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: new("  ")})
+	_, err := templates.New(testhelper.Renderer()).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: new("  ")})
 	require.ErrorIs(t, err, templates.ErrBlankName)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
 }

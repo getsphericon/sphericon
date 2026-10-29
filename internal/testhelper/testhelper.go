@@ -20,6 +20,8 @@ import (
 
 	"net/http/httptest"
 
+	"github.com/go-testfixtures/testfixtures/v3"
+
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
@@ -75,10 +77,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
-	"github.com/go-testfixtures/testfixtures/v3"
+
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mokevnin/dbcleaner"
+
 	// The Postgres cleaner of dbcleaner.
 	_ "github.com/mokevnin/dbcleaner/postgres"
 	ht "github.com/ogen-go/ogen/http"
@@ -443,7 +446,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	segmentsModule := segments.New(bus)
 	contactsModule := contacts.New(bus)
 	erasureModule := erasure.New(bus)
-	templatesModule := templates.New()
+	templatesModule := templates.New(Renderer())
 	brandKitModule := brandkit.New(bus, templatesModule)
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil)
@@ -461,9 +464,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
 	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
 	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, accounts.OwnerNotifier(client, systemMail))
-	automationsModule := automations.New(cipher, bus)
+	automationsModule := automations.New(cipher, bus, Renderer())
 	rulesModule := rules.New(cipher, bus)
-	broadcastsModule := broadcasts.New(bus)
+	broadcastsModule := broadcasts.New(bus, Renderer())
 	acc := accounts.New(client, bus, accounts.WithSignupRule(st.signupRuleOf(&cfg)))
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,

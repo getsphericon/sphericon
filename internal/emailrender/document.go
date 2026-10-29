@@ -24,7 +24,7 @@ type Authored struct {
 
 // FromDocument is the one step from an editor document to the body to store, shared by every
 // place that holds a `doc` beside a `body` (Templates, Broadcasts, Automation steps). It runs
-// the document renderer (the only caller on the write path: the send path never renders a
+// the document renderer r (the only caller on the write path: the send path never renders a
 // document), then makes the export storable: the render's own markers are dropped, the quotes
 // the editor HTML-escapes inside {{ }} and {% %} are restored so Liquid can read them, and the
 // result goes through PrepareFields like any body, so the stored HTML survives SanitizeHTML
@@ -35,8 +35,8 @@ type Authored struct {
 // ended, or a time or memory limit of ours stopped it) says nothing about the document: it is
 // ErrRenderUnavailable, which a client may retry. A failure of the runtime itself is returned as
 // it is.
-func FromDocument(ctx context.Context, subject *string, doc []byte) (Authored, error) {
-	out, err := emaildoc.Default().Render(ctx, doc)
+func FromDocument(ctx context.Context, r *emaildoc.Renderer, subject *string, doc []byte) (Authored, error) {
+	out, err := r.Render(ctx, doc)
 	if err != nil {
 		switch {
 		case isDocumentRefusal(err):
@@ -71,7 +71,7 @@ type Content struct {
 // steps decide it. A document is rendered to it (the one render of the save, never on the send
 // path); a body is validated and sanitized; neither leaves the content alone; both is errBoth,
 // the caller's own refusal.
-func ResolveContent(ctx context.Context, subject, body *string, doc []byte, errBoth error) (Content, error) {
+func ResolveContent(ctx context.Context, r *emaildoc.Renderer, subject, body *string, doc []byte, errBoth error) (Content, error) {
 	if len(doc) == 0 {
 		b, err := PrepareFields(subject, body)
 		return Content{Body: b}, err
@@ -79,7 +79,7 @@ func ResolveContent(ctx context.Context, subject, body *string, doc []byte, errB
 	if body != nil {
 		return Content{}, errBoth
 	}
-	authored, err := FromDocument(ctx, subject, doc)
+	authored, err := FromDocument(ctx, r, subject, doc)
 	if err != nil {
 		return Content{}, err
 	}

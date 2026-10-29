@@ -9,6 +9,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/messaging"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -19,8 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // passingClock is a clock that has passed a year more every time it is read: whatever time a
@@ -445,7 +446,7 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	mod := automations.New(env.Cipher, env.Bus)
+	mod := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 
 	early := enrollVia(t, env, fixtures.AutomationJobsEditableID, fixtures.ContactAliceID)
 	// The first step (the wait) runs; the Enrollment now stands on the email step.

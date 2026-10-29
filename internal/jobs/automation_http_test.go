@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -105,7 +106,7 @@ func newHTTPStepHarness(t *testing.T, body string, signed bool) *httpStepHarness
 		Headers: []automations.Header{{Name: "Authorization"}}, ClearSecret: !signed,
 	}
 	steps := []automations.Step{step, {Type: automations.StepApplyTag, Tag: "notified"}}
-	_, err := automations.New(e.cipher, e.Bus).Update(context.Background(), e.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
+	_, err := automations.New(e.cipher, e.Bus, testhelper.Renderer()).Update(context.Background(), e.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
 	return h
 }
@@ -129,7 +130,7 @@ func (h *httpStepHarness) stepper() *stepping.Module {
 }
 
 func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorker {
-	return jobs.NewRunHTTPStepWorker(h.DB, noFence, automations.New(h.cipher, h.Bus), h.stepper(), webhook.NewClientAllowing(2*time.Second, allow), func() time.Time { return h.clock })
+	return jobs.NewRunHTTPStepWorker(h.DB, noFence, h.cipher, h.stepper(), webhook.NewClientAllowing(2*time.Second, allow), func() time.Time { return h.clock })
 }
 
 // attempt works the HTTP step as river's attempt-th try; the last one is the job's MaxAttempts.

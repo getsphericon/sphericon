@@ -202,13 +202,13 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		Headers: []automations.Header{{Name: "Authorization"}},
 	}}
 	bus := e.bus(t)
-	mod := automations.New(cipher, bus)
+	mod := automations.New(cipher, bus, testhelper.Renderer())
 	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
 	runID, enrolled, err := automations.Enroll(ctx, e.scoped, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
-	w := jobs.NewRunHTTPStepWorker(e.client, e.fence, mod, stepping.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
+	w := jobs.NewRunHTTPStepWorker(e.client, e.fence, cipher, stepping.New(bus, nil, e.fence), webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now)
 
 	workDone := make(chan error, 1)
 	go func() {

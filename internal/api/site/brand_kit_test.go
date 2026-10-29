@@ -81,11 +81,12 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 	names := make([]string, 0, len(starters))
 	for _, tpl := range starters {
 		names = append(names, tpl.Name)
+		// The brand is written into the document; what the export makes of it is internal/brandkit's.
 		assert.NotEmpty(t, tpl.Doc, "%s is written as a document", tpl.Name)
-		assert.Contains(t, tpl.Body, "#f0f4f8", "%s carries the background", tpl.Name)
-		assert.Contains(t, tpl.Body, "Verdana, sans-serif", "%s carries the body font", tpl.Name)
-		assert.Contains(t, tpl.Body, "https://cdn.example.com/logo.png", "%s carries the logo", tpl.Name)
-		assert.Contains(t, tpl.Body, "Vandelay Industries, 1 Main St", "%s carries the footer", tpl.Name)
+		assert.Contains(t, string(tpl.Doc), "#f0f4f8", "%s carries the background", tpl.Name)
+		assert.Contains(t, string(tpl.Doc), "Verdana, sans-serif", "%s carries the body font", tpl.Name)
+		assert.Contains(t, string(tpl.Doc), "https://cdn.example.com/logo.png", "%s carries the logo", tpl.Name)
+		assert.Contains(t, string(tpl.Doc), "Vandelay Industries, 1 Main St", "%s carries the footer", tpl.Name)
 	}
 	assert.ElementsMatch(t, []string{"Welcome", "Receipt", "Digest", "One button"}, names)
 
@@ -96,7 +97,7 @@ func TestSiteBrandKitFirstSaveMakesTheStarterTemplatesAndLaterSavesDoNot(t *test
 	assert.Equal(t, before+4, s.EmailTemplate().Query().CountX(ctx), "a later save makes no Template")
 	assert.Equal(t, "#00aa00", getBrandKit(t, c, fixtures.VandelayPublicID).AccentColor)
 	for _, tpl := range s.EmailTemplate().Query().Where(emailtemplate.IDGT(lastBefore)).AllX(ctx) {
-		assert.NotContains(t, tpl.Body, "#00aa00", "the starters keep the brand they were made in")
+		assert.NotContains(t, string(tpl.Doc), "#00aa00", "the starters keep the brand they were made in")
 	}
 }
 
@@ -131,8 +132,11 @@ func TestSiteBrandKitRecreateMakesNewStartersInTheSavedBrandAndTouchesNothing(t 
 	require.Truef(t, ok, "got %T", res)
 	require.Len(t, *made, 4)
 	for _, tpl := range *made {
-		assert.Contains(t, tpl.Body, "#fafafa", "made in Initech's brand")
-		assert.Contains(t, tpl.Body, "Initech, 4120 Freidrich Lane")
+		stored, err := s.EmailTemplate().Get(ctx, int64(tpl.ID))
+		require.NoError(t, err)
+		doc := string(stored.Doc)
+		assert.Contains(t, doc, "#fafafa", "made in Initech's brand")
+		assert.Contains(t, doc, "Initech, 4120 Freidrich Lane")
 	}
 	assert.Len(t, s.EmailTemplate().Query().AllX(ctx), len(before)+4)
 

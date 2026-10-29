@@ -56,7 +56,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 
 	steps, err := automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
-	opened, err := automations.New(env.Cipher, env.Bus).OpenHTTP(steps[0])
+	opened, err := automations.OpenHTTP(env.Cipher, steps[0])
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T0/SECRETPATH", opened.URL)
 	assert.Equal(t, "Bearer hunter2", opened.Headers["Authorization"])

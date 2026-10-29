@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -77,9 +78,10 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, bod
 	return DryRunResult{Body: out}, nil
 }
 
-// OpenHTTP decrypts a stored HTTP step's URL, header values and secret.
-func (m *Module) OpenHTTP(s Step) (OpenedHTTP, error) {
-	return httpcall.Open(m.cipher, spec(s))
+// OpenHTTP decrypts a stored HTTP step's URL, header values and secret with the cipher that sealed
+// them.
+func OpenHTTP(cipher *secrets.Cipher, s Step) (OpenedHTTP, error) {
+	return httpcall.Open(cipher, spec(s))
 }
 
 func spec(s Step) httpcall.Spec {

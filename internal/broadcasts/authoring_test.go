@@ -35,7 +35,7 @@ func failBroadcastReads(env *testhelper.TestEnv) {
 
 func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 
 	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, false)
 	require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 
 func TestCreateReportsErrors(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := broadcasts.New(env.Bus).Create(canceled(), env.DB.Scoped(fixtures.AcmeID), broadcasts.Fields{})
+	_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Create(canceled(), env.DB.Scoped(fixtures.AcmeID), broadcasts.Fields{})
 	assert.Error(t, err)
 }
 
@@ -58,7 +58,7 @@ func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 	env := testhelper.Setup(t)
 	name, subject, body, from := "N", "S", "<p></p>", "a@"+fixtures.SendingDomainVerifiedDomain
 
-	b, err := broadcasts.New(env.Bus).Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	b, err := broadcasts.New(env.Bus, testhelper.Renderer()).Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
 		broadcasts.Fields{Name: &name, Subject: &subject, Body: &body, FromEmail: &from})
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
@@ -71,7 +71,7 @@ func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 
 func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	subject := "New subject"
 
@@ -91,7 +91,7 @@ func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 
 func TestSetSegment(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	seg := int64(fixtures.SegmentProPlanID)
 
@@ -122,7 +122,7 @@ func TestSetSegment(t *testing.T) {
 
 func TestDeleteDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 
 	require.NoError(t, m.DeleteDraft(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID))
@@ -135,7 +135,7 @@ func TestDeleteDraft(t *testing.T) {
 
 func TestReport(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 
 	// The figures are the rows': 11 recipients of the sent Broadcast, all sent, 5 opened and 2
@@ -163,7 +163,7 @@ func TestReport(t *testing.T) {
 
 func TestGetUnknownAndErrors(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 
 	_, err := m.Get(context.Background(), env.DB.Scoped(fixtures.AcmeID), 987654)
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
@@ -177,20 +177,20 @@ func TestTransitionStoreErrors(t *testing.T) {
 
 	t.Run("claim update fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		_, err := broadcasts.New(env.Bus).Send(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
+		_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Send(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 		assert.Error(t, err)
 	})
 
 	t.Run("unschedule update fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		_, err := broadcasts.New(env.Bus).Unschedule(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID)
+		_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Unschedule(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID)
 		assert.Error(t, err)
 	})
 
 	t.Run("unschedule existence check fails", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		failBroadcastReads(env)
-		_, err := broadcasts.New(env.Bus).Unschedule(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
+		_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Unschedule(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID)
 		assert.ErrorContains(t, err, "read refused")
 	})
 }
@@ -199,7 +199,7 @@ func TestTransitionStoreErrors(t *testing.T) {
 // Broadcast is not found, and a foreign Segment cannot become the Segment.
 func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
@@ -214,7 +214,7 @@ func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 
 func TestArchiveKeepsABroadcastAddressableAndIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
@@ -232,7 +232,7 @@ func TestArchiveKeepsABroadcastAddressableAndIsWorkspaceScoped(t *testing.T) {
 
 func TestCreateAndUpdateRefuseABlankName(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := broadcasts.New(env.Bus)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 

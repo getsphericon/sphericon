@@ -9,6 +9,10 @@
 // stopped and its runtime is discarded (a stopped runtime does not recover), and a fresh one starts
 // on the next call. Inputs are capped (size, depth, node count) before they reach a runtime.
 //
+// The server builds one Renderer and hands it to every module that saves a document. A test that
+// does not test the export passes an Engine of its own (WithEngine), so only the packages that do
+// test it pay for a runtime.
+//
 // A document is also validated: structurally against the editor's schema and by rules of ours
 // (heading levels, a button's attributes, a link's href, allowed attribute values). An invalid
 // document is refused with a reason an agent can act on; nothing is repaired or dropped.
@@ -19,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -98,6 +101,18 @@ type Renderer struct {
 
 	program programOnce
 	started atomic.Bool
+	// engine, when set, stands in for the runtime: the editor's schema check and export run there,
+	// after our own checks, and no runtime is ever started.
+	engine Engine
+}
+
+// Engine is the editor's own code, the part of a render that runs after our checks: its schema
+// check and its export. The Renderer runs the real one in goja; WithEngine passes another.
+type Engine interface {
+	// Check answers nil when the document fits the editor's schema, else an *InvalidError.
+	Check(doc []byte) error
+	// Export renders a document that passed Check.
+	Export(doc []byte) (Rendered, error)
 }
 
 // Option configures New.
@@ -106,6 +121,10 @@ type Option func(*Renderer, *int)
 // WithRuntimes sets how many runtimes the Renderer may run at once (default 1). Each costs about 16
 // MB and seconds to start, the first about 68 MB.
 func WithRuntimes(n int) Option { return func(_ *Renderer, runtimes *int) { *runtimes = max(n, 1) } }
+
+// WithEngine runs engine in place of the editor's code in goja: a test that saves documents
+// without testing their export passes a fake, and starts no runtime.
+func WithEngine(engine Engine) Option { return func(r *Renderer, _ *int) { r.engine = engine } }
 
 // New returns a Renderer. It starts nothing: the first call does, or Warm.
 func New(opts ...Option) *Renderer {
@@ -121,17 +140,6 @@ func New(opts ...Option) *Renderer {
 	return r
 }
 
-var (
-	defaultOnce     sync.Once
-	defaultRenderer *Renderer
-)
-
-// Default is the process-wide Renderer with the default limits and one runtime.
-func Default() *Renderer {
-	defaultOnce.Do(func() { defaultRenderer = New() })
-	return defaultRenderer
-}
-
 // Started reports whether a runtime has been started yet.
 func (r *Renderer) Started() bool { return r.started.Load() }
 
@@ -142,6 +150,9 @@ func (r *Renderer) Started() bool { return r.started.Load() }
 // the start took is logged, since it varies with the machine. The start itself cannot be
 // interrupted, so ctx ending only stops waiting for it.
 func (r *Renderer) Warm(ctx context.Context) {
+	if r.engine != nil {
+		return
+	}
 	go func() {
 		began := time.Now()
 		err := r.withRuntime(ctx, r.config(), func(*vm) error { return nil })
@@ -168,6 +179,12 @@ func (r *Renderer) Validate(ctx context.Context, doc []byte) error {
 	if err := r.prepare(doc); err != nil {
 		return err
 	}
+	if r.engine != nil {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		return r.engine.Check(doc)
+	}
 	return r.withRuntime(ctx, r.config(), func(rt *vm) error {
 		return rt.checkDoc(doc)
 	})
@@ -178,6 +195,15 @@ func (r *Renderer) Validate(ctx context.Context, doc []byte) error {
 func (r *Renderer) Render(ctx context.Context, doc []byte) (Rendered, error) {
 	if err := r.prepare(doc); err != nil {
 		return Rendered{}, err
+	}
+	if r.engine != nil {
+		if err := ctx.Err(); err != nil {
+			return Rendered{}, err
+		}
+		if err := r.engine.Check(doc); err != nil {
+			return Rendered{}, err
+		}
+		return r.engine.Export(doc)
 	}
 	var out Rendered
 	err := r.withRuntime(ctx, r.config(), func(rt *vm) error {

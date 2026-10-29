@@ -68,7 +68,7 @@ func requireBodiesAreRenders(t *testing.T, file string, messages []authored) {
 	ctx := t.Context()
 	rewrites := map[int64]string{}
 	for _, m := range messages {
-		got, err := emailrender.FromDocument(ctx, &m.subject, m.doc)
+		got, err := emailrender.FromDocument(ctx, testhelper.RealRenderer(), &m.subject, m.doc)
 		require.NoError(t, err, "%s row %d", file, m.id)
 		require.NotNil(t, m.version, "%s row %d", file, m.id)
 		require.Equal(t, emaildoc.EditorVersion(), *m.version, "%s row %d: the fixture names the editor version of the bundle", file, m.id)

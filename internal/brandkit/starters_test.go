@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func brandedKit() brandkit.Kit {
@@ -31,7 +32,7 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 	for _, s := range starters {
 		t.Run(s.Name, func(t *testing.T) {
 			subject := s.Subject
-			got, err := emailrender.FromDocument(t.Context(), &subject, s.Doc)
+			got, err := emailrender.FromDocument(t.Context(), testhelper.RealRenderer(), &subject, s.Doc)
 			require.NoError(t, err)
 
 			assert.Equal(t, emailrender.SanitizeHTML(got.Body), got.Body, "the stored body survives the sanitizer")
@@ -53,7 +54,7 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 	// The two starters with a button carry the button style; the heading starters the heading font.
 	bodies := map[string]string{}
 	for _, s := range starters {
-		got, err := emailrender.FromDocument(t.Context(), nil, s.Doc)
+		got, err := emailrender.FromDocument(t.Context(), testhelper.RealRenderer(), nil, s.Doc)
 		require.NoError(t, err)
 		bodies[s.Name] = got.Body
 	}
@@ -68,7 +69,7 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 
 func TestStartersWithoutALogoOrFooterOmitThem(t *testing.T) {
 	for _, s := range brandkit.Starters(brandkit.Defaults()) {
-		got, err := emailrender.FromDocument(t.Context(), nil, s.Doc)
+		got, err := emailrender.FromDocument(t.Context(), testhelper.RealRenderer(), nil, s.Doc)
 		require.NoError(t, err)
 		assert.NotContains(t, got.Body, "<img", s.Name)
 		assert.NotContains(t, got.Body, "font-size:12px", s.Name+" has no footer")

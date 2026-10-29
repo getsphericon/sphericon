@@ -26,7 +26,7 @@ func (h *Handlers) EmailLintLint(ctx context.Context, req *externalapi.LintEmail
 	subject, body := req.Subject.Value, req.Body.Value
 	if req.Doc.Set {
 		// A document is rendered as a save would render it; one that cannot be is the error finding.
-		authored, err := emailrender.FromDocument(ctx, &subject, convert.DocJSON(req.Doc.Value, true))
+		authored, err := h.templates.Prepare(ctx, &subject, convert.DocJSON(req.Doc.Value, true))
 		if errors.Is(err, emailrender.ErrInvalidContent) {
 			return &externalapi.LintEmailResult{
 				Errors:   []externalapi.LintFinding{invalidContent(err)},

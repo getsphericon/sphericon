@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
@@ -64,10 +65,13 @@ func (SendArgs) Kind() string { return "send_broadcast" }
 // call receives the Workspace-scoped client (ADR 0017) built by the entry point, so
 // the module writes no Workspace predicate and cannot name another Workspace.
 type Module struct {
-	bus *events.Bus
+	bus      *events.Bus
+	renderer *emaildoc.Renderer
 }
 
-func New(bus *events.Bus) *Module { return &Module{bus: bus} }
+func New(bus *events.Bus, renderer *emaildoc.Renderer) *Module {
+	return &Module{bus: bus, renderer: renderer}
+}
 
 // Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
 // its send job in the same transaction: either both happen or neither does.
@@ -199,7 +203,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 	if err := checkName(f.Name); err != nil {
 		return nil, err
 	}
-	c, err := emailrender.ResolveContent(ctx, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
+	c, err := emailrender.ResolveContent(ctx, m.renderer, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +291,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) 
 	if err := checkName(f.Name); err != nil {
 		return nil, err
 	}
-	c, err := emailrender.ResolveContent(ctx, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
+	c, err := emailrender.ResolveContent(ctx, m.renderer, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
 	}

@@ -44,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/domainverify"
+	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -470,6 +471,18 @@ func (a *App) start(ctx context.Context) error {
 	}
 
 	go func() { a.done <- a.serve() }()
+	return nil
+}
+
+// WarmDocuments starts the document renderer's runtime in the background
+// (emaildoc.Renderer.Warm). Its start cannot be interrupted, so it is the server binary's call,
+// not part of Start: a process that only opens and closes an App never starts one.
+func (a *App) WarmDocuments(ctx context.Context) error {
+	renderer, err := do.Invoke[*emaildoc.Renderer](a.injector)
+	if err != nil {
+		return err
+	}
+	renderer.Warm(ctx)
 	return nil
 }
 
@@ -1323,8 +1336,16 @@ func registerAudience(injector do.Injector) {
 
 // registerContent provides the domain modules of content, automation and sending.
 func registerContent(injector do.Injector) {
-	do.Provide(injector, func(do.Injector) (*templates.Module, error) {
-		return templates.New(), nil
+	// One document renderer for every save that holds a document; the server warms it at start.
+	do.Provide(injector, func(do.Injector) (*emaildoc.Renderer, error) {
+		return emaildoc.New(), nil
+	})
+	do.Provide(injector, func(i do.Injector) (*templates.Module, error) {
+		renderer, err := do.Invoke[*emaildoc.Renderer](i)
+		if err != nil {
+			return nil, err
+		}
+		return templates.New(renderer), nil
 	})
 	do.Provide(injector, func(i do.Injector) (*brandkit.Module, error) {
 		bus, err := do.Invoke[*eventsBus](i)
@@ -1371,7 +1392,11 @@ func registerContent(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		return automations.New(cipher, bus.Bus), nil
+		renderer, err := do.Invoke[*emaildoc.Renderer](i)
+		if err != nil {
+			return nil, err
+		}
+		return automations.New(cipher, bus.Bus, renderer), nil
 	})
 
 	do.Provide(injector, func(i do.Injector) (*rules.Module, error) {
@@ -1416,7 +1441,11 @@ func registerContent(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		return broadcasts.New(bus.Bus), nil
+		renderer, err := do.Invoke[*emaildoc.Renderer](i)
+		if err != nil {
+			return nil, err
+		}
+		return broadcasts.New(bus.Bus, renderer), nil
 	})
 }
 

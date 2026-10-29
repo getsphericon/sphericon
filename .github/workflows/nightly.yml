@@ -1,8 +1,9 @@
 name: Nightly
 
-# Checks that do not need to run on every pull request: the Go coverage floor, the race detector, mutation testing, fuzzing, the contract fuzz, the
-# external links of the Markdown files, and the dependency scan, whose answer changes with the advisory database rather
-# than with our code. One scheduled run covers them; `workflow_dispatch` runs
+# Checks that do not need to run on every pull request: the Go coverage floor (with the real
+# document export on the save paths), the race detector, mutation testing, fuzzing, the contract
+# fuzz, the external links of the Markdown files, and the dependency scan, whose answer changes
+# with the advisory database rather than with our code. One scheduled run covers them; `workflow_dispatch` runs
 # them on demand. A scheduled workflow only runs from the default branch.
 on:
   schedule:
@@ -19,7 +20,9 @@ concurrency:
 
 jobs:
   # The Go suite over cmd/, internal/ and ee/, failing under the total in
-  # .testcoverage.yml.
+  # .testcoverage.yml. It saves documents through the editor's real export: a pull request's
+  # suite fakes it everywhere but internal/emaildoc, internal/emailrender and the tests of what
+  # the export makes of the starter and fixture documents, as a runtime takes seconds to start.
   coverage:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -36,6 +39,8 @@ jobs:
       # The task starts the `db` mise daemon (Postgres preset) itself.
       - name: Run tests with coverage
         run: mise run test:cover
+        env:
+          TEST_EMAIL_RENDERER: goja
 
   # The whole Go suite under the race detector: slow (the JavaScript runtime that renders email
   # documents is several times slower with it), so it runs here and not on a pull request.

@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/templates"
 )
@@ -159,7 +160,7 @@ func Boot() (*Env, func(), error) {
 		accounts: acc,
 		bus:      bus,
 
-		brandKit: brandkit.New(bus, templates.New()),
+		brandKit: brandkit.New(bus, templates.New(emaildoc.New())),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), nil, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }

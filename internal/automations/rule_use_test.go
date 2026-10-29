@@ -18,7 +18,7 @@ import (
 // (ADR 0049, ADR 0054). A deactivated Rule does not hold it.
 func TestAnAutomationAnActiveRuleEnrollsInIsNotRemoved(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 	named := []inuse.User{{Kind: inuse.Rule, ID: fixtures.RuleEnrollWaitFirstID, Name: fixtures.RuleEnrollWaitFirstName}}
