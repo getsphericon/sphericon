@@ -2,6 +2,7 @@ import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 
 import {
+  handleSiteAutomationsList,
   handleSiteBroadcastsList,
   handleSiteSendingDomainsList,
   handleSiteSetupChecklistGet,
@@ -25,7 +26,10 @@ const finished = {
 const mount = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
 
 beforeEach(() => {
-  worker.use(handleSiteBroadcastsList(() => HttpResponse.json({ items: [], totalItems: 0 })))
+  worker.use(
+    handleSiteBroadcastsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
+    handleSiteAutomationsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
+  )
 })
 
 test('an unfinished checklist is shown with its steps', async () => {
@@ -60,7 +64,7 @@ test('a finished checklist is not shown', async () => {
   await expect.element(screen.getByText('Set up Sphericon')).not.toBeInTheDocument()
 })
 
-test('a finished checklist leaves the shortcuts and the recent broadcasts', async () => {
+test('a finished checklist leaves the shortcuts and what was created last', async () => {
   worker.use(
     handleSiteSetupChecklistGet({ body: finished }),
     handleSiteBroadcastsList(() =>
@@ -77,13 +81,27 @@ test('a finished checklist leaves the shortcuts and the recent broadcasts', asyn
         totalItems: 1,
       }),
     ),
+    handleSiteAutomationsList(() =>
+      HttpResponse.json({
+        items: [
+          {
+            id: '2',
+            name: 'Welcome series',
+            status: 'active',
+            createdAt: '2026-10-28T08:09:00Z',
+          },
+        ],
+        totalItems: 1,
+      }),
+    ),
   )
 
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
   await expect.element(screen.getByText('Create a new…')).toBeInTheDocument()
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
-  await expect.element(screen.getByText('38%')).toBeInTheDocument()
+  await expect.element(screen.getByText('Welcome series')).toBeInTheDocument()
+  await expect.element(screen.getByText('Automation', { exact: true })).toBeInTheDocument()
 })
 
 test('the contact step offers every way to add one and no single page', async () => {
