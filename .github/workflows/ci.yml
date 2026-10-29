@@ -52,7 +52,34 @@ jobs:
             golangci-lint-${{ runner.os }}-
 
       - name: Run checks
-        run: mise run check
+        run: mise run check:lint
+
+  # Package boundaries (easement.yml). Its indexers, scip-go and scip-typescript, type-check both
+  # code bases: on the lint runner they compete with golangci-lint and tsc for the same cores.
+  arch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+
+      # scip-typescript type-checks the frontend against its dependencies.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Go
+        uses: $/.github/actions/go-cache
+        with:
+          scope: arch
+
+      - name: Check package boundaries
+        run: mise run check:arch
 
   generated:
     runs-on: ubuntu-latest

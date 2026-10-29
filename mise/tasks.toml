@@ -486,6 +486,10 @@ run = [
 
 [check]
 description = "Every linter, type-check and security check"
+depends = ["check:lint", "check:arch"]
+
+["check:lint"]
+description = "Every check but the package boundaries: CI runs check:arch as a job of its own, as its indexers would share the runner's cores with golangci-lint and tsc"
 depends = [
   "check:fe",
   "check:i18n",
@@ -497,7 +501,6 @@ depends = [
   "check:copies",
   "check:typos",
   "check:adr",
-  "check:arch",
   "check:helm",
   "check:links",
 ]
