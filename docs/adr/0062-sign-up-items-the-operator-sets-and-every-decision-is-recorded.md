@@ -17,7 +17,7 @@ know the rules. It gives the operator a mechanism instead: **Sign-up items**, ea
 
 - **The market is the Instance's.** One Instance serves one market, in one language. The core ships
   no legal text, names no jurisdiction and has no Sign-up item until a Staff member adds one in the
-  Staff console ([[0061-every-instance-has-a-staff-console-and-a-staff-member-opens-sign-up]]); with
+  Staff console ([[0061-every-instance-has-a-staff-console-and-sign-up-is-always-open]]); with
   none, sign-up behaves as before.
 - **A Sign-up item** has a key, a title and a kind: a **required acceptance** (a checkbox without
   which no User is created), an **optional consent** (an unticked checkbox that sign-up never

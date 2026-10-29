@@ -573,7 +573,7 @@ _Avoid_: Ban, lockout, disable, quota (suspension is not an entitlement state �
 
 **Staff console**:
 The Staff member's own web surface (a fourth API surface beside `/site`, `/api`, `/collect`). On
-every Instance it holds the Instance's own settings: whether sign-up is open, and its Sign-up items.
+every Instance it holds the Instance's own settings, such as its Sign-up items.
 With the Enterprise feature it also acts across Workspaces: it shows Workspace **metadata only**
 (identity, suspension state, deliverability rates, send volume, Audit log) — never Contacts,
 content, or Events — and offers suspend and unsuspend. Impersonation is out of scope.
@@ -906,7 +906,7 @@ _Avoid_: Installation, deployment, tenant (that is a Workspace), server
 **Mode**:
 Which kind of deployment an Instance is: `selfhosted` (the default) or `saas`. It alone decides
 what differs between them, such as whether the Instance reports to the project; no separate
-setting does. Whether sign-up is open is a Staff member's decision, not the Mode's. It is not a License key and
+setting does. Sign-up is always open, whatever the Mode. It is not a License key and
 unlocks no Enterprise feature.
 _Avoid_: Edition (that is core or Enterprise, by License key), plan, tier, flavour
 
