@@ -84,7 +84,7 @@ export function RulesListPage() {
       />
 
       <PagedTable
-        key={String(archived)}
+        resetKey={String(archived)}
         options={(query) =>
           siteRulesListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }

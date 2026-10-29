@@ -88,7 +88,7 @@ export function BroadcastsListPage() {
       />
 
       <PagedTable
-        key={String(archived)}
+        resetKey={String(archived)}
         options={(query) =>
           siteBroadcastsListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }

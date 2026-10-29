@@ -90,7 +90,7 @@ export function AutomationsListPage() {
       />
 
       <PagedTable
-        key={String(archived)}
+        resetKey={String(archived)}
         options={(query) =>
           siteAutomationsListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }

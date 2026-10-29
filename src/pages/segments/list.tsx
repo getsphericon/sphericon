@@ -59,7 +59,7 @@ export function SegmentsListPage() {
       />
 
       <PagedTable
-        key={String(archived)}
+        resetKey={String(archived)}
         options={(query) =>
           siteSegmentsListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }
