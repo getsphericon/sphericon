@@ -93,7 +93,7 @@ func TestSiteAnalyticsOverviewMapsTheModule(t *testing.T) {
 
 	res, err = c.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.Len(t, res.(*siteapi.SiteAnalyticsOverview).Timeseries, 30, "30d is the default window")
+	assert.Len(t, res.(*siteapi.SiteAnalyticsOverview).Timeseries, 7, "7d is the default window")
 }
 
 func TestSubscribedPeopleRequiresAuth(t *testing.T) {

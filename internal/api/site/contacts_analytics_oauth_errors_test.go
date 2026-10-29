@@ -103,10 +103,10 @@ func TestSiteAnalyticsRangesAndEmptyWorkspace(t *testing.T) {
 		assert.Zero(t, ov.Email.ClickToOpenRate)
 	}
 
-	// No range given defaults to 30 days.
+	// No range given defaults to 7 days.
 	def, err := jane.SiteAnalyticsOverview(ctx, siteapi.SiteAnalyticsOverviewParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
-	assert.Len(t, def.(*siteapi.SiteAnalyticsOverview).Timeseries, 30)
+	assert.Len(t, def.(*siteapi.SiteAnalyticsOverview).Timeseries, 7)
 }
 
 func TestSiteOAuthConsentErrorBranches(t *testing.T) {

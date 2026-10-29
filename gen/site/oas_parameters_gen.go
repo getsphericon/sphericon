@@ -18,7 +18,7 @@ import (
 // SiteAnalyticsClicksByLinkParams is parameters of SiteAnalytics_clicksByLink operation.
 type SiteAnalyticsClicksByLinkParams struct {
 	WorkspaceId WorkspaceId
-	// Window to aggregate over (defaults to 30d).
+	// Window to aggregate over (defaults to 7d).
 	Range OptSiteAnalyticsRange `json:",omitempty,omitzero"`
 }
 
@@ -166,7 +166,7 @@ func decodeSiteAnalyticsClicksByLinkParams(args [1]string, argsEscaped bool, r *
 // SiteAnalyticsEventsParams is parameters of SiteAnalytics_events operation.
 type SiteAnalyticsEventsParams struct {
 	WorkspaceId WorkspaceId
-	// Window to report over (defaults to 30d).
+	// Window to report over (defaults to 7d).
 	Range OptSiteAnalyticsRange `json:",omitempty,omitzero"`
 }
 
@@ -314,7 +314,7 @@ func decodeSiteAnalyticsEventsParams(args [1]string, argsEscaped bool, r *http.R
 // SiteAnalyticsNewPeopleParams is parameters of SiteAnalytics_newPeople operation.
 type SiteAnalyticsNewPeopleParams struct {
 	WorkspaceId WorkspaceId
-	// Window to aggregate over (defaults to 30d).
+	// Window to aggregate over (defaults to 7d).
 	Range OptSiteAnalyticsRange `json:",omitempty,omitzero"`
 }
 
@@ -462,7 +462,7 @@ func decodeSiteAnalyticsNewPeopleParams(args [1]string, argsEscaped bool, r *htt
 // SiteAnalyticsOpensByHourParams is parameters of SiteAnalytics_opensByHour operation.
 type SiteAnalyticsOpensByHourParams struct {
 	WorkspaceId WorkspaceId
-	// Window to aggregate over (defaults to 30d).
+	// Window to aggregate over (defaults to 7d).
 	Range OptSiteAnalyticsRange `json:",omitempty,omitzero"`
 }
 
@@ -610,7 +610,7 @@ func decodeSiteAnalyticsOpensByHourParams(args [1]string, argsEscaped bool, r *h
 // SiteAnalyticsOverviewParams is parameters of SiteAnalytics_overview operation.
 type SiteAnalyticsOverviewParams struct {
 	WorkspaceId WorkspaceId
-	// Window to aggregate over (defaults to 30d).
+	// Window to aggregate over (defaults to 7d).
 	Range OptSiteAnalyticsRange `json:",omitempty,omitzero"`
 }
 
@@ -758,7 +758,7 @@ func decodeSiteAnalyticsOverviewParams(args [1]string, argsEscaped bool, r *http
 // SiteAnalyticsSubscribedPeopleParams is parameters of SiteAnalytics_subscribedPeople operation.
 type SiteAnalyticsSubscribedPeopleParams struct {
 	WorkspaceId WorkspaceId
-	// Window to report over (defaults to 30d).
+	// Window to report over (defaults to 7d).
 	Range OptSiteAnalyticsRange `json:",omitempty,omitzero"`
 }
 

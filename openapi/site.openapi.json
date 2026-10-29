@@ -3439,7 +3439,7 @@
             "name": "range",
             "in": "query",
             "required": false,
-            "description": "Window to aggregate over (defaults to 30d)",
+            "description": "Window to aggregate over (defaults to 7d)",
             "schema": {
               "$ref": "#/components/schemas/SiteAnalyticsRange"
             },
@@ -3488,7 +3488,7 @@
             "name": "range",
             "in": "query",
             "required": false,
-            "description": "Window to report over (defaults to 30d)",
+            "description": "Window to report over (defaults to 7d)",
             "schema": {
               "$ref": "#/components/schemas/SiteAnalyticsRange"
             },
@@ -3537,7 +3537,7 @@
             "name": "range",
             "in": "query",
             "required": false,
-            "description": "Window to aggregate over (defaults to 30d)",
+            "description": "Window to aggregate over (defaults to 7d)",
             "schema": {
               "$ref": "#/components/schemas/SiteAnalyticsRange"
             },
@@ -3586,7 +3586,7 @@
             "name": "range",
             "in": "query",
             "required": false,
-            "description": "Window to aggregate over (defaults to 30d)",
+            "description": "Window to aggregate over (defaults to 7d)",
             "schema": {
               "$ref": "#/components/schemas/SiteAnalyticsRange"
             },
@@ -3635,7 +3635,7 @@
             "name": "range",
             "in": "query",
             "required": false,
-            "description": "Window to aggregate over (defaults to 30d)",
+            "description": "Window to aggregate over (defaults to 7d)",
             "schema": {
               "$ref": "#/components/schemas/SiteAnalyticsRange"
             },
@@ -3684,7 +3684,7 @@
             "name": "range",
             "in": "query",
             "required": false,
-            "description": "Window to report over (defaults to 30d)",
+            "description": "Window to report over (defaults to 7d)",
             "schema": {
               "$ref": "#/components/schemas/SiteAnalyticsRange"
             },

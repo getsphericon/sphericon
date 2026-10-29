@@ -268,7 +268,7 @@ namespace SiteAnalytics {
   op overview(
     @path workspaceId: WorkspaceId,
 
-    /** Window to aggregate over (defaults to 30d) */
+    /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsOverview | NotFoundProblem;
 
@@ -278,7 +278,7 @@ namespace SiteAnalytics {
   op newPeople(
     @path workspaceId: WorkspaceId,
 
-    /** Window to aggregate over (defaults to 30d) */
+    /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
   ): SiteNewPeopleReport | NotFoundProblem;
 
@@ -288,7 +288,7 @@ namespace SiteAnalytics {
   op subscribedPeople(
     @path workspaceId: WorkspaceId,
 
-    /** Window to report over (defaults to 30d) */
+    /** Window to report over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsSubscribedPeople | NotFoundProblem;
 
@@ -298,7 +298,7 @@ namespace SiteAnalytics {
   op clicksByLink(
     @path workspaceId: WorkspaceId,
 
-    /** Window to aggregate over (defaults to 30d) */
+    /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsClicksByLink | NotFoundProblem;
 
@@ -308,7 +308,7 @@ namespace SiteAnalytics {
   op opensByHour(
     @path workspaceId: WorkspaceId,
 
-    /** Window to aggregate over (defaults to 30d) */
+    /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsOpensByHour | NotFoundProblem;
 
@@ -318,7 +318,7 @@ namespace SiteAnalytics {
   op events(
     @path workspaceId: WorkspaceId,
 
-    /** Window to report over (defaults to 30d) */
+    /** Window to report over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsEvents | NotFoundProblem;
 }

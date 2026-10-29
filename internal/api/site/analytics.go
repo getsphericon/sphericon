@@ -11,7 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
-// analyticsWindow maps the selectable range to the module's window; 30d is the
+// analyticsWindow maps the selectable range to the module's window; 7d is the
 // default when the param is absent or unrecognized.
 func analyticsWindow(r siteapi.OptSiteAnalyticsRange) analytics.Window {
 	if v, ok := r.Get(); ok {
@@ -24,7 +24,7 @@ func analyticsWindow(r siteapi.OptSiteAnalyticsRange) analytics.Window {
 			return analytics.Window30Days
 		}
 	}
-	return analytics.Window30Days
+	return analytics.Window7Days
 }
 
 // analyticsReport is the shell every report handler shares: it scopes to the Workspace of the
