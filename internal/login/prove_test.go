@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/login"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func (r rig) prove(t *testing.T, address, hash, password string) login.ProofResult {
@@ -46,7 +46,7 @@ func TestProvingAnAccountWithoutAPasswordIsWrongAndCounted(t *testing.T) {
 
 func hashOf(t *testing.T, password string) string {
 	t.Helper()
-	hash, err := credentials.HashPassword(password)
+	hash, err := testhelper.Passwords().Hash(password)
 	require.NoError(t, err)
 	return hash
 }

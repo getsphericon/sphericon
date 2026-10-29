@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/joindomains"
@@ -119,7 +120,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(ranges))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, retention.Events))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, retention.CapturedMessages))
-	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(accounts.New(entClient, bus), retention.UnverifiedUsers))
+	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(accounts.New(entClient, bus, credentials.NewHasher()), retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, time.Now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(workspacedeletion.New(entClient, bus), time.Now))
 

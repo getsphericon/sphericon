@@ -121,6 +121,8 @@ type Config struct {
 	// Mint mints the verification token of a User, bound to its stored password hash and
 	// carrying the hash of the Sign-up browser it trusts.
 	Mint func(u *ent.User, browserHash string) (string, error)
+	// Passwords hashes the password a Sign-up sets.
+	Passwords *credentials.Hasher
 	// RequireVerification is the email verification gate (ADR 0030): on in the saas Mode.
 	RequireVerification bool
 	// SurveyDue reports whether a new User owes the Sign-up survey (ADR 0055).
@@ -165,7 +167,7 @@ func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
 	}
 	// Hashed whatever the address is, so the work does not say whether it is Taken; a
 	// Verified User's hash is dropped unused.
-	hash, err := credentials.HashPassword(in.Password)
+	hash, err := m.cfg.Passwords.Hash(in.Password)
 	if err != nil {
 		return Result{}, err
 	}
@@ -223,7 +225,7 @@ func (m *Module) user(ctx context.Context, name, email, hash string) (*ent.User,
 // User is Verified with its first Workspace at once, and the welcome mail follows as it does
 // after a verification link. No session starts; the User signs in next.
 func (m *Module) signUpVerified(ctx context.Context, name, email, password string) (Result, error) {
-	hash, err := credentials.HashPassword(password)
+	hash, err := m.cfg.Passwords.Hash(password)
 	if err != nil {
 		return Result{}, err
 	}

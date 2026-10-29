@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -97,6 +98,7 @@ type SystemMailEnqueuer interface {
 
 type Handlers struct {
 	accounts       *accounts.Accounts
+	passwords      *credentials.Hasher
 	deletion       *workspacedeletion.Module
 	attempts       *accounts.Attempts
 	bus            *events.Bus
@@ -178,6 +180,8 @@ type Origins struct {
 // cannot diverge on how a module is constructed.
 type Deps struct {
 	Accounts *accounts.Accounts
+	// Passwords hashes the password a User sets (sign-up, reset, a verified link's new one).
+	Passwords *credentials.Hasher
 	// Deletion is the Workspace deletion cycle (ADR 0043).
 	Deletion *workspacedeletion.Module
 	// Instance is the Instance state no Workspace owns (ADR 0032).
@@ -250,7 +254,7 @@ func NewHandlers(d Deps) *Handlers {
 		now = time.Now
 	}
 	h := &Handlers{
-		accounts: d.Accounts, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
+		accounts: d.Accounts, passwords: d.Passwords, deletion: d.Deletion, attempts: d.Attempts, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,

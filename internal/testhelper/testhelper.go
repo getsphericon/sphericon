@@ -414,7 +414,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	}
 	edition, err := ee.New(client, bus, lic, cipher, cfg.JWTSecrets(), staff.Config{
 		Secret: newStaffSecret(), SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
-		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail,
+		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail, Passwords: Passwords(),
 	})
 	require.NoError(t, err, "build edition")
 	// The Edition's ent hooks, on the client and on every transaction the bus opens.
@@ -467,7 +467,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	automationsModule := automations.New(cipher, bus, Renderer())
 	rulesModule := rules.New(cipher, bus)
 	broadcastsModule := broadcasts.New(bus, Renderer())
-	acc := accounts.New(client, bus, accounts.WithSignupRule(st.signupRuleOf(&cfg)))
+	acc := accounts.New(client, bus, Passwords(), accounts.WithSignupRule(st.signupRuleOf(&cfg)))
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
 		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
@@ -499,7 +499,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Deletion:     workspacedeletion.New(client, bus),
 		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
 		Instance: inst,
-		Accounts: acc, Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
+		Accounts: acc, Passwords: Passwords(), Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule, CapturedMessages: capturedModule,

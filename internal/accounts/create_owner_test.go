@@ -14,7 +14,7 @@ import (
 
 func TestCreateOwnerRefusesAMalformedEmail(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
 
 	_, err := acc.CreateOwner(t.Context(), "not-an-email", "Ada")
 
@@ -26,7 +26,7 @@ func TestCreateOwnerRefusesAMalformedEmail(t *testing.T) {
 
 func TestReportOwnerCreatedShowsTheFirstWorkspaceAndTheOneTimePassword(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
 	password, err := acc.CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
 	var out bytes.Buffer
 
@@ -39,7 +39,7 @@ func TestReportOwnerCreatedShowsTheFirstWorkspaceAndTheOneTimePassword(t *testin
 
 func TestReportOwnerCreatedOfATakenEmailSaysNothingChanged(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
 	password, err := acc.CreateOwner(t.Context(), fixtures.OwnerJohnEmail, "John")
 	var out bytes.Buffer
 

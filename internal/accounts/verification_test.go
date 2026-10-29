@@ -22,7 +22,7 @@ import (
 // handler's own check: the write itself only lands on a still-Unverified User.
 func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
 	u, err := acc.CreateUnverified(t.Context(), "Grace", "grace@example.com", "signed-up-hash", false)
 	require.NoError(t, err)
 
@@ -41,7 +41,7 @@ func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 // transaction: whatever the caller believed about the address, no session is refused.
 func TestAcceptInvitationOfAVerifiedUserNeedsTheirSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
 	inv, _, err := acc.Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		accounts.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
@@ -79,7 +79,7 @@ func firstInsertMember(next ent.Mutator) ent.Mutator {
 // and the explicit Invitation's admin Role still raises it.
 func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
 	inv, _, err := acc.Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		accounts.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleAdmin, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)

@@ -84,8 +84,9 @@ func (s loginStore) Lookup(ctx context.Context, address string) (login.Account[*
 // newLogin builds the login module over the site's adapter (ADR 0020, 0030).
 func (h *Handlers) newLogin() *login.Module[*ent.User] {
 	cfg := login.Config[*ent.User]{
-		Throttle: h.attempts.For(accounts.KindLogin),
-		Store:    loginStore{h.accounts},
+		Throttle:  h.attempts.For(accounts.KindLogin),
+		Store:     loginStore{h.accounts},
+		Passwords: h.passwords,
 		Challenge: func(ctx context.Context, u *ent.User) (string, error) {
 			return h.mintLoginChallenge(ctx, u, accounts.LoginPassword, time.Time{})
 		},

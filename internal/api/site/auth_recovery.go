@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signup"
@@ -90,7 +89,7 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 		v := siteapi.SiteAuthResetPasswordBadRequest(problem(http.StatusBadRequest, i18n.T("errors.reset_link_invalid", nil)))
 		return &v, nil
 	}
-	hash, err := credentials.HashPassword(req.Password)
+	hash, err := h.passwords.Hash(req.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +150,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 			v := siteapi.SiteAuthVerifyEmailUnprocessableEntity(fieldsProblem(fieldErrors))
 			return &v, nil
 		}
-		replacement, herr := credentials.HashPassword(password)
+		replacement, herr := h.passwords.Hash(password)
 		if herr != nil {
 			return nil, herr
 		}

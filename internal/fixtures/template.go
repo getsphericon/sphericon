@@ -8,8 +8,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/go-crypt/crypt/algorithm/argon2"
-
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/secrets"
@@ -81,7 +79,7 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 		// lifts the plaintext literal into the catalog (e.g. fixtures.OwnerJohnPassword).
 		// A password hashes at minimum cost: the production verify code reads the cost
 		// back from the stored hash, so verification still works and loading stays fast.
-		"argonHash": hashPasswordMinCost,
+		"argonHash": credentials.NewMinimumCostHasher().Hash,
 		// An API token's or a Service credential's secret is stored as the SHA-256 the
 		// production code computes when it issues one (credentials.HashSecret).
 		"secretHash": credentials.HashSecret,
@@ -90,23 +88,4 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 		"passkeyCredentialID": passkeyCredentialID,
 		"passkeyPublicKey":    passkeyPublicKey,
 	}
-}
-
-// hashPasswordMinCost is a PHC argon2id hash at the minimum legal parameters
-// (credentials.VerifyPassword decodes the parameters from the hash itself).
-func hashPasswordMinCost(password string) (string, error) {
-	hasher, err := argon2.New(
-		argon2.WithVariantID(),
-		argon2.WithT(argon2.IterationsMin),
-		argon2.WithM(argon2.MemoryMin),
-		argon2.WithP(argon2.ParallelismMin),
-	)
-	if err != nil {
-		return "", err
-	}
-	digest, err := hasher.Hash(password)
-	if err != nil {
-		return "", err
-	}
-	return digest.Encode(), nil
 }

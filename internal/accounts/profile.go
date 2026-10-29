@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -74,7 +73,7 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 		if !proved {
 			return ProfileChanged{}, ErrCurrentPasswordIncorrect
 		}
-		h, err := credentials.HashPassword(c.NewPassword)
+		h, err := a.passwords.Hash(c.NewPassword)
 		if err != nil {
 			return ProfileChanged{}, err
 		}

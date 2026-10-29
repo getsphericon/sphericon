@@ -43,6 +43,7 @@ var ErrWorkspaceNotFound = errors.New("accounts: workspace not found")
 type Accounts struct {
 	ent         *ent.Client
 	bus         *events.Bus
+	passwords   *credentials.Hasher
 	newPublicID func() string
 	signup      SignupRule
 }
@@ -57,9 +58,9 @@ func WithWorkspaceIDs(generate func() string) Option {
 }
 
 // New builds Accounts over the ent client; the bus opens the transactions that
-// span several writes.
-func New(client *ent.Client, bus *events.Bus, opts ...Option) *Accounts {
-	a := &Accounts{ent: client, bus: bus, newPublicID: workspaceid.New}
+// span several writes, and passwords hashes the passwords a User sets.
+func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, opts ...Option) *Accounts {
+	a := &Accounts{ent: client, bus: bus, passwords: passwords, newPublicID: workspaceid.New}
 	for _, opt := range opts {
 		opt(a)
 	}
@@ -572,7 +573,7 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 		return "", fmt.Errorf("%q is not an email address", email)
 	}
 	password = rand.Text()
-	hash, err := credentials.HashPassword(password)
+	hash, err := a.passwords.Hash(password)
 	if err != nil {
 		return "", err
 	}
@@ -813,7 +814,7 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
 	role := membership.Role(inv.Role)
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, proven, err := invitee(ctx, tx, inv, name, password, sessionEmail)
+		u, proven, err := invitee(ctx, tx, a.passwords, inv, name, password, sessionEmail)
 		if err != nil {
 			return err
 		}
@@ -871,7 +872,7 @@ type acceptProof struct {
 
 // invitee resolves the User an Invitation is accepted by: a Verified User by their own session,
 // any other address by the name and password the link's holder sets (ADR 0030).
-func invitee(ctx context.Context, tx *ent.Client, inv *ent.Invitation, name, password, sessionEmail string) (*ent.User, acceptProof, error) {
+func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, name, password, sessionEmail string) (*ent.User, acceptProof, error) {
 	u, err := tx.User.Query().Where(user.EmailEqualFold(inv.Email)).Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, acceptProof{}, err
@@ -884,7 +885,7 @@ func invitee(ctx context.Context, tx *ent.Client, inv *ent.Invitation, name, pas
 	if name == "" || password == "" {
 		return nil, acceptProof{}, ErrCredentialsRequired
 	}
-	hash, herr := credentials.HashPassword(password)
+	hash, herr := passwords.Hash(password)
 	if herr != nil {
 		return nil, acceptProof{}, herr
 	}

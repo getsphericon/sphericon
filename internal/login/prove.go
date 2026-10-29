@@ -42,7 +42,7 @@ func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password s
 	if wait {
 		return ProofResult{Proof: ProofThrottled, Delay: delay}, nil
 	}
-	if verify(passwordHash, password) {
+	if m.verify(passwordHash, password) {
 		return ProofResult{Proof: ProofHolds}, nil
 	}
 	if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {

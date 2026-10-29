@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
@@ -123,7 +124,7 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	ws, err := accounts.New(h.env.DB, h.env.Bus).CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Hooli")
+	ws, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords()).CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Hooli")
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)
@@ -165,7 +166,7 @@ func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *test
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	_, err := accounts.New(h.env.DB, h.env.Bus).DeleteUser(t.Context(), fixtures.InitechCoOwnerOwenID, nil)
+	_, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords()).DeleteUser(t.Context(), fixtures.InitechCoOwnerOwenID, nil)
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)
