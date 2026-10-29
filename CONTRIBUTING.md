@@ -126,7 +126,10 @@ Sign in at `https://sphericon.localhost/login`:
 | member | Acme       | `mary@acme.test`          | `password` |
 | owner  | Globex     | `jane@globex.test`        | `password` |
 
-Brightpath has all three roles, so one Workspace is enough for development. `sam@globex.test` / `password` has a TOTP Second factor, secret `JBSWY3DPEHPK3PXP`.
+Brightpath has all three roles, so one Workspace is enough for development. Ana and Milo have a
+TOTP Second factor, as does `sam@globex.test` / `password`: all three share the secret
+`JBSWY3DPEHPK3PXP`, and Ana's unused Recovery codes are `ana01-brght` and `ana02-brght`, Milo's
+`milo1-brght` and `milo2-brght`. Maya signs in with the password alone.
 
 Brightpath's Mailpit Integration sends to `127.0.0.1:1025`, the primary checkout's SMTP port. A
 linked worktree's Mailpit SMTP port is offset (`SPHERICON_SMTP_PORT`) and a fixture cannot follow

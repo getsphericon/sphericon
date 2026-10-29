@@ -11,3 +11,31 @@
   used_at: '2026-01-02 00:00:00'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# --- Brightpath (workspace 20): Recovery codes of Ana and Milo, the two with a Second factor ---
+- id: 20000
+  user_id: 20001
+  code_hash: '{{recoveryCodeHash "ana01-brght"}}'
+  created_at: '{{daysAgo 108}}'
+  updated_at: '{{daysAgo 108}}'
+- id: 20001
+  user_id: 20001
+  code_hash: '{{recoveryCodeHash "ana02-brght"}}'
+  created_at: '{{daysAgo 108}}'
+  updated_at: '{{daysAgo 108}}'
+- id: 20002
+  user_id: 20001
+  code_hash: '{{recoveryCodeHash "ana03-brght"}}'
+  used_at: '{{daysAgo 30}}'
+  created_at: '{{daysAgo 108}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 20003
+  user_id: 20002
+  code_hash: '{{recoveryCodeHash "milo1-brght"}}'
+  created_at: '{{daysAgo 105}}'
+  updated_at: '{{daysAgo 105}}'
+- id: 20004
+  user_id: 20002
+  code_hash: '{{recoveryCodeHash "milo2-brght"}}'
+  created_at: '{{daysAgo 105}}'
+  updated_at: '{{daysAgo 105}}'

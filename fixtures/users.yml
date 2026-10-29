@@ -203,6 +203,8 @@
   email_verified_at: '2026-01-01 00:00:00'
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+# Maya signs in with a password alone; Ana and Milo also have a TOTP Second factor (secret
+# JBSWY3DPEHPK3PXP, Recovery codes in recovery_codes.yml).
 - id: 20000
   name: 'Maya'
   email: 'maya@brightpath.example'
@@ -214,6 +216,8 @@
   name: 'Ana'
   email: 'ana@brightpath.example'
   password_hash: '{{argonHash "password"}}'
+  second_factor_secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
+  second_factor_confirmed_at: '{{daysAgo 108}}'
   created_at: '{{daysAgo 118}}'
   updated_at: '{{daysAgo 118}}'
   email_verified_at: '{{daysAgo 118}}'
@@ -221,6 +225,8 @@
   name: 'Milo'
   email: 'milo@brightpath.example'
   password_hash: '{{argonHash "password"}}'
+  second_factor_secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
+  second_factor_confirmed_at: '{{daysAgo 105}}'
   created_at: '{{daysAgo 115}}'
   updated_at: '{{daysAgo 115}}'
   email_verified_at: '{{daysAgo 115}}'
