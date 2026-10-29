@@ -378,7 +378,13 @@ func (m *Module[P]) verify(hash, password string) bool {
 // decoyHash is a real password hash nobody knows the password of, hashed once.
 func (m *Module[P]) decoyHash() string {
 	m.decoyOnce.Do(func() {
-		m.decoy, _ = m.cfg.Passwords.Hash("decoy password: no account matches")
+		// A decoy that could not be hashed stays empty: it verifies nothing, and the login
+		// it guards is refused either way.
+		decoy, err := m.cfg.Passwords.Hash("decoy password: no account matches")
+		if err != nil {
+			return
+		}
+		m.decoy = decoy
 	})
 	return m.decoy
 }
