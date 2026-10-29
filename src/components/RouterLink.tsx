@@ -1,5 +1,6 @@
-import { Anchor, Button, Menu, NavLink } from '@mantine/core'
+import { Anchor, Button, Menu, NavLink, useMantineTheme } from '@mantine/core'
 import type { AnchorProps, ButtonProps, MenuItemProps, NavLinkProps } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { createLink } from '@tanstack/react-router'
 import type { LinkComponent } from '@tanstack/react-router'
 import { forwardRef } from 'react'
@@ -33,9 +34,14 @@ const NavLinkBase = forwardRef<HTMLAnchorElement, NavLinkLinkProps>(
 
 const NavLinkCreated = createLink(NavLinkBase)
 
-export const NavLinkLink: LinkComponent<typeof NavLinkBase> = (props) => (
-  <NavLinkCreated preload="intent" {...props} />
-)
+// A navbar link on a phone is a link in the drawer, which slides out while the page changes: the
+// router's cross-fade of the whole viewport would fade the old snapshot of the open drawer under
+// the sliding live one. So there the page swaps without it; the sidebar of a wide screen keeps it.
+export const NavLinkLink: LinkComponent<typeof NavLinkBase> = (props) => {
+  const theme = useMantineTheme()
+  const drawer = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`)
+  return <NavLinkCreated preload="intent" viewTransition={!drawer} {...props} />
+}
 
 type AnchorLinkProps = Omit<AnchorProps, 'href'>
 
