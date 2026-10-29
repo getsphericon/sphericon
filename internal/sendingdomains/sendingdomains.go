@@ -387,6 +387,12 @@ func validSelector(raw string) (string, error) {
 	return sel, nil
 }
 
+// Get returns the Sending domain with the id, archived or not; an unknown id, or one of another
+// Workspace, is ent's not-found error.
+func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+	return s.SendingDomain().Get(ctx, id)
+}
+
 // List returns one page of the Workspace's Sending domains, ascending by id: the kept ones, or
 // with archived the archived ones.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, archived bool) (pagination.Page[*ent.SendingDomain], error) {

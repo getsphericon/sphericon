@@ -23,5 +23,5 @@ type Warning struct {
 type Watch interface {
 	// Warning is the Workspace's warning at now, or nil when it is in no warning tier
 	// (exempt and suspended Workspaces are never in one).
-	Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*Warning, error)
+	Warning(ctx context.Context, s *ent.Scoped, now time.Time) (*Warning, error)
 }

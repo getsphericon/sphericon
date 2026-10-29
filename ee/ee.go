@@ -148,7 +148,11 @@ func (e *Edition) AbuseWatch() abusewatch.Watch { return abuseWatchAdapter{e.Sta
 
 type abuseWatchAdapter struct{ watch *abuse.Watch }
 
-func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (*abusewatch.Warning, error) {
+func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.Time) (*abusewatch.Warning, error) {
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return nil, err
+	}
 	b, err := w.watch.Warning(ctx, s, ws, now)
 	if err != nil || b.Tier == abuse.TierNone {
 		return nil, err

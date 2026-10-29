@@ -82,7 +82,7 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 	}
 
 	id := int64(params.ID)
-	d, err := s.SendingDomain().Get(ctx, id)
+	d, err := h.sendingDomains.Get(ctx, s, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsGetNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &v, nil
@@ -115,7 +115,7 @@ func (h *Handlers) SiteSendingDomainsArchive(ctx context.Context, params siteapi
 	if err != nil {
 		return nil, err
 	}
-	d, err := s.SendingDomain().Get(ctx, id)
+	d, err := h.sendingDomains.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (h *Handlers) SiteSendingDomainsUnarchive(ctx context.Context, params sitea
 	case err != nil:
 		return nil, err
 	}
-	d, err := s.SendingDomain().Get(ctx, id)
+	d, err := h.sendingDomains.Get(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

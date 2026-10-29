@@ -994,6 +994,11 @@ func (a *Accounts) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor ev
 	return found, err
 }
 
+// Workspace is the scoped Workspace's own row.
+func (a *Accounts) Workspace(ctx context.Context, s *ent.Scoped) (*ent.Workspace, error) {
+	return s.Workspace(ctx)
+}
+
 // WorkspaceIDByPublicID resolves a Workspace id (ADR 0043) to the internal key; command-line
 // tooling addresses Workspaces by their id.
 func WorkspaceIDByPublicID(ctx context.Context, client *ent.Client, publicID string) (int64, error) {

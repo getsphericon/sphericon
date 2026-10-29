@@ -68,8 +68,8 @@ func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsG
 
 	id := int64(params.ID)
 
-	c, err := auth.TokenScoped(ctx).Contact().Get(ctx, id)
-	if ent.IsNotFound(err) {
+	c, err := h.contacts.Get(ctx, auth.TokenScoped(ctx), id)
+	if errors.Is(err, contacts.ErrNotFound) {
 		res := externalapi.ContactsGetNotFound(problem(http.StatusNotFound, "contact not found"))
 		return &res, nil
 	}

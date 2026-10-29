@@ -8,7 +8,6 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -92,8 +91,9 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 		RequestID:  params.RequestId.Or(""),
 	}
 
-	// A data export is itself audited (story 19), recorded before any row leaves.
-	if err := h.recordAuditExport(ctx, s, filter); err != nil {
+	// A data export is itself audited (story 19): Export records it before any row leaves.
+	write, err := h.audit.Export(ctx, s, filter)
+	if err != nil {
 		return nil, err
 	}
 
@@ -103,44 +103,12 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 	stop := context.AfterFunc(ctx, func() { _ = pw.CloseWithError(ctx.Err()) })
 	go func() {
 		defer stop()
-		_ = pw.CloseWithError(h.audit.ExportCSV(ctx, s, filter, pw))
+		_ = pw.CloseWithError(write(pw))
 	}()
 	return &siteapi.SiteAuditExportOKHeaders{
 		ContentDisposition: `attachment; filename="audit-log-` + string(params.WorkspaceId) + `.csv"`,
 		Response:           siteapi.SiteAuditExportOK{Data: pr},
 	}, nil
-}
-
-// recordAuditExport records the export as an `audit_log.export` Audit entry whose diff
-// names the filters it was narrowed by.
-func (h *Handlers) recordAuditExport(ctx context.Context, s *ent.Scoped, f events.AuditFilter) error {
-	filters := map[string]any{}
-	if !f.From.IsZero() {
-		filters["from"] = f.From.UTC().Format(time.RFC3339)
-	}
-	if !f.To.IsZero() {
-		filters["to"] = f.To.UTC().Format(time.RFC3339)
-	}
-	for k, v := range map[string]string{
-		"actor_kind": f.ActorKind, "actor_id": f.ActorID, "action": f.Action, "target_type": f.TargetType,
-		"target_id": f.TargetID, "ip": f.IP, "request_id": f.RequestID,
-	} {
-		if v != "" {
-			filters[k] = v
-		}
-	}
-	entry := &events.AuditEntry{
-		WorkspaceID: s.WorkspaceID(),
-		Actor:       h.actor(ctx),
-		Action:      events.ActionAuditLogExport,
-		TargetType:  "audit_log",
-	}
-	if len(filters) > 0 {
-		entry.Diff = map[string]any{"filter": filters}
-	}
-	return h.bus.WithinScopedTx(ctx, s, func(_ *ent.Scoped, pub events.Publisher) error {
-		return events.RecordAudit(ctx, pub, entry)
-	})
 }
 
 // SiteAuditGetRetention reads the Audit log retention window. Owner and admin only;
@@ -158,7 +126,7 @@ func (h *Handlers) SiteAuditGetRetention(ctx context.Context, params siteapi.Sit
 		v := siteapi.SiteAuditGetRetentionPaymentRequired(problem(http.StatusPaymentRequired, "audit retention needs an Enterprise license"))
 		return &v, nil
 	}
-	ws, err := s.Workspace(ctx)
+	ws, err := h.accounts.Workspace(ctx, s)
 	if err != nil {
 		return nil, err
 	}

@@ -28,8 +28,8 @@ import (
 var (
 	// ErrScopeEscalation: a token asked to mint a scope it does not hold itself.
 	ErrScopeEscalation = errors.New("apitokens: cannot grant a scope the minting token lacks")
-	// ErrNotFound: no such active token in this Workspace (unknown, foreign or
-	// already revoked).
+	// ErrNotFound: no such token in this Workspace (unknown or foreign); for Revoke and
+	// Rename, also one already revoked.
 	ErrNotFound = errors.New("apitokens: token not found")
 )
 
@@ -114,6 +114,19 @@ func MintWithin(ctx context.Context, s *ent.Scoped, minter []string, in Input) (
 // read call it, so the shape of the query is written once.
 func List(ctx context.Context, s *ent.Scoped) ([]*ent.ApiToken, error) {
 	return s.ApiToken().Query().Order(ent.Asc(apitoken.FieldID)).All(ctx)
+}
+
+// Get returns the Workspace's token with the id, revoked or not, or ErrNotFound when the
+// Workspace has none with that id.
+func Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.ApiToken, error) {
+	token, err := s.ApiToken().Get(ctx, id)
+	if ent.IsNotFound(err) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
 }
 
 // Revoke retires an active token (it stays listed with revoked_at). A token that

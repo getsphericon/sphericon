@@ -94,11 +94,7 @@ func (h *Handlers) abuseWarning(ctx context.Context, s *ent.Scoped) (siteapi.Opt
 	if h.abuseWatch == nil {
 		return siteapi.OptNilSiteAbuseWarning{}, nil
 	}
-	ws, err := s.Workspace(ctx)
-	if err != nil {
-		return siteapi.OptNilSiteAbuseWarning{}, err
-	}
-	w, err := h.abuseWatch.Warning(ctx, s, ws, h.now())
+	w, err := h.abuseWatch.Warning(ctx, s, h.now())
 	if err != nil || w == nil {
 		return siteapi.OptNilSiteAbuseWarning{}, err
 	}

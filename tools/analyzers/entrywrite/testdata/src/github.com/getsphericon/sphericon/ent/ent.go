@@ -38,6 +38,14 @@ func (*TagScoped) CreateBulk() *TagCreate           { return &TagCreate{} }
 func (*TagScoped) Query() *TagQuery                 { return &TagQuery{} }
 func (*TagScoped) Get(context.Context, int64) error { return nil }
 
+type Tag struct{}
+
+func (*Tag) QueryContacts() *TagQuery { return &TagQuery{} }
+
+type Workspace struct{}
+
 type Scoped struct{}
 
-func (*Scoped) Tag() *TagScoped { return &TagScoped{} }
+func (*Scoped) Tag() *TagScoped                               { return &TagScoped{} }
+func (*Scoped) WorkspaceID() int64                            { return 0 }
+func (*Scoped) Workspace(context.Context) (*Workspace, error) { return nil, nil }

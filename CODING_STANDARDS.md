@@ -70,9 +70,12 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **Rule 5, `entrywrite`.** An entry point does not write through ent: a call that starts a mutation
   (`Create`, `CreateBulk`, `Update`, `UpdateOne`, `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`) or an
   upsert (`OnConflict`, `OnConflictColumns`, `OnConflictColumnsWhere`) on a type of the `ent` package (the raw
-  client, a transaction, the scoped client and its wrappers) is a finding; reads are allowed, test files are
-  not read. The closed list of entry points is `entryPoints` in `tools/analyzers/entrywrite`: the site,
-  external and collect handlers, `internal/mcpserver`, `internal/jobs` and `internal/server`. `ee/staff` holds
+  client, a transaction, the scoped client and its wrappers) is a finding; test files are not read. The handlers
+  of the API surfaces (`surfaces`: `internal/api/site`, `external` and `collect`) do not read through ent either:
+  a `Get`, `GetX`, a `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a
+  function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
+  transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
+  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external and collect handlers, `internal/mcpserver`, `internal/jobs` and `internal/server`. `ee/staff` holds
   the Staff handlers and their domain module in one package, so only the methods of its handler types
   (`Handlers`, `ServiceHandlers`, `SecurityHandler`, `ServiceSecurityHandler`, `Surface`, `ServiceSurface`) are
   checked and `*Module` is the domain module; a new handler type there is added to `mixedPackages`. The write
