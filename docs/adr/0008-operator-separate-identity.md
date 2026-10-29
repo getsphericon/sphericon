@@ -1,5 +1,8 @@
 # Platform Staff member is a separate identity, not a User
 
+> **Amended by [[0061-every-instance-has-a-staff-console-and-a-staff-member-opens-sign-up]]:** the Staff
+> member is no longer EE or SaaS only; every Instance has one, the people who run it.
+
 The platform needs staff who act _across_ all Workspaces (suspend an abusive sender,
 impersonate for support). This collides with the model's founding invariant: every domain
 entity is workspace-scoped and every query is scoped by a Workspace, reached through

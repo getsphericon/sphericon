@@ -7,6 +7,9 @@ status: accepted
 > **Amended by [[0060-an-instance-runs-in-one-mode]]:** `SPHERICON_SIGNUP_OPEN` is gone. In `selfhosted`
 > sign-up is open only until the Instance has its first Owner, then closed; in `saas` it is always
 > open. The `create-owner` command stays. The text below is the decision as first taken.
+>
+> **Amended by [[0061-every-instance-has-a-staff-console-and-a-staff-member-opens-sign-up]]:** sign-up is
+> closed on every new Instance, in both Modes, until a Staff member opens it in the Staff console.
 
 An Instance answers `signup` to anyone who reaches it, so a Self-hoster who exposes a fresh
 Instance hands the first Workspace to whoever arrives first. Four of the self-hosted projects read

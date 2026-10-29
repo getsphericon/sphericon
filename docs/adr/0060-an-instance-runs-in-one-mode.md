@@ -4,6 +4,10 @@ status: accepted
 
 # An Instance runs in one Mode, and the Mode, not a flag, decides what differs
 
+> **Amended by [[0061-every-instance-has-a-staff-console-and-a-staff-member-opens-sign-up]]:** the Mode
+> no longer decides sign-up, and the Staff member and the console no longer need `saas`: sign-up is
+> closed on a new Instance until a Staff member opens it.
+
 The same binary is run as a self-hosted Instance and as the SaaS, and the two had drifted apart as a
 set of independent switches (sign-up, its survey, email verification, Telemetry, the Release
 check), each of which a deployment had to set the same way every time. A **Mode**, `selfhosted` or

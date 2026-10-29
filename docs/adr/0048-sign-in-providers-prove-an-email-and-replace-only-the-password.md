@@ -4,6 +4,10 @@ status: accepted
 
 # Sign-in providers prove an email and replace only the password
 
+> **Amended by [[0062-sign-up-items-the-operator-sets-and-every-decision-is-recorded]]:** when the
+> decision would create a User and the Instance has Sign-up items, the callback keeps a pending sign-up
+> instead; the User, its Linked identity and first Workspace are created once the items are answered.
+
 A person who wants to try sphericon should not have to invent a password and wait for a verify
 link. The open core lets a visitor register or log in with a **Sign-in provider** (Google first,
 GitHub next) from `/register` and `/login`. The provider's proof of an address counts as proof
