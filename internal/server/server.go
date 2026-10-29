@@ -251,6 +251,12 @@ func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 		writeCodedProblem(w, status, code, detail)
 		return
 	}
+	// A refusal of a module that every surface answers alike (review rule 15).
+	if refused, ok := refusalProblem(err); ok {
+		logging.FromContext(ctx).WarnContext(ctx, "request refused", "method", r.Method, "path", loggedPath(r.URL.Path), "status", refused.status, "detail", err.Error())
+		refused.write(w)
+		return
+	}
 	// A render that could not run (the request ended, a limit of ours stopped it) is no fault of
 	// the document and no crash: the client may try again.
 	if errors.Is(err, emailrender.ErrRenderUnavailable) {

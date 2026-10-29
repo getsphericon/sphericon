@@ -327,6 +327,14 @@ func (s *AuthTokensBootstrapUnauthorized) Validate() error {
 	return nil
 }
 
+func (s *AuthTokensBootstrapUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AuthTokensCreateBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -344,6 +352,14 @@ func (s *AuthTokensCreateForbidden) Validate() error {
 }
 
 func (s *AuthTokensCreateUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AuthTokensCreateUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

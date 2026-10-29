@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -130,10 +129,6 @@ func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDele
 		return &res, nil
 	}
 	err := h.rules.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
-	if refused, ok := inuse.As(err); ok {
-		res := inUseProblem(refused)
-		return &res, nil
-	}
 	switch {
 	case errors.Is(err, rules.ErrNotFound):
 		res := externalapi.RulesDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))

@@ -21,9 +21,6 @@ func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteCon
 	}
 	if refusal != nil {
 		switch refusal.Status.Value {
-		case http.StatusNotFound:
-			v := siteapi.SiteContactsEraseNotFound(*refusal)
-			return &v, nil
 		case http.StatusForbidden:
 			v := siteapi.SiteContactsEraseForbidden(*refusal)
 			return &v, nil

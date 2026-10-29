@@ -1,0 +1,20 @@
+id: no-common-refusal-in-handlers
+snapshots:
+  "func invalid(err error) bool {\n\tvar verr *validation.Error\n\treturn errors.As(err, &verr)\n}\n":
+    labels:
+      - source: validation.Error
+        style: primary
+        start: 42
+        end: 58
+  "func notFound() siteapi.ProblemDetails {\n\treturn problem(http.StatusNotFound, \"workspace not found\")\n}\n":
+    labels:
+      - source: '"workspace not found"'
+        style: primary
+        start: 78
+        end: 99
+  "func refused(err error) (siteapi.InUseProblemDetails, bool) {\n\tif used, ok := inuse.As(err); ok {\n\t\treturn inUseProblem(used), true\n\t}\n\treturn siteapi.InUseProblemDetails{}, false\n}\n":
+    labels:
+      - source: inuse.As
+        style: primary
+        start: 78
+        end: 86

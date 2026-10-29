@@ -236,14 +236,14 @@ func TestExternalAuthTokensCreateCannotGrantAScopeTheCallerLacks(t *testing.T) {
 	assert.Equal(t, before, after, "a refused mint creates no token")
 }
 
-func TestExternalAuthTokensCreateRefusesABlankName(t *testing.T) {
+func TestExternalAuthTokensCreateRefusesABlankNameWith422(t *testing.T) {
 	env := testhelper.Setup(t)
 	res, err := env.ExternalAnchor(t).AuthTokensCreate(context.Background(), &externalapi.CreateApiTokenInput{
 		Name:   "   ",
 		Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeContactsRead},
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensCreateBadRequest{}, res)
+	assert.IsType(t, &externalapi.AuthTokensCreateUnprocessableEntity{}, res)
 }
 
 func TestExternalAuthTokensDeleteTwiceIsNotFound(t *testing.T) {

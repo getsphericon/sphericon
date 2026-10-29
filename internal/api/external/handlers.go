@@ -135,10 +135,3 @@ func fieldProblem(err error, field string) externalapi.ProblemDetails {
 	p.Errors = externalapi.NewOptProblemDetailsErrors(externalapi.ProblemDetailsErrors{field: {msg}})
 	return p
 }
-
-// validationProblem is the 422 for a refused input of a domain module, naming the field.
-func validationProblem(v *validation.Error) externalapi.ProblemDetails {
-	p := problem(http.StatusUnprocessableEntity, v.Message)
-	p.Errors = externalapi.NewOptProblemDetailsErrors(externalapi.ProblemDetailsErrors{v.Field: {v.Message}})
-	return p
-}

@@ -3,10 +3,12 @@ package site
 import (
 	"context"
 	"errors"
+
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"net/http"
+
+	"github.com/getsphericon/sphericon/internal/accounts"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -22,10 +24,6 @@ import (
 
 func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {
 	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteContactsListNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +46,6 @@ func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteCont
 
 func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCreateContactInput, params siteapi.SiteContactsCreateParams) (siteapi.SiteContactsCreateRes, error) {
 	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteContactsCreateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -73,10 +67,6 @@ func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCrea
 
 func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteContactsGetParams) (siteapi.SiteContactsGetRes, error) {
 	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteContactsGetNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -94,10 +84,6 @@ func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteConta
 
 func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpdateContactInput, params siteapi.SiteContactsUpdateParams) (siteapi.SiteContactsUpdateRes, error) {
 	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteContactsUpdateNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -125,10 +111,6 @@ func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpda
 // SiteContactsDelete is Erasure (ADR 0021): irreversible, so owner or admin only.
 func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteContactsDeleteParams) (siteapi.SiteContactsDeleteRes, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteContactsDeleteNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -170,12 +152,6 @@ func problemWithErrors(code int, detail string, fieldErrors map[string][]string)
 func fieldProblem(err error, field string) siteapi.ProblemDetails {
 	msg := validation.Message(err)
 	return problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{field: {msg}})
-}
-
-// validationProblem is the 422 for a refused input of a domain module: detail is the problem's own
-// message and the field-level error names the field the module refused.
-func validationProblem(detail string, v *validation.Error) siteapi.ProblemDetails {
-	return problemWithErrors(http.StatusUnprocessableEntity, detail, map[string][]string{v.Field: {v.Message}})
 }
 
 // conflictProblem renders a contacts.ConflictError, with the field-level error.

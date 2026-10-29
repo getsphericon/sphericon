@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
@@ -79,7 +80,7 @@ func TestRestoreAfterErasureFindsNoOwner(t *testing.T) {
 
 	err = restore(t, m)
 
-	assert.True(t, ent.IsNotFound(err), "got %v", err)
+	require.ErrorIs(t, err, accounts.ErrWorkspaceNotFound)
 	assert.NotNil(t, initech(t, env).ErasedAt)
 }
 

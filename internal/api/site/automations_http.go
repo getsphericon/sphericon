@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -15,10 +14,6 @@ import (
 // validates it; nothing is called.
 func (h *Handlers) SiteAutomationsDryRunHttpStep(ctx context.Context, req *siteapi.SiteDryRunHttpStepInput, params siteapi.SiteAutomationsDryRunHttpStepParams) (siteapi.SiteAutomationsDryRunHttpStepRes, error) {
 	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteAutomationsDryRunHttpStepNotFound(problem(http.StatusNotFound, "workspace not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

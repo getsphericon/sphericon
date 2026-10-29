@@ -1,0 +1,24 @@
+id: no-common-refusal-in-handlers
+language: Go
+severity: error
+message: "rule 15: a handler maps a refusal the server's error handler renders; fix: return the module's error (validation.Error, inuse.Error, accounts.ErrWorkspaceNotFound) and let refusalProblem in internal/server answer it"
+note: >-
+  A refused input (`*validation.Error`, 422), a removal refused while live work uses the row
+  (`*inuse.Error`, 409) and a Workspace the caller cannot reach (`accounts.ErrWorkspaceNotFound`,
+  404) answer the same on every surface, so `refusalProblem` in internal/server writes their
+  problem once. A handler that matches them, or spells the 404's text, writes a second copy that
+  can drift from the first.
+rule:
+  any:
+    - kind: interpreted_string_literal
+      regex: '^"workspace not found"$'
+    - kind: qualified_type
+      regex: '^(validation\.Error|inuse\.\w+)$'
+    - kind: selector_expression
+      regex: '^inuse\.'
+files:
+  - internal/api/site/**/*.go
+  - internal/api/external/**/*.go
+ignores:
+  - '**/*_test.go'
+  - '**/*_gen.go'

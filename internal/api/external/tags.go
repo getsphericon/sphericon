@@ -11,7 +11,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/tags"
@@ -116,10 +115,6 @@ func (h *Handlers) TagsDelete(ctx context.Context, params externalapi.TagsDelete
 		return &res, nil
 	}
 	err := h.tags.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
-	if refused, ok := inuse.As(err); ok {
-		res := inUseProblem(refused)
-		return &res, nil
-	}
 	if errors.Is(err, tags.ErrNotFound) {
 		res := externalapi.TagsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil

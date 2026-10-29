@@ -21,19 +21,27 @@ import (
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 var (
-	// ErrNameEmpty: the token name is blank after trimming.
-	ErrNameEmpty = errors.New("apitokens: name must not be empty")
-	// ErrUnknownScope: a requested scope is not in the ApiTokenScope vocabulary.
-	ErrUnknownScope = errors.New("apitokens: unknown scope")
 	// ErrScopeEscalation: a token asked to mint a scope it does not hold itself.
 	ErrScopeEscalation = errors.New("apitokens: cannot grant a scope the minting token lacks")
 	// ErrNotFound: no such active token in this Workspace (unknown, foreign or
 	// already revoked).
 	ErrNotFound = errors.New("apitokens: token not found")
 )
+
+// nameEmpty refuses a token name that is blank after trimming.
+func nameEmpty() *validation.Error {
+	return &validation.Error{Field: "name", Message: i18n.T("errors.name_empty", nil)}
+}
+
+// unknownScope refuses a scope that is not in the ApiTokenScope vocabulary.
+func unknownScope(scope string) *validation.Error {
+	return &validation.Error{Field: "scopes", Message: i18n.T("errors.token_scope_unknown", map[string]any{"Scope": scope})}
+}
 
 // Input is what a caller chooses when minting.
 type Input struct {
@@ -55,12 +63,12 @@ type Minted struct {
 func Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
 	name := strings.TrimSpace(in.Name)
 	if name == "" {
-		return Minted{}, ErrNameEmpty
+		return Minted{}, nameEmpty()
 	}
 	scopes := slices.Compact(slices.Sorted(slices.Values(in.Scopes)))
 	for _, sc := range scopes {
 		if !validScope(sc) {
-			return Minted{}, ErrUnknownScope
+			return Minted{}, unknownScope(sc)
 		}
 	}
 
@@ -126,11 +134,11 @@ func Revoke(ctx context.Context, s *ent.Scoped, id int64) error {
 
 // Rename changes the name of an active token and returns the updated row. A token that
 // is unknown, belongs to another Workspace or is revoked is ErrNotFound; a blank name is
-// ErrNameEmpty.
+// a *validation.Error on `name`.
 func Rename(ctx context.Context, s *ent.Scoped, id int64, name string) (*ent.ApiToken, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return nil, ErrNameEmpty
+		return nil, nameEmpty()
 	}
 	n, err := s.ApiToken().Update().
 		Where(apitoken.ID(id), apitoken.RevokedAtIsNil()).

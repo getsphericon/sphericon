@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -33,14 +31,6 @@ func analyticsWindow(r siteapi.OptSiteAnalyticsRange) analytics.Window {
 func analyticsReport[Res any](ctx context.Context, h *Handlers, workspaceID siteapi.WorkspaceId, rng siteapi.OptSiteAnalyticsRange, build func(*ent.Scoped, analytics.Window) (Res, error)) (Res, error) {
 	var none Res
 	s, err := h.scopedFor(ctx, workspaceID)
-	if ent.IsNotFound(err) {
-		v := problem(http.StatusNotFound, "workspace not found")
-		notFound, ok := any(&v).(Res)
-		if !ok {
-			return none, fmt.Errorf("analytics response type does not take %T", &v)
-		}
-		return notFound, nil
-	}
 	if err != nil {
 		return none, err
 	}

@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/segments"
@@ -125,10 +124,6 @@ func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.Segme
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.segments.Archive(ctx, ws, id)
-	if refused, ok := inuse.As(err); ok {
-		res := inUseProblem(refused)
-		return &res, nil
-	}
 	if errors.Is(err, segments.ErrNotFound) {
 		res := externalapi.SegmentsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
 		return &res, nil

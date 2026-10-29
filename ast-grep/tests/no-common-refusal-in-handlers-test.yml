@@ -1,0 +1,34 @@
+id: no-common-refusal-in-handlers
+valid:
+  - |
+    func (h *Handlers) SiteTagsDelete(ctx context.Context, params siteapi.SiteTagsDeleteParams) (siteapi.SiteTagsDeleteRes, error) {
+    	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
+    	if err != nil {
+    		return nil, err
+    	}
+    	if err := h.tags.Delete(ctx, scoped, int64(params.ID)); err != nil {
+    		return nil, err
+    	}
+    	return &siteapi.SiteTagsDeleteNoContent{}, nil
+    }
+  - |
+    func notFound(err error) siteapi.ProblemDetails {
+    	return problem(http.StatusNotFound, validation.Message(err))
+    }
+invalid:
+  - |
+    func notFound() siteapi.ProblemDetails {
+    	return problem(http.StatusNotFound, "workspace not found")
+    }
+  - |
+    func refused(err error) (siteapi.InUseProblemDetails, bool) {
+    	if used, ok := inuse.As(err); ok {
+    		return inUseProblem(used), true
+    	}
+    	return siteapi.InUseProblemDetails{}, false
+    }
+  - |
+    func invalid(err error) bool {
+    	var verr *validation.Error
+    	return errors.As(err, &verr)
+    }

@@ -19,9 +19,6 @@ func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteCo
 	}
 	if refusal != nil {
 		switch refusal.Status.Value {
-		case http.StatusNotFound:
-			v := siteapi.SiteContactsLookupNotFound(*refusal)
-			return &v, nil
 		case http.StatusForbidden:
 			v := siteapi.SiteContactsLookupForbidden(*refusal)
 			return &v, nil

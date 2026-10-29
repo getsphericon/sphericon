@@ -124,10 +124,6 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, params siteapi
 		return &v, nil
 	}
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesAccountLinkNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -159,10 +155,6 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 		load = h.membershipEvenIfWithheld
 	}
 	s, m, err := load(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesSetSecondFactorRequirementNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -190,10 +182,6 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 // SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
 func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, params siteapi.SiteWorkspacesUpdateParams) (siteapi.SiteWorkspacesUpdateRes, error) {
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesUpdateNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -230,10 +218,6 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 // SiteWorkspacesSetTimezone sets the Workspace time zone (Owner only, ADR 0057).
 func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, params siteapi.SiteWorkspacesSetTimezoneParams) (siteapi.SiteWorkspacesSetTimezoneRes, error) {
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesSetTimezoneNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -258,10 +242,6 @@ func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.S
 		return nil, err
 	}
 	return &resource, nil
-}
-
-func workspaceNotFoundProblem() siteapi.ProblemDetails {
-	return problem(http.StatusNotFound, "workspace not found")
 }
 
 // deletedWorkspaceResource is a Workspace in its deletion window with the date its data
@@ -294,10 +274,6 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 // SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
 func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, params siteapi.SiteWorkspacesDeleteParams) (siteapi.SiteWorkspacesDeleteRes, error) {
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesDeleteNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -329,10 +305,6 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 // leave; the only Owner is refused.
 func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, params siteapi.SiteWorkspacesLeaveParams) (siteapi.SiteWorkspacesLeaveRes, error) {
 	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesLeaveNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -359,14 +331,9 @@ func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, params siteapi.SiteW
 func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.SiteWorkspacesRestoreParams) (siteapi.SiteWorkspacesRestoreRes, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
-		v := siteapi.SiteWorkspacesRestoreNotFound(workspaceNotFoundProblem())
-		return &v, nil
+		return nil, accounts.ErrWorkspaceNotFound
 	}
 	_, err := h.deletion.Restore(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteWorkspacesRestoreNotFound(workspaceNotFoundProblem())
-		return &v, nil
-	}
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		v := siteapi.SiteWorkspacesRestoreConflict(problem(http.StatusConflict, i18n.T("errors.workspace_not_restorable", nil)))
 		return &v, nil
