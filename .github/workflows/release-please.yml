@@ -51,7 +51,7 @@ jobs:
           persist-credentials: false
       # Same pinned toolchain as CI (go, node, pnpm, ...); provides `mise run` for the
       # GoReleaser before-hooks (build:tracker / build:spa).
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
         with:
           cache: false
       - run: pnpm install --frozen-lockfile
@@ -91,7 +91,7 @@ jobs:
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
           persist-credentials: false
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
         with:
           cache: false
       - name: Publish the chart
