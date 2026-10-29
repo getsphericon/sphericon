@@ -3,9 +3,11 @@
 //
 // A document is the JSON of @react-email/editor. The render is the editor's own export code (a
 // generated bundle, `mise run build:emaildoc`) run in an embedded JavaScript runtime (goja): no Node,
-// no sidecar, no cgo. A runtime takes seconds to start and tens of megabytes, so a Renderer starts
-// nothing itself: Warm starts it in the background (the server does, at boot) or the first call
-// does; calls queue for it. A call that runs past its time or memory limit is
+// no sidecar, no cgo. The first runtime takes seconds to start and tens of megabytes, and the
+// languages a code block highlights take seconds more to register on a runtime, so a Renderer
+// starts nothing itself: Warm starts it in the background (the server does, at boot) or the first
+// call does, and a runtime registers the languages before its first code block; calls queue for
+// it. A call that runs past its time or memory limit is
 // stopped and its runtime is discarded (a stopped runtime does not recover), and a fresh one starts
 // on the next call. Inputs are capped (size, depth, node count) before they reach a runtime.
 //
@@ -23,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sync/atomic"
 	"time"
 )
@@ -60,8 +63,9 @@ type Limits struct {
 	// Timeout is how long one call may run once a runtime is ready.
 	Timeout time.Duration
 	// StartTimeout is how long a call waits for a runtime to start (the first call of a process,
-	// or the first after one was discarded), on top of Timeout. A start takes seconds, many more on
-	// a busy machine; a call that gives up leaves the start running for the next one.
+	// or the first after one was discarded) and, before the first code block a runtime renders,
+	// for the code block's languages to register, on top of Timeout. Each takes seconds, many more
+	// on a busy machine; a call that gives up leaves the work running for the next one.
 	StartTimeout time.Duration
 	// MemoryGrowth is how many bytes the process heap may grow during one call. The heap counter is
 	// process-wide, so another goroutine's allocations count too; the call is stopped only when the
@@ -101,6 +105,8 @@ type Renderer struct {
 
 	program programOnce
 	started atomic.Bool
+	// languages is set once a runtime has registered the code block's languages before a call.
+	languages atomic.Bool
 	// engine, when set, stands in for the runtime: the editor's schema check and export run there,
 	// after our own checks, and no runtime is ever started.
 	engine Engine
@@ -143,19 +149,24 @@ func New(opts ...Option) *Renderer {
 // Started reports whether a runtime has been started yet.
 func (r *Renderer) Started() bool { return r.started.Load() }
 
-// Warm starts the runtime in the background and returns at once, so a server that calls it at boot
-// has a runtime ready by the time the first document is saved. Without it that first call waits
-// for the start, which takes longer than a request may run on a small machine, and gives up with
-// ErrRenderUnavailable. A start that fails leaves the runtime to the first call, as before. How long
-// the start took is logged, since it varies with the machine. The start itself cannot be
-// interrupted, so ctx ending only stops waiting for it.
+// LanguagesRegistered reports whether a runtime has registered the languages a code block
+// highlights yet, which it does before the first code block it renders (outside the render's time
+// limit) or at Warm, and never for a document without one.
+func (r *Renderer) LanguagesRegistered() bool { return r.languages.Load() }
+
+// Warm starts the runtime in the background, with the code block's languages, and returns at once,
+// so a server that calls it at boot has a runtime ready by the time the first document is saved.
+// Without it that first call waits for the start, which takes longer than a request may run on a
+// small machine, and gives up with ErrRenderUnavailable. A start that fails leaves the runtime to
+// the first call, as before. How long the start took is logged, since it varies with the machine.
+// The start itself cannot be interrupted, so ctx ending only stops waiting for it.
 func (r *Renderer) Warm(ctx context.Context) {
 	if r.engine != nil {
 		return
 	}
 	go func() {
 		began := time.Now()
-		err := r.withRuntime(ctx, r.config(), func(*vm) error { return nil })
+		err := r.withRuntime(ctx, r.config(), true, func(*vm) error { return nil })
 		if err != nil {
 			slog.Warn("document runtime warm-up failed", "error", err, "duration_ms", time.Since(began).Milliseconds())
 			return
@@ -176,7 +187,7 @@ func (r *Renderer) config() callConfig {
 // Validate answers nil when doc is a document the editor can hold and Render can export, else an
 // error that says why: an *InvalidError, or a limit error.
 func (r *Renderer) Validate(ctx context.Context, doc []byte) error {
-	if err := r.prepare(doc); err != nil {
+	if _, err := r.prepare(doc); err != nil {
 		return err
 	}
 	if r.engine != nil {
@@ -185,7 +196,7 @@ func (r *Renderer) Validate(ctx context.Context, doc []byte) error {
 		}
 		return r.engine.Check(doc)
 	}
-	return r.withRuntime(ctx, r.config(), func(rt *vm) error {
+	return r.withRuntime(ctx, r.config(), false, func(rt *vm) error {
 		return rt.checkDoc(doc)
 	})
 }
@@ -193,7 +204,8 @@ func (r *Renderer) Validate(ctx context.Context, doc []byte) error {
 // Render validates doc and exports it as an email: HTML and a plain-text part. It never repairs a
 // document; an invalid one is refused with the reason.
 func (r *Renderer) Render(ctx context.Context, doc []byte) (Rendered, error) {
-	if err := r.prepare(doc); err != nil {
+	root, err := r.prepare(doc)
+	if err != nil {
 		return Rendered{}, err
 	}
 	if r.engine != nil {
@@ -206,7 +218,7 @@ func (r *Renderer) Render(ctx context.Context, doc []byte) (Rendered, error) {
 		return r.engine.Export(doc)
 	}
 	var out Rendered
-	err := r.withRuntime(ctx, r.config(), func(rt *vm) error {
+	err = r.withRuntime(ctx, r.config(), holdsCodeBlock(root), func(rt *vm) error {
 		if err := rt.checkDoc(doc); err != nil {
 			return err
 		}
@@ -220,13 +232,28 @@ func (r *Renderer) Render(ctx context.Context, doc []byte) (Rendered, error) {
 	return out, nil
 }
 
-// prepare caps the document and checks it against our rules, before any runtime is involved.
-func (r *Renderer) prepare(doc []byte) error {
+// prepare caps the document and checks it against our rules, before any runtime is involved, and
+// returns its parsed node tree.
+func (r *Renderer) prepare(doc []byte) (any, error) {
 	root, err := parseWithin(doc, r.limits)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return checkRules(root)
+	return root, checkRules(root)
+}
+
+// holdsCodeBlock says whether a node tree that passed prepare holds a code block, whose export
+// needs the code block's languages.
+func holdsCodeBlock(node any) bool {
+	object, ok := node.(map[string]any)
+	if !ok {
+		return false
+	}
+	if object["type"] == "codeBlock" {
+		return true
+	}
+	children, _ := object["content"].([]any)
+	return slices.ContainsFunc(children, holdsCodeBlock)
 }
 
 // startResult is a runtime start that finished.
@@ -235,15 +262,17 @@ type startResult struct {
 	err error
 }
 
-// startWithin starts a runtime for the slot the caller holds, waiting no longer than ctx and the
-// Renderer's StartTimeout (the start has a bound of its own, apart from the call's time limit). The start itself
-// cannot be interrupted, so a call that gives up leaves it running: the slot is handed back when it
-// finishes, with the runtime when it started, so the work is not lost and the next call finds the
-// slot busy only for as long as the start takes. On error the caller no longer holds the slot.
-func (r *Renderer) startWithin(ctx context.Context) (*vm, error) {
+// readyWithin readies the runtime of the slot the caller holds: it starts one when the slot has
+// none (rt is nil) and registers the code block's languages when the call needs them and the
+// runtime has not yet. It waits no longer than ctx and the Renderer's StartTimeout (this work has a
+// bound of its own, apart from the call's time limit). The work itself cannot be interrupted, so a
+// call that gives up leaves it running: the slot is handed back when it finishes, with the runtime
+// when it is ready, so the work is not lost and the next call finds the slot busy only for as long
+// as it takes. On error the caller no longer holds the slot.
+func (r *Renderer) readyWithin(ctx context.Context, rt *vm, languages bool) (*vm, error) {
 	finished := make(chan startResult, 1)
 	go func() {
-		rt, err := r.program.start()
+		rt, err := r.ready(rt, languages)
 		finished <- startResult{rt: rt, err: err}
 	}()
 	timer := time.NewTimer(r.limits.StartTimeout)
@@ -254,7 +283,7 @@ func (r *Renderer) startWithin(ctx context.Context) (*vm, error) {
 	case res := <-finished:
 		if res.err != nil {
 			r.slots <- nil
-			return nil, fmt.Errorf("start the document runtime: %w", res.err)
+			return nil, fmt.Errorf("ready the document runtime: %w", res.err)
 		}
 		r.started.Store(true)
 		return res.rt, nil
@@ -273,9 +302,29 @@ func (r *Renderer) startWithin(ctx context.Context) (*vm, error) {
 	return nil, abandoned
 }
 
-// withRuntime runs fn on a runtime under the call's limits. A runtime that was stopped, or whose
-// state is unknown after an error, is discarded.
-func (r *Renderer) withRuntime(ctx context.Context, cfg callConfig, fn func(*vm) error) error {
+// ready starts a runtime when rt is nil and registers the code block's languages on it when
+// languages asks for them. A runtime whose registration failed is discarded.
+func (r *Renderer) ready(rt *vm, languages bool) (*vm, error) {
+	if rt == nil {
+		started, err := r.program.start()
+		if err != nil {
+			return nil, err
+		}
+		rt = started
+	}
+	if languages && !rt.languages {
+		if err := rt.loadLanguages(); err != nil {
+			return nil, err
+		}
+		r.languages.Store(true)
+	}
+	return rt, nil
+}
+
+// withRuntime runs fn on a runtime under the call's limits, after the code block's languages are
+// registered on it when languages asks for them. A runtime that was stopped, or whose state is
+// unknown after an error, is discarded.
+func (r *Renderer) withRuntime(ctx context.Context, cfg callConfig, languages bool, fn func(*vm) error) error {
 	// A call whose context has ended takes no slot, even when one is free.
 	if err := ctx.Err(); err != nil {
 		return err
@@ -286,12 +335,12 @@ func (r *Renderer) withRuntime(ctx context.Context, cfg callConfig, fn func(*vm)
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-	if rt == nil {
-		started, err := r.startWithin(ctx)
+	if rt == nil || (languages && !rt.languages) {
+		ready, err := r.readyWithin(ctx, rt, languages)
 		if err != nil {
 			return err
 		}
-		rt = started
+		rt = ready
 	}
 	defer func() { r.slots <- rt }()
 

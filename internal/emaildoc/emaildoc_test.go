@@ -102,6 +102,22 @@ func TestWarmStartsTheRuntimeWithoutACall(t *testing.T) {
 	r.Warm(t.Context())
 
 	require.Eventually(t, r.Started, 2*time.Minute, 50*time.Millisecond, "the runtime starts in the background")
+	require.True(t, r.LanguagesRegistered(), "a warm runtime has the code block's languages")
+}
+
+// The languages a code block highlights are nearly all of a runtime's start, so a runtime registers
+// them only before it renders a code block, outside the render's time limit, and keeps them.
+func TestARuntimeRegistersTheCodeLanguagesBeforeItsFirstCodeBlock(t *testing.T) {
+	r := emaildoc.New()
+	ctx := t.Context()
+
+	_, err := r.Render(ctx, readDoc(t, "newsletter.json"))
+	require.NoError(t, err)
+	require.False(t, r.LanguagesRegistered(), "a document without a code block registers no languages")
+
+	_, err = r.Render(ctx, readDoc(t, "code.json"))
+	require.NoError(t, err)
+	require.True(t, r.LanguagesRegistered(), "the languages were registered before the render, not by it")
 }
 
 func TestLimitsRefuseBeforeTheRuntime(t *testing.T) {

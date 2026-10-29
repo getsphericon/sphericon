@@ -34,6 +34,13 @@ function imageChunk() {
 // - goja bug: `split` with a lookahead regex returns extra empty strings, which breaks
 //   prosemirror-model's content-expression tokenizer (`"(tableCell | tableHeader)+"`). The
 //   equivalent match over word and punctuation tokens does not.
+// - react-email's code block registers every Prism language (about 400 names, 14,000 lines) when
+//   its module loads. In goja that is nearly all of a runtime's start (3 to 7 seconds on a quiet
+//   machine, 15 or more on one a full test run shares), which a document without a code block
+//   never needs. The registration becomes `registerCodeLanguages`, which the host calls before
+//   it renders a code block (internal/emaildoc); the first read of `Prism.languages` still runs
+//   it, in case the host does not. The same languages register in the same order, so a code
+//   block exports as before, and a runtime without them starts in about 0.1 seconds.
 const rewrites = [
   {
     file: /@react-email[\\/]editor[\\/]dist[\\/].*\.mjs$/,
@@ -45,6 +52,28 @@ const rewrites = [
     pattern: /string\.split\(\/\\s\*\(\?=\\b\|\\W\|\$\)\/\)/g,
     replacement: '(string.match(/\\w+|[^\\s\\w]/g) || [])',
   },
+  {
+    file: /react-email[\\/]dist[\\/]components[\\/]code-block[\\/]prism\.mjs$/,
+    pattern:
+      /(const Prism\$1 = PrismImport\.default \?\? PrismImport;\n)([\s\S]*)\nexport \{ Prism\$1 as Prism \};/g,
+    replacement: (_, head, languages) =>
+      `${head}let languagesRegistered = false;
+function registerCodeLanguages() {
+  if (languagesRegistered) return;
+  languagesRegistered = true;
+${languages}
+}
+globalThis.registerCodeLanguages = registerCodeLanguages;
+const Prism = {
+  get languages() {
+    registerCodeLanguages();
+    return Prism$1.languages;
+  },
+  Token: Prism$1.Token,
+  tokenize: (text, grammar) => Prism$1.tokenize(text, grammar),
+};
+export { Prism };`,
+  },
 ]
 
 const rewritten = new Map()
@@ -53,9 +82,11 @@ const rewriteSources = {
   setup(b) {
     for (const rewrite of rewrites) {
       b.onLoad({ filter: rewrite.file }, (args) => {
-        const contents = readFileSync(args.path, 'utf8').replace(rewrite.pattern, () => {
+        const contents = readFileSync(args.path, 'utf8').replace(rewrite.pattern, (...match) => {
           rewritten.set(rewrite, (rewritten.get(rewrite) ?? 0) + 1)
-          return rewrite.replacement
+          return typeof rewrite.replacement === 'function'
+            ? rewrite.replacement(...match)
+            : rewrite.replacement
         })
         return { contents, loader: 'js' }
       })

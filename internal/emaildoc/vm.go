@@ -46,6 +46,11 @@ type vm struct {
 	check     func(goja.Value, ...goja.Value) (goja.Value, error)
 	render    func(goja.Value, ...goja.Value) (goja.Value, error)
 	runTimers func(goja.Value, ...goja.Value) (goja.Value, error)
+	// registerLanguages registers every language a code block highlights (react-email's Prism
+	// grammars). The bundle leaves them out of its load, of which they were nearly all the cost,
+	// so only a runtime that renders a code block pays for them; languages says it has.
+	registerLanguages func(goja.Value, ...goja.Value) (goja.Value, error)
+	languages         bool
 }
 
 func newVM(program *goja.Program) (*vm, error) {
@@ -88,7 +93,21 @@ func newVM(program *goja.Program) (*vm, error) {
 		return nil, errors.New("the bundle did not define drainTimers")
 	}
 	v.runTimers = runTimers
+	registerLanguages, ok := goja.AssertFunction(rt.Get("registerCodeLanguages"))
+	if !ok {
+		return nil, errors.New("the bundle did not define registerCodeLanguages")
+	}
+	v.registerLanguages = registerLanguages
 	return v, nil
+}
+
+// loadLanguages registers the code block's languages on this runtime.
+func (v *vm) loadLanguages() error {
+	if _, err := v.registerLanguages(goja.Undefined()); err != nil {
+		return fmt.Errorf("register the code block languages: %w", err)
+	}
+	v.languages = true
+	return nil
 }
 
 func must(err error) {
