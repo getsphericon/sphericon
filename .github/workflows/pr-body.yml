@@ -41,7 +41,8 @@ jobs:
       - name: Cache Go
         uses: $/.github/actions/go-cache
         with:
-          scope: pr-body
+          # Runs on pull requests only, which save no cache: it reads the one CI's `checks` job seeds on main.
+          scope: checks
 
       # The body is attacker-controlled text: it reaches the program through the environment, never
       # through the script.

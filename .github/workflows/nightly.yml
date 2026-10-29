@@ -3,9 +3,9 @@ name: Nightly
 # Checks that do not need to run on every pull request: the Go coverage floor (with the real
 # document export on the save paths), the frontend's UI tests and coverage floor, the race
 # detector, mutation testing, fuzzing, the contract fuzz, the external links of the Markdown files,
-# and the dependency scan, whose answer changes with the advisory database rather than with our
-# code. One scheduled run covers them; `workflow_dispatch` runs them on demand. A scheduled
-# workflow only runs from the default branch.
+# the compose.yaml smoke test, and the dependency scan, whose answer changes with the advisory
+# database rather than with our code. One scheduled run covers them; `workflow_dispatch` runs them
+# on demand. A scheduled workflow only runs from the default branch.
 on:
   schedule:
     - cron: '17 2 * * *'
@@ -230,3 +230,43 @@ jobs:
         run: mise run check:links:remote
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # compose.yaml is the Self-hoster's entry point: build the image, start the file and wait for
+  # /healthz, so the file cannot rot. Nightly, not per pull request: the image built here comes from
+  # the top-level Dockerfile, while a release ships the GoReleaser image (Dockerfile.release), so a
+  # pull request gains three minutes of build for a check on a path no release takes.
+  compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build --tag ghcr.io/getsphericon/sphericon:ci .
+
+      - name: Write .env
+        run: |
+          {
+            echo "SPHERICON_VERSION=ci"
+            echo "SPHERICON_APP_URL=http://localhost:3000"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 32)"
+            echo "SPHERICON_JWT_SECRET=$(openssl rand -hex 32)"
+            echo "SPHERICON_ENCRYPTION_KEY=$(docker run --rm ghcr.io/getsphericon/sphericon:ci genkey)"
+          } > .env
+
+      # --wait returns once every service is healthy (the image HEALTHCHECK hits /healthz) and
+      # fails if one exits non-zero, so a failed `migrate` fails the step.
+      - name: Start the stack and wait until healthy
+        run: docker compose up -d --wait --wait-timeout 120
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down --volumes

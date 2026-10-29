@@ -1,15 +1,20 @@
 name: Go cache
 description: >
-  Restore and save the Go module cache and build cache. Go comes from mise, so
-  actions/setup-go (which would install a second toolchain) is not used. Every run
-  saves a fresh entry under a key ending in the commit, and restores the newest
-  entry for the same dependencies: the build cache only ever grows by the
-  packages that changed.
+  Restore the Go module cache and build cache, and save them on the default branch only. Go comes
+  from mise, so actions/setup-go (which would install a second toolchain) is not used. A run on
+  main saves a fresh entry under a key ending in the commit and restores the newest entry for the
+  same dependencies, so the build cache only ever grows by the packages that changed. A pull
+  request only restores: the repository's cache is capped at 10 GB, and one entry per scope per
+  pull request commit evicted main's entries, the only ones every pull request can read.
 
 inputs:
   scope:
     description: Jobs build different things (tags, coverage); each keeps its own cache.
     required: true
+  fallback:
+    description: A scope whose entry is restored when this one has none (a new or renamed scope).
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -22,6 +27,7 @@ runs:
         echo "mod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
 
     - name: Cache Go modules and build outputs
+      if: github.ref == 'refs/heads/main'
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
@@ -31,3 +37,17 @@ runs:
         restore-keys: |
           go-${{ inputs.scope }}-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock') }}-
           go-${{ inputs.scope }}-${{ runner.os }}-
+          go-${{ inputs.fallback || inputs.scope }}-${{ runner.os }}-
+
+    - name: Restore Go modules and build outputs
+      if: github.ref != 'refs/heads/main'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ${{ steps.paths.outputs.build }}
+          ${{ steps.paths.outputs.mod }}
+        key: go-${{ inputs.scope }}-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock') }}-${{ github.sha }}
+        restore-keys: |
+          go-${{ inputs.scope }}-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock') }}-
+          go-${{ inputs.scope }}-${{ runner.os }}-
+          go-${{ inputs.fallback || inputs.scope }}-${{ runner.os }}-

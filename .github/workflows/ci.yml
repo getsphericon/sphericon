@@ -2,8 +2,8 @@ name: CI
 
 on:
   pull_request:
-  # A pull request only restores caches saved on its own branch or on the default one:
-  # a run on main is what seeds the Go cache for every new pull request.
+  # A pull request only restores caches saved on its own branch or on the default one, and it
+  # saves none (.github/actions/go-cache): a run on main is what seeds the caches for every pull request.
   push:
     branches: [main]
 
@@ -42,8 +42,34 @@ jobs:
         with:
           scope: lint
 
-      - name: Cache golangci-lint
+      # golangci-lint with our analyzers (build:lint), keyed by the task's own sources. mise rebuilds
+      # an output older than its sources, and the checkout is newer than any restored file: the
+      # touch is what lets a restored binary count as fresh.
+      - name: Cache the custom golangci-lint
+        id: custom-gcl
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .bin/custom-gcl
+          key: custom-gcl-${{ runner.os }}-${{ hashFiles('.custom-gcl.yml', 'tools/analyzers/**/*.go', 'tools/analyzers/go.mod', 'tools/analyzers/go.sum', 'mise.lock') }}
+
+      - name: Mark the restored binary fresh
+        if: steps.custom-gcl.outputs.cache-hit == 'true'
+        run: touch .bin/custom-gcl
+
+      # Saved on main only, as the Go cache is (.github/actions/go-cache).
+      - name: Cache golangci-lint
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/golangci-lint
+          key: golangci-lint-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock', '.golangci.yml') }}-${{ github.sha }}
+          restore-keys: |
+            golangci-lint-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock', '.golangci.yml') }}-
+            golangci-lint-${{ runner.os }}-
+
+      - name: Restore golangci-lint cache
+        if: github.ref != 'refs/heads/main'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/golangci-lint
           key: golangci-lint-${{ runner.os }}-${{ hashFiles('go.mod', 'go.sum', 'mise.lock', '.golangci.yml') }}-${{ github.sha }}
@@ -81,7 +107,8 @@ jobs:
       - name: Check package boundaries
         run: mise run check:arch
 
-  generated:
+  # The short checks, each a few seconds of work after a setup that used to be repeated per job.
+  checks:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -89,32 +116,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
-
-      - name: Setup mise
-        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
-
-      - name: Cache Go
-        uses: $/.github/actions/go-cache
-        with:
-          scope: generated
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Regenerates everything and fails if the committed output differs.
-      - name: Check generated code is up to date
-        run: mise run generate:check
-
-  commits:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # commitlint reads the commits in the pushed range.
+          # commitlint and the upgrade check read the commits in the pushed range.
           fetch-depth: 0
           persist-credentials: false
 
@@ -123,6 +125,21 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Cache Go
+        uses: $/.github/actions/go-cache
+        with:
+          scope: checks
+          fallback: generated
+
+      # Regenerates everything and fails if the committed output differs. First: it needs a clean
+      # tree, and the tracker build below writes (ignored) files.
+      - name: Check generated code is up to date
+        run: mise run generate:check
+
+      # The tracker is shipped to customer sites; keep it within the size budget.
+      - name: Check the tracker size budget
+        run: mise run check:tracker-size
 
       # Conventional Commits drive release-please; lint only the commits being added.
       - name: Lint commit messages
@@ -136,32 +153,13 @@ jobs:
             pnpm lint:commits --from "$FROM" --to "$TO"
           fi
 
-  # ADR 0033: a removal or a rename reaches a minor release only through a breaking pull request,
-  # and a breaking one says what a Self-hoster does. The repository squashes with the pull request
-  # title, so the title is what release-please reads.
-  upgrade:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Setup mise
-        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
-
-      - name: Cache Go
-        uses: $/.github/actions/go-cache
-        with:
-          scope: upgrade
-
-      # The title and the body are attacker-controlled text: they reach the program through
-      # the environment and a file, never through the script.
+      # ADR 0033: a removal or a rename reaches a minor release only through a breaking pull
+      # request, and a breaking one says what a Self-hoster does. The repository squashes with the
+      # pull request title, so the title is what release-please reads. The title and the body are
+      # attacker-controlled text: they reach the program through the environment and a file, never
+      # through the script.
       - name: Check migrations and breaking changes
+        if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
@@ -170,32 +168,18 @@ jobs:
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.md"
           PR_BODY_FILE="$RUNNER_TEMP/pr-body.md" mise run check:upgrade
 
-  tracker-size:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Setup mise
-        uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # The tracker is shipped to customer sites; keep it within the size budget.
-      - name: Build tracker
-        run: pnpm build:tracker
-
-      - name: Check size budget
-        run: pnpm exec size-limit
-
+  # The Go suite over two runners. internal/api/site alone takes about two minutes (its tests ride
+  # one database in transactions, so they do not call t.Parallel: .golangci.yml, paralleltest) and
+  # finished last on a single runner; each package process leases a database of its own, so the
+  # shards share nothing.
   test:
+    name: test (${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [site, rest]
 
     steps:
       - name: Checkout repository
@@ -209,14 +193,25 @@ jobs:
       - name: Cache Go
         uses: $/.github/actions/go-cache
         with:
-          scope: test
+          scope: test-${{ matrix.shard }}
+          fallback: test
 
       # The task starts the `db` mise daemon (Postgres preset) itself.
       - name: Run tests
-        run: mise run test
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          site=github.com/getsphericon/sphericon/internal/api/site
+          if [ "$SHARD" = site ]; then
+            mise run test -- "$site"
+          else
+            # shellcheck disable=SC2046 # one argument per package
+            mise run test -- $(go list ./... | grep -vxF "$site")
+          fi
 
       # Needs the migrated database the tests' Postgres provides, so it is not part of `check`.
       - name: Check the schema against the models
+        if: matrix.shard == 'rest'
         run: mise run check:schema
 
   test-e2e:
@@ -274,40 +269,22 @@ jobs:
       - name: Run the frontend's logic tests
         run: mise run test:frontend:logic
 
-  # compose.yaml is the Self-hoster's entry point: build the image, start the file and wait for
-  # /healthz, so the file cannot rot.
-  compose-smoke:
+  # The one check branch protection requires of this workflow: jobs can be split, merged or renamed
+  # without touching the ruleset. `always()` makes it report a failure rather than be skipped.
+  ci:
+    if: always()
+    needs: [lint, arch, checks, test, test-e2e, test-frontend]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Build image
-        run: docker build --tag ghcr.io/getsphericon/sphericon:ci .
-
-      - name: Write .env
+      - name: Every job passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
-          {
-            echo "SPHERICON_VERSION=ci"
-            echo "SPHERICON_APP_URL=http://localhost:3000"
-            echo "POSTGRES_PASSWORD=$(openssl rand -hex 32)"
-            echo "SPHERICON_JWT_SECRET=$(openssl rand -hex 32)"
-            echo "SPHERICON_ENCRYPTION_KEY=$(docker run --rm ghcr.io/getsphericon/sphericon:ci genkey)"
-          } > .env
-
-      # --wait returns once every service is healthy (the image HEALTHCHECK hits /healthz) and
-      # fails if one exits non-zero, so a failed `migrate` fails the step.
-      - name: Start the stack and wait until healthy
-        run: docker compose up -d --wait --wait-timeout 120
-
-      - name: Show logs on failure
-        if: failure()
-        run: docker compose logs
-
-      - name: Stop the stack
-        if: always()
-        run: docker compose down --volumes
+          for result in $RESULTS; do
+            if [ "$result" != success ]; then
+              echo "a required job ended in: $result"
+              exit 1
+            fi
+          done
