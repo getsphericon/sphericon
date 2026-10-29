@@ -17852,6 +17852,10 @@ func (s *SiteSegmentContactsListOK) SetTotalPages(val int32) {
 
 func (*SiteSegmentContactsListOK) siteSegmentContactsListRes() {}
 
+type SiteSegmentContactsListUnprocessableEntity ProblemDetails
+
+func (*SiteSegmentContactsListUnprocessableEntity) siteSegmentContactsListRes() {}
+
 // Segment resource used by the site UI.
 // Ref: #/components/schemas/SiteSegmentResource
 type SiteSegmentResource struct {

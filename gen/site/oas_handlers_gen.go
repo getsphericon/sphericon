@@ -23251,7 +23251,8 @@ func (s *Server) handleSiteSecondFactorStartEnrollmentRequest(args [0]string, ar
 
 // handleSiteSegmentContactsListRequest handles SiteSegmentContacts_list operation.
 //
-// List the contacts a segment matches right now, evaluated live, ascending by id.
+// List the contacts a segment matches right now, evaluated live, ascending by id. A stored condition
+// that no longer fits the contact schema is a 422.
 //
 // GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
 func (s *Server) handleSiteSegmentContactsListRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

@@ -63,7 +63,7 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 		return &v, nil
 	}
 	if errors.Is(err, accounts.ErrCurrentPasswordIncorrect) {
-		v := siteapi.SiteUserUpdateMeForbidden(problem(http.StatusForbidden, validation.Message(err)))
+		v := siteapi.SiteUserUpdateMeForbidden(problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil)))
 		return &v, nil
 	}
 	if err != nil {

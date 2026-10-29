@@ -21,7 +21,7 @@ import (
 // Domain errors. Callers match with errors.Is.
 var (
 	// ErrNotFound: no such Template in this Workspace.
-	ErrNotFound = validation.Refuse("templates: template not found", "errors.template_not_found")
+	ErrNotFound = validation.NotFound("templates: template not found", "errors.template_not_found")
 	// ErrBlankName: the Template name is blank.
 	ErrBlankName = validation.Refuse("templates: name must not be empty", "errors.name_empty")
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the

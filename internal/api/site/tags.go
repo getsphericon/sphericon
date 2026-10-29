@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -12,8 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/tags"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) SiteTagsList(ctx context.Context, params siteapi.SiteTagsListParams) (siteapi.SiteTagsListRes, error) {
@@ -44,10 +40,6 @@ func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.Si
 	id := int64(params.ContactId)
 
 	mine, err := h.tags.ForContact(ctx, scoped, id)
-	if errors.Is(err, tags.ErrContactNotFound) {
-		v := siteapi.SiteTagsListForContactNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -69,14 +61,6 @@ func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.SiteApplyTagI
 	id := int64(params.ContactId)
 
 	t, err := h.tags.Apply(ctx, scoped, id, req.Name)
-	if errors.Is(err, tags.ErrContactNotFound) {
-		v := siteapi.SiteTagsApplyNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
-	if errors.Is(err, tags.ErrInvalidName) {
-		v := siteapi.SiteTagsApplyUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -92,10 +76,6 @@ func (h *Handlers) SiteTagsRemove(ctx context.Context, params siteapi.SiteTagsRe
 	id := int64(params.ContactId)
 
 	err = h.tags.Remove(ctx, scoped, id, params.Name)
-	if errors.Is(err, tags.ErrContactNotFound) {
-		v := siteapi.SiteTagsRemoveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -111,10 +91,6 @@ func (h *Handlers) SiteTagsDelete(ctx context.Context, params siteapi.SiteTagsDe
 	}
 
 	err = h.tags.Delete(ctx, scoped, int64(params.ID))
-	if errors.Is(err, tags.ErrNotFound) {
-		v := siteapi.SiteTagsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

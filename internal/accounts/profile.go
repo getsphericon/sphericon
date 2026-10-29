@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -26,8 +27,9 @@ type ProfileChange struct {
 type Prove func(ctx context.Context, u *ent.User, password string) (bool, error)
 
 // ErrCurrentPasswordIncorrect is a password change whose current password does not prove the
-// User.
-var ErrCurrentPasswordIncorrect = validation.Refuse("accounts: current password incorrect", "errors.current_password_incorrect")
+// User. It is none of the refusal kinds of validation: like every other failed proof of the
+// current password, the site answers it 403.
+var ErrCurrentPasswordIncorrect = errors.New("accounts: current password incorrect")
 
 // ProfileChanged is what a profile change left.
 type ProfileChanged struct {

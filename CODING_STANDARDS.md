@@ -82,10 +82,14 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   goes into the domain module that owns the entity (the raw-client packages of `docs/architecture.md`), which the entry
   point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site` or
-  `internal/api/external` names no `validation.Error` and nothing of `inuse`, and never spells
-  `"workspace not found"`: it returns the module's error, and `refusalProblem` in `internal/server`
-  answers a `*validation.Error` with 422 and its field, an `*inuse.Error` with 409 and `usedBy`, and
-  `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is not a member of) with 404.
+  `internal/api/external` names no `validation.Error`, `validation.RefusalError` or
+  `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
+  the module's error, and `refusalProblem` in `internal/server` answers a module's sentinel refusal
+  by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409, the
+  message as `detail` and, for `validation.RefuseField`, under its field), a `*validation.Error`
+  with 422 and its field, an `*inuse.Error` with 409 and `usedBy`, content `emailrender` cannot
+  render with 422, and `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is
+  not a member of) with 404.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
   case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message

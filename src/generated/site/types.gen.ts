@@ -11346,6 +11346,10 @@ export type SiteSegmentContactsListErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteSegmentContactsListError = SiteSegmentContactsListErrors[keyof SiteSegmentContactsListErrors];

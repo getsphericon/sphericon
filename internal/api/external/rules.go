@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/samber/lo"
@@ -16,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Rules reuse the Automation scopes: a Rule is the light form of an Automation, so reading
@@ -60,10 +58,6 @@ func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleI
 	}
 	in.Condition = def
 	r, err := h.rules.Create(ctx, auth.TokenScoped(ctx), in)
-	if errors.Is(err, rules.ErrInvalid) {
-		res := externalapi.RulesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -77,10 +71,6 @@ func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetPara
 		return &res, nil
 	}
 	r, err := h.rules.Get(ctx, auth.TokenScoped(ctx), int64(params.ID))
-	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RulesGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -108,14 +98,7 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 	}
 	in.Condition = def
 	r, err := h.rules.Update(ctx, auth.TokenScoped(ctx), int64(params.ID), in)
-	switch {
-	case errors.Is(err, rules.ErrNotFound):
-		res := externalapi.RulesUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case errors.Is(err, rules.ErrInvalid):
-		res := externalapi.RulesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.RuleToResource(r)
@@ -129,11 +112,7 @@ func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDele
 		return &res, nil
 	}
 	err := h.rules.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
-	switch {
-	case errors.Is(err, rules.ErrNotFound):
-		res := externalapi.RulesDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	return &externalapi.RulesDeleteNoContent{}, nil
@@ -148,10 +127,6 @@ func (h *Handlers) RulesArchive(ctx context.Context, params externalapi.RulesArc
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.rules.Archive(ctx, ws, id)
-	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RulesArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -172,10 +147,6 @@ func (h *Handlers) RulesUnarchive(ctx context.Context, params externalapi.RulesU
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.rules.Unarchive(ctx, ws, id)
-	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RulesUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -195,14 +166,7 @@ func (h *Handlers) RulesActivate(ctx context.Context, params externalapi.RulesAc
 		return &res, nil
 	}
 	r, err := h.rules.Activate(ctx, auth.TokenScoped(ctx), int64(params.ID))
-	switch {
-	case errors.Is(err, rules.ErrNotFound):
-		res := externalapi.RulesActivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case errors.Is(err, rules.ErrInvalid):
-		res := externalapi.RulesActivateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.RuleToResource(r)
@@ -215,10 +179,6 @@ func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.Rules
 		return &res, nil
 	}
 	r, err := h.rules.Deactivate(ctx, auth.TokenScoped(ctx), int64(params.ID))
-	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RulesDeactivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -234,14 +194,7 @@ func (h *Handlers) RulesDryRun(ctx context.Context, req *externalapi.DryRunRuleI
 		return &res, nil
 	}
 	dry, err := h.rules.DryRun(ctx, auth.TokenScoped(ctx), int64(params.ID), int64(req.EventId))
-	switch {
-	case errors.Is(err, rules.ErrNotFound):
-		res := externalapi.RulesDryRunNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case errors.Is(err, rules.ErrEventNotFound):
-		res := externalapi.RulesDryRunNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.RuleDryRunToResource(dry)
@@ -255,10 +208,6 @@ func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleF
 		return &res, nil
 	}
 	page, err := h.rules.Firings(ctx, auth.TokenScoped(ctx), int64(params.RuleId), pagination.ParamsOf(params.Page, params.PageSize))
-	if errors.Is(err, rules.ErrNotFound) {
-		res := externalapi.RuleFiringsListNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

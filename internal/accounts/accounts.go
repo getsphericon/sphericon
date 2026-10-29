@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/reportday"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
 
@@ -151,7 +152,12 @@ func SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, callerRole memb
 // sets (or clears, with "") its postal address. A change is recorded as a
 // `workspace.update` Audit entry in the same transaction (ADR 0022): the Workspace is
 // the tenant root and has no scoped wrapper, so this is an explicit path.
+// The name is trimmed; an empty one is ErrWorkspaceNameEmpty.
 func (a *Accounts) UpdateWorkspace(ctx context.Context, s *ent.Scoped, actor events.Actor, name string, postalAddress *string) (*ent.Workspace, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, ErrWorkspaceNameEmpty
+	}
 	var updated *ent.Workspace
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
@@ -302,6 +308,9 @@ func ptrEqual(a, b *int) bool {
 	return *a == *b
 }
 
+// ErrWorkspaceNameEmpty refuses a Workspace name that is empty once trimmed.
+var ErrWorkspaceNameEmpty = validation.RefuseField("name", "accounts: workspace name is empty", "errors.name_empty")
+
 // ErrEmailNotVerified refuses creating a Workspace for a User whose email is not proven
 // (ADR 0030): sign-up verification must not be bypassed by creating Workspaces first.
 var ErrEmailNotVerified = errors.New("accounts: the email is not verified")
@@ -311,7 +320,12 @@ var ErrEmailNotVerified = errors.New("accounts: the email is not verified")
 // Membership and the `workspace.create` Audit entry are written atomically: a Workspace is
 // reached through Memberships, so one without its owner row would be inaccessible. An
 // Unverified User gets ErrEmailNotVerified.
+// The name is trimmed; an empty one is ErrWorkspaceNameEmpty, refused before the User is read.
 func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name string) (*ent.Workspace, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, ErrWorkspaceNameEmpty
+	}
 	for {
 		var ws *ent.Workspace
 		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {

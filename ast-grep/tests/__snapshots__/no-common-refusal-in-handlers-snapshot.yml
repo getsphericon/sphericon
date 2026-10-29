@@ -18,3 +18,15 @@ snapshots:
         style: primary
         start: 78
         end: 86
+  "func sentinel(err error) bool {\n\t_, ok := errors.AsType[*validation.RefusalError](err)\n\treturn ok\n}\n":
+    labels:
+      - source: validation.RefusalError
+        style: primary
+        start: 57
+        end: 80
+  "func templateNotFound(err error) siteapi.ProblemDetails {\n\treturn problem(http.StatusNotFound, validation.Message(err))\n}\n":
+    labels:
+      - source: validation.Message
+        style: primary
+        start: 95
+        end: 113

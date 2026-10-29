@@ -2,19 +2,15 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/templates"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTemplatesListParams) (siteapi.SiteTemplatesListRes, error) {
@@ -51,14 +47,6 @@ func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.SiteCre
 		Body:    convert.StringPtr(req.Body),
 		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
-	if errors.Is(err, templates.ErrBlankName) {
-		v := siteapi.SiteTemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
-	if errors.Is(err, templates.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
-		v := siteapi.SiteTemplatesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -77,10 +65,6 @@ func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemp
 
 	id := int64(params.ID)
 	tpl, err := h.templates.Get(ctx, scoped, id)
-	if errors.Is(err, templates.ErrNotFound) {
-		v := siteapi.SiteTemplatesGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -102,18 +86,6 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpd
 		Body:    convert.StringPtr(req.Body),
 		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
 	})
-	if errors.Is(err, templates.ErrNotFound) {
-		v := siteapi.SiteTemplatesUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
-	if errors.Is(err, templates.ErrBlankName) {
-		v := siteapi.SiteTemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
-	if errors.Is(err, templates.ErrBodyAndDoc) || errors.Is(err, emailrender.ErrInvalidContent) {
-		v := siteapi.SiteTemplatesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +104,6 @@ func (h *Handlers) SiteTemplatesDelete(ctx context.Context, params siteapi.SiteT
 
 	id := int64(params.ID)
 	err = h.templates.Delete(ctx, scoped, id)
-	if errors.Is(err, templates.ErrNotFound) {
-		v := siteapi.SiteTemplatesDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -15,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/rules"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesListParams) (siteapi.SiteRulesListRes, error) {
@@ -55,10 +52,6 @@ func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateR
 	}
 	in.Condition = def
 	r, err := h.rules.Create(ctx, ws, in)
-	if errors.Is(err, rules.ErrInvalid) {
-		v := siteapi.SiteRulesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -73,10 +66,6 @@ func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGet
 	}
 
 	r, err := h.rules.Get(ctx, ws, int64(params.ID))
-	if errors.Is(err, rules.ErrNotFound) {
-		v := siteapi.SiteRulesGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -104,14 +93,7 @@ func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateR
 	}
 	in.Condition = def
 	r, err := h.rules.Update(ctx, ws, int64(params.ID), in)
-	switch {
-	case errors.Is(err, rules.ErrNotFound):
-		v := siteapi.SiteRulesUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, rules.ErrInvalid):
-		v := siteapi.SiteRulesUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.RuleToResource(r)
@@ -126,11 +108,7 @@ func (h *Handlers) SiteRulesDelete(ctx context.Context, params siteapi.SiteRules
 	}
 
 	err = h.rules.Delete(ctx, ws, int64(params.ID))
-	switch {
-	case errors.Is(err, rules.ErrNotFound):
-		v := siteapi.SiteRulesDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteRulesDeleteNoContent{}, nil
@@ -145,10 +123,6 @@ func (h *Handlers) SiteRulesArchive(ctx context.Context, params siteapi.SiteRule
 
 	id := int64(params.ID)
 	err = h.rules.Archive(ctx, ws, id)
-	if errors.Is(err, rules.ErrNotFound) {
-		v := siteapi.SiteRulesArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -169,10 +143,6 @@ func (h *Handlers) SiteRulesUnarchive(ctx context.Context, params siteapi.SiteRu
 
 	id := int64(params.ID)
 	err = h.rules.Unarchive(ctx, ws, id)
-	if errors.Is(err, rules.ErrNotFound) {
-		v := siteapi.SiteRulesUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -192,14 +162,7 @@ func (h *Handlers) SiteRulesActivate(ctx context.Context, params siteapi.SiteRul
 	}
 
 	r, err := h.rules.Activate(ctx, ws, int64(params.ID))
-	switch {
-	case errors.Is(err, rules.ErrNotFound):
-		v := siteapi.SiteRulesActivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, rules.ErrInvalid):
-		v := siteapi.SiteRulesActivateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.RuleToResource(r)
@@ -213,10 +176,6 @@ func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteR
 	}
 
 	r, err := h.rules.Deactivate(ctx, ws, int64(params.ID))
-	if errors.Is(err, rules.ErrNotFound) {
-		v := siteapi.SiteRulesDeactivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -232,14 +191,7 @@ func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.SiteDryRunR
 	}
 
 	dry, err := h.rules.DryRun(ctx, ws, int64(params.ID), int64(req.EventId))
-	switch {
-	case errors.Is(err, rules.ErrNotFound):
-		v := siteapi.SiteRulesDryRunNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case errors.Is(err, rules.ErrEventNotFound):
-		v := siteapi.SiteRulesDryRunNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.RuleDryRunToResource(dry)
@@ -254,10 +206,6 @@ func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteR
 	}
 
 	page, err := h.rules.Firings(ctx, ws, int64(params.RuleId), pagination.ParamsOf(params.Page, params.PageSize))
-	if errors.Is(err, rules.ErrNotFound) {
-		v := siteapi.SiteRuleFiringsListNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

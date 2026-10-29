@@ -886,7 +886,8 @@ type Handler interface {
 	SiteSecondFactorStartEnrollment(ctx context.Context, req *SiteSecondFactorStartInput) (SiteSecondFactorStartEnrollmentRes, error)
 	// SiteSegmentContactsList implements SiteSegmentContacts_list operation.
 	//
-	// List the contacts a segment matches right now, evaluated live, ascending by id.
+	// List the contacts a segment matches right now, evaluated live, ascending by id. A stored condition
+	// that no longer fits the contact schema is a 422.
 	//
 	// GET /workspaces/{workspaceId}/segments/{segmentId}/contacts
 	SiteSegmentContactsList(ctx context.Context, params SiteSegmentContactsListParams) (SiteSegmentContactsListRes, error)

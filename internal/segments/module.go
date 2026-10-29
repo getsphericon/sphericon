@@ -23,7 +23,7 @@ var (
 	// Contact schema. The wrapped message is safe to show to the author.
 	ErrInvalidCondition = validation.Refuse("segments: invalid condition", "errors.segment_condition_invalid")
 	// ErrNotFound: no such Segment in this Workspace.
-	ErrNotFound = validation.Refuse("segments: segment not found", "errors.segment_not_found")
+	ErrNotFound = validation.NotFound("segments: segment not found", "errors.segment_not_found")
 )
 
 // Module is the one place a Segment is written, validated, previewed and counted

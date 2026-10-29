@@ -11,7 +11,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
@@ -54,11 +53,7 @@ func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBr
 		ButtonRadius:    int(req.ButtonRadius),
 		FooterText:      req.FooterText,
 	})
-	switch {
-	case errors.Is(err, emailrender.ErrInvalidContent):
-		v := siteapi.SiteBrandKitSaveUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.BrandKitToResource(kit)
@@ -82,9 +77,6 @@ func (h *Handlers) SiteBrandKitRecreateStarterTemplates(ctx context.Context, par
 	case errors.Is(err, brandkit.ErrNotSaved):
 		v := siteapi.SiteBrandKitRecreateStarterTemplatesUnprocessableEntity(
 			problem(http.StatusUnprocessableEntity, i18n.T("errors.brandkit_not_saved", nil)))
-		return &v, nil
-	case errors.Is(err, emailrender.ErrInvalidContent):
-		v := siteapi.SiteBrandKitRecreateStarterTemplatesUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
 		return &v, nil
 	case err != nil:
 		return nil, err

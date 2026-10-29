@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/samber/lo"
@@ -15,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.AutomationsListParams) (externalapi.AutomationsListRes, error) {
@@ -49,10 +47,6 @@ func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.Creat
 		in.Steps = resources.AutomationSteps(req.Steps)
 	}
 	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), in)
-	if automations.IsInvalid(err) {
-		res := externalapi.AutomationsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +61,6 @@ func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.Automa
 	}
 	id := int64(params.ID)
 	a, err := h.automations.Get(ctx, auth.TokenScoped(ctx), id)
-	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -97,14 +87,7 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 		in.Steps = &steps
 	}
 	a, err := h.automations.Update(ctx, auth.TokenScoped(ctx), id, in)
-	switch {
-	case errors.Is(err, automations.ErrNotFound):
-		res := externalapi.AutomationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case automations.IsInvalid(err):
-		res := externalapi.AutomationsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.AutomationToResource(a)
@@ -118,11 +101,7 @@ func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.Aut
 	}
 	id := int64(params.ID)
 	err := h.automations.Delete(ctx, auth.TokenScoped(ctx), id)
-	switch {
-	case errors.Is(err, automations.ErrNotFound):
-		res := externalapi.AutomationsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	return &externalapi.AutomationsDeleteNoContent{}, nil
@@ -137,10 +116,6 @@ func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.Au
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.automations.Archive(ctx, ws, id)
-	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -161,10 +136,6 @@ func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.automations.Unarchive(ctx, ws, id)
-	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -186,10 +157,6 @@ func (h *Handlers) AutomationsActivate(ctx context.Context, params externalapi.A
 	}
 	id := int64(params.ID)
 	a, err := h.automations.Activate(ctx, auth.TokenScoped(ctx), id)
-	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsActivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -204,10 +171,6 @@ func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi
 	}
 	id := int64(params.ID)
 	a, err := h.automations.Deactivate(ctx, auth.TokenScoped(ctx), id)
-	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.AutomationsDeactivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

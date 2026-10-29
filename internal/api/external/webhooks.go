@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -10,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/samber/lo"
 )
@@ -19,18 +17,6 @@ import (
 // /api response.
 func webhookResource(e webhooks.Endpoint) externalapi.WebhookResource {
 	return mapper.WebhookToResource(e.WebhookEndpoint)
-}
-
-// webhookRuleProblem maps a webhooks rule sentinel to its 422; ok is false for any
-// other error.
-func webhookRuleProblem(err error) (externalapi.ProblemDetails, bool) {
-	switch {
-	case errors.Is(err, webhooks.ErrInvalidURL):
-		return fieldProblem(err, "url"), true
-	case errors.Is(err, webhooks.ErrAuditNeedsLicense):
-		return fieldProblem(err, "eventTypes"), true
-	}
-	return externalapi.ProblemDetails{}, false
 }
 
 func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.WebhooksListParams) (externalapi.WebhooksListRes, error) {
@@ -65,10 +51,6 @@ func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWe
 		EventTypes: req.EventTypes,
 		Enabled:    convert.Ptr(req.Enabled),
 	})
-	if p, ok := webhookRuleProblem(err); ok {
-		res := externalapi.WebhooksCreateUnprocessableEntity(p)
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -85,10 +67,6 @@ func (h *Handlers) WebhooksGet(ctx context.Context, params externalapi.WebhooksG
 	id := int64(params.ID)
 
 	e, err := h.webhooks.Get(ctx, auth.TokenScoped(ctx), id)
-	if errors.Is(err, webhooks.ErrNotFound) {
-		res := externalapi.WebhooksGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -109,14 +87,6 @@ func (h *Handlers) WebhooksUpdate(ctx context.Context, req *externalapi.UpdateWe
 		EventTypes: req.EventTypes,
 		Enabled:    convert.Ptr(req.Enabled),
 	})
-	if p, ok := webhookRuleProblem(err); ok {
-		res := externalapi.WebhooksUpdateUnprocessableEntity(p)
-		return &res, nil
-	}
-	if errors.Is(err, webhooks.ErrNotFound) {
-		res := externalapi.WebhooksUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -133,10 +103,6 @@ func (h *Handlers) WebhooksDelete(ctx context.Context, params externalapi.Webhoo
 	id := int64(params.ID)
 
 	err := h.webhooks.Delete(ctx, auth.TokenScoped(ctx), id)
-	if errors.Is(err, webhooks.ErrNotFound) {
-		res := externalapi.WebhooksDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

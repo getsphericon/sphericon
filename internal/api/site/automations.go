@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -14,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteAutomationsListParams) (siteapi.SiteAutomationsListRes, error) {
@@ -48,10 +45,6 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 		in.Steps = resources.AutomationSteps(req.Steps)
 	}
 	a, err := h.automations.Create(ctx, ws, in)
-	if automations.IsInvalid(err) {
-		v := siteapi.SiteAutomationsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +60,6 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 
 	id := int64(params.ID)
 	a, err := h.automations.Get(ctx, ws, id)
-	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsGetNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -97,14 +86,6 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 		in.Steps = &steps
 	}
 	a, err := h.automations.Update(ctx, ws, id, in)
-	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsUpdateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
-	if automations.IsInvalid(err) {
-		v := siteapi.SiteAutomationsUpdateUnprocessableEntity(problem(http.StatusUnprocessableEntity, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -120,11 +101,7 @@ func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 	err = h.automations.Delete(ctx, ws, id)
-	switch {
-	case errors.Is(err, automations.ErrNotFound):
-		v := siteapi.SiteAutomationsDeleteNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteAutomationsDeleteNoContent{}, nil
@@ -140,10 +117,6 @@ func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.Si
 
 	id := int64(params.ID)
 	err = h.automations.Archive(ctx, ws, id)
-	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsArchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -164,10 +137,6 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 
 	id := int64(params.ID)
 	err = h.automations.Unarchive(ctx, ws, id)
-	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsUnarchiveNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -181,10 +150,6 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 
 func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.SiteAutomationsActivateParams) (siteapi.SiteAutomationsActivateRes, error) {
 	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, true)
-	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsActivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -194,10 +159,6 @@ func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.S
 
 func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (siteapi.SiteAutomationsDeactivateRes, error) {
 	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, false)
-	if errors.Is(err, automations.ErrNotFound) {
-		v := siteapi.SiteAutomationsDeactivateNotFound(problem(http.StatusNotFound, validation.Message(err)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

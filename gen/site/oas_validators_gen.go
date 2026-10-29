@@ -6898,6 +6898,14 @@ func (s *SiteSegmentContactsListOK) Validate() error {
 	return nil
 }
 
+func (s *SiteSegmentContactsListUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteSegmentResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
