@@ -257,6 +257,51 @@ model SiteAnalyticsEvents {
   actions: SiteAnalyticsEventAction[];
 }
 
+/** One Report day of the Workspace's revenue (ADR 0064): the sum of the Movements of the Orders
+ * counted in the Reporting currency that fell on that day in the Workspace time zone. A day
+ * with none is there with zeros. */
+model SiteRevenuePoint {
+  /** The Report day, `YYYY-MM-DD` in the Workspace time zone */
+  date: string;
+
+  /** The net change of revenue that day, in the minor unit of the Reporting currency (cents
+   * for USD, whole yen for JPY); a refund makes it negative */
+  amount: int64;
+
+  /** Orders completed that day */
+  orders: int32;
+}
+
+/** The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
+ * sum of Order Movements over the range, in the Reporting currency. Until an Owner or Admin
+ * chooses that currency `reportingCurrency` is null and every figure is zero; the Orders
+ * received meanwhile are counted once it is chosen. */
+model SiteAnalyticsRevenue {
+  /** The Reporting currency, null until chosen */
+  reportingCurrency: CurrencyCode | null;
+
+  /** Revenue over the range, in the minor unit of the Reporting currency */
+  total: int64;
+
+  /** The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders
+   * credited to a Broadcast or an Automation, in the minor unit of the Reporting currency.
+   * `total` minus `credited` is the revenue of unattributed Orders. */
+  credited: int64;
+
+  /** Orders completed in the range, in the Reporting currency */
+  orders: int32;
+
+  /** Orders completed in the range that are credited to a Broadcast or an Automation */
+  creditedOrders: int32;
+
+  /** Orders in the range kept in another currency: they are listed with the Workspace's
+   * Events but counted in no sum */
+  otherCurrencyOrders: int32;
+
+  /** One point per Report day in the range, oldest first, zero-filled */
+  series: SiteRevenuePoint[];
+}
+
 // Not a CRUD resource — a single workspace-scoped aggregate with no key, so it
 // keeps an explicit nested route rather than @parentResource/@autoRoute.
 @route("/workspaces/{workspaceId}/analytics")
@@ -271,6 +316,17 @@ namespace SiteAnalytics {
     /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
   ): SiteAnalyticsOverview | NotFoundProblem;
+
+  /** Revenue of the Workspace's Orders over the range, in its Reporting currency (ADR 0064).
+   * Open to every member. */
+  @get
+  @route("/revenue")
+  op revenue(
+    @path workspaceId: WorkspaceId,
+
+    /** Window to sum over (defaults to 30d) */
+    @query range?: SiteAnalyticsRange = SiteAnalyticsRange.`30d`,
+  ): SiteAnalyticsRevenue | NotFoundProblem;
 
   /** New people report: Contacts created per Report day, split by Contact source */
   @get

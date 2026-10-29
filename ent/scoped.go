@@ -26,11 +26,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
@@ -353,6 +356,22 @@ func (s *Scoped) verifyEvent(ctx context.Context, ids []int64) error {
 	return nil
 }
 
+// verifyHeldOrderEvent fails with ErrNotInWorkspace unless every id is a HeldOrderEvent of the Workspace.
+func (s *Scoped) verifyHeldOrderEvent(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.HeldOrderEvent.Query().Where(heldorderevent.IDIn(ids...), heldorderevent.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("HeldOrderEvent: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
 // verifyHold fails with ErrNotInWorkspace unless every id is a Hold of the Workspace.
 func (s *Scoped) verifyHold(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
@@ -429,6 +448,38 @@ func (s *Scoped) verifyMembership(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Membership: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyOrder fails with ErrNotInWorkspace unless every id is a Order of the Workspace.
+func (s *Scoped) verifyOrder(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.Order.Query().Where(order.IDIn(ids...), order.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("Order: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyOrderMovement fails with ErrNotInWorkspace unless every id is a OrderMovement of the Workspace.
+func (s *Scoped) verifyOrderMovement(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.OrderMovement.Query().Where(ordermovement.IDIn(ids...), ordermovement.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("OrderMovement: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -9922,6 +9973,18 @@ func (x *ContactScopedCreate) AddEvents(v ...*Event) *ContactScopedCreate {
 	return x
 }
 
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (x *ContactScopedCreate) AddOrderIDs(ids ...int64) *ContactScopedCreate {
+	x.b.AddOrderIDs(ids...)
+	return x
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (x *ContactScopedCreate) AddOrders(v ...*Order) *ContactScopedCreate {
+	x.b.AddOrders(v...)
+	return x
+}
+
 func (x *ContactScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -9933,6 +9996,9 @@ func (x *ContactScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
 		return fmt.Errorf("events: %w", err)
+	}
+	if err := x.s.verifyOrder(ctx, m.OrdersIDs()); err != nil {
+		return fmt.Errorf("orders: %w", err)
 	}
 	return nil
 }
@@ -10560,6 +10626,36 @@ func (x *ContactScopedUpdateOne) RemoveEvents(v ...*Event) *ContactScopedUpdateO
 	return x
 }
 
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (x *ContactScopedUpdateOne) AddOrderIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.b.AddOrderIDs(ids...)
+	return x
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (x *ContactScopedUpdateOne) AddOrders(v ...*Order) *ContactScopedUpdateOne {
+	x.b.AddOrders(v...)
+	return x
+}
+
+// ClearOrders clears the "orders" edges to the Order entity.
+func (x *ContactScopedUpdateOne) ClearOrders() *ContactScopedUpdateOne {
+	x.b.ClearOrders()
+	return x
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (x *ContactScopedUpdateOne) RemoveOrderIDs(ids ...int64) *ContactScopedUpdateOne {
+	x.b.RemoveOrderIDs(ids...)
+	return x
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (x *ContactScopedUpdateOne) RemoveOrders(v ...*Order) *ContactScopedUpdateOne {
+	x.b.RemoveOrders(v...)
+	return x
+}
+
 func (x *ContactScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -10571,6 +10667,9 @@ func (x *ContactScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
 		return fmt.Errorf("events: %w", err)
+	}
+	if err := x.s.verifyOrder(ctx, m.OrdersIDs()); err != nil {
+		return fmt.Errorf("orders: %w", err)
 	}
 	return nil
 }
@@ -10857,6 +10956,36 @@ func (x *ContactScopedUpdate) RemoveEvents(v ...*Event) *ContactScopedUpdate {
 	return x
 }
 
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (x *ContactScopedUpdate) AddOrderIDs(ids ...int64) *ContactScopedUpdate {
+	x.b.AddOrderIDs(ids...)
+	return x
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (x *ContactScopedUpdate) AddOrders(v ...*Order) *ContactScopedUpdate {
+	x.b.AddOrders(v...)
+	return x
+}
+
+// ClearOrders clears the "orders" edges to the Order entity.
+func (x *ContactScopedUpdate) ClearOrders() *ContactScopedUpdate {
+	x.b.ClearOrders()
+	return x
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (x *ContactScopedUpdate) RemoveOrderIDs(ids ...int64) *ContactScopedUpdate {
+	x.b.RemoveOrderIDs(ids...)
+	return x
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (x *ContactScopedUpdate) RemoveOrders(v ...*Order) *ContactScopedUpdate {
+	x.b.RemoveOrders(v...)
+	return x
+}
+
 func (x *ContactScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -10868,6 +10997,9 @@ func (x *ContactScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyEvent(ctx, m.EventsIDs()); err != nil {
 		return fmt.Errorf("events: %w", err)
+	}
+	if err := x.s.verifyOrder(ctx, m.OrdersIDs()); err != nil {
+		return fmt.Errorf("orders: %w", err)
 	}
 	return nil
 }
@@ -13963,6 +14095,463 @@ func (x *EventScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *EventScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// HeldOrderEventScoped reaches HeldOrderEvent entities of one Workspace.
+type HeldOrderEventScoped struct{ s *Scoped }
+
+// HeldOrderEvent returns the HeldOrderEvent entities of the Workspace.
+func (s *Scoped) HeldOrderEvent() *HeldOrderEventScoped { return &HeldOrderEventScoped{s: s} }
+
+// Query returns a HeldOrderEvent query already confined to the Workspace.
+func (t *HeldOrderEventScoped) Query() *HeldOrderEventQuery {
+	return t.s.c.HeldOrderEvent.Query().Where(heldorderevent.WorkspaceID(t.s.ws))
+}
+
+// Get returns the HeldOrderEvent with the id; a row of another Workspace is not found.
+func (t *HeldOrderEventScoped) Get(ctx context.Context, id int64) (*HeldOrderEvent, error) {
+	return t.Query().Where(heldorderevent.ID(id)).Only(ctx)
+}
+
+// HeldOrderEventScopedDeleteOne wraps HeldOrderEventDeleteOne.
+type HeldOrderEventScopedDeleteOne struct {
+	s *Scoped
+	b *HeldOrderEventDeleteOne
+}
+
+// DeleteOneID deletes the HeldOrderEvent with the id; a row of another Workspace is not found.
+func (t *HeldOrderEventScoped) DeleteOneID(id int64) *HeldOrderEventScopedDeleteOne {
+	return &HeldOrderEventScopedDeleteOne{s: t.s, b: t.s.c.HeldOrderEvent.DeleteOneID(id).Where(heldorderevent.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *HeldOrderEventScopedDeleteOne) Where(ps ...predicate.HeldOrderEvent) *HeldOrderEventScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *HeldOrderEventScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// HeldOrderEventScopedDelete wraps HeldOrderEventDelete.
+type HeldOrderEventScopedDelete struct {
+	s *Scoped
+	b *HeldOrderEventDelete
+}
+
+// Delete deletes the HeldOrderEvent entities of the Workspace that match the predicates.
+func (t *HeldOrderEventScoped) Delete() *HeldOrderEventScopedDelete {
+	return &HeldOrderEventScopedDelete{s: t.s, b: t.s.c.HeldOrderEvent.Delete().Where(heldorderevent.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *HeldOrderEventScopedDelete) Where(ps ...predicate.HeldOrderEvent) *HeldOrderEventScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *HeldOrderEventScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// HeldOrderEventScopedCreate wraps HeldOrderEventCreate. It has no way to name a Workspace.
+type HeldOrderEventScopedCreate struct {
+	s *Scoped
+	b *HeldOrderEventCreate
+}
+
+// Create starts a HeldOrderEvent in the Workspace.
+func (t *HeldOrderEventScoped) Create() *HeldOrderEventScopedCreate {
+	return &HeldOrderEventScopedCreate{s: t.s, b: t.s.c.HeldOrderEvent.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *HeldOrderEventScopedCreate) SetCreatedAt(v time.Time) *HeldOrderEventScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *HeldOrderEventScopedCreate) SetNillableCreatedAt(v *time.Time) *HeldOrderEventScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *HeldOrderEventScopedCreate) SetUpdatedAt(v time.Time) *HeldOrderEventScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *HeldOrderEventScopedCreate) SetNillableUpdatedAt(v *time.Time) *HeldOrderEventScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetOrderID sets the "order_id" field.
+func (x *HeldOrderEventScopedCreate) SetOrderID(v string) *HeldOrderEventScopedCreate {
+	x.b.SetOrderID(v)
+	return x
+}
+
+// SetKind sets the "kind" field.
+func (x *HeldOrderEventScopedCreate) SetKind(v heldorderevent.Kind) *HeldOrderEventScopedCreate {
+	x.b.SetKind(v)
+	return x
+}
+
+// SetProperties sets the "properties" field.
+func (x *HeldOrderEventScopedCreate) SetProperties(v map[string]interface{}) *HeldOrderEventScopedCreate {
+	x.b.SetProperties(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *HeldOrderEventScopedCreate) SetContactID(v int64) *HeldOrderEventScopedCreate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *HeldOrderEventScopedCreate) SetNillableContactID(v *int64) *HeldOrderEventScopedCreate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// SetEventID sets the "event_id" field.
+func (x *HeldOrderEventScopedCreate) SetEventID(v string) *HeldOrderEventScopedCreate {
+	x.b.SetEventID(v)
+	return x
+}
+
+// SetOccurredAt sets the "occurred_at" field.
+func (x *HeldOrderEventScopedCreate) SetOccurredAt(v time.Time) *HeldOrderEventScopedCreate {
+	x.b.SetOccurredAt(v)
+	return x
+}
+
+func (x *HeldOrderEventScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the HeldOrderEvent.
+func (x *HeldOrderEventScopedCreate) Save(ctx context.Context) (*HeldOrderEvent, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *HeldOrderEventScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// HeldOrderEventScopedCreateBulk creates several HeldOrderEvent entities of one Workspace at once.
+type HeldOrderEventScopedCreateBulk struct {
+	s  *Scoped
+	xs []*HeldOrderEventScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *HeldOrderEventScoped) CreateBulk(xs ...*HeldOrderEventScopedCreate) *HeldOrderEventScopedCreateBulk {
+	return &HeldOrderEventScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *HeldOrderEventScopedCreateBulk) raw(ctx context.Context) (*HeldOrderEventCreateBulk, error) {
+	builders := make([]*HeldOrderEventCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("HeldOrderEvent: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.HeldOrderEvent.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the HeldOrderEvent entities.
+func (b *HeldOrderEventScopedCreateBulk) Save(ctx context.Context) ([]*HeldOrderEvent, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *HeldOrderEventScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// HeldOrderEventScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type HeldOrderEventScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *HeldOrderEventScopedUpsert) SetUpdatedAt(v time.Time) *HeldOrderEventScopedUpsert {
+	u.u.Set(heldorderevent.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *HeldOrderEventScopedUpsert) UpdateUpdatedAt() *HeldOrderEventScopedUpsert {
+	u.u.SetExcluded(heldorderevent.FieldUpdatedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *HeldOrderEventScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(heldorderevent.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// HeldOrderEventScopedUpsertOne is the "upsert" of one HeldOrderEvent.
+type HeldOrderEventScopedUpsertOne struct {
+	x *HeldOrderEventScopedCreate
+	u *HeldOrderEventUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *HeldOrderEventScopedCreate) OnConflictColumns(columns ...string) *HeldOrderEventScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *HeldOrderEventScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *HeldOrderEventScopedUpsertOne {
+	return &HeldOrderEventScopedUpsertOne{x: x, u: x.b.OnConflict((&HeldOrderEventScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *HeldOrderEventScopedUpsertOne) UpdateNewValues() *HeldOrderEventScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *HeldOrderEventScopedUpsertOne) Ignore() *HeldOrderEventScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *HeldOrderEventScopedUpsertOne) DoNothing() *HeldOrderEventScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *HeldOrderEventScopedUpsertOne) Update(set func(*HeldOrderEventScopedUpsert)) *HeldOrderEventScopedUpsertOne {
+	u.u.Update(func(s *HeldOrderEventUpsert) { set(&HeldOrderEventScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *HeldOrderEventScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *HeldOrderEventScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// HeldOrderEventScopedUpsertBulk is the "upsert" of several HeldOrderEvent entities.
+type HeldOrderEventScopedUpsertBulk struct {
+	b       *HeldOrderEventScopedCreateBulk
+	t       *HeldOrderEventScoped
+	columns []string
+	opts    []func(*HeldOrderEventUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *HeldOrderEventScopedCreateBulk) OnConflictColumns(columns ...string) *HeldOrderEventScopedUpsertBulk {
+	return &HeldOrderEventScopedUpsertBulk{b: b, t: &HeldOrderEventScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *HeldOrderEventScopedUpsertBulk) UpdateNewValues() *HeldOrderEventScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *HeldOrderEventUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *HeldOrderEventScopedUpsertBulk) Ignore() *HeldOrderEventScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *HeldOrderEventUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *HeldOrderEventScopedUpsertBulk) DoNothing() *HeldOrderEventScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *HeldOrderEventUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *HeldOrderEventScopedUpsertBulk) Update(set func(*HeldOrderEventScopedUpsert)) *HeldOrderEventScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *HeldOrderEventUpsertBulk) {
+		r.Update(func(s *HeldOrderEventUpsert) { set(&HeldOrderEventScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *HeldOrderEventScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// HeldOrderEventScopedUpdateOne wraps HeldOrderEventUpdateOne. It has no way to move the row to another Workspace.
+type HeldOrderEventScopedUpdateOne struct {
+	s *Scoped
+	b *HeldOrderEventUpdateOne
+}
+
+// UpdateOneID updates the HeldOrderEvent with the id; a row of another Workspace is not found.
+func (t *HeldOrderEventScoped) UpdateOneID(id int64) *HeldOrderEventScopedUpdateOne {
+	return &HeldOrderEventScopedUpdateOne{s: t.s, b: t.s.c.HeldOrderEvent.UpdateOneID(id).Where(heldorderevent.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *HeldOrderEventScopedUpdateOne) Where(ps ...predicate.HeldOrderEvent) *HeldOrderEventScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *HeldOrderEventScopedUpdateOne) SetUpdatedAt(v time.Time) *HeldOrderEventScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *HeldOrderEventScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the HeldOrderEvent.
+func (x *HeldOrderEventScopedUpdateOne) Save(ctx context.Context) (*HeldOrderEvent, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *HeldOrderEventScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// HeldOrderEventScopedUpdate wraps HeldOrderEventUpdate: a conditional bulk update of one Workspace.
+type HeldOrderEventScopedUpdate struct {
+	s *Scoped
+	b *HeldOrderEventUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the HeldOrderEvent entities of the Workspace that match the predicates.
+func (t *HeldOrderEventScoped) Update() *HeldOrderEventScopedUpdate {
+	return &HeldOrderEventScopedUpdate{s: t.s, b: t.s.c.HeldOrderEvent.Update().Where(heldorderevent.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *HeldOrderEventScopedUpdate) Where(ps ...predicate.HeldOrderEvent) *HeldOrderEventScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *HeldOrderEventScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *HeldOrderEventScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(heldorderevent.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *HeldOrderEventScopedUpdate) SetUpdatedAt(v time.Time) *HeldOrderEventScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *HeldOrderEventScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *HeldOrderEventScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *HeldOrderEventScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }
@@ -18743,6 +19332,1157 @@ func (x *MembershipScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *MembershipScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// OrderScoped reaches Order entities of one Workspace.
+type OrderScoped struct{ s *Scoped }
+
+// Order returns the Order entities of the Workspace.
+func (s *Scoped) Order() *OrderScoped { return &OrderScoped{s: s} }
+
+// Query returns a Order query already confined to the Workspace.
+func (t *OrderScoped) Query() *OrderQuery {
+	return t.s.c.Order.Query().Where(order.WorkspaceID(t.s.ws))
+}
+
+// Get returns the Order with the id; a row of another Workspace is not found.
+func (t *OrderScoped) Get(ctx context.Context, id int64) (*Order, error) {
+	return t.Query().Where(order.ID(id)).Only(ctx)
+}
+
+// OrderScopedDeleteOne wraps OrderDeleteOne.
+type OrderScopedDeleteOne struct {
+	s *Scoped
+	b *OrderDeleteOne
+}
+
+// DeleteOneID deletes the Order with the id; a row of another Workspace is not found.
+func (t *OrderScoped) DeleteOneID(id int64) *OrderScopedDeleteOne {
+	return &OrderScopedDeleteOne{s: t.s, b: t.s.c.Order.DeleteOneID(id).Where(order.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *OrderScopedDeleteOne) Where(ps ...predicate.Order) *OrderScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *OrderScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// OrderScopedDelete wraps OrderDelete.
+type OrderScopedDelete struct {
+	s *Scoped
+	b *OrderDelete
+}
+
+// Delete deletes the Order entities of the Workspace that match the predicates.
+func (t *OrderScoped) Delete() *OrderScopedDelete {
+	return &OrderScopedDelete{s: t.s, b: t.s.c.Order.Delete().Where(order.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *OrderScopedDelete) Where(ps ...predicate.Order) *OrderScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *OrderScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// OrderScopedCreate wraps OrderCreate. It has no way to name a Workspace.
+type OrderScopedCreate struct {
+	s *Scoped
+	b *OrderCreate
+}
+
+// Create starts a Order in the Workspace.
+func (t *OrderScoped) Create() *OrderScopedCreate {
+	return &OrderScopedCreate{s: t.s, b: t.s.c.Order.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *OrderScopedCreate) SetCreatedAt(v time.Time) *OrderScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *OrderScopedCreate) SetNillableCreatedAt(v *time.Time) *OrderScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OrderScopedCreate) SetUpdatedAt(v time.Time) *OrderScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *OrderScopedCreate) SetNillableUpdatedAt(v *time.Time) *OrderScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetOrderID sets the "order_id" field.
+func (x *OrderScopedCreate) SetOrderID(v string) *OrderScopedCreate {
+	x.b.SetOrderID(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *OrderScopedCreate) SetContactID(v int64) *OrderScopedCreate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *OrderScopedCreate) SetNillableContactID(v *int64) *OrderScopedCreate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// SetCurrency sets the "currency" field.
+func (x *OrderScopedCreate) SetCurrency(v string) *OrderScopedCreate {
+	x.b.SetCurrency(v)
+	return x
+}
+
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *OrderScopedCreate) SetBroadcastID(v int64) *OrderScopedCreate {
+	x.b.SetBroadcastID(v)
+	return x
+}
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (x *OrderScopedCreate) SetNillableBroadcastID(v *int64) *OrderScopedCreate {
+	x.b.SetNillableBroadcastID(v)
+	return x
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (x *OrderScopedCreate) SetAutomationID(v int64) *OrderScopedCreate {
+	x.b.SetAutomationID(v)
+	return x
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *OrderScopedCreate) SetNillableAutomationID(v *int64) *OrderScopedCreate {
+	x.b.SetNillableAutomationID(v)
+	return x
+}
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (x *OrderScopedCreate) SetCreditedClickAt(v time.Time) *OrderScopedCreate {
+	x.b.SetCreditedClickAt(v)
+	return x
+}
+
+// SetNillableCreditedClickAt sets the "credited_click_at" field if the given value is not nil.
+func (x *OrderScopedCreate) SetNillableCreditedClickAt(v *time.Time) *OrderScopedCreate {
+	x.b.SetNillableCreditedClickAt(v)
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *OrderScopedCreate) SetContact(v *Contact) *OrderScopedCreate {
+	x.b.SetContact(v)
+	return x
+}
+
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedCreate) SetBroadcast(v *Broadcast) *OrderScopedCreate {
+	x.b.SetBroadcast(v)
+	return x
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *OrderScopedCreate) SetAutomation(v *Automation) *OrderScopedCreate {
+	x.b.SetAutomation(v)
+	return x
+}
+
+// AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
+func (x *OrderScopedCreate) AddMovementIDs(ids ...int64) *OrderScopedCreate {
+	x.b.AddMovementIDs(ids...)
+	return x
+}
+
+// AddMovements adds the "movements" edges to the OrderMovement entity.
+func (x *OrderScopedCreate) AddMovements(v ...*OrderMovement) *OrderScopedCreate {
+	x.b.AddMovements(v...)
+	return x
+}
+
+func (x *OrderScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyOrderMovement(ctx, m.MovementsIDs()); err != nil {
+		return fmt.Errorf("movements: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the Order.
+func (x *OrderScopedCreate) Save(ctx context.Context) (*Order, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *OrderScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// OrderScopedCreateBulk creates several Order entities of one Workspace at once.
+type OrderScopedCreateBulk struct {
+	s  *Scoped
+	xs []*OrderScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *OrderScoped) CreateBulk(xs ...*OrderScopedCreate) *OrderScopedCreateBulk {
+	return &OrderScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *OrderScopedCreateBulk) raw(ctx context.Context) (*OrderCreateBulk, error) {
+	builders := make([]*OrderCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("Order: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.Order.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the Order entities.
+func (b *OrderScopedCreateBulk) Save(ctx context.Context) ([]*Order, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *OrderScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// OrderScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type OrderScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *OrderScopedUpsert) SetUpdatedAt(v time.Time) *OrderScopedUpsert {
+	u.u.Set(order.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateUpdatedAt() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldUpdatedAt)
+	return u
+}
+
+// UpdateContactID sets the "contact_id" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateContactID() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldContactID)
+	return u
+}
+
+// ClearContactID clears the value of the "contact_id" field.
+func (u *OrderScopedUpsert) ClearContactID() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldContactID)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *OrderScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(order.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// OrderScopedUpsertOne is the "upsert" of one Order.
+type OrderScopedUpsertOne struct {
+	x *OrderScopedCreate
+	u *OrderUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *OrderScopedCreate) OnConflictColumns(columns ...string) *OrderScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *OrderScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *OrderScopedUpsertOne {
+	return &OrderScopedUpsertOne{x: x, u: x.b.OnConflict((&OrderScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *OrderScopedUpsertOne) UpdateNewValues() *OrderScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *OrderScopedUpsertOne) Ignore() *OrderScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *OrderScopedUpsertOne) DoNothing() *OrderScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *OrderScopedUpsertOne) Update(set func(*OrderScopedUpsert)) *OrderScopedUpsertOne {
+	u.u.Update(func(s *OrderUpsert) { set(&OrderScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *OrderScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *OrderScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// OrderScopedUpsertBulk is the "upsert" of several Order entities.
+type OrderScopedUpsertBulk struct {
+	b       *OrderScopedCreateBulk
+	t       *OrderScoped
+	columns []string
+	opts    []func(*OrderUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *OrderScopedCreateBulk) OnConflictColumns(columns ...string) *OrderScopedUpsertBulk {
+	return &OrderScopedUpsertBulk{b: b, t: &OrderScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *OrderScopedUpsertBulk) UpdateNewValues() *OrderScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OrderUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *OrderScopedUpsertBulk) Ignore() *OrderScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OrderUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *OrderScopedUpsertBulk) DoNothing() *OrderScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OrderUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *OrderScopedUpsertBulk) Update(set func(*OrderScopedUpsert)) *OrderScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OrderUpsertBulk) {
+		r.Update(func(s *OrderUpsert) { set(&OrderScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *OrderScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// OrderScopedUpdateOne wraps OrderUpdateOne. It has no way to move the row to another Workspace.
+type OrderScopedUpdateOne struct {
+	s *Scoped
+	b *OrderUpdateOne
+}
+
+// UpdateOneID updates the Order with the id; a row of another Workspace is not found.
+func (t *OrderScoped) UpdateOneID(id int64) *OrderScopedUpdateOne {
+	return &OrderScopedUpdateOne{s: t.s, b: t.s.c.Order.UpdateOneID(id).Where(order.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *OrderScopedUpdateOne) Where(ps ...predicate.Order) *OrderScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OrderScopedUpdateOne) SetUpdatedAt(v time.Time) *OrderScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *OrderScopedUpdateOne) SetContactID(v int64) *OrderScopedUpdateOne {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableContactID(v *int64) *OrderScopedUpdateOne {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// ClearContactID clears the value of the "contact_id" field.
+func (x *OrderScopedUpdateOne) ClearContactID() *OrderScopedUpdateOne {
+	x.b.ClearContactID()
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *OrderScopedUpdateOne) SetContact(v *Contact) *OrderScopedUpdateOne {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *OrderScopedUpdateOne) ClearContact() *OrderScopedUpdateOne {
+	x.b.ClearContact()
+	return x
+}
+
+// AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
+func (x *OrderScopedUpdateOne) AddMovementIDs(ids ...int64) *OrderScopedUpdateOne {
+	x.b.AddMovementIDs(ids...)
+	return x
+}
+
+// AddMovements adds the "movements" edges to the OrderMovement entity.
+func (x *OrderScopedUpdateOne) AddMovements(v ...*OrderMovement) *OrderScopedUpdateOne {
+	x.b.AddMovements(v...)
+	return x
+}
+
+// ClearMovements clears the "movements" edges to the OrderMovement entity.
+func (x *OrderScopedUpdateOne) ClearMovements() *OrderScopedUpdateOne {
+	x.b.ClearMovements()
+	return x
+}
+
+// RemoveMovementIDs removes the "movements" edge to OrderMovement entities by IDs.
+func (x *OrderScopedUpdateOne) RemoveMovementIDs(ids ...int64) *OrderScopedUpdateOne {
+	x.b.RemoveMovementIDs(ids...)
+	return x
+}
+
+// RemoveMovements removes "movements" edges to OrderMovement entities.
+func (x *OrderScopedUpdateOne) RemoveMovements(v ...*OrderMovement) *OrderScopedUpdateOne {
+	x.b.RemoveMovements(v...)
+	return x
+}
+
+func (x *OrderScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyOrderMovement(ctx, m.MovementsIDs()); err != nil {
+		return fmt.Errorf("movements: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the Order.
+func (x *OrderScopedUpdateOne) Save(ctx context.Context) (*Order, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *OrderScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// OrderScopedUpdate wraps OrderUpdate: a conditional bulk update of one Workspace.
+type OrderScopedUpdate struct {
+	s *Scoped
+	b *OrderUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the Order entities of the Workspace that match the predicates.
+func (t *OrderScoped) Update() *OrderScopedUpdate {
+	return &OrderScopedUpdate{s: t.s, b: t.s.c.Order.Update().Where(order.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *OrderScopedUpdate) Where(ps ...predicate.Order) *OrderScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *OrderScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *OrderScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(order.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OrderScopedUpdate) SetUpdatedAt(v time.Time) *OrderScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetContactID sets the "contact_id" field.
+func (x *OrderScopedUpdate) SetContactID(v int64) *OrderScopedUpdate {
+	x.b.SetContactID(v)
+	return x
+}
+
+// SetNillableContactID sets the "contact_id" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableContactID(v *int64) *OrderScopedUpdate {
+	x.b.SetNillableContactID(v)
+	return x
+}
+
+// ClearContactID clears the value of the "contact_id" field.
+func (x *OrderScopedUpdate) ClearContactID() *OrderScopedUpdate {
+	x.b.ClearContactID()
+	return x
+}
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *OrderScopedUpdate) SetContact(v *Contact) *OrderScopedUpdate {
+	x.b.SetContact(v)
+	return x
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (x *OrderScopedUpdate) ClearContact() *OrderScopedUpdate {
+	x.b.ClearContact()
+	return x
+}
+
+// AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
+func (x *OrderScopedUpdate) AddMovementIDs(ids ...int64) *OrderScopedUpdate {
+	x.b.AddMovementIDs(ids...)
+	return x
+}
+
+// AddMovements adds the "movements" edges to the OrderMovement entity.
+func (x *OrderScopedUpdate) AddMovements(v ...*OrderMovement) *OrderScopedUpdate {
+	x.b.AddMovements(v...)
+	return x
+}
+
+// ClearMovements clears the "movements" edges to the OrderMovement entity.
+func (x *OrderScopedUpdate) ClearMovements() *OrderScopedUpdate {
+	x.b.ClearMovements()
+	return x
+}
+
+// RemoveMovementIDs removes the "movements" edge to OrderMovement entities by IDs.
+func (x *OrderScopedUpdate) RemoveMovementIDs(ids ...int64) *OrderScopedUpdate {
+	x.b.RemoveMovementIDs(ids...)
+	return x
+}
+
+// RemoveMovements removes "movements" edges to OrderMovement entities.
+func (x *OrderScopedUpdate) RemoveMovements(v ...*OrderMovement) *OrderScopedUpdate {
+	x.b.RemoveMovements(v...)
+	return x
+}
+
+func (x *OrderScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
+		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyBroadcast(ctx, m.BroadcastIDs()); err != nil {
+		return fmt.Errorf("broadcast: %w", err)
+	}
+	if err := x.s.verifyAutomation(ctx, m.AutomationIDs()); err != nil {
+		return fmt.Errorf("automation: %w", err)
+	}
+	if err := x.s.verifyOrderMovement(ctx, m.MovementsIDs()); err != nil {
+		return fmt.Errorf("movements: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *OrderScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *OrderScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// OrderMovementScoped reaches OrderMovement entities of one Workspace.
+type OrderMovementScoped struct{ s *Scoped }
+
+// OrderMovement returns the OrderMovement entities of the Workspace.
+func (s *Scoped) OrderMovement() *OrderMovementScoped { return &OrderMovementScoped{s: s} }
+
+// Query returns a OrderMovement query already confined to the Workspace.
+func (t *OrderMovementScoped) Query() *OrderMovementQuery {
+	return t.s.c.OrderMovement.Query().Where(ordermovement.WorkspaceID(t.s.ws))
+}
+
+// Get returns the OrderMovement with the id; a row of another Workspace is not found.
+func (t *OrderMovementScoped) Get(ctx context.Context, id int64) (*OrderMovement, error) {
+	return t.Query().Where(ordermovement.ID(id)).Only(ctx)
+}
+
+// OrderMovementScopedDeleteOne wraps OrderMovementDeleteOne.
+type OrderMovementScopedDeleteOne struct {
+	s *Scoped
+	b *OrderMovementDeleteOne
+}
+
+// DeleteOneID deletes the OrderMovement with the id; a row of another Workspace is not found.
+func (t *OrderMovementScoped) DeleteOneID(id int64) *OrderMovementScopedDeleteOne {
+	return &OrderMovementScopedDeleteOne{s: t.s, b: t.s.c.OrderMovement.DeleteOneID(id).Where(ordermovement.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *OrderMovementScopedDeleteOne) Where(ps ...predicate.OrderMovement) *OrderMovementScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *OrderMovementScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// OrderMovementScopedDelete wraps OrderMovementDelete.
+type OrderMovementScopedDelete struct {
+	s *Scoped
+	b *OrderMovementDelete
+}
+
+// Delete deletes the OrderMovement entities of the Workspace that match the predicates.
+func (t *OrderMovementScoped) Delete() *OrderMovementScopedDelete {
+	return &OrderMovementScopedDelete{s: t.s, b: t.s.c.OrderMovement.Delete().Where(ordermovement.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *OrderMovementScopedDelete) Where(ps ...predicate.OrderMovement) *OrderMovementScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *OrderMovementScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// OrderMovementScopedCreate wraps OrderMovementCreate. It has no way to name a Workspace.
+type OrderMovementScopedCreate struct {
+	s *Scoped
+	b *OrderMovementCreate
+}
+
+// Create starts a OrderMovement in the Workspace.
+func (t *OrderMovementScoped) Create() *OrderMovementScopedCreate {
+	return &OrderMovementScopedCreate{s: t.s, b: t.s.c.OrderMovement.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *OrderMovementScopedCreate) SetCreatedAt(v time.Time) *OrderMovementScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *OrderMovementScopedCreate) SetNillableCreatedAt(v *time.Time) *OrderMovementScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OrderMovementScopedCreate) SetUpdatedAt(v time.Time) *OrderMovementScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *OrderMovementScopedCreate) SetNillableUpdatedAt(v *time.Time) *OrderMovementScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetOrderID sets the "order_id" field.
+func (x *OrderMovementScopedCreate) SetOrderID(v int64) *OrderMovementScopedCreate {
+	x.b.SetOrderID(v)
+	return x
+}
+
+// SetKind sets the "kind" field.
+func (x *OrderMovementScopedCreate) SetKind(v ordermovement.Kind) *OrderMovementScopedCreate {
+	x.b.SetKind(v)
+	return x
+}
+
+// SetAmount sets the "amount" field.
+func (x *OrderMovementScopedCreate) SetAmount(v int64) *OrderMovementScopedCreate {
+	x.b.SetAmount(v)
+	return x
+}
+
+// SetOccurredAt sets the "occurred_at" field.
+func (x *OrderMovementScopedCreate) SetOccurredAt(v time.Time) *OrderMovementScopedCreate {
+	x.b.SetOccurredAt(v)
+	return x
+}
+
+// SetRefundID sets the "refund_id" field.
+func (x *OrderMovementScopedCreate) SetRefundID(v string) *OrderMovementScopedCreate {
+	x.b.SetRefundID(v)
+	return x
+}
+
+// SetNillableRefundID sets the "refund_id" field if the given value is not nil.
+func (x *OrderMovementScopedCreate) SetNillableRefundID(v *string) *OrderMovementScopedCreate {
+	x.b.SetNillableRefundID(v)
+	return x
+}
+
+// SetEventID sets the "event_id" field.
+func (x *OrderMovementScopedCreate) SetEventID(v string) *OrderMovementScopedCreate {
+	x.b.SetEventID(v)
+	return x
+}
+
+// SetNillableEventID sets the "event_id" field if the given value is not nil.
+func (x *OrderMovementScopedCreate) SetNillableEventID(v *string) *OrderMovementScopedCreate {
+	x.b.SetNillableEventID(v)
+	return x
+}
+
+// SetOrder sets the "order" edge to the Order entity.
+func (x *OrderMovementScopedCreate) SetOrder(v *Order) *OrderMovementScopedCreate {
+	x.b.SetOrder(v)
+	return x
+}
+
+func (x *OrderMovementScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOrder(ctx, m.OrderIDs()); err != nil {
+		return fmt.Errorf("order: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the OrderMovement.
+func (x *OrderMovementScopedCreate) Save(ctx context.Context) (*OrderMovement, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *OrderMovementScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// OrderMovementScopedCreateBulk creates several OrderMovement entities of one Workspace at once.
+type OrderMovementScopedCreateBulk struct {
+	s  *Scoped
+	xs []*OrderMovementScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *OrderMovementScoped) CreateBulk(xs ...*OrderMovementScopedCreate) *OrderMovementScopedCreateBulk {
+	return &OrderMovementScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *OrderMovementScopedCreateBulk) raw(ctx context.Context) (*OrderMovementCreateBulk, error) {
+	builders := make([]*OrderMovementCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("OrderMovement: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.OrderMovement.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the OrderMovement entities.
+func (b *OrderMovementScopedCreateBulk) Save(ctx context.Context) ([]*OrderMovement, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *OrderMovementScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// OrderMovementScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type OrderMovementScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *OrderMovementScopedUpsert) SetUpdatedAt(v time.Time) *OrderMovementScopedUpsert {
+	u.u.Set(ordermovement.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *OrderMovementScopedUpsert) UpdateUpdatedAt() *OrderMovementScopedUpsert {
+	u.u.SetExcluded(ordermovement.FieldUpdatedAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *OrderMovementScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(ordermovement.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// OrderMovementScopedUpsertOne is the "upsert" of one OrderMovement.
+type OrderMovementScopedUpsertOne struct {
+	x *OrderMovementScopedCreate
+	u *OrderMovementUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *OrderMovementScopedCreate) OnConflictColumns(columns ...string) *OrderMovementScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *OrderMovementScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *OrderMovementScopedUpsertOne {
+	return &OrderMovementScopedUpsertOne{x: x, u: x.b.OnConflict((&OrderMovementScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *OrderMovementScopedUpsertOne) UpdateNewValues() *OrderMovementScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *OrderMovementScopedUpsertOne) Ignore() *OrderMovementScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *OrderMovementScopedUpsertOne) DoNothing() *OrderMovementScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *OrderMovementScopedUpsertOne) Update(set func(*OrderMovementScopedUpsert)) *OrderMovementScopedUpsertOne {
+	u.u.Update(func(s *OrderMovementUpsert) { set(&OrderMovementScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *OrderMovementScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *OrderMovementScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// OrderMovementScopedUpsertBulk is the "upsert" of several OrderMovement entities.
+type OrderMovementScopedUpsertBulk struct {
+	b       *OrderMovementScopedCreateBulk
+	t       *OrderMovementScoped
+	columns []string
+	opts    []func(*OrderMovementUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *OrderMovementScopedCreateBulk) OnConflictColumns(columns ...string) *OrderMovementScopedUpsertBulk {
+	return &OrderMovementScopedUpsertBulk{b: b, t: &OrderMovementScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *OrderMovementScopedUpsertBulk) UpdateNewValues() *OrderMovementScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OrderMovementUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *OrderMovementScopedUpsertBulk) Ignore() *OrderMovementScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OrderMovementUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *OrderMovementScopedUpsertBulk) DoNothing() *OrderMovementScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OrderMovementUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *OrderMovementScopedUpsertBulk) Update(set func(*OrderMovementScopedUpsert)) *OrderMovementScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OrderMovementUpsertBulk) {
+		r.Update(func(s *OrderMovementUpsert) { set(&OrderMovementScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *OrderMovementScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// OrderMovementScopedUpdateOne wraps OrderMovementUpdateOne. It has no way to move the row to another Workspace.
+type OrderMovementScopedUpdateOne struct {
+	s *Scoped
+	b *OrderMovementUpdateOne
+}
+
+// UpdateOneID updates the OrderMovement with the id; a row of another Workspace is not found.
+func (t *OrderMovementScoped) UpdateOneID(id int64) *OrderMovementScopedUpdateOne {
+	return &OrderMovementScopedUpdateOne{s: t.s, b: t.s.c.OrderMovement.UpdateOneID(id).Where(ordermovement.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *OrderMovementScopedUpdateOne) Where(ps ...predicate.OrderMovement) *OrderMovementScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OrderMovementScopedUpdateOne) SetUpdatedAt(v time.Time) *OrderMovementScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *OrderMovementScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOrder(ctx, m.OrderIDs()); err != nil {
+		return fmt.Errorf("order: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the OrderMovement.
+func (x *OrderMovementScopedUpdateOne) Save(ctx context.Context) (*OrderMovement, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *OrderMovementScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// OrderMovementScopedUpdate wraps OrderMovementUpdate: a conditional bulk update of one Workspace.
+type OrderMovementScopedUpdate struct {
+	s *Scoped
+	b *OrderMovementUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the OrderMovement entities of the Workspace that match the predicates.
+func (t *OrderMovementScoped) Update() *OrderMovementScopedUpdate {
+	return &OrderMovementScopedUpdate{s: t.s, b: t.s.c.OrderMovement.Update().Where(ordermovement.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *OrderMovementScopedUpdate) Where(ps ...predicate.OrderMovement) *OrderMovementScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *OrderMovementScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *OrderMovementScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(ordermovement.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OrderMovementScopedUpdate) SetUpdatedAt(v time.Time) *OrderMovementScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+func (x *OrderMovementScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyOrder(ctx, m.OrderIDs()); err != nil {
+		return fmt.Errorf("order: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *OrderMovementScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *OrderMovementScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

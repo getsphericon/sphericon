@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/aggregates"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
+	"github.com/getsphericon/sphericon/internal/orders"
 )
 
 // Report is an Automation's engagement figures. Every open and click is an Event (ADR 0053), so
@@ -24,6 +25,9 @@ type Report struct {
 	// Captured counts the messages that went through a sender delivering nowhere outside (a Test
 	// inbox): captured, not delivered.
 	Captured int
+	// Revenue is the Orders credited to the Automation and their net revenue in the Reporting
+	// currency (ADR 0064), nil Currency until it is chosen.
+	Revenue orders.Figures
 	// Links counts the clicks by link, most clicked first.
 	Links []linkclicks.Clicks
 }
@@ -66,7 +70,11 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64) (Report,
 	if err != nil {
 		return Report{}, err
 	}
-	report := Report{Opens: opens, Clicks: linkclicks.Total(links), Links: links}
+	revenue, err := orders.CreditedToAutomations(ctx, s, id)
+	if err != nil {
+		return Report{}, err
+	}
+	report := Report{Opens: opens, Clicks: linkclicks.Total(links), Links: links, Revenue: revenue.Only(id)}
 	if len(results) > 0 {
 		report.Delivered, report.Bounced, report.Complained = results[0].Delivered, results[0].Bounced, results[0].Complained
 		report.Captured = results[0].Captured

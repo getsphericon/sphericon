@@ -11,6 +11,7 @@ import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { DangerZoneSection } from './DangerZoneSection.tsx'
+import { RevenueSettingsSection } from './RevenueSettingsSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 // GeneralSection is split out so the rename form seeds its initial value from the
@@ -128,6 +129,7 @@ export function GeneralPage() {
         <Stack gap="xl">
           <GeneralSection workspace={workspace} />
           <TimezoneSection workspace={workspace} />
+          <RevenueSettingsSection workspace={workspace} />
           <DangerZoneSection workspace={workspace} />
         </Stack>
       )}

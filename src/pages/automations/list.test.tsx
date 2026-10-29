@@ -27,6 +27,7 @@ const WELCOME: SiteAutomationResource = {
   status: 'active',
   triggerEvent: 'contact.created',
   steps: [],
+  revenue: { reportingCurrency: 'USD', orders: 2, amount: 9900 },
   createdAt: NOW,
   updatedAt: NOW,
 }
@@ -36,6 +37,7 @@ const NURTURE: SiteAutomationResource = {
   name: 'Nurture flow',
   status: 'draft',
   triggerEvent: 'email.opened',
+  revenue: { reportingCurrency: null, orders: 0, amount: 0 },
 }
 
 test('lists automations with their status', async () => {
@@ -51,6 +53,20 @@ test('lists automations with their status', async () => {
   await expect.element(screen.getByText('Nurture flow')).toBeInTheDocument()
   await expect.element(screen.getByText('Active', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Draft', { exact: true })).toBeInTheDocument()
+})
+
+test('shows the orders and revenue of an automation and none while the currency is unset', async () => {
+  worker.use(
+    handleSiteAutomationsList(() =>
+      HttpResponse.json({ items: [WELCOME, NURTURE], totalItems: 2 }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('$99.00')).toBeInTheDocument()
+  await expect.element(screen.getByText('2', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('$0.00')).not.toBeInTheDocument()
 })
 
 test('shows the empty state when there are no automations', async () => {

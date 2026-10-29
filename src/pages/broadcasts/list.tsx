@@ -21,6 +21,7 @@ import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspace
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
+import { messageRevenueCells } from '../../utils/messageRevenue.ts'
 import { BroadcastHoldBadge } from './BroadcastHold.tsx'
 
 const STATUS_COLORS: Record<SiteBroadcastStatus, string> = {
@@ -122,6 +123,16 @@ export function BroadcastsListPage() {
             accessor: 'opened',
             title: t(($) => $.broadcasts.openedLabel),
             render: (record) => record.stats.openedCount,
+          },
+          {
+            accessor: 'orders',
+            title: t(($) => $.messageRevenue.orders),
+            render: (record) => messageRevenueCells(record.stats.revenue).orders,
+          },
+          {
+            accessor: 'revenue',
+            title: t(($) => $.messageRevenue.revenue),
+            render: (record) => messageRevenueCells(record.stats.revenue).revenue,
           },
           {
             accessor: 'actions',

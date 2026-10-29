@@ -26,11 +26,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
@@ -167,6 +170,34 @@ func (_c *WorkspaceCreate) SetTimezone(v string) *WorkspaceCreate {
 func (_c *WorkspaceCreate) SetNillableTimezone(v *string) *WorkspaceCreate {
 	if v != nil {
 		_c.SetTimezone(*v)
+	}
+	return _c
+}
+
+// SetReportingCurrency sets the "reporting_currency" field.
+func (_c *WorkspaceCreate) SetReportingCurrency(v string) *WorkspaceCreate {
+	_c.mutation.SetReportingCurrency(v)
+	return _c
+}
+
+// SetNillableReportingCurrency sets the "reporting_currency" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableReportingCurrency(v *string) *WorkspaceCreate {
+	if v != nil {
+		_c.SetReportingCurrency(*v)
+	}
+	return _c
+}
+
+// SetAttributionWindowDays sets the "attribution_window_days" field.
+func (_c *WorkspaceCreate) SetAttributionWindowDays(v int) *WorkspaceCreate {
+	_c.mutation.SetAttributionWindowDays(v)
+	return _c
+}
+
+// SetNillableAttributionWindowDays sets the "attribution_window_days" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableAttributionWindowDays(v *int) *WorkspaceCreate {
+	if v != nil {
+		_c.SetAttributionWindowDays(*v)
 	}
 	return _c
 }
@@ -418,6 +449,51 @@ func (_c *WorkspaceCreate) AddEvents(v ...*Event) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddEventIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (_c *WorkspaceCreate) AddOrderIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddOrderIDs(ids...)
+	return _c
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (_c *WorkspaceCreate) AddOrders(v ...*Order) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOrderIDs(ids...)
+}
+
+// AddOrderMovementIDs adds the "order_movements" edge to the OrderMovement entity by IDs.
+func (_c *WorkspaceCreate) AddOrderMovementIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddOrderMovementIDs(ids...)
+	return _c
+}
+
+// AddOrderMovements adds the "order_movements" edges to the OrderMovement entity.
+func (_c *WorkspaceCreate) AddOrderMovements(v ...*OrderMovement) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOrderMovementIDs(ids...)
+}
+
+// AddHeldOrderEventIDs adds the "held_order_events" edge to the HeldOrderEvent entity by IDs.
+func (_c *WorkspaceCreate) AddHeldOrderEventIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddHeldOrderEventIDs(ids...)
+	return _c
+}
+
+// AddHeldOrderEvents adds the "held_order_events" edges to the HeldOrderEvent entity.
+func (_c *WorkspaceCreate) AddHeldOrderEvents(v ...*HeldOrderEvent) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddHeldOrderEventIDs(ids...)
 }
 
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
@@ -891,6 +967,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultPostalAddress
 		_c.mutation.SetPostalAddress(v)
 	}
+	if _, ok := _c.mutation.AttributionWindowDays(); !ok {
+		v := workspace.DefaultAttributionWindowDays
+		_c.mutation.SetAttributionWindowDays(v)
+	}
 	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
 		v := workspace.DefaultDomainJoinEnabled
 		_c.mutation.SetDomainJoinEnabled(v)
@@ -943,6 +1023,19 @@ func (_c *WorkspaceCreate) check() error {
 	if v, ok := _c.mutation.Timezone(); ok {
 		if err := workspace.TimezoneValidator(v); err != nil {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ReportingCurrency(); ok {
+		if err := workspace.ReportingCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "reporting_currency", err: fmt.Errorf(`ent: validator failed for field "Workspace.reporting_currency": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.AttributionWindowDays(); !ok {
+		return &ValidationError{Name: "attribution_window_days", err: errors.New(`ent: missing required field "Workspace.attribution_window_days"`)}
+	}
+	if v, ok := _c.mutation.AttributionWindowDays(); ok {
+		if err := workspace.AttributionWindowDaysValidator(v); err != nil {
+			return &ValidationError{Name: "attribution_window_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.attribution_window_days": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
@@ -1031,6 +1124,14 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Timezone(); ok {
 		_spec.SetField(workspace.FieldTimezone, field.TypeString, value)
 		_node.Timezone = &value
+	}
+	if value, ok := _c.mutation.ReportingCurrency(); ok {
+		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
+		_node.ReportingCurrency = &value
+	}
+	if value, ok := _c.mutation.AttributionWindowDays(); ok {
+		_spec.SetField(workspace.FieldAttributionWindowDays, field.TypeInt, value)
+		_node.AttributionWindowDays = value
 	}
 	if value, ok := _c.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
@@ -1153,6 +1254,54 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrdersTable,
+			Columns: []string{workspace.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OrderMovementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrderMovementsTable,
+			Columns: []string{workspace.OrderMovementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ordermovement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.HeldOrderEventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HeldOrderEventsTable,
+			Columns: []string{workspace.HeldOrderEventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(heldorderevent.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1786,6 +1935,42 @@ func (u *WorkspaceUpsert) ClearTimezone() *WorkspaceUpsert {
 	return u
 }
 
+// SetReportingCurrency sets the "reporting_currency" field.
+func (u *WorkspaceUpsert) SetReportingCurrency(v string) *WorkspaceUpsert {
+	u.Set(workspace.FieldReportingCurrency, v)
+	return u
+}
+
+// UpdateReportingCurrency sets the "reporting_currency" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateReportingCurrency() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldReportingCurrency)
+	return u
+}
+
+// ClearReportingCurrency clears the value of the "reporting_currency" field.
+func (u *WorkspaceUpsert) ClearReportingCurrency() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldReportingCurrency)
+	return u
+}
+
+// SetAttributionWindowDays sets the "attribution_window_days" field.
+func (u *WorkspaceUpsert) SetAttributionWindowDays(v int) *WorkspaceUpsert {
+	u.Set(workspace.FieldAttributionWindowDays, v)
+	return u
+}
+
+// UpdateAttributionWindowDays sets the "attribution_window_days" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateAttributionWindowDays() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldAttributionWindowDays)
+	return u
+}
+
+// AddAttributionWindowDays adds v to the "attribution_window_days" field.
+func (u *WorkspaceUpsert) AddAttributionWindowDays(v int) *WorkspaceUpsert {
+	u.Add(workspace.FieldAttributionWindowDays, v)
+	return u
+}
+
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
 func (u *WorkspaceUpsert) SetDomainJoinEnabled(v bool) *WorkspaceUpsert {
 	u.Set(workspace.FieldDomainJoinEnabled, v)
@@ -2188,6 +2373,48 @@ func (u *WorkspaceUpsertOne) UpdateTimezone() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearTimezone() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetReportingCurrency sets the "reporting_currency" field.
+func (u *WorkspaceUpsertOne) SetReportingCurrency(v string) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetReportingCurrency(v)
+	})
+}
+
+// UpdateReportingCurrency sets the "reporting_currency" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateReportingCurrency() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateReportingCurrency()
+	})
+}
+
+// ClearReportingCurrency clears the value of the "reporting_currency" field.
+func (u *WorkspaceUpsertOne) ClearReportingCurrency() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearReportingCurrency()
+	})
+}
+
+// SetAttributionWindowDays sets the "attribution_window_days" field.
+func (u *WorkspaceUpsertOne) SetAttributionWindowDays(v int) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetAttributionWindowDays(v)
+	})
+}
+
+// AddAttributionWindowDays adds v to the "attribution_window_days" field.
+func (u *WorkspaceUpsertOne) AddAttributionWindowDays(v int) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddAttributionWindowDays(v)
+	})
+}
+
+// UpdateAttributionWindowDays sets the "attribution_window_days" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateAttributionWindowDays() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateAttributionWindowDays()
 	})
 }
 
@@ -2793,6 +3020,48 @@ func (u *WorkspaceUpsertBulk) UpdateTimezone() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearTimezone() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetReportingCurrency sets the "reporting_currency" field.
+func (u *WorkspaceUpsertBulk) SetReportingCurrency(v string) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetReportingCurrency(v)
+	})
+}
+
+// UpdateReportingCurrency sets the "reporting_currency" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateReportingCurrency() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateReportingCurrency()
+	})
+}
+
+// ClearReportingCurrency clears the value of the "reporting_currency" field.
+func (u *WorkspaceUpsertBulk) ClearReportingCurrency() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearReportingCurrency()
+	})
+}
+
+// SetAttributionWindowDays sets the "attribution_window_days" field.
+func (u *WorkspaceUpsertBulk) SetAttributionWindowDays(v int) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetAttributionWindowDays(v)
+	})
+}
+
+// AddAttributionWindowDays adds v to the "attribution_window_days" field.
+func (u *WorkspaceUpsertBulk) AddAttributionWindowDays(v int) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddAttributionWindowDays(v)
+	})
+}
+
+// UpdateAttributionWindowDays sets the "attribution_window_days" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateAttributionWindowDays() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateAttributionWindowDays()
 	})
 }
 

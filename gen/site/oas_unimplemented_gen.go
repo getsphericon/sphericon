@@ -58,6 +58,16 @@ func (UnimplementedHandler) SiteAnalyticsOverview(ctx context.Context, params Si
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAnalyticsRevenue implements SiteAnalytics_revenue operation.
+//
+// Revenue of the Workspace's Orders over the range, in its Reporting currency (ADR 0064). Open to
+// every member.
+//
+// GET /workspaces/{workspaceId}/analytics/revenue
+func (UnimplementedHandler) SiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (r SiteAnalyticsRevenueRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAnalyticsSubscribedPeople implements SiteAnalytics_subscribedPeople operation.
 //
 // Subscribed people report: who subscribed and unsubscribed per Report day, and how many are
@@ -1748,6 +1758,16 @@ func (UnimplementedHandler) SiteWorkspacesDelete(ctx context.Context, req *SiteD
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesGetRevenueSettings implements SiteWorkspaces_getRevenueSettings operation.
+//
+// Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
+// Attribution window. Open to every member.
+//
+// GET /workspaces/{workspaceId}/revenue-settings
+func (UnimplementedHandler) SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (r SiteWorkspacesGetRevenueSettingsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesLeave implements SiteWorkspaces_leave operation.
 //
 // Leave a Workspace (any Role): the caller's own Membership is removed at once, with no Owner involved
@@ -1819,5 +1839,16 @@ func (UnimplementedHandler) SiteWorkspacesSetTimezone(ctx context.Context, req *
 //
 // PUT /workspaces/{workspaceId}
 func (UnimplementedHandler) SiteWorkspacesUpdate(ctx context.Context, req *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (r SiteWorkspacesUpdateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteWorkspacesUpdateRevenueSettings implements SiteWorkspaces_updateRevenueSettings operation.
+//
+// Change the Reporting currency and the Attribution window (Owner and Admin only, Permission
+// `revenue:configure`, ADR 0061). 422 for a currency code that is not in ISO 4217 or a window outside
+// its bounds. Every change is recorded as an Audit entry naming who changed what.
+//
+// PUT /workspaces/{workspaceId}/revenue-settings
+func (UnimplementedHandler) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (r SiteWorkspacesUpdateRevenueSettingsRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

@@ -35,6 +35,10 @@ const (
 	FieldRetentionDays = "retention_days"
 	// FieldTimezone holds the string denoting the timezone field in the database.
 	FieldTimezone = "timezone"
+	// FieldReportingCurrency holds the string denoting the reporting_currency field in the database.
+	FieldReportingCurrency = "reporting_currency"
+	// FieldAttributionWindowDays holds the string denoting the attribution_window_days field in the database.
+	FieldAttributionWindowDays = "attribution_window_days"
 	// FieldDomainJoinEnabled holds the string denoting the domain_join_enabled field in the database.
 	FieldDomainJoinEnabled = "domain_join_enabled"
 	// FieldSecondFactorRequiredAt holds the string denoting the second_factor_required_at field in the database.
@@ -69,6 +73,12 @@ const (
 	EdgeSegments = "segments"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
 	EdgeEvents = "events"
+	// EdgeOrders holds the string denoting the orders edge name in mutations.
+	EdgeOrders = "orders"
+	// EdgeOrderMovements holds the string denoting the order_movements edge name in mutations.
+	EdgeOrderMovements = "order_movements"
+	// EdgeHeldOrderEvents holds the string denoting the held_order_events edge name in mutations.
+	EdgeHeldOrderEvents = "held_order_events"
 	// EdgeVisitors holds the string denoting the visitors edge name in mutations.
 	EdgeVisitors = "visitors"
 	// EdgeAPITokens holds the string denoting the api_tokens edge name in mutations.
@@ -162,6 +172,27 @@ const (
 	EventsInverseTable = "events"
 	// EventsColumn is the table column denoting the events relation/edge.
 	EventsColumn = "workspace_id"
+	// OrdersTable is the table that holds the orders relation/edge.
+	OrdersTable = "orders"
+	// OrdersInverseTable is the table name for the Order entity.
+	// It exists in this package in order to avoid circular dependency with the "order" package.
+	OrdersInverseTable = "orders"
+	// OrdersColumn is the table column denoting the orders relation/edge.
+	OrdersColumn = "workspace_id"
+	// OrderMovementsTable is the table that holds the order_movements relation/edge.
+	OrderMovementsTable = "order_movements"
+	// OrderMovementsInverseTable is the table name for the OrderMovement entity.
+	// It exists in this package in order to avoid circular dependency with the "ordermovement" package.
+	OrderMovementsInverseTable = "order_movements"
+	// OrderMovementsColumn is the table column denoting the order_movements relation/edge.
+	OrderMovementsColumn = "workspace_id"
+	// HeldOrderEventsTable is the table that holds the held_order_events relation/edge.
+	HeldOrderEventsTable = "held_order_events"
+	// HeldOrderEventsInverseTable is the table name for the HeldOrderEvent entity.
+	// It exists in this package in order to avoid circular dependency with the "heldorderevent" package.
+	HeldOrderEventsInverseTable = "held_order_events"
+	// HeldOrderEventsColumn is the table column denoting the held_order_events relation/edge.
+	HeldOrderEventsColumn = "workspace_id"
 	// VisitorsTable is the table that holds the visitors relation/edge.
 	VisitorsTable = "visitors"
 	// VisitorsInverseTable is the table name for the Visitor entity.
@@ -373,6 +404,8 @@ var Columns = []string{
 	FieldPostalAddress,
 	FieldRetentionDays,
 	FieldTimezone,
+	FieldReportingCurrency,
+	FieldAttributionWindowDays,
 	FieldDomainJoinEnabled,
 	FieldSecondFactorRequiredAt,
 	FieldFeedPosition,
@@ -416,6 +449,12 @@ var (
 	RetentionDaysValidator func(int) error
 	// TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	TimezoneValidator func(string) error
+	// ReportingCurrencyValidator is a validator for the "reporting_currency" field. It is called by the builders before save.
+	ReportingCurrencyValidator func(string) error
+	// DefaultAttributionWindowDays holds the default value on creation for the "attribution_window_days" field.
+	DefaultAttributionWindowDays int
+	// AttributionWindowDaysValidator is a validator for the "attribution_window_days" field. It is called by the builders before save.
+	AttributionWindowDaysValidator func(int) error
 	// DefaultDomainJoinEnabled holds the default value on creation for the "domain_join_enabled" field.
 	DefaultDomainJoinEnabled bool
 	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
@@ -504,6 +543,16 @@ func ByRetentionDays(opts ...sql.OrderTermOption) OrderOption {
 // ByTimezone orders the results by the timezone field.
 func ByTimezone(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTimezone, opts...).ToFunc()
+}
+
+// ByReportingCurrency orders the results by the reporting_currency field.
+func ByReportingCurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReportingCurrency, opts...).ToFunc()
+}
+
+// ByAttributionWindowDays orders the results by the attribution_window_days field.
+func ByAttributionWindowDays(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAttributionWindowDays, opts...).ToFunc()
 }
 
 // ByDomainJoinEnabled orders the results by the domain_join_enabled field.
@@ -633,6 +682,48 @@ func ByEventsCount(opts ...sql.OrderTermOption) OrderOption {
 func ByEvents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newEventsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOrdersCount orders the results by orders count.
+func ByOrdersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOrdersStep(), opts...)
+	}
+}
+
+// ByOrders orders the results by orders terms.
+func ByOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrdersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOrderMovementsCount orders the results by order_movements count.
+func ByOrderMovementsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOrderMovementsStep(), opts...)
+	}
+}
+
+// ByOrderMovements orders the results by order_movements terms.
+func ByOrderMovements(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrderMovementsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByHeldOrderEventsCount orders the results by held_order_events count.
+func ByHeldOrderEventsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newHeldOrderEventsStep(), opts...)
+	}
+}
+
+// ByHeldOrderEvents orders the results by held_order_events terms.
+func ByHeldOrderEvents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHeldOrderEventsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1060,6 +1151,27 @@ func newEventsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EventsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EventsTable, EventsColumn),
+	)
+}
+func newOrdersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrdersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+	)
+}
+func newOrderMovementsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrderMovementsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OrderMovementsTable, OrderMovementsColumn),
+	)
+}
+func newHeldOrderEventsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HeldOrderEventsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, HeldOrderEventsTable, HeldOrderEventsColumn),
 	)
 }
 func newVisitorsStep() *sqlgraph.Step {

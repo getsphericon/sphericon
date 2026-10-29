@@ -57,11 +57,13 @@ type ContactEdges struct {
 	Tags []*Tag `json:"tags,omitempty"`
 	// Events holds the value of the events edge.
 	Events []*Event `json:"events,omitempty"`
+	// Orders holds the value of the orders edge.
+	Orders []*Order `json:"orders,omitempty"`
 	// ContactTags holds the value of the contact_tags edge.
 	ContactTags []*ContactTag `json:"contact_tags,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -102,10 +104,19 @@ func (e ContactEdges) EventsOrErr() ([]*Event, error) {
 	return nil, &NotLoadedError{edge: "events"}
 }
 
+// OrdersOrErr returns the Orders value or an error if the edge
+// was not loaded in eager-loading.
+func (e ContactEdges) OrdersOrErr() ([]*Order, error) {
+	if e.loadedTypes[4] {
+		return e.Orders, nil
+	}
+	return nil, &NotLoadedError{edge: "orders"}
+}
+
 // ContactTagsOrErr returns the ContactTags value or an error if the edge
 // was not loaded in eager-loading.
 func (e ContactEdges) ContactTagsOrErr() ([]*ContactTag, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.ContactTags, nil
 	}
 	return nil, &NotLoadedError{edge: "contact_tags"}
@@ -251,6 +262,11 @@ func (_m *Contact) QueryTags() *TagQuery {
 // QueryEvents queries the "events" edge of the Contact entity.
 func (_m *Contact) QueryEvents() *EventQuery {
 	return NewContactClient(_m.config).QueryEvents(_m)
+}
+
+// QueryOrders queries the "orders" edge of the Contact entity.
+func (_m *Contact) QueryOrders() *OrderQuery {
+	return NewContactClient(_m.config).QueryOrders(_m)
 }
 
 // QueryContactTags queries the "contact_tags" edge of the Contact entity.

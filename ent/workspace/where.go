@@ -105,6 +105,16 @@ func Timezone(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldTimezone, v))
 }
 
+// ReportingCurrency applies equality check predicate on the "reporting_currency" field. It's identical to ReportingCurrencyEQ.
+func ReportingCurrency(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldReportingCurrency, v))
+}
+
+// AttributionWindowDays applies equality check predicate on the "attribution_window_days" field. It's identical to AttributionWindowDaysEQ.
+func AttributionWindowDays(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldAttributionWindowDays, v))
+}
+
 // DomainJoinEnabled applies equality check predicate on the "domain_join_enabled" field. It's identical to DomainJoinEnabledEQ.
 func DomainJoinEnabled(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldDomainJoinEnabled, v))
@@ -693,6 +703,121 @@ func TimezoneEqualFold(v string) predicate.Workspace {
 // TimezoneContainsFold applies the ContainsFold predicate on the "timezone" field.
 func TimezoneContainsFold(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldContainsFold(FieldTimezone, v))
+}
+
+// ReportingCurrencyEQ applies the EQ predicate on the "reporting_currency" field.
+func ReportingCurrencyEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyNEQ applies the NEQ predicate on the "reporting_currency" field.
+func ReportingCurrencyNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyIn applies the In predicate on the "reporting_currency" field.
+func ReportingCurrencyIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldReportingCurrency, vs...))
+}
+
+// ReportingCurrencyNotIn applies the NotIn predicate on the "reporting_currency" field.
+func ReportingCurrencyNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldReportingCurrency, vs...))
+}
+
+// ReportingCurrencyGT applies the GT predicate on the "reporting_currency" field.
+func ReportingCurrencyGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyGTE applies the GTE predicate on the "reporting_currency" field.
+func ReportingCurrencyGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyLT applies the LT predicate on the "reporting_currency" field.
+func ReportingCurrencyLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyLTE applies the LTE predicate on the "reporting_currency" field.
+func ReportingCurrencyLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyContains applies the Contains predicate on the "reporting_currency" field.
+func ReportingCurrencyContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyHasPrefix applies the HasPrefix predicate on the "reporting_currency" field.
+func ReportingCurrencyHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyHasSuffix applies the HasSuffix predicate on the "reporting_currency" field.
+func ReportingCurrencyHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyIsNil applies the IsNil predicate on the "reporting_currency" field.
+func ReportingCurrencyIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldReportingCurrency))
+}
+
+// ReportingCurrencyNotNil applies the NotNil predicate on the "reporting_currency" field.
+func ReportingCurrencyNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldReportingCurrency))
+}
+
+// ReportingCurrencyEqualFold applies the EqualFold predicate on the "reporting_currency" field.
+func ReportingCurrencyEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldReportingCurrency, v))
+}
+
+// ReportingCurrencyContainsFold applies the ContainsFold predicate on the "reporting_currency" field.
+func ReportingCurrencyContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldReportingCurrency, v))
+}
+
+// AttributionWindowDaysEQ applies the EQ predicate on the "attribution_window_days" field.
+func AttributionWindowDaysEQ(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldAttributionWindowDays, v))
+}
+
+// AttributionWindowDaysNEQ applies the NEQ predicate on the "attribution_window_days" field.
+func AttributionWindowDaysNEQ(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldAttributionWindowDays, v))
+}
+
+// AttributionWindowDaysIn applies the In predicate on the "attribution_window_days" field.
+func AttributionWindowDaysIn(vs ...int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldAttributionWindowDays, vs...))
+}
+
+// AttributionWindowDaysNotIn applies the NotIn predicate on the "attribution_window_days" field.
+func AttributionWindowDaysNotIn(vs ...int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldAttributionWindowDays, vs...))
+}
+
+// AttributionWindowDaysGT applies the GT predicate on the "attribution_window_days" field.
+func AttributionWindowDaysGT(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldAttributionWindowDays, v))
+}
+
+// AttributionWindowDaysGTE applies the GTE predicate on the "attribution_window_days" field.
+func AttributionWindowDaysGTE(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldAttributionWindowDays, v))
+}
+
+// AttributionWindowDaysLT applies the LT predicate on the "attribution_window_days" field.
+func AttributionWindowDaysLT(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldAttributionWindowDays, v))
+}
+
+// AttributionWindowDaysLTE applies the LTE predicate on the "attribution_window_days" field.
+func AttributionWindowDaysLTE(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldAttributionWindowDays, v))
 }
 
 // DomainJoinEnabledEQ applies the EQ predicate on the "domain_join_enabled" field.
@@ -1342,6 +1467,75 @@ func HasEvents() predicate.Workspace {
 func HasEventsWith(preds ...predicate.Event) predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
 		step := newEventsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOrders applies the HasEdge predicate on the "orders" edge.
+func HasOrders() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrdersTable, OrdersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrdersWith applies the HasEdge predicate on the "orders" edge with a given conditions (other predicates).
+func HasOrdersWith(preds ...predicate.Order) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newOrdersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOrderMovements applies the HasEdge predicate on the "order_movements" edge.
+func HasOrderMovements() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrderMovementsTable, OrderMovementsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrderMovementsWith applies the HasEdge predicate on the "order_movements" edge with a given conditions (other predicates).
+func HasOrderMovementsWith(preds ...predicate.OrderMovement) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newOrderMovementsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasHeldOrderEvents applies the HasEdge predicate on the "held_order_events" edge.
+func HasHeldOrderEvents() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, HeldOrderEventsTable, HeldOrderEventsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasHeldOrderEventsWith applies the HasEdge predicate on the "held_order_events" edge with a given conditions (other predicates).
+func HasHeldOrderEventsWith(preds ...predicate.HeldOrderEvent) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newHeldOrderEventsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

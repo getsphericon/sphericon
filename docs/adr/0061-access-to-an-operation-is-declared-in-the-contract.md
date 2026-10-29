@@ -76,6 +76,7 @@ surface, and refused unless declared.
 | `second_factor:manage`   | the Two-factor requirement, resetting a Second factor |   ✓   |   ✓   |        |
 | `workspace:update`       | name and postal address                               |   ✓   |   ✓   |        |
 | `workspace:timezone`     | the Workspace time zone                               |   ✓   |   ✓   |        |
+| `revenue:configure`      | the Reporting currency and the Attribution window     |   ✓   |   ✓   |        |
 | `brand_kit:manage`       | the Brand kit and its starter Templates               |   ✓   |   ✓   |        |
 | `join_domains:manage`    | Join domains and the Domain join switch               |   ✓   |   ✓   |        |
 | `account_link:open`      | the Account link, which proves who an Owner is        |   ✓   |       |        |

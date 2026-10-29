@@ -45,6 +45,17 @@ func (env *TestEnv) DeliverToEE(t *testing.T) {
 	}
 }
 
+// DeliverOrders hands every envelope on this test's outbox to the orders subscriber, as the
+// router would (no router runs under txdb). Each call redelivers the whole outbox, so calling it
+// twice exercises at-least-once redelivery.
+func (env *TestEnv) DeliverOrders(t *testing.T) {
+	t.Helper()
+	envelopes := env.OutboxEnvelopes(t)
+	for i := range envelopes {
+		require.NoError(t, events.RecordOrder(t.Context(), env.DB, env.orders, envelopes[i]))
+	}
+}
+
 // OutboxEvents is OutboxEnvelopes decoded into their typed events.
 func (env *TestEnv) OutboxEvents(t *testing.T, names ...string) []events.DomainEvent {
 	t.Helper()

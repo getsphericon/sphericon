@@ -3667,6 +3667,60 @@
         "tags": ["Site Analytics"]
       }
     },
+    "/workspaces/{workspaceId}/analytics/revenue": {
+      "get": {
+        "operationId": "SiteAnalytics_revenue",
+        "description": "Revenue of the Workspace's Orders over the range, in its Reporting currency (ADR 0064).\nOpen to every member.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "description": "Window to sum over (defaults to 30d)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SiteAnalyticsRange"
+                }
+              ],
+              "default": "30d"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAnalyticsRevenue"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Analytics"]
+      }
+    },
     "/workspaces/{workspaceId}/analytics/subscribed-people": {
       "get": {
         "operationId": "SiteAnalytics_subscribedPeople",
@@ -8235,6 +8289,112 @@
         "tags": ["Site Workspaces"]
       }
     },
+    "/workspaces/{workspaceId}/revenue-settings": {
+      "get": {
+        "operationId": "SiteWorkspaces_getRevenueSettings",
+        "description": "Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the\nAttribution window. Open to every member.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteRevenueSettingsResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"]
+      },
+      "put": {
+        "operationId": "SiteWorkspaces_updateRevenueSettings",
+        "description": "Change the Reporting currency and the Attribution window (Owner and Admin only, Permission\n`revenue:configure`, ADR 0061). 422 for a currency code that is not in ISO 4217 or a window\noutside its bounds. Every change is recorded as an Audit entry naming who changed what.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteRevenueSettingsResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteUpdateRevenueSettingsInput"
+              }
+            }
+          }
+        }
+      }
+    },
     "/workspaces/{workspaceId}/rules": {
       "get": {
         "operationId": "SiteRules_list",
@@ -12049,6 +12209,13 @@
         ],
         "description": "Every API token scope: the one vocabulary of the external API"
       },
+      "AttributionWindowDays": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 90,
+        "description": "A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)"
+      },
       "ContactExportBroadcastRecipient": {
         "type": "object",
         "required": ["id", "broadcastId", "createdAt"],
@@ -12688,6 +12855,11 @@
           }
         },
         "description": "An anonymous device (visitor) bound to the contact"
+      },
+      "CurrencyCode": {
+        "type": "string",
+        "pattern": "^[A-Z]{3}$",
+        "description": "An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided\nby the server, which refuses an unknown one with a reason."
       },
       "EmailAddress": {
         "type": "string",
@@ -13367,6 +13539,63 @@
         "enum": ["7d", "30d", "90d"],
         "description": "Selectable window for the analytics overview"
       },
+      "SiteAnalyticsRevenue": {
+        "type": "object",
+        "required": [
+          "reportingCurrency",
+          "total",
+          "credited",
+          "orders",
+          "creditedOrders",
+          "otherCurrencyOrders",
+          "series"
+        ],
+        "properties": {
+          "reportingCurrency": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The Reporting currency, null until chosen"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Revenue over the range, in the minor unit of the Reporting currency"
+          },
+          "credited": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders\ncredited to a Broadcast or an Automation, in the minor unit of the Reporting currency.\n`total` minus `credited` is the revenue of unattributed Orders."
+          },
+          "orders": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Orders completed in the range, in the Reporting currency"
+          },
+          "creditedOrders": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Orders completed in the range that are credited to a Broadcast or an Automation"
+          },
+          "otherCurrencyOrders": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Orders in the range kept in another currency: they are listed with the Workspace's\nEvents but counted in no sum"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteRevenuePoint"
+            },
+            "description": "One point per Report day in the range, oldest first, zero-filled"
+          }
+        },
+        "description": "The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the\nsum of Order Movements over the range, in the Reporting currency. Until an Owner or Admin\nchooses that currency `reportingCurrency` is null and every figure is zero; the Orders\nreceived meanwhile are counted once it is chosen."
+      },
       "SiteAnalyticsSubscribedPeople": {
         "type": "object",
         "required": ["current", "series"],
@@ -13663,7 +13892,16 @@
       },
       "SiteAutomationReport": {
         "type": "object",
-        "required": ["opens", "clicks", "delivered", "bounced", "complained", "captured", "links"],
+        "required": [
+          "opens",
+          "clicks",
+          "delivered",
+          "bounced",
+          "complained",
+          "captured",
+          "revenue",
+          "links"
+        ],
         "properties": {
           "opens": {
             "type": "integer",
@@ -13694,6 +13932,14 @@
             "type": "integer",
             "format": "int32",
             "description": "Messages that went through a Test inbox: captured, not delivered; they count as delivered too"
+          },
+          "revenue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteMessageRevenue"
+              }
+            ],
+            "description": "Orders credited to the automation and their net revenue (ADR 0064)"
           },
           "links": {
             "type": "array",
@@ -13759,6 +14005,14 @@
             ],
             "nullable": true,
             "description": "When the automation was archived; null while it is kept"
+          },
+          "revenue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteMessageRevenue"
+              }
+            ],
+            "description": "Orders credited to the automation and their net revenue (ADR 0064); set on the list and on\nthe single read, absent on the responses of a change"
           },
           "createdAt": {
             "allOf": [
@@ -14146,7 +14400,8 @@
           "clickRate",
           "clickToOpenRate",
           "unsubscribeRate",
-          "failureRate"
+          "failureRate",
+          "revenue"
         ],
         "properties": {
           "recipientsTotal": {
@@ -14228,6 +14483,14 @@
             "type": "number",
             "format": "float",
             "description": "Send failures ÷ recipients targeted (0–1)"
+          },
+          "revenue": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteMessageRevenue"
+              }
+            ],
+            "description": "Orders credited to the Broadcast and their net revenue (ADR 0064)"
           }
         },
         "description": "Denormalized delivery counters for a broadcast"
@@ -16359,6 +16622,33 @@
         "enum": ["creator", "invitation", "domain"],
         "description": "How a member got in"
       },
+      "SiteMessageRevenue": {
+        "type": "object",
+        "required": ["reportingCurrency", "orders", "amount"],
+        "properties": {
+          "reportingCurrency": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The Reporting currency, null until chosen"
+          },
+          "orders": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Orders completed that are credited to it, in the Reporting currency"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Net revenue of those Orders, in the minor unit of the Reporting currency"
+          }
+        },
+        "description": "The Orders credited to one Broadcast or Automation and the net revenue of their Movements\n(ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund\nlowers `amount` on its own day. Until the currency is chosen `reportingCurrency` is null and\nthere is no figure to show. Orders in another currency are counted in neither field."
+      },
       "SiteNewPeoplePoint": {
         "type": "object",
         "required": ["date", "manual", "api", "tracker", "unknown"],
@@ -16956,6 +17246,52 @@
           }
         },
         "description": "Set a new password using a reset token"
+      },
+      "SiteRevenuePoint": {
+        "type": "object",
+        "required": ["date", "amount", "orders"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "The Report day, `YYYY-MM-DD` in the Workspace time zone"
+          },
+          "amount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The net change of revenue that day, in the minor unit of the Reporting currency (cents\nfor USD, whole yen for JPY); a refund makes it negative"
+          },
+          "orders": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Orders completed that day"
+          }
+        },
+        "description": "One Report day of the Workspace's revenue (ADR 0064): the sum of the Movements of the Orders\ncounted in the Reporting currency that fell on that day in the Workspace time zone. A day\nwith none is there with zeros."
+      },
+      "SiteRevenueSettingsResource": {
+        "type": "object",
+        "required": ["reportingCurrency", "attributionWindowDays"],
+        "properties": {
+          "reportingCurrency": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ],
+            "nullable": true,
+            "description": "The Reporting currency; null until an Owner or Admin chooses one, and revenue is not shown\nbefore then"
+          },
+          "attributionWindowDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributionWindowDays"
+              }
+            ],
+            "description": "The Attribution window in whole days: 5 until set. A change affects only Orders that\narrive afterwards."
+          }
+        },
+        "description": "The Workspace's revenue settings (ADR 0064): the Reporting currency every revenue figure is\nin, and the Attribution window an Order may follow a click by. Every member reads them."
       },
       "SiteRuleAction": {
         "type": "object",
@@ -18593,6 +18929,28 @@
           }
         },
         "description": "Change a member's role. Only an owner may grant/transfer the owner role."
+      },
+      "SiteUpdateRevenueSettingsInput": {
+        "type": "object",
+        "properties": {
+          "reportingCurrency": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ],
+            "description": "The Reporting currency, an ISO 4217 code"
+          },
+          "attributionWindowDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributionWindowDays"
+              }
+            ],
+            "description": "The Attribution window in whole days"
+          }
+        },
+        "description": "Change the revenue settings; a field left out stays as it is"
       },
       "SiteUpdateRuleInput": {
         "type": "object",

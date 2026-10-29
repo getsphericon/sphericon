@@ -3,6 +3,7 @@
 package collect
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -44,6 +45,26 @@ func rawMap(m map[string]jx.Raw) map[string]any {
 	return out
 }
 
+// eventProperties is rawMap for an Event's properties, which keep numbers as the text that was
+// sent (json.Number): an amount of an order Event is checked for its decimal places (ADR 0064),
+// which a float64 would blur. Traits stay on rawMap, whose numbers are float64.
+func eventProperties(m map[string]jx.Raw) map[string]any {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		dec := json.NewDecoder(bytes.NewReader(v))
+		dec.UseNumber()
+		var decoded any
+		if err := dec.Decode(&decoded); err != nil {
+			return nil
+		}
+		out[k] = decoded
+	}
+	return out
+}
+
 func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.CollectEventsInput) (collectapi.CollectEventsCreateRes, error) {
 	evts := lo.Map(req.Events, func(e collectapi.CollectEventInput, _ int) visitors.CollectEventInput {
 		evt := visitors.CollectEventInput{
@@ -54,7 +75,7 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 			evt.ClientEventID = id
 		}
 		if props, ok := e.Properties.Get(); ok {
-			evt.Properties = rawMap(props)
+			evt.Properties = eventProperties(props)
 		}
 		if ts, ok := e.OccurredAt.Get(); ok {
 			t := time.Time(ts)

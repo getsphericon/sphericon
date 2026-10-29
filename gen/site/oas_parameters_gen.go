@@ -755,6 +755,159 @@ func decodeSiteAnalyticsOverviewParams(args [1]string, argsEscaped bool, r *http
 	return params, nil
 }
 
+// SiteAnalyticsRevenueParams is parameters of SiteAnalytics_revenue operation.
+type SiteAnalyticsRevenueParams struct {
+	WorkspaceId WorkspaceId
+	// Window to sum over (defaults to 30d).
+	Range OptSiteAnalyticsRevenueRange `json:",omitempty,omitzero"`
+}
+
+func unpackSiteAnalyticsRevenueParams(packed middleware.Parameters) (params SiteAnalyticsRevenueParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "range",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Range = v.(OptSiteAnalyticsRevenueRange)
+		}
+	}
+	return params
+}
+
+func decodeSiteAnalyticsRevenueParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteAnalyticsRevenueParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Set default value for query: range.
+	{
+		val := SiteAnalyticsRevenueRange("30d")
+		params.Range.SetTo(val)
+	}
+	// Decode query: range.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "range",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotRangeVal SiteAnalyticsRevenueRange
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotRangeVal = SiteAnalyticsRevenueRange(c)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Range.SetTo(paramsDotRangeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.Range.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "range",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAnalyticsSubscribedPeopleParams is parameters of SiteAnalytics_subscribedPeople operation.
 type SiteAnalyticsSubscribedPeopleParams struct {
 	WorkspaceId WorkspaceId
@@ -21381,6 +21534,86 @@ func decodeSiteWorkspacesDeleteParams(args [1]string, argsEscaped bool, r *http.
 	return params, nil
 }
 
+// SiteWorkspacesGetRevenueSettingsParams is parameters of SiteWorkspaces_getRevenueSettings operation.
+type SiteWorkspacesGetRevenueSettingsParams struct {
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteWorkspacesGetRevenueSettingsParams(packed middleware.Parameters) (params SiteWorkspacesGetRevenueSettingsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteWorkspacesGetRevenueSettingsParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesGetRevenueSettingsParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteWorkspacesLeaveParams is parameters of SiteWorkspaces_leave operation.
 type SiteWorkspacesLeaveParams struct {
 	WorkspaceId WorkspaceId
@@ -21718,6 +21951,86 @@ func unpackSiteWorkspacesUpdateParams(packed middleware.Parameters) (params Site
 }
 
 func decodeSiteWorkspacesUpdateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesUpdateParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteWorkspacesUpdateRevenueSettingsParams is parameters of SiteWorkspaces_updateRevenueSettings operation.
+type SiteWorkspacesUpdateRevenueSettingsParams struct {
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteWorkspacesUpdateRevenueSettingsParams(packed middleware.Parameters) (params SiteWorkspacesUpdateRevenueSettingsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteWorkspacesUpdateRevenueSettingsParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesUpdateRevenueSettingsParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]

@@ -48,6 +48,8 @@ type Tx struct {
 	Erasure *ErasureClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// HeldOrderEvent is the client for interacting with the HeldOrderEvent builders.
+	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
 	Hold *HoldClient
 	// InstanceState is the client for interacting with the InstanceState builders.
@@ -66,6 +68,10 @@ type Tx struct {
 	OAuthCode *OAuthCodeClient
 	// OAuthRefreshToken is the client for interacting with the OAuthRefreshToken builders.
 	OAuthRefreshToken *OAuthRefreshTokenClient
+	// Order is the client for interacting with the Order builders.
+	Order *OrderClient
+	// OrderMovement is the client for interacting with the OrderMovement builders.
+	OrderMovement *OrderMovementClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
@@ -270,6 +276,7 @@ func (tx *Tx) init() {
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
 	tx.Erasure = NewErasureClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
+	tx.HeldOrderEvent = NewHeldOrderEventClient(tx.config)
 	tx.Hold = NewHoldClient(tx.config)
 	tx.InstanceState = NewInstanceStateClient(tx.config)
 	tx.Integration = NewIntegrationClient(tx.config)
@@ -279,6 +286,8 @@ func (tx *Tx) init() {
 	tx.OAuthClient = NewOAuthClientClient(tx.config)
 	tx.OAuthCode = NewOAuthCodeClient(tx.config)
 	tx.OAuthRefreshToken = NewOAuthRefreshTokenClient(tx.config)
+	tx.Order = NewOrderClient(tx.config)
+	tx.OrderMovement = NewOrderMovementClient(tx.config)
 	tx.OutboundMessage = NewOutboundMessageClient(tx.config)
 	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
 	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)

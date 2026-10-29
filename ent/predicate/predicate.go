@@ -57,6 +57,9 @@ type Erasure func(*sql.Selector)
 // Event is the predicate function for event builders.
 type Event func(*sql.Selector)
 
+// HeldOrderEvent is the predicate function for heldorderevent builders.
+type HeldOrderEvent func(*sql.Selector)
+
 // Hold is the predicate function for hold builders.
 type Hold func(*sql.Selector)
 
@@ -83,6 +86,12 @@ type OAuthCode func(*sql.Selector)
 
 // OAuthRefreshToken is the predicate function for oauthrefreshtoken builders.
 type OAuthRefreshToken func(*sql.Selector)
+
+// Order is the predicate function for order builders.
+type Order func(*sql.Selector)
+
+// OrderMovement is the predicate function for ordermovement builders.
+type OrderMovement func(*sql.Selector)
 
 // OutboundMessage is the predicate function for outboundmessage builders.
 type OutboundMessage func(*sql.Selector)

@@ -10,10 +10,11 @@ import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { RecentlyCreated } from './RecentlyCreated.tsx'
+import { RevenueBlock } from './RevenueBlock.tsx'
 import { SetupChecklist } from './SetupChecklist.tsx'
 
-// OverviewPage is the workspace's landing page: the Setup checklist until it is finished, then
-// the shortcuts to create something and the broadcasts created last.
+// OverviewPage is the workspace's landing page: the Setup checklist until it is finished, the
+// revenue block, the shortcuts to create something and the broadcasts created last.
 export function OverviewPage() {
   const { t } = useTranslation()
   const { workspaceId } = overviewRoute.useParams()
@@ -35,6 +36,8 @@ export function OverviewPage() {
       )}
 
       {showChecklist && <SetupChecklist workspaceId={workspaceId} checklist={checklist} />}
+
+      <RevenueBlock workspaceId={workspaceId} />
 
       <Title order={3}>{t(($) => $.overview.createTitle)}</Title>
       <SimpleGrid cols={{ base: 1, md: 2 }}>

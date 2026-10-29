@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/text/currency"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -259,6 +261,59 @@ func (a *Accounts) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.
 			TargetID:    strconv.FormatInt(before.ID, 10),
 			TargetName:  before.Name,
 			Diff:        map[string]any{workspace.FieldTimezone: events.Change(from, to)},
+		})
+	})
+	return updated, err
+}
+
+// ErrUnknownCurrency refuses a Reporting currency code that is not in ISO 4217.
+var ErrUnknownCurrency = errors.New("accounts: unknown currency code")
+
+// SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
+// as it is) and records each real change in one `workspace.update` Audit entry in the same
+// transaction (ADR 0064). A code outside ISO 4217 is refused with ErrUnknownCurrency; the bounds of
+// the window are the contract's. The caller has checked the role.
+func (a *Accounts) SetRevenueSettings(ctx context.Context, s *ent.Scoped, actor events.Actor, code *string, windowDays *int) (*ent.Workspace, error) {
+	if code != nil {
+		unit, err := currency.ParseISO(*code)
+		if err != nil {
+			return nil, ErrUnknownCurrency
+		}
+		canonical := unit.String()
+		code = &canonical
+	}
+	var updated *ent.Workspace
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		before, err := tx.Workspace.Get(ctx, s.WorkspaceID())
+		if err != nil {
+			return err
+		}
+		diff := map[string]any{}
+		upd := tx.Workspace.UpdateOneID(s.WorkspaceID())
+		if code != nil && (before.ReportingCurrency == nil || *before.ReportingCurrency != *code) {
+			upd = upd.SetReportingCurrency(*code)
+			diff[workspace.FieldReportingCurrency] = events.Change(before.ReportingCurrency, *code)
+		}
+		if windowDays != nil && before.AttributionWindowDays != *windowDays {
+			upd = upd.SetAttributionWindowDays(*windowDays)
+			diff[workspace.FieldAttributionWindowDays] = events.Change(before.AttributionWindowDays, *windowDays)
+		}
+		if len(diff) == 0 {
+			updated = before
+			return nil
+		}
+		updated, err = upd.Save(ctx)
+		if err != nil {
+			return err
+		}
+		return events.RecordAudit(ctx, pub, &events.AuditEntry{
+			WorkspaceID: s.WorkspaceID(),
+			Actor:       actor,
+			Action:      events.ActionWorkspaceUpdate,
+			TargetType:  workspace.Label,
+			TargetID:    strconv.FormatInt(before.ID, 10),
+			TargetName:  before.Name,
+			Diff:        diff,
 		})
 	})
 	return updated, err

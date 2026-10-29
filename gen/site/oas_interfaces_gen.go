@@ -21,6 +21,10 @@ type SiteAnalyticsOverviewRes interface {
 	siteAnalyticsOverviewRes()
 }
 
+type SiteAnalyticsRevenueRes interface {
+	siteAnalyticsRevenueRes()
+}
+
 type SiteAnalyticsSubscribedPeopleRes interface {
 	siteAnalyticsSubscribedPeopleRes()
 }
@@ -661,6 +665,10 @@ type SiteWorkspacesDeleteRes interface {
 	siteWorkspacesDeleteRes()
 }
 
+type SiteWorkspacesGetRevenueSettingsRes interface {
+	siteWorkspacesGetRevenueSettingsRes()
+}
+
 type SiteWorkspacesLeaveRes interface {
 	siteWorkspacesLeaveRes()
 }
@@ -679,4 +687,8 @@ type SiteWorkspacesSetTimezoneRes interface {
 
 type SiteWorkspacesUpdateRes interface {
 	siteWorkspacesUpdateRes()
+}
+
+type SiteWorkspacesUpdateRevenueSettingsRes interface {
+	siteWorkspacesUpdateRevenueSettingsRes()
 }

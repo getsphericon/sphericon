@@ -173,3 +173,31 @@ func (h *Handlers) SiteAnalyticsNewPeople(ctx context.Context, params siteapi.Si
 		return &siteapi.SiteNewPeopleReport{Total: narrow.Int32(report.Total), Timeseries: series}, nil
 	})
 }
+
+// SiteAnalyticsRevenue maps the analytics module's Revenue onto the DTO (ADR 0064). The
+// operation's default range is 30 days, declared in the contract.
+func (h *Handlers) SiteAnalyticsRevenue(ctx context.Context, params siteapi.SiteAnalyticsRevenueParams) (siteapi.SiteAnalyticsRevenueRes, error) {
+	s, err := h.scopedFor(ctx, params.WorkspaceId)
+	if err != nil {
+		return nil, err
+	}
+	report, err := h.analytics.Revenue(ctx, s, revenueWindow(params.Range))
+	if err != nil {
+		return nil, err
+	}
+	r := mapper.RevenueToResource(report)
+	return &r, nil
+}
+
+// revenueWindow maps the selectable range to the module's window. The range is always set: the
+// contract gives it its default.
+func revenueWindow(r siteapi.OptSiteAnalyticsRevenueRange) analytics.Window {
+	switch r.Value {
+	case siteapi.SiteAnalyticsRevenueRange7d:
+		return analytics.Window7Days
+	case siteapi.SiteAnalyticsRevenueRange90d:
+		return analytics.Window90Days
+	default:
+		return analytics.Window30Days
+	}
+}

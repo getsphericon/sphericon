@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/narrow"
 )
@@ -30,6 +31,7 @@ func (h *Handlers) SiteAutomationReportsGet(ctx context.Context, params siteapi.
 		Bounced:    narrow.Int32(report.Bounced),
 		Complained: narrow.Int32(report.Complained),
 		Captured:   narrow.Int32(report.Captured),
+		Revenue:    resources.MessageRevenue(report.Revenue),
 		Links:      mapper.LinkClicksToResource(report.Links),
 	}, nil
 }

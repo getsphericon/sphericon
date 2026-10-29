@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/aggregates"
+	"github.com/getsphericon/sphericon/internal/orders"
 )
 
 // Stats is a Broadcast's delivery figures. They are never stored: the audience is its
@@ -33,6 +34,9 @@ type Stats struct {
 	// Test inbox): captured, not delivered. They are stamped delivered too, so a reader
 	// can tell them apart from a real delivery.
 	Captured int
+	// Revenue is the Orders credited to the Broadcast and their net revenue, in the Reporting
+	// currency (ADR 0064): the Figures of this one Broadcast.
+	Revenue orders.Figures
 }
 
 // Processed counts the recipients whose send has ended.
@@ -142,8 +146,13 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 		}
 		out[m.BroadcastID] = st
 	}
+	revenue, err := orders.CreditedToBroadcasts(ctx, s, ids...)
+	if err != nil {
+		return nil, err
+	}
 	for id, st := range out {
 		st.Pending = max(0, st.Recipients-st.Sent-st.Skipped-st.Failed)
+		st.Revenue = revenue.Only(id)
 		out[id] = st
 	}
 	return out, nil

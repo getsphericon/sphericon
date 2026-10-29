@@ -1,0 +1,19 @@
+# The Movements of the fixture Orders (ADR 0064), 200 days ago: older than any revenue window.
+- id: 1 # fixture: OrderMovementAcme
+  order_id: 1
+  kind: completed
+  amount: 4999
+  occurred_at: '{{daysAgo 200}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 200}}'
+  updated_at: '{{daysAgo 200}}'
+
+# --- Globex (workspace 2) foreign row — DO NOT change ---
+- id: 900 # fixture: OrderMovementGlobex
+  order_id: 900
+  kind: completed
+  amount: 2500
+  occurred_at: '{{daysAgo 200}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 200}}'
+  updated_at: '{{daysAgo 200}}'

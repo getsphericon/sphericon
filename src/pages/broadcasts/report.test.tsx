@@ -34,6 +34,7 @@ const STATS = {
   clickToOpenRate: 0.25,
   unsubscribeRate: 0.015,
   failureRate: 0.05,
+  revenue: { reportingCurrency: 'USD', orders: 11, amount: 4550 },
 }
 
 const BROADCAST = {
@@ -127,4 +128,36 @@ test('shows how far a sending broadcast has got', async () => {
   const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
 
   await expect.element(screen.getByText('Sent 120 of 200')).toBeInTheDocument()
+})
+
+test('shows the orders and the net revenue credited to the broadcast', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() => HttpResponse.json(BROADCAST)),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Orders', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('11', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Revenue', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('$45.50')).toBeInTheDocument()
+})
+
+test('shows no orders or revenue until the reporting currency is chosen', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...BROADCAST,
+        stats: { ...STATS, revenue: { reportingCurrency: null, orders: 0, amount: 0 } },
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Big news')).toBeInTheDocument()
+  await expect.element(screen.getByText('Orders', { exact: true })).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Revenue', { exact: true })).not.toBeInTheDocument()
 })

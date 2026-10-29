@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -38,6 +39,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
@@ -143,6 +146,7 @@ func checkColumn(t, c string) error {
 			emailtemplate.Table:        emailtemplate.ValidColumn,
 			erasure.Table:              erasure.ValidColumn,
 			event.Table:                event.ValidColumn,
+			heldorderevent.Table:       heldorderevent.ValidColumn,
 			hold.Table:                 hold.ValidColumn,
 			instancestate.Table:        instancestate.ValidColumn,
 			integration.Table:          integration.ValidColumn,
@@ -152,6 +156,8 @@ func checkColumn(t, c string) error {
 			oauthclient.Table:          oauthclient.ValidColumn,
 			oauthcode.Table:            oauthcode.ValidColumn,
 			oauthrefreshtoken.Table:    oauthrefreshtoken.ValidColumn,
+			order.Table:                order.ValidColumn,
+			ordermovement.Table:        ordermovement.ValidColumn,
 			outboundmessage.Table:      outboundmessage.ValidColumn,
 			outboxmessage.Table:        outboxmessage.ValidColumn,
 			outboxoffset.Table:         outboxoffset.ValidColumn,

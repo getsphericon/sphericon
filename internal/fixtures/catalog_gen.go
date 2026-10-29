@@ -911,6 +911,10 @@ const (
 	GothamName = "Gotham"
 	// GothamPublicID is from fixtures/workspaces.
 	GothamPublicID = "GothmW61"
+	// HeldOrderEventAcmeID is from fixtures/held_order_events.
+	HeldOrderEventAcmeID = 1
+	// HeldOrderEventGlobexID is from fixtures/held_order_events.
+	HeldOrderEventGlobexID = 900
 	// HoldAcmeLapsedID is from fixtures/holds.
 	HoldAcmeLapsedID = 1
 	// HoldAcmeLapsedKey is from fixtures/holds.
@@ -1273,6 +1277,14 @@ const (
 	MeterName = "Meter"
 	// MeterPublicID is from fixtures/workspaces.
 	MeterPublicID = "MeterW80"
+	// OrderAcmeID is from fixtures/orders.
+	OrderAcmeID = 1
+	// OrderGlobexID is from fixtures/orders.
+	OrderGlobexID = 900
+	// OrderMovementAcmeID is from fixtures/order_movements.
+	OrderMovementAcmeID = 1
+	// OrderMovementGlobexID is from fixtures/order_movements.
+	OrderMovementGlobexID = 900
 	// OscorpAndyEmail is from fixtures/contacts.
 	OscorpAndyEmail = "andy@oscorp.test"
 	// OscorpAndyID is from fixtures/contacts.

@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -41,6 +42,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
@@ -112,6 +115,8 @@ type Client struct {
 	Erasure *ErasureClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// HeldOrderEvent is the client for interacting with the HeldOrderEvent builders.
+	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
 	Hold *HoldClient
 	// InstanceState is the client for interacting with the InstanceState builders.
@@ -130,6 +135,10 @@ type Client struct {
 	OAuthCode *OAuthCodeClient
 	// OAuthRefreshToken is the client for interacting with the OAuthRefreshToken builders.
 	OAuthRefreshToken *OAuthRefreshTokenClient
+	// Order is the client for interacting with the Order builders.
+	Order *OrderClient
+	// OrderMovement is the client for interacting with the OrderMovement builders.
+	OrderMovement *OrderMovementClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
@@ -214,6 +223,7 @@ func (c *Client) init() {
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
 	c.Erasure = NewErasureClient(c.config)
 	c.Event = NewEventClient(c.config)
+	c.HeldOrderEvent = NewHeldOrderEventClient(c.config)
 	c.Hold = NewHoldClient(c.config)
 	c.InstanceState = NewInstanceStateClient(c.config)
 	c.Integration = NewIntegrationClient(c.config)
@@ -223,6 +233,8 @@ func (c *Client) init() {
 	c.OAuthClient = NewOAuthClientClient(c.config)
 	c.OAuthCode = NewOAuthCodeClient(c.config)
 	c.OAuthRefreshToken = NewOAuthRefreshTokenClient(c.config)
+	c.Order = NewOrderClient(c.config)
+	c.OrderMovement = NewOrderMovementClient(c.config)
 	c.OutboundMessage = NewOutboundMessageClient(c.config)
 	c.OutboxMessage = NewOutboxMessageClient(c.config)
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
@@ -360,6 +372,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EmailTemplate:        NewEmailTemplateClient(cfg),
 		Erasure:              NewErasureClient(cfg),
 		Event:                NewEventClient(cfg),
+		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
 		Hold:                 NewHoldClient(cfg),
 		InstanceState:        NewInstanceStateClient(cfg),
 		Integration:          NewIntegrationClient(cfg),
@@ -369,6 +382,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OAuthClient:          NewOAuthClientClient(cfg),
 		OAuthCode:            NewOAuthCodeClient(cfg),
 		OAuthRefreshToken:    NewOAuthRefreshTokenClient(cfg),
+		Order:                NewOrderClient(cfg),
+		OrderMovement:        NewOrderMovementClient(cfg),
 		OutboundMessage:      NewOutboundMessageClient(cfg),
 		OutboxMessage:        NewOutboxMessageClient(cfg),
 		OutboxOffset:         NewOutboxOffsetClient(cfg),
@@ -433,6 +448,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EmailTemplate:        NewEmailTemplateClient(cfg),
 		Erasure:              NewErasureClient(cfg),
 		Event:                NewEventClient(cfg),
+		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
 		Hold:                 NewHoldClient(cfg),
 		InstanceState:        NewInstanceStateClient(cfg),
 		Integration:          NewIntegrationClient(cfg),
@@ -442,6 +458,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OAuthClient:          NewOAuthClientClient(cfg),
 		OAuthCode:            NewOAuthCodeClient(cfg),
 		OAuthRefreshToken:    NewOAuthRefreshTokenClient(cfg),
+		Order:                NewOrderClient(cfg),
+		OrderMovement:        NewOrderMovementClient(cfg),
 		OutboundMessage:      NewOutboundMessageClient(cfg),
 		OutboxMessage:        NewOutboxMessageClient(cfg),
 		OutboxOffset:         NewOutboxOffsetClient(cfg),
@@ -502,14 +520,15 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.CapturedMessage, c.Confirmation, c.Contact, c.ContactTag, c.CustomField,
-		c.EmailTemplate, c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration,
-		c.Invitation, c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode,
-		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
-		c.Passkey, c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob,
-		c.Rule, c.RuleFiring, c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember,
-		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold, c.InstanceState,
+		c.Integration, c.Invitation, c.JoinDomain, c.Membership, c.OAuthClient,
+		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
+		c.OutboxMessage, c.OutboxOffset, c.Passkey, c.PasskeyChallenge,
+		c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
+		c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
+		c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember, c.Suppression,
+		c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -522,14 +541,15 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.CapturedMessage, c.Confirmation, c.Contact, c.ContactTag, c.CustomField,
-		c.EmailTemplate, c.Erasure, c.Event, c.Hold, c.InstanceState, c.Integration,
-		c.Invitation, c.JoinDomain, c.Membership, c.OAuthClient, c.OAuthCode,
-		c.OAuthRefreshToken, c.OutboundMessage, c.OutboxMessage, c.OutboxOffset,
-		c.Passkey, c.PasskeyChallenge, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob,
-		c.Rule, c.RuleFiring, c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember,
-		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold, c.InstanceState,
+		c.Integration, c.Invitation, c.JoinDomain, c.Membership, c.OAuthClient,
+		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
+		c.OutboxMessage, c.OutboxOffset, c.Passkey, c.PasskeyChallenge,
+		c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
+		c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
+		c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember, c.Suppression,
+		c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -572,6 +592,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Erasure.mutate(ctx, m)
 	case *EventMutation:
 		return c.Event.mutate(ctx, m)
+	case *HeldOrderEventMutation:
+		return c.HeldOrderEvent.mutate(ctx, m)
 	case *HoldMutation:
 		return c.Hold.mutate(ctx, m)
 	case *InstanceStateMutation:
@@ -590,6 +612,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OAuthCode.mutate(ctx, m)
 	case *OAuthRefreshTokenMutation:
 		return c.OAuthRefreshToken.mutate(ctx, m)
+	case *OrderMutation:
+		return c.Order.mutate(ctx, m)
+	case *OrderMovementMutation:
+		return c.OrderMovement.mutate(ctx, m)
 	case *OutboundMessageMutation:
 		return c.OutboundMessage.mutate(ctx, m)
 	case *OutboxMessageMutation:
@@ -2718,6 +2744,22 @@ func (c *ContactClient) QueryEvents(_m *Contact) *EventQuery {
 	return query
 }
 
+// QueryOrders queries the orders edge of a Contact.
+func (c *ContactClient) QueryOrders(_m *Contact) *OrderQuery {
+	query := (&OrderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contact.OrdersTable, contact.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryContactTags queries the contact_tags edge of a Contact.
 func (c *ContactClient) QueryContactTags(_m *Contact) *ContactTagQuery {
 	query := (&ContactTagClient{config: c.config}).Query()
@@ -3484,6 +3526,155 @@ func (c *EventClient) mutate(ctx context.Context, m *EventMutation) (Value, erro
 		return (&EventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Event mutation op: %q", m.Op())
+	}
+}
+
+// HeldOrderEventClient is a client for the HeldOrderEvent schema.
+type HeldOrderEventClient struct {
+	config
+}
+
+// NewHeldOrderEventClient returns a client for the HeldOrderEvent from the given config.
+func NewHeldOrderEventClient(c config) *HeldOrderEventClient {
+	return &HeldOrderEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `heldorderevent.Hooks(f(g(h())))`.
+func (c *HeldOrderEventClient) Use(hooks ...Hook) {
+	c.hooks.HeldOrderEvent = append(c.hooks.HeldOrderEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `heldorderevent.Intercept(f(g(h())))`.
+func (c *HeldOrderEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.HeldOrderEvent = append(c.inters.HeldOrderEvent, interceptors...)
+}
+
+// Create returns a builder for creating a HeldOrderEvent entity.
+func (c *HeldOrderEventClient) Create() *HeldOrderEventCreate {
+	mutation := newHeldOrderEventMutation(c.config, OpCreate)
+	return &HeldOrderEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of HeldOrderEvent entities.
+func (c *HeldOrderEventClient) CreateBulk(builders ...*HeldOrderEventCreate) *HeldOrderEventCreateBulk {
+	return &HeldOrderEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *HeldOrderEventClient) MapCreateBulk(slice any, setFunc func(*HeldOrderEventCreate, int)) *HeldOrderEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &HeldOrderEventCreateBulk{err: fmt.Errorf("calling to HeldOrderEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*HeldOrderEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &HeldOrderEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for HeldOrderEvent.
+func (c *HeldOrderEventClient) Update() *HeldOrderEventUpdate {
+	mutation := newHeldOrderEventMutation(c.config, OpUpdate)
+	return &HeldOrderEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *HeldOrderEventClient) UpdateOne(_m *HeldOrderEvent) *HeldOrderEventUpdateOne {
+	mutation := newHeldOrderEventMutation(c.config, OpUpdateOne, withHeldOrderEvent(_m))
+	return &HeldOrderEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *HeldOrderEventClient) UpdateOneID(id int64) *HeldOrderEventUpdateOne {
+	mutation := newHeldOrderEventMutation(c.config, OpUpdateOne, withHeldOrderEventID(id))
+	return &HeldOrderEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for HeldOrderEvent.
+func (c *HeldOrderEventClient) Delete() *HeldOrderEventDelete {
+	mutation := newHeldOrderEventMutation(c.config, OpDelete)
+	return &HeldOrderEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *HeldOrderEventClient) DeleteOne(_m *HeldOrderEvent) *HeldOrderEventDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *HeldOrderEventClient) DeleteOneID(id int64) *HeldOrderEventDeleteOne {
+	builder := c.Delete().Where(heldorderevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &HeldOrderEventDeleteOne{builder}
+}
+
+// Query returns a query builder for HeldOrderEvent.
+func (c *HeldOrderEventClient) Query() *HeldOrderEventQuery {
+	return &HeldOrderEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeHeldOrderEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a HeldOrderEvent entity by its id.
+func (c *HeldOrderEventClient) Get(ctx context.Context, id int64) (*HeldOrderEvent, error) {
+	return c.Query().Where(heldorderevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *HeldOrderEventClient) GetX(ctx context.Context, id int64) *HeldOrderEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a HeldOrderEvent.
+func (c *HeldOrderEventClient) QueryWorkspace(_m *HeldOrderEvent) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(heldorderevent.Table, heldorderevent.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, heldorderevent.WorkspaceTable, heldorderevent.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *HeldOrderEventClient) Hooks() []Hook {
+	return c.hooks.HeldOrderEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *HeldOrderEventClient) Interceptors() []Interceptor {
+	return c.inters.HeldOrderEvent
+}
+
+func (c *HeldOrderEventClient) mutate(ctx context.Context, m *HeldOrderEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&HeldOrderEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&HeldOrderEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&HeldOrderEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&HeldOrderEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown HeldOrderEvent mutation op: %q", m.Op())
 	}
 }
 
@@ -4921,6 +5112,384 @@ func (c *OAuthRefreshTokenClient) mutate(ctx context.Context, m *OAuthRefreshTok
 		return (&OAuthRefreshTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown OAuthRefreshToken mutation op: %q", m.Op())
+	}
+}
+
+// OrderClient is a client for the Order schema.
+type OrderClient struct {
+	config
+}
+
+// NewOrderClient returns a client for the Order from the given config.
+func NewOrderClient(c config) *OrderClient {
+	return &OrderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `order.Hooks(f(g(h())))`.
+func (c *OrderClient) Use(hooks ...Hook) {
+	c.hooks.Order = append(c.hooks.Order, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `order.Intercept(f(g(h())))`.
+func (c *OrderClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Order = append(c.inters.Order, interceptors...)
+}
+
+// Create returns a builder for creating a Order entity.
+func (c *OrderClient) Create() *OrderCreate {
+	mutation := newOrderMutation(c.config, OpCreate)
+	return &OrderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Order entities.
+func (c *OrderClient) CreateBulk(builders ...*OrderCreate) *OrderCreateBulk {
+	return &OrderCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OrderClient) MapCreateBulk(slice any, setFunc func(*OrderCreate, int)) *OrderCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OrderCreateBulk{err: fmt.Errorf("calling to OrderClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OrderCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OrderCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Order.
+func (c *OrderClient) Update() *OrderUpdate {
+	mutation := newOrderMutation(c.config, OpUpdate)
+	return &OrderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrderClient) UpdateOne(_m *Order) *OrderUpdateOne {
+	mutation := newOrderMutation(c.config, OpUpdateOne, withOrder(_m))
+	return &OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrderClient) UpdateOneID(id int64) *OrderUpdateOne {
+	mutation := newOrderMutation(c.config, OpUpdateOne, withOrderID(id))
+	return &OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Order.
+func (c *OrderClient) Delete() *OrderDelete {
+	mutation := newOrderMutation(c.config, OpDelete)
+	return &OrderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OrderClient) DeleteOne(_m *Order) *OrderDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OrderClient) DeleteOneID(id int64) *OrderDeleteOne {
+	builder := c.Delete().Where(order.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrderDeleteOne{builder}
+}
+
+// Query returns a query builder for Order.
+func (c *OrderClient) Query() *OrderQuery {
+	return &OrderQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOrder},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Order entity by its id.
+func (c *OrderClient) Get(ctx context.Context, id int64) (*Order, error) {
+	return c.Query().Where(order.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrderClient) GetX(ctx context.Context, id int64) *Order {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a Order.
+func (c *OrderClient) QueryWorkspace(_m *Order) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.WorkspaceTable, order.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContact queries the contact edge of a Order.
+func (c *OrderClient) QueryContact(_m *Order) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, order.ContactTable, order.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBroadcast queries the broadcast edge of a Order.
+func (c *OrderClient) QueryBroadcast(_m *Order) *BroadcastQuery {
+	query := (&BroadcastClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(broadcast.Table, broadcast.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, order.BroadcastTable, order.BroadcastColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomation queries the automation edge of a Order.
+func (c *OrderClient) QueryAutomation(_m *Order) *AutomationQuery {
+	query := (&AutomationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, order.AutomationTable, order.AutomationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMovements queries the movements edge of a Order.
+func (c *OrderClient) QueryMovements(_m *Order) *OrderMovementQuery {
+	query := (&OrderMovementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(ordermovement.Table, ordermovement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, order.MovementsTable, order.MovementsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrderClient) Hooks() []Hook {
+	return c.hooks.Order
+}
+
+// Interceptors returns the client interceptors.
+func (c *OrderClient) Interceptors() []Interceptor {
+	return c.inters.Order
+}
+
+func (c *OrderClient) mutate(ctx context.Context, m *OrderMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OrderCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OrderUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OrderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Order mutation op: %q", m.Op())
+	}
+}
+
+// OrderMovementClient is a client for the OrderMovement schema.
+type OrderMovementClient struct {
+	config
+}
+
+// NewOrderMovementClient returns a client for the OrderMovement from the given config.
+func NewOrderMovementClient(c config) *OrderMovementClient {
+	return &OrderMovementClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ordermovement.Hooks(f(g(h())))`.
+func (c *OrderMovementClient) Use(hooks ...Hook) {
+	c.hooks.OrderMovement = append(c.hooks.OrderMovement, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ordermovement.Intercept(f(g(h())))`.
+func (c *OrderMovementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OrderMovement = append(c.inters.OrderMovement, interceptors...)
+}
+
+// Create returns a builder for creating a OrderMovement entity.
+func (c *OrderMovementClient) Create() *OrderMovementCreate {
+	mutation := newOrderMovementMutation(c.config, OpCreate)
+	return &OrderMovementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OrderMovement entities.
+func (c *OrderMovementClient) CreateBulk(builders ...*OrderMovementCreate) *OrderMovementCreateBulk {
+	return &OrderMovementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OrderMovementClient) MapCreateBulk(slice any, setFunc func(*OrderMovementCreate, int)) *OrderMovementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OrderMovementCreateBulk{err: fmt.Errorf("calling to OrderMovementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OrderMovementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OrderMovementCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OrderMovement.
+func (c *OrderMovementClient) Update() *OrderMovementUpdate {
+	mutation := newOrderMovementMutation(c.config, OpUpdate)
+	return &OrderMovementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrderMovementClient) UpdateOne(_m *OrderMovement) *OrderMovementUpdateOne {
+	mutation := newOrderMovementMutation(c.config, OpUpdateOne, withOrderMovement(_m))
+	return &OrderMovementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrderMovementClient) UpdateOneID(id int64) *OrderMovementUpdateOne {
+	mutation := newOrderMovementMutation(c.config, OpUpdateOne, withOrderMovementID(id))
+	return &OrderMovementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OrderMovement.
+func (c *OrderMovementClient) Delete() *OrderMovementDelete {
+	mutation := newOrderMovementMutation(c.config, OpDelete)
+	return &OrderMovementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OrderMovementClient) DeleteOne(_m *OrderMovement) *OrderMovementDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OrderMovementClient) DeleteOneID(id int64) *OrderMovementDeleteOne {
+	builder := c.Delete().Where(ordermovement.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrderMovementDeleteOne{builder}
+}
+
+// Query returns a query builder for OrderMovement.
+func (c *OrderMovementClient) Query() *OrderMovementQuery {
+	return &OrderMovementQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOrderMovement},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OrderMovement entity by its id.
+func (c *OrderMovementClient) Get(ctx context.Context, id int64) (*OrderMovement, error) {
+	return c.Query().Where(ordermovement.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrderMovementClient) GetX(ctx context.Context, id int64) *OrderMovement {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a OrderMovement.
+func (c *OrderMovementClient) QueryWorkspace(_m *OrderMovement) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ordermovement.Table, ordermovement.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ordermovement.WorkspaceTable, ordermovement.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrder queries the order edge of a OrderMovement.
+func (c *OrderMovementClient) QueryOrder(_m *OrderMovement) *OrderQuery {
+	query := (&OrderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ordermovement.Table, ordermovement.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ordermovement.OrderTable, ordermovement.OrderColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrderMovementClient) Hooks() []Hook {
+	return c.hooks.OrderMovement
+}
+
+// Interceptors returns the client interceptors.
+func (c *OrderMovementClient) Interceptors() []Interceptor {
+	return c.inters.OrderMovement
+}
+
+func (c *OrderMovementClient) mutate(ctx context.Context, m *OrderMovementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OrderMovementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OrderMovementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OrderMovementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OrderMovementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OrderMovement mutation op: %q", m.Op())
 	}
 }
 
@@ -9359,6 +9928,54 @@ func (c *WorkspaceClient) QueryEvents(_m *Workspace) *EventQuery {
 	return query
 }
 
+// QueryOrders queries the orders edge of a Workspace.
+func (c *WorkspaceClient) QueryOrders(_m *Workspace) *OrderQuery {
+	query := (&OrderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.OrdersTable, workspace.OrdersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOrderMovements queries the order_movements edge of a Workspace.
+func (c *WorkspaceClient) QueryOrderMovements(_m *Workspace) *OrderMovementQuery {
+	query := (&OrderMovementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(ordermovement.Table, ordermovement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.OrderMovementsTable, workspace.OrderMovementsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryHeldOrderEvents queries the held_order_events edge of a Workspace.
+func (c *WorkspaceClient) QueryHeldOrderEvents(_m *Workspace) *HeldOrderEventQuery {
+	query := (&HeldOrderEventClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(heldorderevent.Table, heldorderevent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.HeldOrderEventsTable, workspace.HeldOrderEventsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryVisitors queries the visitors edge of a Workspace.
 func (c *WorkspaceClient) QueryVisitors(_m *Workspace) *VisitorQuery {
 	query := (&VisitorClient{config: c.config}).Query()
@@ -9837,26 +10454,28 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
-		Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event, Hold,
-		InstanceState, Integration, Invitation, JoinDomain, Membership, OAuthClient,
-		OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage, OutboxOffset,
-		Passkey, PasskeyChallenge, PrivateRelayRange, RecoveryCode, RiverJob, Rule,
-		RuleFiring, RuleTrigger, SchemaState, Segment, SendLimiter, SendingDomain,
-		ServiceCredential, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
-		WebhookEndpoint, Workspace []ent.Hook
+		Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
+		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
+		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
+		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger,
+		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
+		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingHostChange,
+		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
+		Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
-		Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event, Hold,
-		InstanceState, Integration, Invitation, JoinDomain, Membership, OAuthClient,
-		OAuthCode, OAuthRefreshToken, OutboundMessage, OutboxMessage, OutboxOffset,
-		Passkey, PasskeyChallenge, PrivateRelayRange, RecoveryCode, RiverJob, Rule,
-		RuleFiring, RuleTrigger, SchemaState, Segment, SendLimiter, SendingDomain,
-		ServiceCredential, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
-		WebhookEndpoint, Workspace []ent.Interceptor
+		Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
+		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
+		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
+		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger,
+		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
+		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingHostChange,
+		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
+		Workspace []ent.Interceptor
 	}
 )
 

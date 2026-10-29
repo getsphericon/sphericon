@@ -1,6 +1,7 @@
 package external
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -59,8 +60,8 @@ func eventInputs(items []externalapi.EventInput, backfill bool) ([]eventlog.Inpu
 		if props, ok := e.Properties.Get(); ok {
 			in.Properties = make(map[string]any, len(props))
 			for key, raw := range props {
-				var value any
-				if err := json.Unmarshal([]byte(raw), &value); err != nil {
+				value, err := decodeProperty(raw)
+				if err != nil {
 					return nil, err
 				}
 				in.Properties[key] = value
@@ -69,6 +70,18 @@ func eventInputs(items []externalapi.EventInput, backfill bool) ([]eventlog.Inpu
 		inputs[i] = in
 	}
 	return inputs, nil
+}
+
+// decodeProperty reads one JSON property keeping numbers as the text that was sent: an amount of
+// an order Event is checked for its decimal places (ADR 0064), which a float64 would blur.
+func decodeProperty(raw []byte) (any, error) {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var value any
+	if err := dec.Decode(&value); err != nil {
+		return nil, err
+	}
+	return value, nil
 }
 
 // EventsBatchSubmit records each Event independently and reports a per-item result.

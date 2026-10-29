@@ -28,11 +28,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
@@ -62,6 +65,9 @@ type WorkspaceQuery struct {
 	withTags                *TagQuery
 	withSegments            *SegmentQuery
 	withEvents              *EventQuery
+	withOrders              *OrderQuery
+	withOrderMovements      *OrderMovementQuery
+	withHeldOrderEvents     *HeldOrderEventQuery
 	withVisitors            *VisitorQuery
 	withAPITokens           *ApiTokenQuery
 	withIntegrations        *IntegrationQuery
@@ -230,6 +236,72 @@ func (_q *WorkspaceQuery) QueryEvents() *EventQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(event.Table, event.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.EventsTable, workspace.EventsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOrders chains the current query on the "orders" edge.
+func (_q *WorkspaceQuery) QueryOrders() *OrderQuery {
+	query := (&OrderClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.OrdersTable, workspace.OrdersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOrderMovements chains the current query on the "order_movements" edge.
+func (_q *WorkspaceQuery) QueryOrderMovements() *OrderMovementQuery {
+	query := (&OrderMovementClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(ordermovement.Table, ordermovement.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.OrderMovementsTable, workspace.OrderMovementsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryHeldOrderEvents chains the current query on the "held_order_events" edge.
+func (_q *WorkspaceQuery) QueryHeldOrderEvents() *HeldOrderEventQuery {
+	query := (&HeldOrderEventClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(heldorderevent.Table, heldorderevent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.HeldOrderEventsTable, workspace.HeldOrderEventsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1050,6 +1122,9 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withTags:                _q.withTags.Clone(),
 		withSegments:            _q.withSegments.Clone(),
 		withEvents:              _q.withEvents.Clone(),
+		withOrders:              _q.withOrders.Clone(),
+		withOrderMovements:      _q.withOrderMovements.Clone(),
+		withHeldOrderEvents:     _q.withHeldOrderEvents.Clone(),
 		withVisitors:            _q.withVisitors.Clone(),
 		withAPITokens:           _q.withAPITokens.Clone(),
 		withIntegrations:        _q.withIntegrations.Clone(),
@@ -1137,6 +1212,39 @@ func (_q *WorkspaceQuery) WithEvents(opts ...func(*EventQuery)) *WorkspaceQuery 
 		opt(query)
 	}
 	_q.withEvents = query
+	return _q
+}
+
+// WithOrders tells the query-builder to eager-load the nodes that are connected to
+// the "orders" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithOrders(opts ...func(*OrderQuery)) *WorkspaceQuery {
+	query := (&OrderClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOrders = query
+	return _q
+}
+
+// WithOrderMovements tells the query-builder to eager-load the nodes that are connected to
+// the "order_movements" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithOrderMovements(opts ...func(*OrderMovementQuery)) *WorkspaceQuery {
+	query := (&OrderMovementClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOrderMovements = query
+	return _q
+}
+
+// WithHeldOrderEvents tells the query-builder to eager-load the nodes that are connected to
+// the "held_order_events" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithHeldOrderEvents(opts ...func(*HeldOrderEventQuery)) *WorkspaceQuery {
+	query := (&HeldOrderEventClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withHeldOrderEvents = query
 	return _q
 }
 
@@ -1526,12 +1634,15 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [33]bool{
+		loadedTypes = [36]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
 			_q.withSegments != nil,
 			_q.withEvents != nil,
+			_q.withOrders != nil,
+			_q.withOrderMovements != nil,
+			_q.withHeldOrderEvents != nil,
 			_q.withVisitors != nil,
 			_q.withAPITokens != nil,
 			_q.withIntegrations != nil,
@@ -1615,6 +1726,27 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadEvents(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.Events = []*Event{} },
 			func(n *Workspace, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOrders; query != nil {
+		if err := _q.loadOrders(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.Orders = []*Order{} },
+			func(n *Workspace, e *Order) { n.Edges.Orders = append(n.Edges.Orders, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOrderMovements; query != nil {
+		if err := _q.loadOrderMovements(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.OrderMovements = []*OrderMovement{} },
+			func(n *Workspace, e *OrderMovement) { n.Edges.OrderMovements = append(n.Edges.OrderMovements, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withHeldOrderEvents; query != nil {
+		if err := _q.loadHeldOrderEvents(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.HeldOrderEvents = []*HeldOrderEvent{} },
+			func(n *Workspace, e *HeldOrderEvent) { n.Edges.HeldOrderEvents = append(n.Edges.HeldOrderEvents, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1956,6 +2088,96 @@ func (_q *WorkspaceQuery) loadEvents(ctx context.Context, query *EventQuery, nod
 	}
 	query.Where(predicate.Event(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.EventsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadOrders(ctx context.Context, query *OrderQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *Order)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(order.FieldWorkspaceID)
+	}
+	query.Where(predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.OrdersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadOrderMovements(ctx context.Context, query *OrderMovementQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *OrderMovement)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(ordermovement.FieldWorkspaceID)
+	}
+	query.Where(predicate.OrderMovement(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.OrderMovementsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadHeldOrderEvents(ctx context.Context, query *HeldOrderEventQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *HeldOrderEvent)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(heldorderevent.FieldWorkspaceID)
+	}
+	query.Where(predicate.HeldOrderEvent(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.HeldOrderEventsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

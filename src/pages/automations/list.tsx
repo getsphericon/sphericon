@@ -21,6 +21,7 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { messageRevenueCells } from '../../utils/messageRevenue.ts'
 import { AutomationCreateModal } from './create.tsx'
 
 export function AutomationsListPage() {
@@ -116,6 +117,16 @@ export function AutomationsListPage() {
                   : t(($) => $.automations.statusDraft)}
               </Badge>
             ),
+          },
+          {
+            accessor: 'orders',
+            title: t(($) => $.messageRevenue.orders),
+            render: (record) => messageRevenueCells(record.revenue).orders,
+          },
+          {
+            accessor: 'revenue',
+            title: t(($) => $.messageRevenue.revenue),
+            render: (record) => messageRevenueCells(record.revenue).revenue,
           },
           {
             accessor: 'actions',

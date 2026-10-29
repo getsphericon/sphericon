@@ -13,6 +13,21 @@ enum SiteBroadcastStatus {
   failed,
 }
 
+/** The Orders credited to one Broadcast or Automation and the net revenue of their Movements
+ * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
+ * lowers `amount` on its own day. Until the currency is chosen `reportingCurrency` is null and
+ * there is no figure to show. Orders in another currency are counted in neither field. */
+model SiteMessageRevenue {
+  /** The Reporting currency, null until chosen */
+  reportingCurrency: CurrencyCode | null;
+
+  /** Orders completed that are credited to it, in the Reporting currency */
+  orders: int32;
+
+  /** Net revenue of those Orders, in the minor unit of the Reporting currency */
+  amount: int64;
+}
+
 /** Denormalized delivery counters for a broadcast */
 model SiteBroadcastStats {
   /** Number of recipients the broadcast targets */
@@ -62,6 +77,9 @@ model SiteBroadcastStats {
 
   /** Send failures ÷ recipients targeted (0–1) */
   failureRate: float32;
+
+  /** Orders credited to the Broadcast and their net revenue (ADR 0064) */
+  revenue: SiteMessageRevenue;
 }
 
 /**
