@@ -815,6 +815,45 @@ var (
 			},
 		},
 	}
+	// HeldOrderEventsColumns holds the columns for the "held_order_events" table.
+	HeldOrderEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "order_id", Type: field.TypeString},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"completed", "updated", "refunded", "cancelled"}},
+		{Name: "properties", Type: field.TypeJSON},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "event_id", Type: field.TypeString},
+		{Name: "occurred_at", Type: field.TypeTime},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// HeldOrderEventsTable holds the schema information for the "held_order_events" table.
+	HeldOrderEventsTable = &schema.Table{
+		Name:       "held_order_events",
+		Columns:    HeldOrderEventsColumns,
+		PrimaryKey: []*schema.Column{HeldOrderEventsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "held_order_events_workspaces_held_order_events",
+				Columns:    []*schema.Column{HeldOrderEventsColumns[9]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "heldorderevent_workspace_id_event_id",
+				Unique:  true,
+				Columns: []*schema.Column{HeldOrderEventsColumns[9], HeldOrderEventsColumns[7]},
+			},
+			{
+				Name:    "heldorderevent_workspace_id_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{HeldOrderEventsColumns[9], HeldOrderEventsColumns[3]},
+			},
+		},
+	}
 	// HoldsColumns holds the columns for the "holds" table.
 	HoldsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1162,6 +1201,134 @@ var (
 				Name:    "oauthrefreshtoken_client_id",
 				Unique:  false,
 				Columns: []*schema.Column{OauthRefreshTokensColumns[6]},
+			},
+		},
+	}
+	// OrdersColumns holds the columns for the "orders" table.
+	OrdersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "order_id", Type: field.TypeString},
+		{Name: "currency", Type: field.TypeString},
+		{Name: "credited_click_at", Type: field.TypeTime, Nullable: true},
+		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// OrdersTable holds the schema information for the "orders" table.
+	OrdersTable = &schema.Table{
+		Name:       "orders",
+		Columns:    OrdersColumns,
+		PrimaryKey: []*schema.Column{OrdersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "orders_contacts_orders",
+				Columns:    []*schema.Column{OrdersColumns[6]},
+				RefColumns: []*schema.Column{ContactsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "orders_broadcasts_broadcast",
+				Columns:    []*schema.Column{OrdersColumns[7]},
+				RefColumns: []*schema.Column{BroadcastsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "orders_automations_automation",
+				Columns:    []*schema.Column{OrdersColumns[8]},
+				RefColumns: []*schema.Column{AutomationsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "orders_workspaces_orders",
+				Columns:    []*schema.Column{OrdersColumns[9]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "order_workspace_id_order_id",
+				Unique:  true,
+				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[3]},
+			},
+			{
+				Name:    "order_contact_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[6]},
+			},
+			{
+				Name:    "order_broadcast_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[7]},
+			},
+			{
+				Name:    "order_automation_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[8]},
+			},
+		},
+	}
+	// OrderMovementsColumns holds the columns for the "order_movements" table.
+	OrderMovementsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"completed", "updated", "refunded", "cancelled"}},
+		{Name: "amount", Type: field.TypeInt64},
+		{Name: "occurred_at", Type: field.TypeTime},
+		{Name: "refund_id", Type: field.TypeString, Nullable: true},
+		{Name: "event_id", Type: field.TypeString, Nullable: true},
+		{Name: "order_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// OrderMovementsTable holds the schema information for the "order_movements" table.
+	OrderMovementsTable = &schema.Table{
+		Name:       "order_movements",
+		Columns:    OrderMovementsColumns,
+		PrimaryKey: []*schema.Column{OrderMovementsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "order_movements_orders_movements",
+				Columns:    []*schema.Column{OrderMovementsColumns[8]},
+				RefColumns: []*schema.Column{OrdersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "order_movements_workspaces_order_movements",
+				Columns:    []*schema.Column{OrderMovementsColumns[9]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ordermovement_workspace_id_occurred_at",
+				Unique:  false,
+				Columns: []*schema.Column{OrderMovementsColumns[9], OrderMovementsColumns[5]},
+			},
+			{
+				Name:    "ordermovement_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrderMovementsColumns[8]},
+			},
+			{
+				Name:    "ordermovement_workspace_id_order_id_refund_id",
+				Unique:  true,
+				Columns: []*schema.Column{OrderMovementsColumns[9], OrderMovementsColumns[8], OrderMovementsColumns[6]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "refund_id IS NOT NULL",
+				},
+			},
+			{
+				Name:    "ordermovement_workspace_id_event_id",
+				Unique:  true,
+				Columns: []*schema.Column{OrderMovementsColumns[9], OrderMovementsColumns[7]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "event_id IS NOT NULL",
+				},
 			},
 		},
 	}
@@ -2108,6 +2275,8 @@ var (
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
 		{Name: "timezone", Type: field.TypeString, Nullable: true},
+		{Name: "reporting_currency", Type: field.TypeString, Nullable: true},
+		{Name: "attribution_window_days", Type: field.TypeInt, Default: 5},
 		{Name: "domain_join_enabled", Type: field.TypeBool, Default: false},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
@@ -2130,7 +2299,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[13], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[15], WorkspacesColumns[0]},
 			},
 		},
 	}
@@ -2153,6 +2322,7 @@ var (
 		EmailTemplatesTable,
 		ErasuresTable,
 		EventsTable,
+		HeldOrderEventsTable,
 		HoldsTable,
 		InstanceStateTable,
 		IntegrationsTable,
@@ -2162,6 +2332,8 @@ var (
 		OauthClientsTable,
 		OauthCodesTable,
 		OauthRefreshTokensTable,
+		OrdersTable,
+		OrderMovementsTable,
 		OutboundMessagesTable,
 		PasskeysTable,
 		PasskeyChallengesTable,
@@ -2300,6 +2472,13 @@ func init() {
 	EventsTable.Annotation = &entsql.Annotation{
 		Table: "events",
 	}
+	HeldOrderEventsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	HeldOrderEventsTable.Annotation = &entsql.Annotation{
+		Table: "held_order_events",
+	}
+	HeldOrderEventsTable.Annotation.Checks = map[string]string{
+		"held_order_events_kind_check": "kind IN ('completed', 'updated', 'refunded', 'cancelled')",
+	}
 	HoldsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	HoldsTable.Annotation = &entsql.Annotation{
 		Table: "holds",
@@ -2349,6 +2528,21 @@ func init() {
 	OauthRefreshTokensTable.ForeignKeys[1].RefTable = APITokensTable
 	OauthRefreshTokensTable.Annotation = &entsql.Annotation{
 		Table: "oauth_refresh_tokens",
+	}
+	OrdersTable.ForeignKeys[0].RefTable = ContactsTable
+	OrdersTable.ForeignKeys[1].RefTable = BroadcastsTable
+	OrdersTable.ForeignKeys[2].RefTable = AutomationsTable
+	OrdersTable.ForeignKeys[3].RefTable = WorkspacesTable
+	OrdersTable.Annotation = &entsql.Annotation{
+		Table: "orders",
+	}
+	OrderMovementsTable.ForeignKeys[0].RefTable = OrdersTable
+	OrderMovementsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	OrderMovementsTable.Annotation = &entsql.Annotation{
+		Table: "order_movements",
+	}
+	OrderMovementsTable.Annotation.Checks = map[string]string{
+		"order_movements_kind_check": "kind IN ('completed', 'updated', 'refunded', 'cancelled')",
 	}
 	OutboundMessagesTable.ForeignKeys[0].RefTable = BroadcastsTable
 	OutboundMessagesTable.ForeignKeys[1].RefTable = AutomationsTable

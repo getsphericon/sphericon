@@ -168,6 +168,37 @@ func encodeSiteAnalyticsOverviewResponse(response SiteAnalyticsOverviewRes, w ht
 	}
 }
 
+func encodeSiteAnalyticsRevenueResponse(response SiteAnalyticsRevenueRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteAnalyticsRevenue:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteAnalyticsSubscribedPeopleResponse(response SiteAnalyticsSubscribedPeopleRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *SiteAnalyticsSubscribedPeople:
@@ -9527,6 +9558,37 @@ func encodeSiteWorkspacesDeleteResponse(response SiteWorkspacesDeleteRes, w http
 	}
 }
 
+func encodeSiteWorkspacesGetRevenueSettingsResponse(response SiteWorkspacesGetRevenueSettingsRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteRevenueSettingsResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteWorkspacesLeaveResponse(response SiteWorkspacesLeaveRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *SiteWorkspacesLeaveNoContent:
@@ -9777,6 +9839,61 @@ func encodeSiteWorkspacesUpdateResponse(response SiteWorkspacesUpdateRes, w http
 		return nil
 
 	case *SiteWorkspacesUpdateUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeSiteWorkspacesUpdateRevenueSettingsResponse(response SiteWorkspacesUpdateRevenueSettingsRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteRevenueSettingsResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesUpdateRevenueSettingsForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesUpdateRevenueSettingsNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
 

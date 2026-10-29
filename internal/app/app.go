@@ -57,6 +57,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/messaging/systemmail"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/rekey"
@@ -978,7 +979,7 @@ func registerEvents(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		if err := events.RegisterSubscribers(router, database.DB, client.Client, jc.Client, jc.Client, edition.Webhooks(jc.Client), edition.Consumers); err != nil {
+		if err := events.RegisterSubscribers(router, database.DB, client.Client, jc.Client, jc.Client, edition.Webhooks(jc.Client), orders.New(), edition.Consumers); err != nil {
 			return nil, err
 		}
 		return &eventsRuntime{router: router}, nil

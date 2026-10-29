@@ -43,6 +43,11 @@ export const zApiTokenScope = z.enum([
 ]);
 
 /**
+ * A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)
+ */
+export const zAttributionWindowDays = z.int().gte(1).lte(90);
+
+/**
  * An arbitrary JSON object: typed custom field values or event properties
  */
 export const zContactExportJson = z.record(z.string(), z.unknown());
@@ -55,6 +60,12 @@ export const zContactExportSource = z.enum([
   'api',
   'tracker'
 ]);
+
+/**
+ * An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided
+ * by the server, which refuses an unknown one with a reason.
+ */
+export const zCurrencyCode = z.string().regex(/^[A-Z]{3}$/);
 
 export const zEmailAddress = z.email().max(320);
 
@@ -445,28 +456,6 @@ export const zSiteAutomationStep = z.object({
 });
 
 /**
- * Denormalized delivery counters for a broadcast
- */
-export const zSiteBroadcastStats = z.object({
-  recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  deliveryRate: z.number(),
-  openRate: z.number(),
-  clickRate: z.number(),
-  clickToOpenRate: z.number(),
-  unsubscribeRate: z.number(),
-  failureRate: z.number()
-});
-
-/**
  * Broadcast lifecycle status
  */
 export const zSiteBroadcastStatus = z.enum([
@@ -814,19 +803,6 @@ export const zSiteLinkClicks = z.object({
 });
 
 /**
- * An automation's engagement figures
- */
-export const zSiteAutomationReport = z.object({
-  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  links: z.array(zSiteLinkClicks)
-});
-
-/**
  * A broadcast's per-link click figures, most clicked first
  */
 export const zSiteBroadcastLinkClicksList = z.object({
@@ -889,6 +865,55 @@ export const zSiteMembershipSource = z.enum([
   'invitation',
   'domain'
 ]);
+
+/**
+ * The Orders credited to one Broadcast or Automation and the net revenue of their Movements
+ * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
+ * lowers `amount` on its own day. Until the currency is chosen `reportingCurrency` is null and
+ * there is no figure to show. Orders in another currency are counted in neither field.
+ */
+export const zSiteMessageRevenue = z.object({
+  reportingCurrency: zCurrencyCode.nullable(),
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  amount: z.string().regex(/^[0-9]+$/)
+});
+
+/**
+ * An automation's engagement figures
+ */
+export const zSiteAutomationReport = z.object({
+  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  revenue: zSiteMessageRevenue,
+  links: z.array(zSiteLinkClicks)
+});
+
+/**
+ * Denormalized delivery counters for a broadcast
+ */
+export const zSiteBroadcastStats = z.object({
+  recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  deliveryRate: z.number(),
+  openRate: z.number(),
+  clickRate: z.number(),
+  clickToOpenRate: z.number(),
+  unsubscribeRate: z.number(),
+  failureRate: z.number(),
+  revenue: zSiteMessageRevenue
+});
 
 /**
  * One Report day of the New people report: the Contacts created that day by the door they
@@ -1142,6 +1167,42 @@ export const zSiteResendVerificationInput = z.object({
 export const zSiteResetPasswordInput = z.object({
   token: z.string(),
   password: z.string()
+});
+
+/**
+ * One Report day of the Workspace's revenue (ADR 0064): the sum of the Movements of the Orders
+ * counted in the Reporting currency that fell on that day in the Workspace time zone. A day
+ * with none is there with zeros.
+ */
+export const zSiteRevenuePoint = z.object({
+  date: z.string(),
+  amount: z.string().regex(/^[0-9]+$/),
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
+ * sum of Order Movements over the range, in the Reporting currency. Until an Owner or Admin
+ * chooses that currency `reportingCurrency` is null and every figure is zero; the Orders
+ * received meanwhile are counted once it is chosen.
+ */
+export const zSiteAnalyticsRevenue = z.object({
+  reportingCurrency: zCurrencyCode.nullable(),
+  total: z.string().regex(/^[0-9]+$/),
+  credited: z.string().regex(/^[0-9]+$/),
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  creditedOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  otherCurrencyOrders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  series: z.array(zSiteRevenuePoint)
+});
+
+/**
+ * The Workspace's revenue settings (ADR 0064): the Reporting currency every revenue figure is
+ * in, and the Attribution window an Order may follow a click by. Every member reads them.
+ */
+export const zSiteRevenueSettingsResource = z.object({
+  reportingCurrency: zCurrencyCode.nullable(),
+  attributionWindowDays: zAttributionWindowDays
 });
 
 /**
@@ -1687,6 +1748,14 @@ export const zSiteUpdateMembershipInput = z.object({
 });
 
 /**
+ * Change the revenue settings; a field left out stays as it is
+ */
+export const zSiteUpdateRevenueSettingsInput = z.object({
+  reportingCurrency: z.exactOptional(zCurrencyCode),
+  attributionWindowDays: z.exactOptional(zAttributionWindowDays)
+});
+
+/**
  * Rename an API token
  */
 export const zSiteUpdateTokenInput = z.object({
@@ -2008,6 +2077,7 @@ export const zSiteAutomationResource = z.object({
   steps: z.array(zSiteAutomationStep),
   integrationId: z.exactOptional(zEntityId.nullable()),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
+  revenue: z.exactOptional(zSiteMessageRevenue),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3459,6 +3529,19 @@ export const zSiteAnalyticsOverviewQuery = z.object({
  */
 export const zSiteAnalyticsOverviewResponse = zSiteAnalyticsOverview;
 
+export const zSiteAnalyticsRevenuePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAnalyticsRevenueQuery = z.object({
+  range: z.exactOptional(zSiteAnalyticsRange)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAnalyticsRevenueResponse = zSiteAnalyticsRevenue;
+
 export const zSiteAnalyticsSubscribedPeoplePath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -4331,6 +4414,26 @@ export const zSiteWorkspacesRestorePath = z.object({
  * The request has succeeded.
  */
 export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
+
+export const zSiteWorkspacesGetRevenueSettingsPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesGetRevenueSettingsResponse = zSiteRevenueSettingsResource;
+
+export const zSiteWorkspacesUpdateRevenueSettingsBody = zSiteUpdateRevenueSettingsInput;
+
+export const zSiteWorkspacesUpdateRevenueSettingsPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesUpdateRevenueSettingsResponse = zSiteRevenueSettingsResource;
 
 export const zSiteRulesDeletePath = z.object({
   workspaceId: zWorkspaceId,

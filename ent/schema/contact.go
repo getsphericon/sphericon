@@ -77,6 +77,10 @@ func (Contact) Edges() []ent.Edge {
 		// Contact (GLOSSARY: Event), so deleting the Contact only unlinks them.
 		edge.To("events", Event.Type).
 			Annotations(entsql.OnDelete(entsql.SetNull)),
+		// The Contact's Orders (ADR 0064): unlinked like its Events, so an Order and its
+		// amounts outlive the Contact.
+		edge.To("orders", Order.Type).
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 

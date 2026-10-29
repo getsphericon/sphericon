@@ -91,6 +91,12 @@ func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 			return err
 		}
 	}
+	orders := events.NewOrderCheck(s)
+	for _, in := range inputs {
+		if err := orders.Check(ctx, in.Action, in.Properties); err != nil {
+			return err
+		}
+	}
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		inBatch := map[string]bool{}
 		for _, in := range inputs {

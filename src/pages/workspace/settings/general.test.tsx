@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteWorkspacesDelete,
+  handleSiteWorkspacesGetRevenueSettings,
   handleSiteWorkspacesLeave,
   handleSiteWorkspacesList,
   handleSiteWorkspacesSetTimezone,
@@ -16,6 +17,10 @@ import { worker } from '../../../test/worker.ts'
 import { GeneralPage } from './general.tsx'
 
 const GENERAL_ROUTE = routeMount(generalRoute, { workspaceId: 'TestWs01' })
+
+const revenueSettings = handleSiteWorkspacesGetRevenueSettings({
+  body: { reportingCurrency: null, attributionWindowDays: 5 },
+})
 
 const workspace = {
   id: 'TestWs01',
@@ -35,6 +40,7 @@ const workspace = {
 test('renames the workspace', async () => {
   const puts: string[] = []
   worker.use(
+    revenueSettings,
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteWorkspacesUpdate(async ({ request }) => {
       puts.push(await request.text())
@@ -55,7 +61,10 @@ test('renames the workspace', async () => {
 })
 
 test('a plain member sees the name read-only', async () => {
-  worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }))
+  worker.use(
+    revenueSettings,
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }),
+  )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
 
@@ -65,6 +74,7 @@ test('a plain member sees the name read-only', async () => {
 test('an owner sets the time zone', async () => {
   const bodies: string[] = []
   worker.use(
+    revenueSettings,
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteWorkspacesSetTimezone(async ({ request }) => {
       bodies.push(await request.text())
@@ -85,7 +95,10 @@ test('an owner sets the time zone', async () => {
 })
 
 test('an admin sees the time zone read-only', async () => {
-  worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }))
+  worker.use(
+    revenueSettings,
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }),
+  )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
 
@@ -93,7 +106,10 @@ test('an admin sees the time zone read-only', async () => {
 })
 
 test('shows an error alert when the workspaces fail to load', async () => {
-  worker.use(handleSiteWorkspacesList(() => problem(500, { detail: 'boom' })))
+  worker.use(
+    revenueSettings,
+    handleSiteWorkspacesList(() => problem(500, { detail: 'boom' })),
+  )
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
 
   await expect.element(screen.getByRole('alert', { name: /Failed to load/ })).toBeInTheDocument()
@@ -102,6 +118,7 @@ test('shows an error alert when the workspaces fail to load', async () => {
 test('an owner deletes the workspace only after typing its name', async () => {
   const posts: string[] = []
   worker.use(
+    revenueSettings,
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteWorkspacesDelete(async ({ request }) => {
       posts.push(await request.text())
@@ -130,7 +147,10 @@ test('an owner deletes the workspace only after typing its name', async () => {
 })
 
 test('an admin can leave but not delete the workspace', async () => {
-  worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }))
+  worker.use(
+    revenueSettings,
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }),
+  )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
 
@@ -143,6 +163,7 @@ test('an admin can leave but not delete the workspace', async () => {
 test('leaves the workspace after confirmation', async () => {
   let left = false
   worker.use(
+    revenueSettings,
     handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }),
     handleSiteWorkspacesLeave(() => {
       left = true
@@ -161,6 +182,7 @@ test('leaves the workspace after confirmation', async () => {
 
 test('keeps the workspace and says why when the only owner tries to leave', async () => {
   worker.use(
+    revenueSettings,
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteWorkspacesLeave(() =>
       HttpResponse.json(

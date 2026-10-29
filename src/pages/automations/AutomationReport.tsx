@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { LinkClickTable } from '../../components/LinkClickTable.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteAutomationReportsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
 
 /**
  * How the emails of an Automation were engaged with: opens, clicks and the clicked links. Renders
@@ -27,6 +28,8 @@ export function AutomationReport({
     return null
   }
 
+  const revenue = formatMessageRevenue(report.revenue)
+
   return (
     <Stack gap="xs">
       <Title order={5}>{t(($) => $.automations.engagementTitle)}</Title>
@@ -40,6 +43,12 @@ export function AutomationReport({
         <StatCard label={t(($) => $.automations.bounced)} value={report.bounced} />
         <StatCard label={t(($) => $.automations.complained)} value={report.complained} />
         <StatCard label={t(($) => $.automations.captured)} value={report.captured} />
+        {revenue !== null && (
+          <>
+            <StatCard label={t(($) => $.messageRevenue.orders)} value={report.revenue.orders} />
+            <StatCard label={t(($) => $.messageRevenue.revenue)} value={revenue} />
+          </>
+        )}
       </SimpleGrid>
       <LinkClickTable links={report.links} />
     </Stack>

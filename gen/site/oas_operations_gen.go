@@ -11,6 +11,7 @@ const (
 	SiteAnalyticsNewPeopleOperation                   OperationName = "SiteAnalyticsNewPeople"
 	SiteAnalyticsOpensByHourOperation                 OperationName = "SiteAnalyticsOpensByHour"
 	SiteAnalyticsOverviewOperation                    OperationName = "SiteAnalyticsOverview"
+	SiteAnalyticsRevenueOperation                     OperationName = "SiteAnalyticsRevenue"
 	SiteAnalyticsSubscribedPeopleOperation            OperationName = "SiteAnalyticsSubscribedPeople"
 	SiteAuditExportOperation                          OperationName = "SiteAuditExport"
 	SiteAuditGetRetentionOperation                    OperationName = "SiteAuditGetRetention"
@@ -180,6 +181,7 @@ const (
 	SiteWorkspacesAccountLinkOperation                OperationName = "SiteWorkspacesAccountLink"
 	SiteWorkspacesCreateOperation                     OperationName = "SiteWorkspacesCreate"
 	SiteWorkspacesDeleteOperation                     OperationName = "SiteWorkspacesDelete"
+	SiteWorkspacesGetRevenueSettingsOperation         OperationName = "SiteWorkspacesGetRevenueSettings"
 	SiteWorkspacesLeaveOperation                      OperationName = "SiteWorkspacesLeave"
 	SiteWorkspacesListOperation                       OperationName = "SiteWorkspacesList"
 	SiteWorkspacesListDeletedOperation                OperationName = "SiteWorkspacesListDeleted"
@@ -187,4 +189,5 @@ const (
 	SiteWorkspacesSetSecondFactorRequirementOperation OperationName = "SiteWorkspacesSetSecondFactorRequirement"
 	SiteWorkspacesSetTimezoneOperation                OperationName = "SiteWorkspacesSetTimezone"
 	SiteWorkspacesUpdateOperation                     OperationName = "SiteWorkspacesUpdate"
+	SiteWorkspacesUpdateRevenueSettingsOperation      OperationName = "SiteWorkspacesUpdateRevenueSettings"
 )

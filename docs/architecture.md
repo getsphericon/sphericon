@@ -91,7 +91,10 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
      contact and scopes from its Workspace; `events.Persist`/`Suppress`, and the webhooks
      consumer, which builds the scope it hands to `Dispatch` from the event envelope: the
-     bus subscriber is the raw-client entry, an envelope carries only a Workspace id), and
+     bus subscriber is the raw-client entry, an envelope carries only a Workspace id; and the
+     orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
+     client and scopes it to the envelope's Workspace to build the Orders, handing the scope to
+     `orders.Module.Record`), and
      `secondfactor.RemindDeadlines` (the deadline reminder job: it lists the Memberships of every
      Workspace with the raw client and scopes each claim to the Workspace of the Membership it
      loaded), and `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and

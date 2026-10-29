@@ -50,6 +50,11 @@ export const ApiTokenScope = {
 export type ApiTokenScope = typeof ApiTokenScope[keyof typeof ApiTokenScope];
 
 /**
+ * A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)
+ */
+export type AttributionWindowDays = number;
+
+/**
  * The contact's engagement with one broadcast (how its send ended is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -451,6 +456,12 @@ export type ContactExportVisitor = {
    */
   createdAt: Timestamp;
 };
+
+/**
+ * An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided
+ * by the server, which refuses an unknown one with a reason.
+ */
+export type CurrencyCode = string;
 
 export type EmailAddress = string;
 
@@ -1068,6 +1079,46 @@ export const SiteAnalyticsRange = {
 export type SiteAnalyticsRange = typeof SiteAnalyticsRange[keyof typeof SiteAnalyticsRange];
 
 /**
+ * The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the
+ * sum of Order Movements over the range, in the Reporting currency. Until an Owner or Admin
+ * chooses that currency `reportingCurrency` is null and every figure is zero; the Orders
+ * received meanwhile are counted once it is chosen.
+ */
+export type SiteAnalyticsRevenue = {
+  /**
+   * The Reporting currency, null until chosen
+   */
+  reportingCurrency: CurrencyCode | null;
+  /**
+   * Revenue over the range, in the minor unit of the Reporting currency
+   */
+  total: number;
+  /**
+   * The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders
+   * credited to a Broadcast or an Automation, in the minor unit of the Reporting currency.
+   * `total` minus `credited` is the revenue of unattributed Orders.
+   */
+  credited: number;
+  /**
+   * Orders completed in the range, in the Reporting currency
+   */
+  orders: number;
+  /**
+   * Orders completed in the range that are credited to a Broadcast or an Automation
+   */
+  creditedOrders: number;
+  /**
+   * Orders in the range kept in another currency: they are listed with the Workspace's
+   * Events but counted in no sum
+   */
+  otherCurrencyOrders: number;
+  /**
+   * One point per Report day in the range, oldest first, zero-filled
+   */
+  series: Array<SiteRevenuePoint>;
+};
+
+/**
  * The Subscribed people report: the daily flow plus the current number, which is read from
  * current state and is never reconstructed from the flow
  */
@@ -1321,6 +1372,10 @@ export type SiteAutomationReport = {
    */
   captured: number;
   /**
+   * Orders credited to the automation and their net revenue (ADR 0064)
+   */
+  revenue: SiteMessageRevenue;
+  /**
    * One entry per clicked link, most clicked first
    */
   links: Array<SiteLinkClicks>;
@@ -1358,6 +1413,11 @@ export type SiteAutomationResource = {
    * When the automation was archived; null while it is kept
    */
   archivedAt?: Timestamp | null;
+  /**
+   * Orders credited to the automation and their net revenue (ADR 0064); set on the list and on
+   * the single read, absent on the responses of a change
+   */
+  revenue?: SiteMessageRevenue;
   /**
    * Creation timestamp
    */
@@ -1700,6 +1760,10 @@ export type SiteBroadcastStats = {
    * Send failures ÷ recipients targeted (0–1)
    */
   failureRate: number;
+  /**
+   * Orders credited to the Broadcast and their net revenue (ADR 0064)
+   */
+  revenue: SiteMessageRevenue;
 };
 
 /**
@@ -3239,6 +3303,27 @@ export const SiteMembershipSource = {
 export type SiteMembershipSource = typeof SiteMembershipSource[keyof typeof SiteMembershipSource];
 
 /**
+ * The Orders credited to one Broadcast or Automation and the net revenue of their Movements
+ * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
+ * lowers `amount` on its own day. Until the currency is chosen `reportingCurrency` is null and
+ * there is no figure to show. Orders in another currency are counted in neither field.
+ */
+export type SiteMessageRevenue = {
+  /**
+   * The Reporting currency, null until chosen
+   */
+  reportingCurrency: CurrencyCode | null;
+  /**
+   * Orders completed that are credited to it, in the Reporting currency
+   */
+  orders: number;
+  /**
+   * Net revenue of those Orders, in the minor unit of the Reporting currency
+   */
+  amount: number;
+};
+
+/**
  * One Report day of the New people report: the Contacts created that day by the door they
  * came through, zero-filled across the range.
  */
@@ -3682,6 +3767,44 @@ export type SiteResendVerificationInput = {
 export type SiteResetPasswordInput = {
   token: string;
   password: string;
+};
+
+/**
+ * One Report day of the Workspace's revenue (ADR 0064): the sum of the Movements of the Orders
+ * counted in the Reporting currency that fell on that day in the Workspace time zone. A day
+ * with none is there with zeros.
+ */
+export type SiteRevenuePoint = {
+  /**
+   * The Report day, `YYYY-MM-DD` in the Workspace time zone
+   */
+  date: string;
+  /**
+   * The net change of revenue that day, in the minor unit of the Reporting currency (cents
+   * for USD, whole yen for JPY); a refund makes it negative
+   */
+  amount: number;
+  /**
+   * Orders completed that day
+   */
+  orders: number;
+};
+
+/**
+ * The Workspace's revenue settings (ADR 0064): the Reporting currency every revenue figure is
+ * in, and the Attribution window an Order may follow a click by. Every member reads them.
+ */
+export type SiteRevenueSettingsResource = {
+  /**
+   * The Reporting currency; null until an Owner or Admin chooses one, and revenue is not shown
+   * before then
+   */
+  reportingCurrency: CurrencyCode | null;
+  /**
+   * The Attribution window in whole days: 5 until set. A change affects only Orders that
+   * arrive afterwards.
+   */
+  attributionWindowDays: AttributionWindowDays;
 };
 
 /**
@@ -4932,6 +5055,20 @@ export type SiteUpdateMeInput = {
  */
 export type SiteUpdateMembershipInput = {
   role: SiteMembershipRole;
+};
+
+/**
+ * Change the revenue settings; a field left out stays as it is
+ */
+export type SiteUpdateRevenueSettingsInput = {
+  /**
+   * The Reporting currency, an ISO 4217 code
+   */
+  reportingCurrency?: CurrencyCode;
+  /**
+   * The Attribution window in whole days
+   */
+  attributionWindowDays?: AttributionWindowDays;
 };
 
 /**
@@ -7335,6 +7472,38 @@ export type SiteAnalyticsOverviewResponses = {
 };
 
 export type SiteAnalyticsOverviewResponse = SiteAnalyticsOverviewResponses[keyof SiteAnalyticsOverviewResponses];
+
+export type SiteAnalyticsRevenueData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: {
+    /**
+     * Window to sum over (defaults to 30d)
+     */
+    range?: SiteAnalyticsRange;
+  };
+  url: '/workspaces/{workspaceId}/analytics/revenue';
+};
+
+export type SiteAnalyticsRevenueErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteAnalyticsRevenueError = SiteAnalyticsRevenueErrors[keyof SiteAnalyticsRevenueErrors];
+
+export type SiteAnalyticsRevenueResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAnalyticsRevenue;
+};
+
+export type SiteAnalyticsRevenueResponse = SiteAnalyticsRevenueResponses[keyof SiteAnalyticsRevenueResponses];
 
 export type SiteAnalyticsSubscribedPeopleData = {
   body?: never;
@@ -10477,6 +10646,68 @@ export type SiteWorkspacesRestoreResponses = {
 };
 
 export type SiteWorkspacesRestoreResponse = SiteWorkspacesRestoreResponses[keyof SiteWorkspacesRestoreResponses];
+
+export type SiteWorkspacesGetRevenueSettingsData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/revenue-settings';
+};
+
+export type SiteWorkspacesGetRevenueSettingsErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteWorkspacesGetRevenueSettingsError = SiteWorkspacesGetRevenueSettingsErrors[keyof SiteWorkspacesGetRevenueSettingsErrors];
+
+export type SiteWorkspacesGetRevenueSettingsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRevenueSettingsResource;
+};
+
+export type SiteWorkspacesGetRevenueSettingsResponse = SiteWorkspacesGetRevenueSettingsResponses[keyof SiteWorkspacesGetRevenueSettingsResponses];
+
+export type SiteWorkspacesUpdateRevenueSettingsData = {
+  body: SiteUpdateRevenueSettingsInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/revenue-settings';
+};
+
+export type SiteWorkspacesUpdateRevenueSettingsErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteWorkspacesUpdateRevenueSettingsError = SiteWorkspacesUpdateRevenueSettingsErrors[keyof SiteWorkspacesUpdateRevenueSettingsErrors];
+
+export type SiteWorkspacesUpdateRevenueSettingsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRevenueSettingsResource;
+};
+
+export type SiteWorkspacesUpdateRevenueSettingsResponse = SiteWorkspacesUpdateRevenueSettingsResponses[keyof SiteWorkspacesUpdateRevenueSettingsResponses];
 
 export type SiteRulesListData = {
   body?: never;

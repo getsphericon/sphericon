@@ -39,6 +39,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteAnalyticsNewPeopleOperation:                   []string{},
 	SiteAnalyticsOpensByHourOperation:                 []string{},
 	SiteAnalyticsOverviewOperation:                    []string{},
+	SiteAnalyticsRevenueOperation:                     []string{},
 	SiteAnalyticsSubscribedPeopleOperation:            []string{},
 	SiteAuditExportOperation:                          []string{},
 	SiteAuditGetRetentionOperation:                    []string{},
@@ -190,6 +191,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWorkspacesAccountLinkOperation:                []string{},
 	SiteWorkspacesCreateOperation:                     []string{},
 	SiteWorkspacesDeleteOperation:                     []string{},
+	SiteWorkspacesGetRevenueSettingsOperation:         []string{},
 	SiteWorkspacesLeaveOperation:                      []string{},
 	SiteWorkspacesListOperation:                       []string{},
 	SiteWorkspacesListDeletedOperation:                []string{},
@@ -197,6 +199,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWorkspacesSetSecondFactorRequirementOperation: []string{},
 	SiteWorkspacesSetTimezoneOperation:                []string{},
 	SiteWorkspacesUpdateOperation:                     []string{},
+	SiteWorkspacesUpdateRevenueSettingsOperation:      []string{},
 }
 
 // GetRolesForApiKeyAuth returns the required roles for the given operation.

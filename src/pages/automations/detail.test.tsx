@@ -35,6 +35,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
         bounced: 0,
         complained: 0,
         captured: 0,
+        revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
       },
     }),
@@ -82,6 +83,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
         bounced: 4,
         complained: 5,
         captured: 8,
+        revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [
           { url: 'https://dest.test/a', clicks: 7 },
           { url: 'https://dest.test/b', clicks: 2 },
@@ -127,6 +129,7 @@ test('marks a draft automation as a draft', async () => {
         bounced: 0,
         complained: 0,
         captured: 0,
+        revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
       },
     }),
@@ -145,4 +148,72 @@ test('shows an error alert when the automation fails to load', async () => {
   const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
 
   await expect.element(screen.getByText('Failed to load automations')).toBeInTheDocument()
+})
+
+test('shows the orders and the net revenue credited to the automation', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        id: '1',
+        name: 'Welcome series',
+        status: 'active',
+        triggerEvent: 'contact.created',
+        steps: [],
+        ...TIMESTAMPS,
+      },
+    }),
+    handleSiteAutomationReportsGet({
+      body: {
+        opens: 0,
+        clicks: 0,
+        delivered: 0,
+        bounced: 0,
+        complained: 0,
+        captured: 0,
+        revenue: { reportingCurrency: 'USD', orders: 4, amount: 12000 },
+        links: [],
+      },
+    }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+
+  await expect.element(screen.getByText('Orders', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('4', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('$120.00')).toBeInTheDocument()
+})
+
+test('shows no orders or revenue on the automation until the currency is chosen', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        id: '1',
+        name: 'Welcome series',
+        status: 'active',
+        triggerEvent: 'contact.created',
+        steps: [],
+        ...TIMESTAMPS,
+      },
+    }),
+    handleSiteAutomationReportsGet({
+      body: {
+        opens: 0,
+        clicks: 0,
+        delivered: 0,
+        bounced: 0,
+        complained: 0,
+        captured: 0,
+        revenue: { reportingCurrency: null, orders: 0, amount: 0 },
+        links: [],
+      },
+    }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+
+  await expect.element(screen.getByText('Opens', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Orders', { exact: true })).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Revenue', { exact: true })).not.toBeInTheDocument()
 })

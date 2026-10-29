@@ -17,7 +17,11 @@ import { BroadcastsListPage } from './list.tsx'
 const LIST_ROUTE = routeMount(broadcastsRoute, { workspaceId: 'TestWs01' })
 const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 
-const STATS = { recipientsTotal: 120, openedCount: 45 }
+const STATS = {
+  recipientsTotal: 120,
+  openedCount: 45,
+  revenue: { reportingCurrency: 'USD', orders: 7, amount: 123456 },
+}
 const DRAFT = {
   id: '1',
   name: 'Spring launch',
@@ -45,6 +49,22 @@ test('lists broadcasts with status, hold badge and counters', async () => {
   await expect.element(screen.getByText('Sending', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('On hold')).toBeInTheDocument()
   await expect.element(screen.getByText('45').first()).toBeInTheDocument()
+  await expect.element(screen.getByText('$1,234.56').first()).toBeInTheDocument()
+  await expect.element(screen.getByText('7', { exact: true }).first()).toBeInTheDocument()
+})
+
+test('shows no revenue figure while the reporting currency is unset', async () => {
+  const unset = { ...STATS, revenue: { reportingCurrency: null, orders: 0, amount: 0 } }
+  worker.use(
+    handleSiteBroadcastsList(() =>
+      HttpResponse.json({ items: [{ ...DRAFT, stats: unset }], totalItems: 1 }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+
+  await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
+  await expect.element(screen.getByText('$0.00')).not.toBeInTheDocument()
 })
 
 test('shows the empty state when there are no broadcasts', async () => {

@@ -127,6 +127,10 @@ model SiteAutomationResource {
   /** When the automation was archived; null while it is kept */
   archivedAt?: Timestamp | null;
 
+  /** Orders credited to the automation and their net revenue (ADR 0064); set on the list and on
+   * the single read, absent on the responses of a change */
+  revenue?: SiteMessageRevenue;
+
   /** Creation timestamp */
   createdAt: Timestamp;
 
@@ -244,6 +248,9 @@ model SiteAutomationReport {
 
   /** Messages that went through a Test inbox: captured, not delivered; they count as delivered too */
   captured: int32;
+
+  /** Orders credited to the automation and their net revenue (ADR 0064) */
+  revenue: SiteMessageRevenue;
 
   /** One entry per clicked link, most clicked first */
   links: SiteLinkClicks[];

@@ -26,11 +26,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
@@ -194,6 +197,47 @@ func (_u *WorkspaceUpdate) SetNillableTimezone(v *string) *WorkspaceUpdate {
 // ClearTimezone clears the value of the "timezone" field.
 func (_u *WorkspaceUpdate) ClearTimezone() *WorkspaceUpdate {
 	_u.mutation.ClearTimezone()
+	return _u
+}
+
+// SetReportingCurrency sets the "reporting_currency" field.
+func (_u *WorkspaceUpdate) SetReportingCurrency(v string) *WorkspaceUpdate {
+	_u.mutation.SetReportingCurrency(v)
+	return _u
+}
+
+// SetNillableReportingCurrency sets the "reporting_currency" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableReportingCurrency(v *string) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetReportingCurrency(*v)
+	}
+	return _u
+}
+
+// ClearReportingCurrency clears the value of the "reporting_currency" field.
+func (_u *WorkspaceUpdate) ClearReportingCurrency() *WorkspaceUpdate {
+	_u.mutation.ClearReportingCurrency()
+	return _u
+}
+
+// SetAttributionWindowDays sets the "attribution_window_days" field.
+func (_u *WorkspaceUpdate) SetAttributionWindowDays(v int) *WorkspaceUpdate {
+	_u.mutation.ResetAttributionWindowDays()
+	_u.mutation.SetAttributionWindowDays(v)
+	return _u
+}
+
+// SetNillableAttributionWindowDays sets the "attribution_window_days" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableAttributionWindowDays(v *int) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetAttributionWindowDays(*v)
+	}
+	return _u
+}
+
+// AddAttributionWindowDays adds value to the "attribution_window_days" field.
+func (_u *WorkspaceUpdate) AddAttributionWindowDays(v int) *WorkspaceUpdate {
+	_u.mutation.AddAttributionWindowDays(v)
 	return _u
 }
 
@@ -499,6 +543,51 @@ func (_u *WorkspaceUpdate) AddEvents(v ...*Event) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddEventIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (_u *WorkspaceUpdate) AddOrderIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddOrderIDs(ids...)
+	return _u
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (_u *WorkspaceUpdate) AddOrders(v ...*Order) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrderIDs(ids...)
+}
+
+// AddOrderMovementIDs adds the "order_movements" edge to the OrderMovement entity by IDs.
+func (_u *WorkspaceUpdate) AddOrderMovementIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddOrderMovementIDs(ids...)
+	return _u
+}
+
+// AddOrderMovements adds the "order_movements" edges to the OrderMovement entity.
+func (_u *WorkspaceUpdate) AddOrderMovements(v ...*OrderMovement) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrderMovementIDs(ids...)
+}
+
+// AddHeldOrderEventIDs adds the "held_order_events" edge to the HeldOrderEvent entity by IDs.
+func (_u *WorkspaceUpdate) AddHeldOrderEventIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddHeldOrderEventIDs(ids...)
+	return _u
+}
+
+// AddHeldOrderEvents adds the "held_order_events" edges to the HeldOrderEvent entity.
+func (_u *WorkspaceUpdate) AddHeldOrderEvents(v ...*HeldOrderEvent) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddHeldOrderEventIDs(ids...)
 }
 
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
@@ -1029,6 +1118,69 @@ func (_u *WorkspaceUpdate) RemoveEvents(v ...*Event) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEventIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to the Order entity.
+func (_u *WorkspaceUpdate) ClearOrders() *WorkspaceUpdate {
+	_u.mutation.ClearOrders()
+	return _u
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (_u *WorkspaceUpdate) RemoveOrderIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveOrderIDs(ids...)
+	return _u
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (_u *WorkspaceUpdate) RemoveOrders(v ...*Order) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrderIDs(ids...)
+}
+
+// ClearOrderMovements clears all "order_movements" edges to the OrderMovement entity.
+func (_u *WorkspaceUpdate) ClearOrderMovements() *WorkspaceUpdate {
+	_u.mutation.ClearOrderMovements()
+	return _u
+}
+
+// RemoveOrderMovementIDs removes the "order_movements" edge to OrderMovement entities by IDs.
+func (_u *WorkspaceUpdate) RemoveOrderMovementIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveOrderMovementIDs(ids...)
+	return _u
+}
+
+// RemoveOrderMovements removes "order_movements" edges to OrderMovement entities.
+func (_u *WorkspaceUpdate) RemoveOrderMovements(v ...*OrderMovement) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrderMovementIDs(ids...)
+}
+
+// ClearHeldOrderEvents clears all "held_order_events" edges to the HeldOrderEvent entity.
+func (_u *WorkspaceUpdate) ClearHeldOrderEvents() *WorkspaceUpdate {
+	_u.mutation.ClearHeldOrderEvents()
+	return _u
+}
+
+// RemoveHeldOrderEventIDs removes the "held_order_events" edge to HeldOrderEvent entities by IDs.
+func (_u *WorkspaceUpdate) RemoveHeldOrderEventIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveHeldOrderEventIDs(ids...)
+	return _u
+}
+
+// RemoveHeldOrderEvents removes "held_order_events" edges to HeldOrderEvent entities.
+func (_u *WorkspaceUpdate) RemoveHeldOrderEvents(v ...*HeldOrderEvent) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveHeldOrderEventIDs(ids...)
 }
 
 // ClearVisitors clears all "visitors" edges to the Visitor entity.
@@ -1672,6 +1824,16 @@ func (_u *WorkspaceUpdate) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ReportingCurrency(); ok {
+		if err := workspace.ReportingCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "reporting_currency", err: fmt.Errorf(`ent: validator failed for field "Workspace.reporting_currency": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.AttributionWindowDays(); ok {
+		if err := workspace.AttributionWindowDaysValidator(v); err != nil {
+			return &ValidationError{Name: "attribution_window_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.attribution_window_days": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
 			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
@@ -1736,6 +1898,18 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReportingCurrency(); ok {
+		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
+	}
+	if _u.mutation.ReportingCurrencyCleared() {
+		_spec.ClearField(workspace.FieldReportingCurrency, field.TypeString)
+	}
+	if value, ok := _u.mutation.AttributionWindowDays(); ok {
+		_spec.SetField(workspace.FieldAttributionWindowDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAttributionWindowDays(); ok {
+		_spec.AddField(workspace.FieldAttributionWindowDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
@@ -2021,6 +2195,141 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrdersTable,
+			Columns: []string{workspace.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !_u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrdersTable,
+			Columns: []string{workspace.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrdersTable,
+			Columns: []string{workspace.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrderMovementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrderMovementsTable,
+			Columns: []string{workspace.OrderMovementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ordermovement.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrderMovementsIDs(); len(nodes) > 0 && !_u.mutation.OrderMovementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrderMovementsTable,
+			Columns: []string{workspace.OrderMovementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ordermovement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrderMovementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrderMovementsTable,
+			Columns: []string{workspace.OrderMovementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ordermovement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HeldOrderEventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HeldOrderEventsTable,
+			Columns: []string{workspace.HeldOrderEventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(heldorderevent.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedHeldOrderEventsIDs(); len(nodes) > 0 && !_u.mutation.HeldOrderEventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HeldOrderEventsTable,
+			Columns: []string{workspace.HeldOrderEventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(heldorderevent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HeldOrderEventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HeldOrderEventsTable,
+			Columns: []string{workspace.HeldOrderEventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(heldorderevent.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -3445,6 +3754,47 @@ func (_u *WorkspaceUpdateOne) ClearTimezone() *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetReportingCurrency sets the "reporting_currency" field.
+func (_u *WorkspaceUpdateOne) SetReportingCurrency(v string) *WorkspaceUpdateOne {
+	_u.mutation.SetReportingCurrency(v)
+	return _u
+}
+
+// SetNillableReportingCurrency sets the "reporting_currency" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableReportingCurrency(v *string) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetReportingCurrency(*v)
+	}
+	return _u
+}
+
+// ClearReportingCurrency clears the value of the "reporting_currency" field.
+func (_u *WorkspaceUpdateOne) ClearReportingCurrency() *WorkspaceUpdateOne {
+	_u.mutation.ClearReportingCurrency()
+	return _u
+}
+
+// SetAttributionWindowDays sets the "attribution_window_days" field.
+func (_u *WorkspaceUpdateOne) SetAttributionWindowDays(v int) *WorkspaceUpdateOne {
+	_u.mutation.ResetAttributionWindowDays()
+	_u.mutation.SetAttributionWindowDays(v)
+	return _u
+}
+
+// SetNillableAttributionWindowDays sets the "attribution_window_days" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableAttributionWindowDays(v *int) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetAttributionWindowDays(*v)
+	}
+	return _u
+}
+
+// AddAttributionWindowDays adds value to the "attribution_window_days" field.
+func (_u *WorkspaceUpdateOne) AddAttributionWindowDays(v int) *WorkspaceUpdateOne {
+	_u.mutation.AddAttributionWindowDays(v)
+	return _u
+}
+
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
 func (_u *WorkspaceUpdateOne) SetDomainJoinEnabled(v bool) *WorkspaceUpdateOne {
 	_u.mutation.SetDomainJoinEnabled(v)
@@ -3747,6 +4097,51 @@ func (_u *WorkspaceUpdateOne) AddEvents(v ...*Event) *WorkspaceUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddEventIDs(ids...)
+}
+
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (_u *WorkspaceUpdateOne) AddOrderIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddOrderIDs(ids...)
+	return _u
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (_u *WorkspaceUpdateOne) AddOrders(v ...*Order) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrderIDs(ids...)
+}
+
+// AddOrderMovementIDs adds the "order_movements" edge to the OrderMovement entity by IDs.
+func (_u *WorkspaceUpdateOne) AddOrderMovementIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddOrderMovementIDs(ids...)
+	return _u
+}
+
+// AddOrderMovements adds the "order_movements" edges to the OrderMovement entity.
+func (_u *WorkspaceUpdateOne) AddOrderMovements(v ...*OrderMovement) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrderMovementIDs(ids...)
+}
+
+// AddHeldOrderEventIDs adds the "held_order_events" edge to the HeldOrderEvent entity by IDs.
+func (_u *WorkspaceUpdateOne) AddHeldOrderEventIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddHeldOrderEventIDs(ids...)
+	return _u
+}
+
+// AddHeldOrderEvents adds the "held_order_events" edges to the HeldOrderEvent entity.
+func (_u *WorkspaceUpdateOne) AddHeldOrderEvents(v ...*HeldOrderEvent) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddHeldOrderEventIDs(ids...)
 }
 
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
@@ -4277,6 +4672,69 @@ func (_u *WorkspaceUpdateOne) RemoveEvents(v ...*Event) *WorkspaceUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEventIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to the Order entity.
+func (_u *WorkspaceUpdateOne) ClearOrders() *WorkspaceUpdateOne {
+	_u.mutation.ClearOrders()
+	return _u
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveOrderIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveOrderIDs(ids...)
+	return _u
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (_u *WorkspaceUpdateOne) RemoveOrders(v ...*Order) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrderIDs(ids...)
+}
+
+// ClearOrderMovements clears all "order_movements" edges to the OrderMovement entity.
+func (_u *WorkspaceUpdateOne) ClearOrderMovements() *WorkspaceUpdateOne {
+	_u.mutation.ClearOrderMovements()
+	return _u
+}
+
+// RemoveOrderMovementIDs removes the "order_movements" edge to OrderMovement entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveOrderMovementIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveOrderMovementIDs(ids...)
+	return _u
+}
+
+// RemoveOrderMovements removes "order_movements" edges to OrderMovement entities.
+func (_u *WorkspaceUpdateOne) RemoveOrderMovements(v ...*OrderMovement) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrderMovementIDs(ids...)
+}
+
+// ClearHeldOrderEvents clears all "held_order_events" edges to the HeldOrderEvent entity.
+func (_u *WorkspaceUpdateOne) ClearHeldOrderEvents() *WorkspaceUpdateOne {
+	_u.mutation.ClearHeldOrderEvents()
+	return _u
+}
+
+// RemoveHeldOrderEventIDs removes the "held_order_events" edge to HeldOrderEvent entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveHeldOrderEventIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveHeldOrderEventIDs(ids...)
+	return _u
+}
+
+// RemoveHeldOrderEvents removes "held_order_events" edges to HeldOrderEvent entities.
+func (_u *WorkspaceUpdateOne) RemoveHeldOrderEvents(v ...*HeldOrderEvent) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveHeldOrderEventIDs(ids...)
 }
 
 // ClearVisitors clears all "visitors" edges to the Visitor entity.
@@ -4933,6 +5391,16 @@ func (_u *WorkspaceUpdateOne) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ReportingCurrency(); ok {
+		if err := workspace.ReportingCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "reporting_currency", err: fmt.Errorf(`ent: validator failed for field "Workspace.reporting_currency": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.AttributionWindowDays(); ok {
+		if err := workspace.AttributionWindowDaysValidator(v); err != nil {
+			return &ValidationError{Name: "attribution_window_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.attribution_window_days": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
 			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
@@ -5014,6 +5482,18 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReportingCurrency(); ok {
+		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
+	}
+	if _u.mutation.ReportingCurrencyCleared() {
+		_spec.ClearField(workspace.FieldReportingCurrency, field.TypeString)
+	}
+	if value, ok := _u.mutation.AttributionWindowDays(); ok {
+		_spec.SetField(workspace.FieldAttributionWindowDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAttributionWindowDays(); ok {
+		_spec.AddField(workspace.FieldAttributionWindowDays, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
@@ -5299,6 +5779,141 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrdersTable,
+			Columns: []string{workspace.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !_u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrdersTable,
+			Columns: []string{workspace.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrdersTable,
+			Columns: []string{workspace.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrderMovementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrderMovementsTable,
+			Columns: []string{workspace.OrderMovementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ordermovement.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrderMovementsIDs(); len(nodes) > 0 && !_u.mutation.OrderMovementsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrderMovementsTable,
+			Columns: []string{workspace.OrderMovementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ordermovement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrderMovementsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.OrderMovementsTable,
+			Columns: []string{workspace.OrderMovementsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ordermovement.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.HeldOrderEventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HeldOrderEventsTable,
+			Columns: []string{workspace.HeldOrderEventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(heldorderevent.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedHeldOrderEventsIDs(); len(nodes) > 0 && !_u.mutation.HeldOrderEventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HeldOrderEventsTable,
+			Columns: []string{workspace.HeldOrderEventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(heldorderevent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.HeldOrderEventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.HeldOrderEventsTable,
+			Columns: []string{workspace.HeldOrderEventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(heldorderevent.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

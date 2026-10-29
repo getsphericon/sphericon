@@ -38,6 +38,13 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/analytics/overview
 	SiteAnalyticsOverview(ctx context.Context, params SiteAnalyticsOverviewParams) (SiteAnalyticsOverviewRes, error)
+	// SiteAnalyticsRevenue implements SiteAnalytics_revenue operation.
+	//
+	// Revenue of the Workspace's Orders over the range, in its Reporting currency (ADR 0064). Open to
+	// every member.
+	//
+	// GET /workspaces/{workspaceId}/analytics/revenue
+	SiteAnalyticsRevenue(ctx context.Context, params SiteAnalyticsRevenueParams) (SiteAnalyticsRevenueRes, error)
 	// SiteAnalyticsSubscribedPeople implements SiteAnalytics_subscribedPeople operation.
 	//
 	// Subscribed people report: who subscribed and unsubscribed per Report day, and how many are
@@ -1221,6 +1228,13 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/delete
 	SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error)
+	// SiteWorkspacesGetRevenueSettings implements SiteWorkspaces_getRevenueSettings operation.
+	//
+	// Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
+	// Attribution window. Open to every member.
+	//
+	// GET /workspaces/{workspaceId}/revenue-settings
+	SiteWorkspacesGetRevenueSettings(ctx context.Context, params SiteWorkspacesGetRevenueSettingsParams) (SiteWorkspacesGetRevenueSettingsRes, error)
 	// SiteWorkspacesLeave implements SiteWorkspaces_leave operation.
 	//
 	// Leave a Workspace (any Role): the caller's own Membership is removed at once, with no Owner involved
@@ -1274,6 +1288,14 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}
 	SiteWorkspacesUpdate(ctx context.Context, req *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (SiteWorkspacesUpdateRes, error)
+	// SiteWorkspacesUpdateRevenueSettings implements SiteWorkspaces_updateRevenueSettings operation.
+	//
+	// Change the Reporting currency and the Attribution window (Owner and Admin only, Permission
+	// `revenue:configure`, ADR 0061). 422 for a currency code that is not in ISO 4217 or a window outside
+	// its bounds. Every change is recorded as an Audit entry naming who changed what.
+	//
+	// PUT /workspaces/{workspaceId}/revenue-settings
+	SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req *SiteUpdateRevenueSettingsInput, params SiteWorkspacesUpdateRevenueSettingsParams) (SiteWorkspacesUpdateRevenueSettingsRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

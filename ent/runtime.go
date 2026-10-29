@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -30,6 +31,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
@@ -436,6 +439,29 @@ func init() {
 	eventDescBackfill := eventFields[10].Descriptor()
 	// event.DefaultBackfill holds the default value on creation for the backfill field.
 	event.DefaultBackfill = eventDescBackfill.Default.(bool)
+	heldordereventMixin := schema.HeldOrderEvent{}.Mixin()
+	heldordereventMixinFields0 := heldordereventMixin[0].Fields()
+	_ = heldordereventMixinFields0
+	heldordereventFields := schema.HeldOrderEvent{}.Fields()
+	_ = heldordereventFields
+	// heldordereventDescCreatedAt is the schema descriptor for created_at field.
+	heldordereventDescCreatedAt := heldordereventMixinFields0[0].Descriptor()
+	// heldorderevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	heldorderevent.DefaultCreatedAt = heldordereventDescCreatedAt.Default.(func() time.Time)
+	// heldordereventDescUpdatedAt is the schema descriptor for updated_at field.
+	heldordereventDescUpdatedAt := heldordereventMixinFields0[1].Descriptor()
+	// heldorderevent.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	heldorderevent.DefaultUpdatedAt = heldordereventDescUpdatedAt.Default.(func() time.Time)
+	// heldorderevent.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	heldorderevent.UpdateDefaultUpdatedAt = heldordereventDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// heldordereventDescOrderID is the schema descriptor for order_id field.
+	heldordereventDescOrderID := heldordereventFields[1].Descriptor()
+	// heldorderevent.OrderIDValidator is a validator for the "order_id" field. It is called by the builders before save.
+	heldorderevent.OrderIDValidator = heldordereventDescOrderID.Validators[0].(func(string) error)
+	// heldordereventDescEventID is the schema descriptor for event_id field.
+	heldordereventDescEventID := heldordereventFields[5].Descriptor()
+	// heldorderevent.EventIDValidator is a validator for the "event_id" field. It is called by the builders before save.
+	heldorderevent.EventIDValidator = heldordereventDescEventID.Validators[0].(func(string) error)
 	holdMixin := schema.Hold{}.Mixin()
 	holdMixinFields0 := holdMixin[0].Fields()
 	_ = holdMixinFields0
@@ -667,6 +693,52 @@ func init() {
 	oauthrefreshtokenDescTokenHash := oauthrefreshtokenFields[1].Descriptor()
 	// oauthrefreshtoken.TokenHashValidator is a validator for the "token_hash" field. It is called by the builders before save.
 	oauthrefreshtoken.TokenHashValidator = oauthrefreshtokenDescTokenHash.Validators[0].(func(string) error)
+	orderMixin := schema.Order{}.Mixin()
+	orderMixinFields0 := orderMixin[0].Fields()
+	_ = orderMixinFields0
+	orderFields := schema.Order{}.Fields()
+	_ = orderFields
+	// orderDescCreatedAt is the schema descriptor for created_at field.
+	orderDescCreatedAt := orderMixinFields0[0].Descriptor()
+	// order.DefaultCreatedAt holds the default value on creation for the created_at field.
+	order.DefaultCreatedAt = orderDescCreatedAt.Default.(func() time.Time)
+	// orderDescUpdatedAt is the schema descriptor for updated_at field.
+	orderDescUpdatedAt := orderMixinFields0[1].Descriptor()
+	// order.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	order.DefaultUpdatedAt = orderDescUpdatedAt.Default.(func() time.Time)
+	// order.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	order.UpdateDefaultUpdatedAt = orderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// orderDescOrderID is the schema descriptor for order_id field.
+	orderDescOrderID := orderFields[1].Descriptor()
+	// order.OrderIDValidator is a validator for the "order_id" field. It is called by the builders before save.
+	order.OrderIDValidator = orderDescOrderID.Validators[0].(func(string) error)
+	// orderDescCurrency is the schema descriptor for currency field.
+	orderDescCurrency := orderFields[3].Descriptor()
+	// order.CurrencyValidator is a validator for the "currency" field. It is called by the builders before save.
+	order.CurrencyValidator = orderDescCurrency.Validators[0].(func(string) error)
+	ordermovementMixin := schema.OrderMovement{}.Mixin()
+	ordermovementMixinFields0 := ordermovementMixin[0].Fields()
+	_ = ordermovementMixinFields0
+	ordermovementFields := schema.OrderMovement{}.Fields()
+	_ = ordermovementFields
+	// ordermovementDescCreatedAt is the schema descriptor for created_at field.
+	ordermovementDescCreatedAt := ordermovementMixinFields0[0].Descriptor()
+	// ordermovement.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ordermovement.DefaultCreatedAt = ordermovementDescCreatedAt.Default.(func() time.Time)
+	// ordermovementDescUpdatedAt is the schema descriptor for updated_at field.
+	ordermovementDescUpdatedAt := ordermovementMixinFields0[1].Descriptor()
+	// ordermovement.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ordermovement.DefaultUpdatedAt = ordermovementDescUpdatedAt.Default.(func() time.Time)
+	// ordermovement.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ordermovement.UpdateDefaultUpdatedAt = ordermovementDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// ordermovementDescRefundID is the schema descriptor for refund_id field.
+	ordermovementDescRefundID := ordermovementFields[5].Descriptor()
+	// ordermovement.RefundIDValidator is a validator for the "refund_id" field. It is called by the builders before save.
+	ordermovement.RefundIDValidator = ordermovementDescRefundID.Validators[0].(func(string) error)
+	// ordermovementDescEventID is the schema descriptor for event_id field.
+	ordermovementDescEventID := ordermovementFields[6].Descriptor()
+	// ordermovement.EventIDValidator is a validator for the "event_id" field. It is called by the builders before save.
+	ordermovement.EventIDValidator = ordermovementDescEventID.Validators[0].(func(string) error)
 	outboundmessageMixin := schema.OutboundMessage{}.Mixin()
 	outboundmessageMixinFields0 := outboundmessageMixin[0].Fields()
 	_ = outboundmessageMixinFields0
@@ -1278,16 +1350,26 @@ func init() {
 	workspaceDescTimezone := workspaceFields[7].Descriptor()
 	// workspace.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	workspace.TimezoneValidator = workspaceDescTimezone.Validators[0].(func(string) error)
+	// workspaceDescReportingCurrency is the schema descriptor for reporting_currency field.
+	workspaceDescReportingCurrency := workspaceFields[8].Descriptor()
+	// workspace.ReportingCurrencyValidator is a validator for the "reporting_currency" field. It is called by the builders before save.
+	workspace.ReportingCurrencyValidator = workspaceDescReportingCurrency.Validators[0].(func(string) error)
+	// workspaceDescAttributionWindowDays is the schema descriptor for attribution_window_days field.
+	workspaceDescAttributionWindowDays := workspaceFields[9].Descriptor()
+	// workspace.DefaultAttributionWindowDays holds the default value on creation for the attribution_window_days field.
+	workspace.DefaultAttributionWindowDays = workspaceDescAttributionWindowDays.Default.(int)
+	// workspace.AttributionWindowDaysValidator is a validator for the "attribution_window_days" field. It is called by the builders before save.
+	workspace.AttributionWindowDaysValidator = workspaceDescAttributionWindowDays.Validators[0].(func(int) error)
 	// workspaceDescDomainJoinEnabled is the schema descriptor for domain_join_enabled field.
-	workspaceDescDomainJoinEnabled := workspaceFields[8].Descriptor()
+	workspaceDescDomainJoinEnabled := workspaceFields[10].Descriptor()
 	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
 	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
 	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
-	workspaceDescFeedPosition := workspaceFields[10].Descriptor()
+	workspaceDescFeedPosition := workspaceFields[12].Descriptor()
 	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[17].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[19].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 }

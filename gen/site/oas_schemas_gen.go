@@ -295,6 +295,8 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	}
 }
 
+type AttributionWindowDays int32
+
 // The contact's engagement with one broadcast (how its send ended is in `outboundMessages`).
 // Ref: #/components/schemas/ContactExportBroadcastRecipient
 type ContactExportBroadcastRecipient struct {
@@ -1397,6 +1399,8 @@ func (s *ContactExportVisitor) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+type CurrencyCode string
+
 type EmailAddress string
 
 type EntityId int64
@@ -1878,6 +1882,51 @@ func (s *LintFinding) SetDetail(val OptString) {
 	s.Detail = val
 }
 
+// NewNilCurrencyCode returns new NilCurrencyCode with value set to v.
+func NewNilCurrencyCode(v CurrencyCode) NilCurrencyCode {
+	return NilCurrencyCode{
+		Value: v,
+	}
+}
+
+// NilCurrencyCode is nullable CurrencyCode.
+type NilCurrencyCode struct {
+	Value CurrencyCode
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilCurrencyCode) SetTo(v CurrencyCode) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilCurrencyCode) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilCurrencyCode) SetToNull() {
+	o.Null = true
+	var v CurrencyCode
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilCurrencyCode) Get() (v CurrencyCode, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilCurrencyCode) Or(d CurrencyCode) CurrencyCode {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilEntityId returns new NilEntityId with value set to v.
 func NewNilEntityId(v EntityId) NilEntityId {
 	return NilEntityId{
@@ -2103,6 +2152,52 @@ func (o NilString) Or(d string) string {
 	return d
 }
 
+// NewOptAttributionWindowDays returns new OptAttributionWindowDays with value set to v.
+func NewOptAttributionWindowDays(v AttributionWindowDays) OptAttributionWindowDays {
+	return OptAttributionWindowDays{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAttributionWindowDays is optional AttributionWindowDays.
+type OptAttributionWindowDays struct {
+	Value AttributionWindowDays
+	Set   bool
+}
+
+// IsSet returns true if OptAttributionWindowDays was set.
+func (o OptAttributionWindowDays) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAttributionWindowDays) Reset() {
+	var v AttributionWindowDays
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAttributionWindowDays) SetTo(v AttributionWindowDays) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAttributionWindowDays) Get() (v AttributionWindowDays, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAttributionWindowDays) Or(d AttributionWindowDays) AttributionWindowDays {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptBool returns new OptBool with value set to v.
 func NewOptBool(v bool) OptBool {
 	return OptBool{
@@ -2143,6 +2238,52 @@ func (o OptBool) Get() (v bool, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptBool) Or(d bool) bool {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptCurrencyCode returns new OptCurrencyCode with value set to v.
+func NewOptCurrencyCode(v CurrencyCode) OptCurrencyCode {
+	return OptCurrencyCode{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCurrencyCode is optional CurrencyCode.
+type OptCurrencyCode struct {
+	Value CurrencyCode
+	Set   bool
+}
+
+// IsSet returns true if OptCurrencyCode was set.
+func (o OptCurrencyCode) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCurrencyCode) Reset() {
+	var v CurrencyCode
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCurrencyCode) SetTo(v CurrencyCode) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCurrencyCode) Get() (v CurrencyCode, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCurrencyCode) Or(d CurrencyCode) CurrencyCode {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3969,6 +4110,52 @@ func (o OptSiteAnalyticsRange) Or(d SiteAnalyticsRange) SiteAnalyticsRange {
 	return d
 }
 
+// NewOptSiteAnalyticsRevenueRange returns new OptSiteAnalyticsRevenueRange with value set to v.
+func NewOptSiteAnalyticsRevenueRange(v SiteAnalyticsRevenueRange) OptSiteAnalyticsRevenueRange {
+	return OptSiteAnalyticsRevenueRange{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAnalyticsRevenueRange is optional SiteAnalyticsRevenueRange.
+type OptSiteAnalyticsRevenueRange struct {
+	Value SiteAnalyticsRevenueRange
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAnalyticsRevenueRange was set.
+func (o OptSiteAnalyticsRevenueRange) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAnalyticsRevenueRange) Reset() {
+	var v SiteAnalyticsRevenueRange
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAnalyticsRevenueRange) SetTo(v SiteAnalyticsRevenueRange) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAnalyticsRevenueRange) Get() (v SiteAnalyticsRevenueRange, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAnalyticsRevenueRange) Or(d SiteAnalyticsRevenueRange) SiteAnalyticsRevenueRange {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteAuditActorKind returns new OptSiteAuditActorKind with value set to v.
 func NewOptSiteAuditActorKind(v SiteAuditActorKind) OptSiteAuditActorKind {
 	return OptSiteAuditActorKind{
@@ -4561,6 +4748,52 @@ func (o OptSiteMembershipSource) Get() (v SiteMembershipSource, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteMembershipSource) Or(d SiteMembershipSource) SiteMembershipSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteMessageRevenue returns new OptSiteMessageRevenue with value set to v.
+func NewOptSiteMessageRevenue(v SiteMessageRevenue) OptSiteMessageRevenue {
+	return OptSiteMessageRevenue{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteMessageRevenue is optional SiteMessageRevenue.
+type OptSiteMessageRevenue struct {
+	Value SiteMessageRevenue
+	Set   bool
+}
+
+// IsSet returns true if OptSiteMessageRevenue was set.
+func (o OptSiteMessageRevenue) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteMessageRevenue) Reset() {
+	var v SiteMessageRevenue
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteMessageRevenue) SetTo(v SiteMessageRevenue) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteMessageRevenue) Get() (v SiteMessageRevenue, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteMessageRevenue) Or(d SiteMessageRevenue) SiteMessageRevenue {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -5655,6 +5888,7 @@ func (*ProblemDetails) siteAnalyticsEventsRes()                {}
 func (*ProblemDetails) siteAnalyticsNewPeopleRes()             {}
 func (*ProblemDetails) siteAnalyticsOpensByHourRes()           {}
 func (*ProblemDetails) siteAnalyticsOverviewRes()              {}
+func (*ProblemDetails) siteAnalyticsRevenueRes()               {}
 func (*ProblemDetails) siteAnalyticsSubscribedPeopleRes()      {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
@@ -5679,6 +5913,7 @@ func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
 func (*ProblemDetails) siteSetupChecklistGetRes()              {}
 func (*ProblemDetails) siteTokensListRes()                     {}
+func (*ProblemDetails) siteWorkspacesGetRevenueSettingsRes()   {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -6735,6 +6970,152 @@ func (s *SiteAnalyticsRange) UnmarshalText(data []byte) error {
 	}
 }
 
+// The revenue of the orders the Workspace sent to Sphericon (ADR 0064), not of its shop: the sum of
+// Order Movements over the range, in the Reporting currency. Until an Owner or Admin chooses that
+// currency `reportingCurrency` is null and every figure is zero; the Orders received meanwhile are
+// counted once it is chosen.
+// Ref: #/components/schemas/SiteAnalyticsRevenue
+type SiteAnalyticsRevenue struct {
+	// The Reporting currency, null until chosen.
+	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
+	// Revenue over the range, in the minor unit of the Reporting currency.
+	Total int64 `json:"total"`
+	// The part of `total` credited to messages (ADR 0064): the sum of the Movements of the Orders credited
+	// to a Broadcast or an Automation, in the minor unit of the Reporting currency. `total` minus
+	// `credited` is the revenue of unattributed Orders.
+	Credited int64 `json:"credited"`
+	// Orders completed in the range, in the Reporting currency.
+	Orders int32 `json:"orders"`
+	// Orders completed in the range that are credited to a Broadcast or an Automation.
+	CreditedOrders int32 `json:"creditedOrders"`
+	// Orders in the range kept in another currency: they are listed with the Workspace's Events but
+	// counted in no sum.
+	OtherCurrencyOrders int32 `json:"otherCurrencyOrders"`
+	// One point per Report day in the range, oldest first, zero-filled.
+	Series []SiteRevenuePoint `json:"series"`
+}
+
+// GetReportingCurrency returns the value of ReportingCurrency.
+func (s *SiteAnalyticsRevenue) GetReportingCurrency() NilCurrencyCode {
+	return s.ReportingCurrency
+}
+
+// GetTotal returns the value of Total.
+func (s *SiteAnalyticsRevenue) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCredited returns the value of Credited.
+func (s *SiteAnalyticsRevenue) GetCredited() int64 {
+	return s.Credited
+}
+
+// GetOrders returns the value of Orders.
+func (s *SiteAnalyticsRevenue) GetOrders() int32 {
+	return s.Orders
+}
+
+// GetCreditedOrders returns the value of CreditedOrders.
+func (s *SiteAnalyticsRevenue) GetCreditedOrders() int32 {
+	return s.CreditedOrders
+}
+
+// GetOtherCurrencyOrders returns the value of OtherCurrencyOrders.
+func (s *SiteAnalyticsRevenue) GetOtherCurrencyOrders() int32 {
+	return s.OtherCurrencyOrders
+}
+
+// GetSeries returns the value of Series.
+func (s *SiteAnalyticsRevenue) GetSeries() []SiteRevenuePoint {
+	return s.Series
+}
+
+// SetReportingCurrency sets the value of ReportingCurrency.
+func (s *SiteAnalyticsRevenue) SetReportingCurrency(val NilCurrencyCode) {
+	s.ReportingCurrency = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SiteAnalyticsRevenue) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCredited sets the value of Credited.
+func (s *SiteAnalyticsRevenue) SetCredited(val int64) {
+	s.Credited = val
+}
+
+// SetOrders sets the value of Orders.
+func (s *SiteAnalyticsRevenue) SetOrders(val int32) {
+	s.Orders = val
+}
+
+// SetCreditedOrders sets the value of CreditedOrders.
+func (s *SiteAnalyticsRevenue) SetCreditedOrders(val int32) {
+	s.CreditedOrders = val
+}
+
+// SetOtherCurrencyOrders sets the value of OtherCurrencyOrders.
+func (s *SiteAnalyticsRevenue) SetOtherCurrencyOrders(val int32) {
+	s.OtherCurrencyOrders = val
+}
+
+// SetSeries sets the value of Series.
+func (s *SiteAnalyticsRevenue) SetSeries(val []SiteRevenuePoint) {
+	s.Series = val
+}
+
+func (*SiteAnalyticsRevenue) siteAnalyticsRevenueRes() {}
+
+// Merged schema.
+type SiteAnalyticsRevenueRange string
+
+const (
+	SiteAnalyticsRevenueRange7d  SiteAnalyticsRevenueRange = "7d"
+	SiteAnalyticsRevenueRange30d SiteAnalyticsRevenueRange = "30d"
+	SiteAnalyticsRevenueRange90d SiteAnalyticsRevenueRange = "90d"
+)
+
+// AllValues returns all SiteAnalyticsRevenueRange values.
+func (SiteAnalyticsRevenueRange) AllValues() []SiteAnalyticsRevenueRange {
+	return []SiteAnalyticsRevenueRange{
+		SiteAnalyticsRevenueRange7d,
+		SiteAnalyticsRevenueRange30d,
+		SiteAnalyticsRevenueRange90d,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAnalyticsRevenueRange) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAnalyticsRevenueRange7d:
+		return []byte(s), nil
+	case SiteAnalyticsRevenueRange30d:
+		return []byte(s), nil
+	case SiteAnalyticsRevenueRange90d:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAnalyticsRevenueRange) UnmarshalText(data []byte) error {
+	switch SiteAnalyticsRevenueRange(data) {
+	case SiteAnalyticsRevenueRange7d:
+		*s = SiteAnalyticsRevenueRange7d
+		return nil
+	case SiteAnalyticsRevenueRange30d:
+		*s = SiteAnalyticsRevenueRange30d
+		return nil
+	case SiteAnalyticsRevenueRange90d:
+		*s = SiteAnalyticsRevenueRange90d
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The Subscribed people report: the daily flow plus the current number, which is read from current
 // state and is never reconstructed from the flow.
 // Ref: #/components/schemas/SiteAnalyticsSubscribedPeople
@@ -7598,6 +7979,8 @@ type SiteAutomationReport struct {
 	Complained int32 `json:"complained"`
 	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
 	Captured int32 `json:"captured"`
+	// Orders credited to the automation and their net revenue (ADR 0064).
+	Revenue SiteMessageRevenue `json:"revenue"`
 	// One entry per clicked link, most clicked first.
 	Links []SiteLinkClicks `json:"links"`
 }
@@ -7630,6 +8013,11 @@ func (s *SiteAutomationReport) GetComplained() int32 {
 // GetCaptured returns the value of Captured.
 func (s *SiteAutomationReport) GetCaptured() int32 {
 	return s.Captured
+}
+
+// GetRevenue returns the value of Revenue.
+func (s *SiteAutomationReport) GetRevenue() SiteMessageRevenue {
+	return s.Revenue
 }
 
 // GetLinks returns the value of Links.
@@ -7667,6 +8055,11 @@ func (s *SiteAutomationReport) SetCaptured(val int32) {
 	s.Captured = val
 }
 
+// SetRevenue sets the value of Revenue.
+func (s *SiteAutomationReport) SetRevenue(val SiteMessageRevenue) {
+	s.Revenue = val
+}
+
 // SetLinks sets the value of Links.
 func (s *SiteAutomationReport) SetLinks(val []SiteLinkClicks) {
 	s.Links = val
@@ -7699,6 +8092,9 @@ type SiteAutomationResource struct {
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// When the automation was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
+	// Orders credited to the automation and their net revenue (ADR 0064); set on the list and on the
+	// single read, absent on the responses of a change.
+	Revenue OptSiteMessageRevenue `json:"revenue"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -7738,6 +8134,11 @@ func (s *SiteAutomationResource) GetIntegrationId() OptNilEntityId {
 // GetArchivedAt returns the value of ArchivedAt.
 func (s *SiteAutomationResource) GetArchivedAt() OptNilTimestamp {
 	return s.ArchivedAt
+}
+
+// GetRevenue returns the value of Revenue.
+func (s *SiteAutomationResource) GetRevenue() OptSiteMessageRevenue {
+	return s.Revenue
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -7783,6 +8184,11 @@ func (s *SiteAutomationResource) SetIntegrationId(val OptNilEntityId) {
 // SetArchivedAt sets the value of ArchivedAt.
 func (s *SiteAutomationResource) SetArchivedAt(val OptNilTimestamp) {
 	s.ArchivedAt = val
+}
+
+// SetRevenue sets the value of Revenue.
+func (s *SiteAutomationResource) SetRevenue(val OptSiteMessageRevenue) {
+	s.Revenue = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.
@@ -8808,6 +9214,8 @@ type SiteBroadcastStats struct {
 	UnsubscribeRate float32 `json:"unsubscribeRate"`
 	// Send failures ÷ recipients targeted (0–1).
 	FailureRate float32 `json:"failureRate"`
+	// Orders credited to the Broadcast and their net revenue (ADR 0064).
+	Revenue SiteMessageRevenue `json:"revenue"`
 }
 
 // GetRecipientsTotal returns the value of RecipientsTotal.
@@ -8890,6 +9298,11 @@ func (s *SiteBroadcastStats) GetFailureRate() float32 {
 	return s.FailureRate
 }
 
+// GetRevenue returns the value of Revenue.
+func (s *SiteBroadcastStats) GetRevenue() SiteMessageRevenue {
+	return s.Revenue
+}
+
 // SetRecipientsTotal sets the value of RecipientsTotal.
 func (s *SiteBroadcastStats) SetRecipientsTotal(val int32) {
 	s.RecipientsTotal = val
@@ -8968,6 +9381,11 @@ func (s *SiteBroadcastStats) SetUnsubscribeRate(val float32) {
 // SetFailureRate sets the value of FailureRate.
 func (s *SiteBroadcastStats) SetFailureRate(val float32) {
 	s.FailureRate = val
+}
+
+// SetRevenue sets the value of Revenue.
+func (s *SiteBroadcastStats) SetRevenue(val SiteMessageRevenue) {
+	s.Revenue = val
 }
 
 // Broadcast lifecycle status.
@@ -14669,6 +15087,50 @@ type SiteMembershipsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteMembershipsUpdateUnprocessableEntity) siteMembershipsUpdateRes() {}
 
+// The Orders credited to one Broadcast or Automation and the net revenue of their Movements (ADR
+// 0064), in the Reporting currency, read from the Movements and never stored: a refund lowers `amount`
+// on its own day. Until the currency is chosen `reportingCurrency` is null and there is no figure to
+// show. Orders in another currency are counted in neither field.
+// Ref: #/components/schemas/SiteMessageRevenue
+type SiteMessageRevenue struct {
+	// The Reporting currency, null until chosen.
+	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
+	// Orders completed that are credited to it, in the Reporting currency.
+	Orders int32 `json:"orders"`
+	// Net revenue of those Orders, in the minor unit of the Reporting currency.
+	Amount int64 `json:"amount"`
+}
+
+// GetReportingCurrency returns the value of ReportingCurrency.
+func (s *SiteMessageRevenue) GetReportingCurrency() NilCurrencyCode {
+	return s.ReportingCurrency
+}
+
+// GetOrders returns the value of Orders.
+func (s *SiteMessageRevenue) GetOrders() int32 {
+	return s.Orders
+}
+
+// GetAmount returns the value of Amount.
+func (s *SiteMessageRevenue) GetAmount() int64 {
+	return s.Amount
+}
+
+// SetReportingCurrency sets the value of ReportingCurrency.
+func (s *SiteMessageRevenue) SetReportingCurrency(val NilCurrencyCode) {
+	s.ReportingCurrency = val
+}
+
+// SetOrders sets the value of Orders.
+func (s *SiteMessageRevenue) SetOrders(val int32) {
+	s.Orders = val
+}
+
+// SetAmount sets the value of Amount.
+func (s *SiteMessageRevenue) SetAmount(val int64) {
+	s.Amount = val
+}
+
 // One Report day of the New people report: the Contacts created that day by the door they came
 // through, zero-filled across the range.
 // Ref: #/components/schemas/SiteNewPeoplePoint
@@ -16447,6 +16909,85 @@ func (s *SiteResetPasswordInput) SetToken(val string) {
 func (s *SiteResetPasswordInput) SetPassword(val string) {
 	s.Password = val
 }
+
+// One Report day of the Workspace's revenue (ADR 0064): the sum of the Movements of the Orders counted
+// in the Reporting currency that fell on that day in the Workspace time zone. A day with none is there
+// with zeros.
+// Ref: #/components/schemas/SiteRevenuePoint
+type SiteRevenuePoint struct {
+	// The Report day, `YYYY-MM-DD` in the Workspace time zone.
+	Date string `json:"date"`
+	// The net change of revenue that day, in the minor unit of the Reporting currency (cents for USD,
+	// whole yen for JPY); a refund makes it negative.
+	Amount int64 `json:"amount"`
+	// Orders completed that day.
+	Orders int32 `json:"orders"`
+}
+
+// GetDate returns the value of Date.
+func (s *SiteRevenuePoint) GetDate() string {
+	return s.Date
+}
+
+// GetAmount returns the value of Amount.
+func (s *SiteRevenuePoint) GetAmount() int64 {
+	return s.Amount
+}
+
+// GetOrders returns the value of Orders.
+func (s *SiteRevenuePoint) GetOrders() int32 {
+	return s.Orders
+}
+
+// SetDate sets the value of Date.
+func (s *SiteRevenuePoint) SetDate(val string) {
+	s.Date = val
+}
+
+// SetAmount sets the value of Amount.
+func (s *SiteRevenuePoint) SetAmount(val int64) {
+	s.Amount = val
+}
+
+// SetOrders sets the value of Orders.
+func (s *SiteRevenuePoint) SetOrders(val int32) {
+	s.Orders = val
+}
+
+// The Workspace's revenue settings (ADR 0064): the Reporting currency every revenue figure is in, and
+// the Attribution window an Order may follow a click by. Every member reads them.
+// Ref: #/components/schemas/SiteRevenueSettingsResource
+type SiteRevenueSettingsResource struct {
+	// The Reporting currency; null until an Owner or Admin chooses one, and revenue is not shown before
+	// then.
+	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
+	// The Attribution window in whole days: 5 until set. A change affects only Orders that arrive
+	// afterwards.
+	AttributionWindowDays AttributionWindowDays `json:"attributionWindowDays"`
+}
+
+// GetReportingCurrency returns the value of ReportingCurrency.
+func (s *SiteRevenueSettingsResource) GetReportingCurrency() NilCurrencyCode {
+	return s.ReportingCurrency
+}
+
+// GetAttributionWindowDays returns the value of AttributionWindowDays.
+func (s *SiteRevenueSettingsResource) GetAttributionWindowDays() AttributionWindowDays {
+	return s.AttributionWindowDays
+}
+
+// SetReportingCurrency sets the value of ReportingCurrency.
+func (s *SiteRevenueSettingsResource) SetReportingCurrency(val NilCurrencyCode) {
+	s.ReportingCurrency = val
+}
+
+// SetAttributionWindowDays sets the value of AttributionWindowDays.
+func (s *SiteRevenueSettingsResource) SetAttributionWindowDays(val AttributionWindowDays) {
+	s.AttributionWindowDays = val
+}
+
+func (*SiteRevenueSettingsResource) siteWorkspacesGetRevenueSettingsRes()    {}
+func (*SiteRevenueSettingsResource) siteWorkspacesUpdateRevenueSettingsRes() {}
 
 // One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
 // name, http actions the call.
@@ -21452,6 +21993,35 @@ func (s *SiteUpdateMembershipInput) SetRole(val SiteMembershipRole) {
 	s.Role = val
 }
 
+// Change the revenue settings; a field left out stays as it is.
+// Ref: #/components/schemas/SiteUpdateRevenueSettingsInput
+type SiteUpdateRevenueSettingsInput struct {
+	// The Reporting currency, an ISO 4217 code.
+	ReportingCurrency OptCurrencyCode `json:"reportingCurrency"`
+	// The Attribution window in whole days.
+	AttributionWindowDays OptAttributionWindowDays `json:"attributionWindowDays"`
+}
+
+// GetReportingCurrency returns the value of ReportingCurrency.
+func (s *SiteUpdateRevenueSettingsInput) GetReportingCurrency() OptCurrencyCode {
+	return s.ReportingCurrency
+}
+
+// GetAttributionWindowDays returns the value of AttributionWindowDays.
+func (s *SiteUpdateRevenueSettingsInput) GetAttributionWindowDays() OptAttributionWindowDays {
+	return s.AttributionWindowDays
+}
+
+// SetReportingCurrency sets the value of ReportingCurrency.
+func (s *SiteUpdateRevenueSettingsInput) SetReportingCurrency(val OptCurrencyCode) {
+	s.ReportingCurrency = val
+}
+
+// SetAttributionWindowDays sets the value of AttributionWindowDays.
+func (s *SiteUpdateRevenueSettingsInput) SetAttributionWindowDays(val OptAttributionWindowDays) {
+	s.AttributionWindowDays = val
+}
+
 // Site request body for updating a Rule.
 // Ref: #/components/schemas/SiteUpdateRuleInput
 type SiteUpdateRuleInput struct {
@@ -22762,6 +23332,19 @@ func (*SiteWorkspacesUpdateForbidden) siteWorkspacesUpdateRes() {}
 type SiteWorkspacesUpdateNotFound ProblemDetails
 
 func (*SiteWorkspacesUpdateNotFound) siteWorkspacesUpdateRes() {}
+
+type SiteWorkspacesUpdateRevenueSettingsForbidden ProblemDetails
+
+func (*SiteWorkspacesUpdateRevenueSettingsForbidden) siteWorkspacesUpdateRevenueSettingsRes() {}
+
+type SiteWorkspacesUpdateRevenueSettingsNotFound ProblemDetails
+
+func (*SiteWorkspacesUpdateRevenueSettingsNotFound) siteWorkspacesUpdateRevenueSettingsRes() {}
+
+type SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity ProblemDetails
+
+func (*SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity) siteWorkspacesUpdateRevenueSettingsRes() {
+}
 
 type SiteWorkspacesUpdateUnprocessableEntity ProblemDetails
 

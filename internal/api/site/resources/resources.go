@@ -22,12 +22,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/integrations"
 
+	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -53,6 +55,8 @@ import (
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
 // goverter:extend optNilTimeZone
+// goverter:extend nilCurrencyCode
+// goverter:extend attributionWindowDays
 // goverter:extend workspaceTimezone
 // goverter:extend optNilTimestamp
 // goverter:extend contactCustomFields
@@ -114,6 +118,11 @@ type Converter interface {
 	// The numeric key stays internal: the contract's id is the Workspace id.
 	// goverter:map PublicID ID
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
+	// The revenue settings are two columns of the Workspace (ADR 0064).
+	RevenueSettingsToResource(source *ent.Workspace) siteapi.SiteRevenueSettingsResource
+	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
+	// goverter:map Currency ReportingCurrency
+	RevenueToResource(source *analytics.Revenue) siteapi.SiteAnalyticsRevenue
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	LinkClicksToResource(source []linkclicks.Clicks) []siteapi.SiteLinkClicks
 
@@ -143,6 +152,9 @@ type Converter interface {
 	// The stored definition string (the executor's JSON format) is decoded into
 	// the typed steps DTO at this boundary.
 	// goverter:map . Steps | automationSteps
+	// The revenue is summed from Order Movements, which the mapper cannot see: the handler
+	// attaches it.
+	// goverter:ignore Revenue
 	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
@@ -443,12 +455,40 @@ func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
 		ClickToOpenRate:   broadcasts.Ratio(st.Clicked, st.Opened),
 		UnsubscribeRate:   broadcasts.Ratio(st.Unsubscribed, st.Sent),
 		FailureRate:       broadcasts.Ratio(st.Failed, st.Recipients),
+		Revenue:           MessageRevenue(st.Revenue),
+	}
+}
+
+// MessageRevenue is the Orders and net revenue credited to a Broadcast or an Automation, in
+// the Reporting currency (nil until chosen: the figures are then zero). f holds one id: a
+// list item narrows it with Only.
+func MessageRevenue(f orders.Figures) siteapi.SiteMessageRevenue {
+	var c orders.Credited
+	for _, v := range f.ByID {
+		c = v
+	}
+	return siteapi.SiteMessageRevenue{
+		ReportingCurrency: nilCurrencyCode(f.Currency),
+		Orders:            narrow.Int32(c.Orders),
+		Amount:            c.Amount,
 	}
 }
 
 // workspaceTimezone is the Workspace time zone, UTC while an Owner has not set one (ADR 0057).
 func workspaceTimezone(v *string) siteapi.TimeZoneName {
 	return siteapi.TimeZoneName(reportday.Name(v))
+}
+
+// nilCurrencyCode is the Reporting currency, null until an Owner or Admin chooses one (ADR 0064).
+func nilCurrencyCode(v *string) siteapi.NilCurrencyCode {
+	if v == nil {
+		return siteapi.NilCurrencyCode{Null: true}
+	}
+	return siteapi.NewNilCurrencyCode(siteapi.CurrencyCode(*v))
+}
+
+func attributionWindowDays(v int) siteapi.AttributionWindowDays {
+	return siteapi.AttributionWindowDays(narrow.Int32(v))
 }
 
 func optNilTimeZone(v *string) siteapi.OptNilTimeZoneName {

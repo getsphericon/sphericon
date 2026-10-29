@@ -22,12 +22,15 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
@@ -211,6 +214,9 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).AuditEntry, auditentry.IDIn),
 	stepOf((*ent.Scoped).Erasure, erasure.IDIn),
 	stepOf((*ent.Scoped).Event, event.IDIn),
+	stepOf((*ent.Scoped).HeldOrderEvent, heldorderevent.IDIn),
+	stepOf((*ent.Scoped).OrderMovement, ordermovement.IDIn),
+	stepOf((*ent.Scoped).Order, order.IDIn),
 	stepOf((*ent.Scoped).CapturedMessage, capturedmessage.IDIn),
 	stepOf((*ent.Scoped).OutboundMessage, outboundmessage.IDIn),
 	stepOf((*ent.Scoped).BroadcastRecipient, broadcastrecipient.IDIn),

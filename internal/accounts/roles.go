@@ -98,6 +98,13 @@ func CanSetTimezone(role membership.Role) bool {
 	return role == membership.RoleOwner
 }
 
+// CanConfigureRevenue reports whether role may choose the Reporting currency and the Attribution
+// window (Permission `revenue:configure`, ADR 0061 access table, ADR 0064): they decide what
+// every revenue figure means for everyone. Owner and admin may; every member reads them.
+func CanConfigureRevenue(role membership.Role) bool {
+	return role == membership.RoleOwner || role == membership.RoleAdmin
+}
+
 // CanDeleteWorkspace reports whether role may delete the Workspace and restore it within its
 // deletion window (ADR 0043). Owner only.
 func CanDeleteWorkspace(role membership.Role) bool {

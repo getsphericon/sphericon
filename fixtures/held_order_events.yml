@@ -1,0 +1,23 @@
+# An Order Refunded that arrived before the Order Completed of its order_id (ADR 0064), old on
+# purpose like the Orders: no revenue test reads it, and an order_id of its own never completes.
+# Workspace acme (id 1)
+- id: 1 # fixture: HeldOrderEventAcme
+  order_id: fixture-order-held
+  kind: refunded
+  properties: '{"order_id": "fixture-order-held", "total": 5, "currency": "USD"}'
+  event_id: fixture-held-event-1
+  occurred_at: '{{daysAgo 200}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 200}}'
+  updated_at: '{{daysAgo 200}}'
+
+# --- Globex (workspace 2) foreign row — DO NOT change ---
+- id: 900 # fixture: HeldOrderEventGlobex
+  order_id: fixture-order-held
+  kind: refunded
+  properties: '{"order_id": "fixture-order-held", "total": 5, "currency": "USD"}'
+  event_id: fixture-held-event-globex
+  occurred_at: '{{daysAgo 200}}'
+  workspace_id: 2
+  created_at: '{{daysAgo 200}}'
+  updated_at: '{{daysAgo 200}}'

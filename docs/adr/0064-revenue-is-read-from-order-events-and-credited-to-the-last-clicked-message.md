@@ -18,7 +18,8 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
   (`order_id`, `total`, `currency`, `products`, `discount`, `tax`, `shipping`, `cancel_reason`). No
   name or field is translated. The four order Events are checked at ingest, on the tracker and the
   external API alike: an amount with more places than its currency has, or an unknown currency code, is
-  refused with a reason in the response, so the shop learns at once and no order is lost silently.
+  refused with a reason in the response, so the shop learns at once and no order is lost silently. Only what Sphericon reads is checked
+  (`order_id`, `total`, `currency`, a refund's `refund_id`): an odd `tax` or `revenue` refuses nothing.
   Every other Event is ingested as before, and a valid order Event is stored like any Event and read
   after it is stored. A field the spec has and Sphericon does not use is kept in the Event's properties.
 - **An Order is a read model of those Events**, one per (Workspace, `order_id`), and its revenue is
@@ -50,8 +51,12 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
   Events' retention is 400 days by default and counts from when an Event is stored (ADR 0019).
 - **One reporting currency per Workspace**, set by the Owner or an Admin, who also set the window; both
   changes enter the audit log. Revenue is not shown until the currency is chosen, and an Order without a
-  `currency` counts in it. An Order in another currency is stored and listed but counted in no sum. No
-  rate is applied, so no figure is a guess.
+  `currency` counts in it. An Order Completed that names no currency while none is chosen is kept as
+  sent and read when the Owner or an Admin chooses one, so a shop that never sends a `currency` loses
+  no order; one that names a currency is read at once. An Order keeps the currency it was read in: a
+  later change of the Reporting currency leaves it in the old one. An Updated, Refunded or Cancelled
+  that names no currency is in the currency of its own Order. An Order in another currency is stored
+  and listed but counted in no sum. No rate is applied, so no figure is a guess.
 - **Attribution is the last click.** An Order is credited to the Broadcast or Automation whose
   `email.clicked` Event the Contact made most recently before the order's Event time, inside the
   **Attribution window**, which the Workspace edits and which is 5 days until set. Opens do not count:

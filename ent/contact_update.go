@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/visitor"
@@ -235,6 +236,21 @@ func (_u *ContactUpdate) AddEvents(v ...*Event) *ContactUpdate {
 	return _u.AddEventIDs(ids...)
 }
 
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (_u *ContactUpdate) AddOrderIDs(ids ...int64) *ContactUpdate {
+	_u.mutation.AddOrderIDs(ids...)
+	return _u
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (_u *ContactUpdate) AddOrders(v ...*Order) *ContactUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrderIDs(ids...)
+}
+
 // Mutation returns the ContactMutation object of the builder.
 func (_u *ContactUpdate) Mutation() *ContactMutation {
 	return _u.mutation
@@ -307,6 +323,27 @@ func (_u *ContactUpdate) RemoveEvents(v ...*Event) *ContactUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEventIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to the Order entity.
+func (_u *ContactUpdate) ClearOrders() *ContactUpdate {
+	_u.mutation.ClearOrders()
+	return _u
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (_u *ContactUpdate) RemoveOrderIDs(ids ...int64) *ContactUpdate {
+	_u.mutation.RemoveOrderIDs(ids...)
+	return _u
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (_u *ContactUpdate) RemoveOrders(v ...*Order) *ContactUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrderIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -583,6 +620,51 @@ func (_u *ContactUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.OrdersTable,
+			Columns: []string{contact.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !_u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.OrdersTable,
+			Columns: []string{contact.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.OrdersTable,
+			Columns: []string{contact.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -807,6 +889,21 @@ func (_u *ContactUpdateOne) AddEvents(v ...*Event) *ContactUpdateOne {
 	return _u.AddEventIDs(ids...)
 }
 
+// AddOrderIDs adds the "orders" edge to the Order entity by IDs.
+func (_u *ContactUpdateOne) AddOrderIDs(ids ...int64) *ContactUpdateOne {
+	_u.mutation.AddOrderIDs(ids...)
+	return _u
+}
+
+// AddOrders adds the "orders" edges to the Order entity.
+func (_u *ContactUpdateOne) AddOrders(v ...*Order) *ContactUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrderIDs(ids...)
+}
+
 // Mutation returns the ContactMutation object of the builder.
 func (_u *ContactUpdateOne) Mutation() *ContactMutation {
 	return _u.mutation
@@ -879,6 +976,27 @@ func (_u *ContactUpdateOne) RemoveEvents(v ...*Event) *ContactUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveEventIDs(ids...)
+}
+
+// ClearOrders clears all "orders" edges to the Order entity.
+func (_u *ContactUpdateOne) ClearOrders() *ContactUpdateOne {
+	_u.mutation.ClearOrders()
+	return _u
+}
+
+// RemoveOrderIDs removes the "orders" edge to Order entities by IDs.
+func (_u *ContactUpdateOne) RemoveOrderIDs(ids ...int64) *ContactUpdateOne {
+	_u.mutation.RemoveOrderIDs(ids...)
+	return _u
+}
+
+// RemoveOrders removes "orders" edges to Order entities.
+func (_u *ContactUpdateOne) RemoveOrders(v ...*Order) *ContactUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrderIDs(ids...)
 }
 
 // Where appends a list predicates to the ContactUpdate builder.
@@ -1178,6 +1296,51 @@ func (_u *ContactUpdateOne) sqlSave(ctx context.Context) (_node *Contact, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.OrdersTable,
+			Columns: []string{contact.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrdersIDs(); len(nodes) > 0 && !_u.mutation.OrdersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.OrdersTable,
+			Columns: []string{contact.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrdersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   contact.OrdersTable,
+			Columns: []string{contact.OrdersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(order.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

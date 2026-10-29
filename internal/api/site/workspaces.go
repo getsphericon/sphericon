@@ -333,3 +333,55 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	}
 	return &r, nil
 }
+
+// SiteWorkspacesGetRevenueSettings reads the Reporting currency and the Attribution window
+// (every member, ADR 0064).
+func (h *Handlers) SiteWorkspacesGetRevenueSettings(ctx context.Context, params siteapi.SiteWorkspacesGetRevenueSettingsParams) (siteapi.SiteWorkspacesGetRevenueSettingsRes, error) {
+	s, _, err := h.membershipFor(ctx, params.WorkspaceId)
+	if err != nil {
+		return nil, err
+	}
+	w, err := h.accounts.Workspace(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := mapper.RevenueSettingsToResource(w)
+	return &r, nil
+}
+
+// SiteWorkspacesUpdateRevenueSettings changes the Reporting currency and the Attribution window
+// (Owner and Admin, Permission revenue:configure, ADR 0064).
+func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req *siteapi.SiteUpdateRevenueSettingsInput, params siteapi.SiteWorkspacesUpdateRevenueSettingsParams) (siteapi.SiteWorkspacesUpdateRevenueSettingsRes, error) {
+	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
+	if err != nil {
+		return nil, err
+	}
+	if !accounts.CanConfigureRevenue(m.Role) {
+		v := siteapi.SiteWorkspacesUpdateRevenueSettingsForbidden(problem(http.StatusForbidden, "only owners and admins can change the revenue settings"))
+		return &v, nil
+	}
+	var code *string
+	if c, ok := req.ReportingCurrency.Get(); ok {
+		str := string(c)
+		code = &str
+	}
+	var days *int
+	if d, ok := req.AttributionWindowDays.Get(); ok {
+		n := int(d)
+		days = &n
+	}
+	w, err := h.accounts.SetRevenueSettings(ctx, s, h.actor(ctx), code, days)
+	if errors.Is(err, accounts.ErrUnknownCurrency) {
+		reason := i18n.T("errors.currency_unknown", nil)
+		v := siteapi.SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity(problemWithErrors(
+			http.StatusUnprocessableEntity, reason,
+			map[string][]string{"reportingCurrency": {reason}},
+		))
+		return &v, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	r := mapper.RevenueSettingsToResource(w)
+	return &r, nil
+}

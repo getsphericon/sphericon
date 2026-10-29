@@ -55,6 +55,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/reputation"
@@ -179,7 +180,8 @@ type TestEnv struct {
 	// Outbound module.
 	Holds *holds.Holds
 
-	edition *ee.Edition // the EE parts, built like the composition root builds them
+	orders  *orders.Module // the orders subscriber's module, driven by DeliverOrders
+	edition *ee.Edition    // the EE parts, built like the composition root builds them
 
 	sender    *outbound.Module // the Outbound module the queued Broadcast sends run through
 	jwtSecret string           // for tokens a test needs in a state the Tracker never mints
@@ -501,7 +503,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule,
 		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule, CapturedMessages: capturedModule,
-		Tokens: authtoken.New(baseCfg.JWTSecret).WithClock(st.now), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New().WithRetention(cfg.EventsRetention),
+		Tokens: authtoken.New(baseCfg.JWTSecret).WithClock(st.now), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New().WithClock(st.now).WithRetention(cfg.EventsRetention),
 		SecondFactor:             secondFactor,
 		Passkeys:                 passkeys,
 		Clock:                    st.now,
@@ -514,7 +516,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	return &TestEnv{
 		sender:   sender,
-		Instance: inst, AppURL: cfg.AppURL, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
+		Instance: inst, AppURL: cfg.AppURL, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, orders: orders.New(), Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
 		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Machine: detector, PrivateRelay: relay, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
 	}
 }

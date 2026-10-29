@@ -7,6 +7,7 @@ import (
 	ent "github.com/getsphericon/sphericon/ent"
 	schema "github.com/getsphericon/sphericon/ent/schema"
 	site "github.com/getsphericon/sphericon/gen/site"
+	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
@@ -411,6 +412,32 @@ func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey 
 	}
 	return siteapiSitePasskey
 }
+func (c *ConverterImpl) RevenueSettingsToResource(source *ent.Workspace) site.SiteRevenueSettingsResource {
+	var siteapiSiteRevenueSettingsResource site.SiteRevenueSettingsResource
+	if source != nil {
+		siteapiSiteRevenueSettingsResource.ReportingCurrency = nilCurrencyCode((*source).ReportingCurrency)
+		siteapiSiteRevenueSettingsResource.AttributionWindowDays = attributionWindowDays((*source).AttributionWindowDays)
+	}
+	return siteapiSiteRevenueSettingsResource
+}
+func (c *ConverterImpl) RevenueToResource(source *analytics.Revenue) site.SiteAnalyticsRevenue {
+	var siteapiSiteAnalyticsRevenue site.SiteAnalyticsRevenue
+	if source != nil {
+		siteapiSiteAnalyticsRevenue.ReportingCurrency = nilCurrencyCode((*source).Currency)
+		siteapiSiteAnalyticsRevenue.Total = (*source).Total
+		siteapiSiteAnalyticsRevenue.Credited = (*source).Credited
+		siteapiSiteAnalyticsRevenue.Orders = count((*source).Orders)
+		siteapiSiteAnalyticsRevenue.CreditedOrders = count((*source).CreditedOrders)
+		siteapiSiteAnalyticsRevenue.OtherCurrencyOrders = count((*source).OtherCurrencyOrders)
+		if (*source).Series != nil {
+			siteapiSiteAnalyticsRevenue.Series = make([]site.SiteRevenuePoint, len((*source).Series))
+			for i := 0; i < len((*source).Series); i++ {
+				siteapiSiteAnalyticsRevenue.Series[i] = c.analyticsRevenuePointToSiteapiSiteRevenuePoint((*source).Series[i])
+			}
+		}
+	}
+	return siteapiSiteAnalyticsRevenue
+}
 func (c *ConverterImpl) RuleDryRunToResource(source rules.DryRun) site.SiteRuleDryRunResource {
 	var siteapiSiteRuleDryRunResource site.SiteRuleDryRunResource
 	siteapiSiteRuleDryRunResource.Outcome = site.SiteRuleDryRunOutcome(source.Outcome)
@@ -666,6 +693,13 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteWorkspaceResource
+}
+func (c *ConverterImpl) analyticsRevenuePointToSiteapiSiteRevenuePoint(source analytics.RevenuePoint) site.SiteRevenuePoint {
+	var siteapiSiteRevenuePoint site.SiteRevenuePoint
+	siteapiSiteRevenuePoint.Date = source.Date
+	siteapiSiteRevenuePoint.Amount = source.Amount
+	siteapiSiteRevenuePoint.Orders = count(source.Orders)
+	return siteapiSiteRevenuePoint
 }
 func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
 	var siteapiSiteLinkClicks site.SiteLinkClicks

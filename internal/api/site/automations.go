@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -25,8 +26,16 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 		return nil, err
 	}
 
+	revenue, err := orders.CreditedToAutomations(ctx, ws, lo.Map(page.Items, func(a *ent.Automation, _ int) int64 { return a.ID })...)
+	if err != nil {
+		return nil, err
+	}
 	return &siteapi.SiteAutomationsListOK{
-		Items:      lo.Map(page.Items, func(a *ent.Automation, _ int) siteapi.SiteAutomationResource { return mapper.AutomationToResource(a) }),
+		Items: lo.Map(page.Items, func(a *ent.Automation, _ int) siteapi.SiteAutomationResource {
+			res := mapper.AutomationToResource(a)
+			res.Revenue = siteapi.NewOptSiteMessageRevenue(resources.MessageRevenue(revenue.Only(a.ID)))
+			return res
+		}),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),
@@ -63,7 +72,12 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 	if err != nil {
 		return nil, err
 	}
+	revenue, err := orders.CreditedToAutomations(ctx, ws, a.ID)
+	if err != nil {
+		return nil, err
+	}
 	res := mapper.AutomationToResource(a)
+	res.Revenue = siteapi.NewOptSiteMessageRevenue(resources.MessageRevenue(revenue.Only(a.ID)))
 	return &res, nil
 }
 

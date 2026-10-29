@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/visitor"
@@ -33,6 +34,7 @@ type ContactQuery struct {
 	withVisitors    *VisitorQuery
 	withTags        *TagQuery
 	withEvents      *EventQuery
+	withOrders      *OrderQuery
 	withContactTags *ContactTagQuery
 	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -152,6 +154,28 @@ func (_q *ContactQuery) QueryEvents() *EventQuery {
 			sqlgraph.From(contact.Table, contact.FieldID, selector),
 			sqlgraph.To(event.Table, event.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, contact.EventsTable, contact.EventsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOrders chains the current query on the "orders" edge.
+func (_q *ContactQuery) QueryOrders() *OrderQuery {
+	query := (&OrderClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(contact.Table, contact.FieldID, selector),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, contact.OrdersTable, contact.OrdersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -377,6 +401,7 @@ func (_q *ContactQuery) Clone() *ContactQuery {
 		withVisitors:    _q.withVisitors.Clone(),
 		withTags:        _q.withTags.Clone(),
 		withEvents:      _q.withEvents.Clone(),
+		withOrders:      _q.withOrders.Clone(),
 		withContactTags: _q.withContactTags.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
@@ -426,6 +451,17 @@ func (_q *ContactQuery) WithEvents(opts ...func(*EventQuery)) *ContactQuery {
 		opt(query)
 	}
 	_q.withEvents = query
+	return _q
+}
+
+// WithOrders tells the query-builder to eager-load the nodes that are connected to
+// the "orders" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ContactQuery) WithOrders(opts ...func(*OrderQuery)) *ContactQuery {
+	query := (&OrderClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOrders = query
 	return _q
 }
 
@@ -518,11 +554,12 @@ func (_q *ContactQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cont
 	var (
 		nodes       = []*Contact{}
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			_q.withWorkspace != nil,
 			_q.withVisitors != nil,
 			_q.withTags != nil,
 			_q.withEvents != nil,
+			_q.withOrders != nil,
 			_q.withContactTags != nil,
 		}
 	)
@@ -571,6 +608,13 @@ func (_q *ContactQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Cont
 		if err := _q.loadEvents(ctx, query, nodes,
 			func(n *Contact) { n.Edges.Events = []*Event{} },
 			func(n *Contact, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOrders; query != nil {
+		if err := _q.loadOrders(ctx, query, nodes,
+			func(n *Contact) { n.Edges.Orders = []*Order{} },
+			func(n *Contact, e *Order) { n.Edges.Orders = append(n.Edges.Orders, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -722,6 +766,39 @@ func (_q *ContactQuery) loadEvents(ctx context.Context, query *EventQuery, nodes
 	}
 	query.Where(predicate.Event(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(contact.EventsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ContactID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "contact_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "contact_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ContactQuery) loadOrders(ctx context.Context, query *OrderQuery, nodes []*Contact, init func(*Contact), assign func(*Contact, *Order)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Contact)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(order.FieldContactID)
+	}
+	query.Where(predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(contact.OrdersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

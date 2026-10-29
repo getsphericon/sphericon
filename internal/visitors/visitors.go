@@ -95,6 +95,12 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 			return events.CheckAction(evt.Action)
 		}
 	}
+	orders := events.NewOrderCheck(s)
+	for _, evt := range evts {
+		if err := orders.Check(ctx, evt.Action, evt.Properties); err != nil {
+			return err
+		}
+	}
 	for _, evt := range evts {
 		visitorID := strings.TrimSpace(evt.VisitorID)
 		dedupID := ""

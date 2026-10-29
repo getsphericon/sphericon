@@ -2,11 +2,14 @@ import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 
 import {
+  handleSiteAnalyticsRevenue,
   handleSiteAutomationsList,
   handleSiteBroadcastsList,
   handleSiteSendingDomainsList,
   handleSiteSetupChecklistGet,
 } from '../../generated/site/msw.gen.ts'
+import { SiteAnalyticsRange } from '../../generated/site/types.gen.ts'
+import type { SiteAnalyticsRevenue } from '../../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -23,12 +26,24 @@ const finished = {
   complete: true,
 } as const
 
+const revenue: SiteAnalyticsRevenue = {
+  reportingCurrency: null,
+  total: 0,
+  credited: 0,
+  orders: 0,
+  creditedOrders: 0,
+  otherCurrencyOrders: 0,
+  series: [],
+}
+
 const mount = routeMount(overviewRoute, { workspaceId: 'TestWs01' })
 
 beforeEach(() => {
   worker.use(
     handleSiteBroadcastsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
     handleSiteAutomationsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
+    handleSiteSetupChecklistGet({ body: finished }),
+    handleSiteAnalyticsRevenue({ body: { ...revenue, reportingCurrency: 'USD' } }),
   )
 })
 
@@ -154,4 +169,93 @@ test('a done contact step offers no action', async () => {
   await expect
     .element(screen.getByRole('link', { name: 'Install the tracker' }))
     .not.toBeInTheDocument()
+})
+
+test('revenue shows the total, the credited share and the orders in the Reporting currency', async () => {
+  worker.use(
+    handleSiteAnalyticsRevenue({
+      body: {
+        ...revenue,
+        reportingCurrency: 'USD',
+        total: 123456,
+        credited: 30864,
+        orders: 17,
+        creditedOrders: 5,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('$1,234.56')).toBeInTheDocument()
+  await expect.element(screen.getByText('25%')).toBeInTheDocument()
+  await expect.element(screen.getByText('17', { exact: true })).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/orders sent to Sphericon, not of your shop/))
+    .toBeInTheDocument()
+})
+
+test('a currency without minor units is formatted by its own exponent', async () => {
+  worker.use(
+    handleSiteAnalyticsRevenue({
+      body: { ...revenue, reportingCurrency: 'JPY', total: 5000, credited: 0, orders: 2 },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('¥5,000')).toBeInTheDocument()
+})
+
+test('the period is 30 days until another is picked and the pick is sent to the server', async () => {
+  const ranges: (string | null)[] = []
+  worker.use(
+    handleSiteAnalyticsRevenue(({ request }) => {
+      ranges.push(new URL(request.url).searchParams.get('range'))
+      return HttpResponse.json({ ...revenue, reportingCurrency: 'USD' })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.poll(() => ranges).toEqual([SiteAnalyticsRange['30D']])
+  await screen.getByText('7 days').click()
+  await expect.poll(() => ranges).toEqual([SiteAnalyticsRange['30D'], SiteAnalyticsRange['7D']])
+  await screen.getByText('90 days').click()
+  await expect
+    .poll(() => ranges)
+    .toEqual([SiteAnalyticsRange['30D'], SiteAnalyticsRange['7D'], SiteAnalyticsRange['90D']])
+})
+
+test('an unset Reporting currency asks for it, links to the settings and shows no figure', async () => {
+  worker.use(handleSiteAnalyticsRevenue({ body: { ...revenue, total: 999, orders: 3 } }))
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(screen.getByRole('link', { name: 'Choose the reporting currency' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings')
+  await expect.element(screen.getByText('$9.99')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Orders', { exact: true })).not.toBeInTheDocument()
+})
+
+test('revenue is shown beside an unfinished checklist too', async () => {
+  worker.use(
+    handleSiteSetupChecklistGet({
+      body: {
+        steps: {
+          integration: 'done',
+          sendingDomain: 'done',
+          contact: 'todo',
+          sentEmail: 'todo',
+        },
+        complete: false,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect.element(screen.getByText('Set up Sphericon')).toBeInTheDocument()
+  await expect.element(screen.getByText('Revenue', { exact: true })).toBeInTheDocument()
 })

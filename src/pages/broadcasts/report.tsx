@@ -13,6 +13,7 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastStats, SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
+import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
 import { BroadcastHoldAlert } from './BroadcastHold.tsx'
 import { BroadcastProgress } from './BroadcastProgress.tsx'
 
@@ -24,7 +25,10 @@ const STATUS_COLORS: Record<SiteBroadcastStatus, string> = {
   failed: 'red',
 }
 
-function statEntries(t: TFunction, stats: SiteBroadcastStats): { label: string; value: number }[] {
+function statEntries(
+  t: TFunction,
+  stats: SiteBroadcastStats,
+): { label: string; value: number | string }[] {
   return [
     { label: t(($) => $.broadcasts.stats.recipients), value: stats.recipientsTotal },
     { label: t(($) => $.broadcasts.stats.sent), value: stats.sentCount },
@@ -36,6 +40,22 @@ function statEntries(t: TFunction, stats: SiteBroadcastStats): { label: string; 
     { label: t(($) => $.broadcasts.stats.clicked), value: stats.clickedCount },
     { label: t(($) => $.broadcasts.stats.unsubscribed), value: stats.unsubscribedCount },
     { label: t(($) => $.broadcasts.stats.failed), value: stats.failedCount },
+    ...revenueEntries(t, stats),
+  ]
+}
+
+// Orders and Revenue are left out while the Reporting currency is unset: no figure, not a zero.
+function revenueEntries(
+  t: TFunction,
+  stats: SiteBroadcastStats,
+): { label: string; value: number | string }[] {
+  const revenue = formatMessageRevenue(stats.revenue)
+  if (revenue === null) {
+    return []
+  }
+  return [
+    { label: t(($) => $.messageRevenue.orders), value: stats.revenue.orders },
+    { label: t(($) => $.messageRevenue.revenue), value: revenue },
   ]
 }
 

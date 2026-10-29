@@ -76,6 +76,8 @@ const (
 	GroupRules       = "rules"
 	GroupWebhooks    = "webhooks"
 	GroupSuppression = "suppression"
+	// GroupOrders reads the order Events into Orders (ADR 0064).
+	GroupOrders = "orders"
 	// GroupAudit is the Enterprise audit subscriber's group (ee/audit). Core lists it
 	// so the outbox prune never deletes an Audit entry the subscriber has not consumed
 	// (ADR 0022); the subscriber is always registered, licensed or not.
@@ -87,7 +89,7 @@ const (
 
 // coreGroups are the groups core wires itself, in registration order.
 func coreGroups() []string {
-	return []string{GroupPersist, GroupAutomations, GroupRules, GroupWebhooks, GroupSuppression}
+	return []string{GroupPersist, GroupAutomations, GroupRules, GroupWebhooks, GroupSuppression, GroupOrders}
 }
 
 // ConsumerGroups lists every consumer group registered in code, in registration
@@ -107,7 +109,7 @@ func ConsumerGroups() []string {
 // ConsumerGroups so the outbox prune waits for it.
 //
 // opts tune every subscriber it builds (see SubscribeOption).
-func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, extra []Consumer, opts ...SubscribeOption) error {
+func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, orders OrderRecorder, extra []Consumer, opts ...SubscribeOption) error {
 	handlers := map[string]struct {
 		name    string
 		handler message.NoPublishHandlerFunc
@@ -117,6 +119,7 @@ func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client,
 		GroupRules:       {"evaluate_rules", RulesConsumer(rules)},
 		GroupWebhooks:    {"dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
 		GroupSuppression: {"update_suppression", suppressionConsumer(client)},
+		GroupOrders:      {"record_orders", ordersConsumer(client, orders)},
 	}
 	for _, group := range coreGroups() {
 		h := handlers[group]

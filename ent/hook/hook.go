@@ -213,6 +213,18 @@ func (f EventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EventMutation", m)
 }
 
+// The HeldOrderEventFunc type is an adapter to allow the use of ordinary
+// function as HeldOrderEvent mutator.
+type HeldOrderEventFunc func(context.Context, *ent.HeldOrderEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f HeldOrderEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.HeldOrderEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HeldOrderEventMutation", m)
+}
+
 // The HoldFunc type is an adapter to allow the use of ordinary
 // function as Hold mutator.
 type HoldFunc func(context.Context, *ent.HoldMutation) (ent.Value, error)
@@ -319,6 +331,30 @@ func (f OAuthRefreshTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OAuthRefreshTokenMutation", m)
+}
+
+// The OrderFunc type is an adapter to allow the use of ordinary
+// function as Order mutator.
+type OrderFunc func(context.Context, *ent.OrderMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OrderMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderMutation", m)
+}
+
+// The OrderMovementFunc type is an adapter to allow the use of ordinary
+// function as OrderMovement mutator.
+type OrderMovementFunc func(context.Context, *ent.OrderMovementMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrderMovementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OrderMovementMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrderMovementMutation", m)
 }
 
 // The OutboundMessageFunc type is an adapter to allow the use of ordinary

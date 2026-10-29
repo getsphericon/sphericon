@@ -163,6 +163,37 @@ model SiteWorkspaceTimezoneInput {
   timezone: TimeZoneName;
 }
 
+/** An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided
+ * by the server, which refuses an unknown one with a reason. */
+@pattern("^[A-Z]{3}$")
+scalar CurrencyCode extends string;
+
+/** A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064) */
+@minValue(1)
+@maxValue(90)
+scalar AttributionWindowDays extends int32;
+
+/** The Workspace's revenue settings (ADR 0064): the Reporting currency every revenue figure is
+ * in, and the Attribution window an Order may follow a click by. Every member reads them. */
+model SiteRevenueSettingsResource {
+  /** The Reporting currency; null until an Owner or Admin chooses one, and revenue is not shown
+   * before then */
+  reportingCurrency: CurrencyCode | null;
+
+  /** The Attribution window in whole days: 5 until set. A change affects only Orders that
+   * arrive afterwards. */
+  attributionWindowDays: AttributionWindowDays;
+}
+
+/** Change the revenue settings; a field left out stays as it is */
+model SiteUpdateRevenueSettingsInput {
+  /** The Reporting currency, an ISO 4217 code */
+  reportingCurrency?: CurrencyCode;
+
+  /** The Attribution window in whole days */
+  attributionWindowDays?: AttributionWindowDays;
+}
+
 @route("/workspaces")
 @tag("Site Workspaces")
 namespace SiteWorkspaces {
@@ -278,4 +309,26 @@ namespace SiteWorkspaces {
     | SiteAccountLinkResource
     | ForbiddenProblem
     | NotFoundProblem;
+
+  /** Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
+   * Attribution window. Open to every member. */
+  @get
+  @route("/{workspaceId}/revenue-settings")
+  op getRevenueSettings(@path workspaceId: WorkspaceId):
+    | SiteRevenueSettingsResource
+    | NotFoundProblem;
+
+  /** Change the Reporting currency and the Attribution window (Owner and Admin only, Permission
+   * `revenue:configure`, ADR 0061). 422 for a currency code that is not in ISO 4217 or a window
+   * outside its bounds. Every change is recorded as an Audit entry naming who changed what. */
+  @put
+  @route("/{workspaceId}/revenue-settings")
+  op updateRevenueSettings(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteUpdateRevenueSettingsInput,
+  ):
+    | SiteRevenueSettingsResource
+    | ForbiddenProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
 }

@@ -21,11 +21,14 @@ import (
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/order"
+	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
@@ -791,6 +794,12 @@ func ScopedEntities() []ScopedEntity {
 						return s.Contact().UpdateOneID(id).AddEventIDs(target).Exec(ctx)
 					},
 				},
+				{
+					Name: "orders", Target: "Order",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Contact().UpdateOneID(id).AddOrderIDs(target).Exec(ctx)
+					},
+				},
 			},
 		},
 		{
@@ -998,6 +1007,51 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Name:    "HeldOrderEvent",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.HeldOrderEvent.Query().Where(heldorderevent.WorkspaceID(ws)).Order(Asc(heldorderevent.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.HeldOrderEvent().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.HeldOrderEvent().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.HeldOrderEvent().Update().Where(heldorderevent.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.HeldOrderEvent().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.HeldOrderEvent().Delete().Where(heldorderevent.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.HeldOrderEvent.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.HeldOrderEvent().Create()
+				b.SetOrderID(src.OrderID)
+				b.SetKind(src.Kind)
+				b.SetProperties(src.Properties)
+				if src.ContactID != nil {
+					b.SetContactID(*src.ContactID)
+				}
+				b.SetEventID(src.EventID)
+				b.SetOccurredAt(src.OccurredAt)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Name:    "Hold",
@@ -1256,6 +1310,117 @@ func ScopedEntities() []ScopedEntity {
 				}
 				if src.SecondFactorRemindedAt != nil {
 					b.SetSecondFactorRemindedAt(*src.SecondFactorRemindedAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Name:    "Order",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.Order.Query().Where(order.WorkspaceID(ws)).Order(Asc(order.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.Order().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Order().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Order().Update().Where(order.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.Order().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.Order().Delete().Where(order.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.Order.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.Order().Create()
+				b.SetOrderID(src.OrderID)
+				if src.ContactID != nil {
+					b.SetContactID(remap("Contact", *src.ContactID))
+				}
+				b.SetCurrency(src.Currency)
+				if src.BroadcastID != nil {
+					b.SetBroadcastID(remap("Broadcast", *src.BroadcastID))
+				}
+				if src.AutomationID != nil {
+					b.SetAutomationID(remap("Automation", *src.AutomationID))
+				}
+				if src.CreditedClickAt != nil {
+					b.SetCreditedClickAt(*src.CreditedClickAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "contact", Target: "Contact",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Order().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "movements", Target: "OrderMovement",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Order().UpdateOneID(id).AddMovementIDs(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Name:    "OrderMovement",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.OrderMovement.Query().Where(ordermovement.WorkspaceID(ws)).Order(Asc(ordermovement.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.OrderMovement().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.OrderMovement().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.OrderMovement().Update().Where(ordermovement.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.OrderMovement().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.OrderMovement().Delete().Where(ordermovement.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.OrderMovement.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.OrderMovement().Create()
+				b.SetOrderID(remap("Order", src.OrderID))
+				b.SetKind(src.Kind)
+				b.SetAmount(src.Amount)
+				b.SetOccurredAt(src.OccurredAt)
+				if src.RefundID != nil {
+					b.SetRefundID(*src.RefundID)
+				}
+				if src.EventID != nil {
+					b.SetEventID(*src.EventID)
 				}
 				created, err := b.Save(ctx)
 				if err != nil {

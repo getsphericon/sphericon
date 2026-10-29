@@ -799,6 +799,10 @@
       "undo": "Undo"
     }
   },
+  "messageRevenue": {
+    "orders": "Orders",
+    "revenue": "Revenue"
+  },
   "nav": {
     "analytics": "Analytics",
     "automations": "Automations",
@@ -917,6 +921,22 @@
     "recentEmpty": "Nothing created yet.",
     "recentLoadError": "Failed to load recently created items",
     "recentTitle": "Recently created",
+    "revenue": {
+      "chooseCurrency": "Choose the reporting currency",
+      "credited": "Credited to messages",
+      "currencyUnsetBody": "Choose the currency revenue is reported in to see it here. Orders received meanwhile are counted once you do.",
+      "currencyUnsetTitle": "No reporting currency yet",
+      "loadError": "Failed to load revenue",
+      "note": "This is the revenue of the orders sent to Sphericon, not of your shop.",
+      "orders": "Orders",
+      "periods": {
+        "30d": "30 days",
+        "7d": "7 days",
+        "90d": "90 days"
+      },
+      "title": "Revenue",
+      "total": "Total revenue"
+    },
     "statusLabel": "Status",
     "typeAutomation": "Automation",
     "typeBroadcast": "Broadcast",
@@ -1387,6 +1407,17 @@
       "suppressions": "Suppressions: {{n}}",
       "title": "Look up an address",
       "unsubscribes": "Unsubscribes: {{n}}"
+    },
+    "revenue": {
+      "currencyDescription": "Every revenue figure is shown in this currency. Revenue stays hidden until one is chosen.",
+      "currencyLabel": "Reporting currency",
+      "currencyPlaceholder": "Not chosen yet",
+      "errorTitle": "Could not save the revenue settings",
+      "forbidden": "Only owners and admins can change the revenue settings.",
+      "loadError": "Failed to load the revenue settings",
+      "title": "Revenue",
+      "windowDescription": "An order is credited to the message whose link its contact last clicked within this many days (1 to 90). A change applies only to orders that arrive afterwards.",
+      "windowLabel": "Attribution window (days)"
     },
     "saved": "Workspace updated",
     "sendEventsDescription": "The snippet above tracks page views in the browser. To send events yourself, use an SDK or the API.",

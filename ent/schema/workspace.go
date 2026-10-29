@@ -81,6 +81,16 @@ func (Workspace) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			NotEmpty(),
+		// The Reporting currency (ADR 0064): the ISO 4217 code every revenue figure is in. NULL until
+		// an Owner or Admin chooses one; internal/accounts checks the code against the registry.
+		field.String("reporting_currency").
+			Optional().
+			Nillable().
+			NotEmpty(),
+		// The Attribution window (ADR 0064) in whole days; its bounds are declared in the contract.
+		field.Int("attribution_window_days").
+			Default(5).
+			Positive(),
 		// Domain join (ADR 0051): whether Users who prove an address on one of the Workspace's
 		// verified Join domains become its members. Off until an Owner switches it on.
 		field.Bool("domain_join_enabled").
@@ -158,6 +168,9 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("tags", Tag.Type),
 		edge.To("segments", Segment.Type),
 		edge.To("events", Event.Type),
+		edge.To("orders", Order.Type),
+		edge.To("order_movements", OrderMovement.Type),
+		edge.To("held_order_events", HeldOrderEvent.Type),
 		edge.To("visitors", Visitor.Type),
 		edge.To("api_tokens", ApiToken.Type),
 		edge.To("integrations", Integration.Type),
