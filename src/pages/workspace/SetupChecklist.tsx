@@ -1,4 +1,4 @@
-import { Badge, Card, Grid, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
+import { Badge, Card, Flex, Grid, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import { IconCheck, IconCircle, IconClock } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
@@ -118,8 +118,8 @@ export function SetupChecklist({
         {STEPS.map(({ key: step, to }) => {
           const status = checklist.steps[step]
           return (
-            <Grid key={step} type="container" align="center" gap="sm">
-              <Grid.Col span={{ base: 12, sm: 7 }}>
+            <Grid key={step} align="center" gap="sm">
+              <Grid.Col span={{ base: 12, md: 7 }}>
                 <Group gap="sm" wrap="nowrap" align="flex-start">
                   <StatusIcon status={status} />
                   <Stack gap={0} flex={1} miw={0}>
@@ -142,17 +142,19 @@ export function SetupChecklist({
                   </Stack>
                 </Group>
               </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 5 }}>
-                {status !== 'done' &&
-                  (to === null ? (
-                    step === 'contact' ? (
-                      <ContactActions workspaceId={workspaceId} />
+              <Grid.Col span={{ base: 12, md: 5 }}>
+                <Flex justify={{ base: 'flex-start', md: 'flex-end' }}>
+                  {status !== 'done' &&
+                    (to === null ? (
+                      step === 'contact' ? (
+                        <ContactActions workspaceId={workspaceId} />
+                      ) : (
+                        <SendActions workspaceId={workspaceId} />
+                      )
                     ) : (
-                      <SendActions workspaceId={workspaceId} />
-                    )
-                  ) : (
-                    <StepLink step={step} to={to} workspaceId={workspaceId} />
-                  ))}
+                      <StepLink step={step} to={to} workspaceId={workspaceId} />
+                    ))}
+                </Flex>
               </Grid.Col>
             </Grid>
           )
