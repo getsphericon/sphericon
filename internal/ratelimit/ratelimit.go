@@ -380,7 +380,7 @@ func humanRoute(r *http.Request) string {
 	}
 	p := r.URL.Path
 	switch {
-	case p == "/site/auth/register":
+	case p == "/site/auth/sign-up":
 		return "signup"
 	case p == "/site/auth/resend-verification":
 		return "resend-verification"

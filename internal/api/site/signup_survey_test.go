@@ -19,7 +19,7 @@ import (
 const surveyEmail = "newcomer@survey.example"
 
 // surveyOn is an Instance that asks the Sign-up survey (the switch and the `staff` license the
-// test license carries) and has no email verification gate, so a registration is a whole sign-up.
+// test license carries) and has no email verification gate, so a Sign-up is a whole sign-up.
 func surveyOn(t *testing.T, opts ...testhelper.Option) *testhelper.TestEnv {
 	t.Helper()
 	on := testhelper.WithConfig(func(c *config.Config) {
@@ -31,10 +31,10 @@ func surveyOn(t *testing.T, opts ...testhelper.Option) *testhelper.TestEnv {
 
 func signUpForSurvey(t *testing.T, env *testhelper.TestEnv) *siteapi.Client {
 	t.Helper()
-	res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(),
-		&siteapi.SiteRegisterInput{Name: "Newcomer", Email: surveyEmail, Password: siteapi.NewOptString(formPassword)})
+	res, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(),
+		&siteapi.SiteSignUpInput{Name: "Newcomer", Email: surveyEmail, Password: siteapi.NewOptString(formPassword)})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, res)
+	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, res)
 	return env.SiteActor(t, surveyEmail)
 }
 
@@ -163,7 +163,7 @@ func TestAnInstanceWithoutTheStaffLicenseNeverAsks(t *testing.T) {
 
 func TestAUserWhoVerifiesTheirAddressOwesTheSurveyToo(t *testing.T) {
 	env := testhelper.Setup(t)
-	registerAndVerify(t, env, "Grace Hopper", "grace@example.com", formPassword)
+	signUpAndVerify(t, env, "Grace Hopper", "grace@example.com", formPassword)
 
 	due := surveyDue(t, env.SiteActor(t, "grace@example.com"))
 
@@ -258,9 +258,9 @@ func TestDeletingTheUserRemovesTheirSurveyAnswers(t *testing.T) {
 	assert.True(t, ent.IsNotFound(err))
 }
 
-func TestAnUnverifiedRegistrantWhoAcceptsAnInvitationIsNeverAsked(t *testing.T) {
+func TestAnUnverifiedUserWhoAcceptsAnInvitationIsNeverAsked(t *testing.T) {
 	env := testhelper.Setup(t)
-	register(t, env, "Newcomer", surveyEmail)
+	signUpLink(t, env, "Newcomer", surveyEmail)
 	token := inviteToAcme(t, env, surveyEmail)
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),

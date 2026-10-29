@@ -126,7 +126,7 @@ func (a *Accounts) signIn(ctx context.Context, in ProviderLogin) (*ProviderSigni
 				continue
 			}
 			if errors.Is(err, ErrSignupClosed) {
-				// Another registration took the first place between the facts and the write.
+				// Another Sign-up took the first place between the facts and the write.
 				return nil, &SigninRefusedError{Reason: signin.ReasonSignupClosed}
 			}
 			if err != nil {
@@ -145,7 +145,7 @@ func (a *Accounts) signIn(ctx context.Context, in ProviderLogin) (*ProviderSigni
 		case SigninTakeOver:
 			taken, err := a.takeOver(ctx, holder.ID, in)
 			if (errors.Is(err, ErrAlreadyVerified) || db.IsUniqueViolation(err)) && attempt == 0 {
-				// The registrant verified the address first (it is a Verified User now), or
+				// The person who signed up verified the address first (it is a Verified User now), or
 				// the sign-in raced itself: read the facts again.
 				continue
 			}
@@ -186,7 +186,7 @@ func (a *Accounts) signinFacts(ctx context.Context, in ProviderLogin) (known, ho
 
 // createFromProvider creates a Verified User for a trusted provider email, with the Linked
 // identity, its first Workspace and `user.email_verify`, in one transaction, as a
-// registration does when its link is followed (ADR 0030). The User has no password: the
+// Sign-up does when its link is followed (ADR 0030). The User has no password: the
 // provider proved the address, so no mail is sent. Its email is proven now.
 func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*ent.User, error) {
 	email := strings.TrimSpace(in.Email)
@@ -347,7 +347,7 @@ func (a *Accounts) linkToHolder(ctx context.Context, holderID int64, in Provider
 	return linked, identityID, err
 }
 
-// takeOver is the provider's proof winning over a registration nobody proved: the Unverified
+// takeOver is the provider's proof winning over a Sign-up nobody proved: the Unverified
 // User becomes Verified with the provider's name, its pending password is cleared, earlier
 // sessions end, and it gets the identity and its first Workspace, as a verify link would
 // give it. A pending Invitation to the address is not touched. ErrAlreadyVerified when the

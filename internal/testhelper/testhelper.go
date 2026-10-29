@@ -284,7 +284,7 @@ func WithStaffVolumeFloor(n int) Option { return func(s *setup) { s.volumeFloor 
 // WithMode runs the test Instance in a Mode, with every setting the Mode decides.
 func WithMode(m config.Mode) Option { return func(s *setup) { s.cfg.ApplyMode(m) } }
 
-// WithSignupRule opens or closes registration whatever the Mode says. The fixtures already hold
+// WithSignupRule opens or closes Sign-up whatever the Mode says. The fixtures already hold
 // Users, so a selfhosted test Instance is closed; a test of what a new person gets on such an
 // Instance (the Sign-up survey) opens it with accounts.SignupAlways.
 func WithSignupRule(rule accounts.SignupRule) Option { return func(s *setup) { s.signupRule = &rule } }

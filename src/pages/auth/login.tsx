@@ -38,7 +38,7 @@ import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as forgotPasswordRoute } from '../../routes/forgot-password.tsx'
 import { Route as indexRoute } from '../../routes/index.tsx'
-import { Route as registerRoute } from '../../routes/register.tsx'
+import { Route as signUpRoute } from '../../routes/sign-up.tsx'
 import { isEmailVerificationRequiredError } from '../../utils/apiErrors.ts'
 
 // The browser's side of a Passkey login (ADR 0052): the server's request options go to the
@@ -268,8 +268,8 @@ export function LoginPage() {
 
           <Group justify="space-between" align="center">
             <Stack gap={2}>
-              <AnchorLink to={registerRoute.to} size="sm">
-                {t(($) => $.login.registerLink)}
+              <AnchorLink to={signUpRoute.to} size="sm">
+                {t(($) => $.login.signUpLink)}
               </AnchorLink>
               <AnchorLink to={forgotPasswordRoute.to} size="sm">
                 {t(($) => $.login.forgotPasswordLink)}

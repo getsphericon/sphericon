@@ -85,7 +85,7 @@ func TestSigninAnInvitationMatchesTheAddressWhateverItsCase(t *testing.T) {
 	assert.Equal(t, "admin", acmeRoleOf(t, env, newcomer.Email))
 }
 
-func TestSigninAnInvitationOpensAClosedRegistrationForItsAddress(t *testing.T) {
+func TestSigninAnInvitationOpensAClosedSignUpForItsAddress(t *testing.T) {
 	env, fake := signinEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 	token := inviteAdminToAcme(t, env, newcomer.Email)
 	other := testhelper.SigninIdentity{Subject: "google-subject-of-olga", Email: "olga@gmail.com", EmailVerified: true}
@@ -93,7 +93,7 @@ func TestSigninAnInvitationOpensAClosedRegistrationForItsAddress(t *testing.T) {
 	refused := signInWith(t, fake, env.NewRedirectBrowser(t), other, "")
 	accepted := signInToAccept(t, fake, env.NewRedirectBrowser(t), newcomer, token)
 
-	assert.Equal(t, signin.ReasonSignupClosed, refusalCode(t, refused, loginErrorPath), "without an Invitation registration stays closed")
+	assert.Equal(t, signin.ReasonSignupClosed, refusalCode(t, refused, loginErrorPath), "without an Invitation Sign-up stays closed")
 	assert.Equal(t, "/", accepted.Header.Get("Location"))
 	assert.Equal(t, "admin", acmeRoleOf(t, env, newcomer.Email))
 }

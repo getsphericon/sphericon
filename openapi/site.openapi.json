@@ -498,123 +498,16 @@
         "security": [{}]
       }
     },
-    "/auth/register": {
-      "post": {
-        "operationId": "SiteAuth_register",
-        "description": "Create an Unverified User (ADR 0030): no session, no Workspace. A verification\nemail with the link is on its way (202), and 202 is the answer for every address,\ntaken or not (ADR 0031): the owner of a taken address gets a notice by mail\ninstead. The answer always sets the registration cookie (httpOnly, SameSite=Strict,\nscoped to the auth prefix shared by verify and resend), which binds the link to this browser, so the\nheader does not say whether the address is taken either. The password is required\n(422 otherwise). On an Instance that does not require email verification (the selfhosted Mode) there is no\nmail to carry that notice and no link: the request creates a Verified User with its\nfirst Workspace at once (202, no session and no cookie: the User signs in next), and\na taken address answers 409. An Instance whose sign-up is closed\n(ADR 0042, 0060) answers 403 with code `signup_closed`\nbefore anything is read or created; accepting an Invitation still works.",
-        "parameters": [],
-        "responses": {
-          "202": {
-            "description": "The request has been accepted for processing, but processing has not yet completed.",
-            "headers": {
-              "Set-Cookie": {
-                "required": false,
-                "description": "The registration cookie, absent when the install does not require verification",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "RFC 7807 forbidden response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
-            "headers": {
-              "Retry-After": {
-                "required": true,
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Limit": {
-                "required": true,
-                "description": "The request budget of the window that was exceeded",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "required": true,
-                "description": "Requests left in the current window",
-                "schema": {
-                  "type": "integer",
-                  "format": "int32"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "required": true,
-                "description": "Unix time at which the window resets",
-                "schema": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
-            },
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Auth"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SiteRegisterInput"
-              }
-            }
-          }
-        },
-        "security": [{}]
-      }
-    },
     "/auth/resend-verification": {
       "post": {
         "operationId": "SiteAuth_resendVerification",
-        "description": "Send the verification link again to an Unverified User. Answers 202 the same\nway whether the address is unknown, already verified or unverified, so it adds no\nenumeration; only an Unverified User gets a mail. Rate limited per IP\nlike registration.",
+        "description": "Send the verification link again to an Unverified User. Answers 202 the same\nway whether the address is unknown, already verified or unverified, so it adds no\nenumeration; only an Unverified User gets a mail. Rate limited per IP\nlike Sign-up.",
         "parameters": [
           {
-            "name": "REG",
+            "name": "SIGN_UP_BROWSER",
             "in": "cookie",
             "required": false,
-            "description": "The registration cookie of the browser asking, if any: the new link binds to\nwhatever cookie the caller holds and then signs that browser in without a\npassword",
+            "description": "The Sign-up browser cookie of the browser asking, if any: the new link binds to\nwhatever cookie the caller holds and then signs that browser in without a\npassword",
             "schema": {
               "type": "string"
             },
@@ -822,6 +715,113 @@
         "security": [{}]
       }
     },
+    "/auth/sign-up": {
+      "post": {
+        "operationId": "SiteAuth_signUp",
+        "description": "Create an Unverified User (ADR 0030): no session, no Workspace. A verification\nemail with the link is on its way (202), and 202 is the answer for every address,\ntaken or not (ADR 0031): the owner of a taken address gets a notice by mail\ninstead. The answer always sets the Sign-up browser cookie (httpOnly, SameSite=Strict,\nscoped to the auth prefix shared by verify and resend), which binds the link to this browser, so the\nheader does not say whether the address is taken either. The password is required\n(422 otherwise). On an Instance that does not require email verification (the selfhosted Mode) there is no\nmail to carry that notice and no link: the request creates a Verified User with its\nfirst Workspace at once (202, no session and no cookie: the User signs in next), and\na taken address answers 409. An Instance whose sign-up is closed\n(ADR 0042, 0060) answers 403 with code `signup_closed`\nbefore anything is read or created; accepting an Invitation still works.",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": "The request has been accepted for processing, but processing has not yet completed.",
+            "headers": {
+              "Set-Cookie": {
+                "required": false,
+                "description": "The Sign-up browser cookie, absent when the install does not require verification",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSignUpInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
     "/auth/signin-not-me": {
       "post": {
         "operationId": "SiteAuth_signinNotMe",
@@ -859,7 +859,7 @@
     "/auth/signin-providers": {
       "get": {
         "operationId": "SiteAuth_signinProviders",
-        "description": "The Sign-in providers this Instance offers, for the buttons of the login and register\npages. Public; empty when none is configured.",
+        "description": "The Sign-in providers this Instance offers, for the buttons of the login and sign-up\npages. Public; empty when none is configured.",
         "parameters": [],
         "responses": {
           "200": {
@@ -993,7 +993,7 @@
             "name": "invitation",
             "in": "query",
             "required": false,
-            "description": "The token of an Invitation link: the sign-in then accepts that Invitation when the\nprovider's trusted email is the invited address, and an Invitation opens a closed\nregistration for that address (ADR 0042). A mismatch creates nothing.",
+            "description": "The token of an Invitation link: the sign-in then accepts that Invitation when the\nprovider's trusted email is the invited address, and an Invitation opens a closed\nSign-up for that address (ADR 0042). A mismatch creates nothing.",
             "schema": {
               "type": "string"
             },
@@ -1038,13 +1038,13 @@
     "/auth/verify-email": {
       "post": {
         "operationId": "SiteAuth_verifyEmail",
-        "description": "Complete a registration from the verification link (the token is the\ncredential): stamps the Verified email, ends every earlier session, creates the\nUser's first Workspace, sends the welcome email and starts the session (the cookie\nis issued after the epoch bump, as login does, ADR 0020). When the request carries\nthe registration cookie the link was minted for, the password from registration\nstays; otherwise the request must carry a password, which replaces it, and without\none the answer is 428 and nothing changes, the link stays valid (a mail scanner\nconsumes nothing); a password outside the length rule answers 422, and the link stays\nvalid too. A link is single use and scoped to the address it was sent to.\nRate limited like registration.",
+        "description": "Complete a Sign-up from the verification link (the token is the\ncredential): stamps the Verified email, ends every earlier session, creates the\nUser's first Workspace, sends the welcome email and starts the session (the cookie\nis issued after the epoch bump, as login does, ADR 0020). When the request carries\nthe Sign-up browser cookie the link was minted for, the password from Sign-up\nstays; otherwise the request must carry a password, which replaces it, and without\none the answer is 428 and nothing changes, the link stays valid (a mail scanner\nconsumes nothing); a password outside the length rule answers 422, and the link stays\nvalid too. A link is single use and scoped to the address it was sent to.\nRate limited like Sign-up.",
         "parameters": [
           {
-            "name": "REG",
+            "name": "SIGN_UP_BROWSER",
             "in": "cookie",
             "required": false,
-            "description": "The registration cookie of the browser that registered, if any. Its path is the\nauth prefix shared with resend, and it is SameSite=Strict: not sent on the\ncross-site click from the mail, but sent on the page's own later request.",
+            "description": "The Sign-up browser cookie of the browser that signed up, if any. Its path is the\nauth prefix shared with resend, and it is SameSite=Strict: not sent on the\ncross-site click from the mail, but sent on the page's own later request.",
             "schema": {
               "type": "string"
             },
@@ -1092,7 +1092,7 @@
             }
           },
           "428": {
-            "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)",
+            "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Sign-up browser needs a password, ADR 0030)",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16924,23 +16924,6 @@
         },
         "description": "Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes"
       },
-      "SiteRegisterInput": {
-        "type": "object",
-        "required": ["name", "email"],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "$ref": "#/components/schemas/EmailAddress"
-          },
-          "password": {
-            "type": "string",
-            "description": "Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated\nregistration of the address replaces it."
-          }
-        },
-        "description": "Register with a name, an email and a password. The User stays Unverified until the\naddress is proven (ADR 0030); the password is trusted only when the verification link\nis opened in the browser that registered."
-      },
       "SiteResendVerificationInput": {
         "type": "object",
         "required": ["email"],
@@ -17822,6 +17805,23 @@
         },
         "description": "The Setup checklist steps, in the order the checklist shows them; none blocks another"
       },
+      "SiteSignUpInput": {
+        "type": "object",
+        "required": ["name", "email"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "$ref": "#/components/schemas/EmailAddress"
+          },
+          "password": {
+            "type": "string",
+            "description": "Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated\nSign-up of the address replaces it."
+          }
+        },
+        "description": "Sign up with a name, an email and a password. The User stays Unverified until the\naddress is proven (ADR 0030); the password is trusted only when the verification link\nis opened in the Sign-up browser."
+      },
       "SiteSigninError": {
         "type": "string",
         "enum": [
@@ -17874,7 +17874,7 @@
             }
           }
         },
-        "description": "The Sign-in providers this Instance has configured. Empty on an Instance that\nconfigured none, which leaves the login and register pages as they are."
+        "description": "The Sign-in providers this Instance has configured. Empty on an Instance that\nconfigured none, which leaves the login and sign-up pages as they are."
       },
       "SiteSignupCompanySize": {
         "type": "string",
@@ -18724,7 +18724,7 @@
           },
           "password": {
             "type": "string",
-            "description": "Needed only when the link is not opened in the Registration browser: it replaces\nthe password given at registration. Ignored in the Registration browser."
+            "description": "Needed only when the link is not opened in the Sign-up browser: it replaces\nthe password given at Sign-up. Ignored in the Sign-up browser."
           }
         },
         "description": "Prove an email address with the token sent to it"

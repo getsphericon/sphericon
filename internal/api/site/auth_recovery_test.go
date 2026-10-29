@@ -91,8 +91,8 @@ func TestResetPasswordRejectsWrongPurposeToken(t *testing.T) {
 	pub := env.SiteAnonymous(t)
 	ctx := context.Background()
 
-	// Take a verify token from a registration mail, then try to use it as a reset token.
-	verifyToken := register(t, env, "Grace Hopper", "grace@example.com")
+	// Take a verify token from a Sign-up mail, then try to use it as a reset token.
+	verifyToken := signUpLink(t, env, "Grace Hopper", "grace@example.com")
 
 	res, err := pub.SiteAuthResetPassword(ctx, &siteapi.SiteResetPasswordInput{Token: verifyToken, Password: "whatever123"})
 	require.NoError(t, err)

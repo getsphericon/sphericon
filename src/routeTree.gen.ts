@@ -16,8 +16,8 @@ import { Route as ConfirmEmailChangeRouteImport } from './routes/confirm-email-c
 import { Route as ConsoleRouteRouteImport } from './routes/console/route'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SigninNotMeRouteImport } from './routes/signin-not-me'
 import { Route as SignupSurveyRouteImport } from './routes/signup-survey'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
@@ -123,11 +123,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/register.lazy').then((d) => d.Route))
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -135,6 +130,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 } as any).lazy(() =>
   import('./routes/reset-password.lazy').then((d) => d.Route),
 )
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/sign-up.lazy').then((d) => d.Route))
 const SigninNotMeRoute = SigninNotMeRouteImport.update({
   id: '/signin-not-me',
   path: '/signin-not-me',
@@ -720,8 +720,8 @@ export interface FileRoutesByFullPath {
   '/confirm-email-change': typeof ConfirmEmailChangeRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sign-up': typeof SignUpRoute
   '/signin-not-me': typeof SigninNotMeRoute
   '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -794,8 +794,8 @@ export interface FileRoutesByTo {
   '/confirm-email-change': typeof ConfirmEmailChangeRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sign-up': typeof SignUpRoute
   '/signin-not-me': typeof SigninNotMeRoute
   '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -866,8 +866,8 @@ export interface FileRoutesById {
   '/confirm-email-change': typeof ConfirmEmailChangeRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sign-up': typeof SignUpRoute
   '/signin-not-me': typeof SigninNotMeRoute
   '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -944,8 +944,8 @@ export interface FileRouteTypes {
     | '/confirm-email-change'
     | '/forgot-password'
     | '/login'
-    | '/register'
     | '/reset-password'
+    | '/sign-up'
     | '/signin-not-me'
     | '/signup-survey'
     | '/unsubscribe'
@@ -1018,8 +1018,8 @@ export interface FileRouteTypes {
     | '/confirm-email-change'
     | '/forgot-password'
     | '/login'
-    | '/register'
     | '/reset-password'
+    | '/sign-up'
     | '/signin-not-me'
     | '/signup-survey'
     | '/unsubscribe'
@@ -1089,8 +1089,8 @@ export interface FileRouteTypes {
     | '/confirm-email-change'
     | '/forgot-password'
     | '/login'
-    | '/register'
     | '/reset-password'
+    | '/sign-up'
     | '/signin-not-me'
     | '/signup-survey'
     | '/unsubscribe'
@@ -1166,8 +1166,8 @@ export interface RootRouteChildren {
   ConfirmEmailChangeRoute: typeof ConfirmEmailChangeRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
-  RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SignUpRoute: typeof SignUpRoute
   SigninNotMeRoute: typeof SigninNotMeRoute
   SignupSurveyRoute: typeof SignupSurveyRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
@@ -1230,18 +1230,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signin-not-me': {
@@ -1931,8 +1931,8 @@ const rootRouteChildren: RootRouteChildren = {
   ConfirmEmailChangeRoute: ConfirmEmailChangeRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
-  RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SignUpRoute: SignUpRoute,
   SigninNotMeRoute: SigninNotMeRoute,
   SignupSurveyRoute: SignupSurveyRoute,
   UnsubscribeRoute: UnsubscribeRoute,

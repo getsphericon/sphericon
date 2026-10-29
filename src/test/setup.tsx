@@ -73,7 +73,7 @@ beforeAll(async () =>
 // installs its own handler over this one.
 beforeEach(() => {
   worker.use(handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }))
-  // The login and register pages ask which Sign-in providers are enabled; by default none are.
+  // The login and sign-up pages ask which Sign-in providers are enabled; by default none are.
   worker.use(handleSiteAuthSigninProviders({ body: { items: [] } }))
   // The account security page lists the User's Linked identities; by default there are none.
   worker.use(handleSiteIdentitiesList({ body: { items: [] } }))

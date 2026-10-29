@@ -127,26 +127,11 @@ type Invoker interface {
 	//
 	// POST /auth/logout
 	SiteAuthLogout(ctx context.Context) (*SiteAuthLogoutNoContent, error)
-	// SiteAuthRegister invokes SiteAuth_register operation.
-	//
-	// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
-	// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
-	// a taken address gets a notice by mail instead. The answer always sets the registration cookie
-	// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
-	// link to this browser, so the header does not say whether the address is taken either. The password
-	// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
-	// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
-	// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
-	// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
-	// `signup_closed` before anything is read or created; accepting an Invitation still works.
-	//
-	// POST /auth/register
-	SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error)
 	// SiteAuthResendVerification invokes SiteAuth_resendVerification operation.
 	//
 	// Send the verification link again to an Unverified User. Answers 202 the same way whether the address
 	// is unknown, already verified or unverified, so it adds no enumeration; only an Unverified User gets
-	// a mail. Rate limited per IP like registration.
+	// a mail. Rate limited per IP like Sign-up.
 	//
 	// POST /auth/resend-verification
 	SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (SiteAuthResendVerificationRes, error)
@@ -166,6 +151,21 @@ type Invoker interface {
 	//
 	// POST /auth/second-factor
 	SiteAuthSecondFactor(ctx context.Context, request *SiteLoginSecondFactorInput) (SiteAuthSecondFactorRes, error)
+	// SiteAuthSignUp invokes SiteAuth_signUp operation.
+	//
+	// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+	// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+	// a taken address gets a notice by mail instead. The answer always sets the Sign-up browser cookie
+	// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+	// link to this browser, so the header does not say whether the address is taken either. The password
+	// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
+	// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
+	// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
+	// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
+	// `signup_closed` before anything is read or created; accepting an Invitation still works.
+	//
+	// POST /auth/sign-up
+	SiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (SiteAuthSignUpRes, error)
 	// SiteAuthSigninCallback invokes SiteAuth_signinCallback operation.
 	//
 	// Where the provider sends the browser back (the redirect URI derived from the app URL). Always
@@ -189,7 +189,7 @@ type Invoker interface {
 	SiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (SiteAuthSigninNotMeRes, error)
 	// SiteAuthSigninProviders invokes SiteAuth_signinProviders operation.
 	//
-	// The Sign-in providers this Instance offers, for the buttons of the login and register pages. Public;
+	// The Sign-in providers this Instance offers, for the buttons of the login and sign-up pages. Public;
 	// empty when none is configured.
 	//
 	// GET /auth/signin-providers
@@ -205,14 +205,14 @@ type Invoker interface {
 	SiteAuthSigninStart(ctx context.Context, params SiteAuthSigninStartParams) (SiteAuthSigninStartRes, error)
 	// SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 	//
-	// Complete a registration from the verification link (the token is the credential): stamps the
-	// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
-	// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
-	// When the request carries the registration cookie the link was minted for, the password from
-	// registration stays; otherwise the request must carry a password, which replaces it, and without one
-	// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing); a
-	// password outside the length rule answers 422, and the link stays valid too. A link is single use and
-	// scoped to the address it was sent to. Rate limited like registration.
+	// Complete a Sign-up from the verification link (the token is the credential): stamps the Verified
+	// email, ends every earlier session, creates the User's first Workspace, sends the welcome email and
+	// starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020). When the
+	// request carries the Sign-up browser cookie the link was minted for, the password from Sign-up stays;
+	// otherwise the request must carry a password, which replaces it, and without one the answer is 428
+	// and nothing changes, the link stays valid (a mail scanner consumes nothing); a password outside the
+	// length rule answers 422, and the link stays valid too. A link is single use and scoped to the
+	// address it was sent to. Rate limited like Sign-up.
 	//
 	// POST /auth/verify-email
 	SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error)
@@ -3538,103 +3538,11 @@ func (c *Client) sendSiteAuthLogout(ctx context.Context) (res *SiteAuthLogoutNoC
 	return result, nil
 }
 
-// SiteAuthRegister invokes SiteAuth_register operation.
-//
-// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
-// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
-// a taken address gets a notice by mail instead. The answer always sets the registration cookie
-// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
-// link to this browser, so the header does not say whether the address is taken either. The password
-// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
-// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
-// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
-// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
-// `signup_closed` before anything is read or created; accepting an Invitation still works.
-//
-// POST /auth/register
-func (c *Client) SiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (SiteAuthRegisterRes, error) {
-	res, err := c.sendSiteAuthRegister(ctx, request)
-	return res, err
-}
-
-func (c *Client) sendSiteAuthRegister(ctx context.Context, request *SiteRegisterInput) (res SiteAuthRegisterRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteAuth_register"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/auth/register"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthRegisterOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/auth/register"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeSiteAuthRegisterRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeSiteAuthRegisterResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // SiteAuthResendVerification invokes SiteAuth_resendVerification operation.
 //
 // Send the verification link again to an Unverified User. Answers 202 the same way whether the address
 // is unknown, already verified or unverified, so it adds no enumeration; only an Unverified User gets
-// a mail. Rate limited per IP like registration.
+// a mail. Rate limited per IP like Sign-up.
 //
 // POST /auth/resend-verification
 func (c *Client) SiteAuthResendVerification(ctx context.Context, request *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (SiteAuthResendVerificationRes, error) {
@@ -3695,14 +3603,14 @@ func (c *Client) sendSiteAuthResendVerification(ctx context.Context, request *Si
 	stage = "EncodeCookieParams"
 	cookie := uri.NewCookieEncoder(r)
 	{
-		// Encode "REG" parameter.
+		// Encode "SIGN_UP_BROWSER" parameter.
 		cfg := uri.CookieParameterEncodingConfig{
-			Name:    "REG",
+			Name:    "SIGN_UP_BROWSER",
 			Explode: false,
 		}
 
 		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.REG.Get(); ok {
+			if val, ok := params.SIGNUPBROWSER.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil
@@ -3897,6 +3805,98 @@ func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLogi
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteAuthSecondFactorResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteAuthSignUp invokes SiteAuth_signUp operation.
+//
+// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+// a taken address gets a notice by mail instead. The answer always sets the Sign-up browser cookie
+// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+// link to this browser, so the header does not say whether the address is taken either. The password
+// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
+// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
+// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
+// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
+// `signup_closed` before anything is read or created; accepting an Invitation still works.
+//
+// POST /auth/sign-up
+func (c *Client) SiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (SiteAuthSignUpRes, error) {
+	res, err := c.sendSiteAuthSignUp(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (res SiteAuthSignUpRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signUp"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/sign-up"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthSignUpOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/sign-up"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteAuthSignUpRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteAuthSignUpResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -4187,7 +4187,7 @@ func (c *Client) sendSiteAuthSigninNotMe(ctx context.Context, request *SiteSigni
 
 // SiteAuthSigninProviders invokes SiteAuth_signinProviders operation.
 //
-// The Sign-in providers this Instance offers, for the buttons of the login and register pages. Public;
+// The Sign-in providers this Instance offers, for the buttons of the login and sign-up pages. Public;
 // empty when none is configured.
 //
 // GET /auth/signin-providers
@@ -4408,14 +4408,14 @@ func (c *Client) sendSiteAuthSigninStart(ctx context.Context, params SiteAuthSig
 
 // SiteAuthVerifyEmail invokes SiteAuth_verifyEmail operation.
 //
-// Complete a registration from the verification link (the token is the credential): stamps the
-// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
-// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
-// When the request carries the registration cookie the link was minted for, the password from
-// registration stays; otherwise the request must carry a password, which replaces it, and without one
-// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing); a
-// password outside the length rule answers 422, and the link stays valid too. A link is single use and
-// scoped to the address it was sent to. Rate limited like registration.
+// Complete a Sign-up from the verification link (the token is the credential): stamps the Verified
+// email, ends every earlier session, creates the User's first Workspace, sends the welcome email and
+// starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020). When the
+// request carries the Sign-up browser cookie the link was minted for, the password from Sign-up stays;
+// otherwise the request must carry a password, which replaces it, and without one the answer is 428
+// and nothing changes, the link stays valid (a mail scanner consumes nothing); a password outside the
+// length rule answers 422, and the link stays valid too. A link is single use and scoped to the
+// address it was sent to. Rate limited like Sign-up.
 //
 // POST /auth/verify-email
 func (c *Client) SiteAuthVerifyEmail(ctx context.Context, request *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (SiteAuthVerifyEmailRes, error) {
@@ -4476,14 +4476,14 @@ func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerif
 	stage = "EncodeCookieParams"
 	cookie := uri.NewCookieEncoder(r)
 	{
-		// Encode "REG" parameter.
+		// Encode "SIGN_UP_BROWSER" parameter.
 		cfg := uri.CookieParameterEncodingConfig{
-			Name:    "REG",
+			Name:    "SIGN_UP_BROWSER",
 			Explode: false,
 		}
 
 		if err := cookie.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.REG.Get(); ok {
+			if val, ok := params.SIGNUPBROWSER.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil

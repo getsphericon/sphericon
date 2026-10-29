@@ -14,7 +14,7 @@ const SigninFlowCookie = "SIGNIN"
 const signinFlowPath = "/site/auth/signin"
 
 // SigninFlow wraps the sealed flow in its cookie: httpOnly, living for ttl, and SameSite=Lax
-// (not Strict like the Registration browser's): the provider sends the browser back with a
+// (not Strict like the Sign-up browser's): the provider sends the browser back with a
 // cross-site top-level redirect, which Strict would withhold the cookie from.
 func (s *Sessions) SigninFlow(value string, ttl time.Duration) *http.Cookie {
 	return &http.Cookie{

@@ -178,30 +178,30 @@ func TestTheOnlyOwnerOfAWorkspaceInItsDeletionWindowIsNotBlocked(t *testing.T) {
 	assert.Zero(t, left)
 }
 
-func TestADeletedAddressRegistersAgainWhereSignupIsOpen(t *testing.T) {
+func TestADeletedAddressSignsUpAgainWhereSignupIsOpen(t *testing.T) {
 	env := testhelper.Setup(t)
 	deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
 		Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 	})
 
-	res := registerWithPassword(t, env, "Mary Again", fixtures.MemberMaryEmail, formPassword)
+	res := signUpWithPassword(t, env, "Mary Again", fixtures.MemberMaryEmail, formPassword)
 
-	require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, res)
+	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, res)
 	again, err := env.DB.User.Query().Where(entuser.Email(fixtures.MemberMaryEmail)).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, "Mary Again", again.Name)
 	assert.NotEqual(t, int64(fixtures.MemberMaryID), again.ID, "a new User, not the old one")
 }
 
-func TestADeletedAddressCannotRegisterWhereSignupIsClosed(t *testing.T) {
+func TestADeletedAddressCannotSignUpWhereSignupIsClosed(t *testing.T) {
 	env := closedInstance(t)
 	deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
 		Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
 	})
 
-	res := registerWithPassword(t, env, "Mary Again", fixtures.MemberMaryEmail, formPassword)
+	res := signUpWithPassword(t, env, "Mary Again", fixtures.MemberMaryEmail, formPassword)
 
-	assert.IsType(t, &siteapi.SiteAuthRegisterForbidden{}, res)
+	assert.IsType(t, &siteapi.SiteAuthSignUpForbidden{}, res)
 	assert.False(t, userExists(t, env, fixtures.MemberMaryEmail))
 }
 

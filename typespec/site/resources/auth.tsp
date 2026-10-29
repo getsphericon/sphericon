@@ -2,15 +2,15 @@ using TypeSpec.Http;
 
 namespace Sphericon;
 
-/** Register with a name, an email and a password. The User stays Unverified until the
+/** Sign up with a name, an email and a password. The User stays Unverified until the
  * address is proven (ADR 0030); the password is trusted only when the verification link
- * is opened in the browser that registered. */
-model SiteRegisterInput {
+ * is opened in the Sign-up browser. */
+model SiteSignUpInput {
   name: string;
   email: EmailAddress;
 
   /** Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated
-   * registration of the address replaces it. */
+   * Sign-up of the address replaces it. */
   password?: string;
 }
 
@@ -65,8 +65,8 @@ model SiteResetPasswordInput {
 model SiteVerifyEmailInput {
   token: string;
 
-  /** Needed only when the link is not opened in the Registration browser: it replaces
-   * the password given at registration. Ignored in the Registration browser. */
+  /** Needed only when the link is not opened in the Sign-up browser: it replaces
+   * the password given at Sign-up. Ignored in the Sign-up browser. */
   password?: string;
 }
 
@@ -97,7 +97,7 @@ model SiteSigninProvider {
 }
 
 /** The Sign-in providers this Instance has configured. Empty on an Instance that
- * configured none, which leaves the login and register pages as they are. */
+ * configured none, which leaves the login and sign-up pages as they are. */
 model SiteSigninProviders {
   items: SiteSigninProvider[];
 }
@@ -142,7 +142,7 @@ namespace SiteAuth {
   /** Create an Unverified User (ADR 0030): no session, no Workspace. A verification
    * email with the link is on its way (202), and 202 is the answer for every address,
    * taken or not (ADR 0031): the owner of a taken address gets a notice by mail
-   * instead. The answer always sets the registration cookie (httpOnly, SameSite=Strict,
+   * instead. The answer always sets the Sign-up browser cookie (httpOnly, SameSite=Strict,
    * scoped to the auth prefix shared by verify and resend), which binds the link to this browser, so the
    * header does not say whether the address is taken either. The password is required
    * (422 otherwise). On an Instance that does not require email verification (the selfhosted Mode) there is no
@@ -153,12 +153,12 @@ namespace SiteAuth {
    * before anything is read or created; accepting an Invitation still works. */
   @useAuth(NoAuth)
   @post
-  @route("/register")
-  op register(@body body: SiteRegisterInput):
+  @route("/sign-up")
+  op signUp(@body body: SiteSignUpInput):
     | {
         @statusCode statusCode: 202;
 
-        /** The registration cookie, absent when the install does not require verification */
+        /** The Sign-up browser cookie, absent when the install does not require verification */
         @header("Set-Cookie") setCookie?: string;
       }
     | ForbiddenProblem
@@ -211,7 +211,7 @@ namespace SiteAuth {
     | UnauthorizedProblem
     | TooManyRequestsProblem;
 
-  /** The Sign-in providers this Instance offers, for the buttons of the login and register
+  /** The Sign-in providers this Instance offers, for the buttons of the login and sign-up
    * pages. Public; empty when none is configured. */
   @useAuth(NoAuth)
   @get
@@ -237,7 +237,7 @@ namespace SiteAuth {
 
     /** The token of an Invitation link: the sign-in then accepts that Invitation when the
      * provider's trusted email is the invited address, and an Invitation opens a closed
-     * registration for that address (ADR 0042). A mismatch creates nothing. */
+     * Sign-up for that address (ADR 0042). A mismatch creates nothing. */
     @query invitation?: string,
   ):
     | {
@@ -322,24 +322,24 @@ namespace SiteAuth {
     | BadRequestProblem
     | UnprocessableEntityProblem;
 
-  /** Complete a registration from the verification link (the token is the
+  /** Complete a Sign-up from the verification link (the token is the
    * credential): stamps the Verified email, ends every earlier session, creates the
    * User's first Workspace, sends the welcome email and starts the session (the cookie
    * is issued after the epoch bump, as login does, ADR 0020). When the request carries
-   * the registration cookie the link was minted for, the password from registration
+   * the Sign-up browser cookie the link was minted for, the password from Sign-up
    * stays; otherwise the request must carry a password, which replaces it, and without
    * one the answer is 428 and nothing changes, the link stays valid (a mail scanner
    * consumes nothing); a password outside the length rule answers 422, and the link stays
    * valid too. A link is single use and scoped to the address it was sent to.
-   * Rate limited like registration. */
+   * Rate limited like Sign-up. */
   @useAuth(NoAuth)
   @post
   @route("/verify-email")
   op verifyEmail(
-    /** The registration cookie of the browser that registered, if any. Its path is the
+    /** The Sign-up browser cookie of the browser that signed up, if any. Its path is the
      * auth prefix shared with resend, and it is SameSite=Strict: not sent on the
      * cross-site click from the mail, but sent on the page's own later request. */
-    @cookie("REG") registration?: string,
+    @cookie("SIGN_UP_BROWSER") signUpBrowser?: string,
 
     @body body: SiteVerifyEmailInput,
   ):
@@ -359,15 +359,15 @@ namespace SiteAuth {
   /** Send the verification link again to an Unverified User. Answers 202 the same
    * way whether the address is unknown, already verified or unverified, so it adds no
    * enumeration; only an Unverified User gets a mail. Rate limited per IP
-   * like registration. */
+   * like Sign-up. */
   @useAuth(NoAuth)
   @post
   @route("/resend-verification")
   op resendVerification(
-    /** The registration cookie of the browser asking, if any: the new link binds to
+    /** The Sign-up browser cookie of the browser asking, if any: the new link binds to
      * whatever cookie the caller holds and then signs that browser in without a
      * password */
-    @cookie("REG") registration?: string,
+    @cookie("SIGN_UP_BROWSER") signUpBrowser?: string,
 
     @body body: SiteResendVerificationInput,
   ): AcceptedResponse | TooManyRequestsProblem;

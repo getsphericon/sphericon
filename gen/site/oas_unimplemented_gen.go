@@ -153,29 +153,11 @@ func (UnimplementedHandler) SiteAuthLogout(ctx context.Context) (r *SiteAuthLogo
 	return r, ht.ErrNotImplemented
 }
 
-// SiteAuthRegister implements SiteAuth_register operation.
-//
-// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
-// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
-// a taken address gets a notice by mail instead. The answer always sets the registration cookie
-// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
-// link to this browser, so the header does not say whether the address is taken either. The password
-// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
-// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
-// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
-// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
-// `signup_closed` before anything is read or created; accepting an Invitation still works.
-//
-// POST /auth/register
-func (UnimplementedHandler) SiteAuthRegister(ctx context.Context, req *SiteRegisterInput) (r SiteAuthRegisterRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // SiteAuthResendVerification implements SiteAuth_resendVerification operation.
 //
 // Send the verification link again to an Unverified User. Answers 202 the same way whether the address
 // is unknown, already verified or unverified, so it adds no enumeration; only an Unverified User gets
-// a mail. Rate limited per IP like registration.
+// a mail. Rate limited per IP like Sign-up.
 //
 // POST /auth/resend-verification
 func (UnimplementedHandler) SiteAuthResendVerification(ctx context.Context, req *SiteResendVerificationInput, params SiteAuthResendVerificationParams) (r SiteAuthResendVerificationRes, _ error) {
@@ -201,6 +183,24 @@ func (UnimplementedHandler) SiteAuthResetPassword(ctx context.Context, req *Site
 //
 // POST /auth/second-factor
 func (UnimplementedHandler) SiteAuthSecondFactor(ctx context.Context, req *SiteLoginSecondFactorInput) (r SiteAuthSecondFactorRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteAuthSignUp implements SiteAuth_signUp operation.
+//
+// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+// a taken address gets a notice by mail instead. The answer always sets the Sign-up browser cookie
+// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+// link to this browser, so the header does not say whether the address is taken either. The password
+// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
+// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
+// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
+// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
+// `signup_closed` before anything is read or created; accepting an Invitation still works.
+//
+// POST /auth/sign-up
+func (UnimplementedHandler) SiteAuthSignUp(ctx context.Context, req *SiteSignUpInput) (r SiteAuthSignUpRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -233,7 +233,7 @@ func (UnimplementedHandler) SiteAuthSigninNotMe(ctx context.Context, req *SiteSi
 
 // SiteAuthSigninProviders implements SiteAuth_signinProviders operation.
 //
-// The Sign-in providers this Instance offers, for the buttons of the login and register pages. Public;
+// The Sign-in providers this Instance offers, for the buttons of the login and sign-up pages. Public;
 // empty when none is configured.
 //
 // GET /auth/signin-providers
@@ -255,14 +255,14 @@ func (UnimplementedHandler) SiteAuthSigninStart(ctx context.Context, params Site
 
 // SiteAuthVerifyEmail implements SiteAuth_verifyEmail operation.
 //
-// Complete a registration from the verification link (the token is the credential): stamps the
-// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
-// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
-// When the request carries the registration cookie the link was minted for, the password from
-// registration stays; otherwise the request must carry a password, which replaces it, and without one
-// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing); a
-// password outside the length rule answers 422, and the link stays valid too. A link is single use and
-// scoped to the address it was sent to. Rate limited like registration.
+// Complete a Sign-up from the verification link (the token is the credential): stamps the Verified
+// email, ends every earlier session, creates the User's first Workspace, sends the welcome email and
+// starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020). When the
+// request carries the Sign-up browser cookie the link was minted for, the password from Sign-up stays;
+// otherwise the request must carry a password, which replaces it, and without one the answer is 428
+// and nothing changes, the link stays valid (a mail scanner consumes nothing); a password outside the
+// length rule answers 422, and the link stays valid too. A link is single use and scoped to the
+// address it was sent to. Rate limited like Sign-up.
 //
 // POST /auth/verify-email
 func (UnimplementedHandler) SiteAuthVerifyEmail(ctx context.Context, req *SiteVerifyEmailInput, params SiteAuthVerifyEmailParams) (r SiteAuthVerifyEmailRes, _ error) {

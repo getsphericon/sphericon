@@ -28,7 +28,7 @@ func inviteToAcme(t *testing.T, env *testhelper.TestEnv, email string) string {
 
 func TestAnInvitationToAnUnverifiedAddressIsLikeOneToANewAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	register(t, env, "Squatter", "victim@example.com")
+	signUpLink(t, env, "Squatter", "victim@example.com")
 	token := inviteToAcme(t, env, "victim@example.com")
 
 	lookup, err := env.SiteAnonymous(t).SitePublicInvitationsLookup(t.Context(),
@@ -50,11 +50,11 @@ func TestAnInvitationToAnUnverifiedAddressIsLikeOneToANewAddress(t *testing.T) {
 	assert.IsType(t, &siteapi.SitePublicInvitationsAcceptUnprocessableEntity{}, res, "a password is required too")
 }
 
-// The reported pre-hijacking: the attacker registers the invitee's address, an Owner
+// The reported pre-hijacking: the attacker signs up the invitee's address, an Owner
 // invites it, the invitee accepts. The attacker ends with no way in.
-func TestPreHijackingAnAttackerWhoRegisteredTheInviteesAddressGainsNothing(t *testing.T) {
+func TestPreHijackingAnAttackerWhoSignedUpWithTheInviteesAddressGainsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	register(t, env, "Attacker", "victim@example.com")
+	signUpLink(t, env, "Attacker", "victim@example.com")
 	token := inviteToAcme(t, env, "victim@example.com")
 
 	res, err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
@@ -82,14 +82,14 @@ func TestPreHijackingAnAttackerWhoRegisteredTheInviteesAddressGainsNothing(t *te
 	assert.Contains(t, ids, fixtures.AcmePublicID)
 }
 
-// An Invitation that proves an address is a Verified email like a registration link
+// An Invitation that proves an address is a Verified email like a Sign-up link
 // does, so the Staff member reading the Audit log sees who proved what (ADR 0030).
 func TestAcceptingAnInvitationThatVerifiesTheAddressIsAuditedAsEmailVerified(t *testing.T) {
 	for name, prepare := range map[string]func(*testing.T, *testhelper.TestEnv){
 		"new address": func(*testing.T, *testhelper.TestEnv) {},
 		"unverified address": func(t *testing.T, env *testhelper.TestEnv) {
 			t.Helper()
-			register(t, env, "Squatter", "invitee@example.com")
+			signUpLink(t, env, "Squatter", "invitee@example.com")
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

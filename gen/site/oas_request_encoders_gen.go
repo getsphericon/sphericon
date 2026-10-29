@@ -66,20 +66,6 @@ func encodeSiteAuthLoginRequest(
 	return nil
 }
 
-func encodeSiteAuthRegisterRequest(
-	req *SiteRegisterInput,
-	r *http.Request,
-) error {
-	const contentType = "application/json"
-	e := new(jx.Encoder)
-	{
-		req.Encode(e)
-	}
-	encoded := e.Bytes()
-	ht.SetBody(r, bytes.NewReader(encoded), contentType)
-	return nil
-}
-
 func encodeSiteAuthResendVerificationRequest(
 	req *SiteResendVerificationInput,
 	r *http.Request,
@@ -110,6 +96,20 @@ func encodeSiteAuthResetPasswordRequest(
 
 func encodeSiteAuthSecondFactorRequest(
 	req *SiteLoginSecondFactorInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteAuthSignUpRequest(
+	req *SiteSignUpInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

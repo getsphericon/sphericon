@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -10,10 +11,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // SiteUserGetMe returns the authenticated user's profile. Auth is enforced by
@@ -39,14 +40,9 @@ func (h *Handlers) userResource(u *ent.User) *siteapi.SiteUserResource {
 	return res
 }
 
-// newPasswordForm is the new password SiteUserUpdateMe sets, checked beyond the contract.
-type newPasswordForm struct {
-	NewPassword string `json:"newPassword" validate:"password_not_blank,password_length"`
-}
-
-// SiteUserUpdateMe updates the authenticated user's name and/or password. Email
-// is the login identity and is not editable here. Changing the password
-// requires the correct current password.
+// SiteUserUpdateMe changes the authenticated User's name and/or password through accounts,
+// which holds the profile rules. The email is the login identity and is not editable here. A
+// password change ended every session; the acting one continues under a fresh cookie.
 func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdateMeInput) (siteapi.SiteUserUpdateMeRes, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
@@ -57,65 +53,25 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 	if err != nil {
 		return nil, err
 	}
-
-	var newName, newHash *string
-
+	change := accounts.ProfileChange{NewPassword: req.NewPassword.Or(""), CurrentPassword: req.CurrentPassword.Or("")}
 	if name, ok := req.Name.Get(); ok {
-		name = strings.TrimSpace(name)
-		if name == "" {
-			v := siteapi.SiteUserUpdateMeUnprocessableEntity(problemWithErrors(
-				http.StatusUnprocessableEntity,
-				i18n.T("errors.name_empty", nil),
-				map[string][]string{fieldName: {i18n.T("errors.name_empty", nil)}},
-			))
-			return &v, nil
-		}
-		newName = &name
+		change.Name = &name
 	}
-
-	if newPassword, ok := req.NewPassword.Get(); ok && newPassword != "" {
-		// The rule is checked before the current password is: a refused one costs no hash.
-		fieldErrors, err := checkFields(newPasswordForm{NewPassword: newPassword})
-		if err != nil {
-			return nil, err
-		}
-		if fieldErrors != nil {
-			v := siteapi.SiteUserUpdateMeUnprocessableEntity(fieldsProblem(fieldErrors))
-			return &v, nil
-		}
-		currentPassword, _ := req.CurrentPassword.Get()
-		if currentPassword == "" {
-			v := siteapi.SiteUserUpdateMeUnprocessableEntity(problemWithErrors(
-				http.StatusUnprocessableEntity,
-				i18n.T("errors.current_password_required", nil),
-				map[string][]string{"currentPassword": {i18n.T("errors.current_password_required", nil)}},
-			))
-			return &v, nil
-		}
-		if proved, err := h.proveCurrentPassword(ctx, u, currentPassword); err != nil {
-			return nil, err
-		} else if !proved {
-			v := siteapi.SiteUserUpdateMeForbidden(problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil)))
-			return &v, nil
-		}
-		hash, err := credentials.HashPassword(newPassword)
-		if err != nil {
-			return nil, err
-		}
-		newHash = &hash
+	changed, err := h.accounts.ChangeProfile(ctx, u, change, h.proveCurrentPassword)
+	if fields, ok := errors.AsType[*validation.FieldsError](err); ok {
+		v := siteapi.SiteUserUpdateMeUnprocessableEntity(fieldsProblem(fields.Fields))
+		return &v, nil
 	}
-
-	if newName != nil || newHash != nil {
-		u, err = h.accounts.UpdateProfile(ctx, u.ID, newName, newHash)
-		if err != nil {
-			return nil, err
-		}
+	if errors.Is(err, accounts.ErrCurrentPasswordIncorrect) {
+		v := siteapi.SiteUserUpdateMeForbidden(problem(http.StatusForbidden, validation.Message(err)))
+		return &v, nil
 	}
-	res := &siteapi.SiteUserResourceHeaders{Response: *h.userResource(u)}
-	// The password change ended every session; the acting one continues under a
-	// fresh token stamped with the new epoch.
-	if newHash != nil {
-		cookie, err := h.sessions.Issue(u, currentSession(ctx))
+	if err != nil {
+		return nil, err
+	}
+	res := &siteapi.SiteUserResourceHeaders{Response: *h.userResource(changed.User)}
+	if changed.PasswordChanged {
+		cookie, err := h.sessions.Issue(changed.User, currentSession(ctx))
 		if err != nil {
 			return nil, err
 		}

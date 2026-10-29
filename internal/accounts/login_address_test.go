@@ -11,13 +11,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// A User's email is stored as registered (trimmed, case kept) while the login module
+// A User's email is stored as typed at Sign-up (trimmed, case kept) while the login module
 // lower-cases the address it looks up, so the lookup must ignore case: otherwise a User
-// registered as "Grace@Example.com" could never sign in.
+// who signed up as "Grace@Example.com" could never sign in.
 func TestUserByLoginAddressIgnoresTheCaseOfTheStoredEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := accounts.New(env.DB, env.Bus)
-	u, err := acc.Register(t.Context(), "Grace", "Grace@Example.com", "hash", false)
+	u, err := acc.CreateUnverified(t.Context(), "Grace", "Grace@Example.com", "hash", false)
 	require.NoError(t, err)
 
 	found, err := acc.UserByLoginAddress(t.Context(), "grace@example.com")

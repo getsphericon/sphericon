@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/signup"
 )
 
 // Token lifetimes for the self-service account flows.
@@ -26,7 +27,7 @@ const (
 
 // SiteAuthForgotPassword mints a reset token and emails a link. It answers 202
 // whether or not the address matches an account and whether or not the per-address
-// budget is spent, so the endpoint cannot be used to enumerate registered emails
+// budget is spent, so the endpoint cannot be used to enumerate the addresses that hold a User
 // (the per-IP cap answers 429 in the rate limit middleware, before this runs). Every
 // request does the same work: take a slot of the address's budget in one atomic
 // step, look the address up, mint a token and enqueue a mail job. Only a known
@@ -93,11 +94,11 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	if err != nil {
 		return nil, err
 	}
-	u, completedRegistration, err := h.accounts.ResetPassword(ctx, uid, hash)
+	u, completedSignUp, err := h.accounts.ResetPassword(ctx, uid, hash)
 	if err != nil {
 		return nil, err
 	}
-	if completedRegistration {
+	if completedSignUp {
 		if err := h.welcome.EnqueueWelcome(ctx, u.Email, u.Name); err != nil {
 			mailNotQueued(ctx, "Welcome", err)
 		}
@@ -105,11 +106,11 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 	return &siteapi.SiteAuthResetPasswordOK{}, nil
 }
 
-// SiteAuthVerifyEmail completes a registration from its link (ADR 0030): the token
+// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030): the token
 // proves the address, so it stamps the Verified email, ends every earlier session,
 // creates the User's first Workspace and sends the welcome email, then starts the
-// session through the login issuer. The password stored at registration stays only when
-// the request carries the registration cookie the token was minted for; any other
+// session through the login issuer. The password stored at Sign-up stays only when
+// the request carries the Sign-up browser cookie the token was minted for; any other
 // browser must send a password, which replaces it, and without one nothing changes and
 // the token stays valid (a mail scanner consumes nothing). The token is single use
 // (the Verified check) and scoped to the address it was sent to: an old link never
@@ -132,10 +133,10 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 		v := siteapi.SiteAuthVerifyEmailBadRequest(problem(http.StatusBadRequest, i18n.T("errors.verify_link_stale", nil)))
 		return &v, nil
 	}
-	// The Registration browser keeps the password stored at registration (nil); any other
+	// The Sign-up browser keeps the password stored at Sign-up (nil); any other
 	// browser replaces it with the one from the form.
 	var hash *string
-	if !auth.SameRegistrationBrowser(auth.VerifyClaimsBrowser(extra), params.REG.Or("")) {
+	if !signup.SameBrowser(auth.VerifyClaimsBrowser(extra), params.SIGNUPBROWSER.Or("")) {
 		password := req.Password.Or("")
 		if password == "" {
 			v := siteapi.SiteAuthVerifyEmailPreconditionRequired(problem(http.StatusPreconditionRequired, i18n.T("errors.verify_password_needed", nil)))

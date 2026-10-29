@@ -1130,17 +1130,6 @@ export const zSiteRecoveryCodesInput = z.object({
 });
 
 /**
- * Register with a name, an email and a password. The User stays Unverified until the
- * address is proven (ADR 0030); the password is trusted only when the verification link
- * is opened in the browser that registered.
- */
-export const zSiteRegisterInput = z.object({
-  name: z.string(),
-  email: zEmailAddress,
-  password: z.exactOptional(z.string())
-});
-
-/**
  * Ask for the verification link again (always accepted; no account enumeration)
  */
 export const zSiteResendVerificationInput = z.object({
@@ -1388,6 +1377,17 @@ export const zSiteSetupProgress = z.object({
 });
 
 /**
+ * Sign up with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the Sign-up browser.
+ */
+export const zSiteSignUpInput = z.object({
+  name: z.string(),
+  email: zEmailAddress,
+  password: z.exactOptional(z.string())
+});
+
+/**
  * Why a provider sign-in did not start a session. The callback redirects to `/login` with
  * one of these as the `error` query parameter, and the SPA renders it through i18n.
  */
@@ -1421,7 +1421,7 @@ export const zSiteSigninProvider = z.object({
 
 /**
  * The Sign-in providers this Instance has configured. Empty on an Instance that
- * configured none, which leaves the login and register pages as they are.
+ * configured none, which leaves the login and sign-up pages as they are.
  */
 export const zSiteSigninProviders = z.object({
   items: z.array(zSiteSigninProvider)
@@ -3092,8 +3092,6 @@ export const zSitePasskeyLoginFinishBody = zSitePasskeyLoginInput;
  */
 export const zSitePasskeyLoginFinishResponse = zSiteLoginResult;
 
-export const zSiteAuthRegisterBody = zSiteRegisterInput;
-
 export const zSiteAuthResendVerificationBody = zSiteResendVerificationInput;
 
 export const zSiteAuthResetPasswordBody = zSiteResetPasswordInput;
@@ -3104,6 +3102,8 @@ export const zSiteAuthSecondFactorBody = zSiteLoginSecondFactorInput;
  * The request has succeeded.
  */
 export const zSiteAuthSecondFactorResponse = zSiteLoginResult;
+
+export const zSiteAuthSignUpBody = zSiteSignUpInput;
 
 export const zSiteAuthSigninNotMeBody = zSiteSigninNotMeInput;
 

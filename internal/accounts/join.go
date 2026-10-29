@@ -17,7 +17,7 @@ import (
 // proof is what an address's proof tells the domain-join step about the person.
 type proof struct {
 	// SignupPermits is the sign-up gate (ADR 0042) as it stands for this person: true for a
-	// User who already exists (a verify link follows a registration), the Instance's sign-up
+	// User who already exists (a verify link follows a Sign-up), the Instance's sign-up
 	// switch for a User the proof itself creates.
 	SignupPermits bool
 }

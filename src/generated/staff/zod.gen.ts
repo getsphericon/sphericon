@@ -82,7 +82,7 @@ export const zPaymentRequiredProblem = z.object({
 
 /**
  * RFC 7807 precondition required response: the request needs something it did not carry
- * (a verification link opened outside its Registration browser needs a password, ADR 0030)
+ * (a verification link opened outside its Sign-up browser needs a password, ADR 0030)
  */
 export const zPreconditionRequiredProblem = z.object({
   body: zProblemDetails

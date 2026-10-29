@@ -80,7 +80,7 @@ func TestPrunedAddressKeepsItsInvitationAndTheInviteeCanAcceptIt(t *testing.T) {
 	assert.True(t, env.DB.Scoped(fixtures.GlobexID).Membership().Query().Where(membership.UserID(owner.ID)).ExistX(t.Context()))
 }
 
-func TestAddressCanRegisterOnlyAfterItsStaleUserIsPruned(t *testing.T) {
+func TestAddressCanSignUpOnlyAfterItsStaleUserIsPruned(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := accounts.New(env.DB, env.Bus)
 	taken, err := acc.EmailTaken(t.Context(), fixtures.StaleUnverifiedUserEmail)
@@ -89,6 +89,6 @@ func TestAddressCanRegisterOnlyAfterItsStaleUserIsPruned(t *testing.T) {
 
 	pruneUnverified(t, env, unverifiedRetention)
 
-	_, err = acc.Register(t.Context(), "Real Owner", fixtures.StaleUnverifiedUserEmail, "registered-hash", false)
+	_, err = acc.CreateUnverified(t.Context(), "Real Owner", fixtures.StaleUnverifiedUserEmail, "signed-up-hash", false)
 	require.NoError(t, err)
 }

@@ -36,17 +36,17 @@ func enableAcmeJoin(t *testing.T, env *testhelper.TestEnv) {
 	require.IsType(t, &siteapi.SiteDomainJoinResource{}, setDomainJoin(t, env.SiteActor(t, fixtures.OwnerJohnEmail), true))
 }
 
-// signedUp is a person who registered and followed the verify link: the client holds their
+// signedUp is a person who signed up and followed the verify link: the client holds their
 // session, landing is the Workspace the link answered with.
 type signedUp struct {
 	client  *siteapi.Client
 	landing siteapi.WorkspaceId
 }
 
-// signUp takes a new person through registration and the verify link.
+// signUp takes a new person through Sign-up and the verify link.
 func signUp(t *testing.T, env *testhelper.TestEnv, email string) signedUp {
 	t.Helper()
-	res := verify(t, env, register(t, env, "New Colleague", email), joinerPassword)
+	res := verify(t, env, signUpLink(t, env, "New Colleague", email), joinerPassword)
 	ok, isOK := res.(*siteapi.SiteVerifyEmailResultHeaders)
 	require.Truef(t, isOK, "got %T", res)
 	cookie, err := http.ParseSetCookie(ok.SetCookie)
@@ -258,7 +258,7 @@ func TestTheWorkspacesTwoFactorRequirementAppliesToAJoinerWithTheUsualGrace(t *t
 	assert.WithinDuration(t, time.Now().Add(7*24*time.Hour), time.Time(acme[0].SecondFactorGraceEndsAt.Value), time.Minute)
 }
 
-func TestAJoinSendsNoMailToTheJoinerOrTheOwnerBeyondTheRegistrationAndWelcome(t *testing.T) {
+func TestAJoinSendsNoMailToTheJoinerOrTheOwnerBeyondTheSignUpAndWelcome(t *testing.T) {
 	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
 	before := len(env.SystemMail.Messages())

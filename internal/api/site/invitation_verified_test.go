@@ -69,7 +69,7 @@ func TestAnInvitationForAVerifiedUserAcceptsTheirSessionAndReadsNoPassword(t *te
 
 func TestAnInvitationForAnUnverifiedAddressNeedsNoSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	register(t, env, "Squatter", "victim@example.com")
+	signUpLink(t, env, "Squatter", "victim@example.com")
 	token := inviteToAcme(t, env, "victim@example.com")
 
 	// A signed-in stranger does not get in the way of the invitee's own accept.

@@ -12,13 +12,13 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 )
 
-// colleaguePassword is the password every Colleague registers with.
+// colleaguePassword is the password every Colleague signs up with.
 const colleaguePassword = "colleague-password-1"
 
-// Colleague is a person who registered with an address on the Workspace's Join domain and
+// Colleague is a person who signed up with an address on the Workspace's Join domain and
 // followed the verify link from Mailpit.
 type Colleague struct {
-	// Email is the address they registered with.
+	// Email is the address they signed up with.
 	Email string
 	// Landing is the Workspace the verify link opened.
 	Landing siteapi.WorkspaceId
@@ -53,19 +53,19 @@ func (w *Workspace) EnableDomainJoin() {
 	require.True(w.t, got.Enabled)
 }
 
-// RegisterColleague registers a person on the Join domain through the real flow: the
-// registration form, the verify mail from Mailpit and the link in it.
-func (w *Workspace) RegisterColleague(domain string) *Colleague {
+// SignUpColleague signs up a person on the Join domain through the real flow: the
+// Sign-up form, the verify mail from Mailpit and the link in it.
+func (w *Workspace) SignUpColleague(domain string) *Colleague {
 	w.t.Helper()
 	ctx := w.t.Context()
 	email := "colleague-" + uniq() + "@" + domain
 	anonymous, err := siteapi.NewClient(w.env.BaseURL+"/site", cookieSource(""))
 	require.NoError(w.t, err)
 
-	registered, err := anonymous.SiteAuthRegister(ctx, &siteapi.SiteRegisterInput{
+	signedUp, err := anonymous.SiteAuthSignUp(ctx, &siteapi.SiteSignUpInput{
 		Name: "Colleague", Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(colleaguePassword),
 	})
-	ok[siteapi.SiteAuthRegisterAccepted](w.t, "register", registered, err)
+	ok[siteapi.SiteAuthSignUpAccepted](w.t, "sign up", signedUp, err)
 
 	mail := w.Inbox.Wait(Match{To: email, Subject: "Verify your Sphericon email"})
 	verified, err := anonymous.SiteAuthVerifyEmail(ctx,

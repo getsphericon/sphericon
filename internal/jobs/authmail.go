@@ -116,7 +116,7 @@ func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage
 	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(subjectID, nil), Text: body}, nil
 }
 
-// buildAddressTakenMail renders the notice a registration or an email change to a
+// buildAddressTakenMail renders the notice a Sign-up or an email change to a
 // Taken address sends its owner. It carries no token, so it can never be a way in.
 func buildAddressTakenMail(appURL, to string) messaging.EmailMessage {
 	base := strings.TrimRight(appURL, "/")

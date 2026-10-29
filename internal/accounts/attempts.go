@@ -24,7 +24,7 @@ const (
 	KindLogin         = authattempt.KindLogin
 	KindStaffLogin    = authattempt.KindStaffLogin
 	KindPasswordReset = authattempt.KindPasswordReset
-	KindRegister      = authattempt.KindRegister
+	KindSignUp        = authattempt.KindSignUp
 	KindEmailChange   = authattempt.KindEmailChange
 	// KindTestSendUser caps a Test send from the System sender (ADR 0041), keyed by a User or Workspace
 	// id rather than an address (see counterKey).
@@ -92,7 +92,7 @@ func WithRateLimits(limits config.RateLimits) AttemptsOption {
 		a.rules[KindPasswordReset] = ResetRule(limits.ForgotAddress)
 		// The notice to the owner of a Taken address (ADR 0031) shares the reset budget:
 		// one limit for every mail a stranger can make us send to an address.
-		a.rules[KindRegister] = ResetRule(limits.ForgotAddress)
+		a.rules[KindSignUp] = ResetRule(limits.ForgotAddress)
 		a.rules[KindEmailChange] = ResetRule(limits.ForgotAddress)
 	}
 }
@@ -105,7 +105,7 @@ func NewAttempts(client *ent.Client, opts ...AttemptsOption) *Attempts {
 		KindLogin:         LoginRule(0),
 		KindStaffLogin:    LoginRule(0),
 		KindPasswordReset: ResetRule(0),
-		KindRegister:      ResetRule(0),
+		KindSignUp:        ResetRule(0),
 		KindEmailChange:   ResetRule(0),
 		// Not configurable: always on, with their own windows.
 		KindTestSendUser:      {Threshold: TestSendPerUserHour, Window: time.Hour},
@@ -316,7 +316,7 @@ func (a *Attempts) Purge(ctx context.Context) (int, error) {
 	return total, nil
 }
 
-// Counter is the failure counter of one Kind, as the login module sees it: the Kind is
+// Counter is the counter of one Kind, as the login and signup modules see it: the Kind is
 // bound, so a caller cannot count a User's failures under the Staff Kind or the reverse.
 type Counter struct {
 	attempts *Attempts
@@ -339,6 +339,11 @@ func (c Counter) RecordFailure(ctx context.Context, email string) error {
 // RecordSuccess is Attempts.RecordSuccess for the bound Kind.
 func (c Counter) RecordSuccess(ctx context.Context, email string) error {
 	return c.attempts.RecordSuccess(ctx, c.kind, email)
+}
+
+// Take is Attempts.Take for the bound Kind.
+func (c Counter) Take(ctx context.Context, email string) (bool, error) {
+	return c.attempts.Take(ctx, c.kind, email)
 }
 
 // Limit is Attempts.Limit for the bound Kind.

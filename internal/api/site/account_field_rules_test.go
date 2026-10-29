@@ -13,15 +13,15 @@ import (
 )
 
 // Every way a person sets a password or names an address of their own goes through the same
-// rules as registration (internal/validation), so none of them is a way around it.
+// rules as Sign-up (internal/validation), so none of them is a way around it.
 
 const shortPasswordMessage = "the password must be 8 to 256 characters long"
 
-func TestRegisteringWithAPasswordOfSpacesIsRefused(t *testing.T) {
+func TestSigningUpWithAPasswordOfSpacesIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := registerWithPassword(t, env, "Grace Hopper", "grace@example.com", "        ")
-	problem, ok := res.(*siteapi.SiteAuthRegisterUnprocessableEntity)
+	res := signUpWithPassword(t, env, "Grace Hopper", "grace@example.com", "        ")
+	problem, ok := res.(*siteapi.SiteAuthSignUpUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.ProblemDetailsErrors{"password": {"the password must not be only spaces"}}, problem.Errors.Value)
 }
@@ -49,7 +49,7 @@ func TestResettingToAShortPasswordIsRefusedAndKeepsTheLink(t *testing.T) {
 
 func TestTheLinkInAnotherBrowserRefusesAShortPasswordAndStaysValid(t *testing.T) {
 	env := testhelper.Setup(t)
-	token := registerIn(t, env, env.SiteBrowser(t), "Grace Hopper", "grace@example.com", formPassword)
+	token := signUpIn(t, env, env.SiteBrowser(t), "Grace Hopper", "grace@example.com", formPassword)
 
 	res := verifyIn(t, env.SiteBrowser(t), token, "1")
 	problem, ok := res.(*siteapi.SiteAuthVerifyEmailUnprocessableEntity)

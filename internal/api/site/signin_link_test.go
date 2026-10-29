@@ -21,7 +21,7 @@ const (
 	patPassword = "pat-password-1"
 )
 
-// patWithGoogle is Pat's Google account: the address Pat registered with, vouched for by Google.
+// patWithGoogle is Pat's Google account: the address Pat signed up with, vouched for by Google.
 var patWithGoogle = testhelper.SigninIdentity{Subject: "google-subject-of-pat", Email: patEmail, EmailVerified: true, Name: "Pat at Google"}
 
 // johnWithGoogle is a Google account of a hosted domain whose address is OwnerJohn's: an address
@@ -55,7 +55,7 @@ func notMeLink(t *testing.T, env *testhelper.TestEnv) string {
 
 func TestSigninAProvenUserIsLinkedSilentlyAndKeepsThePassword(t *testing.T) {
 	env, fake := signinEnv(t)
-	registerAndVerify(t, env, "Pat", patEmail, patPassword)
+	signUpAndVerify(t, env, "Pat", patEmail, patPassword)
 	pat := userByEmail(t, env, patEmail)
 	patSession := sessionCookie(postLogin(t, env, patEmail, patPassword).Result())
 	require.NotNil(t, patSession)
@@ -78,7 +78,7 @@ func TestSigninAProvenUserIsLinkedSilentlyAndKeepsThePassword(t *testing.T) {
 
 func TestSigninLinkingNoticesTheOwnerByMail(t *testing.T) {
 	env, fake := signinEnv(t)
-	registerAndVerify(t, env, "Pat", patEmail, patPassword)
+	signUpAndVerify(t, env, "Pat", patEmail, patPassword)
 	before := len(env.SystemMail.Messages())
 
 	signInWith(t, fake, env.NewRedirectBrowser(t), patWithGoogle, "")
@@ -103,7 +103,7 @@ func TestSigninAKnownIdentityOrANewPersonSendsNoLinkNotice(t *testing.T) {
 
 func TestSigninTheNotMeLinkUnlinksTheIdentityAndEndsEverySession(t *testing.T) {
 	env, fake := signinEnv(t)
-	registerAndVerify(t, env, "Pat", patEmail, patPassword)
+	signUpAndVerify(t, env, "Pat", patEmail, patPassword)
 	pat := userByEmail(t, env, patEmail)
 	patSession := sessionCookie(postLogin(t, env, patEmail, patPassword).Result())
 	require.NotNil(t, patSession)
@@ -123,7 +123,7 @@ func TestSigninTheNotMeLinkUnlinksTheIdentityAndEndsEverySession(t *testing.T) {
 
 func TestSigninTheNotMeLinkWorksOnce(t *testing.T) {
 	env, fake := signinEnv(t)
-	registerAndVerify(t, env, "Pat", patEmail, patPassword)
+	signUpAndVerify(t, env, "Pat", patEmail, patPassword)
 	signInWith(t, fake, env.NewRedirectBrowser(t), patWithGoogle, "")
 	token := notMeLink(t, env)
 	anonymous := env.SiteAnonymous(t)
@@ -199,7 +199,7 @@ func TestSigninTheNotMeLinkOfAnUnprovenTakeoverLeavesNoWayInButTheReset(t *testi
 
 func TestSigninTheVisitorSeesTheSameWhetherOrNotTheAddressExisted(t *testing.T) {
 	env, fake := signinEnv(t)
-	registerAndVerify(t, env, "Pat", patEmail, patPassword)
+	signUpAndVerify(t, env, "Pat", patEmail, patPassword)
 	existing := env.NewRedirectBrowser(t)
 	fresh := env.NewRedirectBrowser(t)
 
@@ -214,7 +214,7 @@ func TestSigninTheVisitorSeesTheSameWhetherOrNotTheAddressExisted(t *testing.T) 
 
 func TestSigninAnUnverifiedUserIsTakenOverAndItsPendingPasswordRejected(t *testing.T) {
 	env, fake := signinEnv(t)
-	registerPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
+	signUpPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
 	squatter := userByEmail(t, env, "victim@gmail.com")
 	require.Nil(t, squatter.EmailVerifiedAt)
 	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}
@@ -236,9 +236,9 @@ func TestSigninAnUnverifiedUserIsTakenOverAndItsPendingPasswordRejected(t *testi
 	assert.Equal(t, 1, workspaces, "the first Workspace is made as a verify link makes it")
 }
 
-func TestSigninATakenOverRegistrationKeepsThePendingInvitation(t *testing.T) {
+func TestSigninATakenOverSignUpKeepsThePendingInvitation(t *testing.T) {
 	env, fake := signinEnv(t)
-	registerPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
+	signUpPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
 	token := inviteToAcme(t, env, "victim@gmail.com")
 	victim := testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}
 	b := env.NewRedirectBrowser(t)
@@ -254,7 +254,7 @@ func TestSigninATakenOverRegistrationKeepsThePendingInvitation(t *testing.T) {
 
 func TestSigninATakeoverOfAnUnverifiedAddressSendsNoNotice(t *testing.T) {
 	env, fake := signinEnv(t)
-	registerPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
+	signUpPending(t, env, "Squatter", "victim@gmail.com", "squatter-password-1")
 	before := len(env.SystemMail.Messages())
 
 	signInWith(t, fake, env.NewRedirectBrowser(t), testhelper.SigninIdentity{Subject: "google-subject-of-victim", Email: "victim@gmail.com", EmailVerified: true, Name: "Victim"}, "")
@@ -274,12 +274,12 @@ func TestSigninALinkedUserWithASecondFactorStillGetsTheChallenge(t *testing.T) {
 func TestTheAddressIsProvenByEveryLinkItIsMailedTo(t *testing.T) {
 	t.Run("a verify link", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		registerAndVerify(t, env, "Pat", patEmail, patPassword)
+		signUpAndVerify(t, env, "Pat", patEmail, patPassword)
 		assert.NotNil(t, userByEmail(t, env, patEmail).EmailProvenAt)
 	})
-	t.Run("a registration with verification off proves nothing", func(t *testing.T) {
+	t.Run("a Sign-up with verification off proves nothing", func(t *testing.T) {
 		env := gateOff(t)
-		require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerWithPassword(t, env, "Pat", patEmail, patPassword))
+		require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, signUpWithPassword(t, env, "Pat", patEmail, patPassword))
 		u := userByEmail(t, env, patEmail)
 		assert.NotNil(t, u.EmailVerifiedAt)
 		assert.Nil(t, u.EmailProvenAt)
@@ -349,9 +349,9 @@ func TestAuditASilentLinkAndItsNotMeUndoNameOnlyTheProvider(t *testing.T) {
 	assert.JSONEq(t, `{"provider":"google"}`, diffOf(t, unlinked[0]))
 }
 
-// registerPending registers an address and leaves its verify link unused: an
+// signUpPending signs up an address and leaves its verify link unused: an
 // Unverified User with a pending password.
-func registerPending(t *testing.T, env *testhelper.TestEnv, name, email, password string) {
+func signUpPending(t *testing.T, env *testhelper.TestEnv, name, email, password string) {
 	t.Helper()
-	registerIn(t, env, env.SiteAnonymous(t), name, email, password)
+	signUpIn(t, env, env.SiteAnonymous(t), name, email, password)
 }
