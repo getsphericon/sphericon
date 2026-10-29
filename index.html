@@ -8,7 +8,7 @@
     <link rel="icon" sizes="32x32" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <!-- Instance locale, substituted at serve time: the Go backend replaces the
-         {{APP_LOCALE}} sentinel in the embedded index.html (see internal/server/spa.go),
+         {{APP_LOCALE}} sentinel in the embedded index.html (see internal/server/spa/spa.go),
          and the Vite dev server does the same in dev (see vite.config.ts). The SPA reads
          window.__APP_LOCALE__ synchronously at boot (src/i18n.ts) — no extra request —
          and sets <html lang> from it (kept a valid "en" here so the a11y lint passes). -->

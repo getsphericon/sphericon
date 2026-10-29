@@ -18,7 +18,7 @@ import (
 // scheduled order.
 func (e *riverEnv) recipientJobTimes(t *testing.T) []time.Time {
 	t.Helper()
-	res, err := e.client.River().JobList(e.workCtx(),
+	res, err := e.queue.JobList(e.workCtx(),
 		river.NewJobListParams().Kinds("send_broadcast_recipient").
 			OrderBy(river.JobListOrderByScheduledAt, river.SortOrderAsc).First(1000))
 	require.NoError(t, err)

@@ -19,7 +19,7 @@
 - river's tables are one migration per river version (`*_river_00N.sql`, river applies each version
   in a transaction of its own), written by `mise run db:river-migration` from the river version in
   `go.mod`; after a river upgrade run it again and `rivermigrate.Validate` in
-  `cmd/server/migrate_test.go` tells you when it is due. Do not edit those files by hand.
+  `internal/db/run_test.go` tells you when it is due. Do not edit those files by hand.
 - **Migrations are immutable.** `cmd/upgradecheck immutable` (in `check:upgrade`) fails a PR that
   modifies or deletes a goose `.sql` or Go migration already on `main`, naming each file; only a PR
   whose body has a line `History-Collapse: <reason>` may rewrite history.

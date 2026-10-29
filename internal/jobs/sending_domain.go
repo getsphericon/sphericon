@@ -29,6 +29,11 @@ type VerifySendingDomainWorker struct {
 	mod *domainverify.Module
 }
 
+// NewVerifySendingDomainWorker builds the worker that verifies one Sending domain.
+func NewVerifySendingDomainWorker(mod *domainverify.Module) *VerifySendingDomainWorker {
+	return &VerifySendingDomainWorker{mod: mod}
+}
+
 func (w *VerifySendingDomainWorker) Work(ctx context.Context, job *river.Job[VerifySendingDomainArgs]) error {
 	return w.mod.Verify(ctx, job.Args.SendingDomainID)
 }
@@ -43,6 +48,11 @@ type RecheckSendingDomainsWorker struct {
 	river.WorkerDefaults[RecheckSendingDomainsArgs]
 
 	mod *domainverify.Module
+}
+
+// NewRecheckSendingDomainsWorker builds the worker that queues a check of every Sending domain due one.
+func NewRecheckSendingDomainsWorker(mod *domainverify.Module) *RecheckSendingDomainsWorker {
+	return &RecheckSendingDomainsWorker{mod: mod}
 }
 
 // Work fans the periodic tick out into one VerifySendingDomain job per due domain, giving each
@@ -75,6 +85,11 @@ type VerifyTrackingDomainWorker struct {
 	mod *domainverify.Module
 }
 
+// NewVerifyTrackingDomainWorker builds the worker that verifies one Sending domain's tracking host.
+func NewVerifyTrackingDomainWorker(mod *domainverify.Module) *VerifyTrackingDomainWorker {
+	return &VerifyTrackingDomainWorker{mod: mod}
+}
+
 func (w *VerifyTrackingDomainWorker) Work(ctx context.Context, job *river.Job[VerifyTrackingDomainArgs]) error {
 	return w.mod.VerifyTracking(ctx, job.Args.SendingDomainID)
 }
@@ -87,6 +102,11 @@ type RecheckTrackingDomainsWorker struct {
 	river.WorkerDefaults[RecheckTrackingDomainsArgs]
 
 	mod *domainverify.Module
+}
+
+// NewRecheckTrackingDomainsWorker builds the worker that queues a check of every tracking host due one.
+func NewRecheckTrackingDomainsWorker(mod *domainverify.Module) *RecheckTrackingDomainsWorker {
+	return &RecheckTrackingDomainsWorker{mod: mod}
 }
 
 // Work fans the tick out into one VerifyTrackingDomain job per due Sending domain.
@@ -118,6 +138,11 @@ type VerifyJoinDomainWorker struct {
 	mod *joindomains.Module
 }
 
+// NewVerifyJoinDomainWorker builds the worker that verifies one Join domain.
+func NewVerifyJoinDomainWorker(mod *joindomains.Module) *VerifyJoinDomainWorker {
+	return &VerifyJoinDomainWorker{mod: mod}
+}
+
 // Work re-checks one domain. The Owners' mail is sent by the module, best-effort.
 func (w *VerifyJoinDomainWorker) Work(ctx context.Context, job *river.Job[VerifyJoinDomainArgs]) error {
 	_, err := w.mod.Recheck(ctx, job.Args.JoinDomainID)
@@ -132,6 +157,11 @@ type RecheckJoinDomainsWorker struct {
 	river.WorkerDefaults[RecheckJoinDomainsArgs]
 
 	mod *joindomains.Module
+}
+
+// NewRecheckJoinDomainsWorker builds the worker that queues a check of every Join domain due one.
+func NewRecheckJoinDomainsWorker(mod *joindomains.Module) *RecheckJoinDomainsWorker {
+	return &RecheckJoinDomainsWorker{mod: mod}
 }
 
 // Work fans the tick out into one VerifyJoinDomain job per due domain, up to

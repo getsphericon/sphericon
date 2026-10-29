@@ -1,12 +1,11 @@
 package jobs_test
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -43,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
+	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/suspension"
@@ -59,6 +59,8 @@ type riverEnv struct {
 
 	pool   *sql.DB
 	client *jobs.Client
+	// queue is a river client over the same pool for what the test inserts, lists and clears.
+	queue  *river.Client[*sql.Tx]
 	cipher *secrets.Cipher
 	cfg    *config.Config
 	sender *fakeSender
@@ -79,7 +81,9 @@ func newRiverEnv(t *testing.T) *riverEnv {
 	mod := newMod(env, resolvingTo(fs))
 	client, err := jobs.NewClient(pool, env.DB, mod, cipher, env.Bus, env.SystemMail, nil, nil, registry.Default(), cfg.AppURL, cfg.OutboundAllow, nil, jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention})
 	require.NoError(t, err)
-	e := &riverEnv{TestEnv: env, pool: pool, client: client, cipher: cipher, cfg: cfg, sender: fs}
+	queue, err := jobs.NewInserter(pool)
+	require.NoError(t, err)
+	e := &riverEnv{TestEnv: env, pool: pool, client: client, queue: queue, cipher: cipher, cfg: cfg, sender: fs}
 	e.clearQueue(t)
 	t.Cleanup(func() { e.clearQueue(t) })
 	return e
@@ -88,20 +92,20 @@ func newRiverEnv(t *testing.T) *riverEnv {
 // workCtx is the context river hands a worker: it carries the client the fan-out
 // workers insert follow-up jobs with.
 func (e *riverEnv) workCtx() context.Context {
-	return rivertest.WorkContext(context.Background(), e.client.River())
+	return rivertest.WorkContext(context.Background(), e.queue)
 }
 
 // clearQueue removes every job from the real queue.
 func (e *riverEnv) clearQueue(t *testing.T) {
 	t.Helper()
-	_, err := e.client.River().JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, stepping.QueueHTTPSteps))
+	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, stepping.QueueHTTPSteps))
 	require.NoError(t, err)
 }
 
 // queued returns the kinds of the jobs currently in the queue, oldest first.
 func (e *riverEnv) queued(t *testing.T) []string {
 	t.Helper()
-	res, err := e.client.River().JobList(context.Background(),
+	res, err := e.queue.JobList(context.Background(),
 		river.NewJobListParams().OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(1000))
 	require.NoError(t, err)
 	kinds := make([]string, 0, len(res.Jobs))
@@ -177,6 +181,34 @@ func TestDispatchFansOutToMatchingEnabledEndpoints(t *testing.T) {
 	// An endpoint with no filter receives every event (Globex's, workspace 2).
 	require.NoError(t, e.client.Dispatch(ctx, e.DB.Scoped(fixtures.GlobexID), "segment.created", "d-3", []byte(`{}`)))
 	assert.Len(t, e.queued(t), 2)
+}
+
+// queuedEndpoints returns the endpoints of the queued webhook deliveries, oldest first.
+func (e *riverEnv) queuedEndpoints(t *testing.T) []int64 {
+	t.Helper()
+	res, err := e.queue.JobList(context.Background(), river.NewJobListParams().
+		Kinds(jobs.DeliverWebhookArgs{}.Kind()).OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(1000))
+	require.NoError(t, err)
+	return lo.Map(res.Jobs, func(j *rivertype.JobRow, _ int) int64 {
+		var args jobs.DeliverWebhookArgs
+		require.NoError(t, json.Unmarshal(j.EncodedArgs, &args))
+		return args.EndpointID
+	})
+}
+
+// An Audit entry reaches only an endpoint that selects it: an empty filter means every
+// customer-facing event, never the Audit log (ADR 0022).
+func TestDispatchSendsAuditEntriesOnlyToEndpointsThatSelectThem(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := context.Background()
+	initech := e.DB.Scoped(fixtures.InitechID)
+
+	require.NoError(t, e.client.Dispatch(ctx, initech, events.NameAuditEntry, "d-audit", []byte(`{}`)))
+	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
+
+	e.clearQueue(t)
+	require.NoError(t, e.client.Dispatch(ctx, initech, events.NameContactCreated, "d-contact", []byte(`{}`)))
+	assert.Equal(t, []int64{fixtures.WebhookInitechID}, e.queuedEndpoints(t), "an empty filter still receives customer events")
 }
 
 func TestWelcomeWorker(t *testing.T) {
@@ -652,16 +684,19 @@ func TestBroadcastWorkers(t *testing.T) {
 	require.NoError(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastEmptyAudienceID})))
 	assert.Len(t, e.queued(t), before)
 
-	// A suspended workspace holds: the job snoozes rather than fails.
-	_, err := suspension.SuspendWorkspace(ctx, e.Bus, fixtures.AcmeID, suspension.System, "complaints")
-	require.NoError(t, err)
+	// A resolver failure is a plain error: river retries it, spending an attempt.
 	e.DB.Broadcast.UpdateOneID(fixtures.BroadcastProSegmentID).SetStatus(broadcast.StatusSending).ExecX(ctx)
+	failing := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, failingResolver(errors.New("no integration"))))
+	err := failing.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID}))
+	require.Error(t, err)
 	var snooze *river.JobSnoozeError
-	require.ErrorAs(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
+	assert.NotErrorAs(t, err, &snooze, "a failure is not a snooze")
 
-	// A resolver failure is a plain error: river retries it.
-	hold := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, failingResolver(errors.New("no integration"))))
-	require.Error(t, hold.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})))
+	// A suspended workspace holds: the job snoozes rather than fails.
+	_, err = suspension.SuspendWorkspace(ctx, e.Bus, fixtures.AcmeID, suspension.System, "complaints")
+	require.NoError(t, err)
+	require.ErrorAs(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
+	assert.Equal(t, outbound.HoldBackoff, snooze.Duration, "a hold asks again after the hold backoff")
 }
 
 func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
@@ -676,6 +711,8 @@ func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 	// Not the last attempt: the error surfaces for retry, row stays pending.
 	err = failing.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID}))
 	require.Error(t, err)
+	var snooze *river.JobSnoozeError
+	assert.NotErrorAs(t, err, &snooze, "a failure spends an attempt: it is not a snooze")
 	assert.True(t, stillPending(ctx, e.DB, ids[0]))
 
 	// Last attempt: the row is marked failed so the broadcast can finalize.
@@ -722,22 +759,22 @@ func TestSendRecipientWorkerSnoozesInsteadOfGivingUpOnALiveClaim(t *testing.T) {
 	assert.Equal(t, broadcast.StatusSending, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
 }
 
-func TestErrorHandlerLogsAndKeepsRetrying(t *testing.T) {
-	var buf bytes.Buffer
-	h := jobs.NewErrorHandler(slog.New(slog.NewTextHandler(&buf, nil)))
-	row := &rivertype.JobRow{ID: 7, Kind: "send_welcome", Queue: "default", Attempt: 2, MaxAttempts: 5}
+// A recipient whose send another attempt is making waits that attempt out: the job snoozes,
+// which spends no attempt, and nothing is sent or failed meanwhile.
+func TestSendRecipientWorkerSnoozesWhileAnotherAttemptSends(t *testing.T) {
+	e := newRiverEnv(t)
+	ctx := e.workCtx()
+	id := e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactBobID)
+	e.ClaimRecipient(ctx, id, 0)
 
-	res := h.HandleError(context.Background(), row, errors.New("boom"))
-	require.NotNil(t, res)
-	assert.False(t, res.SetCancelled, "river keeps following its retry schedule")
-	assert.Contains(t, buf.String(), "river job errored")
-	assert.Contains(t, buf.String(), "send_welcome")
+	err := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender))).
+		Work(ctx, job(jobs.SendRecipientArgs{RecipientID: id, BroadcastID: fixtures.BroadcastSendingID}))
 
-	res = h.HandlePanic(context.Background(), row, "kaboom", "stack")
-	require.NotNil(t, res)
-	assert.False(t, res.SetCancelled)
-	assert.Contains(t, buf.String(), "river job panicked")
-	assert.Contains(t, buf.String(), "kaboom")
+	var snooze *river.JobSnoozeError
+	require.ErrorAs(t, err, &snooze)
+	assert.Positive(t, snooze.Duration)
+	assert.True(t, stillPending(ctx, e.DB, id))
+	assert.Empty(t, e.sender.sent)
 }
 
 // A queued plan job that fires after its Broadcast has finished is stale: it finishes

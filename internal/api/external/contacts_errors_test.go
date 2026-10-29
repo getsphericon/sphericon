@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/hook"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/api/external"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -131,12 +131,50 @@ func TestExternalContactsBatchUpsertCarriesCustomFields(t *testing.T) {
 	assert.Equal(t, "gold", stored.CustomFields["tier"])
 }
 
-// A batch item's failure is worded for the caller; storage details never leak.
-func TestItemErrorWordsDomainErrorsAndHidesTheRest(t *testing.T) {
-	assert.Equal(t, (&contacts.ConflictError{Field: contacts.FieldPhone}).Message(), external.ItemError(&contacts.ConflictError{Field: contacts.FieldPhone}))
-	assert.Equal(t, contacts.ErrIdentityRequired.Error(), external.ItemError(contacts.ErrIdentityRequired))
-	assert.Equal(t, "no way in", external.ItemError(&events.RejectionError{Reason: "no way in"}))
-	assert.Equal(t, "internal error", external.ItemError(errors.New("pq: connection refused at 10.0.0.3")))
+// A batch item's failure is worded for the caller: a conflict and a missing alias key say
+// so in the module's own words.
+func TestABatchItemFailureIsWordedForTheCaller(t *testing.T) {
+	env := testhelper.Setup(t)
+	taken := env.DB.Contact.GetX(t.Context(), fixtures.ContactExportSubjectID).Phone
+	require.NotNil(t, taken)
+
+	res, err := env.ExternalScoped(t, "contacts:write").ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
+		Contacts: []externalapi.UpsertContactInput{
+			{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail), Phone: externalapi.NewOptNilString(*taken)},
+			{FirstName: externalapi.NewOptNilString("Nobody")},
+		},
+	})
+	require.NoError(t, err)
+	out, ok := res.(*externalapi.UpsertContactsResult)
+	require.Truef(t, ok, "got %T", res)
+	require.Len(t, out.Results, 2)
+
+	assert.Equal(t, (&contacts.ConflictError{Field: contacts.FieldPhone}).Message(), out.Results[0].Error.Or(""))
+	assert.Equal(t, contacts.ErrIdentityRequired.Error(), out.Results[1].Error.Or(""))
+}
+
+// errStorageDown is a storage failure whose words name an address the caller must never see.
+var errStorageDown = errors.New("pq: connection refused at 10.0.0.3")
+
+// isContact is the condition of a hook that touches only Contact writes.
+func isContact(_ context.Context, m ent.Mutation) bool { return m.Type() == ent.TypeContact }
+
+// A batch item that fails in storage is an internal error to the caller: what the database
+// said never leaks.
+func TestABatchItemStorageFailureHidesTheCause(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.Bus.Use(hook.If(hook.FixedError(errStorageDown), isContact))
+
+	res, err := env.ExternalScoped(t, "contacts:write").ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{
+		Contacts: []externalapi.UpsertContactInput{{Email: externalapi.NewOptNilEmailAddress("batch.down@example.com")}},
+	})
+	require.NoError(t, err)
+	out, ok := res.(*externalapi.UpsertContactsResult)
+	require.Truef(t, ok, "got %T", res)
+	require.Len(t, out.Results, 1)
+
+	assert.Equal(t, externalapi.ContactBatchStatusFailed, out.Results[0].Status)
+	assert.Equal(t, "internal error", out.Results[0].Error.Or(""))
 }
 
 // JSON Merge Patch on update, as on /site: an explicit null clears an optional field

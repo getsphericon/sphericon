@@ -29,6 +29,11 @@ type SendMemberInviteWorker struct {
 	sender messaging.EmailSender
 }
 
+// NewMemberInviteWorker builds the worker that sends a Member invitation through the system sender.
+func NewMemberInviteWorker(sender messaging.EmailSender) *SendMemberInviteWorker {
+	return &SendMemberInviteWorker{sender: sender}
+}
+
 func (w *SendMemberInviteWorker) Work(ctx context.Context, job *river.Job[SendMemberInviteArgs]) error {
 	return SendMemberInvite(ctx, w.sender, job.Args)
 }

@@ -1,4 +1,4 @@
-package telemetry
+package telemetry_test
 
 import (
 	"context"
@@ -15,31 +15,31 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/telemetry"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// isolate restores the process-wide state Setup mutates and clears OTEL_CONFIG_FILE.
-func isolate(t *testing.T) {
-	t.Helper()
-	testhelper.IsolateOtel(t)
-	prevHandler := metricsHandler
-	t.Cleanup(func() { metricsHandler = prevHandler })
+func setup(build telemetry.BuildInfo) func(context.Context) (func(context.Context) error, error) {
+	return func(ctx context.Context) (func(context.Context) error, error) {
+		return telemetry.Setup(ctx, &config.Config{OtelServiceName: "sphericon-test"}, "test", build)
+	}
 }
 
 func scrape(t *testing.T) (status int, body string) {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	MetricsHandler().ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", nil))
+	telemetry.MetricsHandler().ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", nil))
 	raw, err := io.ReadAll(rec.Result().Body)
 	require.NoError(t, err)
 	return rec.Code, string(raw)
 }
 
-func TestMetricsHandlerIsA503StubBeforeSetup(t *testing.T) {
-	isolate(t)
-	metricsHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		http.Error(w, "telemetry not configured", http.StatusServiceUnavailable)
-	})
+// Once telemetry is shut down, /metrics answers 503 again instead of a stale exposition.
+func TestMetricsHandlerIsA503StubAfterShutdown(t *testing.T) {
+	testhelper.IsolateOtel(t)
+	stop, err := setup(telemetry.BuildInfo{})(context.Background())
+	require.NoError(t, err)
+	require.NoError(t, stop(context.Background()))
 
 	code, body := scrape(t)
 	assert.Equal(t, http.StatusServiceUnavailable, code)
@@ -49,10 +49,7 @@ func TestMetricsHandlerIsA503StubBeforeSetup(t *testing.T) {
 // Without a config file Setup serves Prometheus metrics, tags the resource
 // and leaves the tracer provider a no-op.
 func TestSetupPullOnly(t *testing.T) {
-	isolate(t)
-
-	stop, err := Setup(context.Background(), &config.Config{OtelServiceName: "sphericon-test"}, "test", BuildInfo{Version: "v1", Commit: "abc"})
-	require.NoError(t, err)
+	testhelper.InstallOtel(t, setup(telemetry.BuildInfo{Version: "v1", Commit: "abc"}))
 
 	code, body := scrape(t)
 	assert.Equal(t, http.StatusOK, code)
@@ -68,17 +65,13 @@ func TestSetupPullOnly(t *testing.T) {
 	defer span.End()
 	assert.False(t, span.SpanContext().IsValid(), "the tracer provider is a no-op without a config file")
 	assert.Contains(t, otel.GetTextMapPropagator().Fields(), "traceparent")
-
-	require.NoError(t, stop(context.Background()))
 }
 
 // sphericon_license_expired is 1 while the license key has lapsed and 0 otherwise (ADR 0035).
 func TestLicenseExpiredGaugeFollowsTheLapse(t *testing.T) {
-	isolate(t)
-	_, err := Setup(context.Background(), &config.Config{OtelServiceName: "sphericon-test"}, "test", BuildInfo{Version: "0.1.0", Commit: "abc"})
-	require.NoError(t, err)
+	testhelper.InstallOtel(t, setup(telemetry.BuildInfo{Version: "0.1.0", Commit: "abc"}))
 	var lapsed atomic.Bool
-	require.NoError(t, ObserveLicenseExpired(lapsed.Load))
+	require.NoError(t, telemetry.ObserveLicenseExpired(lapsed.Load))
 
 	_, body := scrape(t)
 	assert.Regexp(t, `sphericon_license_expired(\{[^}]*\})? 0`, body)
@@ -91,12 +84,10 @@ func TestLicenseExpiredGaugeFollowsTheLapse(t *testing.T) {
 // The newer release the Release check cached shows next to sphericon_build_info, and the
 // gauge disappears once there is none.
 func TestReleaseAvailableGaugeFollowsTheCachedResult(t *testing.T) {
-	isolate(t)
-	_, err := Setup(context.Background(), &config.Config{OtelServiceName: "sphericon-test"}, "test", BuildInfo{Version: "0.1.0", Commit: "abc"})
-	require.NoError(t, err)
+	testhelper.InstallOtel(t, setup(telemetry.BuildInfo{Version: "0.1.0", Commit: "abc"}))
 	var latest atomic.Value
 	latest.Store("0.2.0")
-	require.NoError(t, ObserveReleaseAvailable(func(context.Context) (string, error) { return latest.Load().(string), nil }))
+	require.NoError(t, telemetry.ObserveReleaseAvailable(func(context.Context) (string, error) { return latest.Load().(string), nil }))
 
 	_, body := scrape(t)
 	assert.Regexp(t, `sphericon_release_available\{[^}]*latest="0.2.0"[^}]*\} 1`, body)
@@ -110,14 +101,10 @@ func TestReleaseAvailableGaugeFollowsTheCachedResult(t *testing.T) {
 // With OTEL_CONFIG_FILE naming an OTLP exporter, traces and metrics push to it and shutdown
 // flushes both.
 func TestSetupWithOTLPPush(t *testing.T) {
-	isolate(t)
+	testhelper.IsolateOtel(t)
 
 	var hits atomic.Int64
-	collector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, err := io.Copy(io.Discard, r.Body); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+	collector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		hits.Add(1)
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -141,7 +128,7 @@ meter_provider:
 	t.Setenv("OTEL_CONFIG_FILE", file)
 
 	ctx := context.Background()
-	stop, err := Setup(ctx, &config.Config{OtelServiceName: "sphericon-test"}, "test", BuildInfo{})
+	stop, err := setup(telemetry.BuildInfo{})(ctx)
 	require.NoError(t, err)
 
 	_, span := otel.Tracer("test").Start(ctx, "work")

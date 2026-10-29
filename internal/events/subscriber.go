@@ -113,9 +113,9 @@ func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client,
 		handler message.NoPublishHandlerFunc
 	}{
 		GroupPersist:     {"persist_event", persistConsumer(client)},
-		GroupAutomations: {"enroll_automations", automationsConsumer(enroller)},
-		GroupRules:       {"evaluate_rules", rulesConsumer(rules)},
-		GroupWebhooks:    {"dispatch_webhooks", webhooksConsumer(client, dispatcher)},
+		GroupAutomations: {"enroll_automations", AutomationsConsumer(enroller)},
+		GroupRules:       {"evaluate_rules", RulesConsumer(rules)},
+		GroupWebhooks:    {"dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
 		GroupSuppression: {"update_suppression", suppressionConsumer(client)},
 	}
 	for _, group := range coreGroups() {
@@ -206,9 +206,10 @@ type webhookPayload struct {
 	Data        json.RawMessage `json:"data,omitempty"`
 }
 
-// The bus subscriber is a raw-client allowlist entry (ADR 0017): an event envelope
+// WebhooksConsumer serializes the event into the public webhook body and hands it to the
+// dispatcher. The bus subscriber is a raw-client allowlist entry (ADR 0017): an event envelope
 // carries only a Workspace id, so the scope handed to the dispatcher is built here.
-func webhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.NoPublishHandlerFunc {
+func WebhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
 		var env Envelope
 		if err := json.Unmarshal(msg.Payload, &env); err != nil {
@@ -260,9 +261,9 @@ func webhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 	}
 }
 
-// automationsConsumer enrolls the event's contact into matching automations. It
+// AutomationsConsumer enrolls the event's contact into matching automations. It
 // skips events with no contact (ContactID == 0, e.g. anonymous collect events).
-func automationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
+func AutomationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
 		var env Envelope
 		if err := json.Unmarshal(msg.Payload, &env); err != nil {
@@ -314,11 +315,11 @@ func RuleProperties(props map[string]any) map[string]any {
 // 0053), which never triggers a Rule.
 func machineEvent(ev DomainEvent) bool { return ev.Project().Machine }
 
-// rulesConsumer queues the evaluation of the event against the Workspace's Rules (ADR 0054).
+// RulesConsumer queues the evaluation of the event against the Workspace's Rules (ADR 0054).
 // Like the Automations consumer it skips the events that are never a trigger, and it also skips
 // an event with no Contact, a machine event and an event a Rule's Action published (its
 // envelope carries CausedBy).
-func rulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
+func RulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
 		var env Envelope
 		if err := json.Unmarshal(msg.Payload, &env); err != nil {

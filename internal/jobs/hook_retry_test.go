@@ -106,7 +106,7 @@ func newHookRetryHarnessAt(t *testing.T, status int, retryAfter string, now time
 // worker's own (a failed delivery), the result what river stored.
 func (h *hookRetryHarness) work(maxAttempts int) (*rivertest.WorkResult, error) {
 	h.t.Helper()
-	inserted, err := h.env.client.River().InsertTx(context.Background(), h.tx, jobs.DeliverWebhookArgs{
+	inserted, err := h.env.queue.InsertTx(context.Background(), h.tx, jobs.DeliverWebhookArgs{
 		EndpointID: fixtures.WebhookCodebasicsID, EventName: "email.opened", DeliveryID: "msg_1", Body: []byte(`{}`),
 	}, &river.InsertOpts{MaxAttempts: maxAttempts})
 	require.NoError(h.t, err)

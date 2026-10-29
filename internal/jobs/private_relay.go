@@ -28,6 +28,11 @@ type RefreshPrivateRelayWorker struct {
 	ranges *machine.Detector
 }
 
+// NewRefreshPrivateRelayWorker builds the worker that refreshes the Private Relay ranges of the detector.
+func NewRefreshPrivateRelayWorker(ranges *machine.Detector) *RefreshPrivateRelayWorker {
+	return &RefreshPrivateRelayWorker{ranges: ranges}
+}
+
 func (w *RefreshPrivateRelayWorker) Work(ctx context.Context, _ *river.Job[RefreshPrivateRelayArgs]) error {
 	if err := w.ranges.Refresh(ctx); err != nil {
 		slog.WarnContext(ctx, "private relay ranges not refreshed, keeping the previous ones", "err", err)

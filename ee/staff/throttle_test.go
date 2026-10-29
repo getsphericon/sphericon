@@ -1,21 +1,19 @@
 package staff_test
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/authattempt"
+	"github.com/getsphericon/sphericon/ent/hook"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -121,24 +119,11 @@ func TestUserFailuresNeverCountAgainstTheStaffMemberOfTheSameAddress(t *testing.
 	assert.Equal(t, staffapi.StaffLoginOutcomeChallenge, res.Outcome)
 }
 
-// brokenCounter is a failure counter that lets everything through and cannot record.
-type brokenCounter struct{}
-
-var errCounterDown = errors.New("counter down")
-
-func (brokenCounter) Delay(context.Context, string) (time.Duration, error) { return 0, nil }
-func (brokenCounter) RecordFailure(context.Context, string) error          { return errCounterDown }
-func (brokenCounter) RecordSuccess(context.Context, string) error          { return nil }
-func (brokenCounter) Limit() int                                           { return loginFailures }
-func (brokenCounter) Now() time.Time                                       { return time.Now() }
-
-var _ login.Throttle = brokenCounter{}
-
 // A counter that cannot record a failure refuses the attempt, never answers a plain 401
 // that would let guessing go on uncounted.
 func TestABrokenFailureCounterRefusesTheStaffLoginAttempt(t *testing.T) {
-	h := newHarness(t)
-	h.env.StaffMembers.UseThrottle(brokenCounter{})
+	h := throttledHarness(t, 0)
+	h.env.DB.AuthAttempt.Use(hook.FixedError(errors.New("counter down")))
 
 	rec := h.rawPasswordStep(t, fixtures.StaffEnrolledEmail, "wrong-password")
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
@@ -527,31 +528,33 @@ func TestDeferralBacklogIgnoresRecipientsAsleepOnTheirOwnDeferral(t *testing.T) 
 	assert.LessOrEqual(t, second.Delay, 1300*time.Millisecond)
 }
 
-// The pacing times are monotonic, start at the start, and are exactly one step apart.
-func TestSpreadIsMonotonicAndOneStepApart(t *testing.T) {
+// Whatever the rate, the start and the number of sends, pacing starts at the start, puts the
+// sends exactly one step (one over the rate) apart and records the last one on the Broadcast.
+func TestPaceSpreadsEverySendOneStepApartFromTheStart(t *testing.T) {
+	d := newDelivery(t)
 	rapid.Check(t, func(rt *rapid.T) {
-		n := rapid.IntRange(0, 500).Draw(rt, "n")
-		step := time.Duration(rapid.Int64Range(1, int64(time.Hour)).Draw(rt, "step"))
-		startOffset := rapid.Int64Range(0, int64(24*time.Hour)).Draw(rt, "start")
-		start := fixedNow.Add(time.Duration(startOffset))
+		n := rapid.IntRange(1, 500).Draw(rt, "n")
+		perSecond := rapid.IntRange(1, 1000).Draw(rt, "perSecond")
+		later := time.Duration(rapid.Int64Range(0, int64(24*time.Hour/time.Microsecond)).Draw(rt, "later")) * time.Microsecond
+		start := fixedNow.Add(later)
+		d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(perSecond).ExecX(d.t.Context())
+		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetScheduledAt(start).ExecX(d.t.Context())
+		step := time.Second / time.Duration(perSecond)
 
-		times := broadcasts.Spread(start, step, n)
+		times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, n, fixedNow)
 
-		if len(times) != n {
-			rt.Fatalf("got %d times for %d sends", len(times), n)
-		}
-		for i, at := range times {
-			if i == 0 && !at.Equal(start) {
-				rt.Fatalf("first send at %v, want the start %v", at, start)
-			}
-			if i > 0 && times[i].Sub(times[i-1]) != step {
-				rt.Fatalf("send %d is %v after send %d, want one step %v", i, times[i].Sub(times[i-1]), i-1, step)
-			}
-			if at.Before(start) {
-				rt.Fatalf("send %d at %v before the start %v", i, at, start)
-			}
-		}
+		require.NoError(rt, err)
+		require.Len(rt, times, n)
+		assert.Equal(rt, lo.Times(n, func(i int) time.Duration { return time.Duration(i) * step }), sinceStart(times, start))
+		last := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).LastScheduledAt
+		require.NotNil(rt, last)
+		assert.WithinDuration(rt, times[n-1], *last, time.Microsecond)
 	})
+}
+
+// sinceStart is how long after start each time is.
+func sinceStart(times []time.Time, start time.Time) []time.Duration {
+	return lo.Map(times, func(at time.Time, _ int) time.Duration { return at.Sub(start) })
 }
 
 // A queued job runs only a Broadcast that was claimed for it (scheduled or sending). One

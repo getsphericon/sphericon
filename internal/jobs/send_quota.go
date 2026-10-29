@@ -30,6 +30,11 @@ type RefreshSendQuotasWorker struct {
 	ent *ent.Client
 }
 
+// NewRefreshSendQuotasWorker builds the worker that queues a quota read of every Integration due one.
+func NewRefreshSendQuotasWorker(client *ent.Client) *RefreshSendQuotasWorker {
+	return &RefreshSendQuotasWorker{ent: client}
+}
+
 // Work fans the hourly tick out into one RefreshIntegrationQuota job per Integration,
 // so each lookup has its own isolation and retry (the Sending-domain recheck pattern).
 func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[RefreshSendQuotasArgs]) error {
@@ -69,6 +74,11 @@ type RefreshIntegrationQuotaWorker struct {
 	ent     *ent.Client
 	cipher  *secrets.Cipher
 	catalog *messaging.Catalog
+}
+
+// NewRefreshIntegrationQuotaWorker builds the worker that reads one Integration's provider send quota.
+func NewRefreshIntegrationQuotaWorker(client *ent.Client, cipher *secrets.Cipher, catalog *messaging.Catalog) *RefreshIntegrationQuotaWorker {
+	return &RefreshIntegrationQuotaWorker{ent: client, cipher: cipher, catalog: catalog}
 }
 
 func (w *RefreshIntegrationQuotaWorker) Work(ctx context.Context, job *river.Job[RefreshIntegrationQuotaArgs]) error {

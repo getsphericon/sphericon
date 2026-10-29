@@ -44,6 +44,11 @@ type SendBroadcastWorker struct {
 	del *broadcasts.Delivery
 }
 
+// NewSendBroadcastWorker builds the worker that plans a Broadcast's audience and sends through mod.
+func NewSendBroadcastWorker(client *ent.Client, mod *outbound.Module) *SendBroadcastWorker {
+	return &SendBroadcastWorker{ent: client, del: broadcasts.NewDelivery(mod)}
+}
+
 // Timeout gives the plan phase room to resolve a large audience and enqueue the
 // per-recipient jobs; the actual sending happens in those jobs, each bounded by
 // the default per-job timeout.
@@ -103,6 +108,11 @@ type SendRecipientWorker struct {
 
 	ent *ent.Client
 	del *broadcasts.Delivery
+}
+
+// NewSendRecipientWorker builds the worker that sends one Broadcast recipient through mod.
+func NewSendRecipientWorker(client *ent.Client, mod *outbound.Module) *SendRecipientWorker {
+	return &SendRecipientWorker{ent: client, del: broadcasts.NewDelivery(mod)}
 }
 
 // Work is the river adapter over the module's recipient delivery: it keeps only the queue

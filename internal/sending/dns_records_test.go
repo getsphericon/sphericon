@@ -1,4 +1,4 @@
-package sending
+package sending_test
 
 import (
 	"context"
@@ -9,14 +9,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/sending"
 )
 
 func TestSPFAndDMARCRecords(t *testing.T) {
-	host, value := SPFRecord("mail.acme.com")
+	host, value := sending.SPFRecord("mail.acme.com")
 	require.Equal(t, "mail.acme.com", host)
 	require.Equal(t, "v=spf1 include:amazonses.com ~all", value)
 
-	host, value = DMARCRecord("mail.acme.com")
+	host, value = sending.DMARCRecord("mail.acme.com")
 	require.Equal(t, "_dmarc.mail.acme.com", host)
 	require.Equal(t, "v=DMARC1; p=none;", value)
 }
@@ -37,7 +39,7 @@ func TestPublicKeyFromPrivatePEMRejectsBadKeys(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, err := PublicKeyFromPrivatePEM(tc.pem)
+			got, err := sending.PublicKeyFromPrivatePEM(tc.pem)
 			require.ErrorContains(t, err, tc.want)
 			require.Emptyf(t, got, "got %q, want empty", got)
 		})
@@ -46,7 +48,7 @@ func TestPublicKeyFromPrivatePEMRejectsBadKeys(t *testing.T) {
 
 func TestVerifyDKIMRejectsEmptyExpectedKey(t *testing.T) {
 	lookup := func(context.Context, string) ([]string, error) { return []string{"v=DKIM1; k=rsa; p=abc"}, nil }
-	ok, err := VerifyDKIM(context.Background(), lookup, "sphericon", "acme.com", "v=DKIM1; k=rsa; p=")
+	ok, err := sending.VerifyDKIM(context.Background(), lookup, "sphericon", "acme.com", "v=DKIM1; k=rsa; p=")
 	require.False(t, ok, "an empty expected key never verifies")
 	require.Error(t, err)
 }

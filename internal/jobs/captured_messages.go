@@ -34,6 +34,11 @@ type PruneCapturedMessagesWorker struct {
 	retention time.Duration
 }
 
+// NewPruneCapturedMessagesWorker builds the prune of Captured messages older than retention (0 disables it).
+func NewPruneCapturedMessagesWorker(client *ent.Client, retention time.Duration) *PruneCapturedMessagesWorker {
+	return &PruneCapturedMessagesWorker{ent: client, retention: retention}
+}
+
 func (w *PruneCapturedMessagesWorker) Work(ctx context.Context, _ *river.Job[PruneCapturedMessagesArgs]) error {
 	deleted, err := capturedmessages.Purge(ctx, w.ent, w.retention, capturedMessagesBatch)
 	if err != nil {

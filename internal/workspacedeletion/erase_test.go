@@ -25,10 +25,10 @@ func deleteUmbrella(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(now.Add(-ago)).ExecX(t.Context())
 }
 
-// runErase is one erase at now, in batches of two so the batch loop is exercised.
+// runErase is one erase at now.
 func runErase(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	m := workspacedeletion.WithBatch(workspacedeletion.New(env.DB, env.Bus), 2)
+	m := workspacedeletion.New(env.DB, env.Bus)
 	_, err := m.EraseDue(context.Background(), now)
 	require.NoError(t, err)
 }

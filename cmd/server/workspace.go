@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/urfave/cli/v3"
@@ -12,7 +11,7 @@ import (
 )
 
 // workspaceOps is what the `workspace` staff member commands need from the app. The
-// app implements it (internal/app); tests use a fake.
+// app implements it (internal/app).
 type workspaceOps interface {
 	SuspendWorkspace(ctx context.Context, id string, by suspension.Actor, reason string) (bool, error)
 	UnsuspendWorkspace(ctx context.Context, id string, by suspension.Actor) (bool, error)
@@ -38,15 +37,7 @@ func workspaceCommand(d deps) *cli.Command {
 					return errors.New("a reason is required: the owner is told why")
 				}
 				changed, err := ops.SuspendWorkspace(ctx, id, suspension.CLI, reason)
-				if err != nil {
-					return err
-				}
-				if !changed {
-					_, _ = fmt.Fprintf(out(cmd), "workspace %q is already suspended; nothing changed\n", id)
-					return nil
-				}
-				_, _ = fmt.Fprintf(out(cmd), "workspace %q suspended: outbound sending is frozen and the owner has been notified\n", id)
-				return nil
+				return suspension.ReportSuspended(out(cmd), id, changed, err)
 			}),
 		},
 		&cli.Command{
@@ -57,15 +48,7 @@ func workspaceCommand(d deps) *cli.Command {
 			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
 				id := cmd.StringArg("id")
 				changed, err := ops.UnsuspendWorkspace(ctx, id, suspension.CLI)
-				if err != nil {
-					return err
-				}
-				if !changed {
-					_, _ = fmt.Fprintf(out(cmd), "workspace %q is not suspended; nothing changed\n", id)
-					return nil
-				}
-				_, _ = fmt.Fprintf(out(cmd), "workspace %q unsuspended: held sends will resume\n", id)
-				return nil
+				return suspension.ReportUnsuspended(out(cmd), id, changed, err)
 			}),
 		},
 	)

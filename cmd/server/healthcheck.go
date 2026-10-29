@@ -3,19 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
-	"net"
 	"net/http"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/healthcheck"
 )
 
-// healthcheckCommand is `sphericon healthcheck`: the image's HEALTHCHECK. The runtime image is
-// scratch, with no shell and no wget, so the binary probes its own /healthz on PORT and exits
-// non-zero unless it answers 200.
+// healthcheckCommand is `sphericon healthcheck`: the image's HEALTHCHECK. It exits non-zero
+// unless the server on PORT answers its /healthz with 200.
 func healthcheckCommand(d deps) *cli.Command {
 	return &cli.Command{
 		Name:  "healthcheck",
@@ -24,34 +21,11 @@ func healthcheckCommand(d deps) *cli.Command {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
 			}
-
 			port, err := config.Port(d.env)
 			if err != nil {
 				return err
 			}
-
-			ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-			defer cancel()
-
-			url := "http://" + net.JoinHostPort("127.0.0.1", port) + "/healthz"
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
-			if err != nil {
-				return err
-			}
-
-			res, err := http.DefaultClient.Do(req)
-			if err != nil {
-				return fmt.Errorf("healthcheck: %w", err)
-			}
-			defer func() { _ = res.Body.Close() }()
-
-			if _, err := io.Copy(io.Discard, res.Body); err != nil {
-				return fmt.Errorf("healthcheck: read the answer: %w", err)
-			}
-			if res.StatusCode != http.StatusOK {
-				return fmt.Errorf("healthcheck: GET %s answered %s", url, res.Status)
-			}
-			return nil
+			return healthcheck.Probe(ctx, http.DefaultClient, port)
 		},
 	}
 }

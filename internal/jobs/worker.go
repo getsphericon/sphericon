@@ -30,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/webhook"
-	"github.com/getsphericon/sphericon/internal/webhooks"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
@@ -83,59 +82,46 @@ type Retention struct {
 // Enterprise Edition's workers and periodic jobs.
 func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, ranges *machine.Detector, retention Retention, ext ...Extension) (*Client, error) {
 	workers := river.NewWorkers()
-	river.AddWorker(workers, &SendBroadcastWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
-	river.AddWorker(workers, &SendRecipientWorker{ent: entClient, del: broadcasts.NewDelivery(mod)})
+	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
+	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
 	stepper := stepping.New(bus, mod, automations.FenceOn(entClient))
-	river.AddWorker(workers, &EvaluateTriggerWorker{ent: entClient, bus: bus})
+	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, bus))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	ruleMod := rules.New(cipher, bus)
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: ruleMod})
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: ruleMod, runners: RuleActionRunners(mod, bus)})
-	river.AddWorker(workers, &RunRuleHTTPWorker{ent: entClient, mod: ruleMod, client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), now: time.Now})
-	river.AddWorker(workers, &RunHTTPStepWorker{
-		ent:    entClient,
-		cipher: cipher,
-		step:   stepper,
-		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
-		now:    time.Now,
-		fence:  automations.FenceOn(entClient),
-	})
-	notifyOwners := accounts.OwnerNotifier(entClient, systemSender)
-	river.AddWorker(workers, &DeliverWebhookWorker{
-		ent:    entClient,
-		cipher: cipher,
-		client: webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow),
-		now:    time.Now,
-		mod:    webhooks.New(bus, cipher, nil, nil, notifyOwners),
-	})
-	river.AddWorker(workers, &SendWelcomeWorker{sender: systemSender})
-	river.AddWorker(workers, &SendAuthMailWorker{sender: systemSender, appURL: appURL})
-	river.AddWorker(workers, &SendMemberInviteWorker{sender: systemSender})
+	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, ruleMod, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now))
+	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, automations.FenceOn(entClient), cipher, stepper, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now))
+	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhookDeliveryTimeout, outboundAllow), time.Now, bus, systemSender))
+	river.AddWorker(workers, NewWelcomeWorker(systemSender))
+	river.AddWorker(workers, NewAuthMailWorker(systemSender, appURL))
+	river.AddWorker(workers, NewMemberInviteWorker(systemSender))
 	river.AddWorker(workers, &NotifySecondFactorRequiredWorker{ent: entClient, sender: systemSender, appURL: appURL})
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
+	notifyOwners := accounts.OwnerNotifier(entClient, systemSender)
 	// Sending-domain DKIM verification (ADR 0010). LookupTXT re-checks published
 	// DNS; verified is a live property re-validated by the periodic job below.
 	domains := domainverify.New(entClient, lookup, tracking, notifyOwners)
-	river.AddWorker(workers, &VerifySendingDomainWorker{mod: domains})
-	river.AddWorker(workers, &RecheckSendingDomainsWorker{mod: domains})
+	river.AddWorker(workers, NewVerifySendingDomainWorker(domains))
+	river.AddWorker(workers, NewRecheckSendingDomainsWorker(domains))
 	// Join domains stay verified only while their TXT record is published.
 	joinDomains := joindomains.New(entClient, bus, lookup, time.Now, notifyOwners)
-	river.AddWorker(workers, &VerifyJoinDomainWorker{mod: joinDomains})
-	river.AddWorker(workers, &RecheckJoinDomainsWorker{mod: joinDomains})
-	river.AddWorker(workers, &VerifyTrackingDomainWorker{mod: domains})
-	river.AddWorker(workers, &RecheckTrackingDomainsWorker{mod: domains})
+	river.AddWorker(workers, NewVerifyJoinDomainWorker(joinDomains))
+	river.AddWorker(workers, NewRecheckJoinDomainsWorker(joinDomains))
+	river.AddWorker(workers, NewVerifyTrackingDomainWorker(domains))
+	river.AddWorker(workers, NewRecheckTrackingDomainsWorker(domains))
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
-	river.AddWorker(workers, &RefreshSendQuotasWorker{ent: entClient})
-	river.AddWorker(workers, &RefreshIntegrationQuotaWorker{ent: entClient, cipher: cipher, catalog: catalog})
-	river.AddWorker(workers, &PurgeAuthAttemptsWorker{ent: entClient})
-	river.AddWorker(workers, &PruneOutboxWorker{ent: entClient, floor: retention.OutboxFloor})
-	river.AddWorker(workers, &RefreshPrivateRelayWorker{ranges: ranges})
-	river.AddWorker(workers, &PruneEventsWorker{ent: entClient, retention: retention.Events})
-	river.AddWorker(workers, &PruneCapturedMessagesWorker{ent: entClient, retention: retention.CapturedMessages})
-	river.AddWorker(workers, &PruneUnverifiedUsersWorker{accounts: accounts.New(entClient, bus), retention: retention.UnverifiedUsers})
-	river.AddWorker(workers, &PrunePasskeyChallengesWorker{ent: entClient, now: time.Now})
-	river.AddWorker(workers, &EraseWorkspacesWorker{deletion: workspacedeletion.New(entClient, bus), now: time.Now})
+	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
+	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, cipher, catalog))
+	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient))
+	river.AddWorker(workers, NewPruneOutboxWorker(entClient, retention.OutboxFloor))
+	river.AddWorker(workers, NewRefreshPrivateRelayWorker(ranges))
+	river.AddWorker(workers, NewPruneEventsWorker(entClient, retention.Events))
+	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, retention.CapturedMessages))
+	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(accounts.New(entClient, bus), retention.UnverifiedUsers))
+	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, time.Now))
+	river.AddWorker(workers, NewEraseWorkspacesWorker(workspacedeletion.New(entClient, bus), time.Now))
 
 	var extraPeriodic []*river.PeriodicJob
 	for _, e := range ext {

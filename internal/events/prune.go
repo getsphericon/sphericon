@@ -13,12 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 )
 
-// outboxTable / offsetsTable are the quoted names of the domain-events outbox and
-// its consumer offsets, derived from the same adapters the producer and the
-// subscribers use.
-func outboxTable() string  { return outboxSchema.MessagesTable(TopicDomainEvents) }
-func offsetsTable() string { return outboxOffsets.MessagesOffsetsTable(TopicDomainEvents) }
-
 // PruneResult reports one PruneOutbox run.
 type PruneResult struct {
 	// Deleted is the number of outbox rows removed.

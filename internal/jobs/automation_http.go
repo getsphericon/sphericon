@@ -28,6 +28,12 @@ type RunHTTPStepWorker struct {
 	fence  automations.Fencer
 }
 
+// NewRunHTTPStepWorker builds the worker that runs an Automation's HTTP step through doer, on the
+// clock now, behind the Enrollment's fence.
+func NewRunHTTPStepWorker(client *ent.Client, fence automations.Fencer, cipher *secrets.Cipher, step *stepping.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
+	return &RunHTTPStepWorker{ent: client, cipher: cipher, step: step, client: doer, now: now, fence: fence}
+}
+
 func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepping.RunHTTPStepArgs]) error {
 	// Job entry point: the Workspace is read off the loaded run (ADR 0017). A run or Contact
 	// erased after the job was queued (ADR 0021) ends the job quietly, and nothing is sent.

@@ -19,7 +19,7 @@ research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
   crosses. Until 1.0 each `0.MINOR` is a Major.
 - **A destructive migration comes with a breaking commit** (`!` or `BREAKING CHANGE:`), so release-please
   cuts the Major itself, and CI runs Squawk over the new migrations and fails a
-  destructive finding (the `destructiveRules` table in `cmd/upgradecheck`: a dropped or renamed
+  destructive finding (the `destructiveRules` table in `internal/upgradecheck`: a dropped or renamed
   column or table, a changed column type, a NOT NULL column without a default) whose commit is not
   breaking. It also fails a **blocking** finding under any title (the `blockingRules` table: an index
   built or dropped without `CONCURRENTLY`, a UNIQUE, FOREIGN KEY or CHECK constraint added without
