@@ -1,4 +1,4 @@
-import { Badge, Card, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
+import { Badge, Card, Grid, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import { IconCheck, IconCircle, IconClock } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
@@ -118,39 +118,43 @@ export function SetupChecklist({
         {STEPS.map(({ key: step, to }) => {
           const status = checklist.steps[step]
           return (
-            <Group key={step} justify="space-between" align="center" wrap="wrap" gap="sm">
-              <Group gap="sm" wrap="nowrap" align="flex-start" flex={1} miw={220}>
-                <StatusIcon status={status} />
-                <Stack gap={0} flex={1} miw={0}>
-                  <Group gap="xs">
-                    <Text fw={500}>{t(($) => $.setupChecklist.steps[step].title)}</Text>
-                    {status === 'pending' && (
-                      <Badge color="yellow" variant="light">
-                        {t(($) => $.setupChecklist.waitingForDns)}
-                      </Badge>
-                    )}
-                    {status === 'done' && (
-                      <Badge color="teal" variant="light">
-                        {t(($) => $.setupChecklist.done)}
-                      </Badge>
-                    )}
-                  </Group>
-                  <Text size="sm" c="dimmed">
-                    {t(($) => $.setupChecklist.steps[step].description)}
-                  </Text>
-                </Stack>
-              </Group>
-              {status !== 'done' &&
-                (to === null ? (
-                  step === 'contact' ? (
-                    <ContactActions workspaceId={workspaceId} />
+            <Grid key={step} type="container" align="center" gap="sm">
+              <Grid.Col span={{ base: 12, sm: 7 }}>
+                <Group gap="sm" wrap="nowrap" align="flex-start">
+                  <StatusIcon status={status} />
+                  <Stack gap={0} flex={1} miw={0}>
+                    <Group gap="xs">
+                      <Text fw={500}>{t(($) => $.setupChecklist.steps[step].title)}</Text>
+                      {status === 'pending' && (
+                        <Badge color="yellow" variant="light">
+                          {t(($) => $.setupChecklist.waitingForDns)}
+                        </Badge>
+                      )}
+                      {status === 'done' && (
+                        <Badge color="teal" variant="light">
+                          {t(($) => $.setupChecklist.done)}
+                        </Badge>
+                      )}
+                    </Group>
+                    <Text size="sm" c="dimmed">
+                      {t(($) => $.setupChecklist.steps[step].description)}
+                    </Text>
+                  </Stack>
+                </Group>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 5 }}>
+                {status !== 'done' &&
+                  (to === null ? (
+                    step === 'contact' ? (
+                      <ContactActions workspaceId={workspaceId} />
+                    ) : (
+                      <SendActions workspaceId={workspaceId} />
+                    )
                   ) : (
-                    <SendActions workspaceId={workspaceId} />
-                  )
-                ) : (
-                  <StepLink step={step} to={to} workspaceId={workspaceId} />
-                ))}
-            </Group>
+                    <StepLink step={step} to={to} workspaceId={workspaceId} />
+                  ))}
+              </Grid.Col>
+            </Grid>
           )
         })}
       </Stack>
