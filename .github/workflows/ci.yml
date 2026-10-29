@@ -41,6 +41,9 @@ jobs:
         uses: $/.github/actions/go-cache
         with:
           scope: lint
+          # golangci-lint builds both modules (the app and tools/analyzers): this job saves the
+          # module cache every other one restores.
+          save-modules: 'true'
 
       # golangci-lint with our analyzers (build:lint), keyed by the task's own sources. mise rebuilds
       # an output older than its sources, and the checkout is newer than any restored file: the
