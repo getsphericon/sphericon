@@ -2,6 +2,7 @@
 air = "latest"
 ast-grep = "latest"
 caddy = "latest"
+cloudflared = "latest"
 coredns = "latest"
 gitleaks = "latest"
 go = "1.27.3"

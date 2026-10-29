@@ -862,6 +862,52 @@ checksum = "sha256:0a1edc0b799512051c57071ce0e798d3f2cf67dc98171366f1d2b326072e3
 url = "https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_windows_amd64.zip"
 url_api = "https://api.github.com/repos/caddyserver/caddy/releases/assets/607244987"
 
+[[tools.cloudflared]]
+version = "2026.10.5"
+backend = "aqua:cloudflare/cloudflared"
+specifiers = ["latest"]
+
+[tools.cloudflared."platforms.linux-arm64"]
+checksum = "sha256:72e0d05a67e09da87cf495e409a28c3cc5994dd23fc66a982eebea6a55923b7d"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-arm64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681691739"
+
+[tools.cloudflared."platforms.linux-arm64-musl"]
+checksum = "sha256:72e0d05a67e09da87cf495e409a28c3cc5994dd23fc66a982eebea6a55923b7d"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-arm64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681691739"
+
+[tools.cloudflared."platforms.linux-x64"]
+checksum = "sha256:e1bc0cf084fd9e590554fe769a86b1db46701c3f847a43d902f7b974a4e16298"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-amd64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681690401"
+
+[tools.cloudflared."platforms.linux-x64-musl"]
+checksum = "sha256:e1bc0cf084fd9e590554fe769a86b1db46701c3f847a43d902f7b974a4e16298"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-linux-amd64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681690401"
+
+[tools.cloudflared."platforms.macos-arm64"]
+checksum = "sha256:184c7d4f5f977348243a6d7ca8f6cf6073b9b2746cfe8c1fe15aa59e9a522bf0"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-darwin-arm64.tgz"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681689374"
+
+[tools.cloudflared."platforms.macos-x64"]
+checksum = "sha256:6699392fed92367808c248c2d90bed66e49bbf66e1b4ee3e4141230f3f7391b3"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-darwin-amd64.tgz"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681689768"
+
+[tools.cloudflared."platforms.windows-x64"]
+checksum = "sha256:db4e4c413612a0916f3e1679d3caaf376f94911952d163028fb726fb2e0516a9"
+checksum_source = "mise-versions"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.10.5/cloudflared-windows-amd64.exe"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/681692942"
+
 [[tools.coredns]]
 version = "1.15.0"
 backend = "github:coredns/coredns"

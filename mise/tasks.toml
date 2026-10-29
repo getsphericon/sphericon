@@ -28,6 +28,15 @@ run = "mise daemons stop caddy backend frontend demo mailpit"
 description = "Restart this checkout's dev stack (dev:down, then dev; the shared Postgres keeps running)"
 run = ["mise run dev:down", "mise run dev"]
 
+# A Cloudflare Quick Tunnel to this checkout's Caddy: a random https://<name>.trycloudflare.com,
+# no account, alive until Ctrl+C. The tunnel sends APP_HOST as Host and SNI, so Caddy, Vite and
+# the backend serve it as the usual origin; SPHERICON_APP_URL stays local, so links in sent mail
+# and Passkeys do not work through it. The dev stack has public secrets and seeded passwords:
+# keep the tunnel up only while you use it.
+["dev:tunnel"]
+description = "Expose this checkout's running dev stack at a temporary public https://<name>.trycloudflare.com URL until Ctrl+C"
+run = 'cloudflared tunnel --no-autoupdate --url "https://localhost:$CADDY_PORT" --http-host-header "$APP_HOST" --origin-server-name "$APP_HOST" --no-tls-verify'
+
 # --- database --------------------------------------------------------------------
 
 ["db:up"]

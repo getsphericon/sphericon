@@ -114,6 +114,14 @@ own origin `brightpath.localhost` that sends events through `@sphericon/analytic
 `SPHERICON_ENCRYPTION_KEY`, SMTP) live in the `[env]` table of `.mise.toml`; personal overrides go in
 the gitignored `.env` (read by the app) or `.mise.local.toml`.
 
+**A public URL for the running stack.** `mise run dev:tunnel` opens a Cloudflare Quick Tunnel
+(`cloudflared`, no account) to this checkout's Caddy and prints a random
+`https://<name>.trycloudflare.com`, alive until Ctrl+C: enough to open the app on a phone. The
+tunnel sends `APP_HOST` as Host and SNI, so Caddy, Vite and the backend see the usual origin, but
+`SPHERICON_APP_URL` stays local: sign in with a password (a Passkey is bound to the local host),
+links in sent mail point at the local origin, and HMR does not reach the phone (reload by hand).
+The dev stack's secrets and seeded passwords are public, so close the tunnel when you are done.
+
 **Ports and origins per checkout.** Every daemon declares `port = { auto = true, base = <port> }`:
 the primary checkout gets exactly the ports above (caddy 443, vite 5173, backend 3300, mailpit
 8025/1025, metrics 9090); a linked worktree gets one slot offset (`base + N`, the same `N` for all
