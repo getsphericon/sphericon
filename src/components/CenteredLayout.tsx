@@ -14,7 +14,7 @@ export function CenteredLayout({
 }) {
   return (
     <Container size={maw} w="100%">
-      <Center mih="100vh" py="xl">
+      <Center mih="100dvh" py="xl">
         <Stack w="100%" align={align}>
           {children}
         </Stack>

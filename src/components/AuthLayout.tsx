@@ -18,7 +18,7 @@ export function AuthLayout({ maw = 400, children }: { maw?: number; children: Re
   ]
 
   return (
-    <Flex mih="100vh">
+    <Flex mih="100dvh">
       <Stack
         visibleFrom="md"
         w="45%"
