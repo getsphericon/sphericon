@@ -544,8 +544,9 @@ Workspace). No scopes, not a bearer token. The deliberate counterpart to an API 
 _Avoid_: Token (for these), API key
 
 **Staff member**:
-A member of the **platform's** staff who acts _across_ all Workspaces (suspend an abusive
-sender, impersonate for support). Deliberately **not** a User and **not** reached through a
+A person who runs the Instance (its operator; on the SaaS, the platform's staff) and acts on it
+as a whole: its own settings, and with the Enterprise features _across_ all Workspaces (suspend
+an abusive sender, impersonate for support). Deliberately **not** a User and **not** reached through a
 Membership: a distinct identity with its own store and its own auth surface, holding **no**
 Membership, so the "every query is scoped by a Workspace" invariant has no exception —
 workspace-scoped code has no path that can return a Staff member. A person who is both staff and
@@ -553,8 +554,8 @@ a customer holds two separate identities (a Staff member _and_ a User), by desig
 least-privilege and clean audit. Created only by the `sphericon staff create` command (no
 signup), it logs in with a password and a mandatory TOTP enrolled at first login, on a short
 session of its own. Failed logins are rate limited, and a lost TOTP is reset only by
-`sphericon staff reset-totp` (re-enrolment at next login), never through the web. Customers see its actions only as "sphericon staff". A SaaS/platform
-concept, absent from a plain self-hosted install.
+`sphericon staff reset-totp` (re-enrolment at next login), never through the web. Customers see its actions only as "sphericon staff". Every
+Instance has one, self-hosted or not.
 _Avoid_: Operator (the former name), Admin (that is a workspace Role), superuser, staff user, root
 
 **Workspace deletion**:
@@ -580,11 +581,11 @@ on the same core send chokepoint — the two are independent reasons, never merg
 _Avoid_: Ban, lockout, disable, quota (suspension is not an entitlement state — see Staff hold)
 
 **Staff console**:
-The Staff member's own web surface (a fourth API surface beside `/site`, `/api`, `/collect`) for
-acting across Workspaces. It shows Workspace **metadata only** (identity, suspension state,
-deliverability rates, send volume, Audit log) — never Contacts, content, or Events — and offers
-suspend and unsuspend. Impersonation is out of scope. A SaaS/platform concept, absent from a
-plain self-hosted install.
+The Staff member's own web surface (a fourth API surface beside `/site`, `/api`, `/collect`). On
+every Instance it holds the Instance's own settings, such as its Sign-up items.
+With the Enterprise feature it also acts across Workspaces: it shows Workspace **metadata only**
+(identity, suspension state, deliverability rates, send volume, Audit log) — never Contacts,
+content, or Events — and offers suspend and unsuspend. Impersonation is out of scope.
 _Avoid_: Admin panel, back office
 
 **Abuse detector**:
@@ -826,6 +827,28 @@ when the survey was turned on are not asked. It completes nothing and personaliz
 not the Setup checklist.
 _Avoid_: Onboarding wizard, questionnaire
 
+**Sign-up item**:
+One thing an Instance asks or tells a person when they sign up, set by a Staff member for the market
+the Instance serves: a **required acceptance** (a checkbox without which no User is created), an
+**optional consent** (an unticked checkbox sign-up never depends on) or a **notice** (a link, nothing
+to tick). Each has its own Legal document, and one may stand for consent to the operator's mailings.
+An Instance has none until a Staff member adds them: the core ships no legal text and knows no law.
+_Avoid_: Consent (for the item), checkbox, terms (as the general name)
+
+**Legal document**:
+The text of a Sign-up item, kept in the Instance's database in the Instance's one language and shown
+on a fixed public page of the app. Publishing makes an immutable version that takes effect at once; a
+new version of a required acceptance stops every User who has not accepted it at an
+accept-or-sign-out screen.
+_Avoid_: Policy page, terms URL
+
+**Consent record**:
+One decision of a User on one version of a Sign-up item's Legal document (accepted, declined or
+withdrawn), with when and where it was made and the IP address and user agent it came from. Records
+are only added, never changed; the latest per item is the User's current answer. It belongs to the
+User, not a Workspace, and is unrelated to a Contact's consent proof.
+_Avoid_: Acceptance flag, opt-in (alone)
+
 ### Usage & holds
 
 The core _measures_ what each Workspace does and lets a Staff member hold sending from outside; it
@@ -901,8 +924,8 @@ _Avoid_: Installation, deployment, tenant (that is a Workspace), server
 
 **Mode**:
 Which kind of deployment an Instance is: `selfhosted` (the default) or `saas`. It alone decides
-what differs between them, such as who may sign up, whether the Instance reports to the project
-and whether the Staff surface exists; no separate setting does. It is not a License key and
+what differs between them, such as whether the Instance reports to the project; no separate
+setting does. Sign-up is always open, whatever the Mode. It is not a License key and
 unlocks no Enterprise feature.
 _Avoid_: Edition (that is core or Enterprise, by License key), plan, tier, flavour
 

@@ -6,6 +6,11 @@ status: accepted
 
 > **Amended by [[0060-an-instance-runs-in-one-mode]]:** the Staff surface needs the `saas` Mode as
 > well as the `staff` license feature; in `selfhosted` it is off even with the key.
+>
+> **Amended by [[0061-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** the Staff
+> member, its sign-in and the console run on every Instance without the key, and hold the Instance's own
+> settings. What this ADR builds across Workspaces (metadata, suspension, the detector, Staff holds,
+> Service credentials) stays under the `staff` feature.
 
 [[0007-workspace-suspension-in-core]] left the Staff console and the automated detector as
 closed EE, and [[0008-operator-separate-identity]] fixed the Staff member as a separate identity. This
