@@ -190,8 +190,15 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   an unprojected event (`events.Unprojected`): persist, automations and webhooks skip it.
   The Audit table's only remover is `ee/retention` (the `retention` license feature, a
   Workspace `retention_days` window, one hourly river job registered through `Edition.Jobs()`).
-  Publish through `events.RecordAudit` inside the mutation's transaction. In tests the router
-  does not run, so call `env.DeliverToEE(t)` to hand the outbox to the EE subscribers.
+  An explicit entry, one no audited write produces (a Workspace setting, a login, a membership
+  change, the Audit log export `audit.Log.Export`), is recorded one way: `events.RecordAudit`
+  inside the transaction of the change (`bus.WithinTx`, or `bus.WithinScopedTx` with the scope's
+  `Actor()` when there is a scope); `events.ExplicitAuditActions` lists its actions. Many of them
+  have no scope to take the actor from (a User's action goes to each of their Workspaces, a
+  suspension names its Staff actor), so the scoped client has no recorder of its own. `ee.New`
+  takes the bus for the export: the bus is built first, with the Edition's hooks from `ee.Hooks`.
+  In tests the router does not run, so call `env.DeliverToEE(t)` to hand the outbox to the EE
+  subscribers.
   **Audit capture in the scoped client (ADR 0022):** an `*ent.Scoped` carries its actor
   (`s.As(actor, opener)`, set at the construction points: `Accounts.Scope` user,
   `HandleBearerAuth` api_token, collect/SES/consent/bootstrap `events.Ingest`; `bus.Act` for
@@ -199,8 +206,7 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   its generated wrappers then run in their own transaction, or join the one the scope is bound
   to (`WithinScopedTx` keeps the actor), and publish the entry. Ingest and actor-less scopes take
   the plain path. Upserts of an audited entity must be `DoNothing`. Add the annotation, nothing
-  per handler. An entry no audited write produces (the Audit log export, `audit.Log.Export`) is
-  `s.RecordAudit(ctx, change)`: the same actor and transaction, through the scope.
+  per handler.
   Note `ee/licensekey`, not `ee/license`: the path is case-insensitive on macOS and would
   collide with `ee/LICENSE`.
 - **Owners and suspension are defined once.** `internal/accounts/owners.go` owns "Owner of a

@@ -92,7 +92,7 @@ func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	// Renewal: the same database read under the renewed key, as after a restart.
 	renewed, err := licensekey.Parse(l.valid, l.pub, lapseNow)
 	require.NoError(t, err)
-	log := audit.NewLog(renewed)
+	log := audit.NewLog(renewed, env.Bus)
 	require.True(t, log.Licensed())
 	entries, _, err := log.Entries(t.Context(), acme, events.AuditFilter{}, 0, rows+1)
 	require.NoError(t, err)

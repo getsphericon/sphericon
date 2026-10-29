@@ -1,0 +1,21 @@
+id: one-way-to-record-audit
+valid:
+  - |
+    func record(ctx context.Context, b *events.Bus, s *ent.Scoped) error {
+    	return b.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+    		return events.RecordAudit(ctx, pub, &events.AuditEntry{WorkspaceID: ts.WorkspaceID(), Actor: ts.Actor()})
+    	})
+    }
+  - |
+    func (p auditPublisher) PublishAudit(ctx context.Context, workspaceID int64, c ent.AuditChange) error {
+    	return RecordAudit(ctx, p.pub, &AuditEntry{WorkspaceID: workspaceID, Actor: c.Actor})
+    }
+invalid:
+  - |
+    func export(ctx context.Context, s *ent.Scoped) error {
+    	return s.RecordAudit(ctx, ent.AuditChange{Action: events.ActionAuditLogExport})
+    }
+  - |
+    func record(ctx context.Context, m *Module, entry *events.AuditEntry) error {
+    	return m.recorder.RecordAudit(ctx, entry)
+    }

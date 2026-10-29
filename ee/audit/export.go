@@ -29,11 +29,15 @@ var exportHeader = []string{
 // recorded before any row leaves: an error here means nothing was exported. The caller
 // has already checked Licensed and the reader's role.
 func (l *Log) Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (func(w io.Writer) error, error) {
-	change := ent.AuditChange{Action: events.ActionAuditLogExport, TargetType: "audit_log"}
+	entry := &events.AuditEntry{Action: events.ActionAuditLogExport, TargetType: "audit_log"}
 	if filters := exportFilters(f); len(filters) > 0 {
-		change.Diff = map[string]any{"filter": filters}
+		entry.Diff = map[string]any{"filter": filters}
 	}
-	if err := s.RecordAudit(ctx, change); err != nil {
+	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		entry.WorkspaceID, entry.Actor = ts.WorkspaceID(), ts.Actor()
+		return events.RecordAudit(ctx, pub, entry)
+	})
+	if err != nil {
 		return nil, err
 	}
 	return func(w io.Writer) error { return l.exportCSV(ctx, s, f, w) }, nil

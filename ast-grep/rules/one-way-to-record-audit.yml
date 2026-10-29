@@ -1,0 +1,24 @@
+id: one-way-to-record-audit
+language: Go
+severity: error
+message: "rule 6: an explicit Audit entry is recorded through something other than events.RecordAudit; fix: call events.RecordAudit(ctx, pub, entry) in the transaction of the change (bus.WithinTx, or bus.WithinScopedTx with the scope's Actor())"
+note: >-
+  An entry no audited write produces is recorded one way (ADR 0022, docs/architecture.md): the
+  seam events.RecordAudit, which fills the request id, address and user agent and skips the
+  ingest actor. A RecordAudit of another receiver (the scoped client, a module's own helper) is a
+  second copy of that rule. Package events calls it unqualified for the generated wrappers.
+# A Go pattern such as `x.RecordAudit($$$A)` parses as a type conversion, so the pattern names
+# its statement context and selects the call_expression.
+rule:
+  pattern:
+    context: 'func _() { $RECV.RecordAudit($$$ARGS) }'
+    selector: call_expression
+constraints:
+  RECV:
+    not:
+      regex: ^events$
+files:
+  - '**/*.go'
+ignores:
+  - ent/**
+  - gen/**

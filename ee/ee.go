@@ -56,9 +56,11 @@ type Edition struct {
 // New builds the Edition for a license. Subscribers are always registered and each
 // checks the license itself, so a key added later needs no rewiring and an unlicensed
 // instance stores nothing. The Staff member configuration is validated only when the
-// `staff` feature is licensed: an unlicensed instance needs none of it.
-func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, siteSecrets []string, staffCfg staff.Config) (*Edition, error) {
-	auditLog := audit.NewLog(lic)
+// `staff` feature is licensed: an unlicensed instance needs none of it. The Audit log
+// records its export through bus, which is built before the Edition and takes the
+// Edition's ent hooks from Hooks.
+func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, cipher *secrets.Cipher, siteSecrets []string, staffCfg staff.Config) (*Edition, error) {
+	auditLog := audit.NewLog(lic, bus)
 	e := &Edition{
 		lic:          lic,
 		client:       client,
@@ -84,19 +86,22 @@ func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, si
 // Hooks are the ent hooks the Edition needs on every client, the long-lived one and the
 // event bus's transaction client alike: the one that keeps the contacts peak of Usage as
 // Contacts change (ADR 0009). Empty without the `staff` license.
-func (e *Edition) Hooks() []entgo.Hook {
-	if !e.lic.Has(licensekey.FeatureStaff) {
+func (e *Edition) Hooks() []entgo.Hook { return Hooks(e.lic, e.now) }
+
+// Hooks are the Edition's ent hooks for a license and a clock, for a client built before
+// the Edition (the event bus's transaction client). Empty without the `staff` license.
+func Hooks(lic *licensekey.License, now func() time.Time) []entgo.Hook {
+	if !lic.Has(licensekey.FeatureStaff) {
 		return nil
 	}
-	return []entgo.Hook{usage.Hook(e.lic, e.now)}
+	return []entgo.Hook{usage.Hook(lic, now)}
 }
 
 // Staff is the /staff API (ADR 0026) for the composition root to mount, or nil
 // without the `staff` license, in which case the whole surface answers 404.
 //
 // The surface suspends Workspaces through the core mechanism, so it takes the event bus
-// and the system (platform) sender that tells the owner. The bus is built after the
-// Edition (it carries the Edition's consumers), hence they come here and not to New.
+// and the system (platform) sender that tells the owner.
 func (e *Edition) Staff(bus *events.Bus, sender messaging.EmailSender) interface {
 	Server(opts ...staffapi.ServerOption) (http.Handler, error)
 } {
