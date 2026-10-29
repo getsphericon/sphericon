@@ -150,6 +150,27 @@ An Event with no Contact, a machine Event, and an Event caused by a Rule's own A
 Rule. Actions today: apply Tag, remove Tag, HTTP call, enroll in an Automation.
 _Avoid_: Workflow, flow, hook, automation (an Automation is sequential and stateful)
 
+**Order**:
+The read model of one purchase a Workspace's shop reported through order Events, one per `order_id`:
+its total, its currency, its refunds and whether it was cancelled. Created and changed only by Events;
+it holds no catalogue and no payment state.
+_Avoid_: Purchase, transaction, sale
+
+**Revenue**:
+The net amount of Orders in the Workspace's reporting currency: each Order's total minus its refunds,
+a cancelled Order counting nothing. **Attributed revenue** is the part credited to a Broadcast or an Automation.
+_Avoid_: Sales, turnover, GMV
+
+**Reporting currency**:
+The one currency in which a Workspace's revenue is summed. An Order in another currency is kept but
+counted in no sum.
+_Avoid_: Base currency, default currency
+
+**Attribution window**:
+How long after a Contact clicks an email of a Broadcast or an Automation an Order of that Contact is credited to it. The
+Workspace edits it; 5 days until set. The last click inside it wins, and an open credits nothing.
+_Avoid_: Lookback, conversion window
+
 ### Send-eligibility
 
 Whether a message on channel C from sending source S may reach destination D is decided in
