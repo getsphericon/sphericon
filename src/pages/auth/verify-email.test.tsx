@@ -45,7 +45,7 @@ test('sends the token alone first and opens the workspace the answer names when 
   await expect.element(screen.getByRole('button', { name: 'Set password' })).not.toBeInTheDocument()
 })
 
-test('asks for a password when the link is not in the registration browser and resends with it', async () => {
+test('asks for a password when the link is not in the Sign-up browser and resends with it', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthVerifyEmail(async ({ request }) => {

@@ -8,14 +8,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/postgres"
 )
 
-// SignupRule is who may register on the Instance (ADR 0060). It follows from the Instance's Mode;
+// SignupRule is who may sign up on the Instance (ADR 0060). It follows from the Instance's Mode;
 // an Invitation and `sphericon user create-owner` open a closed sign-up whatever the rule says.
 type SignupRule int
 
 const (
-	// SignupAlways lets anyone who reaches the Instance register: the saas Mode.
+	// SignupAlways lets anyone who reaches the Instance sign up: the saas Mode.
 	SignupAlways SignupRule = iota
-	// SignupUntilFirstUser lets anyone register until the Instance has a User, the first Owner,
+	// SignupUntilFirstUser lets anyone sign up until the Instance has a User, the first Owner,
 	// and closes sign-up after that: the selfhosted Mode.
 	SignupUntilFirstUser
 )
@@ -28,21 +28,21 @@ func SignupRuleOf(saas bool) SignupRule {
 	return SignupUntilFirstUser
 }
 
-// ErrSignupClosed is a registration the Instance's sign-up rule refuses.
+// ErrSignupClosed is a Sign-up the Instance's sign-up rule refuses.
 var ErrSignupClosed = errors.New("accounts: sign-up is closed")
 
-// signupLockKey is the advisory lock that makes two first registrations of a fresh Instance take
+// signupLockKey is the advisory lock that makes two first Sign-ups of a fresh Instance take
 // turns, so only the first finds the Instance empty.
 const signupLockKey = 7_204_002
 
-// WithSignupRule sets who may register; the default is SignupAlways.
+// WithSignupRule sets who may sign up; the default is SignupAlways.
 func WithSignupRule(rule SignupRule) Option {
 	return func(a *Accounts) { a.signup = rule }
 }
 
-// SignupOpen reports whether a person with no Invitation may register now. It is the cheap answer
+// SignupOpen reports whether a person with no Invitation may sign up now. It is the cheap answer
 // that refuses early and feeds the sign-in decision; the transaction that creates the User decides
-// again (permitSignup), because another registration may have come in between.
+// again (permitSignup), because another Sign-up may have come in between.
 func (a *Accounts) SignupOpen(ctx context.Context) (bool, error) {
 	if a.signup == SignupAlways {
 		return true, nil
@@ -53,7 +53,7 @@ func (a *Accounts) SignupOpen(ctx context.Context) (bool, error) {
 
 // permitSignup is the sign-up rule inside the transaction that creates a User. Under
 // SignupUntilFirstUser it first takes the advisory lock to the end of the transaction, so a second
-// first registration waits and then sees the first one's User.
+// first Sign-up waits and then sees the first one's User.
 func (a *Accounts) permitSignup(ctx context.Context, tx *ent.Client) error {
 	if a.signup == SignupAlways {
 		return nil

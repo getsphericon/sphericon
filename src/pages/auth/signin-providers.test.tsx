@@ -8,7 +8,7 @@ import {
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { LoginPage } from './login.tsx'
-import { RegisterPage } from './register.tsx'
+import { SignUpPage } from './sign-up.tsx'
 
 const GOOGLE = { items: [{ name: 'google', displayName: 'Google' }] }
 
@@ -51,9 +51,9 @@ test('the login page hands its return address to the provider flow', async () =>
     .toHaveAttribute('href', '/site/auth/signin/google/start?return_to=%2Fw%2Fabc')
 })
 
-test('the register page offers the same buttons', async () => {
+test('the sign-up page offers the same buttons', async () => {
   worker.use(handleSiteAuthSigninProviders({ body: GOOGLE }))
-  const { screen } = await renderWithRouter(<RegisterPage />)
+  const { screen } = await renderWithRouter(<SignUpPage />)
 
   await expect.element(screen.getByRole('link', { name: 'Continue with Google' })).toBeVisible()
 })

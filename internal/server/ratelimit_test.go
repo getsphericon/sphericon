@@ -24,7 +24,7 @@ const humanLimit = 3
 // humanEndpoints are the public, human-driven site endpoints the "human" policy
 // covers (ADR 0025). Each one is its own bucket per IP.
 var humanEndpoints = map[string]string{
-	"signup":          "/site/auth/register",
+	"signup":          "/site/auth/sign-up",
 	"resend":          "/site/auth/resend-verification",
 	"verify email":    "/site/auth/verify-email",
 	"invitation":      "/site/invitations/some-token/accept",
@@ -119,11 +119,11 @@ func TestARejectionCarriesCORSHeaders(t *testing.T) {
 func TestTheGeneratedClientTypesTheRateLimitResponse(t *testing.T) {
 	env := testhelper.Setup(t, withHumanLimit(1))
 	client := env.SiteAnonymous(t)
-	input := &siteapi.SiteRegisterInput{Name: "Eve", Email: "eve@example.test", Password: siteapi.NewOptString("eve-password-1")}
+	input := &siteapi.SiteSignUpInput{Name: "Eve", Email: "eve@example.test", Password: siteapi.NewOptString("eve-password-1")}
 
-	_, err := client.SiteAuthRegister(t.Context(), input)
+	_, err := client.SiteAuthSignUp(t.Context(), input)
 	require.NoError(t, err)
-	res, err := client.SiteAuthRegister(t.Context(), input)
+	res, err := client.SiteAuthSignUp(t.Context(), input)
 	require.NoError(t, err)
 
 	limited, ok := res.(*siteapi.ProblemDetailsHeaders)

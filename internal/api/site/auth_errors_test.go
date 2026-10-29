@@ -35,7 +35,7 @@ func TestSiteAuthVerifyNamesEveryFirstWorkspacePersonal(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	wsOf := func(email string) (*ent.Workspace, membership.Role) {
-		registerAndVerify(t, env, "Someone", email, "password123")
+		signUpAndVerify(t, env, "Someone", email, "password123")
 		u, err := env.DB.User.Query().Where(entuser.Email(email)).Only(t.Context())
 		require.NoError(t, err)
 		ws, err := env.DB.Workspace.Query().Where(workspace.HasMembershipsWith(membership.UserID(u.ID))).Only(t.Context())

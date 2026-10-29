@@ -69,7 +69,7 @@ func TestAProviderSigninOnAClosedInstanceCreatesNoUserAndJoinsNobody(t *testing.
 
 func TestAProviderLinkOfAnAddressNeverProvenJoinsTheUser(t *testing.T) {
 	env, fake := githubEnv(t, testhelper.WithConfig(verificationOff))
-	require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerWithPassword(t, env, "Colleague", colleague.Email, joinerPassword))
+	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, signUpWithPassword(t, env, "Colleague", colleague.Email, joinerPassword))
 	enableAcmeJoin(t, env)
 
 	signInWithGitHub(t, fake, env.NewRedirectBrowser(t), colleague)
@@ -79,7 +79,7 @@ func TestAProviderLinkOfAnAddressNeverProvenJoinsTheUser(t *testing.T) {
 
 func TestAProviderLinkOfAnAlreadyProvenAddressJoinsNobody(t *testing.T) {
 	env, fake := githubEnv(t)
-	registerAndVerify(t, env, "Colleague", colleague.Email, joinerPassword)
+	signUpAndVerify(t, env, "Colleague", colleague.Email, joinerPassword)
 	enableAcmeJoin(t, env)
 
 	signInWithGitHub(t, fake, env.NewRedirectBrowser(t), colleague)
@@ -87,9 +87,9 @@ func TestAProviderLinkOfAnAlreadyProvenAddressJoinsNobody(t *testing.T) {
 	requireNotInAcme(t, env, colleague.Email)
 }
 
-func TestAProviderTakeOverOfAPendingRegistrationJoinsTheUser(t *testing.T) {
+func TestAProviderTakeOverOfAPendingSignUpJoinsTheUser(t *testing.T) {
 	env, fake := githubEnv(t)
-	registerPending(t, env, "Squatter", colleague.Email, joinerPassword)
+	signUpPending(t, env, "Squatter", colleague.Email, joinerPassword)
 	enableAcmeJoin(t, env)
 
 	signInWithGitHub(t, fake, env.NewRedirectBrowser(t), colleague)
@@ -237,7 +237,7 @@ func resetPassword(t *testing.T, env *testhelper.TestEnv, email string) {
 
 func TestAResetLinkThatProvesAnAddressNeverProvenJoinsTheUser(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(verificationOff))
-	require.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerWithPassword(t, env, "Colleague", colleague.Email, joinerPassword))
+	require.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, signUpWithPassword(t, env, "Colleague", colleague.Email, joinerPassword))
 	enableAcmeJoin(t, env)
 
 	resetPassword(t, env, colleague.Email)
@@ -247,7 +247,7 @@ func TestAResetLinkThatProvesAnAddressNeverProvenJoinsTheUser(t *testing.T) {
 
 func TestAResetLinkOfAnAlreadyProvenAddressJoinsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
-	registerAndVerify(t, env, "Colleague", colleague.Email, joinerPassword)
+	signUpAndVerify(t, env, "Colleague", colleague.Email, joinerPassword)
 	enableAcmeJoin(t, env)
 
 	resetPassword(t, env, colleague.Email)

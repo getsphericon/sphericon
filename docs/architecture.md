@@ -38,6 +38,17 @@ coding standards in `CODING_STANDARDS.md`.
   `accounts.Attempts.For(kind)`, a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
   which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
   `login.SecondOutcome`).
+- **Sign-up sequence**: `internal/signup` (ADR 0030, 0031) is the one core module for a Sign-up with
+  a password, shaped like `login`: the sign-up rule first (ADR 0042, 0060), the form, then the same
+  work for every address (a mail budget slot, the hash, the lookup, one write, a token and exactly
+  one mail job) so a Taken address is not learnable, the recovery from a race on the unique email,
+  the replaced password of an Unverified User, and the Sign-up browser's value (`BrowserHash`,
+  `SameBrowser`). It holds no database client; the `/site` adapter (`internal/api/site/auth.go`)
+  supplies the `Store` over `accounts`, the budget (`accounts.Attempts.For(KindSignUp)`), the
+  mails and the token mint, and turns the `signup.Outcome` into the answer and the cookie. The
+  profile rules of a User (a blank name, the password rule, the proof of the current password and
+  whether the session is issued again) are `accounts.ChangeProfile`, which takes the login module's
+  `Prove` as a seam.
 - **Package boundaries are checked by easement (`easement.yml`, `mise run check:arch`).** A surface
   package (`internal/api/{site,external,collect}`) never imports another surface, `internal/**` core
   imports neither a surface nor `ee/`, and only the wiring packages (`internal/app`,

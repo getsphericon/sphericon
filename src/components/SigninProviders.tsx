@@ -30,7 +30,7 @@ function signinStartUrl(
   })
 }
 
-// The "Continue with <provider>" buttons of the login and register pages (ADR 0048): one per
+// The "Continue with <provider>" buttons of the login and sign-up pages (ADR 0048): one per
 // Sign-in provider the Instance enabled, and nothing at all when it enabled none, so the
 // pages stay as they were. `returnTo` is the in-app path to land on afterwards; `invitation`
 // is the token of an Invitation link, which the sign-in then accepts; `separator` puts the "or"

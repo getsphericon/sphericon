@@ -12,7 +12,7 @@ type SigninFacts struct {
 	TrustFailure signin.Reason
 	// EmailHolder is the User that already holds the provider's email, nil when none does.
 	EmailHolder *EmailHolder
-	// SignupOpen is whether the Instance lets new Users register (ADR 0042).
+	// SignupOpen is whether the Instance lets new Users sign up (ADR 0042).
 	SignupOpen bool
 }
 

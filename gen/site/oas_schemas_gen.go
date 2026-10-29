@@ -5765,9 +5765,9 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 
 func (*ProblemDetailsHeaders) siteAuthForgotPasswordRes()                  {}
 func (*ProblemDetailsHeaders) siteAuthLoginRes()                           {}
-func (*ProblemDetailsHeaders) siteAuthRegisterRes()                        {}
 func (*ProblemDetailsHeaders) siteAuthResendVerificationRes()              {}
 func (*ProblemDetailsHeaders) siteAuthSecondFactorRes()                    {}
+func (*ProblemDetailsHeaders) siteAuthSignUpRes()                          {}
 func (*ProblemDetailsHeaders) siteAuthVerifyEmailRes()                     {}
 func (*ProblemDetailsHeaders) siteBroadcastsTestSendRes()                  {}
 func (*ProblemDetailsHeaders) sitePasskeyLoginFinishRes()                  {}
@@ -7397,35 +7397,6 @@ func (s *SiteAuthLogoutNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
 
-// SiteAuthRegisterAccepted is response for SiteAuthRegister operation.
-type SiteAuthRegisterAccepted struct {
-	SetCookie OptString
-}
-
-// GetSetCookie returns the value of SetCookie.
-func (s *SiteAuthRegisterAccepted) GetSetCookie() OptString {
-	return s.SetCookie
-}
-
-// SetSetCookie sets the value of SetCookie.
-func (s *SiteAuthRegisterAccepted) SetSetCookie(val OptString) {
-	s.SetCookie = val
-}
-
-func (*SiteAuthRegisterAccepted) siteAuthRegisterRes() {}
-
-type SiteAuthRegisterConflict ProblemDetails
-
-func (*SiteAuthRegisterConflict) siteAuthRegisterRes() {}
-
-type SiteAuthRegisterForbidden ProblemDetails
-
-func (*SiteAuthRegisterForbidden) siteAuthRegisterRes() {}
-
-type SiteAuthRegisterUnprocessableEntity ProblemDetails
-
-func (*SiteAuthRegisterUnprocessableEntity) siteAuthRegisterRes() {}
-
 // SiteAuthResendVerificationAccepted is response for SiteAuthResendVerification operation.
 type SiteAuthResendVerificationAccepted struct{}
 
@@ -7443,6 +7414,35 @@ func (*SiteAuthResetPasswordOK) siteAuthResetPasswordRes() {}
 type SiteAuthResetPasswordUnprocessableEntity ProblemDetails
 
 func (*SiteAuthResetPasswordUnprocessableEntity) siteAuthResetPasswordRes() {}
+
+// SiteAuthSignUpAccepted is response for SiteAuthSignUp operation.
+type SiteAuthSignUpAccepted struct {
+	SetCookie OptString
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteAuthSignUpAccepted) GetSetCookie() OptString {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteAuthSignUpAccepted) SetSetCookie(val OptString) {
+	s.SetCookie = val
+}
+
+func (*SiteAuthSignUpAccepted) siteAuthSignUpRes() {}
+
+type SiteAuthSignUpConflict ProblemDetails
+
+func (*SiteAuthSignUpConflict) siteAuthSignUpRes() {}
+
+type SiteAuthSignUpForbidden ProblemDetails
+
+func (*SiteAuthSignUpForbidden) siteAuthSignUpRes() {}
+
+type SiteAuthSignUpUnprocessableEntity ProblemDetails
+
+func (*SiteAuthSignUpUnprocessableEntity) siteAuthSignUpRes() {}
 
 // SiteAuthSigninCallbackFound is response for SiteAuthSigninCallback operation.
 type SiteAuthSigninCallbackFound struct {
@@ -16405,48 +16405,6 @@ func (s *SiteRecoveryCodesInput) SetCurrentPassword(val OptString) {
 	s.CurrentPassword = val
 }
 
-// Register with a name, an email and a password. The User stays Unverified until the address is proven
-// (ADR 0030); the password is trusted only when the verification link is opened in the browser that
-// registered.
-// Ref: #/components/schemas/SiteRegisterInput
-type SiteRegisterInput struct {
-	Name  string       `json:"name"`
-	Email EmailAddress `json:"email"`
-	// Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated registration of
-	// the address replaces it.
-	Password OptString `json:"password"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteRegisterInput) GetName() string {
-	return s.Name
-}
-
-// GetEmail returns the value of Email.
-func (s *SiteRegisterInput) GetEmail() EmailAddress {
-	return s.Email
-}
-
-// GetPassword returns the value of Password.
-func (s *SiteRegisterInput) GetPassword() OptString {
-	return s.Password
-}
-
-// SetName sets the value of Name.
-func (s *SiteRegisterInput) SetName(val string) {
-	s.Name = val
-}
-
-// SetEmail sets the value of Email.
-func (s *SiteRegisterInput) SetEmail(val EmailAddress) {
-	s.Email = val
-}
-
-// SetPassword sets the value of Password.
-func (s *SiteRegisterInput) SetPassword(val OptString) {
-	s.Password = val
-}
-
 // Ask for the verification link again (always accepted; no account enumeration).
 // Ref: #/components/schemas/SiteResendVerificationInput
 type SiteResendVerificationInput struct {
@@ -18979,6 +18937,48 @@ func (s *SiteSetupSteps) SetSentEmail(val SiteSetupStepStatus) {
 	s.SentEmail = val
 }
 
+// Sign up with a name, an email and a password. The User stays Unverified until the address is proven
+// (ADR 0030); the password is trusted only when the verification link is opened in the Sign-up
+// browser.
+// Ref: #/components/schemas/SiteSignUpInput
+type SiteSignUpInput struct {
+	Name  string       `json:"name"`
+	Email EmailAddress `json:"email"`
+	// Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated Sign-up of the
+	// address replaces it.
+	Password OptString `json:"password"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteSignUpInput) GetName() string {
+	return s.Name
+}
+
+// GetEmail returns the value of Email.
+func (s *SiteSignUpInput) GetEmail() EmailAddress {
+	return s.Email
+}
+
+// GetPassword returns the value of Password.
+func (s *SiteSignUpInput) GetPassword() OptString {
+	return s.Password
+}
+
+// SetName sets the value of Name.
+func (s *SiteSignUpInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetEmail sets the value of Email.
+func (s *SiteSignUpInput) SetEmail(val EmailAddress) {
+	s.Email = val
+}
+
+// SetPassword sets the value of Password.
+func (s *SiteSignUpInput) SetPassword(val OptString) {
+	s.Password = val
+}
+
 // The "this was not me" link of the notice mailed when a Sign-in provider was linked to an account.
 // Ref: #/components/schemas/SiteSigninNotMeInput
 type SiteSigninNotMeInput struct {
@@ -19025,7 +19025,7 @@ func (s *SiteSigninProvider) SetDisplayName(val string) {
 }
 
 // The Sign-in providers this Instance has configured. Empty on an Instance that configured none, which
-// leaves the login and register pages as they are.
+// leaves the login and sign-up pages as they are.
 // Ref: #/components/schemas/SiteSigninProviders
 type SiteSigninProviders struct {
 	Items []SiteSigninProvider `json:"items"`
@@ -21790,8 +21790,8 @@ func (*SiteUserUpdateMeUnprocessableEntity) siteUserUpdateMeRes() {}
 // Ref: #/components/schemas/SiteVerifyEmailInput
 type SiteVerifyEmailInput struct {
 	Token string `json:"token"`
-	// Needed only when the link is not opened in the Registration browser: it replaces the password given
-	// at registration. Ignored in the Registration browser.
+	// Needed only when the link is not opened in the Sign-up browser: it replaces the password given at
+	// Sign-up. Ignored in the Sign-up browser.
 	Password OptString `json:"password"`
 }
 

@@ -9,10 +9,10 @@ status: accepted
 > instead; the User, its Linked identity and first Workspace are created once the items are answered.
 
 A person who wants to try sphericon should not have to invent a password and wait for a verify
-link. The open core lets a visitor register or log in with a **Sign-in provider** (Google first,
-GitHub next) from `/register` and `/login`. The provider's proof of an address counts as proof
+link. The open core lets a visitor sign up or log in with a **Sign-in provider** (Google first,
+GitHub next) from `/sign-up` and `/login`. The provider's proof of an address counts as proof
 (a Verified email), and the provider replaces only the password step: an enrolled Second factor,
-the Login throttle, a Workspace's Two-factor requirement and the registration gates keep working
+the Login throttle, a Workspace's Two-factor requirement and the sign-up gates keep working
 as they do for email and password (ADR 0020, ADR 0030, ADR 0042). Per-Workspace federation
 (SAML or OIDC of an organization, SCIM) stays Enterprise (ADR 0014); "SSO" is on the GLOSSARY's
 Avoid list for this concept.
@@ -34,8 +34,8 @@ Avoid list for this concept.
 - **`email_proven_at`.** A nullable `users` column set when an address is proven (a provider
   sign-in, a verify link, a reset link (mailed to the address too), an accepted Invitation and a
   confirmed email change). It differs from `email_verified_at`, which an install that turned verification off sets
-  at registration with no proof, and it is what keeps silent linking by email from being a
-  pre-registration takeover.
+  at sign-up with no proof, and it is what keeps silent linking by email from being a
+  takeover before sign-up is proven.
 - **One decision.** `accounts.DecideSignin` is a pure function of the facts (known subject, trust
   of the email, the User holding the address, whether sign-up is open) with the outcomes known,
   link, take over, create and refuse. Each branch is tested on its own, and the apply step is
@@ -43,13 +43,13 @@ Avoid list for this concept.
 - **Linking to an existing address.** A trusted email held by a Verified User links the identity
   silently and signs that User in; the visitor's response is the same as for a new address. When
   the holder's `email_proven_at` is empty, the same transaction also clears its password hash, so
-  a pre-registration's password dies with the link. Every silent link bumps `session_epoch` (the
+  the password of an unproven Sign-up dies with the link. Every silent link bumps `session_epoch` (the
   other sessions end; the session the sign-in starts carries the new epoch). Every silent link mails the
   owner (the Taken address pattern: a system mail, never a reply to the visitor) a notice whose
   "this was not me" link unlinks that identity and bumps `session_epoch`. The link is a signed
   token naming the identity, with no binding: it works once, because a link whose identity is gone
   answers 400 and changes nothing.
-- **Taking over a registration.** A trusted email held by an Unverified User makes that User
+- **Taking over an unproven Sign-up.** A trusted email held by an Unverified User makes that User
   Verified through the provider's proof: its pending password is cleared, its sessions end, it
   takes the provider's name, gets the identity and its first Workspace, and a pending Invitation to
   the address stays. No notice is mailed: the person signing in is the address's owner.
@@ -59,7 +59,7 @@ Avoid list for this concept.
   guidance treats the claim as weak evidence for addresses it does not own.
 - **Flow state** (`state`, PKCE verifier, `nonce`, the validated `return_to`) lives in a signed,
   httpOnly, SameSite=Lax cookie scoped to `/site/auth/signin` and valid for ten minutes. It is Lax,
-  not Strict like the Registration browser's, because the provider sends the browser back with a
+  not Strict like the Sign-up browser's, because the provider sends the browser back with a
   cross-site redirect. `return_to` is honoured only as a relative in-app path.
 - **A callback always redirects.** To the page the flow began from with the session cookie, or to
   `/login?error=<code>` (the `SiteSigninError` enum of the `/site` contract), which the SPA renders
@@ -73,11 +73,11 @@ Avoid list for this concept.
   codes feed the Login throttle exactly as after a password. The provider's own MFA does not
   count, and a Workspace's Two-factor requirement is enforced as for any session.
 
-- **Gates and Invitations.** A provider sign-up of a new address obeys the registration gate
+- **Gates and Invitations.** A provider sign-up of a new address obeys the sign-up gate
   (the Mode's sign-up rule, ADR 0060: `signup_closed`); a Linked identity or a matching Verified
-  User still signs in. The Instance has no other registration gate, so provider sign-up has
+  User still signs in. The Instance has no other sign-up gate, so provider sign-up has
   none either. A Workspace may admit by domain (ADR 0051) once an address is proven, but that
-  never opens or closes registration: it adds a Membership, not a User. An Invitation link carries its token into the flow
+  never opens or closes sign-up: it adds a Membership, not a User. An Invitation link carries its token into the flow
   (`start?invitation=`, kept in the flow cookie): the provider's trusted email must equal the
   invited address (case-insensitive) or the callback refuses with `invitation_email_mismatch`,
   before anything is created, and lands back on the Invitation page. A match opens a closed
@@ -112,7 +112,7 @@ Avoid list for this concept.
 - **go-pkgz providers.** Rejected: ADR 0020 keeps one session issuer, and a library that issues
   its own sessions is a second path around the Second factor.
 - **Linking by email without verification.** Rejected: an unproven address would let anyone who
-  controls a provider account take over the account registered with that address.
+  controls a provider account take over the account signed up with that address.
 - **A "confirm with your password to link" step.** Rejected: a person who signed up with a
   provider has no password, and a person who forgot theirs is the one who needs the provider.
 - **Treating the provider's own multi-factor sign-in as a Second factor.** Rejected: the Instance

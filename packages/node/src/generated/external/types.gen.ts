@@ -2535,7 +2535,7 @@ export type MaxPerSecond = number;
 
 /**
  * RFC 7807 precondition required response: the request needs something it did not carry
- * (a verification link opened outside its Registration browser needs a password, ADR 0030)
+ * (a verification link opened outside its Sign-up browser needs a password, ADR 0030)
  */
 export type PreconditionRequiredProblem = {
   body: ProblemDetails;

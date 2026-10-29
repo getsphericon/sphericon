@@ -53,10 +53,6 @@ type SiteAuthLoginRes interface {
 	siteAuthLoginRes()
 }
 
-type SiteAuthRegisterRes interface {
-	siteAuthRegisterRes()
-}
-
 type SiteAuthResendVerificationRes interface {
 	siteAuthResendVerificationRes()
 }
@@ -67,6 +63,10 @@ type SiteAuthResetPasswordRes interface {
 
 type SiteAuthSecondFactorRes interface {
 	siteAuthSecondFactorRes()
+}
+
+type SiteAuthSignUpRes interface {
+	siteAuthSignUpRes()
 }
 
 type SiteAuthSigninNotMeRes interface {

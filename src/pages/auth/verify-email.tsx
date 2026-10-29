@@ -15,7 +15,7 @@ import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/ind
 import { getApiErrorMessage, hasErrorStatus } from '../../utils/apiErrors.ts'
 
 // Where the link in the verification email lands (ADR 0030). The page sends the token
-// alone first: in the browser that registered, the password from the registration form
+// alone first: in the Sign-up browser, the password from the Sign-up form
 // stays and the answer starts the session. Anywhere else the answer is "password
 // needed", nothing has changed, and the form here sets the password that goes live.
 export function VerifyEmailPage() {
@@ -32,7 +32,7 @@ export function VerifyEmailPage() {
     },
   })
 
-  // The link was not opened in the Registration browser: the form replaces the password.
+  // The link was not opened in the Sign-up browser: the form replaces the password.
   const [needsPassword, setNeedsPassword] = useState(false)
 
   const mutation = useMutation({

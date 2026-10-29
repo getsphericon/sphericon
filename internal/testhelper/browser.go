@@ -13,7 +13,7 @@ import (
 // SiteBrowser returns an anonymous /site client that keeps cookies between its requests
 // the way one browser does: a cookie a response sets goes back on the next request whose
 // URL its path and attributes match. Two SiteBrowser clients are two browsers, which is
-// what the Registration browser tests need (ADR 0030).
+// what the Sign-up browser tests need (ADR 0030).
 func (env *TestEnv) SiteBrowser(t *testing.T) *siteapi.Client {
 	t.Helper()
 	jar, err := cookiejar.New(nil)

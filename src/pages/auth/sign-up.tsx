@@ -9,10 +9,10 @@ import { AuthLayout } from '../../components/AuthLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import {
-  siteAuthRegisterMutation,
+  siteAuthSignUpMutation,
   siteAuthResendVerificationMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteRegisterInput } from '../../generated/site/types.gen.ts'
+import type { SiteSignUpInput } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -22,14 +22,14 @@ import { Route as loginRoute } from '../../routes/login.tsx'
 // Seconds the resend button waits after a send; the server's per-IP limit stays the real gate.
 const RESEND_COOLDOWN_SECONDS = 60
 
-export function RegisterPage() {
+export function SignUpPage() {
   const { t } = useTranslation()
   const notify = useNotify()
   const apiErrorMessage = useApiErrorMessage()
   // With the gate off (ADR 0030) the account is usable at once; with it on, the link
   // to the address proves it, and signs in when followed in this browser.
   const usableAtOnce = !requiresEmailVerification()
-  // The address the verification link went to; set once registration is accepted.
+  // The address the verification link went to; set once the Sign-up is accepted.
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [created, setCreated] = useState(false)
 
@@ -50,7 +50,7 @@ export function RegisterPage() {
     }
   }, [cooldown, ticker])
 
-  const form = useForm<Required<SiteRegisterInput> & { confirm: string }>({
+  const form = useForm<Required<SiteSignUpInput> & { confirm: string }>({
     initialValues: {
       name: '',
       email: '',
@@ -58,13 +58,12 @@ export function RegisterPage() {
       confirm: '',
     },
     validate: {
-      confirm: (value, values) =>
-        value === values.password ? null : t(($) => $.registration.mismatch),
+      confirm: (value, values) => (value === values.password ? null : t(($) => $.signUp.mismatch)),
     },
   })
 
-  const registerMutation = useMutation({
-    ...siteAuthRegisterMutation(),
+  const signUpMutation = useMutation({
+    ...siteAuthSignUpMutation(),
     onSuccess: (_data, variables) => {
       if (usableAtOnce) {
         setCreated(true)
@@ -75,17 +74,17 @@ export function RegisterPage() {
     onError: (error) => {
       notify({
         color: 'red',
-        title: t(($) => $.registration.errorTitle),
+        title: t(($) => $.signUp.errorTitle),
         message: apiErrorMessage(
           error,
-          t(($) => $.registration.errorMessage),
+          t(($) => $.signUp.errorMessage),
         ),
       })
     },
   })
 
-  const handleSubmit = (values: Required<SiteRegisterInput>) => {
-    registerMutation.mutate({
+  const handleSubmit = (values: Required<SiteSignUpInput>) => {
+    signUpMutation.mutate({
       body: {
         name: values.name.trim(),
         email: values.email.trim(),
@@ -99,12 +98,12 @@ export function RegisterPage() {
       <AuthLayout maw={460}>
         <Card withBorder padding="xl">
           <Stack align="center" gap="sm">
-            <Title order={3}>{t(($) => $.registration.createdTitle)}</Title>
+            <Title order={3}>{t(($) => $.signUp.createdTitle)}</Title>
             <Text c="dimmed" ta="center">
-              {t(($) => $.registration.createdBody)}
+              {t(($) => $.signUp.createdBody)}
             </Text>
             <AnchorLink to={loginRoute.to} size="sm" mt="md">
-              {t(($) => $.registration.signInLink)}
+              {t(($) => $.signUp.signInLink)}
             </AnchorLink>
           </Stack>
         </Card>
@@ -117,12 +116,12 @@ export function RegisterPage() {
       <AuthLayout maw={460}>
         <Card withBorder padding="xl">
           <Stack align="center" gap="sm">
-            <Title order={3}>{t(($) => $.registration.checkEmailTitle)}</Title>
+            <Title order={3}>{t(($) => $.signUp.checkEmailTitle)}</Title>
             <Text c="dimmed" ta="center">
-              {t(($) => $.registration.checkEmailBody, { email: sentTo })}
+              {t(($) => $.signUp.checkEmailBody, { email: sentTo })}
             </Text>
             <Text size="sm" mt="md">
-              {t(($) => $.registration.didntReceive)}
+              {t(($) => $.signUp.didntReceive)}
             </Text>
             <Button
               variant="default"
@@ -131,11 +130,11 @@ export function RegisterPage() {
               onClick={() => resendMutation.mutate({ body: { email: sentTo } })}
             >
               {cooldown > 0
-                ? t(($) => $.registration.resendIn, { seconds: cooldown })
+                ? t(($) => $.signUp.resendIn, { seconds: cooldown })
                 : t(($) => $.login.resendVerification)}
             </Button>
             <AnchorLink to={loginRoute.to} size="sm" mt="md">
-              {t(($) => $.registration.loginLink)}
+              {t(($) => $.signUp.loginLink)}
             </AnchorLink>
           </Stack>
         </Card>
@@ -145,29 +144,29 @@ export function RegisterPage() {
 
   return (
     <AuthLayout>
-      <Title order={3}>{t(($) => $.registration.title)}</Title>
+      <Title order={3}>{t(($) => $.signUp.title)}</Title>
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
           <TextInput
-            label={t(($) => $.registration.nameLabel)}
+            label={t(($) => $.signUp.nameLabel)}
             required
             {...form.getInputProps('name')}
           />
           <TextInput
-            label={t(($) => $.registration.emailLabel)}
+            label={t(($) => $.signUp.emailLabel)}
             type="email"
             required
             {...form.getInputProps('email')}
           />
           <PasswordInput
-            label={t(($) => $.registration.passwordLabel)}
+            label={t(($) => $.signUp.passwordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('password')}
           />
           <PasswordInput
-            label={t(($) => $.registration.confirmPasswordLabel)}
+            label={t(($) => $.signUp.confirmPasswordLabel)}
             autoComplete="new-password"
             required
             {...form.getInputProps('confirm')}
@@ -175,10 +174,10 @@ export function RegisterPage() {
 
           <Group justify="space-between" align="center">
             <AnchorLink to={loginRoute.to} size="sm">
-              {t(($) => $.registration.loginLink)}
+              {t(($) => $.signUp.loginLink)}
             </AnchorLink>
-            <Button type="submit" loading={registerMutation.isPending}>
-              {t(($) => $.registration.submitButton)}
+            <Button type="submit" loading={signUpMutation.isPending}>
+              {t(($) => $.signUp.submitButton)}
             </Button>
           </Group>
         </Stack>

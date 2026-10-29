@@ -23,10 +23,10 @@ func closedInstance(t *testing.T) *testhelper.TestEnv {
 func TestAClosedInstanceRefusesSignupAndCreatesNoUser(t *testing.T) {
 	env := closedInstance(t)
 
-	res, err := env.SiteAnonymous(t).SiteAuthRegister(t.Context(),
-		&siteapi.SiteRegisterInput{Name: "Grace Hopper", Email: "grace@example.com", Password: siteapi.NewOptString(formPassword)})
+	res, err := env.SiteAnonymous(t).SiteAuthSignUp(t.Context(),
+		&siteapi.SiteSignUpInput{Name: "Grace Hopper", Email: "grace@example.com", Password: siteapi.NewOptString(formPassword)})
 	require.NoError(t, err)
-	refused, ok := res.(*siteapi.SiteAuthRegisterForbidden)
+	refused, ok := res.(*siteapi.SiteAuthSignUpForbidden)
 	require.Truef(t, ok, "got %T", res)
 	assert.Equal(t, siteapi.ProblemCodeSignupClosed, refused.Code.Value)
 	exists, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Exist(t.Context())

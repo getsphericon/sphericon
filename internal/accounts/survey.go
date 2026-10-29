@@ -8,7 +8,7 @@ import (
 )
 
 // Who owes the Sign-up survey is decided here and nowhere else in the package: a User owes it
-// while users.signup_survey_due_at is set. A public sign-up (a password registration or a
+// while users.signup_survey_due_at is set. A public sign-up (a password Sign-up or a
 // Sign-in provider creating the User) sets the marker through surveyDueAt when the Instance asks
 // the survey (the caller passes signupsurvey.Module.Enabled); a User who is admitted by an
 // Invitation or a Join domain is not a public sign-up and has it cleared by clearSurveyDue.

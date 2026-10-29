@@ -26,7 +26,7 @@ const (
 )
 
 // SiteAuthSigninProviders lists the Sign-in providers the Instance enabled, for the buttons
-// of the login and register pages (empty when none is configured).
+// of the login and sign up pages (empty when none is configured).
 func (h *Handlers) SiteAuthSigninProviders(context.Context) (*siteapi.SiteSigninProviders, error) {
 	enabled := h.signin.Enabled()
 	items := make([]siteapi.SiteSigninProvider, len(enabled))

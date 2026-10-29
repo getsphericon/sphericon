@@ -60,7 +60,7 @@ func New(cfg *config.Config, db *sql.DB, client *ent.Client, site apisite.Deps, 
 	mux.Handle("/avatar/", http.NotFoundHandler())
 	limiter := ratelimit.New(cfg.RateLimits)
 
-	// Site API — /site (JWT cookie via generated SecurityHandler; register, login
+	// Site API — /site (JWT cookie via generated SecurityHandler; sign up, login
 	// and logout are public per the spec).
 	siteSrv, err := siteapi.NewServer(
 		apisite.NewHandlers(site),

@@ -15786,7 +15786,7 @@
             "$ref": "#/components/schemas/ProblemDetails"
           }
         },
-        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Registration browser needs a password, ADR 0030)"
+        "description": "RFC 7807 precondition required response: the request needs something it did not carry\n(a verification link opened outside its Sign-up browser needs a password, ADR 0030)"
       },
       "PresetResource": {
         "type": "object",

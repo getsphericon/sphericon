@@ -2420,19 +2420,19 @@ func decodeSiteAuthConfirmEmailChangeParams(args [0]string, argsEscaped bool, r 
 
 // SiteAuthResendVerificationParams is parameters of SiteAuth_resendVerification operation.
 type SiteAuthResendVerificationParams struct {
-	// The registration cookie of the browser asking, if any: the new link binds to whatever cookie the
+	// The Sign-up browser cookie of the browser asking, if any: the new link binds to whatever cookie the
 	// caller holds and then signs that browser in without a password.
-	REG OptString `json:",omitempty,omitzero"`
+	SIGNUPBROWSER OptString `json:",omitempty,omitzero"`
 }
 
 func unpackSiteAuthResendVerificationParams(packed middleware.Parameters) (params SiteAuthResendVerificationParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "REG",
+			Name: "SIGN_UP_BROWSER",
 			In:   "cookie",
 		}
 		if v, ok := packed[key]; ok {
-			params.REG = v.(OptString)
+			params.SIGNUPBROWSER = v.(OptString)
 		}
 	}
 	return params
@@ -2440,15 +2440,15 @@ func unpackSiteAuthResendVerificationParams(packed middleware.Parameters) (param
 
 func decodeSiteAuthResendVerificationParams(args [0]string, argsEscaped bool, r *http.Request) (params SiteAuthResendVerificationParams, _ error) {
 	c := uri.NewCookieDecoder(r)
-	// Decode cookie: REG.
+	// Decode cookie: SIGN_UP_BROWSER.
 	if err := func() error {
 		cfg := uri.CookieParameterDecodingConfig{
-			Name:    "REG",
+			Name:    "SIGN_UP_BROWSER",
 			Explode: false,
 		}
 		if err := c.HasParam(cfg); err == nil {
 			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotREGVal string
+				var paramsDotSIGNUPBROWSERVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -2460,12 +2460,12 @@ func decodeSiteAuthResendVerificationParams(args [0]string, argsEscaped bool, r 
 						return err
 					}
 
-					paramsDotREGVal = c
+					paramsDotSIGNUPBROWSERVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.REG.SetTo(paramsDotREGVal)
+				params.SIGNUPBROWSER.SetTo(paramsDotSIGNUPBROWSERVal)
 				return nil
 			}); err != nil {
 				return err
@@ -2474,7 +2474,7 @@ func decodeSiteAuthResendVerificationParams(args [0]string, argsEscaped bool, r 
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "REG",
+			Name: "SIGN_UP_BROWSER",
 			In:   "cookie",
 			Err:  err,
 		}
@@ -2812,8 +2812,8 @@ type SiteAuthSigninStartParams struct {
 	// A relative in-app path to land on after signing in.
 	ReturnTo OptString `json:",omitempty,omitzero"`
 	// The token of an Invitation link: the sign-in then accepts that Invitation when the provider's
-	// trusted email is the invited address, and an Invitation opens a closed registration for that address
-	// (ADR 0042). A mismatch creates nothing.
+	// trusted email is the invited address, and an Invitation opens a closed Sign-up for that address (ADR
+	// 0042). A mismatch creates nothing.
 	Invitation OptString `json:",omitempty,omitzero"`
 }
 
@@ -2980,20 +2980,20 @@ func decodeSiteAuthSigninStartParams(args [1]string, argsEscaped bool, r *http.R
 
 // SiteAuthVerifyEmailParams is parameters of SiteAuth_verifyEmail operation.
 type SiteAuthVerifyEmailParams struct {
-	// The registration cookie of the browser that registered, if any. Its path is the auth prefix shared
+	// The Sign-up browser cookie of the browser that signed up, if any. Its path is the auth prefix shared
 	// with resend, and it is SameSite=Strict: not sent on the cross-site click from the mail, but sent on
 	// the page's own later request.
-	REG OptString `json:",omitempty,omitzero"`
+	SIGNUPBROWSER OptString `json:",omitempty,omitzero"`
 }
 
 func unpackSiteAuthVerifyEmailParams(packed middleware.Parameters) (params SiteAuthVerifyEmailParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "REG",
+			Name: "SIGN_UP_BROWSER",
 			In:   "cookie",
 		}
 		if v, ok := packed[key]; ok {
-			params.REG = v.(OptString)
+			params.SIGNUPBROWSER = v.(OptString)
 		}
 	}
 	return params
@@ -3001,15 +3001,15 @@ func unpackSiteAuthVerifyEmailParams(packed middleware.Parameters) (params SiteA
 
 func decodeSiteAuthVerifyEmailParams(args [0]string, argsEscaped bool, r *http.Request) (params SiteAuthVerifyEmailParams, _ error) {
 	c := uri.NewCookieDecoder(r)
-	// Decode cookie: REG.
+	// Decode cookie: SIGN_UP_BROWSER.
 	if err := func() error {
 		cfg := uri.CookieParameterDecodingConfig{
-			Name:    "REG",
+			Name:    "SIGN_UP_BROWSER",
 			Explode: false,
 		}
 		if err := c.HasParam(cfg); err == nil {
 			if err := c.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotREGVal string
+				var paramsDotSIGNUPBROWSERVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -3021,12 +3021,12 @@ func decodeSiteAuthVerifyEmailParams(args [0]string, argsEscaped bool, r *http.R
 						return err
 					}
 
-					paramsDotREGVal = c
+					paramsDotSIGNUPBROWSERVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.REG.SetTo(paramsDotREGVal)
+				params.SIGNUPBROWSER.SetTo(paramsDotSIGNUPBROWSERVal)
 				return nil
 			}); err != nil {
 				return err
@@ -3035,7 +3035,7 @@ func decodeSiteAuthVerifyEmailParams(args [0]string, argsEscaped bool, r *http.R
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "REG",
+			Name: "SIGN_UP_BROWSER",
 			In:   "cookie",
 			Err:  err,
 		}

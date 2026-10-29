@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
-
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -14,7 +12,7 @@ import (
 // checkFields validates a handler's form (a local struct tagged for internal/validation) and
 // words its failures as the field errors of a 422; nil when the form is valid.
 func checkFields(form any) (map[string][]string, error) {
-	return validation.Check(form, fieldMessage)
+	return validation.Fields(form)
 }
 
 // fieldsProblem is the 422 for a form's field errors. Its detail, which is what the SPA shows,
@@ -67,29 +65,4 @@ func joinWords(words []string) string {
 		return strings.Join(words, "")
 	}
 	return strings.Join(words[:len(words)-1], ", ") + " and " + words[len(words)-1]
-}
-
-// requiredMessages words an empty required field, by its json name.
-var requiredMessages = map[string]string{
-	fieldName:     "errors.name_required",
-	fieldEmail:    "errors.email_required",
-	fieldPassword: "errors.password_required",
-	fieldNewEmail: "errors.new_email_required",
-}
-
-// ruleMessages words a failed rule of internal/validation, whatever the field.
-var ruleMessages = map[string]string{
-	"account_email":      "errors.email_invalid",
-	"password_length":    "errors.password_length",
-	"password_not_blank": "errors.password_blank",
-}
-
-// passwordLength fills the bounds into errors.password_length; the other messages ignore it.
-var passwordLength = map[string]any{"Min": validation.PasswordMinLength, "Max": validation.PasswordMaxLength}
-
-func fieldMessage(f validator.FieldError) string {
-	if f.Tag() == "required" {
-		return i18n.T(requiredMessages[f.Field()], nil)
-	}
-	return i18n.T(ruleMessages[f.Tag()], passwordLength)
 }

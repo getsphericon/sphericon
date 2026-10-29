@@ -2604,163 +2604,11 @@ func (s *Server) handleSiteAuthLogoutRequest(args [0]string, argsEscaped bool, w
 	}
 }
 
-// handleSiteAuthRegisterRequest handles SiteAuth_register operation.
-//
-// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
-// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
-// a taken address gets a notice by mail instead. The answer always sets the registration cookie
-// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
-// link to this browser, so the header does not say whether the address is taken either. The password
-// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
-// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
-// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
-// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
-// `signup_closed` before anything is read or created; accepting an Invitation still works.
-//
-// POST /auth/register
-func (s *Server) handleSiteAuthRegisterRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteAuth_register"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/auth/register"),
-	}
-	// Add attributes from config.
-	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
-
-	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteAuthRegisterOperation,
-		trace.WithAttributes(otelAttrs...),
-		serverSpanKind,
-	)
-	defer span.End()
-
-	// Add Labeler to context.
-	labeler := &Labeler{attrs: otelAttrs}
-	ctx = contextWithLabeler(ctx, labeler)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		elapsedDuration := time.Since(startTime)
-
-		attrSet := labeler.AttributeSet()
-		attrs := attrSet.ToSlice()
-		code := statusWriter.status
-		if code != 0 {
-			codeAttr := semconv.HTTPResponseStatusCode(code)
-			attrs = append(attrs, codeAttr)
-			span.SetAttributes(attrs...)
-		}
-		attrOpt := metric.WithAttributes(attrs...)
-
-		// Increment request counter.
-		s.requests.Add(ctx, 1, attrOpt)
-
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
-	}()
-
-	var (
-		recordError = func(stage string, err error) {
-			span.RecordError(err)
-
-			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
-			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
-			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
-			// max redirects exceeded), in which case status MUST be set to Error.
-			code := statusWriter.status
-			if code < 100 || code >= 500 {
-				span.SetStatus(codes.Error, stage)
-			}
-
-			attrSet := labeler.AttributeSet()
-			attrs := attrSet.ToSlice()
-			if code != 0 {
-				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
-			}
-
-			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-		}
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: SiteAuthRegisterOperation,
-			ID:   "SiteAuth_register",
-		}
-	)
-
-	var rawBody []byte
-	request, rawBody, close, err := s.decodeSiteAuthRegisterRequest(r)
-	if err != nil {
-		err = &ogenerrors.DecodeRequestError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeRequest", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-	defer func() {
-		if err := close(); err != nil {
-			recordError("CloseRequest", err)
-		}
-	}()
-
-	var response SiteAuthRegisterRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    SiteAuthRegisterOperation,
-			OperationSummary: "",
-			OperationID:      "SiteAuth_register",
-			Body:             request,
-			RawBody:          rawBody,
-			Params:           middleware.Parameters{},
-			Raw:              r,
-		}
-
-		type (
-			Request  = *SiteRegisterInput
-			Params   = struct{}
-			Response = SiteAuthRegisterRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			nil,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteAuthRegister(ctx, request)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.SiteAuthRegister(ctx, request)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeSiteAuthRegisterResponse(response, w, span); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
 // handleSiteAuthResendVerificationRequest handles SiteAuth_resendVerification operation.
 //
 // Send the verification link again to an Unverified User. Answers 202 the same way whether the address
 // is unknown, already verified or unverified, so it adds no enumeration; only an Unverified User gets
-// a mail. Rate limited per IP like registration.
+// a mail. Rate limited per IP like Sign-up.
 //
 // POST /auth/resend-verification
 func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -2873,9 +2721,9 @@ func (s *Server) handleSiteAuthResendVerificationRequest(args [0]string, argsEsc
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "REG",
+					Name: "SIGN_UP_BROWSER",
 					In:   "cookie",
-				}: params.REG,
+				}: params.SIGNUPBROWSER,
 			},
 			Raw: r,
 		}
@@ -3206,6 +3054,158 @@ func (s *Server) handleSiteAuthSecondFactorRequest(args [0]string, argsEscaped b
 	}
 }
 
+// handleSiteAuthSignUpRequest handles SiteAuth_signUp operation.
+//
+// Create an Unverified User (ADR 0030): no session, no Workspace. A verification email with the link
+// is on its way (202), and 202 is the answer for every address, taken or not (ADR 0031): the owner of
+// a taken address gets a notice by mail instead. The answer always sets the Sign-up browser cookie
+// (httpOnly, SameSite=Strict, scoped to the auth prefix shared by verify and resend), which binds the
+// link to this browser, so the header does not say whether the address is taken either. The password
+// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
+// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
+// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
+// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
+// `signup_closed` before anything is read or created; accepting an Invitation still works.
+//
+// POST /auth/sign-up
+func (s *Server) handleSiteAuthSignUpRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signUp"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.HTTPRouteKey.String("/auth/sign-up"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteAuthSignUpOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteAuthSignUpOperation,
+			ID:   "SiteAuth_signUp",
+		}
+	)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeSiteAuthSignUpRequest(r)
+	if err != nil {
+		err = &ogenerrors.DecodeRequestError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeRequest", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
+
+	var response SiteAuthSignUpRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteAuthSignUpOperation,
+			OperationSummary: "",
+			OperationID:      "SiteAuth_signUp",
+			Body:             request,
+			RawBody:          rawBody,
+			Params:           middleware.Parameters{},
+			Raw:              r,
+		}
+
+		type (
+			Request  = *SiteSignUpInput
+			Params   = struct{}
+			Response = SiteAuthSignUpRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			nil,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteAuthSignUp(ctx, request)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteAuthSignUp(ctx, request)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteAuthSignUpResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleSiteAuthSigninCallbackRequest handles SiteAuth_signinCallback operation.
 //
 // Where the provider sends the browser back (the redirect URI derived from the app URL). Always
@@ -3523,7 +3523,7 @@ func (s *Server) handleSiteAuthSigninNotMeRequest(args [0]string, argsEscaped bo
 
 // handleSiteAuthSigninProvidersRequest handles SiteAuth_signinProviders operation.
 //
-// The Sign-in providers this Instance offers, for the buttons of the login and register pages. Public;
+// The Sign-in providers this Instance offers, for the buttons of the login and sign-up pages. Public;
 // empty when none is configured.
 //
 // GET /auth/signin-providers
@@ -3802,14 +3802,14 @@ func (s *Server) handleSiteAuthSigninStartRequest(args [1]string, argsEscaped bo
 
 // handleSiteAuthVerifyEmailRequest handles SiteAuth_verifyEmail operation.
 //
-// Complete a registration from the verification link (the token is the credential): stamps the
-// Verified email, ends every earlier session, creates the User's first Workspace, sends the welcome
-// email and starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020).
-// When the request carries the registration cookie the link was minted for, the password from
-// registration stays; otherwise the request must carry a password, which replaces it, and without one
-// the answer is 428 and nothing changes, the link stays valid (a mail scanner consumes nothing); a
-// password outside the length rule answers 422, and the link stays valid too. A link is single use and
-// scoped to the address it was sent to. Rate limited like registration.
+// Complete a Sign-up from the verification link (the token is the credential): stamps the Verified
+// email, ends every earlier session, creates the User's first Workspace, sends the welcome email and
+// starts the session (the cookie is issued after the epoch bump, as login does, ADR 0020). When the
+// request carries the Sign-up browser cookie the link was minted for, the password from Sign-up stays;
+// otherwise the request must carry a password, which replaces it, and without one the answer is 428
+// and nothing changes, the link stays valid (a mail scanner consumes nothing); a password outside the
+// length rule answers 422, and the link stays valid too. A link is single use and scoped to the
+// address it was sent to. Rate limited like Sign-up.
 //
 // POST /auth/verify-email
 func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -3922,9 +3922,9 @@ func (s *Server) handleSiteAuthVerifyEmailRequest(args [0]string, argsEscaped bo
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "REG",
+					Name: "SIGN_UP_BROWSER",
 					In:   "cookie",
-				}: params.REG,
+				}: params.SIGNUPBROWSER,
 			},
 			Raw: r,
 		}

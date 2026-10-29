@@ -15,13 +15,13 @@ import (
 )
 
 // An address is one account whatever case it is typed in (internal/emailcase): it is stored
-// lower-cased, so a second registration in another case finds the first one instead of making a
+// lower-cased, so a second Sign-up in another case finds the first one instead of making a
 // second account that sign-in could never reach.
 func TestAnAddressInAnotherCaseIsTheSameAccount(t *testing.T) {
 	env := gateOff(t)
 
-	assert.IsType(t, &siteapi.SiteAuthRegisterAccepted{}, registerWithPassword(t, env, "Grace", "Grace@Example.com", "grace-password-1"))
-	assert.IsType(t, &siteapi.SiteAuthRegisterConflict{}, registerWithPassword(t, env, "Grace", "grace@EXAMPLE.com", "grace-password-2"))
+	assert.IsType(t, &siteapi.SiteAuthSignUpAccepted{}, signUpWithPassword(t, env, "Grace", "Grace@Example.com", "grace-password-1"))
+	assert.IsType(t, &siteapi.SiteAuthSignUpConflict{}, signUpWithPassword(t, env, "Grace", "grace@EXAMPLE.com", "grace-password-2"))
 
 	users, err := env.DB.User.Query().Where(entuser.EmailEqualFold("grace@example.com")).All(t.Context())
 	require.NoError(t, err)

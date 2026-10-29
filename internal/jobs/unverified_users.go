@@ -23,7 +23,7 @@ type PruneUnverifiedUsersArgs struct{}
 
 func (PruneUnverifiedUsersArgs) Kind() string { return "unverified_users_prune" }
 
-// PruneUnverifiedUsersWorker frees the addresses held by registrations whose verify
+// PruneUnverifiedUsersWorker frees the addresses held by Sign-ups whose verify
 // link was never used; the accounts module decides which Users are stale. A zero
 // retention disables it.
 type PruneUnverifiedUsersWorker struct {

@@ -19,7 +19,7 @@ const localeSentinel = "{{APP_LOCALE}}"
 
 // verificationSentinel is the placeholder for the email verification gate (ADR 0030):
 // "true" or "false", substituted like the locale, so the SPA knows at boot whether
-// registration collects a password (window.__REQUIRE_EMAIL_VERIFICATION__).
+// Sign-up collects a password (window.__REQUIRE_EMAIL_VERIFICATION__).
 const verificationSentinel = "{{REQUIRE_EMAIL_VERIFICATION}}"
 
 // sentryDSNSentinel is the placeholder for the browser error reporter's DSN: empty when

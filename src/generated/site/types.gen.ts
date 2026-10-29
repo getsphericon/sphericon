@@ -3670,21 +3670,6 @@ export type SiteRecoveryCodesInput = {
 };
 
 /**
- * Register with a name, an email and a password. The User stays Unverified until the
- * address is proven (ADR 0030); the password is trusted only when the verification link
- * is opened in the browser that registered.
- */
-export type SiteRegisterInput = {
-  name: string;
-  email: EmailAddress;
-  /**
-   * Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated
-   * registration of the address replaces it.
-   */
-  password?: string;
-};
-
-/**
  * Ask for the verification link again (always accepted; no account enumeration)
  */
 export type SiteResendVerificationInput = {
@@ -4328,6 +4313,21 @@ export type SiteSetupSteps = {
 };
 
 /**
+ * Sign up with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the Sign-up browser.
+ */
+export type SiteSignUpInput = {
+  name: string;
+  email: EmailAddress;
+  /**
+   * Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated
+   * Sign-up of the address replaces it.
+   */
+  password?: string;
+};
+
+/**
  * Why a provider sign-in did not start a session. The callback redirects to `/login` with
  * one of these as the `error` query parameter, and the SPA renders it through i18n.
  */
@@ -4373,7 +4373,7 @@ export type SiteSigninProvider = {
 
 /**
  * The Sign-in providers this Instance has configured. Empty on an Instance that
- * configured none, which leaves the login and register pages as they are.
+ * configured none, which leaves the login and sign-up pages as they are.
  */
 export type SiteSigninProviders = {
   items: Array<SiteSigninProvider>;
@@ -5033,8 +5033,8 @@ export type SiteUserResource = {
 export type SiteVerifyEmailInput = {
   token: string;
   /**
-   * Needed only when the link is not opened in the Registration browser: it replaces
-   * the password given at registration. Ignored in the Registration browser.
+   * Needed only when the link is not opened in the Sign-up browser: it replaces
+   * the password given at Sign-up. Ignored in the Sign-up browser.
    */
   password?: string;
 };
@@ -5872,41 +5872,6 @@ export type SitePasskeyLoginFinishResponses = {
 
 export type SitePasskeyLoginFinishResponse = SitePasskeyLoginFinishResponses[keyof SitePasskeyLoginFinishResponses];
 
-export type SiteAuthRegisterData = {
-  body: SiteRegisterInput;
-  path?: never;
-  query?: never;
-  url: '/auth/register';
-};
-
-export type SiteAuthRegisterErrors = {
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type SiteAuthRegisterError = SiteAuthRegisterErrors[keyof SiteAuthRegisterErrors];
-
-export type SiteAuthRegisterResponses = {
-  /**
-   * The request has been accepted for processing, but processing has not yet completed.
-   */
-  202: unknown;
-};
-
 export type SiteAuthResendVerificationData = {
   body: SiteResendVerificationInput;
   path?: never;
@@ -5986,6 +5951,41 @@ export type SiteAuthSecondFactorResponses = {
 
 export type SiteAuthSecondFactorResponse = SiteAuthSecondFactorResponses[keyof SiteAuthSecondFactorResponses];
 
+export type SiteAuthSignUpData = {
+  body: SiteSignUpInput;
+  path?: never;
+  query?: never;
+  url: '/auth/sign-up';
+};
+
+export type SiteAuthSignUpErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type SiteAuthSignUpError = SiteAuthSignUpErrors[keyof SiteAuthSignUpErrors];
+
+export type SiteAuthSignUpResponses = {
+  /**
+   * The request has been accepted for processing, but processing has not yet completed.
+   */
+  202: unknown;
+};
+
 export type SiteAuthSigninNotMeData = {
   body: SiteSigninNotMeInput;
   path?: never;
@@ -6060,7 +6060,7 @@ export type SiteAuthSigninStartData = {
     /**
      * The token of an Invitation link: the sign-in then accepts that Invitation when the
      * provider's trusted email is the invited address, and an Invitation opens a closed
-     * registration for that address (ADR 0042). A mismatch creates nothing.
+     * Sign-up for that address (ADR 0042). A mismatch creates nothing.
      */
     invitation?: string;
   };
@@ -6094,7 +6094,7 @@ export type SiteAuthVerifyEmailErrors = {
   422: ProblemDetails;
   /**
    * RFC 7807 precondition required response: the request needs something it did not carry
-   * (a verification link opened outside its Registration browser needs a password, ADR 0030)
+   * (a verification link opened outside its Sign-up browser needs a password, ADR 0030)
    */
   428: ProblemDetails;
   /**

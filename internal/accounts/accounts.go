@@ -385,16 +385,16 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(NormalizeEmail(email))).Exist(ctx)
 }
 
-// Register creates an Unverified User (ADR 0030): a name, an email and the password hash
-// from the registration form, no Membership. The password goes live only when the address
-// is verified from the Registration browser, or replaced on the link. The unique index on the email refuses a taken address (see
+// CreateUnverified creates an Unverified User (ADR 0030): a name, an email and the password hash
+// from the Sign-up form, no Membership. The password goes live only when the address
+// is verified from the Sign-up browser, or replaced on the link. The unique index on the email refuses a taken address (see
 // db.IsUniqueViolation). surveyDue marks the User as owing the Sign-up survey (the Instance asks it).
-func (a *Accounts) Register(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
+func (a *Accounts) CreateUnverified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
 	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).
 		SetNillableSignupSurveyDueAt(surveyDueAt(surveyDue)).Save(ctx)
 }
 
-// ReplaceUnverifiedPassword is a repeated registration of an address (ADR 0030): it
+// ReplaceUnverifiedPassword is a repeated Sign-up of an address (ADR 0030): it
 // stores the new password hash on the User while it is still Unverified, which ends
 // every verification link minted over the earlier hash. A Verified User is left
 // untouched. It returns the User as it stands afterwards.
@@ -410,7 +410,7 @@ func (a *Accounts) ReplaceUnverifiedPassword(ctx context.Context, id int64, pass
 }
 
 // CreateUser creates a User whose email is already proven, with a password hash: a
-// User made by the platform itself rather than by a registration.
+// User made by the platform itself rather than by a Sign-up.
 func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
 	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
 }
@@ -445,9 +445,9 @@ func markVerified(ctx context.Context, tx *ent.Client, id int64, name string, pa
 // FirstWorkspaceName is the fixed name of the Workspace made for a User at verification.
 const FirstWorkspaceName = "Personal"
 
-// VerifyEmail completes a registration from its link (ADR 0030), in one transaction:
+// VerifyEmail completes a Sign-up from its link (ADR 0030), in one transaction:
 // it stamps the Verified email, sets the password hash to *passwordHash (nil keeps the one
-// stored at registration), bumps the session epoch (ending every session issued before, as
+// stored at Sign-up), bumps the session epoch (ending every session issued before, as
 // a password change does) and creates the User's first Workspace, named FirstWorkspaceName,
 // with the User as owner. It records `user.email_verify` in that Workspace's Audit log and
 // returns the User. The address was just proven, so it is a domain-join step (ADR 0051): a
@@ -456,13 +456,13 @@ const FirstWorkspaceName = "Personal"
 // next: the joined Workspace, else the first one.
 // ErrAlreadyVerified when the User is no longer Unverified (a used link).
 func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (u *ent.User, landing *ent.Workspace, err error) {
-	// The link follows a registration, so the User exists: the sign-up gate permits.
+	// The link follows a Sign-up, so the User exists: the sign-up gate permits.
 	return a.verified(ctx, &proof{SignupPermits: true}, func(tx *ent.Client) (*ent.User, error) {
 		return markVerified(ctx, tx, id, "", passwordHash)
 	})
 }
 
-// SignUpVerified is registration on an install that does not require email
+// SignUpVerified is a Sign-up on an install that does not require email
 // verification (ADR 0030): in one transaction it checks the Instance's sign-up rule
 // (ErrSignupClosed, ADR 0060), creates a User that is Verified at once with its password, and
 // the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The unique index on the
@@ -552,16 +552,11 @@ func (a *Accounts) verified(ctx context.Context, p *proof, write func(tx *ent.Cl
 	}
 }
 
-// UpdateProfile sets the User's name and/or password hash (nil leaves a field
-// unchanged) and returns the stored User. A password change bumps the session
-// epoch, ending every session issued before it (ADR 0020), and is recorded as an
-// Audit entry in every Workspace the User belongs to, in the same transaction.
-func (a *Accounts) UpdateProfile(ctx context.Context, id int64, name, passwordHash *string) (*ent.User, error) {
-	return a.updateProfile(ctx, id, name, passwordHash, false)
-}
-
-// updateProfile is UpdateProfile; proven also stamps the address as proven (a reset link
-// was followed, which was mailed to it).
+// updateProfile sets the User's name and/or password hash (nil leaves a field unchanged)
+// and returns the stored User. A password change bumps the session epoch, ending every
+// session issued before it (ADR 0020), and is recorded as an Audit entry in every Workspace
+// the User belongs to, in the same transaction. proven also stamps the address as proven (a
+// reset link was followed, which was mailed to it).
 func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHash *string, proven bool) (*ent.User, error) {
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
@@ -603,12 +598,12 @@ func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHa
 
 // ResetPassword sets the User's password from a reset link (ADR 0030). The link was
 // mailed to the login address, so following it proves the address as much as the
-// verification link does: for an Unverified User it completes the registration
+// verification link does: for an Unverified User it completes the Sign-up
 // exactly as VerifyEmail (Verified email, first Workspace, `user.email_verify`) and
-// reports completedRegistration = true with the User, so the caller sends the welcome
-// email. For a Verified User it is only a password change, recorded like UpdateProfile.
+// reports completedSignUp = true with the User, so the caller sends the welcome
+// email. For a Verified User it is only a password change, recorded like ChangeProfile.
 // Either way every earlier session ends.
-func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash string) (u *ent.User, completedRegistration bool, err error) {
+func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash string) (u *ent.User, completedSignUp bool, err error) {
 	u, err = a.User(ctx, id)
 	if err != nil {
 		return nil, false, err
@@ -738,7 +733,7 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 // (ErrCredentialsRequired otherwise): the link proves control of the address, so the
 // User is created, or the Unverified User's row completed (name and password set,
 // Verified email stamped, session epoch bumped, `user.email_verify` audited), and
-// nothing the registrant set survives; if the address was verified meanwhile that is ErrAlreadyVerified. A
+// nothing the person who signed up set survives; if the address was verified meanwhile that is ErrAlreadyVerified. A
 // Verified User is attached as is. The Membership is created (a
 // duplicate is not an error), the Invitation marked accepted and the acceptance
 // audited, all in one transaction.
@@ -831,7 +826,7 @@ func invitee(ctx context.Context, tx *ent.Client, inv *ent.Invitation, name, pas
 	} else {
 		u, err = markVerified(ctx, tx, u.ID, name, &hash)
 		if err == nil {
-			// The registrant is an invitee now, not a public sign-up.
+			// The person who signed up is an invitee now, not a public Sign-up.
 			err = clearSurveyDue(ctx, tx, u.ID)
 		}
 	}
