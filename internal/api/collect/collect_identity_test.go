@@ -21,15 +21,30 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestRawMapDecodesValuesToTheirNaturalTypes(t *testing.T) {
-	assert.Nil(t, collect.RawMap(nil))
-	assert.Equal(t, map[string]any{}, collect.RawMap(map[string]jx.Raw{}))
+// A property keeps its JSON value: a string, a number, a boolean, an object, a list and null
+// arrive in the collected Event as the values they were sent as.
+func TestCollectedEventPropertiesKeepTheirJSONValues(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	res, err := env.CollectAcme(t).CollectEventsCreate(context.Background(), &collectapi.CollectEventsInput{
+		Events: []collectapi.CollectEventInput{{
+			VisitorId: "dev-props",
+			Action:    "viewed",
+			Properties: collectapi.NewOptNilCollectEventInputProperties(collectapi.CollectEventInputProperties{
+				"s": jx.Raw(`"x"`), "n": jx.Raw(`2`), "b": jx.Raw(`true`), "o": jx.Raw(`{"k":"v"}`), "l": jx.Raw(`[1]`), "z": jx.Raw(`null`),
+			}),
+		}},
+	})
+	require.NoError(t, err)
+	require.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
+
+	collected := env.OutboxEvents(t, events.NameCollected)
+	require.Len(t, collected, 1)
+	got, ok := collected[0].(*events.CollectedEvent)
+	require.Truef(t, ok, "got %T", collected[0])
 	assert.Equal(t, map[string]any{
 		"s": "x", "n": float64(2), "b": true, "o": map[string]any{"k": "v"}, "l": []any{float64(1)}, "z": nil,
-	}, collect.RawMap(map[string]jx.Raw{
-		"s": jx.Raw(`"x"`), "n": jx.Raw(`2`), "b": jx.Raw(`true`), "o": jx.Raw(`{"k":"v"}`), "l": jx.Raw(`[1]`), "z": jx.Raw(`null`),
-	}))
-	assert.Nil(t, collect.RawMap(map[string]jx.Raw{"bad": jx.Raw(`{oops`)}), "an undecodable value drops the whole map")
+	}, got.Properties)
 }
 
 func TestCollectIdentifyAssertsPhoneAndSubjectID(t *testing.T) {

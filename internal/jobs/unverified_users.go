@@ -33,6 +33,11 @@ type PruneUnverifiedUsersWorker struct {
 	retention time.Duration
 }
 
+// NewPruneUnverifiedUsersWorker builds the prune of Unverified Users older than retention (0 disables it).
+func NewPruneUnverifiedUsersWorker(acc *accounts.Accounts, retention time.Duration) *PruneUnverifiedUsersWorker {
+	return &PruneUnverifiedUsersWorker{accounts: acc, retention: retention}
+}
+
 func (w *PruneUnverifiedUsersWorker) Work(ctx context.Context, _ *river.Job[PruneUnverifiedUsersArgs]) error {
 	deleted, err := w.accounts.PruneUnverified(ctx, w.retention, unverifiedUsersBatch)
 	if err != nil {

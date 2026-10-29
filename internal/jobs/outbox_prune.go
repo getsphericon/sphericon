@@ -35,6 +35,11 @@ type PruneOutboxWorker struct {
 	floor time.Duration
 }
 
+// NewPruneOutboxWorker builds the outbox prune, which never deletes a row younger than floor.
+func NewPruneOutboxWorker(client *ent.Client, floor time.Duration) *PruneOutboxWorker {
+	return &PruneOutboxWorker{ent: client, floor: floor}
+}
+
 func (w *PruneOutboxWorker) Work(ctx context.Context, _ *river.Job[PruneOutboxArgs]) error {
 	res, err := events.PruneOutbox(ctx, w.ent, w.floor, outboxPruneBatch)
 	if err != nil {

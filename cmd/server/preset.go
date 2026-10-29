@@ -2,12 +2,9 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -60,73 +57,39 @@ func presetTestCommand() *cli.Command {
 			if cmd.Args().Len() != 1 {
 				return fmt.Errorf("preset test needs one Preset: a file or the name of a built-in (see `%s --help`)", cmd.FullName())
 			}
-			p, err := loadPreset(cmd.Args().First())
+			p, err := preset.Open(cmd.Args().First())
 			if err != nil {
 				return err
 			}
 			if cmd.String("payload") == "" {
-				return runPresetTests(ctx, out(cmd), p)
+				return p.WriteTests(ctx, out(cmd))
 			}
-			return runPresetSample(ctx, cmd, p)
+			req, params, now, err := sample(cmd)
+			if err != nil {
+				return err
+			}
+			return p.WriteSample(ctx, out(cmd), req, params, now)
 		},
 	}
 }
 
-// loadPreset reads a Preset file, or finds a built-in by name when the argument is not a
-// file. The file is parsed on its own: its name may not collide with a built-in here, so
-// a Self-hoster can test a copy of one.
-func loadPreset(arg string) (*preset.Preset, error) {
-	data, err := os.ReadFile(arg)
-	switch {
-	case err == nil:
-		return preset.Parse(filepath.Base(arg), data)
-	case !errors.Is(err, os.ErrNotExist):
-		return nil, err
-	}
-	reg, err := preset.Load(nil)
-	if err != nil {
-		return nil, err
-	}
-	p, ok := reg.Get(arg)
-	if !ok {
-		return nil, fmt.Errorf("%q is neither a file nor a built-in Preset (%s)", arg, strings.Join(reg.Names(), ", "))
-	}
-	return p, nil
-}
-
-func runPresetTests(ctx context.Context, w io.Writer, p *preset.Preset) error {
-	failed := 0
-	results := p.RunTests(ctx)
-	for _, r := range results {
-		if r.Err != nil {
-			failed++
-			_, _ = fmt.Fprintf(w, "FAIL %s\n     %v\n", r.Name, r.Err)
-			continue
-		}
-		_, _ = fmt.Fprintf(w, "PASS %s\n", r.Name)
-	}
-	if failed > 0 {
-		return fmt.Errorf("preset %s: %d of %d cases failed", p.Name(), failed, len(results))
-	}
-	return nil
-}
-
-func runPresetSample(ctx context.Context, cmd *cli.Command, p *preset.Preset) error {
+// sample reads the --payload, --header, --param and --now flags of `preset test`.
+func sample(cmd *cli.Command) (preset.Request, preset.Params, time.Time, error) {
 	body, err := os.ReadFile(cmd.String("payload"))
 	if err != nil {
-		return err
+		return preset.Request{}, nil, time.Time{}, err
 	}
-	header := http.Header{}
 	headers, err := pairs(cmd.StringSlice("header"))
 	if err != nil {
-		return fmt.Errorf("--header: %w", err)
+		return preset.Request{}, nil, time.Time{}, fmt.Errorf("--header: %w", err)
 	}
+	header := http.Header{}
 	for k, v := range headers {
 		header.Set(k, v)
 	}
 	values, err := pairs(cmd.StringSlice("param"))
 	if err != nil {
-		return fmt.Errorf("--param: %w", err)
+		return preset.Request{}, nil, time.Time{}, fmt.Errorf("--param: %w", err)
 	}
 	params := preset.Params{}
 	for k, v := range values {
@@ -135,27 +98,10 @@ func runPresetSample(ctx context.Context, cmd *cli.Command, p *preset.Preset) er
 	now := time.Now()
 	if raw := cmd.String("now"); raw != "" {
 		if now, err = time.Parse(time.RFC3339, raw); err != nil {
-			return fmt.Errorf("--now is not an RFC 3339 time: %w", err)
+			return preset.Request{}, nil, time.Time{}, fmt.Errorf("--now is not an RFC 3339 time: %w", err)
 		}
 	}
-
-	res, err := p.Handle(ctx, preset.Request{Header: header, Body: body}, params, now)
-	if err != nil {
-		_, _ = fmt.Fprintf(out(cmd), "refused: %v\n", err)
-		return err
-	}
-	for _, f := range res.Notices {
-		kind := string(f.Kind)
-		if f.Kind == preset.Bounce {
-			kind += map[bool]string{true: " hard", false: " soft"}[f.Hard]
-		}
-		_, _ = fmt.Fprintf(out(cmd), "%s %s id=%s sending_domain=%s message_id=%s reason=%q\n",
-			kind, f.Destination, f.ID, f.SendingDomain, f.MessageID, f.Reason)
-	}
-	if len(res.Notices) == 0 {
-		_, _ = fmt.Fprintln(out(cmd), "verified, no Delivery notices (an event the Preset does not handle)")
-	}
-	return nil
+	return preset.Request{Header: header, Body: body}, params, now, nil
 }
 
 // pairs reads repeated name=value flags.

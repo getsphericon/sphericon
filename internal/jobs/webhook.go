@@ -9,8 +9,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
+	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
@@ -36,6 +38,18 @@ type DeliverWebhookWorker struct {
 	now    func() time.Time
 	// mod keeps the endpoint's failure state, disables it and tells the owners.
 	mod *webhooks.Module
+}
+
+// NewDeliverWebhookWorker builds the worker that delivers a webhook through doer on the clock now;
+// the owners of a Workspace whose endpoint is turned off are told through sender.
+func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, bus *events.Bus, sender messaging.EmailSender) *DeliverWebhookWorker {
+	return &DeliverWebhookWorker{
+		ent:    client,
+		cipher: cipher,
+		client: doer,
+		now:    now,
+		mod:    webhooks.New(bus, cipher, nil, nil, accounts.OwnerNotifier(client, sender)),
+	}
 }
 
 func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverWebhookArgs]) error {

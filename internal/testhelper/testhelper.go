@@ -20,8 +20,6 @@ import (
 
 	"net/http/httptest"
 
-	"github.com/go-testfixtures/testfixtures/v3"
-
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
@@ -647,44 +645,9 @@ func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
 // templating for relative dates, which must be relative to now, not to when a template was
 // built.
 func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projectRoot string) error {
-	// ResetSequencesTo keeps the explicit fixture ids clear of app-inserted rows.
-	return loadFixtureDir(ctx, sqlDB, cfg, filepath.Join(projectRoot, "fixtures"), testfixtures.ResetSequencesTo(100000))
-}
-
-// loadFixtureDir loads the YAML files of one directory through the fixture library, with its
-// templating (relative dates, load-time encryption); the caller's option says what happens to
-// the sequences afterwards.
-func loadFixtureDir(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, dir string, sequences func(*testfixtures.Loader) error) error {
 	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
 	if err != nil {
 		return err
 	}
-
-	// "Now" is the database's clock, not Go's: the first test of a package may run inside a
-	// testing/synctest bubble, where time.Now() starts in the year 2000, and every fixture
-	// of the process would be dated around it.
-	var now time.Time
-	// raw sql: the database's clock as a bare value, read before any fixture exists.
-	if err := sqlDB.QueryRowContext(ctx, `SELECT now()`).Scan(&now); err != nil {
-		return err
-	}
-
-	loader, err := testfixtures.New(
-		testfixtures.Database(sqlDB),
-		testfixtures.Dialect("postgres"),
-		// A date the YAML writes without a zone is UTC, whatever the machine's zone: the
-		// library parses it in time.Local otherwise, a shift of the machine's UTC offset.
-		testfixtures.Location(time.UTC),
-		// Template options MUST precede Directory: Directory eagerly reads and
-		// renders the files when its option is applied. Fixtures use templating
-		// for relative dates and load-time encryption (internal/fixtures).
-		testfixtures.Template(),
-		testfixtures.TemplateFuncs(fixtures.TemplateFuncs(cipher, now)),
-		testfixtures.Directory(dir),
-		sequences,
-	)
-	if err != nil {
-		return err
-	}
-	return loader.Load()
+	return fixtures.Load(ctx, sqlDB, cipher, filepath.Join(projectRoot, "fixtures"))
 }

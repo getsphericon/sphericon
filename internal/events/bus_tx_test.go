@@ -46,6 +46,28 @@ func TestWithinTxRollsBackOnError(t *testing.T) {
 	assert.Zero(t, outboxRows(t, env, "rolled-back@example.com"), "and so is the outbox row")
 }
 
+// An update ent runs in a transaction of its own joins the bus's: it commits with the outbox row
+// when the body succeeds and rolls back with it when the body fails.
+func TestWithinTxOwnsTheCommitOfAnUpdate(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	rename := func(name, email string, result error) error {
+		return env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+			tx.Contact.UpdateOneID(fixtures.ContactAliceID).SetFirstName(name).ExecX(ctx)
+			require.NoError(t, pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: email}))
+			return result
+		})
+	}
+
+	require.NoError(t, rename("Committed", "committed@example.com", nil))
+	boom := errors.New("producer failed")
+	require.ErrorIs(t, rename("Discarded", "discarded@example.com", boom), boom)
+
+	assert.Equal(t, "Committed", *env.DB.Contact.GetX(ctx, fixtures.ContactAliceID).FirstName)
+	assert.Equal(t, 1, outboxRows(t, env, "committed@example.com"), "the outbox row commits with the update")
+	assert.Zero(t, outboxRows(t, env, "discarded@example.com"))
+}
+
 // A panic in the body rolls the transaction back and propagates to the caller.
 func TestWithinTxRollsBackAndRepanics(t *testing.T) {
 	env := testhelper.Setup(t)

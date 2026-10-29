@@ -28,7 +28,7 @@ func TestQueueMetricsReportDepthAndOldestAge(t *testing.T) {
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "a@example.com", "A"))
 	require.NoError(t, e.client.EnqueueWelcome(ctx, "b@example.com", "B"))
 	later := time.Now().Add(time.Hour)
-	_, err = e.client.River().Insert(ctx, broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID, ScheduledAt: &later},
+	_, err = e.queue.Insert(ctx, broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID, ScheduledAt: &later},
 		&river.InsertOpts{Queue: broadcasts.Queue, ScheduledAt: later})
 	require.NoError(t, err)
 

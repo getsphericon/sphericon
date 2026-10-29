@@ -31,6 +31,11 @@ type EvaluateTriggerWorker struct {
 	bus *events.Bus
 }
 
+// NewEvaluateTriggerWorker builds the worker that enrolls a Contact into the Automations an action triggers.
+func NewEvaluateTriggerWorker(client *ent.Client, bus *events.Bus) *EvaluateTriggerWorker {
+	return &EvaluateTriggerWorker{ent: client, bus: bus}
+}
+
 func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[EvaluateTriggerArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the loaded contact's
 	// Workspace, not from the job argument.

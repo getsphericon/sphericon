@@ -13,6 +13,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/mail"
 	"strconv"
 	"strings"
 	"time"
@@ -509,9 +510,12 @@ func (a *Accounts) createVerified(ctx context.Context, gated bool, name, email, 
 // CreateOwner is the Instance operator's way to make a first Owner on an Instance that
 // closed sign-up (ADR 0042): a Verified User with a generated password and its first
 // Workspace, named FirstWorkspaceName, exactly as SignUpVerified makes them. The password
-// is returned once; the unique index on the email refuses a taken address (see
-// db.IsUniqueViolation).
+// is returned once; an address that does not parse is refused, and the unique index on the
+// email refuses a taken one (see db.IsUniqueViolation).
 func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (password string, err error) {
+	if _, err := mail.ParseAddress(email); err != nil {
+		return "", fmt.Errorf("%q is not an email address", email)
+	}
 	password = rand.Text()
 	hash, err := credentials.HashPassword(password)
 	if err != nil {

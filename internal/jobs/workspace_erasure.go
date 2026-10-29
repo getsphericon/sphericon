@@ -28,6 +28,12 @@ type EraseWorkspacesWorker struct {
 	now      func() time.Time
 }
 
+// NewEraseWorkspacesWorker builds the worker that erases the Workspaces whose deletion window has
+// passed by the clock now.
+func NewEraseWorkspacesWorker(deletion *workspacedeletion.Module, now func() time.Time) *EraseWorkspacesWorker {
+	return &EraseWorkspacesWorker{deletion: deletion, now: now}
+}
+
 func (w *EraseWorkspacesWorker) Work(ctx context.Context, _ *river.Job[EraseWorkspacesArgs]) error {
 	n, err := w.deletion.EraseDue(ctx, w.now())
 	if n > 0 {

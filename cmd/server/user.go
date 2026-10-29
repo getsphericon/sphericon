@@ -3,17 +3,16 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/mail"
 	"strings"
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
 // userOps is what the `user` staff member commands need from the app. The app
-// implements it (internal/app); tests use a fake.
+// implements it (internal/app).
 type userOps interface {
 	ResetSecondFactor(ctx context.Context, email string) (bool, error)
 	CreateOwner(ctx context.Context, email, name string) (password string, err error)
@@ -40,18 +39,8 @@ func userCommand(d deps) *cli.Command {
 				if name == "" {
 					return errors.New("a name is required")
 				}
-				if _, err := mail.ParseAddress(email); err != nil {
-					return fmt.Errorf("%q is not an email address", email)
-				}
 				password, err := ops.CreateOwner(ctx, email, name)
-				if db.IsUniqueViolation(err) {
-					return fmt.Errorf("a user with email %q already exists; nothing changed", email)
-				}
-				if err != nil {
-					return err
-				}
-				_, _ = fmt.Fprintf(out(cmd), "owner %q created with its first workspace \"Personal\"\npassword (shown once): %s\nsign in and change it\n", email, password)
-				return nil
+				return accounts.ReportOwnerCreated(out(cmd), email, password, err)
 			}),
 		},
 		&cli.Command{
@@ -62,15 +51,7 @@ func userCommand(d deps) *cli.Command {
 			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
 				email := cmd.StringArg("email")
 				changed, err := ops.ResetSecondFactor(ctx, email)
-				if err != nil {
-					return err
-				}
-				if !changed {
-					_, _ = fmt.Fprintf(out(cmd), "user %q has no second factor; nothing changed\n", email)
-					return nil
-				}
-				_, _ = fmt.Fprintf(out(cmd), "second factor of %q reset: the factor and recovery codes are cleared and every session has ended\n", email)
-				return nil
+				return secondfactor.ReportReset(out(cmd), email, changed, err)
 			}),
 		},
 	)

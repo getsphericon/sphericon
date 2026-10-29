@@ -22,6 +22,11 @@ type PurgeAuthAttemptsWorker struct {
 	ent *ent.Client
 }
 
+// NewPurgeAuthAttemptsWorker builds the purge of failed sign-in attempts past their window.
+func NewPurgeAuthAttemptsWorker(client *ent.Client) *PurgeAuthAttemptsWorker {
+	return &PurgeAuthAttemptsWorker{ent: client}
+}
+
 func (w *PurgeAuthAttemptsWorker) Work(ctx context.Context, _ *river.Job[PurgeAuthAttemptsArgs]) error {
 	_, err := accounts.NewAttempts(w.ent).Purge(ctx)
 	return err

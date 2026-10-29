@@ -15,10 +15,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/changelog"
 	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/doctor"
 )
 
 // commandOps is everything the staff member commands need from the app. The app
-// implements it (internal/app); tests use fakes.
+// implements it (internal/app).
 type commandOps interface {
 	workspaceOps
 	userOps
@@ -27,7 +28,7 @@ type commandOps interface {
 	rekeyOps
 }
 
-// deps is what the commands reach outside themselves for, so tests can swap it.
+// deps is what the commands reach outside themselves for.
 type deps struct {
 	env string
 	// changelog is the text `upgrade-notes` reads: the one embedded in this binary.
@@ -37,7 +38,7 @@ type deps struct {
 	// file), for the key commands that need no database.
 	encryptionKey func() (string, error)
 	// doctor is what `doctor` reaches outside the process for.
-	doctor doctorSeams
+	doctor doctor.Seams
 	// open boots the minimal command app (no listener, no event router, no workers) and
 	// returns its ops and the function that shuts it down. It runs only once the
 	// arguments have parsed.
@@ -50,7 +51,7 @@ func newDeps(env string) deps {
 		changelog:     changelog.Embedded(),
 		now:           time.Now,
 		encryptionKey: func() (string, error) { return config.EncryptionKey(env) },
-		doctor:        newDoctorSeams(),
+		doctor:        doctor.DefaultSeams(),
 		open: func(ctx context.Context) (commandOps, func(), error) {
 			a, err := app.NewCommandApp(env)
 			if err != nil {

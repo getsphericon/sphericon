@@ -48,6 +48,11 @@ type PruneEventsWorker struct {
 	retention time.Duration
 }
 
+// NewPruneEventsWorker builds the prune of analytical Events older than retention (0 disables it).
+func NewPruneEventsWorker(client *ent.Client, retention time.Duration) *PruneEventsWorker {
+	return &PruneEventsWorker{ent: client, retention: retention}
+}
+
 func (w *PruneEventsWorker) Work(ctx context.Context, _ *river.Job[PruneEventsArgs]) error {
 	deleted, err := events.PruneEvents(ctx, w.ent, w.retention, eventsRetentionBatch)
 	if err != nil {

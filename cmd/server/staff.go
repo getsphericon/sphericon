@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/urfave/cli/v3"
 
@@ -11,7 +9,7 @@ import (
 )
 
 // staffOps is what the `staff` commands need from the app. The app implements
-// it (internal/app); tests use a fake.
+// it (internal/app).
 type staffOps interface {
 	CreateStaffMember(ctx context.Context, email string) (password string, err error)
 	ResetStaffTOTP(ctx context.Context, email string) error
@@ -32,16 +30,7 @@ func staffCommand(d deps) *cli.Command {
 			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
 				email := cmd.StringArg("email")
 				password, err := ops.CreateStaffMember(ctx, email)
-				switch {
-				case errors.Is(err, staff.ErrDuplicate):
-					return fmt.Errorf("a staff with email %q already exists; nothing changed", email)
-				case errors.Is(err, staff.ErrNotLicensed):
-					return errors.New(noLicense)
-				case err != nil:
-					return err
-				}
-				_, _ = fmt.Fprintf(out(cmd), "staff %q created\npassword (shown once): %s\nthe staff enrols a TOTP at first login\n", email, password)
-				return nil
+				return staff.ReportCreated(out(cmd), email, password, err)
 			}),
 		},
 		&cli.Command{
@@ -51,16 +40,8 @@ func staffCommand(d deps) *cli.Command {
 			Arguments: []cli.Argument{&cli.StringArg{Name: "email", Required: true}},
 			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
 				email := cmd.StringArg("email")
-				switch err := ops.ResetStaffTOTP(ctx, email); {
-				case errors.Is(err, staff.ErrNotFound):
-					return fmt.Errorf("no staff with email %q; nothing changed", email)
-				case errors.Is(err, staff.ErrNotLicensed):
-					return errors.New(noLicense)
-				case err != nil:
-					return err
-				}
-				_, _ = fmt.Fprintf(out(cmd), "totp of staff %q reset: every session has ended and the staff must re-enrol at next login\n", email)
-				return nil
+				err := ops.ResetStaffTOTP(ctx, email)
+				return staff.ReportTOTPReset(out(cmd), email, err)
 			}),
 		},
 	)

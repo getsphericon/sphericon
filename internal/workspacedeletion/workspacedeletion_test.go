@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/qmuntal/stateless"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/hook"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -37,13 +38,6 @@ func deletedAgo(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {
 	t.Helper()
 	return env.DB.Workspace.GetX(t.Context(), fixtures.InitechID)
-}
-
-func erase(t *testing.T, env *testhelper.TestEnv) error {
-	t.Helper()
-	return env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
-		return workspacedeletion.Tombstone(t.Context(), tx, fixtures.InitechID, now)
-	})
 }
 
 func restore(t *testing.T, m *workspacedeletion.Module) error {
@@ -84,54 +78,18 @@ func TestRestoreAfterErasureFindsNoOwner(t *testing.T) {
 	assert.NotNil(t, initech(t, env).ErasedAt)
 }
 
-// The machine itself refuses a restore of an erased row, whatever the caller could see.
-func TestTheMachineRefusesRestoringAnErasedWorkspace(t *testing.T) {
-	env, _ := setup(t)
-	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
-	require.NoError(t, erase(t, env))
-	machine := workspacedeletion.Machine(workspacedeletion.Storage(env.DB, fixtures.InitechID, now))
-
-	err := machine.FireCtx(t.Context(), workspacedeletion.TriggerRestore)
-
-	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
-	got := initech(t, env)
-	assert.NotNil(t, got.DiscardedAt)
-	assert.NotNil(t, got.ErasedAt)
-}
-
-func TestEraseOfAWorkspaceThatIsNotDeletedIsRefused(t *testing.T) {
-	env, _ := setup(t)
+// A live Workspace is not due: the erase leaves its name and its collect key.
+func TestEraseDueLeavesALiveWorkspace(t *testing.T) {
+	env, m := setup(t)
 	before := initech(t, env)
 
-	require.ErrorIs(t, erase(t, env), lifecycle.ErrInvalidTransition)
+	_, err := m.EraseDue(t.Context(), now)
 
+	require.NoError(t, err)
 	got := initech(t, env)
 	assert.Nil(t, got.ErasedAt)
 	assert.Equal(t, before.Name, got.Name, "a live Workspace keeps its name")
 	assert.Equal(t, before.CollectKey, got.CollectKey)
-}
-
-func TestEraseLeavesATombstone(t *testing.T) {
-	env, _ := setup(t)
-	before := initech(t, env)
-	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
-
-	require.NoError(t, erase(t, env))
-
-	got := initech(t, env)
-	require.NotNil(t, got.ErasedAt)
-	assert.True(t, now.Equal(*got.ErasedAt))
-	assert.Empty(t, got.Name)
-	assert.Empty(t, got.PostalAddress)
-	assert.NotEqual(t, before.CollectKey, got.CollectKey)
-}
-
-func TestEraseTwiceIsRefused(t *testing.T) {
-	env, _ := setup(t)
-	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
-	require.NoError(t, erase(t, env))
-
-	require.ErrorIs(t, erase(t, env), lifecycle.ErrInvalidTransition)
 }
 
 func TestDeletingTwiceKeepsTheFirstDeletionTime(t *testing.T) {
@@ -158,38 +116,64 @@ func TestDeleteRefusesAWrongName(t *testing.T) {
 	assert.Nil(t, initech(t, env).DiscardedAt)
 }
 
-// stale is a mover that read the Workspace as pending deletion before anyone wrote.
-func stale(env *testhelper.TestEnv) *stateless.StateMachine {
-	st := workspacedeletion.Storage(env.DB, fixtures.InitechID, now)
-	st.Read = func(context.Context) (workspacedeletion.State, error) {
-		return workspacedeletion.StatePendingDeletion, nil
-	}
-	return workspacedeletion.Machine(st)
+// erasedJustBefore is an ent hook on the Workspace's compare-and-swap write: an erase that read
+// the same state writes first, so the write that follows holds a stale read. It is registered on
+// the restore's write only (restoreWrite), so the writes it causes do not run it again.
+func erasedJustBefore(next ent.Mutator) ent.Mutator {
+	return hook.WorkspaceFunc(func(ctx context.Context, m *ent.WorkspaceMutation) (ent.Value, error) {
+		// test writes: a concurrent mover simulated inside a hook is the race under test
+		if err := m.Client().Workspace.UpdateOneID(fixtures.InitechID).SetErasedAt(now).Exec(ctx); err != nil {
+			return nil, err
+		}
+		return next.Mutate(ctx, m)
+	})
 }
 
-// A restore and an erase that both read the Workspace as pending deletion race on one row:
-// the first write wins and the second one, whose read is stale, loses the compare-and-swap.
-func TestARestoreRacingAnEraseHasOneWinner(t *testing.T) {
-	cases := []struct {
-		name          string
-		first, second workspacedeletion.Trigger
-		want          workspacedeletion.State
-	}{
-		{"restore first", workspacedeletion.TriggerRestore, workspacedeletion.TriggerErase, workspacedeletion.StateActive},
-		{"erase first", workspacedeletion.TriggerErase, workspacedeletion.TriggerRestore, workspacedeletion.StateErased},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			env, _ := setup(t)
-			// Inside the window both moves are legal, so only the order decides.
-			deletedAgo(t, env, time.Hour)
-			first, second := stale(env), stale(env)
+// restoredJustBefore is an ent hook on the Workspace's compare-and-swap write: a restore that read
+// the same state writes first, so the write that follows holds a stale read. It is registered on
+// the tombstone's write only (tombstoneWrite).
+func restoredJustBefore(next ent.Mutator) ent.Mutator {
+	return hook.WorkspaceFunc(func(ctx context.Context, m *ent.WorkspaceMutation) (ent.Value, error) {
+		// test writes: a concurrent mover simulated inside a hook is the race under test
+		if err := m.Client().Workspace.UpdateOneID(fixtures.InitechID).ClearDiscardedAt().Exec(ctx); err != nil {
+			return nil, err
+		}
+		return next.Mutate(ctx, m)
+	})
+}
 
-			require.NoError(t, first.FireCtx(t.Context(), c.first))
-			require.ErrorIs(t, second.FireCtx(t.Context(), c.second), lifecycle.ErrInvalidTransition)
+// restoreWrite is the restore's compare-and-swap: the conditional update that clears discarded_at.
+var restoreWrite = hook.And(hook.HasOp(ent.OpUpdate), hook.HasClearedFields(workspace.FieldDiscardedAt))
 
-			got := workspacedeletion.StateOf(initech(t, env))
-			assert.Equal(t, c.want, got)
-		})
-	}
+// tombstoneWrite is the erase's compare-and-swap: the conditional update that sets erased_at.
+var tombstoneWrite = hook.And(hook.HasOp(ent.OpUpdate), hook.HasFields(workspace.FieldErasedAt))
+
+// A restore that read the Workspace as pending deletion loses to an erase that wrote first: its
+// compare-and-swap finds the row moved, and the Workspace is not brought back.
+func TestARestoreThatLosesToAnEraseIsRefused(t *testing.T) {
+	env, m := setup(t)
+	deletedAgo(t, env, time.Hour)
+	env.Bus.Use(hook.If(erasedJustBefore, restoreWrite))
+
+	err := restore(t, m)
+
+	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
+	assert.NotNil(t, initech(t, env).DiscardedAt, "the Workspace stays deleted")
+}
+
+// An erase that read the Workspace as pending deletion loses to a restore that wrote first: the
+// stale move is finished, not an error, and no tombstone is written.
+func TestAnEraseThatLosesToARestoreIsFinishedWithoutATombstone(t *testing.T) {
+	env, m := setup(t)
+	deletedAgo(t, env, workspacedeletion.DeletionWindow+time.Hour)
+	name := initech(t, env).Name
+	env.Bus.Use(hook.If(restoredJustBefore, tombstoneWrite))
+
+	erased, err := m.EraseDue(t.Context(), now)
+
+	require.NoError(t, err)
+	assert.Zero(t, erased)
+	got := initech(t, env)
+	assert.Nil(t, got.ErasedAt)
+	assert.Equal(t, name, got.Name)
 }

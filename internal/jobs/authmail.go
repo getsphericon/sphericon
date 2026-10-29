@@ -73,6 +73,11 @@ type SendAuthMailWorker struct {
 	appURL string
 }
 
+// NewAuthMailWorker builds the worker that sends account emails, their links built on appURL.
+func NewAuthMailWorker(sender messaging.EmailSender, appURL string) *SendAuthMailWorker {
+	return &SendAuthMailWorker{sender: sender, appURL: appURL}
+}
+
 func (w *SendAuthMailWorker) Work(ctx context.Context, job *river.Job[SendAuthMailArgs]) error {
 	return SendAuthMail(ctx, w.sender, w.appURL, job.Args)
 }

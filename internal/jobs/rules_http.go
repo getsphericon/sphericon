@@ -58,6 +58,11 @@ type RunRuleHTTPWorker struct {
 	now    func() time.Time
 }
 
+// NewRunRuleHTTPWorker builds the worker that runs a Firing's HTTP Action through doer, on the clock now.
+func NewRunRuleHTTPWorker(client *ent.Client, mod *rules.Module, doer webhook.Doer, now func() time.Time) *RunRuleHTTPWorker {
+	return &RunRuleHTTPWorker{ent: client, mod: mod, client: doer, now: now}
+}
+
 func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTPArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the Workspace of the loaded Firing.
 	f, err := w.ent.RuleFiring.Get(ctx, job.Args.FiringID)

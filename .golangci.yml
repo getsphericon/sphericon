@@ -78,6 +78,7 @@ linters:
     - funcorder
     - godot
     - gochecknoinits
+    - testpackage
     - asciicheck
     - canonicalheader
     - containedctx
@@ -272,6 +273,11 @@ linters:
       # Constructors come right after their type; the exported-before-unexported method order is
       # left to the author.
       struct-method: false
+    testpackage:
+      # No export_test.go opens a package's insides to its tests, and a command (package main) is
+      # a handler over internal packages: it has no tests of its own.
+      skip-regexp: ^$
+      allow-packages: []
     gosmopolitan:
       # The Second factor deadlines are calendar days of the Instance's own zone.
       allow-time-local: true
@@ -345,22 +351,16 @@ linters:
         linters:
           - gosec
         text: G124
-      # G702: upgradecheck runs `git` (a constant) with arguments from its own command line; it is
-      # a CI tool and takes no request input.
-      - path: ^cmd/upgradecheck/main\.go$
-        linters:
-          - gosec
-        text: G702
       # G703: tools and the OTEL_CONFIG_FILE setting read the file the operator names, and tests
       # read and rewrite this repository's own files and temp directories.
-      - path: ^(cmd/upgradecheck/(main|immutable)\.go|internal/telemetry/telemetry\.go|.*_test\.go)$
+      - path: ^(cmd/upgradecheck/main\.go|internal/telemetry/telemetry\.go|.*_test\.go)$
         linters:
           - gosec
         text: G703
       # G704: the health check calls 127.0.0.1 and only the port comes from PORT; the OAuth client
       # metadata fetch runs through an SSRF-hardened client (webhook.NewClientAllowing: private
       # and loopback addresses refused at dial time, no redirects) after validMetadataURL.
-      - path: ^(cmd/server/healthcheck|internal/oauthserver/metadata)\.go$
+      - path: ^(internal/healthcheck/healthcheck|internal/oauthserver/metadata)\.go$
         linters:
           - gosec
         text: G704
@@ -411,6 +411,12 @@ linters:
       - path: tools/analyzers/plugin\.go$
         linters:
           - gochecknoinits
+      # A test is black-box (rule 12): it sits in the package's _test package and goes through what
+      # the package exports. The end-to-end suite is a package of its own that drives the app over
+      # HTTP, and the analyzers' testdata are the inputs analysistest loads, not tests.
+      - path: ^(e2e/|tools/analyzers/.*/testdata/)
+        linters:
+          - testpackage
       # A failed assertion in a test panics, and the panic fails the test with its stack.
       - path: _test\.go$
         linters:

@@ -1,3 +1,5 @@
+// Command prcheck runs the pull request body checks (internal/prcheck) in CI: the body comes from
+// PR_BODY and the diff of the markers check from stdin.
 package main
 
 import (
@@ -5,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/getsphericon/sphericon/internal/prcheck"
 )
 
 const usage = `usage: the body is the PR_BODY environment variable
@@ -24,13 +28,13 @@ func run(args []string, body string, diff io.Reader) error {
 	}
 	switch args[0] {
 	case "disclosure":
-		return CheckDisclosure(body)
+		return prcheck.CheckDisclosure(body)
 	case "markers":
 		b, err := io.ReadAll(diff)
 		if err != nil {
 			return err
 		}
-		return CheckMarkers(AddedMarkerFiles(string(b)), body)
+		return prcheck.CheckMarkers(prcheck.AddedMarkerFiles(string(b)), body)
 	default:
 		return errors.New(usage)
 	}

@@ -3,10 +3,8 @@
 package app
 
 import (
-	"cmp"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -57,6 +55,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
+	"github.com/getsphericon/sphericon/internal/messaging/systemmail"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
@@ -862,7 +861,7 @@ func registerMessaging(injector do.Injector, o options) {
 		}
 		// The platform's own SMTP relay is self-hoster-configured, not tenant input, so it may
 		// be a private host even where Workspace Integrations may not.
-		sender, err := buildSystemSender(cfg, registry.Default())
+		sender, err := systemmail.Sender(cfg, registry.Default())
 		if err != nil {
 			return nil, err
 		}
@@ -1710,44 +1709,6 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		RequireEmailVerification: cfg.RequireEmailVerification,
 		Signin:                   signin.FromConfig(cfg, nil),
 	}, nil
-}
-
-// buildSystemSender constructs sphericon's platform email sender from config via the
-// messaging catalog: smtp (dev → mailpit) or ses (prod). Same abstraction as
-// customer sends, just sphericon's own provider.
-func buildSystemSender(cfg *config.Config, catalog *messaging.Catalog) (messaging.EmailSender, error) {
-	from := cmp.Or(cfg.SystemEmailFrom, cfg.SMTPFrom)
-	fromName := cmp.Or(cfg.SystemEmailFromName, "sphericon")
-	switch cfg.SystemEmailProvider {
-	case "ses":
-		blob, err := json.Marshal(map[string]any{
-			"region":          cfg.SESRegion,
-			"accessKeyId":     cfg.SESAccessKeyID,
-			"secretAccessKey": cfg.SESSecretAccessKey,
-			"from":            from,
-			"fromName":        fromName,
-			"replyTo":         cfg.SystemEmailReplyTo,
-		})
-		if err != nil {
-			return nil, err
-		}
-		// nil signer: platform mail is not signed with a workspace sending domain.
-		return catalog.BuildEmail(messaging.ProviderSES, blob, messaging.Deps{})
-	default: // smtp (dev → mailpit)
-		blob, err := json.Marshal(map[string]any{
-			"host":     cfg.SMTPHost,
-			"port":     cfg.SMTPPort,
-			"username": cfg.SMTPUser,
-			"password": cfg.SMTPPass,
-			"from":     from,
-			"fromName": fromName,
-			"replyTo":  cfg.SystemEmailReplyTo,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return catalog.BuildEmail(messaging.ProviderSMTP, blob, messaging.Deps{})
-	}
 }
 
 // Reencrypt seals every stored secret under the primary key of the encryption keyset

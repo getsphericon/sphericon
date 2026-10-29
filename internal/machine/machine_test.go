@@ -3,6 +3,7 @@ package machine_test
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -20,33 +21,36 @@ func cancelled() context.Context {
 	return ctx
 }
 
-func detector(t *testing.T) (*machine.Detector, *time.Time) {
+// detector is a detector over the fixtures. A test runs it inside a testing/synctest bubble, so
+// testhelper.Elapse moves the detector's clock past the reload intervals at once.
+func detector(t *testing.T) *machine.Detector {
 	t.Helper()
 	env := testhelper.Setup(t)
-	d := machine.New(env.DB, env.PrivateRelay)
-	now := time.Date(2026, 10, 24, 9, 0, 0, 0, time.UTC)
-	d.SetClock(func() time.Time { return now })
-	return d, &now
+	return machine.New(env.DB, env.PrivateRelay)
 }
 
 // A table that cannot be read again keeps serving the last one that could: a database that hiccups
 // must not turn every Private Relay hit into a human open.
 func TestAFailedReloadKeepsTheLastTable(t *testing.T) {
-	d, now := detector(t)
-	assert.True(t, d.IsMachine(context.Background(), "", relayAddr), "the first read loads the table")
+	synctest.Test(t, func(t *testing.T) {
+		d := detector(t)
+		assert.True(t, d.IsMachine(context.Background(), "", relayAddr), "the first read loads the table")
 
-	*now = now.Add(2 * time.Hour) // the copy is stale, and the next read fails
+		testhelper.Elapse(2 * time.Hour) // the copy is stale, and the next read fails
 
-	assert.True(t, d.IsMachine(cancelled(), "", relayAddr))
+		assert.True(t, d.IsMachine(cancelled(), "", relayAddr))
+	})
 }
 
 // With no table at all a failed read says nothing, and the read is not repeated on every hit.
 func TestAFailedFirstReadIsTriedAgainAfterAWhile(t *testing.T) {
-	d, now := detector(t)
-	assert.False(t, d.IsMachine(cancelled(), "", relayAddr))
+	synctest.Test(t, func(t *testing.T) {
+		d := detector(t)
+		assert.False(t, d.IsMachine(cancelled(), "", relayAddr))
 
-	assert.False(t, d.IsMachine(context.Background(), "", relayAddr), "not retried at once")
+		assert.False(t, d.IsMachine(context.Background(), "", relayAddr), "not retried at once")
 
-	*now = now.Add(2 * time.Minute)
-	assert.True(t, d.IsMachine(context.Background(), "", relayAddr))
+		testhelper.Elapse(2 * time.Minute)
+		assert.True(t, d.IsMachine(context.Background(), "", relayAddr))
+	})
 }

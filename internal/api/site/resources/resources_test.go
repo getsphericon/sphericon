@@ -1,16 +1,17 @@
-package resources
+package resources_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 )
 
 func TestBroadcastStatsRates(t *testing.T) {
 	// 100 targeted, 80 delivered, 40 opened, 20 clicked, 5 unsubscribed, 20 failed.
-	got := BroadcastStats(broadcasts.Stats{
+	got := resources.BroadcastStats(broadcasts.Stats{
 		Recipients:   100,
 		Sent:         80,
 		Opened:       40,
@@ -43,7 +44,7 @@ func TestBroadcastStatsRates(t *testing.T) {
 
 func TestBroadcastStatsZeroDenominators(t *testing.T) {
 	// An all-zero broadcast (never sent): every rate must be 0, no NaN/Inf.
-	got := BroadcastStats(broadcasts.Stats{})
+	got := resources.BroadcastStats(broadcasts.Stats{})
 	rates := map[string]float32{
 		"deliveryRate":    got.DeliveryRate,
 		"openRate":        got.OpenRate,
@@ -57,7 +58,7 @@ func TestBroadcastStatsZeroDenominators(t *testing.T) {
 	}
 
 	// Delivered but nobody opened: openRate defined (0), clickToOpenRate guarded (0).
-	got = BroadcastStats(broadcasts.Stats{Recipients: 10, Sent: 10})
+	got = resources.BroadcastStats(broadcasts.Stats{Recipients: 10, Sent: 10})
 	assert.InDeltaf(t, 1, got.DeliveryRate, 1e-9, "deliveryRate = %v, want 1", got.DeliveryRate)
 	assert.InDelta(t, 0, got.OpenRate, 1e-9)
 	assert.InDelta(t, 0, got.ClickToOpenRate, 1e-9)

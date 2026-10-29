@@ -29,6 +29,8 @@
 /cmd/contractcopy/  @mokevnin
 /cmd/prcheck/       @mokevnin
 /internal/contractcopy/ @mokevnin
+/internal/upgradecheck/ @mokevnin
+/internal/prcheck/  @mokevnin
 
 # The rules and the instructions agents and contributors read
 AGENTS.md           @mokevnin

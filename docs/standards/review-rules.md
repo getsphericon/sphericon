@@ -82,6 +82,10 @@ or `AGENTS.md`.
     what was called, how often or with which arguments. An outside boundary (mail, a provider's HTTP)
     may be replaced by a stub, as long as the test looks at what was left behind and not at the calls.
     The facts asserted are business facts, not accidents: no row counts of a whole table or raw ids.
+    A test is black-box: it sits in the package's `_test` package and goes through what the package
+    exports, and no `export_test.go` opens the package's insides to it. A command (`cmd/*`) is a
+    handler like an HTTP one: its logic lives in an internal package, which is tested, and the
+    command has no tests.
 12. **Tests cover our logic only.** A test exercises a decision the code makes and checks what came
     out, not the behavior of a library, how long something takes, how much memory it uses, a timeout
     firing on the wall clock, a runtime limit, or the machine and the process around the code. A

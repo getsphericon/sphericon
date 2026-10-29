@@ -7,7 +7,7 @@ import en from '../locales/en/translation.json' with { type: 'json' }
 // Locale is a property of the instance (a SaaS deployment runs per country),
 // fixed at startup — there is no in-app language switcher and no browser
 // detection. The backend substitutes window.__APP_LOCALE__ into index.html at
-// serve time (see internal/server/spa.go); Vite does the same in dev. We read it
+// serve time (see internal/server/spa/spa.go); Vite does the same in dev. We read it
 // synchronously here, so no extra request is needed at boot.
 export const SUPPORTED_LOCALES = ['en'] as const
 export type Locale = (typeof SUPPORTED_LOCALES)[number]

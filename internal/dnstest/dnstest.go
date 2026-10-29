@@ -23,13 +23,6 @@ func Resolver(tb testing.TB, zones map[string]mockdns.Zone) *net.Resolver {
 	return start(tb, zones).NewResolver()
 }
 
-// Addr serves zones like Resolver and returns the server's address, for code that is configured
-// with a DNS server rather than handed a resolver.
-func Addr(tb testing.TB, zones map[string]mockdns.Zone) string {
-	tb.Helper()
-	return start(tb, zones).LocalAddr().String()
-}
-
 // start serves zones until the test ends. go-mockdns starts its UDP and TCP servers in goroutines,
 // and a Close that comes before one of them has started stops nothing: that server then serves
 // for the rest of the process, and goleak fails the package. So start returns only once the

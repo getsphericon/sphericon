@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url)
 const SUPPORTED_LOCALES = new Set(['en'])
 
 // Dev-only: substitute the {{APP_LOCALE}} sentinels in index.html the same way
-// the Go backend does at serve time in prod (internal/server/spa.go). Applied
+// the Go backend does at serve time in prod (internal/server/spa/spa.go). Applied
 // only in `serve` so the `build` output keeps the raw sentinels for Go to
 // replace at runtime. Drives off SPHERICON_APP_LOCALE — the same env var the backend uses.
 function devLocalePlugin(): Plugin {

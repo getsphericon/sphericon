@@ -1,44 +1,30 @@
-package buildinfo
+package buildinfo_test
 
 import (
-	"runtime/debug"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/getsphericon/sphericon/internal/buildinfo"
 )
 
-func TestResolveKeepsWhatTheReleaseBuildSet(t *testing.T) {
-	got := resolve(Info{Version: "v0.4.2", Commit: "abc1234", Date: "2026-10-18T10:00:00Z"}, &debug.BuildInfo{
-		Settings: []debug.BuildSetting{{Key: "vcs.revision", Value: "ffffffffffff"}},
-	})
-
-	assert.Equal(t, Info{Version: "v0.4.2", Commit: "abc1234", Date: "2026-10-18T10:00:00Z"}, got)
+// setLinkerFlags sets the variables the release build sets with -ldflags, for this test only.
+func setLinkerFlags(t *testing.T, version, commit, date string) {
+	t.Helper()
+	prevVersion, prevCommit, prevDate := buildinfo.Version, buildinfo.Commit, buildinfo.Date
+	t.Cleanup(func() { buildinfo.Version, buildinfo.Commit, buildinfo.Date = prevVersion, prevCommit, prevDate })
+	buildinfo.Version, buildinfo.Commit, buildinfo.Date = version, commit, date
 }
 
-func TestResolveFallsBackToGoBuildInfo(t *testing.T) {
-	got := resolve(Info{}, &debug.BuildInfo{
-		Main: debug.Module{Version: "(devel)"},
-		Settings: []debug.BuildSetting{
-			{Key: "vcs.revision", Value: "0123456789abcdef0123"},
-			{Key: "vcs.time", Value: "2026-10-18T09:00:00Z"},
-		},
-	})
+// What the release build set wins over whatever the Go build info says.
+func TestCurrentKeepsWhatTheReleaseBuildSet(t *testing.T) {
+	setLinkerFlags(t, "v0.4.2", "abc1234", "2026-10-18T10:00:00Z")
 
-	assert.Equal(t, Info{Version: "dev", Commit: "0123456789ab", Date: "2026-10-18T09:00:00Z"}, got)
-}
-
-func TestResolveUsesTheModuleVersionOfAGoInstall(t *testing.T) {
-	got := resolve(Info{}, &debug.BuildInfo{Main: debug.Module{Version: "v0.5.0"}})
-
-	assert.Equal(t, Info{Version: "v0.5.0", Commit: "unknown", Date: "unknown"}, got)
-}
-
-func TestResolveWithoutAnyBuildInfo(t *testing.T) {
-	assert.Equal(t, Info{Version: "dev", Commit: "unknown", Date: "unknown"}, resolve(Info{}, nil))
+	assert.Equal(t, buildinfo.Info{Version: "v0.4.2", Commit: "abc1234", Date: "2026-10-18T10:00:00Z"}, buildinfo.Current())
 }
 
 func TestLine(t *testing.T) {
-	line := Info{Version: "v0.4.2", Commit: "abc1234", Date: "2026-10-18T10:00:00Z"}.Line()
+	line := buildinfo.Info{Version: "v0.4.2", Commit: "abc1234", Date: "2026-10-18T10:00:00Z"}.Line()
 
 	assert.Equal(t, "sphericon v0.4.2 (commit abc1234, built 2026-10-18T10:00:00Z)", line)
 }

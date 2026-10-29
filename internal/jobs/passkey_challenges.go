@@ -29,6 +29,11 @@ type PrunePasskeyChallengesWorker struct {
 	now func() time.Time
 }
 
+// NewPrunePasskeyChallengesWorker builds the prune of spent Passkey challenges, aged by the clock now.
+func NewPrunePasskeyChallengesWorker(client *ent.Client, now func() time.Time) *PrunePasskeyChallengesWorker {
+	return &PrunePasskeyChallengesWorker{ent: client, now: now}
+}
+
 func (w *PrunePasskeyChallengesWorker) Work(ctx context.Context, _ *river.Job[PrunePasskeyChallengesArgs]) error {
 	deleted, err := secondfactor.PruneSpentChallenges(ctx, w.ent, w.now().Add(-secondfactor.SpentChallengeRetention))
 	if err != nil {

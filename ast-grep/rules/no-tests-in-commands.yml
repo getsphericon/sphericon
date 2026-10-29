@@ -1,0 +1,9 @@
+id: no-tests-in-commands
+language: Go
+severity: error
+message: 'rule 11: a command has no tests; fix: move the logic into an internal package and test it there, black-box'
+note: A command under cmd/ is a handler like an HTTP one, parsing its flags and calling an internal package. What it decides belongs to that package, whose _test package tests it through what it exports.
+rule:
+  kind: package_clause
+files:
+  - 'cmd/**/*_test.go'

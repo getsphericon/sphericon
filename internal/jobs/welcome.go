@@ -25,6 +25,11 @@ type SendWelcomeWorker struct {
 	sender messaging.EmailSender
 }
 
+// NewWelcomeWorker builds the worker that sends the welcome email through the system sender.
+func NewWelcomeWorker(sender messaging.EmailSender) *SendWelcomeWorker {
+	return &SendWelcomeWorker{sender: sender}
+}
+
 func (w *SendWelcomeWorker) Work(ctx context.Context, job *river.Job[SendWelcomeArgs]) error {
 	return SendWelcome(ctx, w.sender, job.Args.Email, job.Args.Name)
 }

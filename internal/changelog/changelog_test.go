@@ -1,10 +1,12 @@
-package changelog
+package changelog_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/changelog"
 )
 
 const sample = `# Changelog
@@ -46,7 +48,7 @@ then install 1.0.0.
 `
 
 func TestParseReadsEveryReleaseNewestFirstWithItsUpgradeEntries(t *testing.T) {
-	got := Parse(sample)
+	got := changelog.Parse(sample)
 
 	require.Len(t, got, 4)
 	assert.Equal(t, "1.0.0", got[0].Version)
@@ -60,7 +62,7 @@ func TestParseReadsEveryReleaseNewestFirstWithItsUpgradeEntries(t *testing.T) {
 }
 
 func TestSinceKeepsOnlyReleasesAfterTheVersionThatHaveNotes(t *testing.T) {
-	got, err := Since(Parse(sample), "v0.1.9")
+	got, err := changelog.Since(changelog.Parse(sample), "v0.1.9")
 
 	require.NoError(t, err)
 	require.Len(t, got, 2)
@@ -69,25 +71,25 @@ func TestSinceKeepsOnlyReleasesAfterTheVersionThatHaveNotes(t *testing.T) {
 }
 
 func TestSinceTheNewestVersionIsEmpty(t *testing.T) {
-	got, err := Since(Parse(sample), "1.0.0")
+	got, err := changelog.Since(changelog.Parse(sample), "1.0.0")
 
 	require.NoError(t, err)
 	assert.Empty(t, got)
 }
 
 func TestSinceRejectsAnInvalidVersion(t *testing.T) {
-	_, err := Since(Parse(sample), "latest")
+	_, err := changelog.Since(changelog.Parse(sample), "latest")
 
 	assert.Error(t, err)
 }
 
 func TestRender(t *testing.T) {
-	got, err := Since(Parse(sample), "0.1.10")
+	got, err := changelog.Since(changelog.Parse(sample), "0.1.10")
 	require.NoError(t, err)
 
-	assert.Equal(t, "1.0.0\n  - run the segment export first, then install 1.0.0.\n\n0.2.0\n  - set SPHERICON_FOO before the restart\n", Render(got))
+	assert.Equal(t, "1.0.0\n  - run the segment export first, then install 1.0.0.\n\n0.2.0\n  - set SPHERICON_FOO before the restart\n", changelog.Render(got))
 }
 
 func TestRenderNothing(t *testing.T) {
-	assert.Empty(t, Render(nil))
+	assert.Empty(t, changelog.Render(nil))
 }

@@ -1,4 +1,4 @@
-package secrets
+package secrets_test
 
 import (
 	"bytes"
@@ -10,6 +10,8 @@ import (
 	"github.com/tink-crypto/tink-go/v2/insecurecleartextkeyset"
 	"github.com/tink-crypto/tink-go/v2/keyset"
 	"github.com/tink-crypto/tink-go/v2/mac"
+
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
 // A well-formed keyset of the wrong primitive (an HMAC key) cannot back an AEAD cipher.
@@ -19,14 +21,14 @@ func TestNewCipherRejectsAKeysetThatIsNotAnAEAD(t *testing.T) {
 	buf := new(bytes.Buffer)
 	require.NoError(t, insecurecleartextkeyset.Write(kh, keyset.NewBinaryWriter(buf)))
 
-	_, err = NewCipher(base64.StdEncoding.EncodeToString(buf.Bytes()))
+	_, err = secrets.NewCipher(base64.StdEncoding.EncodeToString(buf.Bytes()))
 	assert.ErrorContains(t, err, "build AEAD")
 }
 
 func TestNewCipherTrimsWhitespaceAroundTheKeyset(t *testing.T) {
-	ks, err := GenerateKeysetBase64()
+	ks, err := secrets.GenerateKeysetBase64()
 	require.NoError(t, err)
-	c, err := NewCipher("  " + ks + "\n")
+	c, err := secrets.NewCipher("  " + ks + "\n")
 	require.NoError(t, err)
 	enc, err := c.Encrypt([]byte("x"))
 	require.NoError(t, err)

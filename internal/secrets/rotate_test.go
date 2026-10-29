@@ -1,27 +1,29 @@
-package secrets
+package secrets_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/secrets"
 )
 
-func cipherOf(t *testing.T, ks string) *Cipher {
+func cipherOf(t *testing.T, ks string) *secrets.Cipher {
 	t.Helper()
-	c, err := NewCipher(ks)
+	c, err := secrets.NewCipher(ks)
 	require.NoError(t, err)
 	return c
 }
 
 func TestRotateKeepsOldCiphertextReadableAndSealsUnderTheNewKey(t *testing.T) {
-	oldKS, err := GenerateKeysetBase64()
+	oldKS, err := secrets.GenerateKeysetBase64()
 	require.NoError(t, err)
 	oldCipher := cipherOf(t, oldKS)
 	oldSealed, err := oldCipher.Encrypt([]byte("old"))
 	require.NoError(t, err)
 
-	newKS, err := Rotate(oldKS)
+	newKS, err := secrets.Rotate(oldKS)
 	require.NoError(t, err)
 	assert.NotEqual(t, oldKS, newKS)
 	rotated := cipherOf(t, newKS)
@@ -33,15 +35,15 @@ func TestRotateKeepsOldCiphertextReadableAndSealsUnderTheNewKey(t *testing.T) {
 	newSealed, err := rotated.Encrypt([]byte("new"))
 	require.NoError(t, err)
 	_, err = oldCipher.Decrypt(newSealed)
-	assert.ErrorIs(t, err, ErrCiphertext, "the new primary key is not in the old keyset")
+	assert.ErrorIs(t, err, secrets.ErrCiphertext, "the new primary key is not in the old keyset")
 }
 
 func TestRewrapMovesOldCiphertextToThePrimaryKeyOnce(t *testing.T) {
-	oldKS, err := GenerateKeysetBase64()
+	oldKS, err := secrets.GenerateKeysetBase64()
 	require.NoError(t, err)
 	oldSealed, err := cipherOf(t, oldKS).Encrypt([]byte("payload"))
 	require.NoError(t, err)
-	newKS, err := Rotate(oldKS)
+	newKS, err := secrets.Rotate(oldKS)
 	require.NoError(t, err)
 	c := cipherOf(t, newKS)
 
@@ -63,16 +65,16 @@ func TestRewrapMovesOldCiphertextToThePrimaryKeyOnce(t *testing.T) {
 }
 
 func TestRetiredKeysetReadsRewrappedValuesAndRefusesTheRest(t *testing.T) {
-	oldKS, err := GenerateKeysetBase64()
+	oldKS, err := secrets.GenerateKeysetBase64()
 	require.NoError(t, err)
 	oldSealed, err := cipherOf(t, oldKS).Encrypt([]byte("payload"))
 	require.NoError(t, err)
-	newKS, err := Rotate(oldKS)
+	newKS, err := secrets.Rotate(oldKS)
 	require.NoError(t, err)
 	rewrapped, _, err := cipherOf(t, newKS).Rewrap(oldSealed)
 	require.NoError(t, err)
 
-	retiredKS, err := Retire(newKS)
+	retiredKS, err := secrets.Retire(newKS)
 	require.NoError(t, err)
 	retired := cipherOf(t, retiredKS)
 
@@ -80,10 +82,10 @@ func TestRetiredKeysetReadsRewrappedValuesAndRefusesTheRest(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "payload", string(got))
 	_, err = retired.Decrypt(oldSealed)
-	assert.ErrorIs(t, err, ErrCiphertext)
+	assert.ErrorIs(t, err, secrets.ErrCiphertext)
 }
 
 func TestCurrentRejectsAValueWithNoKeyId(t *testing.T) {
 	_, err := testCipher(t).Current("AAAA")
-	assert.ErrorIs(t, err, ErrCiphertext)
+	assert.ErrorIs(t, err, secrets.ErrCiphertext)
 }

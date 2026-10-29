@@ -1,4 +1,4 @@
-package logging
+package logging_test
 
 import (
 	"context"
@@ -9,13 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/logging"
 )
 
 func TestSetupInstallsDefaultLogger(t *testing.T) {
 	prev := slog.Default()
 	t.Cleanup(func() { slog.SetDefault(prev) })
 
-	Setup(&config.Config{LogFormat: "json", LogLevel: "error"})
+	logging.Setup(&config.Config{LogFormat: "json", LogLevel: "error"})
 
 	def := slog.Default()
 	warnEnabled := def.Enabled(context.Background(), slog.LevelWarn)
@@ -24,24 +25,25 @@ func TestSetupInstallsDefaultLogger(t *testing.T) {
 	require.True(t, errorEnabled, "default logger should emit errors after Setup")
 }
 
-func TestNewTextFormatIsCaseInsensitive(t *testing.T) {
-	logger := New(&config.Config{LogFormat: "TEXT", LogLevel: "debug"})
-	debugEnabled := logger.Enabled(context.Background(), slog.LevelDebug)
-	require.True(t, debugEnabled, "text handler at debug level should emit debug")
-}
-
-func TestParseLevelNamedLevels(t *testing.T) {
+// The level is one of debug|info|warn|error, in any case and with surrounding spaces, and
+// anything unrecognised is info: the logger emits that level and nothing below it.
+func TestNewLogsFromTheConfiguredLevel(t *testing.T) {
 	for _, c := range []struct {
 		in   string
 		want slog.Level
 	}{
+		{"debug", slog.LevelDebug},
+		{"DEBUG", slog.LevelDebug},
+		{"info", slog.LevelInfo},
 		{"warn", slog.LevelWarn},
 		{" Warning ", slog.LevelWarn},
 		{"error", slog.LevelError},
-		{"info", slog.LevelInfo},
 		{"", slog.LevelInfo},
+		{"nonsense", slog.LevelInfo},
 	} {
-		got := parseLevel(c.in)
-		assert.Equalf(t, c.want, got, "parseLevel(%q) = %v, want %v", c.in, got, c.want)
+		logger := logging.New(&config.Config{LogFormat: "json", LogLevel: c.in})
+
+		assert.Truef(t, logger.Enabled(context.Background(), c.want), "LogLevel %q emits %v", c.in, c.want)
+		assert.Falsef(t, logger.Enabled(context.Background(), c.want-1), "LogLevel %q drops what is below %v", c.in, c.want)
 	}
 }

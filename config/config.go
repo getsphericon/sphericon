@@ -224,7 +224,7 @@ type Config struct {
 
 	// SentryDSN is the Sentry-compatible DSN the browser app reports its errors to
 	// (SPHERICON_SENTRY_DSN). Empty, the default, leaves the browser reporting off: the SPA
-	// sends nothing anywhere. The DSN reaches the page at serve time (internal/server/spa.go),
+	// sends nothing anywhere. The DSN reaches the page at serve time (internal/server/spa/spa.go),
 	// never at build time, so one image serves every Instance.
 	SentryDSN string
 
@@ -1000,9 +1000,8 @@ func isDevEnv(envName string) bool {
 }
 
 // envRoot is the directory the .env files are read from: the repository root, found from this
-// file's source path. The package's tests point it at a directory holding only the committed
-// files, so a developer's own (gitignored) ones change nothing they load.
-var envRoot = func() (string, error) {
+// file's source path.
+func envRoot() (string, error) {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
 		return "", errors.New("locate the config package's source to find the .env files")
@@ -1010,16 +1009,19 @@ var envRoot = func() (string, error) {
 	return filepath.Join(filepath.Dir(file), ".."), nil
 }
 
+// envFiles are the .env files of an environment, in the order they override each other. The
+// automated profiles (test, e2e) read only their committed .env.<name>: a developer's own
+// (gitignored) .env, .env.local and .env.<name>.local would fill in what a run leaves empty.
 func envFiles(rootDir, envName string) []string {
-	files := []string{
+	if envName == "test" || isE2E(envName) {
+		return []string{filepath.Join(rootDir, ".env."+envName)}
+	}
+	return []string{
 		filepath.Join(rootDir, ".env"),
 		filepath.Join(rootDir, ".env."+envName),
+		filepath.Join(rootDir, ".env.local"),
+		filepath.Join(rootDir, ".env."+envName+".local"),
 	}
-	if envName != "test" {
-		files = append(files, filepath.Join(rootDir, ".env.local"))
-	}
-	files = append(files, filepath.Join(rootDir, ".env."+envName+".local"))
-	return files
 }
 
 // secretEnvNames are the variables whose values must never be printed.

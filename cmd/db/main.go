@@ -1,30 +1,19 @@
-// Command db runs the development database tasks: it creates and drops this checkout's database,
-// writes the next goose migration from the ent schema and writes the migration for river's schema.
+// Command db runs the development database tasks of internal/devdb: it creates and drops this
+// checkout's database, writes the next goose migration from the ent schema and writes the
+// migration for river's schema.
 package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
-	"slices"
-	"strconv"
-	"strings"
 
-	"ariga.io/atlas/sql/sqltool"
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql/schema"
-	"github.com/jackc/pgerrcode"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/urfave/cli/v3"
 
 	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/ent/migrate"
-	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/devdb"
 )
 
 func main() {
@@ -48,21 +37,21 @@ func newRoot() *cli.Command {
 				Name:  "create",
 				Usage: "create this checkout's database",
 				Action: func(ctx context.Context, _ *cli.Command) error {
-					return admin(ctx, createDatabase)
+					return onDatabase(ctx, devdb.Create)
 				},
 			},
 			{
 				Name:  "drop",
 				Usage: "drop this checkout's database",
 				Action: func(ctx context.Context, _ *cli.Command) error {
-					return admin(ctx, dropDatabase)
+					return onDatabase(ctx, devdb.Drop)
 				},
 			},
 			{
 				Name:  "river-migration",
 				Usage: "write the goose migration for river's schema",
 				Action: func(context.Context, *cli.Command) error {
-					return generateRiverMigration("migrations")
+					return devdb.GenerateRiverMigration("migrations", os.Stdout)
 				},
 			},
 			{
@@ -71,16 +60,16 @@ func newRoot() *cli.Command {
 				ArgsUsage: "<migration-name>",
 				Arguments: []cli.Argument{&cli.StringArg{Name: "name", Required: true}},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return generateMigration(ctx, cmd.StringArg("name"))
+					return devdb.GenerateMigration(ctx, "migrations", os.Getenv("DIFF_DB_URL"), cmd.StringArg("name"))
 				},
 			},
 		},
 	}
 }
 
-// admin runs fn against the server's `postgres` database, with the name of the database
-// DATABASE_URL points at.
-func admin(ctx context.Context, fn func(ctx context.Context, adminDB *sql.DB, dbName string) error) error {
+// onDatabase runs task on the database DATABASE_URL of this environment points at and logs what
+// it did.
+func onDatabase(ctx context.Context, task func(ctx context.Context, databaseURL string) (string, error)) error {
 	envName := os.Getenv("SPHERICON_ENV")
 	if envName == "" {
 		envName = "development"
@@ -89,110 +78,10 @@ func admin(ctx context.Context, fn func(ctx context.Context, adminDB *sql.DB, db
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
-	u, err := url.Parse(cfg.DatabaseURL)
-	if err != nil {
-		return fmt.Errorf("parse DATABASE_URL: %w", err)
-	}
-
-	dbName := strings.TrimPrefix(u.Path, "/")
-	u.Path = "/postgres"
-
-	adminDB, err := sql.Open("pgx", u.String())
-	if err != nil {
-		return fmt.Errorf("open admin db: %w", err)
-	}
-	defer cleanup.Close(adminDB, "database")
-	return fn(ctx, adminDB, dbName)
-}
-
-// quoteIdent has the server quote a database name, so no escaping of our own stands between a
-// name from DATABASE_URL and the CREATE or DROP DATABASE that takes it: those commands accept an
-// identifier and not a bound parameter.
-func quoteIdent(ctx context.Context, adminDB *sql.DB, name string) (string, error) {
-	var quoted string
-	// raw sql: quote_ident is the server's own identifier quoting; ent has no such function.
-	if err := adminDB.QueryRowContext(ctx, "SELECT quote_ident($1)", name).Scan(&quoted); err != nil {
-		return "", fmt.Errorf("quote database name: %w", err)
-	}
-	return quoted, nil
-}
-
-func createDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
-	ident, err := quoteIdent(ctx, adminDB, dbName)
+	done, err := task(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}
-	// raw sql: CREATE DATABASE is a server command with an identifier, not a table operation.
-	if _, err := adminDB.ExecContext(ctx, "CREATE DATABASE "+ident); err != nil {
-		if pgErr := new(pgconn.PgError); errors.As(err, &pgErr) && pgErr.Code == pgerrcode.DuplicateDatabase {
-			log.Printf("database %s already exists, skipping", strconv.Quote(dbName))
-			return nil
-		}
-		return fmt.Errorf("create database: %w", err)
-	}
-	log.Printf("database %s created", strconv.Quote(dbName))
-	return nil
-}
-
-func dropDatabase(ctx context.Context, adminDB *sql.DB, dbName string) error {
-	ident, err := quoteIdent(ctx, adminDB, dbName)
-	if err != nil {
-		return err
-	}
-	// raw sql: DROP DATABASE is a server command with an identifier, not a table operation.
-	if _, err := adminDB.ExecContext(ctx, "DROP DATABASE IF EXISTS "+ident); err != nil {
-		return fmt.Errorf("drop database: %w", err)
-	}
-	log.Printf("database %s dropped", strconv.Quote(dbName))
-	return nil
-}
-
-// requireDiffDatabase fails with the task that creates the diff database when it is not there.
-func requireDiffDatabase(ctx context.Context, dsn string) error {
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		return fmt.Errorf("open the diff database: %w", err)
-	}
-	pingErr := db.PingContext(ctx)
-	if err := db.Close(); err != nil {
-		return fmt.Errorf("close the diff database: %w", err)
-	}
-	if pingErr != nil {
-		return fmt.Errorf("the diff database (DIFF_DB_URL) is not reachable, run `mise run db:up` to create it: %w", pingErr)
-	}
-	return nil
-}
-
-// generateMigration writes the next migration from the ent schema. ent's own
-// versioned-migration engine (the Atlas library, no Atlas binary) diffs the schema against migrations/ using the scratch
-// DIFF_DB_URL database and writes the SQL file (no atlas.sum: see sumlessDir).
-func generateMigration(ctx context.Context, name string) error {
-	// The diff engine opens the diff URL with the "postgres" driver name; pgx registers itself
-	// as "pgx", so alias it (guarded: registering twice panics).
-	if !slices.Contains(sql.Drivers(), "postgres") {
-		sql.Register("postgres", stdlib.GetDefaultDriver())
-	}
-	diffURL := os.Getenv("DIFF_DB_URL")
-	if diffURL == "" {
-		return errors.New("DIFF_DB_URL is not set (the diff database migrations are generated against)")
-	}
-	if err := requireDiffDatabase(ctx, diffURL); err != nil {
-		return err
-	}
-	dir, err := sqltool.NewGooseDir("migrations")
-	if err != nil {
-		return fmt.Errorf("open migrations dir: %w", err)
-	}
-	if err := migrate.NamedDiff(ctx, diffURL, name,
-		schema.WithDir(sumlessDir{dir}),
-		schema.WithMigrationMode(schema.ModeReplay),
-		// A removal is a destructive migration (ADR 0033): written here, guarded by hand.
-		schema.WithDropColumn(true),
-		schema.WithDropIndex(true),
-		schema.WithDialect(dialect.Postgres),
-		schema.WithFormatter(sqltool.GooseFormatter),
-	); err != nil {
-		return fmt.Errorf("generate migration: %w", err)
-	}
+	log.Print(done)
 	return nil
 }
