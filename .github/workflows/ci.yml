@@ -98,15 +98,6 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
-      # scip-typescript type-checks the frontend against its dependencies.
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Cache Go
-        uses: $/.github/actions/go-cache
-        with:
-          scope: arch
-
       # easement keeps each SCIP index under a key of the files its indexer reads, so a run that
       # changes no Go file reads scip-go's output from an earlier one instead of running it. Saved
       # by pull requests too, unlike the Go cache: the indexes are megabytes, not gigabytes, and a
@@ -117,6 +108,31 @@ jobs:
           path: ~/.cache/easement
           key: easement-${{ runner.os }}-${{ github.sha }}
           restore-keys: easement-${{ runner.os }}-
+
+      # An indexer needs its toolchain set up only when it runs: `--cache-only` runs none and
+      # exits 3 when an index is not cached. Any other answer (a pass, a violation, an error) is
+      # left to the check below.
+      - name: Look for every index in the cache
+        id: indexes
+        run: |
+          status=0
+          easement check --cache-only > /dev/null 2>&1 || status=$?
+          if [ "$status" -eq 3 ]; then
+            echo "cached=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "cached=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # scip-typescript type-checks the frontend against its dependencies.
+      - name: Install dependencies
+        if: steps.indexes.outputs.cached != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Go
+        if: steps.indexes.outputs.cached != 'true'
+        uses: $/.github/actions/go-cache
+        with:
+          scope: arch
 
       - name: Check package boundaries
         run: mise run check:arch
