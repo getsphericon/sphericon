@@ -10,6 +10,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # The scip indexers are editor tooling no job runs. On a mise cache miss, `go install` of scip-go
+  # fills the Go module cache with read-only files before go-cache restores it, tar cannot overwrite
+  # them and the module cache restore is dropped.
+  MISE_DISABLE_TOOLS: go:github.com/scip-code/scip-go/cmd/scip-go,npm:@sourcegraph/scip-typescript
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
