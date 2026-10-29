@@ -40,8 +40,10 @@ or `AGENTS.md`.
    the API that place is TypeSpec, and none of the following is declared anywhere else: operations
    (path, method, name), request and response shapes, value constraints (length, range, format,
    pattern), enums and unions, error problems and which an operation returns, the auth scheme of a
-   surface, query and header parameters, field and operation docs, the telemetry report schema, and
-   the Service credential scopes. (The persistence shape is the ent schema, not TypeSpec.)
+   surface, query and header parameters, field and operation docs, the telemetry report schema, the
+   Service credential scopes, the scopes an external operation requires, the Permissions a `/site`
+   operation requires and the Permission each grantable scope needs (ADR 0061). (The persistence
+   shape is the ent schema, not TypeSpec.)
 7. **A state is stored as the shape its history needs.** Decided per field from the facts:
    1. If anyone needs to know when, why or by whom it changed, store the moment as `<x>_at` (plus a
       reason or actor column); a boolean cannot hold that.
@@ -97,3 +99,11 @@ or `AGENTS.md`.
     checks nothing. State the expectation on a value read beforehand; keep a table's rows as data
     (split a table whose rows need different assertions, give a row its expected value rather than a
     flag); logic that must branch goes into a named helper.
+
+## Refusals
+
+15. **A refusal answers the same on every surface, and is mapped once.** 400: the request could not
+    be decoded. 422: it was decoded and a module's rule refused it. 409: the subject is in use. 401:
+    no credential, or an invalid one. 403: a valid credential without the scope or Permission. 404:
+    not found, or a Workspace the caller is not a member of. A handler returns the module's error;
+    the server's error handler turns it into the problem, so no handler writes the same mapping again.

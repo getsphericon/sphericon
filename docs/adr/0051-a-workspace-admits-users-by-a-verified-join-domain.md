@@ -60,7 +60,9 @@ door, and this lands in the core for good.
   Instance-wide lookup of a domain to its verified row runs before any scope exists, so it sits in
   the new `internal/joindomains` package, which joins the raw-client list.
 - **Operations.** Listing, adding, verifying and removing Join domains and reading and setting the
-  switch are `/site` operations, owner only; nothing is added to the external API or MCP. The
+  switch are `/site` operations under the `join_domains:manage` Permission (owner and admin,
+  [[0061-access-to-an-operation-is-declared-in-the-contract]]; this was owner only); nothing is
+  added to the external API or MCP. The
   members list shows how each member got in (`source`: `creator`, `invitation`, `domain`).
 
 ## Which proof points trigger it

@@ -527,8 +527,15 @@ _Avoid_: UTC day
 **API token**:
 A workspace-scoped, **scoped** bearer credential for the external `/api` surface — a public
 `prefix` plus a hashed secret, carrying scopes, optional expiry, and revocation. Distinct from
-a Key: a token is scoped, revocable, and expiring.
+a Key: a token is scoped, revocable, and expiring. It belongs to the Workspace and outlives the people
+who minted it; a User's own grant to an application is a Connection.
 _Avoid_: API key, secret, password
+
+**Connection**:
+The access a User gave an application (an MCP client such as Claude) to one Workspace by
+consenting to it. It belongs to that User's Membership, can do no more than the User's Role
+allows at the moment of each request, and ends with the Membership.
+_Avoid_: OAuth grant, authorized application, API token (that is the Workspace's)
 
 **Key** (collect key / ingest key):
 A bare, single-purpose secret string for one job — a Workspace's `collect_key` (browser tracking
@@ -651,6 +658,11 @@ A human who authenticates (email + password). A User reaches Workspaces through 
 each carrying a Role — a Workspace is never owned by a single User directly.
 _Avoid_: Account, member, customer, owner
 
+**Sign-up**:
+A person creating a User for themself, with a password or through a Sign-in provider, on an
+Instance whose sign-up is open. The new User stays an Unverified User until its address is proven.
+_Avoid_: Registration, register, signup (one word)
+
 **Leaving**:
 A User's own removal of their Membership in one Workspace, with no action by an Owner. The last
 Owner cannot leave: another Member must become Owner first, or the Workspace is deleted. A User
@@ -659,8 +671,8 @@ _Avoid_: Quit, unjoin, self-removal (removal is what an Owner does to another Me
 
 **User deletion**:
 A User's own immediate and irreversible removal of themself: their Memberships, Linked
-identities, Second factor, Recovery codes and Passkeys go, every session ends, and the address can register
-again as a new User where registration is open. Refused while the User is the only Owner of any Workspace. Invitations the
+identities, Second factor, Recovery codes and Passkeys go, every session ends, and the address can sign up
+again as a new User where sign-up is open. Refused while the User is the only Owner of any Workspace. Invitations the
 User sent stay valid without a sender; Audit entries that name the User keep the id and the name
 snapshot. It never touches a Contact or a Staff member (a Contact has its own Erasure).
 _Avoid_: Account deletion, closing an account, deactivation, Erasure (that is a Contact's)
@@ -670,14 +682,14 @@ A User's email address whose control has been proven by following a link sent to
 link, an accepted Invitation, or a confirmed email change). Until then the User is an
 **Unverified User**: it holds no session, no Membership and no Workspace, and its password, if
 any, is not yet usable. A password chosen before the address is proven stays only if the link is
-opened in the **Registration browser**; otherwise it is set again through the link, so whoever
+opened in the **Sign-up browser**; otherwise it is set again through the link, so whoever
 proves the address is the one who sets the password.
 _Avoid_: Confirmed email, activated account
 
-**Registration browser**:
-The browser that submitted a registration. It holds a random value that the verify link also
-carries (hashed), so the link can tell it is being opened where the registration happened.
-_Avoid_: Same device, trusted browser
+**Sign-up browser**:
+The browser that submitted a Sign-up. It holds a random value that the verify link also
+carries (hashed), so the link can tell it is being opened where the Sign-up happened.
+_Avoid_: Registration browser, same device, trusted browser
 
 **Join domain**:
 A Workspace-scoped, DNS-verified domain whose Users may join the Workspace automatically. An Owner
@@ -700,10 +712,10 @@ with the system as the actor.
 _Avoid_: Auto-join, domain capture, domain-based signup
 
 **Sign-in provider**:
-An external service that proves a person's email address so they can register or log in without a
+An external service that proves a person's email address so they can sign up or log in without a
 password of ours: Google, GitHub. The Instance operator enables one by setting its OAuth client id
 and secret; a provider replaces only the password step (an enrolled Second factor, the Login throttle
-and registration gates still apply). A person's own account at a provider, not an organization's
+and sign-up gates still apply). A person's own account at a provider, not an organization's
 identity system: per-Workspace federation stays Enterprise (ADR 0014).
 _Avoid_: SSO, social login, OAuth provider (that is the OAuth server for MCP clients)
 
@@ -724,8 +736,8 @@ mail. The one exception is an install that turned email verification off.
 _Avoid_: Duplicate email, existing account
 
 **Unverified User**:
-A User whose email is not yet a Verified email: a registration awaiting its verify link. It
-cannot log in, even with the password it registered with, owns nothing and is not attached to any Workspace. A daily job deletes one that
+A User whose email is not yet a Verified email: a Sign-up awaiting its verify link. It
+cannot log in, even with the password it signed up with, owns nothing and is not attached to any Workspace. A daily job deletes one that
 holds no Membership once it is older than `SPHERICON_UNVERIFIED_USER_RETENTION_DAYS` (default 7), freeing
 its address; a pending Invitation to that address is kept.
 _Avoid_: Pending account, inactive user
@@ -773,11 +785,16 @@ SaaS is planned and retrofitting access control onto single-owner is expensive.
 _Avoid_: Team, seat, collaborator, ownership
 
 **Role**:
-A Membership's permission level in a Workspace (e.g. owner / admin / member). The exact set is a
-follow-up; the structural decision is that access is role-scoped per Membership. A Workspace
-always keeps at least one owner, and only an owner grants the owner Role or changes or removes
-another owner's Membership.
-_Avoid_: Permission, scope (scope is the API-token term)
+The named set of Permissions a Membership holds in a Workspace: owner, admin or member. A
+Workspace always keeps at least one owner, and only an owner grants the owner Role or changes or
+removes another owner's Membership.
+_Avoid_: Permission (a Role holds Permissions, it is not one), scope (scope is the API-token term)
+
+**Permission**:
+A named action in a Workspace that a Role allows, such as managing API tokens or deleting the
+Workspace. It belongs to a Membership through its Role, never to an API token: a token's
+counterpart is its scope.
+_Avoid_: Ability, capability, right, scope
 
 **Audit entry** (the Audit log is the Workspace's append-only sequence of them):
 An immutable record that an **actor** changed a Workspace's configuration or access — who
