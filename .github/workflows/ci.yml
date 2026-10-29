@@ -30,7 +30,7 @@ jobs:
       # One toolchain for everything: go, node, pnpm, golangci-lint, gitleaks,
       # jactionlint, zizmor, ... all pinned in .mise.toml.
       - name: Setup mise
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -93,7 +93,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
       # scip-typescript type-checks the frontend against its dependencies.
       - name: Install dependencies
@@ -121,7 +121,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -168,10 +168,11 @@ jobs:
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.md"
           PR_BODY_FILE="$RUNNER_TEMP/pr-body.md" mise run check:upgrade
 
-  # The Go suite over two runners. internal/api/site alone takes about two minutes (its tests ride
+  # The Go suite over three runners. internal/api/site runs its tests one after another (they ride
   # one database in transactions, so they do not call t.Parallel: .golangci.yml, paralleltest) and
-  # finished last on a single runner; each package process leases a database of its own, so the
-  # shards share nothing.
+  # finished last when it shared a runner; the other packages alternate between two shards by their
+  # place in `go list`. Each package process leases a database of its own, so the shards share
+  # nothing.
   test:
     name: test (${{ matrix.shard }})
     runs-on: ubuntu-latest
@@ -179,7 +180,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [site, rest]
+        shard: [site, rest-1, rest-2]
 
     steps:
       - name: Checkout repository
@@ -188,13 +189,13 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
       - name: Cache Go
         uses: $/.github/actions/go-cache
         with:
           scope: test-${{ matrix.shard }}
-          fallback: test
+          fallback: test-rest
 
       # The task starts the `db` mise daemon (Postgres preset) itself.
       - name: Run tests
@@ -205,13 +206,14 @@ jobs:
           if [ "$SHARD" = site ]; then
             mise run test -- "$site"
           else
+            # rest-1 takes the odd lines, rest-2 the even ones.
             # shellcheck disable=SC2046 # one argument per package
-            mise run test -- $(go list ./... | grep -vxF "$site")
+            mise run test -- $(go list ./... | grep -vxF "$site" | awk -v n="${SHARD#rest-}" 'NR % 2 == n % 2')
           fi
 
       # Needs the migrated database the tests' Postgres provides, so it is not part of `check`.
       - name: Check the schema against the models
-        if: matrix.shard == 'rest'
+        if: matrix.shard == 'rest-1'
         run: mise run check:schema
 
   test-e2e:
@@ -226,7 +228,7 @@ jobs:
 
       # The toolchain also provides the mailpit binary the suite starts.
       - name: Setup mise
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
       - name: Cache Go
         uses: $/.github/actions/go-cache
@@ -250,7 +252,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
