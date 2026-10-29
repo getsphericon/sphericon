@@ -1,0 +1,221 @@
+[tools]
+air = "latest"
+ast-grep = "latest"
+caddy = "latest"
+cloudflared = "latest"
+coredns = "latest"
+gitleaks = "latest"
+go = "1.27.3"
+golangci-lint = "2"
+hk = "latest"
+helm = "latest"
+jactionlint = "latest"
+kubeconform = "latest"
+mailpit = "latest"
+node = "26.12.1"
+pinact = "latest"
+pitchfork = "latest"
+pkl = "latest"
+pnpm = "12"
+typos = "latest"
+uv = "latest"
+"aqua:boyter/scc" = "latest"
+"github:daveshanley/vacuum" = "latest"
+"github:google/osv-scanner" = "latest"
+"github:mokevnin/heavy" = "0.1.1"
+"github:sbdchd/squawk" = "latest"
+zizmor = "latest"
+jq = "latest"
+lychee = "latest"
+shellcheck = "latest"
+"github:mokevnin/easement" = "0.3.5"
+"go:github.com/scip-code/scip-go/cmd/scip-go" = "latest"
+"npm:@sourcegraph/scip-typescript" = "latest"
+
+# schemalens ships its CLI and each adapter as separate archives of one release: the CLI is the
+# primary asset and the ent adapter is extracted into the same install directory, so both are on
+# PATH. The patterns are per platform because mise resolves a templated pattern for the host, which
+# would write the wrong URLs into mise.lock.
+[tools."github:mokevnin/schemalens"]
+version = "0.1.3"
+
+[tools."github:mokevnin/schemalens".platforms]
+macos-arm64 = { asset_pattern = "schemalens_*_darwin_arm64.tar.gz", additional_asset_patterns = [
+  "schemalens-adapter-ent_*_darwin_arm64.tar.gz",
+] }
+macos-x64 = { asset_pattern = "schemalens_*_darwin_amd64.tar.gz", additional_asset_patterns = [
+  "schemalens-adapter-ent_*_darwin_amd64.tar.gz",
+] }
+linux-x64 = { asset_pattern = "schemalens_*_linux_amd64.tar.gz", additional_asset_patterns = [
+  "schemalens-adapter-ent_*_linux_amd64.tar.gz",
+] }
+linux-arm64 = { asset_pattern = "schemalens_*_linux_arm64.tar.gz", additional_asset_patterns = [
+  "schemalens-adapter-ent_*_linux_arm64.tar.gz",
+] }
+
+# Install the git hooks (hk.pkl) once the toolchain is in place. `--mise` runs hk through
+# `mise x`, so a hook needs no shim on PATH. hk's version must match the package:// import
+# at the top of hk.pkl: bump both together.
+[hooks]
+postinstall = "hk install --mise"
+
+# Keep dependencies in sync when the lockfiles change (checked on the shell prompt).
+[[watch_files]]
+patterns = ["pnpm-lock.yaml"]
+run = "pnpm install --frozen-lockfile"
+
+[[watch_files]]
+patterns = ["go.mod", "go.sum"]
+run = "go mod download"
+
+[settings]
+experimental = true
+
+# Dev defaults. DATABASE_URL and PG* are set below, the same in every checkout (do not set
+# DATABASE_URL in .env: the app reads .env too, but real env vars win). Personal overrides go
+# in the gitignored .env (read by the app) or .mise.local.toml (read by mise).
+[env]
+SPHERICON_ENV = "development"
+# The primary checkout is https://sphericon.localhost on :443. A linked worktree gets its own
+# origin, https://<dir-name>.sphericon.localhost:<caddy port>: browser cookies are shared across
+# ports of one host, so a per-worktree host keeps the session cookies apart.
+APP_HOST = "{% if env.CADDY_PORT == '443' %}sphericon.localhost{% else %}{{ config_root | basename | lower | replace(from='_', to='-') }}.sphericon.localhost{% endif %}"
+API_HOST = "api.{{ env.APP_HOST }}"
+# The tracking ingestion on a host of its own, like a customer site reaches it in production. The tracker
+# keeps the /collect prefix in its paths, so the edge proxies without a rewrite.
+COLLECT_HOST = "collect.{{ env.APP_HOST }}"
+# Mailpit's web UI behind Caddy, an external tool on a domain of its own: mailpit.localhost, or
+# mailpit.<dir>.sphericon.localhost in a linked worktree (like the demo storefront's host).
+MAIL_HOST = "{% if env.CADDY_PORT == '443' %}mailpit.localhost{% else %}mailpit.{{ env.APP_HOST }}{% endif %}"
+SPHERICON_APP_URL = "https://{{ env.APP_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
+# Caddy's admin API (2019 + offset) and HTTP listener (80 in the primary checkout, otherwise
+# 4000 + offset, clear of every other base + offset range).
+CADDY_ADMIN = "127.0.0.1:{{ env.CADDY_PORT | int - 443 + 2019 }}"
+CADDY_HTTP_PORT = "{% if env.CADDY_PORT == '443' %}80{% else %}{{ env.CADDY_PORT | int + 3557 }}{% endif %}"
+SPHERICON_APP_LOCALE = "en"
+PORT = "{{ env.BACKEND_PORT }}"
+# Opt-in Prometheus listener (ADR 0018); never reachable through Caddy. Every daemon port is
+# its base plus the checkout's slot offset (0 in the primary checkout, one offset for all
+# daemons), so ports with no daemon of their own (this one, SMTP) are derived from it.
+SPHERICON_METRICS_ADDR = "127.0.0.1:{{ env.BACKEND_PORT | int - 3300 + 9090 }}"
+CGO_ENABLED = "0"
+# Dev-only secret so a fresh clone authenticates out of the box.
+SPHERICON_JWT_SECRET = "dev-secret-change-in-production"
+# Dev-only Staff member secret (read only with the `staff` license); never the site's.
+SPHERICON_STAFF_JWT_SECRET = "dev-staff-secret-change-in-production"
+# Dev-only Tink keyset (same one the old .env.docker.sample shipped); never use in prod.
+SPHERICON_ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EiIaIIOWohIqGhyD2NeiOazlLrnrHqCirukTjCjD1iMFPqiEGAEQARiGprHOCSAB"
+# The demo storefront (packages/storefront) is a customer site on its own origin: brightpath.localhost
+# in the primary checkout, brightpath.<dir>.sphericon.localhost in a linked worktree. Its tracker
+# posts to the `collect.` host (not the `api.` host, where Caddy rewrites /collect to /api/collect) with
+# the Brightpath collect key from the fixtures.
+DEMO_HOST = "{% if env.CADDY_PORT == '443' %}brightpath.localhost{% else %}brightpath.{{ env.APP_HOST }}{% endif %}"
+DEMO_COLLECT_URL = "https://{{ env.COLLECT_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
+# The snippet on the Tracking settings page shows the same tracker host.
+SPHERICON_TRACKER_URL = "{{ env.DEMO_COLLECT_URL }}"
+DEMO_COLLECT_KEY = "omck_test_brightpath_collect_key"
+# The storefront's server calls the external API at the api. host with the "Demo site" token
+# (committed dev secret: fixtures/api_tokens.yml).
+DEMO_API_URL = "https://{{ env.API_HOST }}{% if env.CADDY_PORT != '443' %}:{{ env.CADDY_PORT }}{% endif %}"
+DEMO_API_TOKEN = "omtk_demosite0001_demo-token-secret"
+SPHERICON_SMTP_HOST = "127.0.0.1"
+SPHERICON_SMTP_PORT = "{{ env.MAILPIT_PORT | int - 8025 + 1025 }}"
+# One Postgres serves every checkout: the primary checkout's `db` daemon (below), started
+# by `mise run db:up`. A daemon declared in a linked worktree would export its own offset port
+# and database, so the connection is spelled out here, from the checkout's directory name:
+# sphericon_<dir> (lowercased, [a-z0-9_]; over 40 characters it is cut to 31 plus a hash of the path),
+# with the _test, _e2e and _diff twins, so each name fits Postgres's 63-byte identifier limit.
+# SPHERICON_PG_HOST / SPHERICON_PG_PORT point every checkout at another server (an external Postgres,
+# a CI service); a server that already answers there is used as is and never started.
+PGHOST = "{{ get_env(name='SPHERICON_PG_HOST', default='127.0.0.1') }}"
+PGPORT = "{{ get_env(name='SPHERICON_PG_PORT', default='15432') }}"
+PGUSER = "postgres"
+PGDATABASE = "{% set n = config_root | basename | lower | slugify | replace(from='-', to='_') %}sphericon_{% if n | length > 40 %}{{ n | truncate(length=31, end='') }}_{{ config_root | hash(len=8) }}{% else %}{{ n }}{% endif %}"
+DATABASE_URL = "postgres://{{ env.PGUSER }}@{{ env.PGHOST }}:{{ env.PGPORT }}/{{ env.PGDATABASE }}?sslmode=disable"
+# Every database of this checkout; db:up creates them, worktrees:gc keeps them.
+DB_NAMES = "{{ env.PGDATABASE }} {{ env.PGDATABASE }}_test {{ env.PGDATABASE }}_e2e {{ env.PGDATABASE }}_diff"
+# Set TEST_DB_URL / E2E_DB_URL / DIFF_DB_URL in the environment to use other databases.
+TEST_DB_URL = "{{ get_env(name='TEST_DB_URL', default='postgres://' ~ env.PGUSER ~ '@' ~ env.PGHOST ~ ':' ~ env.PGPORT ~ '/' ~ env.PGDATABASE ~ '_test?sslmode=disable') }}"
+E2E_DB_URL = "{{ get_env(name='E2E_DB_URL', default='postgres://' ~ env.PGUSER ~ '@' ~ env.PGHOST ~ ':' ~ env.PGPORT ~ '/' ~ env.PGDATABASE ~ '_e2e?sslmode=disable') }}"
+DIFF_DB_URL = "{{ get_env(name='DIFF_DB_URL', default='postgres://' ~ env.PGUSER ~ '@' ~ env.PGHOST ~ ':' ~ env.PGPORT ~ '/' ~ env.PGDATABASE ~ '_diff?sslmode=disable') }}"
+
+# --- dev stack (replaces docker compose) -----------------------------------------
+# `mise run dev` runs db:up, then `mise daemons start caddy`, which brings up everything below
+# in dependency order. Each daemon's
+# `port` is `auto`: the primary checkout gets the base port (today's ports), a linked worktree
+# a free slot (base + offset), exported as <NAME>_PORT and visible to `mise env` before any
+# daemon runs. `ready_port` cannot be templated, so readiness is a `ready_cmd` on that port.
+# Entry point is Caddy: it terminates TLS and routes /site, /api, /collect to the
+# backend and everything else to Vite (see Caddyfile). Run `caddy trust` once so the
+# browser accepts Caddy's local CA.
+
+# The one Postgres. Only the primary checkout (the first `git worktree list` entry, a stable
+# project root that `mise daemons prune` never sees as deleted) runs it, at a fixed port, and
+# `mise run db:up` starts it from any checkout. Nothing else depends on it or starts it: a
+# postmaster per worktree takes one of macOS's 32 SysV shared-memory segments (kern.sysv.shmmni)
+# and ~30 worktrees exhaust them ("shmget ... No space left on device").
+[daemons.db]
+preset = "postgres"
+version = "18"
+port = 15432
+
+[daemons.mailpit]
+run = "exec mailpit --listen 0.0.0.0:$MAILPIT_PORT --smtp 0.0.0.0:$SPHERICON_SMTP_PORT"
+port = { auto = true, base = 8025 }
+ready_cmd = "nc -z 127.0.0.1 $MAILPIT_PORT"
+proxy = false
+
+# The DNS server that verifies Sending domains and Join domains in dev (dev/Corefile). The backend
+# reaches it through SPHERICON_DNS_ADDR, set on that daemon only: the tests and CI keep their stubs. The
+# same daemon turns Tracking domains on (SPHERICON_TRACKING_CNAME_TARGET): a Sending domain's
+# track.<domain> CNAME to that target verifies against the zone.
+[daemons.dns]
+run = "DNS_PORT=$DNS_PORT exec coredns -conf dev/Corefile"
+port = { auto = true, base = 15353 }
+ready_cmd = "nc -z 127.0.0.1 $DNS_PORT"
+proxy = false
+
+[daemons.backend]
+run = "SPHERICON_DNS_ADDR=127.0.0.1:$DNS_PORT SPHERICON_TRACKING_CNAME_TARGET=edge.sphericon.localhost exec air"
+port = { auto = true, base = 3300 }
+ready_cmd = "nc -z 127.0.0.1 $BACKEND_PORT"
+depends = ["mailpit", "dns"]
+proxy = false
+
+[daemons.frontend]
+run = "exec pnpm exec vite"
+port = { auto = true, base = 5173 }
+ready_cmd = "nc -z 127.0.0.1 $FRONTEND_PORT"
+proxy = false
+
+# The demo storefront. NODE_USE_SYSTEM_CA makes Node trust the certificate `caddy trust` installed.
+[daemons.demo]
+run = "NODE_USE_SYSTEM_CA=1 exec pnpm --filter @sphericon/storefront exec vite"
+port = { auto = true, base = 5373 }
+ready_cmd = "nc -z 127.0.0.1 $DEMO_PORT"
+proxy = false
+
+# The server `mise run check:contract` fuzzes: the binary check:contract:prepare builds, on the
+# seeded e2e database. The rate limits are off (the failed-authentication one too: the fuzzer sends
+# bad credentials on purpose) so a 429 does not stand in for an answer.
+[daemons.contract]
+run = "exec env SPHERICON_ENV=e2e DATABASE_URL=$E2E_DB_URL SPHERICON_METRICS_ADDR= PORT=$CONTRACT_PORT SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND=0 SPHERICON_RATE_LIMIT_API_PER_MINUTE=0 SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE=0 .bin/contract-server"
+port = { auto = true, base = 3990 }
+ready_cmd = "curl -fsS http://localhost:$CONTRACT_PORT/healthz"
+proxy = false
+
+[daemons.caddy]
+run = "exec caddy run --config Caddyfile --adapter caddyfile"
+port = { auto = true, base = 443 }
+ready_cmd = "nc -z 127.0.0.1 $CADDY_PORT"
+depends = ["frontend", "backend", "demo"]
+proxy = false
+
+# Resources shipped by packslip tools (hk, pitchfork, ...): agent skills are linked
+# into .claude/skills and kept in sync with the pinned tool versions.
+[settings.skills]
+auto_sync = true
+prune = true
+
+[task_config]
+includes = ["mise/tasks.toml"]
