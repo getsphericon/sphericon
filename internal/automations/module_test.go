@@ -4,17 +4,18 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
 

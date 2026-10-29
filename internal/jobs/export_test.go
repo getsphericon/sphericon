@@ -96,8 +96,8 @@ func NewEvaluateTriggerWorker(client *ent.Client, bus *events.Bus) *EvaluateTrig
 	return &EvaluateTriggerWorker{ent: client, bus: bus}
 }
 
-func NewRunHTTPStepWorker(client *ent.Client, fence automations.Fencer, mod *automations.Module, step *stepping.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
-	return &RunHTTPStepWorker{ent: client, mod: mod, step: step, client: doer, now: now, fence: fence}
+func NewRunHTTPStepWorker(client *ent.Client, fence automations.Fencer, cipher *secrets.Cipher, step *stepping.Module, doer webhook.Doer, now func() time.Time) *RunHTTPStepWorker {
+	return &RunHTTPStepWorker{ent: client, cipher: cipher, step: step, client: doer, now: now, fence: fence}
 }
 
 func NewSendBroadcastWorker(client *ent.Client, mod *outbound.Module) *SendBroadcastWorker {

@@ -28,7 +28,7 @@ func (o outcomeSender) Send(context.Context, *ent.Scoped, outbound.Request) (out
 func TestSendRefusesARequestThatCannotBeSent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	m := transactional.New(templates.New(), outcomeSender(outbound.Sent))
+	m := transactional.New(templates.New(testhelper.Renderer()), outcomeSender(outbound.Sent))
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	_, err := m.Send(ctx, acme, transactional.Request{TemplateID: fixtures.TemplateWithVariablesID, Destination: "  "})
@@ -53,7 +53,7 @@ func TestSendRefusesARequestThatCannotBeSent(t *testing.T) {
 
 func TestSendTreatsADeferralAsAnInvariantViolation(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := transactional.New(templates.New(), outcomeSender(outbound.Deferral))
+	m := transactional.New(templates.New(testhelper.Renderer()), outcomeSender(outbound.Deferral))
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional.Request{
 		TemplateID: fixtures.TemplateWithVariablesID, Destination: "a@example.com",

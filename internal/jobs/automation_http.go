@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
@@ -20,7 +21,7 @@ type RunHTTPStepWorker struct {
 	river.WorkerDefaults[stepping.RunHTTPStepArgs]
 
 	ent    *ent.Client
-	mod    *automations.Module
+	cipher *secrets.Cipher
 	step   *stepping.Module
 	client webhook.Doer
 	now    func() time.Time
@@ -69,7 +70,7 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepping.Ru
 	if err != nil {
 		return err
 	}
-	opened, err := w.mod.OpenHTTP(step)
+	opened, err := automations.OpenHTTP(w.cipher, step)
 	if err != nil {
 		return err
 	}

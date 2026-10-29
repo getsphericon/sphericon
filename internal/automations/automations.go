@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
@@ -85,36 +86,6 @@ var (
 	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")
 )
 
-// build renders every email step that holds a document to its body, in the same save (ADR 0040,
-// the Template rules): a step with a document and a body is refused, and a document that cannot
-// be rendered refuses the whole save, naming the step (1-based). A step with no document is
-// left as it is, so a body-only write stores no document.
-func build(ctx context.Context, steps []Step) ([]Step, error) {
-	out := make([]Step, len(steps))
-	copy(out, steps)
-	for i := range out {
-		s := out[i]
-		if s.Type != StepEmail || len(s.Doc) == 0 {
-			continue
-		}
-		var body *string
-		if s.Body != "" {
-			body = &s.Body
-		}
-		c, err := emailrender.ResolveContent(ctx, &s.Subject, body, s.Doc, errBodyAndDoc)
-		switch {
-		case errors.Is(err, errBodyAndDoc):
-			return nil, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
-		case errors.Is(err, emailrender.ErrInvalidContent):
-			return nil, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
-		case err != nil:
-			return nil, err
-		}
-		out[i].Body, out[i].EditorVersion = c.Authored.Body, c.Authored.EditorVersion
-	}
-	return out, nil
-}
-
 // Decode parses a stored definition. An empty definition has no steps.
 func Decode(definition string) ([]Step, error) {
 	if definition == "" {
@@ -178,14 +149,48 @@ func validate(steps []Step) error {
 
 // Module is the automations module.
 type Module struct {
-	cipher *secrets.Cipher
-	bus    *events.Bus
+	cipher   *secrets.Cipher
+	bus      *events.Bus
+	renderer *emaildoc.Renderer
 }
 
 // New builds the automations module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets; the bus
-// opens the transaction that saves an Automation together with its steps.
-func New(cipher *secrets.Cipher, bus *events.Bus) *Module { return &Module{cipher: cipher, bus: bus} }
+// opens the transaction that saves an Automation together with its steps; the renderer builds an
+// email step's body from its document.
+func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer) *Module {
+	return &Module{cipher: cipher, bus: bus, renderer: renderer}
+}
+
+// build renders every email step that holds a document to its body, in the same save (ADR 0040,
+// the Template rules): a step with a document and a body is refused, and a document that cannot
+// be rendered refuses the whole save, naming the step (1-based). A step with no document is
+// left as it is, so a body-only write stores no document.
+func (m *Module) build(ctx context.Context, steps []Step) ([]Step, error) {
+	out := make([]Step, len(steps))
+	copy(out, steps)
+	for i := range out {
+		s := out[i]
+		if s.Type != StepEmail || len(s.Doc) == 0 {
+			continue
+		}
+		var body *string
+		if s.Body != "" {
+			body = &s.Body
+		}
+		c, err := emailrender.ResolveContent(ctx, m.renderer, &s.Subject, body, s.Doc, errBodyAndDoc)
+		switch {
+		case errors.Is(err, errBodyAndDoc):
+			return nil, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
+		case errors.Is(err, emailrender.ErrInvalidContent):
+			return nil, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
+		case err != nil:
+			return nil, err
+		}
+		out[i].Body, out[i].EditorVersion = c.Authored.Body, c.Authored.EditorVersion
+	}
+	return out, nil
+}
 
 // IsInvalid reports whether err refuses the Automation's input (a step, the trigger or the
 // Integration), which an API surface renders as 422.
@@ -307,7 +312,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	if err := validateTrigger(in.TriggerEvent); err != nil {
 		return nil, err
 	}
-	built, err := build(ctx, in.Steps)
+	built, err := m.build(ctx, in.Steps)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +363,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	var steps []Step
 	if in.Steps != nil {
-		built, err := build(ctx, *in.Steps)
+		built, err := m.build(ctx, *in.Steps)
 		if err != nil {
 			return nil, err
 		}

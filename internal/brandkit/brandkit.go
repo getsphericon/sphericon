@@ -88,7 +88,7 @@ func (m *Module) Save(ctx context.Context, s *ent.Scoped, in Input) (Kit, error)
 	}
 	var starters []renderedStarter
 	if !current.Saved {
-		if starters, err = renderStarters(ctx, kitOfInput(in)); err != nil {
+		if starters, err = m.renderStarters(ctx, kitOfInput(in)); err != nil {
 			return Kit{}, err
 		}
 	}
@@ -160,7 +160,7 @@ func (m *Module) RecreateStarterTemplates(ctx context.Context, s *ent.Scoped) ([
 	if !kit.Saved {
 		return nil, ErrNotSaved
 	}
-	starters, err := renderStarters(ctx, kit)
+	starters, err := m.renderStarters(ctx, kit)
 	if err != nil {
 		return nil, err
 	}
@@ -182,10 +182,10 @@ type renderedStarter struct {
 // renderStarters renders the four starter documents. The first render of a process starts the
 // document runtime, which takes seconds, so it runs before a transaction opens: a transaction
 // never holds its database connection through a render.
-func renderStarters(ctx context.Context, kit Kit) ([]renderedStarter, error) {
+func (m *Module) renderStarters(ctx context.Context, kit Kit) ([]renderedStarter, error) {
 	var out []renderedStarter
 	for _, starter := range Starters(kit) {
-		authored, err := emailrender.FromDocument(ctx, &starter.Subject, starter.Doc)
+		authored, err := m.templates.Prepare(ctx, &starter.Subject, starter.Doc)
 		if err != nil {
 			return nil, err
 		}

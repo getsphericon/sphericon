@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -28,11 +29,20 @@ var (
 	ErrBodyAndDoc = validation.Refuse("templates: write a body or a doc, not both", "errors.body_and_doc")
 )
 
-// Module holds no state: every call receives the Workspace-scoped client (ADR 0017).
-type Module struct{}
+// Module holds no Workspace state: every call receives the Workspace-scoped client (ADR 0017).
+// It holds the document renderer a save with a document runs.
+type Module struct {
+	renderer *emaildoc.Renderer
+}
 
 // New builds the templates module.
-func New() *Module { return &Module{} }
+func New(renderer *emaildoc.Renderer) *Module { return &Module{renderer: renderer} }
+
+// Prepare renders a document to the body a save stores (emailrender.FromDocument), for a caller
+// that renders before it opens a transaction (CreateInput.Prepared) or renders without saving.
+func (m *Module) Prepare(ctx context.Context, subject *string, doc []byte) (emailrender.Authored, error) {
+	return emailrender.FromDocument(ctx, m.renderer, subject, doc)
+}
 
 // CreateInput is a new Template; nil Subject and Body keep their defaults.
 type CreateInput struct {
@@ -42,7 +52,7 @@ type CreateInput struct {
 	// Doc is the editor's JSON document, empty when the Template is written as HTML. The body is
 	// built from it in the same save (ADR 0040).
 	Doc json.RawMessage
-	// Prepared is Doc already rendered by emailrender.FromDocument, for a caller that renders
+	// Prepared is Doc already rendered by Prepare, for a caller that renders
 	// before it opens a transaction so that no database connection is held through the render.
 	// Nil renders Doc here; a Body is never combined with it.
 	Prepared *emailrender.Authored
@@ -87,7 +97,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		c = emailrender.Content{Body: &in.Prepared.Body, Authored: in.Prepared}
 	} else {
 		var err error
-		if c, err = emailrender.ResolveContent(ctx, in.Subject, in.Body, in.Doc, ErrBodyAndDoc); err != nil {
+		if c, err = emailrender.ResolveContent(ctx, m.renderer, in.Subject, in.Body, in.Doc, ErrBodyAndDoc); err != nil {
 			return nil, err
 		}
 	}
@@ -107,7 +117,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if err := checkName(in.Name); err != nil {
 		return nil, err
 	}
-	c, err := emailrender.ResolveContent(ctx, in.Subject, in.Body, in.Doc, ErrBodyAndDoc)
+	c, err := emailrender.ResolveContent(ctx, m.renderer, in.Subject, in.Body, in.Doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
 	}

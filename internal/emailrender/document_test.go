@@ -7,16 +7,21 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/emaildoc"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 )
+
+// One runtime serves the whole test process: starting one takes seconds.
+var renderer = emaildoc.New()
 
 func TestFromDocumentBuildsAStorableBody(t *testing.T) {
 	doc, err := os.ReadFile(filepath.Join("..", "emaildoc", "testdata", "docs", "newsletter.json"))
 	require.NoError(t, err)
 
-	got, err := emailrender.FromDocument(t.Context(), nil, doc)
+	got, err := emailrender.FromDocument(t.Context(), renderer, nil, doc)
 	require.NoError(t, err)
 
 	assert.Equal(t, emailrender.SanitizeHTML(got.Body), got.Body, "the stored body survives the sanitizer")
@@ -35,7 +40,7 @@ func TestFromDocumentRefusesWhatCannotBeRendered(t *testing.T) {
 		"not JSON":           `[`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			_, err := emailrender.FromDocument(t.Context(), nil, []byte(doc))
+			_, err := emailrender.FromDocument(t.Context(), renderer, nil, []byte(doc))
 			require.ErrorIs(t, err, emailrender.ErrInvalidContent)
 		})
 	}
@@ -43,7 +48,7 @@ func TestFromDocumentRefusesWhatCannotBeRendered(t *testing.T) {
 
 func TestFromDocumentChecksTheSubjectToo(t *testing.T) {
 	subject := "{% if %}"
-	_, err := emailrender.FromDocument(t.Context(), &subject,
+	_, err := emailrender.FromDocument(t.Context(), renderer, &subject,
 		[]byte(`{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"x"}]}]}`))
 	require.ErrorIs(t, err, emailrender.ErrInvalidContent)
 }
@@ -54,7 +59,7 @@ func TestFromDocumentSaysARenderThatCouldNotRunIsNotTheDocumentsFault(t *testing
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	_, err := emailrender.FromDocument(ctx, nil,
+	_, err := emailrender.FromDocument(ctx, renderer, nil,
 		[]byte(`{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"x"}]}]}`))
 
 	require.ErrorIs(t, err, emailrender.ErrRenderUnavailable)
@@ -69,7 +74,7 @@ func TestResolveContent(t *testing.T) {
 	body := "<p>plain</p>"
 
 	t.Run("a document is rendered to the body", func(t *testing.T) {
-		got, err := emailrender.ResolveContent(t.Context(), nil, nil, doc, errBoth)
+		got, err := emailrender.ResolveContent(t.Context(), renderer, nil, nil, doc, errBoth)
 		require.NoError(t, err)
 		require.NotNil(t, got.Authored)
 		require.NotNil(t, got.Body)
@@ -77,20 +82,20 @@ func TestResolveContent(t *testing.T) {
 		assert.Equal(t, got.Authored.Body, *got.Body)
 	})
 	t.Run("a body is stored on its own", func(t *testing.T) {
-		got, err := emailrender.ResolveContent(t.Context(), nil, &body, nil, errBoth)
+		got, err := emailrender.ResolveContent(t.Context(), renderer, nil, &body, nil, errBoth)
 		require.NoError(t, err)
 		assert.Nil(t, got.Authored)
 		require.NotNil(t, got.Body)
 		assert.Contains(t, *got.Body, "plain")
 	})
 	t.Run("neither leaves the content alone", func(t *testing.T) {
-		got, err := emailrender.ResolveContent(t.Context(), nil, nil, nil, errBoth)
+		got, err := emailrender.ResolveContent(t.Context(), renderer, nil, nil, nil, errBoth)
 		require.NoError(t, err)
 		assert.Nil(t, got.Authored)
 		assert.Nil(t, got.Body)
 	})
 	t.Run("both is the caller's refusal", func(t *testing.T) {
-		_, err := emailrender.ResolveContent(t.Context(), nil, &body, doc, errBoth)
+		_, err := emailrender.ResolveContent(t.Context(), renderer, nil, &body, doc, errBoth)
 		require.ErrorIs(t, err, errBoth)
 	})
 }

@@ -24,7 +24,7 @@ func TestFromDocumentRendersTheThemeTheEditorWroteIntoTheDocument(t *testing.T) 
 	  ]}}},
 	  {"type":"paragraph","content":[{"type":"text","text":"Hello"}]}]}`
 
-	got, err := emailrender.FromDocument(t.Context(), nil, []byte(doc))
+	got, err := emailrender.FromDocument(t.Context(), renderer, nil, []byte(doc))
 	require.NoError(t, err)
 
 	assert.Contains(t, got.Body, "#abcdef")
@@ -37,7 +37,7 @@ func TestFromDocumentAcceptsADocumentThemedByTheEditorWithABrandKit(t *testing.T
 	doc, err := os.ReadFile(filepath.Join("testdata", "editor_branded.json"))
 	require.NoError(t, err)
 
-	got, err := emailrender.FromDocument(t.Context(), nil, doc)
+	got, err := emailrender.FromDocument(t.Context(), renderer, nil, doc)
 	require.NoError(t, err)
 
 	for _, brand := range []string{"#f0f4f8", "#ff5500", "#fefefe", "border-radius:12px", "Georgia, serif", "Verdana, sans-serif"} {
