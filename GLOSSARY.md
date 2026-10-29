@@ -147,7 +147,8 @@ Contact and the Rule's Condition holds for that Contact and Event, its Actions r
 order. No delay, no Enrollment and no email step; those belong to an Automation. Fires on every
 matching Event, only going forward, and at most once per Event (a **Firing** records what ran).
 An Event with no Contact, a machine Event, and an Event caused by a Rule's own Action trigger no
-Rule. Actions today: apply Tag, remove Tag, HTTP call, enroll in an Automation.
+Rule. Actions today: apply Tag, remove Tag, HTTP call, enroll in an Automation. What it does is
+its live **Rule version**; an edit writes a draft, and only **Publish** makes it live.
 _Avoid_: Workflow, flow, hook, automation (an Automation is sequential and stateful)
 
 **Order**:
@@ -250,8 +251,10 @@ _Avoid_: Subscribed flag, subscription status, opt-in flag, double opt-in status
 
 **Broadcast**:
 A one-off email send to an audience, authored and sent once (draft → scheduled → sending →
-sent / failed). Its audience is a Segment (or all Contacts) resolved and **frozen into
-Recipients at send time**, then filtered per-recipient by Send-eligibility. Sends under the
+sent / failed). Its audience is a Segment (or all Contacts). Scheduling takes a **copy of the
+Segment's Condition**, so a later edit of the Segment does not change who the Broadcast reaches;
+the copy is resolved and **frozen into Recipients at send time**, then filtered per-recipient by
+Send-eligibility. Sends under the
 shared "broadcasts" unsubscribe scope. There is no "active contacts" audience — eligibility is
 derived, not a contact status. "Audience" is prose for whoever a Broadcast reaches; the thing
 that picks them is always a Segment, and names say Segment.
@@ -356,27 +359,45 @@ _Avoid_: Notification, system email, trigger (that is the Automation term), API 
 **Automation**:
 A workspace-scoped, event-triggered sequence: when its Trigger fires for a Contact, the
 Contact is enrolled and walks the Automation's ordered steps (send email, wait, …). Each
-Automation is its own unsubscribe Sending source. Activating starts enrolling; deactivating
+Automation is its own unsubscribe Sending source. What it does is its **live version**: an edit
+writes a draft, and only **Publish** makes it live. Publishing starts enrolling; deactivating
 stops _new_ enrollments but lets in-flight Enrollments finish (deactivate ≠ halt). Removing
 one is **Archive** (a **Discard**) once no Enrollment is active, which hides it and enrolls
 nobody while its Enrollments stay; only an Automation with no Enrollments at all is purged.
 _Avoid_: Workflow, flow, journey, drip, campaign
 
 **Automation version**:
-One immutable copy of an Automation's steps. An Enrollment stays on the version it began on, so
-editing the steps changes only later Enrollments; a version no Enrollment stands on is rewritten
-rather than superseded. The name and Trigger belong to the Automation, not to a version.
-_Avoid_: Revision, snapshot, draft
+One copy of an Automation's definition: its Trigger, its Integration and its Steps. The **live
+version** is the one new Enrollments begin on; the **draft** is a newer version that edits are
+written into, rewritten in place until it is published. A live version is never rewritten, and an
+Enrollment stays on the version it began on. The name belongs to the Automation, not to a version.
+_Avoid_: Revision, snapshot
+
+**Rule version**:
+One copy of a Rule's definition: its Trigger events, its Condition and its Actions. Live and draft
+as for an Automation version; a Firing runs the version that fired.
+_Avoid_: Revision, snapshot
+
+**Publish**:
+The send-class act that makes the draft of an Automation or a Rule its live version and makes it
+active; with no draft, it makes the live version active again. The only way the definition of a
+live Automation or Rule changes.
+_Avoid_: Activate, launch, go live, deploy
+
+**Revert**:
+Dropping the draft of an Automation or a Rule, so that its live version is again the latest. It
+changes nothing that sends.
+_Avoid_: Discard (that is the soft-delete mechanism), reset, undo
 
 **Trigger**:
 The single Event action that enrolls a Contact into an Automation (e.g. "contact.created", a
-custom event). Not a separate entity — one Trigger per Automation. Matched by the Event's
+custom event). Not a separate entity — one Trigger per Automation version. Matched by the Event's
 resolved identity, not by email.
 _Avoid_: Hook, entry condition
 
 **Enrollment**:
 One Contact's membership-and-progress in one Automation — enrolled at most once ever
-(re-enrollment is deliberately out of scope). Stands on one **Automation version** (the one latest when
+(re-enrollment is deliberately out of scope). Stands on one **Automation version** (the one live when
 it began) and holds the current step in it, and a terminal state:
 `completed`, `failed`, or **`exited`** (left early). An unsubscribe from the Automation has two
 effects from one action — it records the durable opt-out (scope `automation:<id>`) _and_ moves

@@ -4,6 +4,10 @@ status: accepted
 
 # MCP surface: a projection of the external `/api`, not a second implementation
 
+> Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: the send-class list is
+> Automation and Rule Publish, Email send, and Broadcast schedule and unschedule, and an edit of an
+> active Automation or Rule writes a draft.
+
 sphericon is operated by agents through an MCP server mounted at `/mcp` in the same binary
 (Streamable HTTP, official `modelcontextprotocol/go-sdk`). Its tools are **projected from the
 external OpenAPI contract** at startup and dispatch in-process through the same ogen server, so

@@ -4,6 +4,9 @@ status: accepted
 
 # A Rule is a stateless reaction to an Event, built on the Segment's Condition tree
 
+> Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: a Rule is versioned, an edit
+> writes a draft, Publish makes it live, and the lifecycle is `active` and `inactive`.
+
 A Workspace could react to an Event only by building an Automation: a sequence with an
 Enrollment, a version and a once-ever fence, even to "tag a Contact who clicked this link" or "tell
 the CRM". A **Rule** is the light primitive for that: when any of its Trigger events is recorded for
