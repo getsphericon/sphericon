@@ -359,6 +359,8 @@ export default interface Resources {
         },
         "title": "Sending is on hold"
       },
+      "integrationDefault": "Workspace default",
+      "integrationLabel": "Send through",
       "nameLabel": "Name",
       "noRecords": "No broadcasts yet",
       "openedLabel": "Opened",

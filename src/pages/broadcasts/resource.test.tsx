@@ -12,10 +12,12 @@ import {
   handleSiteBroadcastsList,
   handleSiteBroadcastsSend,
   handleSiteBroadcastsUpdate,
+  handleSiteIntegrationsList,
   handleSiteSegmentsList,
   handleSiteSendingDomainsList,
   handleSiteTemplatesList,
 } from '../../generated/site/msw.gen.ts'
+import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { problem } from '../../test/problem.ts'
@@ -49,6 +51,36 @@ function broadcast(status: string) {
     status,
   }
 }
+
+const integration = (id: string, name: string, isDefault = false): SiteIntegrationResource => ({
+  id,
+  name,
+  channel: 'email',
+  provider: 'smtp',
+  enabled: true,
+  isDefault,
+  maxPerSecond: null,
+  maxPerDay: null,
+  sendLimit: {
+    perSecond: { limit: null, source: null },
+    perDay: { limit: null, source: null },
+    sentLast24h: 0,
+    warnings: ['unlimited'],
+  },
+  config: { kind: 'smtp', host: 'smtp.test', port: 587, from: 'a@acme.com' },
+  preset: null,
+  params: {},
+  secretsRetiring: [],
+  hookUrl: 'https://app.test/hooks/omik_one',
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+})
+
+const INTEGRATIONS = [
+  integration('1', 'Primary SMTP', true),
+  integration('21', 'Postmark'),
+  { ...integration('30', 'SMS gateway'), channel: 'sms' as const },
+]
 
 function empty() {
   return HttpResponse.json({ items: [], totalItems: 0 })
@@ -99,6 +131,7 @@ function serve(
     handleSiteSegmentsList(empty),
     handleSiteTemplatesList(empty),
     handleSiteSendingDomainsList(() => domainsPage(domains)),
+    handleSiteIntegrationsList({ body: INTEGRATIONS }),
   )
   return { bodies, fetches }
 }
@@ -155,6 +188,7 @@ test('editing a draft; a cleared sender name is sent as null and the Segment is 
         fromName: null,
         fromEmail: 'ada@example.com',
         segmentId: null,
+        integrationId: null,
         body: '<p></p>',
       },
     ])
@@ -239,6 +273,7 @@ test('saving a broadcast written in the editor sends its document and no body', 
         fromName: 'Ada',
         fromEmail: 'ada@example.com',
         segmentId: null,
+        integrationId: null,
         doc: DOC,
       },
     ])
@@ -308,4 +343,37 @@ test('a saved From whose domain lost verification stays visible, marked, and sav
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => bodies).toMatchObject([{ fromEmail: 'ada@example.com' }])
+})
+
+test('the Integration a broadcast sends through is chosen among the email ones and saved', async () => {
+  const { bodies } = serve('draft')
+
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+  await screen.getByLabelText(/^Name/).fill('Launch')
+  const picker = screen.getByRole('combobox', { name: 'Send through' })
+  await expect.element(picker).toHaveValue('Workspace default')
+  await picker.click()
+  expect(screen.getByRole('option', { name: 'SMS gateway' }).elements()).toHaveLength(0)
+  await screen.getByRole('option', { name: 'Postmark' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ name: 'Launch', integrationId: '21' }])
+})
+
+test('a saved Integration is shown, and switching back to the default clears it', async () => {
+  const { bodies } = serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({ ...broadcast('draft'), integrationId: '21' }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+  const picker = screen.getByRole('combobox', { name: 'Send through' })
+  await expect.element(picker).toHaveValue('Postmark')
+  await picker.click()
+  await screen.getByRole('option', { name: 'Workspace default' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => bodies).toMatchObject([{ integrationId: null }])
 })
