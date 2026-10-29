@@ -494,7 +494,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
 	relay := &FakeRelayRanges{}
 	detector := machine.New(client, relay)
-	handler, err := server.New(&cfg, txDB, client, apisite.Deps{
+	handler, err := server.New(&cfg, txDB, migrated, client, apisite.Deps{
 		SignupSurvey: signupsurvey.New(bus, signupsurvey.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default())),
 		Deletion:     workspacedeletion.New(client, bus),
 		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
@@ -653,3 +653,8 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 	}
 	return fixtures.Load(ctx, sqlDB, cipher, filepath.Join(projectRoot, "fixtures"))
 }
+
+// migrated is the schema watch of the test server: every test database is cloned from the
+// migrated template, so none is ever behind. The guard's own answers are tested on it directly
+// (internal/server), and asking the database for every test cost a query each.
+var migrated = db.WatchSchema(func(context.Context) (int, error) { return 0, nil }, time.Now)

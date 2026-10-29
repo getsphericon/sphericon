@@ -1608,7 +1608,7 @@ func registerHandler(injector do.Injector) {
 			return nil, err
 		}
 
-		return server.New(cfg, database.DB, client.Client, site, detector, external.Handler, mcp.Handler, staffAPI)
+		return server.New(cfg, database.DB, db.NewSchemaWatch(database.DB), client.Client, site, detector, external.Handler, mcp.Handler, staffAPI)
 	})
 }
 
