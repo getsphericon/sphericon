@@ -451,12 +451,12 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	tagsModule := tags.New()
 	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil)
 	// An `sns` Preset checks signatures against the test certificate, so a test posts a
-	// notification signed offline; confirmations are recorded, never fetched.
-	certs := st.certs
-	if certs == nil {
-		certs = preset.TestSNSCertificates
+	// notification signed offline; confirmations are recorded, never fetched. A test with
+	// certificates of its own loads the Presets over them.
+	presets, err := testPresets()
+	if st.certs != nil {
+		presets, err = preset.Load(nil, preset.WithSNSCertificates(st.certs))
 	}
-	presets, err := preset.Load(nil, preset.WithSNSCertificates(certs))
 	if err != nil {
 		t.Fatalf("load presets: %v", err)
 	}
@@ -658,3 +658,9 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 // migrated template, so none is ever behind. The guard's own answers are tested on it directly
 // (internal/server), and asking the database for every test cost a query each.
 var migrated = db.WatchSchema(func(context.Context) (int, error) { return 0, nil }, time.Now)
+
+// testPresets are the built-in Presets over the test SNS certificate, loaded once per process:
+// a Registry is read-only once loaded, and loading compiles every Preset's parameter schema.
+var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
+	return preset.Load(nil, preset.WithSNSCertificates(preset.TestSNSCertificates))
+})
