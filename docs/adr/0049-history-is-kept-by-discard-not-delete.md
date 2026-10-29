@@ -4,6 +4,10 @@ status: accepted
 
 # History is kept by Discard, not by delete
 
+> Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: an Automation version also
+> holds the Trigger and the Integration, the live version is never rewritten, and only the draft
+> above it is rewritten in place.
+
 Only a Workspace was removed softly (ADR 0043); every other row was removed with `DeleteOneID`.
 That broke history in three places: deleting an Automation cascaded away its Enrollments (the
 Outbound messages stayed, the record of who was enrolled and why a run failed did not), deleting a
