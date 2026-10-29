@@ -15,8 +15,8 @@ import { docCodec } from '../../utils/messageDoc.ts'
 import { BroadcastForm } from './BroadcastForm.tsx'
 import { DeliveryBlock } from './DeliveryBlock.tsx'
 
-// The integration is not edited here, so it never round-trips into the payload. The name is
-// required on both create and update. The document is held as JSON text; a blank one is absent,
+// The name is required on both create and update; a blank Segment or Integration is the whole
+// list or the Workspace default. The document is held as JSON text; a blank one is absent,
 // so a source-only save writes a body.
 const broadcastSchema = resourceFormSchema(
   zSiteCreateBroadcastInput
@@ -25,6 +25,7 @@ const broadcastSchema = resourceFormSchema(
       fromName: true,
       fromEmail: true,
       segmentId: true,
+      integrationId: true,
       body: true,
     })
     .extend({ name: z.string().min(1), doc: z.exactOptional(docCodec) }),

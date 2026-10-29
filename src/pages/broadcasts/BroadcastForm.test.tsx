@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteBroadcastsCreate,
+  handleSiteIntegrationsList,
   handleSiteSegmentsList,
   handleSiteSendingDomainsList,
   handleSiteTemplatesList,
@@ -41,6 +42,7 @@ function serve(templates: ReturnType<typeof template>[], bodies: unknown[] = [])
       HttpResponse.json({ items: templates, totalItems: templates.length }),
     ),
     handleSiteSendingDomainsList(() => HttpResponse.json({ items: [], totalItems: 0 })),
+    handleSiteIntegrationsList({ body: [] }),
     handleSiteBroadcastsCreate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({ id: '42', name: 'x' }, { status: 201 })

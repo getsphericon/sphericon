@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { AnchorLink, ButtonLink } from '../../components/RouterLink.tsx'
 import {
+  siteIntegrationsListOptions,
   siteSegmentsListOptions,
   siteSendingDomainsListOptions,
   siteTemplatesListOptions,
@@ -33,6 +34,17 @@ export function BroadcastForm({
   const segmentOptions = [
     { value: '', label: t(($) => $.broadcasts.segmentAll) },
     ...(segmentsQuery.data?.items ?? []).map((s) => ({ value: s.id, label: s.name })),
+  ]
+
+  // The Integration the broadcast sends and paces through; blank is the Workspace default.
+  const integrationsQuery = useQuery(
+    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
+  )
+  const integrationOptions = [
+    { value: '', label: t(($) => $.broadcasts.integrationDefault) },
+    ...(integrationsQuery.data ?? [])
+      .filter((integration) => integration.channel === 'email')
+      .map((integration) => ({ value: integration.id, label: integration.name })),
   ]
 
   // From is a local part on one of the verified Sending domains (ADR 0010); the server is the
@@ -96,7 +108,7 @@ export function BroadcastForm({
   // A message written in the editor is its document and the server builds the body; sending
   // both is a 422.
   const submit = (payload: SiteCreateBroadcastInput) => {
-    const { doc: written, name, subject, fromName, fromEmail, segmentId } = payload
+    const { doc: written, name, subject, fromName, fromEmail, segmentId, integrationId } = payload
     onSubmit(
       written
         ? {
@@ -106,6 +118,7 @@ export function BroadcastForm({
             ...(fromName !== undefined && { fromName }),
             ...(fromEmail !== undefined && { fromEmail }),
             ...(segmentId !== undefined && { segmentId }),
+            ...(integrationId !== undefined && { integrationId }),
           }
         : payload,
     )
@@ -149,6 +162,13 @@ export function BroadcastForm({
             </AnchorLink>
           </Alert>
         ) : null}
+
+        <Select
+          label={t(($) => $.broadcasts.integrationLabel)}
+          data={integrationOptions}
+          allowDeselect={false}
+          {...form.getInputProps('integrationId')}
+        />
 
         <Select
           label={t(($) => $.broadcasts.segmentLabel)}
