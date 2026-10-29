@@ -45,8 +45,10 @@ modelled and stay out.
   group: an OAuth client gets them only when it asked for them **and** the user ticks a second box on
   the consent screen, apart from the send box (neither brings the other, and they bring no `mcp:send`).
   Everything that cannot be undone or gives a standing way in stays token-only: `tokens:*` (a connector
-  must never mint a credential), `contacts:erase`, `audit:read`, `export:read`. The role needs no check
-  of its own: consent already takes an owner or admin, and so do the two resources.
+  must never mint a credential), `contacts:erase`, `audit:read`, `export:read`. Each setup scope
+  needs the Permission of its resource to be granted (`integrations:manage`,
+  `sending_domains:manage`), so a member's consent screen does not offer it
+  ([[0061-access-to-an-operation-is-declared-in-the-contract]]).
 - **Consent only narrows through the agent.** An agent may add a Suppression or record an
   Unsubscribe. Resubscribing and lifting a Suppression are not exposed on `/api` or MCP at all:
   they widen reach and assert consent, so a human (or the contact via link) does them.
@@ -98,12 +100,14 @@ Decisions taken while building it, so the contract and code are not the only rec
   resource and the `SPHERICON_APP_URL` issuer, and the `WWW-Authenticate` challenge points at the metadata
   on the MCP host. The binary is host-agnostic and serves discovery on every host. Unknown scopes are dropped;
   `tokens:*` is never grantable, so a connector cannot mint credentials.
-- **Consent role.** Approving consent mints a workspace token (renewable by refresh), so it takes the role
-  that may create one: owner or admin. Plain members are refused (403), and `/site` token creation
-  and revocation follow the same rule.
-- **Tokens issued over OAuth** are ordinary API tokens named `<client> (MCP)`: listed and
-  revocable in workspace settings (revoking one kills its refresh token too); hand-made API
-  tokens stay long-lived.
+- **Consent role.** Any member may approve a client. Approving creates a **Connection**: it belongs to
+  the approving User's Membership, offers only the scopes that User's Permissions allow, can do on each
+  request no more than the User's current Role allows, and ends with the Membership
+  ([[0061-access-to-an-operation-is-declared-in-the-contract]]; this was "owner or admin, a workspace
+  token").
+- **Connections are not API tokens.** Each User lists and revokes their own Connections (revoking one
+  kills its refresh token too), and `members:manage` lists and revokes anyone's; hand-made API tokens
+  stay long-lived and are managed under `tokens:manage`.
 
 ## Considered options
 

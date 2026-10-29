@@ -5,7 +5,8 @@ status: accepted
 # A report day is a day in the Workspace time zone, computed live
 
 Every analytics report counts by **Report day**, a calendar day in the Workspace time zone (UTC until
-an Owner sets it), and the hour-of-day report reads the hour in the same zone. Nothing is stored per
+an owner or admin sets it, the `workspace:timezone` Permission of
+[[0061-access-to-an-operation-is-declared-in-the-contract]]), and the hour-of-day report reads the hour in the same zone. Nothing is stored per
 day: reports query the Events, Broadcast recipients and Contacts at read time, so a change of the
 zone re-buckets the whole history at once and the dashboard, the engagement rates and every report
 agree on where a day ends.
