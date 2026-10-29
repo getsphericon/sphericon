@@ -7183,7 +7183,7 @@ export type SiteAnalyticsClicksByLinkData = {
   };
   query?: {
     /**
-     * Window to aggregate over (defaults to 30d)
+     * Window to aggregate over (defaults to 7d)
      */
     range?: SiteAnalyticsRange;
   };
@@ -7215,7 +7215,7 @@ export type SiteAnalyticsEventsData = {
   };
   query?: {
     /**
-     * Window to report over (defaults to 30d)
+     * Window to report over (defaults to 7d)
      */
     range?: SiteAnalyticsRange;
   };
@@ -7247,7 +7247,7 @@ export type SiteAnalyticsNewPeopleData = {
   };
   query?: {
     /**
-     * Window to aggregate over (defaults to 30d)
+     * Window to aggregate over (defaults to 7d)
      */
     range?: SiteAnalyticsRange;
   };
@@ -7279,7 +7279,7 @@ export type SiteAnalyticsOpensByHourData = {
   };
   query?: {
     /**
-     * Window to aggregate over (defaults to 30d)
+     * Window to aggregate over (defaults to 7d)
      */
     range?: SiteAnalyticsRange;
   };
@@ -7311,7 +7311,7 @@ export type SiteAnalyticsOverviewData = {
   };
   query?: {
     /**
-     * Window to aggregate over (defaults to 30d)
+     * Window to aggregate over (defaults to 7d)
      */
     range?: SiteAnalyticsRange;
   };
@@ -7343,7 +7343,7 @@ export type SiteAnalyticsSubscribedPeopleData = {
   };
   query?: {
     /**
-     * Window to report over (defaults to 30d)
+     * Window to report over (defaults to 7d)
      */
     range?: SiteAnalyticsRange;
   };

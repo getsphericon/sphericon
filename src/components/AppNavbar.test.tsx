@@ -107,7 +107,7 @@ test.each(ANALYTICS_SECTIONS)(
       .element(screen.getByRole('link', { name: label, exact: true }))
       .toHaveAttribute(
         'href',
-        `${routeMount(target, { workspaceId: 'AcmeWs01' }).initialPath}?range=30d`,
+        `${routeMount(target, { workspaceId: 'AcmeWs01' }).initialPath}?range=7d`,
       )
   },
 )
@@ -116,14 +116,14 @@ test('the analytics group is open on one of its reports, and keeps the chosen wi
   const { initialPath, ...rest } = routeMount(newPeopleRoute, { workspaceId: 'AcmeWs01' })
   const { screen } = await renderWithRouter(<AppNavbar workspaceId="AcmeWs01" />, {
     ...rest,
-    initialPath: `${initialPath}?range=7d`,
+    initialPath: `${initialPath}?range=90d`,
   })
 
   await expect
     .element(screen.getByRole('link', { name: 'Email metrics', exact: true }))
     .toHaveAttribute(
       'href',
-      `${routeMount(emailMetricsRoute, { workspaceId: 'AcmeWs01' }).initialPath}?range=7d`,
+      `${routeMount(emailMetricsRoute, { workspaceId: 'AcmeWs01' }).initialPath}?range=90d`,
     )
 })
 

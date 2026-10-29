@@ -57,7 +57,7 @@ export function AppNavbar({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const matchRoute = useMatchRoute()
   // The analytics window rides along from one report to the next; outside analytics it is the default.
-  const range = zSiteAnalyticsRange.catch('30d').parse(useSearch({ strict: false }).range)
+  const range = zSiteAnalyticsRange.catch('7d').parse(useSearch({ strict: false }).range)
 
   const link = ({
     route,
