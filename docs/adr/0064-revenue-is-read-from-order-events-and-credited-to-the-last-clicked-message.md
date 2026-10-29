@@ -18,10 +18,14 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
   (`order_id`, `total`, `currency`, `products`, `discount`, `tax`, `shipping`, `cancel_reason`). The
   ingest paths of the tracker and the external API are not changed; the Event is read after it is
   stored. A field the spec has and Sphericon does not use is kept in the Event's properties.
-- **An Order is a read model of those Events**, one per (Workspace, `order_id`). `Order Completed`
-  creates it, a repeat of the same `order_id` updates it and never adds to it, `Order Updated` replaces
-  its amounts, `Order Cancelled` voids it. The spec has no `provider`, so two shops feeding one Workspace
-  must keep their order ids apart.
+- **An Order is a read model of those Events**, one per (Workspace, `order_id`), and its revenue is
+  a list of dated **movements**, never a figure that is rewritten. `Order Completed` creates it and
+  adds its `total` on the day of its Event; a repeat of the same `order_id` is a no-op. `Order Updated`
+  adds the difference between its new `total` and the one before, on the day of the update.
+  `Order Cancelled` takes back what is left, on its own day, like a refund. The spec has no `provider`,
+  so two shops feeding one Workspace must keep their order ids apart.
+- **An order Event that arrives before its `Order Completed`** is kept and applied, by its own time,
+  once the `Order Completed` arrives. An Order that never gets one counts nothing.
 - **Revenue is `total`.** It is the one amount the spec carries on all four events and already has
   discounts applied. `revenue` (which leaves out shipping and tax) is optional in the spec and absent
   from refunds, so it is not read.
@@ -31,13 +35,16 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
   Events. Refunds are only added: an optional `refund_id` property, when present, makes a repeat of the
   same refund of the same `order_id` a no-op, and without it each Event counts. The net revenue of an
   Order is its total minus its refunds, never below zero: a refund that would take it under zero is
-  applied only up to what is left, and the Event stays as sent. A cancelled Order has no revenue.
+  applied only up to what is left, and the Event stays as sent. A refund and a cancellation are movements like the rest.
 - **Money is stored as an integer in the currency's minor unit** with an ISO 4217 code. The spec sends
   plain decimal numbers, which are converted at ingest using the currency's own exponent (two places for
   USD, none for JPY); an amount with more places than the currency has is rejected, not rounded.
-- **Time is the sender's.** An Order and a refund are placed at the Event's `timestamp`, as every Event
-  is ([[0044-history-arrives-as-a-backfill-and-a-live-event-never-claims-to-be-old]]); a history sent late credits only the Orders whose click is
-  still in the Events' retention.
+- **Time is the sender's, within the rules of Backfill.** A movement is dated at its Event's
+  `occurredAt`. A live Event on the external API older than the live window is refused, so a shop's
+  history is loaded as a Backfill
+  ([[0044-history-arrives-as-a-backfill-and-a-live-event-never-claims-to-be-old]]): its order Events
+  build Orders and trigger nothing. A Backfill credits an Order only while the click is still kept: the
+  Events' retention is 400 days by default and counts from when an Event is stored (ADR 0019).
 - **One reporting currency per Workspace**, set by the Owner or an Admin, who also set the window; both
   changes enter the audit log. Revenue is not shown until the currency is chosen, and an Order without a
   `currency` counts in it. An Order in another currency is stored and listed but counted in no sum. No
@@ -47,17 +54,20 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
   **Attribution window**, which the Workspace edits and which is 5 days until set. Opens do not count:
   mail clients open messages by themselves. A click by software
   ([[0053-delivery-and-engagement-events-cover-every-send]]) does not count either. Every
-  click is already an Event that carries its Broadcast or Automation, so no tracking is added. An Order
-  with no such click in the window is unattributed.
+  click is already an Event that carries its Broadcast or Automation, so no tracking is added; a click
+  that carries neither (a Transactional send) is passed over. An Order with no such click in the window
+  is unattributed.
 - **The credit is fixed when the Order is created.** `Order Completed` finds the winning click once
   and keeps it on the Order; changing the window later affects only later Orders, and a click that
-  leaves the Events' retention takes no revenue with it. Of two clicks inside the window, the later
+  leaves the Events' retention takes no revenue with it. A click stored after the Order, though dated
+  before it, credits nothing: the credit is not looked for again. Of two clicks inside the window, the later
   wins, and equal times go to the click Event stored last. An Order is placed on the Contact the Event
   resolves to by the existing identity rule; an Event for no known Contact is still an Order, counts in
   total revenue and is credited to nothing. An Order never creates a Contact.
 - **Broadcast and Automation revenue are sums over the Orders credited to them**, never a figure stored
-  on them. A refund lowers the credited revenue, and is counted on the day of the refund, so a figure
-  already shown for a past day does not change.
+  on them. Every movement of an Order goes to the Broadcast
+  or Automation the Order is credited to, on the day of the movement, so a figure already shown for a
+  past day does not change.
 - **The overview and the reports say what they count.** The overview shows revenue for 7, 30 or 90 Report
   days (30 by default) in the Workspace time zone and the share of it credited to messages, labelled as the revenue of the orders the Workspace sent in, not of its
   shop. A Broadcast and an Automation show orders and revenue; the denominator of any per-recipient
@@ -75,5 +85,5 @@ Sphericon's. The research behind this is in `docs/research/revenue-and-attributi
   every store mapper already has the refund's own amount to put in `total`.
 - **A currency on every order and a sum per currency**: honest, but every figure then has several
   values. A rate table can come later without changing the stored orders.
-- **Storing revenue on the Broadcast or Automation**: cheap to read, but wrong once the window, the
-  currency or a late refund changes.
+- **Storing revenue on the Broadcast or Automation**: cheap to read, but a total to be rewritten by
+  every later refund or update, where the movements add up the same on any day.
