@@ -19,10 +19,6 @@ import (
 // the ceremony cookie. It is anonymous and writes nothing (ADR 0052).
 func (h *Handlers) SitePasskeyLoginBegin(context.Context) (siteapi.SitePasskeyLoginBeginRes, error) {
 	raw, ceremony, err := h.passkeys.BeginLogin()
-	if errors.Is(err, secondfactor.ErrPasskeysUnavailable) {
-		v := problem(http.StatusNotFound, i18n.T("errors.passkeys_unavailable", nil))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

@@ -46,10 +46,6 @@ func (h *Handlers) SiteSecondFactorStartEnrollment(ctx context.Context, req *sit
 		return &v, nil
 	}
 	e, err := h.secondFactor.StartEnrollment(ctx, userID)
-	if errors.Is(err, secondfactor.ErrAlreadyActive) {
-		v := siteapi.SiteSecondFactorStartEnrollmentConflict(problem(http.StatusConflict, i18n.T("errors.second_factor_already_active", nil)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +68,6 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 	switch {
 	case errors.Is(err, secondfactor.ErrInvalidCode):
 		v := siteapi.SiteSecondFactorConfirmEnrollmentUnprocessableEntity(codeInvalidProblem())
-		return &v, nil
-	case errors.Is(err, secondfactor.ErrNoPending):
-		v := siteapi.SiteSecondFactorConfirmEnrollmentConflict(problem(http.StatusConflict, i18n.T("errors.second_factor_no_pending", nil)))
-		return &v, nil
-	case errors.Is(err, secondfactor.ErrAlreadyActive):
-		v := siteapi.SiteSecondFactorConfirmEnrollmentConflict(problem(http.StatusConflict, i18n.T("errors.second_factor_already_active", nil)))
 		return &v, nil
 	case err != nil:
 		return nil, err

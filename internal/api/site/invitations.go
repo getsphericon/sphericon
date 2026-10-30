@@ -71,9 +71,6 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 			http.StatusUnprocessableEntity, i18n.T("errors.email_empty", nil),
 			map[string][]string{fieldEmail: {i18n.T("errors.email_empty", nil)}}))
 		return &v, nil
-	case errors.Is(err, accounts.ErrAlreadyMember):
-		v := siteapi.SiteInvitationsCreateConflict(problem(http.StatusConflict, i18n.T("errors.already_member", nil)))
-		return &v, nil
 	case err != nil:
 		return nil, err
 	}

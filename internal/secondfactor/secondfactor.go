@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/otpcode"
 	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Issuer names the instance in the authenticator app.
@@ -45,9 +46,9 @@ var (
 	// ErrNotActive: the User has no confirmed Second factor.
 	ErrNotActive = errors.New("secondfactor: no active second factor")
 	// ErrAlreadyActive: enrollment is refused while a Second factor is active.
-	ErrAlreadyActive = errors.New("secondfactor: second factor already active")
+	ErrAlreadyActive = validation.Conflict("secondfactor: second factor already active", "errors.second_factor_already_active")
 	// ErrNoPending: there is no pending enrollment to confirm.
-	ErrNoPending = errors.New("secondfactor: no pending enrollment")
+	ErrNoPending = validation.Conflict("secondfactor: no pending enrollment", "errors.second_factor_no_pending")
 	// ErrBindingMoved: the challenge binding a second step was started under has
 	// moved (another second step, an epoch bump or a password change got there
 	// first), so the challenge is spent.

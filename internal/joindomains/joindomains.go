@@ -38,12 +38,12 @@ const RecordLabel = "_sphericon-join."
 
 var (
 	// ErrAlreadyExists means the Workspace already has this domain.
-	ErrAlreadyExists = errors.New("this domain is already added")
+	ErrAlreadyExists = validation.Conflict("joindomains: this domain is already added", "errors.join_domain_exists")
 	// ErrRecordNotFound means the TXT record is not published (or carries another value).
-	ErrRecordNotFound = errors.New("the TXT record was not found")
+	ErrRecordNotFound = validation.Refuse("joindomains: the TXT record was not found", "errors.join_domain_record_missing")
 	// ErrHeldElsewhere means another Workspace has the domain verified and still publishes
 	// its record.
-	ErrHeldElsewhere = errors.New("another workspace has verified this domain")
+	ErrHeldElsewhere = validation.Conflict("joindomains: another workspace has verified this domain", "errors.join_domain_held")
 )
 
 // Record is the DNS TXT record an Owner publishes to prove a domain.

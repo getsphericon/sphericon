@@ -51,10 +51,6 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (siteapi.S
 		return nil, err
 	}
 	raw, ceremony, err := h.passkeys.BeginRegistration(ctx, u)
-	if errors.Is(err, secondfactor.ErrPasskeysUnavailable) {
-		v := problem(http.StatusNotFound, i18n.T("errors.passkeys_unavailable", nil))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +86,6 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 		return nil, err
 	}
 	u, row, err := h.passkeys.FinishRegistration(ctx, userID, params.PASSKEY.Or(""), response, name)
-	if errors.Is(err, secondfactor.ErrPasskeysUnavailable) {
-		v := siteapi.SitePasskeysFinishRegistrationNotFound(problem(http.StatusNotFound, i18n.T("errors.passkeys_unavailable", nil)))
-		return &v, nil
-	}
 	if isCeremonyFailure(err) {
 		v := siteapi.SitePasskeysFinishRegistrationUnprocessableEntity(problem(http.StatusUnprocessableEntity, i18n.T("errors.passkey_registration_failed", nil)))
 		return &v, nil
@@ -123,7 +115,7 @@ func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (siteapi.SitePass
 		return nil, err
 	}
 	raw, ceremony, err := h.passkeys.BeginCheck(ctx, u)
-	if errors.Is(err, secondfactor.ErrPasskeysUnavailable) || errors.Is(err, secondfactor.ErrPasskeyUnknown) {
+	if errors.Is(err, secondfactor.ErrPasskeyUnknown) {
 		v := problem(http.StatusNotFound, i18n.T("errors.passkeys_unavailable", nil))
 		return &v, nil
 	}
@@ -165,10 +157,6 @@ func (h *Handlers) SitePasskeysFinishCheck(ctx context.Context, req *siteapi.Sit
 	owner, err := h.passkeys.FindLogin(ctx, response)
 	if errors.Is(err, secondfactor.ErrPasskeyUnknown) || (err == nil && owner.ID != u.ID) {
 		return refused()
-	}
-	if errors.Is(err, secondfactor.ErrPasskeysUnavailable) {
-		v := siteapi.SitePasskeysFinishCheckNotFound(problem(http.StatusNotFound, i18n.T("errors.passkeys_unavailable", nil)))
-		return &v, nil
 	}
 	if err != nil {
 		return nil, err
@@ -272,10 +260,6 @@ func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePass
 	u, row, err := h.passkeys.Remove(ctx, userID, int64(params.ID))
 	if errors.Is(err, secondfactor.ErrPasskeyNotFound) {
 		v := siteapi.SitePasskeysRemoveNotFound(passkeyNotFoundProblem())
-		return &v, nil
-	}
-	if errors.Is(err, secondfactor.ErrLastSignIn) {
-		v := siteapi.SitePasskeysRemoveConflict(problem(http.StatusConflict, i18n.T("errors.passkey_last_sign_in", nil)))
 		return &v, nil
 	}
 	if err != nil {
