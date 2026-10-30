@@ -1,7 +1,7 @@
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { QueryBuilderMantine } from '@react-querybuilder/mantine'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { QueryBuilder } from 'react-querybuilder'
 import type { Field, Operator } from 'react-querybuilder'
@@ -11,9 +11,14 @@ import {
   siteEventsActionsOptions,
   siteSegmentsPreviewMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SiteConditionOperator } from '../../generated/site/types.gen.ts'
+import {
+  SiteConditionEventOperator,
+  SiteConditionOperator,
+} from '../../generated/site/types.gen.ts'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
-import { toGroup, toQuery } from './condition.ts'
+import { eventFieldPrefix, eventPresets, toCondition, toDraft, toQuery } from './condition.ts'
+import type { ConditionDraft } from './condition.ts'
+import { EventCountEditor } from './EventCountEditor.tsx'
 import { triggerFieldPrefix } from './triggerFieldPrefix.ts'
 import { TriggerFieldSelector } from './TriggerFieldSelector.tsx'
 
@@ -36,11 +41,14 @@ const customFieldOperators: Operator[] = [
   { name: SiteConditionOperator.NOT_NULL, label: 'is set' },
 ]
 
-// Event conditions get their own operator set (per-field overrides the global one).
-// The value is a day window: blank = ever.
+// Event conditions count the action (per-field overrides the global operator set): the presets
+// "performed" and "not performed", or at least / at most a number of times. EventCountEditor
+// edits the count and the window in days (blank = ever).
 const eventOperators: Operator[] = [
-  { name: SiteConditionOperator.PERFORMED, label: 'performed in last (days)' },
-  { name: SiteConditionOperator.NOT_PERFORMED, label: 'not performed in last (days)' },
+  { name: eventPresets.performed, label: 'performed' },
+  { name: eventPresets.notPerformed, label: 'not performed' },
+  { name: SiteConditionEventOperator.AT_LEAST, label: 'at least (times)' },
+  { name: SiteConditionEventOperator.AT_MOST, label: 'at most (times)' },
 ]
 
 const contactFields: Field[] = [
@@ -54,8 +62,12 @@ const contactFields: Field[] = [
 
 interface ConditionBuilderProps {
   workspaceId: string
-  value: SiteConditionGroup
-  onChange: (group: SiteConditionGroup) => void
+  // The Condition the builder starts from. The builder keeps its own state from then on (an
+  // operator the user picked stays picked, a count can be blank while it is typed), so a later
+  // change of this value is not read: a form that loads another Condition remounts the builder.
+  initialValue: SiteConditionGroup
+  // Every edit, as a draft: toCondition is undefined while an event count is blank.
+  onChange: (draft: ConditionDraft) => void
   // Offer the tests on the triggering Event's properties. Only a Rule has an Event: a
   // Segment refuses them, and so does the segment preview, which is hidden with them.
   triggerLeaves?: boolean
@@ -66,16 +78,18 @@ interface ConditionBuilderProps {
 // API's typed rule group and offers a live preview of how many active contacts match.
 export function ConditionBuilder({
   workspaceId,
-  value,
+  initialValue,
   onChange,
   triggerLeaves = false,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
-  const query = useMemo(() => toQuery(value), [value])
+  const [initialQuery] = useState(() => toQuery(initialValue))
+  const [draft, setDraft] = useState<ConditionDraft>(initialValue)
+  const condition = toCondition(draft)
   const preview = useMutation(siteSegmentsPreviewMutation())
 
-  // The workspace's distinct event actions become behavioral fields
-  // ("event:<action>") that compile to an EXISTS against the events log.
+  // The workspace's distinct event actions become behavioral fields ("event:<action>"), each an
+  // event leaf: a count of the action in the events log.
   const actionsQuery = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
   // The typed Custom field catalogue (ADR 0006) becomes targetable fields
   // ("custom:<key>") alongside the core fields — one governed attribute list.
@@ -88,11 +102,10 @@ export function ConditionBuilder({
       inputType: f.type === 'number' ? 'number' : 'text',
     }))
     const eventFields = (actionsQuery.data?.actions ?? []).map<Field>((action) => ({
-      name: `event:${action}`,
+      name: `${eventFieldPrefix}${action}`,
       label: `Did "${action}"`,
       operators: eventOperators,
-      defaultOperator: SiteConditionOperator.PERFORMED,
-      inputType: 'number',
+      defaultOperator: eventPresets.performed,
     }))
     const triggerFields: Field[] = triggerLeaves
       ? [{ name: triggerFieldPrefix, label: 'Event property' }]
@@ -106,10 +119,17 @@ export function ConditionBuilder({
         <QueryBuilder
           fields={fields}
           operators={textOperators}
-          query={query}
+          defaultQuery={initialQuery}
           enableMountQueryChange={false}
-          controlElements={triggerLeaves ? { fieldSelector: TriggerFieldSelector } : {}}
-          onQueryChange={(q) => onChange(toGroup(q))}
+          controlElements={{
+            valueEditor: EventCountEditor,
+            ...(triggerLeaves ? { fieldSelector: TriggerFieldSelector } : {}),
+          }}
+          onQueryChange={(q) => {
+            const next = toDraft(q)
+            setDraft(next)
+            onChange(next)
+          }}
         />
       </QueryBuilderMantine>
       {triggerLeaves ? null : (
@@ -118,7 +138,12 @@ export function ConditionBuilder({
             variant="light"
             size="compact-sm"
             loading={preview.isPending}
-            onClick={() => preview.mutate({ path: { workspaceId }, body: { condition: value } })}
+            disabled={condition === undefined}
+            onClick={() => {
+              if (condition) {
+                preview.mutate({ path: { workspaceId }, body: { condition } })
+              }
+            }}
           >
             {t(($) => $.segments.previewButton)}
           </Button>

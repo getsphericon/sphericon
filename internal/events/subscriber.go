@@ -116,7 +116,7 @@ func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client,
 	}{
 		GroupPersist:     {"persist_event", persistConsumer(client)},
 		GroupAutomations: {"enroll_automations", AutomationsConsumer(enroller)},
-		GroupRules:       {"evaluate_rules", RulesConsumer(rules)},
+		GroupRules:       {"evaluate_rules", RulesConsumer(client, rules)},
 		GroupWebhooks:    {"dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
 		GroupSuppression: {"update_suppression", suppressionConsumer(client)},
 		GroupOrders:      {"record_orders", ordersConsumer(client, orders)},
@@ -321,8 +321,10 @@ func machineEvent(ev DomainEvent) bool { return ev.Project().Machine }
 // RulesConsumer queues the evaluation of the event against the Workspace's Rules (ADR 0054).
 // Like the Automations consumer it skips the events that are never a trigger, and it also skips
 // an event with no Contact, a machine event and an event a Rule's Action published (its
-// envelope carries CausedBy).
-func RulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
+// envelope carries CausedBy). It stores the Event's row first, through the idempotent Persist the
+// persist consumer runs too, so a Condition that counts the Contact's Events counts the one that
+// fired the Rule, whichever consumer runs first.
+func RulesConsumer(client *ent.Client, rules RuleEvaluator) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
 		var env Envelope
 		if err := json.Unmarshal(msg.Payload, &env); err != nil {
@@ -347,6 +349,9 @@ func RulesConsumer(rules RuleEvaluator) message.NoPublishHandlerFunc {
 		p := ev.Project()
 		if p.ContactID == 0 {
 			return nil // no Contact to act on
+		}
+		if err := Persist(msg.Context(), client, env); err != nil {
+			return err
 		}
 		sourceID := env.DedupKey
 		if sourceID == "" {

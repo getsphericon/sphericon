@@ -4842,13 +4842,60 @@
   workspace_id: 58
   occurred_at: '{{daysAgo 40}}'
   created_at: '{{daysAgo 40}}'
-# An anonymous page_view (no Contact yet) must not hide Bob from notPerformed.
+# Ann's page_views count three over all time and two in the last week.
+- id: 5504
+  contact_id: 5543
+  action: page_view
+  workspace_id: 58
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 5505
+  contact_id: 5543
+  action: page_view
+  workspace_id: 58
+  occurred_at: '{{daysAgo 20}}'
+  created_at: '{{daysAgo 20}}'
+# An anonymous page_view (no Contact yet) must not hide Bob from "at most 0".
 - id: 5502
   visitor_id: anon-massive
   action: page_view
   workspace_id: 58
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+# Bob opened once by hand and twice by software (ADR 0053), Cara twice by hand: only the human
+# opens count, so Cara reaches two and Bob stays at one.
+- id: 5506
+  contact_id: 5544
+  action: email.opened
+  workspace_id: 58
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5507
+  contact_id: 5544
+  action: email.opened
+  properties: '{"machine":true}'
+  workspace_id: 58
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5508
+  contact_id: 5544
+  action: email.opened
+  properties: '{"machine":true}'
+  workspace_id: 58
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5509
+  contact_id: 5545
+  action: email.opened
+  workspace_id: 58
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 5510
+  contact_id: 5545
+  action: email.opened
+  workspace_id: 58
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
 - id: 5503
   contact_id: 5551
   action: signed_up
@@ -4901,6 +4948,13 @@
   contact_id: 100
   action: rule_url
   properties: '{"url":"https://x.test/docs"}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+# Liam's first rule_revisit: RuleSecondRevisit fires on his next one.
+- id: 9108
+  contact_id: 100
+  action: rule_revisit
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'

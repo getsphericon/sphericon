@@ -163,6 +163,30 @@ func TestSiteTriggerLeafIsAcceptedInARuleAndRefusedInASegment(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, segment)
 }
 
+// A Rule's Condition counts Events as a Segment's does, and refuses the same counts.
+func TestSiteRuleConditionCountsEvents(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	create := func(leaf string) siteapi.SiteRulesCreateRes {
+		t.Helper()
+		def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
+		out, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+			Name: "Pricing twice", TriggerEvents: []string{"pricing_viewed"},
+			Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "keen")},
+			Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
+		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
+		require.NoError(t, err)
+		return out
+	}
+
+	counted := create(`{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":2,"withinDays":7}`)
+	atLeastNone := create(`{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":0}`)
+
+	assert.IsType(t, &siteapi.SiteRuleResource{}, counted)
+	assert.IsType(t, &siteapi.SiteRulesCreateUnprocessableEntity{}, atLeastNone)
+}
+
 func TestSiteRulesPublishRefusesARuleWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

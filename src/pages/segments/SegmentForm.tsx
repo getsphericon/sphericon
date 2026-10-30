@@ -1,9 +1,8 @@
 import { Button, Group, Input, Stack, TextInput } from '@mantine/core'
-import { useMemo } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
 
-import { conditionCodec, emptyGroup } from '../../components/conditions/condition.ts'
+import { conditionCodec, draftText, emptyGroup } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
@@ -20,12 +19,13 @@ export interface SegmentPayload {
 export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<SegmentPayload>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  const condition = form.values.condition
-  // The form holds the Condition as JSON text; a blank or unreadable text is the empty group.
-  const group = useMemo(() => {
-    const parsed = conditionCodec.safeParse(condition)
+  // The form holds the Condition as JSON text; a blank or unreadable text is the empty group. The
+  // builder starts from it and keeps its own state; the form gets every edit back as a draft, which
+  // the schema refuses on submit while an event count is blank.
+  const [initialCondition] = useState(() => {
+    const parsed = conditionCodec.safeParse(form.values.condition)
     return parsed.success ? parsed.data : emptyGroup
-  }, [condition])
+  })
 
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
@@ -41,8 +41,8 @@ export function SegmentForm({ form, isPending, onSubmit }: ResourceFormProps<Seg
         >
           <ConditionBuilder
             workspaceId={workspaceId}
-            value={group}
-            onChange={(next) => form.setFieldValue('condition', z.encode(conditionCodec, next))}
+            initialValue={initialCondition}
+            onChange={(next) => form.setFieldValue('condition', draftText(next))}
           />
         </Input.Wrapper>
 

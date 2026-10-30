@@ -9880,6 +9880,244 @@ func (s *ConditionCombinator) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *ConditionEventLeaf) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionEventLeaf) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("action")
+		e.Str(s.Action)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		e.FieldStart("times")
+		e.Int32(s.Times)
+	}
+	{
+		if s.WithinDays.Set {
+			e.FieldStart("withinDays")
+			s.WithinDays.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfConditionEventLeaf = [5]string{
+	0: "kind",
+	1: "action",
+	2: "operator",
+	3: "times",
+	4: "withinDays",
+}
+
+// Decode decodes ConditionEventLeaf from json.
+func (s *ConditionEventLeaf) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionEventLeaf to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "action":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Action = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"action\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "times":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.Times = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"times\"")
+			}
+		case "withinDays":
+			if err := func() error {
+				s.WithinDays.Reset()
+				if err := s.WithinDays.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"withinDays\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionEventLeaf")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionEventLeaf) {
+					name = jsonFieldsNameOfConditionEventLeaf[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionEventLeaf) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionEventLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionEventLeafKind as json.
+func (s ConditionEventLeafKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionEventLeafKind from json.
+func (s *ConditionEventLeafKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionEventLeafKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionEventLeafKind(v) {
+	case ConditionEventLeafKindEvent:
+		*s = ConditionEventLeafKindEvent
+	default:
+		*s = ConditionEventLeafKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionEventLeafKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionEventLeafKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionEventOperator as json.
+func (s ConditionEventOperator) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionEventOperator from json.
+func (s *ConditionEventOperator) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionEventOperator to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionEventOperator(v) {
+	case ConditionEventOperatorAtLeast:
+		*s = ConditionEventOperatorAtLeast
+	case ConditionEventOperatorAtMost:
+		*s = ConditionEventOperatorAtMost
+	default:
+		*s = ConditionEventOperator(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionEventOperator) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionEventOperator) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *ConditionGroup) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -10330,6 +10568,30 @@ func (s ConditionNodeSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case ConditionEventLeafConditionNodeSum:
+		e.FieldStart("kind")
+		e.Str("event")
+		{
+			s := s.ConditionEventLeaf
+			{
+				e.FieldStart("action")
+				e.Str(s.Action)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				e.FieldStart("times")
+				e.Int32(s.Times)
+			}
+			{
+				if s.WithinDays.Set {
+					e.FieldStart("withinDays")
+					s.WithinDays.Encode(e)
+				}
+			}
+		}
 	case ConditionGroupConditionNodeSum:
 		e.FieldStart("kind")
 		e.Str("group")
@@ -10383,6 +10645,9 @@ func (s *ConditionNodeSum) Decode(d *jx.Decoder) error {
 				case "rule":
 					s.Type = ConditionLeafConditionNodeSum
 					found = true
+				case "event":
+					s.Type = ConditionEventLeafConditionNodeSum
+					found = true
 				case "group":
 					s.Type = ConditionGroupConditionNodeSum
 					found = true
@@ -10402,6 +10667,10 @@ func (s *ConditionNodeSum) Decode(d *jx.Decoder) error {
 	switch s.Type {
 	case ConditionLeafConditionNodeSum:
 		if err := s.ConditionLeaf.Decode(d); err != nil {
+			return err
+		}
+	case ConditionEventLeafConditionNodeSum:
+		if err := s.ConditionEventLeaf.Decode(d); err != nil {
 			return err
 		}
 	case ConditionGroupConditionNodeSum:
@@ -10455,10 +10724,6 @@ func (s *ConditionOperator) Decode(d *jx.Decoder) error {
 		*s = ConditionOperatorNull
 	case ConditionOperatorNotNull:
 		*s = ConditionOperatorNotNull
-	case ConditionOperatorPerformed:
-		*s = ConditionOperatorPerformed
-	case ConditionOperatorNotPerformed:
-		*s = ConditionOperatorNotPerformed
 	case ConditionOperatorHas:
 		*s = ConditionOperatorHas
 	case ConditionOperatorDoesNotHave:

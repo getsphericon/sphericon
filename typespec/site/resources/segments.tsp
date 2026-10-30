@@ -12,8 +12,8 @@ enum SiteConditionCombinator {
 }
 
 /** What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
- * notPerformed; the tag field takes has and doesNotHave. */
+ * notNull; a custom field takes eq, neq, contains and notNull; the tag field takes has and
+ * doesNotHave. */
 enum SiteConditionOperator {
   eq,
   neq,
@@ -21,8 +21,6 @@ enum SiteConditionOperator {
   beginsWith,
   null,
   notNull,
-  performed,
-  notPerformed,
   has,
   doesNotHave,
 }
@@ -32,7 +30,7 @@ model SiteConditionLeaf {
   kind: "rule";
 
   /** What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone), "tag", "custom:<key>" for a custom field of the workspace, "event:<action>", or "trigger:<key>"
+   * time_zone), "tag", "custom:<key>" for a custom field of the workspace, or "trigger:<key>"
    * (a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the
    * text operators, and is false when the Event lacks the key or holds a value that is not text) */
   field: string;
@@ -40,15 +38,44 @@ model SiteConditionLeaf {
   /** How the field is tested */
   operator: SiteConditionOperator;
 
-  /** The value to test against: a tag name, a day window for events ("" = ever), blank for
-   * null and notNull */
+  /** The value to test against: a tag name, blank for null and notNull */
   value?: string;
 }
 
-/** A leaf or a nested group inside a condition group, discriminated by `kind`. */
+/** How an event leaf bounds the count: at least `times`, or at most `times` */
+enum SiteConditionEventOperator {
+  atLeast,
+  atMost,
+}
+
+/** A test of how many times a contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted. */
+model SiteConditionEventLeaf {
+  kind: "event";
+
+  /** The Event action counted */
+  action: string;
+
+  /** How the count is bounded */
+  operator: SiteConditionEventOperator;
+
+  /** The bound: atLeast takes 1 or more, atMost 0 or more */
+  @minValue(0)
+  times: int32;
+
+  /** Count only the Events of the last this many days; absent counts all time */
+  @minValue(1)
+  withinDays?: int32;
+}
+
+/** A leaf (a test of a field, or an event count) or a nested group inside a condition group,
+ * discriminated by `kind`. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union SiteConditionNode {
   rule: SiteConditionLeaf,
+  event: SiteConditionEventLeaf,
   group: SiteConditionGroup,
 }
 

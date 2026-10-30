@@ -10748,6 +10748,150 @@ func (s *SiteConditionCombinator) UnmarshalText(data []byte) error {
 	}
 }
 
+// A test of how many times a contact performed an Event action, over all time or within the last
+// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
+// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
+// Event retention is capped by it: expired Events are no longer counted.
+// Ref: #/components/schemas/SiteConditionEventLeaf
+type SiteConditionEventLeaf struct {
+	Kind SiteConditionEventLeafKind `json:"kind"`
+	// The Event action counted.
+	Action string `json:"action"`
+	// How the count is bounded.
+	Operator SiteConditionEventOperator `json:"operator"`
+	// The bound: atLeast takes 1 or more, atMost 0 or more.
+	Times int32 `json:"times"`
+	// Count only the Events of the last this many days; absent counts all time.
+	WithinDays OptInt32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteConditionEventLeaf) GetKind() SiteConditionEventLeafKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *SiteConditionEventLeaf) GetAction() string {
+	return s.Action
+}
+
+// GetOperator returns the value of Operator.
+func (s *SiteConditionEventLeaf) GetOperator() SiteConditionEventOperator {
+	return s.Operator
+}
+
+// GetTimes returns the value of Times.
+func (s *SiteConditionEventLeaf) GetTimes() int32 {
+	return s.Times
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *SiteConditionEventLeaf) GetWithinDays() OptInt32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteConditionEventLeaf) SetKind(val SiteConditionEventLeafKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *SiteConditionEventLeaf) SetAction(val string) {
+	s.Action = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *SiteConditionEventLeaf) SetOperator(val SiteConditionEventOperator) {
+	s.Operator = val
+}
+
+// SetTimes sets the value of Times.
+func (s *SiteConditionEventLeaf) SetTimes(val int32) {
+	s.Times = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *SiteConditionEventLeaf) SetWithinDays(val OptInt32) {
+	s.WithinDays = val
+}
+
+type SiteConditionEventLeafKind string
+
+const (
+	SiteConditionEventLeafKindEvent SiteConditionEventLeafKind = "event"
+)
+
+// AllValues returns all SiteConditionEventLeafKind values.
+func (SiteConditionEventLeafKind) AllValues() []SiteConditionEventLeafKind {
+	return []SiteConditionEventLeafKind{
+		SiteConditionEventLeafKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConditionEventLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConditionEventLeafKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConditionEventLeafKind) UnmarshalText(data []byte) error {
+	switch SiteConditionEventLeafKind(data) {
+	case SiteConditionEventLeafKindEvent:
+		*s = SiteConditionEventLeafKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How an event leaf bounds the count: at least `times`, or at most `times`.
+// Ref: #/components/schemas/SiteConditionEventOperator
+type SiteConditionEventOperator string
+
+const (
+	SiteConditionEventOperatorAtLeast SiteConditionEventOperator = "atLeast"
+	SiteConditionEventOperatorAtMost  SiteConditionEventOperator = "atMost"
+)
+
+// AllValues returns all SiteConditionEventOperator values.
+func (SiteConditionEventOperator) AllValues() []SiteConditionEventOperator {
+	return []SiteConditionEventOperator{
+		SiteConditionEventOperatorAtLeast,
+		SiteConditionEventOperatorAtMost,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConditionEventOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConditionEventOperatorAtLeast:
+		return []byte(s), nil
+	case SiteConditionEventOperatorAtMost:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConditionEventOperator) UnmarshalText(data []byte) error {
+	switch SiteConditionEventOperator(data) {
+	case SiteConditionEventOperatorAtLeast:
+		*s = SiteConditionEventOperatorAtLeast
+		return nil
+	case SiteConditionEventOperatorAtMost:
+		*s = SiteConditionEventOperatorAtMost
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
 // empty negated group matches none).
 // Ref: #/components/schemas/SiteConditionGroup
@@ -10840,14 +10984,13 @@ func (s *SiteConditionGroupKind) UnmarshalText(data []byte) error {
 type SiteConditionLeaf struct {
 	Kind SiteConditionLeafKind `json:"kind"`
 	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone),
-	// "tag", "custom:" for a custom field of the workspace, "event:", or "trigger:" (a property of the
-	// Event that fired a rule: valid only in a rule, refused in a segment, takes the text operators, and
-	// is false when the Event lacks the key or holds a value that is not text).
+	// "tag", "custom:" for a custom field of the workspace, or "trigger:" (a property of the Event that
+	// fired a rule: valid only in a rule, refused in a segment, takes the text operators, and is false
+	// when the Event lacks the key or holds a value that is not text).
 	Field string `json:"field"`
 	// How the field is tested.
 	Operator SiteConditionOperator `json:"operator"`
-	// The value to test against: a tag name, a day window for events ("" = ever), blank for null and
-	// notNull.
+	// The value to test against: a tag name, blank for null and notNull.
 	Value OptString `json:"value"`
 }
 
@@ -10925,7 +11068,8 @@ func (s *SiteConditionLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// A leaf or a nested group inside a condition group, discriminated by `kind`.
+// A leaf (a test of a field, or an event count) or a nested group inside a condition group,
+// discriminated by `kind`.
 // Ref: #/components/schemas/SiteConditionNode
 type SiteConditionNode struct {
 	OneOf SiteConditionNodeSum
@@ -10944,9 +11088,10 @@ func (s *SiteConditionNode) SetOneOf(val SiteConditionNodeSum) {
 // SiteConditionNodeSum represents sum type.
 type SiteConditionNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type               SiteConditionNodeSumType
-	SiteConditionLeaf  SiteConditionLeaf
-	SiteConditionGroup SiteConditionGroup
+	Type                   SiteConditionNodeSumType
+	SiteConditionLeaf      SiteConditionLeaf
+	SiteConditionEventLeaf SiteConditionEventLeaf
+	SiteConditionGroup     SiteConditionGroup
 }
 
 // SiteConditionNodeSumType is oneOf type of SiteConditionNodeSum.
@@ -10954,13 +11099,19 @@ type SiteConditionNodeSumType string
 
 // Possible values for SiteConditionNodeSumType.
 const (
-	SiteConditionLeafSiteConditionNodeSum  SiteConditionNodeSumType = "rule"
-	SiteConditionGroupSiteConditionNodeSum SiteConditionNodeSumType = "group"
+	SiteConditionLeafSiteConditionNodeSum      SiteConditionNodeSumType = "rule"
+	SiteConditionEventLeafSiteConditionNodeSum SiteConditionNodeSumType = "event"
+	SiteConditionGroupSiteConditionNodeSum     SiteConditionNodeSumType = "group"
 )
 
 // IsSiteConditionLeaf reports whether SiteConditionNodeSum is SiteConditionLeaf.
 func (s SiteConditionNodeSum) IsSiteConditionLeaf() bool {
 	return s.Type == SiteConditionLeafSiteConditionNodeSum
+}
+
+// IsSiteConditionEventLeaf reports whether SiteConditionNodeSum is SiteConditionEventLeaf.
+func (s SiteConditionNodeSum) IsSiteConditionEventLeaf() bool {
+	return s.Type == SiteConditionEventLeafSiteConditionNodeSum
 }
 
 // IsSiteConditionGroup reports whether SiteConditionNodeSum is SiteConditionGroup.
@@ -10989,6 +11140,27 @@ func NewSiteConditionLeafSiteConditionNodeSum(v SiteConditionLeaf) SiteCondition
 	return s
 }
 
+// SetSiteConditionEventLeaf sets SiteConditionNodeSum to SiteConditionEventLeaf.
+func (s *SiteConditionNodeSum) SetSiteConditionEventLeaf(v SiteConditionEventLeaf) {
+	s.Type = SiteConditionEventLeafSiteConditionNodeSum
+	s.SiteConditionEventLeaf = v
+}
+
+// GetSiteConditionEventLeaf returns SiteConditionEventLeaf and true boolean if SiteConditionNodeSum is SiteConditionEventLeaf.
+func (s SiteConditionNodeSum) GetSiteConditionEventLeaf() (v SiteConditionEventLeaf, ok bool) {
+	if !s.IsSiteConditionEventLeaf() {
+		return v, false
+	}
+	return s.SiteConditionEventLeaf, true
+}
+
+// NewSiteConditionEventLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionEventLeaf.
+func NewSiteConditionEventLeafSiteConditionNodeSum(v SiteConditionEventLeaf) SiteConditionNodeSum {
+	var s SiteConditionNodeSum
+	s.SetSiteConditionEventLeaf(v)
+	return s
+}
+
 // SetSiteConditionGroup sets SiteConditionNodeSum to SiteConditionGroup.
 func (s *SiteConditionNodeSum) SetSiteConditionGroup(v SiteConditionGroup) {
 	s.Type = SiteConditionGroupSiteConditionNodeSum
@@ -11011,22 +11183,19 @@ func NewSiteConditionGroupSiteConditionNodeSum(v SiteConditionGroup) SiteConditi
 }
 
 // What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
-// a custom field takes eq, neq, contains and notNull; an event takes performed and notPerformed; the
-// tag field takes has and doesNotHave.
+// a custom field takes eq, neq, contains and notNull; the tag field takes has and doesNotHave.
 // Ref: #/components/schemas/SiteConditionOperator
 type SiteConditionOperator string
 
 const (
-	SiteConditionOperatorEq           SiteConditionOperator = "eq"
-	SiteConditionOperatorNeq          SiteConditionOperator = "neq"
-	SiteConditionOperatorContains     SiteConditionOperator = "contains"
-	SiteConditionOperatorBeginsWith   SiteConditionOperator = "beginsWith"
-	SiteConditionOperatorNull         SiteConditionOperator = "null"
-	SiteConditionOperatorNotNull      SiteConditionOperator = "notNull"
-	SiteConditionOperatorPerformed    SiteConditionOperator = "performed"
-	SiteConditionOperatorNotPerformed SiteConditionOperator = "notPerformed"
-	SiteConditionOperatorHas          SiteConditionOperator = "has"
-	SiteConditionOperatorDoesNotHave  SiteConditionOperator = "doesNotHave"
+	SiteConditionOperatorEq          SiteConditionOperator = "eq"
+	SiteConditionOperatorNeq         SiteConditionOperator = "neq"
+	SiteConditionOperatorContains    SiteConditionOperator = "contains"
+	SiteConditionOperatorBeginsWith  SiteConditionOperator = "beginsWith"
+	SiteConditionOperatorNull        SiteConditionOperator = "null"
+	SiteConditionOperatorNotNull     SiteConditionOperator = "notNull"
+	SiteConditionOperatorHas         SiteConditionOperator = "has"
+	SiteConditionOperatorDoesNotHave SiteConditionOperator = "doesNotHave"
 )
 
 // AllValues returns all SiteConditionOperator values.
@@ -11038,8 +11207,6 @@ func (SiteConditionOperator) AllValues() []SiteConditionOperator {
 		SiteConditionOperatorBeginsWith,
 		SiteConditionOperatorNull,
 		SiteConditionOperatorNotNull,
-		SiteConditionOperatorPerformed,
-		SiteConditionOperatorNotPerformed,
 		SiteConditionOperatorHas,
 		SiteConditionOperatorDoesNotHave,
 	}
@@ -11059,10 +11226,6 @@ func (s SiteConditionOperator) MarshalText() ([]byte, error) {
 	case SiteConditionOperatorNull:
 		return []byte(s), nil
 	case SiteConditionOperatorNotNull:
-		return []byte(s), nil
-	case SiteConditionOperatorPerformed:
-		return []byte(s), nil
-	case SiteConditionOperatorNotPerformed:
 		return []byte(s), nil
 	case SiteConditionOperatorHas:
 		return []byte(s), nil
@@ -11093,12 +11256,6 @@ func (s *SiteConditionOperator) UnmarshalText(data []byte) error {
 		return nil
 	case SiteConditionOperatorNotNull:
 		*s = SiteConditionOperatorNotNull
-		return nil
-	case SiteConditionOperatorPerformed:
-		*s = SiteConditionOperatorPerformed
-		return nil
-	case SiteConditionOperatorNotPerformed:
-		*s = SiteConditionOperatorNotPerformed
 		return nil
 	case SiteConditionOperatorHas:
 		*s = SiteConditionOperatorHas

@@ -126,7 +126,7 @@ func TestTriggerLeafIsValidOnlyInARule(t *testing.T) {
 
 	for name, bad := range map[string]condition.Leaf{
 		"no key":           rule("trigger:", "eq", "x"),
-		"unknown operator": rule("trigger:k", "performed", "x"),
+		"unknown operator": rule("trigger:k", "atLeast", "x"),
 	} {
 		_, err = condition.RulePredicate(ctx, s, encode(t, opsGroup(bad)), nil)
 		require.Error(t, err, name)

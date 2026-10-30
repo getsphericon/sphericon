@@ -71,6 +71,12 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
+- id: 112
+  version_id: 111
+  action: rule_revisit
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
 - id: 900
   version_id: 900
   action: rule_click

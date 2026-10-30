@@ -7,6 +7,11 @@ status: accepted
 > Amended by [[0065-a-live-automation-or-rule-changes-only-by-publish]]: a Rule is versioned, an edit
 > writes a draft, Publish makes it live, and the lifecycle is `active` and `inactive`.
 
+> **Amended by #749:** the Rules consumer stores the Event's row (the idempotent `Persist` the
+> persist consumer also runs) before it queues the evaluation, so the row of the Event that fired a
+> Rule exists when its Condition is evaluated, and an `event` leaf counting the Trigger event's
+> action counts it. `trigger:<key>` leaves still read the properties the envelope carries.
+
 A Workspace could react to an Event only by building an Automation: a sequence with an
 Enrollment, a version and a once-ever fence, even to "tag a Contact who clicked this link" or "tell
 the CRM". A **Rule** is the light primitive for that: when any of its Trigger events is recorded for

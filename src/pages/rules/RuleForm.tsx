@@ -10,11 +10,11 @@ import {
 } from '@mantine/core'
 import { IconTrash } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
-import { conditionCodec, emptyGroup } from '../../components/conditions/condition.ts'
+import { conditionCodec, draftText, emptyGroup } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
@@ -52,10 +52,11 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
     const parsed = triggerEventsCodec.safeParse(form.values.triggerEvents)
     return parsed.success ? parsed.data : []
   }, [form.values.triggerEvents])
-  const condition = useMemo(() => {
+  // The builder starts from the stored Condition and keeps its own state (see SegmentForm).
+  const [initialCondition] = useState(() => {
     const parsed = conditionCodec.safeParse(form.values.condition)
     return parsed.success ? parsed.data : emptyGroup
-  }, [form.values.condition])
+  })
   const actions = useMemo(() => {
     const parsed = actionsCodec.safeParse(form.values.actions)
     return parsed.success ? parsed.data : []
@@ -106,8 +107,8 @@ export function RuleForm({ form, isPending, onSubmit }: ResourceFormProps<RulePa
           <ConditionBuilder
             workspaceId={workspaceId}
             triggerLeaves
-            value={condition}
-            onChange={(next) => form.setFieldValue('condition', z.encode(conditionCodec, next))}
+            initialValue={initialCondition}
+            onChange={(next) => form.setFieldValue('condition', draftText(next))}
           />
         </Input.Wrapper>
         <Input.Wrapper
