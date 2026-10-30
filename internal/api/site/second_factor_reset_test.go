@@ -82,6 +82,7 @@ func TestAdminCannotResetAnOwnersSecondFactor(t *testing.T) {
 	res := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexOwnerMembershipID)
 
 	require.IsType(t, &siteapi.SiteMembershipsResetSecondFactorForbidden{}, res)
+	assert.Equal(t, siteapi.ProblemCodePermissionRequired, res.(*siteapi.SiteMembershipsResetSecondFactorForbidden).Code.Value)
 }
 
 func TestSecondFactorResetRefusesOneselfAndAMemberWithoutAFactor(t *testing.T) {

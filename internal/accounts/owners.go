@@ -7,7 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 )
@@ -15,16 +15,10 @@ import (
 // The Owners of a Workspace (GLOSSARY "Role") are defined here and nowhere else: every
 // lookup, lock and notice that needs them goes through these functions.
 
-// IsOwner reports whether role is the owner Role.
-func IsOwner(role membership.Role) bool { return role == membership.RoleOwner }
-
-// OwnerMembership selects Memberships that hold the owner Role.
-func OwnerMembership() predicate.Membership { return membership.RoleEQ(membership.RoleOwner) }
-
 // Owners loads the owner Memberships of the Workspace s with their Users, oldest first.
 func Owners(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 	return s.Membership().Query().
-		Where(OwnerMembership()).
+		Where(roles.Owners()).
 		WithUser().
 		Order(ent.Asc(membership.FieldID)).
 		All(ctx)
@@ -35,7 +29,7 @@ func Owners(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 // many Workspaces).
 func OwnersOf(ctx context.Context, client *ent.Client, workspaceIDs ...int64) ([]*ent.Membership, error) {
 	return client.Membership.Query().
-		Where(membership.WorkspaceIDIn(workspaceIDs...), OwnerMembership()).
+		Where(membership.WorkspaceIDIn(workspaceIDs...), roles.Owners()).
 		WithUser().
 		Order(ent.Asc(membership.FieldID)).
 		All(ctx)
@@ -45,7 +39,7 @@ func OwnersOf(ctx context.Context, client *ent.Client, workspaceIDs ...int64) ([
 // their ids. Locking first serializes concurrent Owner changes: the second waits, then reads
 // the committed outcome of the first.
 func LockOwners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
-	return s.Membership().Query().Where(OwnerMembership()).ForUpdate().IDs(ctx)
+	return s.Membership().Query().Where(roles.Owners()).ForUpdate().IDs(ctx)
 }
 
 // NotifyOwners sends one platform email to every Owner of the Workspace through the system

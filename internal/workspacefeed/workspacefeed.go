@@ -24,6 +24,7 @@ import (
 	entclient "github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/postgres"
 )
 
@@ -57,7 +58,7 @@ func changesFeed(m ent.Mutation) bool {
 	case *entclient.MembershipMutation:
 		if mu.Op().Is(ent.OpCreate) {
 			role, ok := mu.Role()
-			return ok && role == membership.RoleOwner
+			return ok && roles.IsOwner(role)
 		}
 		if mu.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
 			_, changesRole := mu.Role()
@@ -133,7 +134,7 @@ func mutateMembership(ctx context.Context, next ent.Mutator, m *entclient.Member
 		if err != nil {
 			return v, err
 		}
-		if role, ok := m.Role(); ok && role == membership.RoleOwner {
+		if role, ok := m.Role(); ok && roles.IsOwner(role) {
 			if ws, ok := m.WorkspaceID(); ok {
 				err = touch(ctx, c, ws)
 			}
@@ -146,7 +147,7 @@ func mutateMembership(ctx context.Context, next ent.Mutator, m *entclient.Member
 			return nil, err
 		}
 		affected, err = workspacesOf(ctx, c.Membership.Query().
-			Where(membership.IDIn(ids...), membership.RoleEQ(membership.RoleOwner)))
+			Where(membership.IDIn(ids...), roles.Owners()))
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +191,7 @@ func mutateUser(ctx context.Context, next ent.Mutator, m *entclient.UserMutation
 		return v, err
 	}
 	owned, err := workspacesOf(ctx, c.Membership.Query().
-		Where(membership.UserIDIn(ids...), membership.RoleEQ(membership.RoleOwner)))
+		Where(membership.UserIDIn(ids...), roles.Owners()))
 	if err != nil || len(owned) == 0 {
 		return v, err
 	}

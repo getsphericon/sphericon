@@ -1,0 +1,15 @@
+id: access-is-a-permission-tsx
+valid:
+  - "const canResolve = can(workspace, 'holds:resolve')"
+  - 'const changed = value !== record.role'
+  - "const options = { role: 'member' }"
+  - "const isMenu = element.kind === 'menu'"
+invalid:
+  - "const plain = role === 'member'"
+  - "const owner = workspace.role === 'owner'"
+  - "const admin = 'admin' !== current.role"
+  - |
+    switch (workspace.role) {
+      case 'owner':
+        show()
+    }

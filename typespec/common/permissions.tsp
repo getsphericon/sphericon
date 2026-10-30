@@ -53,9 +53,19 @@ enum Permission {
   /** Join domains and the Domain join switch */
   joinDomainsManage: "join_domains:manage",
 
+  /** Following a Hold's action link to resolve it (a member is told to ask an owner or admin) */
+  holdsResolve: "holds:resolve",
+
   /** The Account link, which proves who an Owner is */
   accountLinkOpen: "account_link:open",
 
   /** Deleting and restoring the Workspace */
   workspaceDelete: "workspace:delete",
+
+  /** Granting the owner Role, changing or removing an owner, resetting an owner's Second factor */
+  ownersManage: "owners:manage",
+
+  /** Reading and changing the Instance state (Telemetry, the notice). Every owner holds it; only
+   * the holders in the oldest Workspace decide about the Instance */
+  instanceManage: "instance:manage",
 }

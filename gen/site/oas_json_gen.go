@@ -6100,10 +6100,16 @@ func (s *Permission) Decode(d *jx.Decoder) error {
 		*s = PermissionBrandKitManage
 	case PermissionJoinDomainsManage:
 		*s = PermissionJoinDomainsManage
+	case PermissionHoldsResolve:
+		*s = PermissionHoldsResolve
 	case PermissionAccountLinkOpen:
 		*s = PermissionAccountLinkOpen
 	case PermissionWorkspaceDelete:
 		*s = PermissionWorkspaceDelete
+	case PermissionOwnersManage:
+		*s = PermissionOwnersManage
+	case PermissionInstanceManage:
+		*s = PermissionInstanceManage
 	default:
 		*s = Permission(v)
 	}

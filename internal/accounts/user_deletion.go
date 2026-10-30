@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
@@ -170,7 +171,7 @@ func membershipsUnderOwnerLocks(ctx context.Context, tx *ent.Client, userID int6
 func soleOwnedWorkspaces(memberships []*ent.Membership, owners map[int64][]int64) []int64 {
 	var sole []int64
 	for _, m := range memberships {
-		if IsOwner(m.Role) && len(owners[m.WorkspaceID]) == 1 {
+		if roles.IsOwner(m.Role) && len(owners[m.WorkspaceID]) == 1 {
 			sole = append(sole, m.WorkspaceID)
 		}
 	}

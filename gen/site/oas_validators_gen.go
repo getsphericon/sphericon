@@ -566,9 +566,15 @@ func (s Permission) Validate() error {
 		return nil
 	case "join_domains:manage":
 		return nil
+	case "holds:resolve":
+		return nil
 	case "account_link:open":
 		return nil
 	case "workspace:delete":
+		return nil
+	case "owners:manage":
+		return nil
+	case "instance:manage":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

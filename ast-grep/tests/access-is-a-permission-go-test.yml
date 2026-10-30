@@ -1,0 +1,55 @@
+id: access-is-a-permission-go
+valid:
+  - |
+    func others(ctx context.Context, c *ent.Client) (int, error) {
+    	return c.SignupSurveyResponse.Query().Where(signupsurveyresponse.RoleEQ(signupsurveyresponse.RoleOther)).Count(ctx)
+    }
+  - |
+    func check(role membership.Role) error {
+    	return accounts.Require(role, accounts.PermOwnersManage)
+    }
+  - |
+    func last(target *ent.Membership, owners int) bool {
+    	return roles.IsOwner(target.Role) && owners <= 1
+    }
+  - |
+    func create(ctx context.Context, ts *ent.Scoped, userID int64) error {
+    	return ts.Membership().Create().SetUserID(userID).SetRole(membership.RoleOwner).Exec(ctx)
+    }
+  - |
+    func owners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
+    	return s.Membership().Query().Where(roles.Owners()).IDs(ctx)
+    }
+invalid:
+  - |
+    func admin(m *ent.Membership) bool {
+    	return m.Role == entmembership.RoleAdmin
+    }
+  - |
+    func pending(ctx context.Context, s *ent.Scoped) ([]int64, error) {
+    	return s.Invitation().Query().Where(invitation.RoleEQ(invitation.RoleAdmin)).IDs(ctx)
+    }
+  - |
+    func check(callerRole membership.Role) bool {
+    	return callerRole != membership.RoleOwner
+    }
+  - |
+    func raise(existing *ent.Membership) bool {
+    	return membership.RoleMember == existing.Role
+    }
+  - |
+    func owners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
+    	return s.Membership().Query().Where(membership.RoleEQ(membership.RoleOwner)).IDs(ctx)
+    }
+  - |
+    func staff(ctx context.Context, s *ent.Scoped) ([]int64, error) {
+    	return s.Membership().Query().Where(membership.RoleIn(membership.RoleOwner, membership.RoleAdmin)).IDs(ctx)
+    }
+  - |
+    func label(role membership.Role) string {
+    	switch role {
+    	case membership.RoleAdmin:
+    		return "admin"
+    	}
+    	return ""
+    }

@@ -5772,8 +5772,11 @@ const (
 	PermissionRevenueConfigure     Permission = "revenue:configure"
 	PermissionBrandKitManage       Permission = "brand_kit:manage"
 	PermissionJoinDomainsManage    Permission = "join_domains:manage"
+	PermissionHoldsResolve         Permission = "holds:resolve"
 	PermissionAccountLinkOpen      Permission = "account_link:open"
 	PermissionWorkspaceDelete      Permission = "workspace:delete"
+	PermissionOwnersManage         Permission = "owners:manage"
+	PermissionInstanceManage       Permission = "instance:manage"
 )
 
 // AllValues returns all Permission values.
@@ -5795,8 +5798,11 @@ func (Permission) AllValues() []Permission {
 		PermissionRevenueConfigure,
 		PermissionBrandKitManage,
 		PermissionJoinDomainsManage,
+		PermissionHoldsResolve,
 		PermissionAccountLinkOpen,
 		PermissionWorkspaceDelete,
+		PermissionOwnersManage,
+		PermissionInstanceManage,
 	}
 }
 
@@ -5835,9 +5841,15 @@ func (s Permission) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case PermissionJoinDomainsManage:
 		return []byte(s), nil
+	case PermissionHoldsResolve:
+		return []byte(s), nil
 	case PermissionAccountLinkOpen:
 		return []byte(s), nil
 	case PermissionWorkspaceDelete:
+		return []byte(s), nil
+	case PermissionOwnersManage:
+		return []byte(s), nil
+	case PermissionInstanceManage:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -5895,11 +5907,20 @@ func (s *Permission) UnmarshalText(data []byte) error {
 	case PermissionJoinDomainsManage:
 		*s = PermissionJoinDomainsManage
 		return nil
+	case PermissionHoldsResolve:
+		*s = PermissionHoldsResolve
+		return nil
 	case PermissionAccountLinkOpen:
 		*s = PermissionAccountLinkOpen
 		return nil
 	case PermissionWorkspaceDelete:
 		*s = PermissionWorkspaceDelete
+		return nil
+	case PermissionOwnersManage:
+		*s = PermissionOwnersManage
+		return nil
+	case PermissionInstanceManage:
+		*s = PermissionInstanceManage
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

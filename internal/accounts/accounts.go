@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -139,15 +140,17 @@ func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, 
 }
 
 // SecondFactorResetTarget loads the Membership targetID of the Workspace s as the target of a
-// Second factor reset by a caller holding callerRole: only an Owner resets an Owner's
-// (ErrOwnerOnly). A target outside the Workspace is an ent NotFound error.
+// Second factor reset by a caller holding callerRole: resetting an Owner's needs owners:manage,
+// refused as Require refuses it. A target outside the Workspace is an ent NotFound error.
 func SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, callerRole membership.Role, targetID int64) (*ent.Membership, error) {
 	target, err := s.Membership().Get(ctx, targetID)
 	if err != nil {
 		return nil, err
 	}
-	if IsOwner(target.Role) && !IsOwner(callerRole) {
-		return nil, ErrOwnerOnly
+	if roles.IsOwner(target.Role) {
+		if err := Require(callerRole, PermOwnersManage); err != nil {
+			return nil, err
+		}
 	}
 	return target, nil
 }
@@ -825,7 +828,7 @@ func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, na
 		if err != nil {
 			return err
 		}
-		if existing != nil && existing.Role == membership.RoleMember && role == membership.RoleAdmin {
+		if existing != nil && roles.IsMember(existing.Role) && roles.IsAdmin(role) {
 			// An explicit Invitation raises a member to admin; it never lowers a Role.
 			if err := raiseToAdmin(ctx, ts, pub, inv, actor, u, existing); err != nil {
 				return err

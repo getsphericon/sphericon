@@ -19,6 +19,7 @@ import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/route.tsx'
 import { Route as newWorkspaceRoute } from '../routes/workspaces/new.tsx'
 import { isSecondFactorRequiredError } from '../utils/apiErrors.ts'
+import { can } from '../utils/permissions.ts'
 import { secondFactorStanding } from '../utils/secondFactorStanding.ts'
 import { DashboardShell } from './DashboardShell.tsx'
 
@@ -100,25 +101,26 @@ function SuspensionBanner({
   )
 }
 
-// HoldAction points an Owner or Admin to where the setter of a hold says it can be resolved,
-// and tells a plain member to ask one of them; a hold with no action URL renders nothing.
+// HoldAction points a member who holds holds:resolve to where the setter of a hold says it can
+// be resolved, and tells anyone else to ask an Owner or Admin; a hold with no action URL renders
+// nothing.
 function HoldAction({
-  role,
+  canResolve,
   actionUrl,
 }: {
-  role: SiteWorkspaceResource['role']
+  canResolve: boolean
   actionUrl: string | null | undefined
 }) {
   const { t } = useTranslation()
   if (!actionUrl) {
     return null
   }
-  return role === 'member' ? (
-    <Text size="sm">{t(($) => $.workspaceHold.actionContact)}</Text>
-  ) : (
+  return canResolve ? (
     <Anchor size="sm" display="block" href={actionUrl}>
       {t(($) => $.workspaceHold.actionLink)}
     </Anchor>
+  ) : (
+    <Text size="sm">{t(($) => $.workspaceHold.actionContact)}</Text>
   )
 }
 
@@ -127,12 +129,13 @@ function HoldAction({
 // deliberately not the suspension banner: another color and icon, another title.
 function HoldBanner({
   holds,
-  role,
+  workspace,
 }: {
   holds: SiteWorkspaceHold[]
-  role: SiteWorkspaceResource['role']
+  workspace: SiteWorkspaceResource
 }) {
   const { t } = useTranslation()
+  const canResolve = can(workspace, 'holds:resolve')
   return (
     <Alert
       color="yellow"
@@ -147,7 +150,7 @@ function HoldBanner({
           <Text size="sm" fw={500} mt="xs">
             {hold.message}
           </Text>
-          <HoldAction role={role} actionUrl={hold.actionUrl} />
+          <HoldAction canResolve={canResolve} actionUrl={hold.actionUrl} />
         </div>
       ))}
     </Alert>
@@ -212,7 +215,7 @@ export function WorkspaceLayout() {
               supportEmail={current.supportEmail}
             />
           ) : null}
-          {holds.length > 0 && current ? <HoldBanner holds={holds} role={current.role} /> : null}
+          {holds.length > 0 && current ? <HoldBanner holds={holds} workspace={current} /> : null}
           {standing.kind === 'grace' ? <SecondFactorGraceBanner endsAt={standing.endsAt} /> : null}
         </>
       }

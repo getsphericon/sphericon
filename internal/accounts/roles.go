@@ -8,19 +8,16 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
-// The Owner invariants of a Role (GLOSSARY "Role"): a Workspace always keeps at least one
-// owner, and only an owner grants the owner Role or changes or removes another owner's
-// Membership. Surfaces map ErrOwnerOnly to 403 and ErrLastOwner to 422.
-var (
-	// ErrOwnerOnly is returned when a caller who is not an owner grants the owner Role or
-	// changes or removes an owner's Membership.
-	ErrOwnerOnly = errors.New("accounts: only an owner may grant the owner role or change an owner")
-	// ErrLastOwner is returned when the change would leave the Workspace without an owner.
-	ErrLastOwner = errors.New("accounts: a workspace keeps at least one owner")
-)
+// The Owner invariant of a Role (GLOSSARY "Role"): a Workspace always keeps at least one owner,
+// refused with ErrLastOwner (422). Granting the owner Role and changing or removing an owner's
+// Membership need the Permission owners:manage (ADR 0061), refused as Require refuses it (403).
+
+// ErrLastOwner is returned when the change would leave the Workspace without an owner.
+var ErrLastOwner = errors.New("accounts: a workspace keeps at least one owner")
 
 // ChangeMembershipRole sets the Role of the Membership targetID in the Workspace s on
 // behalf of a caller holding callerRole, and records `membership.update` with the role
@@ -59,7 +56,7 @@ func (a *Accounts) ChangeMembershipRole(ctx context.Context, s *ent.Scoped, acto
 }
 
 // RemoveMembership removes the Membership targetID from the Workspace s on behalf of a
-// caller holding callerRole, under the same Owner invariants and locking as
+// caller holding callerRole, under the same owner rules and locking as
 // ChangeMembershipRole, and records `membership.delete` with actor as an Audit entry in the
 // same transaction. A target outside the Workspace is an ent NotFound error.
 func (a *Accounts) RemoveMembership(ctx context.Context, s *ent.Scoped, actor events.Actor, callerRole membership.Role, targetID int64) error {
@@ -162,13 +159,16 @@ func lockedTarget(ctx context.Context, ts *ent.Scoped, target predicate.Membersh
 	return m, len(ownerIDs), nil
 }
 
-// checkOwnerChange applies the Owner invariants to turning target into desired ("" when
-// the Membership is removed).
+// checkOwnerChange applies the owner rules to turning target into desired ("" when the
+// Membership is removed): a change that grants or touches the owner Role needs owners:manage,
+// and the last owner stays one.
 func checkOwnerChange(callerRole membership.Role, target *ent.Membership, owners int, desired membership.Role) error {
-	if callerRole != membership.RoleOwner && (desired == membership.RoleOwner || target.Role == membership.RoleOwner) {
-		return ErrOwnerOnly
+	if roles.IsOwner(desired) || roles.IsOwner(target.Role) {
+		if err := Require(callerRole, PermOwnersManage); err != nil {
+			return err
+		}
 	}
-	if target.Role == membership.RoleOwner && desired != membership.RoleOwner && owners <= 1 {
+	if roles.IsOwner(target.Role) && !roles.IsOwner(desired) && owners <= 1 {
 		return ErrLastOwner
 	}
 	return nil

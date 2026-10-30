@@ -837,8 +837,9 @@ _Avoid_: Team, seat, collaborator, ownership
 
 **Role**:
 The named set of Permissions a Membership holds in a Workspace: owner, admin or member. A
-Workspace always keeps at least one owner, and only an owner grants the owner Role or changes or
-removes another owner's Membership.
+Workspace always keeps at least one owner, and only a Role holding `owners:manage` (the owner)
+grants the owner Role or changes or removes another owner's Membership. No code compares a Role to
+decide access: it asks a Permission.
 _Avoid_: Permission (a Role holds Permissions, it is not one), scope (scope is the API-token term)
 
 **Permission**:

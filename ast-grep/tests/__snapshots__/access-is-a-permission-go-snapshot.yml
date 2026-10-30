@@ -1,0 +1,90 @@
+id: access-is-a-permission-go
+snapshots:
+  "func admin(m *ent.Membership) bool {\n\treturn m.Role == entmembership.RoleAdmin\n}\n":
+    labels:
+      - source: m.Role == entmembership.RoleAdmin
+        style: primary
+        start: 45
+        end: 78
+      - source: ==
+        style: secondary
+        start: 52
+        end: 54
+      - source: entmembership.RoleAdmin
+        style: secondary
+        start: 55
+        end: 78
+  "func check(callerRole membership.Role) bool {\n\treturn callerRole != membership.RoleOwner\n}\n":
+    labels:
+      - source: callerRole != membership.RoleOwner
+        style: primary
+        start: 54
+        end: 88
+      - source: '!='
+        style: secondary
+        start: 65
+        end: 67
+      - source: membership.RoleOwner
+        style: secondary
+        start: 68
+        end: 88
+  "func label(role membership.Role) string {\n\tswitch role {\n\tcase membership.RoleAdmin:\n\t\treturn \"admin\"\n\t}\n\treturn \"\"\n}\n":
+    labels:
+      - source: |
+          case membership.RoleAdmin:
+          		return "admin"
+        style: primary
+        start: 58
+        end: 102
+      - source: membership.RoleAdmin
+        style: secondary
+        start: 63
+        end: 83
+      - source: membership.RoleAdmin
+        style: secondary
+        start: 63
+        end: 83
+  "func owners(ctx context.Context, s *ent.Scoped) ([]int64, error) {\n\treturn s.Membership().Query().Where(membership.RoleEQ(membership.RoleOwner)).IDs(ctx)\n}\n":
+    labels:
+      - source: membership.RoleEQ(membership.RoleOwner)
+        style: primary
+        start: 104
+        end: 143
+      - source: membership.RoleEQ
+        style: secondary
+        start: 104
+        end: 121
+  "func pending(ctx context.Context, s *ent.Scoped) ([]int64, error) {\n\treturn s.Invitation().Query().Where(invitation.RoleEQ(invitation.RoleAdmin)).IDs(ctx)\n}\n":
+    labels:
+      - source: invitation.RoleEQ(invitation.RoleAdmin)
+        style: primary
+        start: 105
+        end: 144
+      - source: invitation.RoleEQ
+        style: secondary
+        start: 105
+        end: 122
+  "func raise(existing *ent.Membership) bool {\n\treturn membership.RoleMember == existing.Role\n}\n":
+    labels:
+      - source: membership.RoleMember == existing.Role
+        style: primary
+        start: 52
+        end: 90
+      - source: ==
+        style: secondary
+        start: 74
+        end: 76
+      - source: membership.RoleMember
+        style: secondary
+        start: 52
+        end: 73
+  "func staff(ctx context.Context, s *ent.Scoped) ([]int64, error) {\n\treturn s.Membership().Query().Where(membership.RoleIn(membership.RoleOwner, membership.RoleAdmin)).IDs(ctx)\n}\n":
+    labels:
+      - source: membership.RoleIn(membership.RoleOwner, membership.RoleAdmin)
+        style: primary
+        start: 103
+        end: 164
+      - source: membership.RoleIn
+        style: secondary
+        start: 103
+        end: 120

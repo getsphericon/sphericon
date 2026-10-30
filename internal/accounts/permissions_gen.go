@@ -24,6 +24,9 @@ const (
 	PermRevenueConfigure     Permission = "revenue:configure"
 	PermBrandKitManage       Permission = "brand_kit:manage"
 	PermJoinDomainsManage    Permission = "join_domains:manage"
+	PermHoldsResolve         Permission = "holds:resolve"
 	PermAccountLinkOpen      Permission = "account_link:open"
 	PermWorkspaceDelete      Permission = "workspace:delete"
+	PermOwnersManage         Permission = "owners:manage"
+	PermInstanceManage       Permission = "instance:manage"
 )

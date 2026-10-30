@@ -640,8 +640,11 @@ export const Permission = {
   REVENUE_CONFIGURE: 'revenue:configure',
   BRAND_KIT_MANAGE: 'brand_kit:manage',
   JOIN_DOMAINS_MANAGE: 'join_domains:manage',
+  HOLDS_RESOLVE: 'holds:resolve',
   ACCOUNT_LINK_OPEN: 'account_link:open',
-  WORKSPACE_DELETE: 'workspace:delete'
+  WORKSPACE_DELETE: 'workspace:delete',
+  OWNERS_MANAGE: 'owners:manage',
+  INSTANCE_MANAGE: 'instance:manage'
 } as const;
 
 /**

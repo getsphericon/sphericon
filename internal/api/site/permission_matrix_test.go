@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -67,11 +68,21 @@ var permissionMatrix = []guarded{
 	{siteapi.PermissionJoinDomainsManage, http.MethodGet, acmePath("/join-domains"), "", ok, ok, refused},
 	{siteapi.PermissionAccountLinkOpen, http.MethodPost, acmePath("/account-link"), "", ok, refused, refused},
 	{siteapi.PermissionWorkspaceDelete, http.MethodPost, acmePath("/delete"), `{"name":"not the name"}`, rejected, refused, refused},
+	// owners:manage is asked by the operation for an owner's Membership (John, Acme's owner, stays
+	// one); a member is refused earlier, by the members:manage the operation declares.
+	{siteapi.PermissionOwnersManage, http.MethodPut, acmePath("/memberships/" + strconv.Itoa(fixtures.AcmeOwnerMembershipID)), `{"role":"owner"}`, ok, refused, refused},
+	// instance:manage is held in the oldest Workspace, Acme (ADR 0032).
+	{siteapi.PermissionInstanceManage, http.MethodGet, "/site/instance", "", ok, refused, refused},
 }
+
+// shownOnly is the Permissions no operation asks for: the client alone reads them, from the
+// Workspace resource, to decide what it offers (holds:resolve: the link of a Hold's action).
+// Their cells are the Workspace's permissions (TestTheWorkspaceCarriesThePermissionsOfTheCallersRole).
+var shownOnly = []siteapi.Permission{siteapi.PermissionHoldsResolve}
 
 func TestTheMatrixHasAnOperationForEveryPermission(t *testing.T) {
 	assert.ElementsMatch(t, siteapi.Permission("").AllValues(),
-		lo.Map(permissionMatrix, func(g guarded, _ int) siteapi.Permission { return g.permission }))
+		append(lo.Map(permissionMatrix, func(g guarded, _ int) siteapi.Permission { return g.permission }), shownOnly...))
 }
 
 // Every cell of the Permission matrix of ADR 0061, through a real request: a Role that holds the

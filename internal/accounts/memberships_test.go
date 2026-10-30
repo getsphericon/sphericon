@@ -32,13 +32,13 @@ func TestChangeMembershipRoleInvariants(t *testing.T) {
 
 	t.Run("an admin cannot grant the owner Role", func(t *testing.T) {
 		_, err := acc.ChangeMembershipRole(ctx, s, actor, membership.RoleAdmin, fixtures.InitechMemberMembershipID, membership.RoleOwner)
-		require.ErrorIs(t, err, accounts.ErrOwnerOnly)
+		require.ErrorIs(t, err, accounts.Require(membership.RoleAdmin, accounts.PermOwnersManage))
 		assert.Equal(t, membership.RoleMember, roleOf(fixtures.InitechMemberMembershipID))
 	})
 
 	t.Run("an admin cannot alter an owner", func(t *testing.T) {
 		_, err := acc.ChangeMembershipRole(ctx, s, actor, membership.RoleAdmin, fixtures.InitechCoOwnerMembershipID, membership.RoleMember)
-		require.ErrorIs(t, err, accounts.ErrOwnerOnly)
+		require.ErrorIs(t, err, accounts.Require(membership.RoleAdmin, accounts.PermOwnersManage))
 		assert.Equal(t, membership.RoleOwner, roleOf(fixtures.InitechCoOwnerMembershipID))
 	})
 
@@ -114,7 +114,7 @@ func TestRemoveMembershipInvariants(t *testing.T) {
 
 	t.Run("an admin cannot remove an owner", func(t *testing.T) {
 		err := acc.RemoveMembership(ctx, s, actor, membership.RoleAdmin, fixtures.InitechCoOwnerMembershipID)
-		require.ErrorIs(t, err, accounts.ErrOwnerOnly)
+		require.ErrorIs(t, err, accounts.Require(membership.RoleAdmin, accounts.PermOwnersManage))
 		assert.True(t, exists(fixtures.InitechCoOwnerMembershipID))
 	})
 

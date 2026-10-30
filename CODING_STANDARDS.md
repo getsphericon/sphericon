@@ -94,6 +94,14 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   with 422 and its field, an `*inuse.Error` with 409 and `usedBy`, content `emailrender` cannot
   render with 422, and `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is
   not a member of) with 404.
+- **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares
+  a Role: in Go, `==`/`!=` or a `case` with `RoleOwner`/`RoleAdmin`/`RoleMember` of any package
+  (`membership`, `entmembership`, `invitation`), and `RoleEQ`/`RoleNEQ`/`RoleIn`/`RoleNotIn` of a
+  Membership or an Invitation in a query; in TypeScript, a `role` or `.role`
+  compared with `'owner'`/`'admin'`/`'member'`. Access asks `accounts.Allows`/`Require`/`HoldersOf`
+  or `can(workspace, …)`; a Role fact that is not access calls `internal/accounts/roles`. Only that
+  package and the Permission table (`internal/accounts/permissions.go`) are not read, with tests and
+  generated code. Setting a Role is not a comparison.
 - **Adding an analyzer.** (1) Create `tools/analyzers/<name>/` with `Analyzer` (see `noprint`) and report
   through `rule.Message`. (2) Write `<name>_test.go` with `analysistest.Run` and a test data package per
   case under `testdata/src/` (a `bad` package whose violating lines carry `// want` with the message

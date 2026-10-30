@@ -13535,8 +13535,11 @@
           "revenue:configure",
           "brand_kit:manage",
           "join_domains:manage",
+          "holds:resolve",
           "account_link:open",
-          "workspace:delete"
+          "workspace:delete",
+          "owners:manage",
+          "instance:manage"
         ],
         "description": "A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY \"Permission\"),\nwritten `resource:verb` like the API token scopes. A Role is a set of them; the table\nfrom Role to Permissions lives in the server, and the client reads a Membership's\nPermissions from its Workspace instead of computing them."
       },
