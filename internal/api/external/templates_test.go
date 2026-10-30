@@ -75,7 +75,7 @@ func TestExternalTemplatesScopes(t *testing.T) {
 	other := env.ExternalScoped(t, "contacts:read", "contacts:write")
 	l, err := other.TemplatesList(ctx, externalapi.TemplatesListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TemplatesListUnauthorized{}, l)
+	assert.IsType(t, &externalapi.TemplatesListForbidden{}, l)
 
 	// Read-only token cannot write.
 	ro := env.ExternalScoped(t, "templates:read")
@@ -84,13 +84,13 @@ func TestExternalTemplatesScopes(t *testing.T) {
 	assert.IsType(t, &externalapi.TemplateResource{}, g)
 	cr, err := ro.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{Name: "x"})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TemplatesCreateUnauthorized{}, cr)
+	assert.IsType(t, &externalapi.TemplatesCreateForbidden{}, cr)
 	up, err := ro.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{}, externalapi.TemplatesUpdateParams{ID: entityIDString(fixtures.TemplateWelcomeID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TemplatesUpdateUnauthorized{}, up)
+	assert.IsType(t, &externalapi.TemplatesUpdateForbidden{}, up)
 	de, err := ro.TemplatesDelete(ctx, externalapi.TemplatesDeleteParams{ID: entityIDString(fixtures.TemplateWelcomeID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TemplatesDeleteUnauthorized{}, de)
+	assert.IsType(t, &externalapi.TemplatesDeleteForbidden{}, de)
 }
 
 func TestExternalTemplatesAreWorkspaceScoped(t *testing.T) {

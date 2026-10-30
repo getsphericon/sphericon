@@ -70,5 +70,8 @@ interface Templates
   extends ExternalCrud<
       TemplateResource,
       CreateTemplateInput,
-      UpdateTemplateInput
+      UpdateTemplateInput,
+      ApiTokenScope.templatesRead,
+      ApiTokenScope.templatesWrite,
+      ApiTokenScope.templatesWrite
     > {}

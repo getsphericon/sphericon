@@ -48,20 +48,20 @@ func TestExternalIntegrationsWritesNeedTheWriteScope(t *testing.T) {
 
 	create, err := reader.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{Name: "x", Config: smtpInput("smtp.example.com")})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsCreateUnauthorized{}, create)
+	assert.IsType(t, &externalapi.IntegrationsCreateForbidden{}, create)
 
 	upd, err := reader.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Name: externalapi.NewOptString("x")}, externalapi.IntegrationsUpdateParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsUpdateUnauthorized{}, upd)
+	assert.IsType(t, &externalapi.IntegrationsUpdateForbidden{}, upd)
 
 	del, err := reader.IntegrationsArchive(ctx, externalapi.IntegrationsArchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsArchiveUnauthorized{}, del)
+	assert.IsType(t, &externalapi.IntegrationsArchiveForbidden{}, del)
 
 	writer := env.ExternalScoped(t, "integrations:write")
 	get, err := writer.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsGetUnauthorized{}, get, "write does not imply read")
+	assert.IsType(t, &externalapi.IntegrationsGetForbidden{}, get, "write does not imply read")
 
 	n, err := env.DB.Scoped(fixtures.AcmeID).Integration().Query().Where(integration.ID(fixtures.IntegrationAcmeSesID)).Count(ctx)
 	require.NoError(t, err)

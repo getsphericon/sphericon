@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
 
@@ -125,11 +126,14 @@ interface Segments
   extends ExternalCrudArchivable<
       SegmentResource,
       CreateSegmentInput,
-      UpdateSegmentInput
+      UpdateSegmentInput,
+      ApiTokenScope.segmentsRead,
+      ApiTokenScope.segmentsWrite
     > {
   /** Count the contacts matching an unsaved rule definition */
   @collectionAction(SegmentResource, "preview")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.segmentsRead])
   preview(
     ...ResourceCollectionParameters<SegmentResource>,
     @body body: PreviewSegmentInput,
@@ -137,6 +141,7 @@ interface Segments
     | PreviewSegmentResult
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
 }

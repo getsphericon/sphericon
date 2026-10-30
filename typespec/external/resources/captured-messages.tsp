@@ -100,10 +100,12 @@ interface CapturedMessages {
   @listsResource(CapturedMessageResource)
   @get
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.capturedMessagesRead])
   list(...ResourceCollectionParameters<CapturedMessageResource>, ...PageQuery):
     | Page<CapturedMessageSummary>
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
 
@@ -111,10 +113,12 @@ interface CapturedMessages {
   @readsResource(CapturedMessageResource)
   @get
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.capturedMessagesRead])
   get(...ResourceParameters<CapturedMessageResource>):
     | CapturedMessageResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
@@ -122,10 +126,12 @@ interface CapturedMessages {
   @deletesResource(CapturedMessageResource)
   @delete
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.capturedMessagesWrite])
   delete(...ResourceParameters<CapturedMessageResource>):
     | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
@@ -133,8 +139,10 @@ interface CapturedMessages {
   @collectionAction(CapturedMessageResource, "all")
   @delete
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.capturedMessagesWrite])
   deleteAll(...ResourceCollectionParameters<CapturedMessageResource>):
     | NoContentResponse
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem;
 }

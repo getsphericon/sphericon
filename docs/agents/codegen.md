@@ -17,7 +17,9 @@ ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, 
 ent + gen/{site,external,staff,service}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 openapi/service (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
-openapi/site (`x-required-permissions`, `x-allowed-while-withheld` per operation) ──cmd/scopegen──▶ internal/api/site/access_gen.go (`operationAccess`); the tables are `scopegen.Tables`
+openapi/external (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ internal/api/auth/external_scopes_gen.go (`ExternalOperationScopes`)
+openapi/site (`x-required-permissions`, `x-allowed-while-withheld` per operation) ──cmd/scopegen──▶ internal/api/site/access_gen.go (`operationAccess`)
+openapi/site (`x-grant-permissions` on each grantable scope enum) ──cmd/scopegen──▶ internal/accounts/grant_permissions_gen.go (`GrantPermissions`); the tables are `scopegen.Tables`
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```

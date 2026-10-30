@@ -15,10 +15,6 @@ import (
 // the audit:read scope (a SIEM feed). An instance without an Enterprise license
 // answers 402 (ADR 0014, ADR 0022).
 func (h *Handlers) AuditEntriesList(ctx context.Context, params externalapi.AuditEntriesListParams) (externalapi.AuditEntriesListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAuditRead) {
-		res := externalapi.AuditEntriesListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	if h.audit == nil || !h.audit.Licensed() {
 		res := externalapi.AuditEntriesListPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
 		return &res, nil

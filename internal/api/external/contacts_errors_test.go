@@ -94,7 +94,7 @@ func TestExternalContactsListRequiresReadScopeAndPaginates(t *testing.T) {
 
 	denied, err := env.ExternalScoped(t, "contacts:write").ContactsList(ctx, externalapi.ContactsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, denied)
+	assert.IsType(t, &externalapi.ContactsListForbidden{}, denied)
 
 	c := env.ExternalScoped(t, "contacts:read")
 	first, err := c.ContactsList(ctx, externalapi.ContactsListParams{PageSize: externalapi.NewOptInt32(1)})

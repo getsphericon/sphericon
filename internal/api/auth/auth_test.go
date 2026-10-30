@@ -73,7 +73,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	env := testhelper.Setup(t)
 	h := auth.NewExternalSecurityHandler(env.DB, env.Bus)
 
-	ctx, err := h.HandleBearerAuth(context.Background(), "", externalapi.BearerAuth{
+	ctx, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
 	})
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	assert.Contains(t, got.Scopes, "contacts:read")
 
 	scoped := env.ScopedBearerFor(t, fixtures.GlobexID, "events:read")
-	ctx, err = h.HandleBearerAuth(context.Background(), "", externalapi.BearerAuth{Token: scoped})
+	ctx, err = h.Authenticate(context.Background(), externalapi.BearerAuth{Token: scoped})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.GlobexID, auth.GetTokenAuth(ctx).WorkspaceID, "the token's own workspace, whichever it is")
 	assert.Equal(t, []string{"events:read"}, auth.GetTokenAuth(ctx).Scopes)
@@ -121,15 +121,39 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 		"expired":          expired,
 		"valid prefix cut": valid[:len(valid)-len(fixtures.AnchorTokenSecret)-1],
 	} {
-		got, err := h.HandleBearerAuth(ctx, "", externalapi.BearerAuth{Token: token})
+		got, err := h.Authenticate(ctx, externalapi.BearerAuth{Token: token})
 		require.ErrorIs(t, err, auth.ErrUnauthorized, name)
 		assert.Nil(t, auth.GetTokenAuth(got), name)
 	}
 }
 
+// A valid token calls an operation only with every scope the contract declares for it; an
+// operation the table does not list is refused to every token. Neither refusal is an
+// unauthorized credential.
+func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
+	env := testhelper.Setup(t)
+	h := auth.NewExternalSecurityHandler(env.DB, env.Bus)
+	reader := externalapi.BearerAuth{Token: env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsRead))}
+
+	ctx, err := h.HandleBearerAuth(t.Context(), externalapi.ContactsListOperation, reader)
+	require.NoError(t, err)
+	assert.NotNil(t, auth.GetTokenAuth(ctx))
+
+	_, err = h.HandleBearerAuth(t.Context(), externalapi.AuthMeGetOperation, reader)
+	require.NoError(t, err, "an operation that declares no scope is open to any valid token")
+
+	_, err = h.HandleBearerAuth(t.Context(), externalapi.ContactsCreateOperation, reader)
+	require.EqualError(t, err, "the API token lacks the scope contacts:write")
+	require.NotErrorIs(t, err, auth.ErrUnauthorized)
+
+	_, err = h.HandleBearerAuth(t.Context(), "NotListed", reader)
+	require.EqualError(t, err, "the operation NotListed is not open to API tokens")
+	require.NotErrorIs(t, err, auth.ErrUnauthorized)
+}
+
 func TestBearerAuthStorageFailureIsNotAnUnauthorizedAnswer(t *testing.T) {
 	h := auth.NewExternalSecurityHandler(closedClient(t), nil)
-	_, err := h.HandleBearerAuth(context.Background(), "", externalapi.BearerAuth{
+	_, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
 	})
 	require.Error(t, err)
@@ -154,7 +178,7 @@ func TestCollectKeyResolvesTheOwningWorkspace(t *testing.T) {
 
 	_, err := auth.NewCollectSecurityHandler(closedClient(t)).HandleApiKeyAuth(context.Background(), "", collectapi.ApiKeyAuth{APIKey: fixtures.AcmeCollectKey})
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, auth.ErrUnauthorized)
+	require.NotErrorIs(t, err, auth.ErrUnauthorized)
 }
 
 func TestSiteAuthResolvesTheDashboardUserByTheIDInTheToken(t *testing.T) {
@@ -212,7 +236,7 @@ func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
 
 	_, err = auth.NewSiteSecurityHandler(cfg.JWTSecret, closedClient(t), nil).HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{APIKey: good})
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, auth.ErrUnauthorized)
+	require.NotErrorIs(t, err, auth.ErrUnauthorized)
 }
 
 // collectWorkspaceID is the resolved collect key's Workspace id, 0 when unauthenticated.

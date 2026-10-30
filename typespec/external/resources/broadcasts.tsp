@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
 
@@ -189,6 +190,9 @@ interface Broadcasts
       BroadcastResource,
       CreateBroadcastInput,
       UpdateBroadcastInput,
+      ApiTokenScope.broadcastsRead,
+      ApiTokenScope.broadcastsWrite,
+      ApiTokenScope.broadcastsWrite,
       never,
       never,
       BroadcastsListFilter
@@ -196,10 +200,12 @@ interface Broadcasts
   /** Archive a sent or failed broadcast: it leaves the list but keeps its report and figures, and can be restored. A draft is deleted instead; a scheduled or sending broadcast cannot be archived. */
   @action("archive")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.broadcastsWrite])
   archive(...ResourceParameters<BroadcastResource>):
     | BroadcastResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -207,10 +213,12 @@ interface Broadcasts
   /** Restore an archived broadcast to the list */
   @action("unarchive")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.broadcastsWrite])
   unarchive(...ResourceParameters<BroadcastResource>):
     | BroadcastResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
@@ -218,6 +226,7 @@ interface Broadcasts
   @action("segment")
   @put
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.broadcastsWrite])
   setSegment(
     ...ResourceParameters<BroadcastResource>,
     @body body: SetBroadcastSegmentInput,
@@ -225,6 +234,7 @@ interface Broadcasts
     | BroadcastResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -232,6 +242,7 @@ interface Broadcasts
   /** Send a rendered preview with sample merge data to a single address. Never sends to the audience. */
   @action("test-send")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.broadcastsWrite])
   testSend(
     ...ResourceParameters<BroadcastResource>,
     @body body: TestSendBroadcastInput,
@@ -239,6 +250,7 @@ interface Broadcasts
     | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -246,6 +258,7 @@ interface Broadcasts
   /** Schedule a draft or scheduled broadcast to send to its audience at a future time. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("schedule")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.broadcastsSend])
   schedule(
     ...ResourceParameters<BroadcastResource>,
     @body body: ScheduleBroadcastInput,
@@ -253,6 +266,7 @@ interface Broadcasts
     | BroadcastResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -260,10 +274,12 @@ interface Broadcasts
   /** Cancel a scheduled broadcast and return it to draft. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("unschedule")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.broadcastsSend])
   unschedule(...ResourceParameters<BroadcastResource>):
     | BroadcastResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -272,10 +288,12 @@ interface Broadcasts
   @action("report")
   @get
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.broadcastsRead])
   report(...ResourceParameters<BroadcastResource>):
     | BroadcastReport
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 }

@@ -134,10 +134,10 @@ func TestExternalConsentRequiresWriteScope(t *testing.T) {
 	c := env.ExternalScoped(t, "contacts:read")
 	r1, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.ContactAliceEmail})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SuppressionsCreateUnauthorized{}, r1)
+	assert.IsType(t, &externalapi.SuppressionsCreateForbidden{}, r1)
 	r2, err := c.UnsubscribesCreate(context.Background(), &externalapi.CreateUnsubscribeInput{Destination: fixtures.ContactAliceEmail})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.UnsubscribesCreateUnauthorized{}, r2)
+	assert.IsType(t, &externalapi.UnsubscribesCreateForbidden{}, r2)
 	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
 }
 

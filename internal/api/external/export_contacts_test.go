@@ -101,7 +101,7 @@ func TestExportContactsNeedsTheExportReadScope(t *testing.T) {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.AcmeID, scopes...))
 		res, err := c.ExportContacts(context.Background(), externalapi.ExportContactsParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportContactsUnauthorized{}, res, "scopes %v are refused", scopes)
+		assert.IsType(t, &externalapi.ExportContactsForbidden{}, res, "scopes %v are refused", scopes)
 	}
 }
 

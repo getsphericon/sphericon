@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
 
@@ -171,6 +172,9 @@ interface Automations
       AutomationResource,
       CreateAutomationInput,
       UpdateAutomationInput,
+      ApiTokenScope.automationsRead,
+      ApiTokenScope.automationsWrite,
+      ApiTokenScope.automationsWrite,
       never,
       InUseProblem,
       AutomationsListFilter
@@ -178,10 +182,12 @@ interface Automations
   /** Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count). */
   @action("archive")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
   archive(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | InUseProblem;
@@ -189,20 +195,24 @@ interface Automations
   /** Restore an archived automation to the list */
   @action("unarchive")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
   unarchive(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
   /** Activate an automation (starts enrolling contacts). Needs the automations:activate scope. */
   @action("activate")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsActivate])
   activate(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -210,16 +220,22 @@ interface Automations
   /** Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:activate scope. */
   @action("deactivate")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsActivate])
   deactivate(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(AutomationResource, "dry-run-http-step")
   @autoRoute
+  @extension(
+    "x-required-scopes",
+    #[ApiTokenScope.automationsWrite, ApiTokenScope.contactsRead]
+  )
   dryRunHttpStep(
     ...ResourceCollectionParameters<AutomationResource>,
     @body body: DryRunHttpStepInput,
@@ -227,6 +243,7 @@ interface Automations
     | DryRunHttpStepResult
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;

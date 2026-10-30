@@ -19,11 +19,6 @@ import (
 )
 
 func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEventsInput) (externalapi.EventsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEventsWrite) {
-		res := externalapi.EventsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	inputs, err := eventInputs(req.Events, false)
 	if err != nil {
 		return nil, err
@@ -86,11 +81,6 @@ func decodeProperty(raw []byte) (any, error) {
 
 // EventsBatchSubmit records each Event independently and reports a per-item result.
 func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.RecordEventsBatchInput) (externalapi.EventsBatchSubmitRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEventsWrite) {
-		res := externalapi.EventsBatchSubmitUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	inputs, err := eventInputs(req.Events, req.Backfill.Or(false))
 	if err != nil {
 		return nil, err
@@ -109,11 +99,6 @@ func (h *Handlers) EventsBatchSubmit(ctx context.Context, req *externalapi.Recor
 }
 
 func (h *Handlers) EventActionsList(ctx context.Context, params externalapi.EventActionsListParams) (externalapi.EventActionsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEventsRead) {
-		res := externalapi.EventActionsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	page, err := h.eventlog.ListActions(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err

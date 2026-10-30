@@ -53,11 +53,10 @@ func TestExternalCapturedMessagesNeedTheirScopes(t *testing.T) {
 	noWriteAll, err := reader.CapturedMessagesDeleteAll(t.Context())
 	require.NoError(t, err)
 
-	assert.IsType(t, &externalapi.CapturedMessagesListUnauthorized{}, noRead)
-	assert.IsType(t, &externalapi.CapturedMessagesGetUnauthorized{}, noReadOne)
-	assert.IsType(t, &externalapi.CapturedMessagesDeleteUnauthorized{}, noWrite)
-	assert.IsType(t, &externalapi.ProblemDetails{}, noWriteAll)
-	assert.Equal(t, 401, int(noWriteAll.(*externalapi.ProblemDetails).Status.Value))
+	assert.IsType(t, &externalapi.CapturedMessagesListForbidden{}, noRead)
+	assert.IsType(t, &externalapi.CapturedMessagesGetForbidden{}, noReadOne)
+	assert.IsType(t, &externalapi.CapturedMessagesDeleteForbidden{}, noWrite)
+	assert.IsType(t, &externalapi.CapturedMessagesDeleteAllForbidden{}, noWriteAll)
 }
 
 func TestExternalCapturedMessagesAreDeletedOneAndAllWithinTheWorkspace(t *testing.T) {

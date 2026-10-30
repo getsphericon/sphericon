@@ -16,10 +16,6 @@ import (
 )
 
 func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.EnrollmentsListParams) (externalapi.EnrollmentsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEnrollmentsRead) {
-		res := externalapi.EnrollmentsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	status := ""
 	if v, ok := params.Status.Get(); ok {
 		status = string(v)
@@ -44,10 +40,6 @@ func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.Enrol
 }
 
 func (h *Handlers) EnrollmentsGet(ctx context.Context, params externalapi.EnrollmentsGetParams) (externalapi.EnrollmentsGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEnrollmentsRead) {
-		res := externalapi.EnrollmentsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	r, err := h.automations.Enrollment(ctx, auth.TokenScoped(ctx), int64(params.AutomationId), int64(params.EnrollmentId))
 	if errors.Is(err, automations.ErrNotFound) {
 		res := externalapi.EnrollmentsGetNotFound(problem(http.StatusNotFound, "enrollment not found"))

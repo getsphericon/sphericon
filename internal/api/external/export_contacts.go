@@ -12,12 +12,8 @@ import (
 
 // ExportContacts serves the Contacts stream (ADR 0045), the same shape as ExportEvents.
 func (h *Handlers) ExportContacts(ctx context.Context, params externalapi.ExportContactsParams) (externalapi.ExportContactsRes, error) {
-	switch code, detail := h.exportDenied(ctx); code {
-	case http.StatusNotFound:
-		res := externalapi.ExportContactsNotFound(problem(code, detail))
-		return &res, nil
-	case http.StatusUnauthorized:
-		res := externalapi.ExportContactsUnauthorized(problem(code, detail))
+	if !h.exportLicensed() {
+		res := externalapi.ExportContactsNotFound(problem(http.StatusNotFound, "not found"))
 		return &res, nil
 	}
 

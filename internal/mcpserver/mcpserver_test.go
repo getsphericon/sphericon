@@ -130,7 +130,8 @@ func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	s = env.MCPClient(t, env.ScopedBearer(t, "mcp:send"))
 	res = call(t, s, "broadcasts_schedule", args)
 	require.True(t, res.IsError)
-	assert.Contains(t, text(t, res), "401")
+	assert.Contains(t, text(t, res), "HTTP 403 Forbidden")
+	assert.Contains(t, text(t, res), "broadcasts:send")
 
 	// Both: the broadcast is scheduled.
 	s = env.MCPClient(t, env.ScopedBearer(t, "mcp:send", "broadcasts:send"))
@@ -344,10 +345,11 @@ func TestMCPToolCallReturnsTheAPIError(t *testing.T) {
 	env := testhelper.Setup(t)
 	ro := env.MCPClient(t, env.ScopedBearer(t, "contacts:read"))
 
-	// Scope: the /api insufficient-scope problem comes back as a tool error.
+	// Scope: the /api 403 for a token without the scope comes back as a tool error.
 	res := call(t, ro, "contacts_create", map[string]any{"email": "nope@example.com"})
 	require.True(t, res.IsError)
-	assert.Contains(t, text(t, res), "insufficient scope")
+	assert.Contains(t, text(t, res), "HTTP 403 Forbidden")
+	assert.Contains(t, text(t, res), "the API token lacks the scope contacts:write")
 
 	// Not found.
 	res = call(t, ro, "contacts_get", map[string]any{"id": "999999"})

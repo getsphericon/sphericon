@@ -34,9 +34,10 @@ const apiPrefix = "/api"
 const instructions = "Sphericon marketing automation. Tools mirror the Sphericon external API and act on " +
 	"the workspace of the Bearer API token used to connect; results and errors are the API's." + untrustedInstructions
 
-// Authenticator validates a Bearer API token (the external API's security handler).
+// Authenticator validates a Bearer API token whatever it is used for (the external API's security
+// handler). A tool call meets its operation's scopes when it is dispatched to /api.
 type Authenticator interface {
-	HandleBearerAuth(ctx context.Context, op externalapi.OperationName, t externalapi.BearerAuth) (context.Context, error)
+	Authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error)
 }
 
 var _ Authenticator = (*apiauth.ExternalSecurityHandler)(nil)
@@ -119,7 +120,7 @@ func canSend(ctx context.Context, auth Authenticator, extra *mcp.RequestExtra) b
 	if !ok {
 		return false
 	}
-	ctx, err := auth.HandleBearerAuth(ctx, "", externalapi.BearerAuth{Token: token})
+	ctx, err := auth.Authenticate(ctx, externalapi.BearerAuth{Token: token})
 	return err == nil && apiauth.HasScope(apiauth.GetTokenAuth(ctx), externalapi.ApiTokenScopeMcpSend)
 }
 
@@ -153,7 +154,7 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 			writeProblem(w, http.StatusUnauthorized, "missing bearer token")
 			return
 		}
-		if _, err := auth.HandleBearerAuth(r.Context(), "", externalapi.BearerAuth{Token: token}); err != nil {
+		if _, err := auth.Authenticate(r.Context(), externalapi.BearerAuth{Token: token}); err != nil {
 			var limited *ratelimit.LimitedError
 			switch {
 			case errors.As(err, &limited):

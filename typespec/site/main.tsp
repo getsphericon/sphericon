@@ -5,10 +5,12 @@ import "@typespec/openapi";
 import "../common/scalars.tsp";
 import "../common/pagination.tsp";
 import "../common/errors.tsp";
+// scopes.tsp before crud.tsp: the external CRUD templates constrain their scope parameters to
+// ApiTokenScope, and a scope enum first checked through them loses its doc and extensions.
+import "../common/scopes.tsp";
 import "../common/crud.tsp";
 import "../common/contact-export.tsp";
 import "../common/lint.tsp";
-import "../common/scopes.tsp";
 import "../common/permissions.tsp";
 import "./resources/consent.tsp";
 import "./resources/contacts.tsp";

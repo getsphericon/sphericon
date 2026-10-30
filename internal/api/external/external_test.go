@@ -120,7 +120,7 @@ func TestExternalAuthAndScopes(t *testing.T) {
 	ro := env.ExternalScoped(t, "contacts:read")
 	createRes, err := ro.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("x@example.com")})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsCreateUnauthorized{}, createRes)
+	assert.IsType(t, &externalapi.ContactsCreateForbidden{}, createRes)
 
 	listRes, err := ro.ContactsList(ctx, externalapi.ContactsListParams{})
 	require.NoError(t, err)
@@ -188,13 +188,13 @@ func TestExternalEventsScopes(t *testing.T) {
 		Events: []externalapi.EventInput{{SubjectId: "s", Action: "a"}},
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EventsCreateUnauthorized{}, createRes)
+	assert.IsType(t, &externalapi.EventsCreateForbidden{}, createRes)
 
 	// events:write cannot read actions.
 	wo := env.ExternalScoped(t, "events:write")
 	listRes, err := wo.EventActionsList(ctx, externalapi.EventActionsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EventActionsListUnauthorized{}, listRes)
+	assert.IsType(t, &externalapi.EventActionsListForbidden{}, listRes)
 }
 
 // TestExternalEventActionsList verifies distinct actions for the token's

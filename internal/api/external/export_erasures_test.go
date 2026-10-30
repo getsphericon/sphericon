@@ -160,7 +160,7 @@ func TestExportErasuresNeedTheExportReadScope(t *testing.T) {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
 		res, err := c.ExportErasures(context.Background(), externalapi.ExportErasuresParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportErasuresUnauthorized{}, res, "scopes %v are refused", scopes)
+		assert.IsType(t, &externalapi.ExportErasuresForbidden{}, res, "scopes %v are refused", scopes)
 	}
 }
 

@@ -13097,7 +13097,73 @@
           "sending_domains:read",
           "integrations:read"
         ],
-        "description": "Scopes an OAuth client may be granted without any extra opt-in: the external\nAPI's read/write vocabulary. Token management scopes are deliberately absent,\nso a connector can never mint further credentials."
+        "description": "Scopes an OAuth client may be granted without any extra opt-in: the external\nAPI's read/write vocabulary. Token management scopes are deliberately absent,\nso a connector can never mint further credentials.",
+        "x-grant-permissions": [
+          {
+            "scope": "contacts:read"
+          },
+          {
+            "scope": "contacts:write"
+          },
+          {
+            "scope": "events:read"
+          },
+          {
+            "scope": "events:write"
+          },
+          {
+            "scope": "segments:read"
+          },
+          {
+            "scope": "segments:write"
+          },
+          {
+            "scope": "broadcasts:read"
+          },
+          {
+            "scope": "broadcasts:write"
+          },
+          {
+            "scope": "automations:read"
+          },
+          {
+            "scope": "automations:write"
+          },
+          {
+            "scope": "enrollments:read"
+          },
+          {
+            "scope": "templates:read"
+          },
+          {
+            "scope": "templates:write"
+          },
+          {
+            "scope": "webhooks:read",
+            "permission": "webhooks:manage"
+          },
+          {
+            "scope": "webhooks:write",
+            "permission": "webhooks:manage"
+          },
+          {
+            "scope": "webhooks:regenerate",
+            "permission": "webhooks:manage"
+          },
+          {
+            "scope": "webhooks:test",
+            "permission": "webhooks:manage"
+          },
+          {
+            "scope": "custom_fields:read"
+          },
+          {
+            "scope": "sending_domains:read"
+          },
+          {
+            "scope": "integrations:read"
+          }
+        ]
       },
       "InUseProblemDetails": {
         "type": "object",
@@ -13363,12 +13429,36 @@
       "SendScope": {
         "type": "string",
         "enum": ["emails:send", "broadcasts:send", "automations:activate", "mcp:send"],
-        "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along."
+        "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along.",
+        "x-grant-permissions": [
+          {
+            "scope": "emails:send"
+          },
+          {
+            "scope": "broadcasts:send"
+          },
+          {
+            "scope": "automations:activate"
+          },
+          {
+            "scope": "mcp:send"
+          }
+        ]
       },
       "SetupScope": {
         "type": "string",
         "enum": ["sending_domains:write", "integrations:write"],
-        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send."
+        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
+        "x-grant-permissions": [
+          {
+            "scope": "sending_domains:write",
+            "permission": "sending_domains:manage"
+          },
+          {
+            "scope": "integrations:write",
+            "permission": "integrations:manage"
+          }
+        ]
       },
       "SiteAbuseMetric": {
         "type": "string",

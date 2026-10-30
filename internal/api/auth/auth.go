@@ -5,7 +5,9 @@ package auth
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -58,8 +60,8 @@ func HasScope(auth *TokenAuth, scope externalapi.ApiTokenScope) bool {
 }
 
 // TokenScoped returns the Workspace-scoped client of the authenticated api token.
-// It is nil on an unauthenticated context, so call it only after the handler's
-// HasScope check (which fails for a nil TokenAuth). Handlers pass it to the
+// It is nil on an unauthenticated context; the security handler runs before every
+// operation that needs a token, so handlers can rely on it. Handlers pass it to the
 // domain modules; they never build a *ent.Scoped from an id themselves.
 func TokenScoped(ctx context.Context) *ent.Scoped {
 	if a := GetTokenAuth(ctx); a != nil {
@@ -82,14 +84,31 @@ func NewExternalSecurityHandler(client *ent.Client, bus *events.Bus) *ExternalSe
 
 var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
 
-// HandleBearerAuth authenticates the Bearer token and applies the rate limits that
-// need it (ADR 0025): a client address that spent its failed-authentication budget
-// is refused before the token is looked at, a failure counts against it, and a
-// success charges the Workspace's shared /api and /mcp budget. Rejections surface
-// as *ratelimit.LimitedError.
+// HandleBearerAuth authenticates the Bearer token (Authenticate) and then lets it call op only
+// when it carries every scope the contract declares for op (ExternalOperationScopes, ADR 0061).
+// An operation absent from the table is refused to every token. A token that is missing,
+// invalid, revoked or expired is ErrUnauthorized (401); a valid token without a scope of op is
+// refused with 403, which does not count against the address's failed-authentication budget.
 func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op externalapi.OperationName, t externalapi.BearerAuth) (context.Context, error) {
+	authed, err := h.Authenticate(ctx, t)
+	if err != nil {
+		return ctx, err
+	}
+	if err := permitted(op, GetTokenAuth(authed)); err != nil {
+		return ctx, err
+	}
+	return authed, nil
+}
+
+// Authenticate resolves the Bearer token to its TokenAuth whatever it is used for, and applies
+// the rate limits that need it (ADR 0025): a client address that spent its failed-authentication
+// budget is refused before the token is looked at, a failure counts against it, and a success
+// charges the Workspace's shared /api and /mcp budget. Rejections surface as
+// *ratelimit.LimitedError. /mcp authenticates its requests with it; each tool call it dispatches
+// to /api then meets the operation's scopes in HandleBearerAuth.
+func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error) {
 	authed, err := guardedAuth(ctx,
-		func() (context.Context, error) { return h.authenticate(ctx, op, t) },
+		func() (context.Context, error) { return h.authenticate(ctx, t) },
 		func(limits *ratelimit.Exchange, authed context.Context) error {
 			return limits.ChargeWorkspace(GetTokenAuth(authed).WorkspaceID)
 		})
@@ -97,6 +116,44 @@ func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op exter
 		return ctx, err
 	}
 	return authed, nil
+}
+
+// permitted reports, as a refusal, whether the token may call op: the contract must declare op,
+// and the token must carry each of its scopes.
+func permitted(op externalapi.OperationName, auth *TokenAuth) error {
+	required, declared := ExternalOperationScopes[op]
+	if !declared {
+		return scopeRequiredError{op: op}
+	}
+	missing := lo.Reject(required, func(s externalapi.ApiTokenScope, _ int) bool { return HasScope(auth, s) })
+	if len(missing) > 0 {
+		return scopeRequiredError{op: op, missing: missing}
+	}
+	return nil
+}
+
+// scopeRequiredError refuses a valid API token an operation it lacks a scope of, or one the
+// contract does not open to tokens at all. The server's error handler answers it through its
+// Problem method.
+type scopeRequiredError struct {
+	op      externalapi.OperationName
+	missing []externalapi.ApiTokenScope
+}
+
+func (e scopeRequiredError) Error() string {
+	if len(e.missing) == 0 {
+		return "the operation " + e.op + " is not open to API tokens"
+	}
+	names := lo.Map(e.missing, func(s externalapi.ApiTokenScope, _ int) string { return string(s) })
+	if len(names) == 1 {
+		return "the API token lacks the scope " + names[0]
+	}
+	return "the API token lacks the scopes " + strings.Join(names, ", ")
+}
+
+// Problem is the 403 a valid token without the scope is answered with.
+func (e scopeRequiredError) Problem() (status int, code, detail string) {
+	return http.StatusForbidden, "", e.Error()
 }
 
 // guardedAuth is the sequence both token surfaces share (ADR 0025): a client address
@@ -125,7 +182,7 @@ func guardedAuth[T any](ctx context.Context, authenticate func() (T, error), cha
 	return authed, nil
 }
 
-func (h *ExternalSecurityHandler) authenticate(ctx context.Context, _ externalapi.OperationName, t externalapi.BearerAuth) (context.Context, error) {
+func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error) {
 	parsed := credentials.ParseToken(t.Token)
 	if parsed == nil {
 		return ctx, ErrUnauthorized

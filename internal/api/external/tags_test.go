@@ -95,15 +95,15 @@ func TestExternalTagsRequireScopes(t *testing.T) {
 	readOnly := env.ExternalScoped(t, "contacts:read")
 	denied, err := readOnly.TagsApply(ctx, &externalapi.ApplyTagInput{Name: "x"}, externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactAliceID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TagsApplyUnauthorized{}, denied)
+	assert.IsType(t, &externalapi.TagsApplyForbidden{}, denied)
 	deniedRemove, err := readOnly.TagsRemove(ctx, externalapi.TagsRemoveParams{ContactId: entityIDString(fixtures.ContactAliceID), Name: "vip"})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TagsRemoveUnauthorized{}, deniedRemove)
+	assert.IsType(t, &externalapi.TagsRemoveForbidden{}, deniedRemove)
 
 	writeOnly := env.ExternalScoped(t, "contacts:write")
 	deniedList, err := writeOnly.TagsList(ctx, externalapi.TagsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.TagsListUnauthorized{}, deniedList)
+	assert.IsType(t, &externalapi.TagsListForbidden{}, deniedList)
 }
 
 func TestExternalTagsApplyRefusesAForeignContact(t *testing.T) {

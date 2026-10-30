@@ -100,10 +100,10 @@ func TestExternalSegmentsScopes(t *testing.T) {
 	none := env.ExternalScoped(t, "contacts:read")
 	list, err := none.SegmentsList(ctx, externalapi.SegmentsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsListUnauthorized{}, list)
+	assert.IsType(t, &externalapi.SegmentsListForbidden{}, list)
 	prev, err := none.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsPreviewUnauthorized{}, prev)
+	assert.IsType(t, &externalapi.SegmentsPreviewForbidden{}, prev)
 
 	// Read scope cannot write.
 	ro := env.ExternalScoped(t, "segments:read")
@@ -112,19 +112,19 @@ func TestExternalSegmentsScopes(t *testing.T) {
 		Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsCreateUnauthorized{}, cr)
+	assert.IsType(t, &externalapi.SegmentsCreateForbidden{}, cr)
 	up, err := ro.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{}, externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsUpdateUnauthorized{}, up)
+	assert.IsType(t, &externalapi.SegmentsUpdateForbidden{}, up)
 	del, err := ro.SegmentsArchive(ctx, externalapi.SegmentsArchiveParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsArchiveUnauthorized{}, del)
+	assert.IsType(t, &externalapi.SegmentsArchiveForbidden{}, del)
 
 	// Write scope cannot read.
 	wo := env.ExternalScoped(t, "segments:write")
 	get, err := wo.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: entityIDString(fixtures.SegmentActiveID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SegmentsGetUnauthorized{}, get)
+	assert.IsType(t, &externalapi.SegmentsGetForbidden{}, get)
 }
 
 // Another tenant's segment is invisible and immutable through this token.

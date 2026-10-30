@@ -17,10 +17,6 @@ import (
 
 // CapturedMessagesList returns the Workspace's Captured messages, newest first, without content.
 func (h *Handlers) CapturedMessagesList(ctx context.Context, params externalapi.CapturedMessagesListParams) (externalapi.CapturedMessagesListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeCapturedMessagesRead) {
-		res := externalapi.CapturedMessagesListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	page, err := h.captured.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
@@ -40,10 +36,6 @@ func (h *Handlers) CapturedMessagesList(ctx context.Context, params externalapi.
 
 // CapturedMessagesGet returns one Captured message in full.
 func (h *Handlers) CapturedMessagesGet(ctx context.Context, params externalapi.CapturedMessagesGetParams) (externalapi.CapturedMessagesGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeCapturedMessagesRead) {
-		res := externalapi.CapturedMessagesGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	row, err := h.captured.Get(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if errors.Is(err, capturedmessages.ErrNotFound) {
 		res := externalapi.CapturedMessagesGetNotFound(problem(http.StatusNotFound, err.Error()))
@@ -58,10 +50,6 @@ func (h *Handlers) CapturedMessagesGet(ctx context.Context, params externalapi.C
 
 // CapturedMessagesDelete deletes one Captured message.
 func (h *Handlers) CapturedMessagesDelete(ctx context.Context, params externalapi.CapturedMessagesDeleteParams) (externalapi.CapturedMessagesDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeCapturedMessagesWrite) {
-		res := externalapi.CapturedMessagesDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	err := h.captured.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if errors.Is(err, capturedmessages.ErrNotFound) {
 		res := externalapi.CapturedMessagesDeleteNotFound(problem(http.StatusNotFound, err.Error()))
@@ -75,10 +63,6 @@ func (h *Handlers) CapturedMessagesDelete(ctx context.Context, params externalap
 
 // CapturedMessagesDeleteAll deletes every Captured message of the Workspace.
 func (h *Handlers) CapturedMessagesDeleteAll(ctx context.Context) (externalapi.CapturedMessagesDeleteAllRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeCapturedMessagesWrite) {
-		res := problem(http.StatusUnauthorized, "insufficient scope")
-		return &res, nil
-	}
 	if err := h.captured.DeleteAll(ctx, auth.TokenScoped(ctx)); err != nil {
 		return nil, err
 	}

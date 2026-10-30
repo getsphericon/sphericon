@@ -70,8 +70,8 @@ func TestExternalBroadcastsArchiveNeedsTheWriteScope(t *testing.T) {
 
 	arch, err := readOnly.BroadcastsArchive(ctx, externalapi.BroadcastsArchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsArchiveUnauthorized{}, arch)
+	assert.IsType(t, &externalapi.BroadcastsArchiveForbidden{}, arch)
 	unarch, err := readOnly.BroadcastsUnarchive(ctx, externalapi.BroadcastsUnarchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUnarchiveUnauthorized{}, unarch)
+	assert.IsType(t, &externalapi.BroadcastsUnarchiveForbidden{}, unarch)
 }

@@ -55,8 +55,8 @@ func TestExternalRulesArchiveAndDeleteNeedTheAutomationsWriteScope(t *testing.T)
 
 	archive, err := reader.RulesArchive(ctx, externalapi.RulesArchiveParams{ID: entityIDString(fixtures.RuleDraftID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesArchiveUnauthorized{}, archive)
+	assert.IsType(t, &externalapi.RulesArchiveForbidden{}, archive)
 	del, err := reader.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleDraftID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesDeleteUnauthorized{}, del)
+	assert.IsType(t, &externalapi.RulesDeleteForbidden{}, del)
 }

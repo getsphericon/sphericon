@@ -84,11 +84,11 @@ func TestExternalEnrollmentsNeedTheirOwnScope(t *testing.T) {
 
 	res, err := denied.EnrollmentsList(ctx, externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationNotifySlackID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EnrollmentsListUnauthorized{}, res)
+	assert.IsType(t, &externalapi.EnrollmentsListForbidden{}, res)
 	one, err := denied.EnrollmentsGet(ctx, externalapi.EnrollmentsGetParams{
 		AutomationId: entityIDString(fixtures.AutomationNotifySlackID),
 		EnrollmentId: entityIDString(fixtures.AutomationRunHTTPFailedID),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EnrollmentsGetUnauthorized{}, one)
+	assert.IsType(t, &externalapi.EnrollmentsGetForbidden{}, one)
 }

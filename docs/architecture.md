@@ -17,6 +17,12 @@ coding standards in `CODING_STANDARDS.md`.
   and auth scheme:
   - `/site/*` — frontend SPA API. Auth: **JWT cookie** (issued by the `login` operation through `auth.Sessions`, ADR 0020). Handlers in `internal/api/site`.
   - `/api/*` — external/public API. Auth: **Bearer api-token** (workspace-scoped). Handlers in `internal/api/external`.
+    Every operation names the scopes a token needs in `auth.ExternalOperationScopes`, generated from the
+    `@extension("x-required-scopes", #[ApiTokenScope.…])` on each TypeSpec operation and checked by
+    `ExternalSecurityHandler.HandleBearerAuth` before the handler runs (ADR 0061): a missing declaration fails
+    generation, no entry = refused to all, a valid token without a scope = 403, and 401 only for a missing,
+    invalid, revoked or expired token. No handler checks a scope; /mcp inherits the check, as each tool call is
+    dispatched to /api with the caller's token.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
   - `/staff/*` — platform staff (the **Staff member**, ADR 0026), Enterprise (license feature `staff`; unlicensed = 404).
     Auth: its own **JWT cookie** (`STAFF_JWT`, `SPHERICON_STAFF_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/staff`.

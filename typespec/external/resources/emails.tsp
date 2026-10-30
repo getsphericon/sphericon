@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using TypeSpec.Rest;
 
 namespace Sphericon;
@@ -78,9 +79,11 @@ namespace EmailLint {
    * and not neither (422).
    */
   @post
+  @extension("x-required-scopes", #[ApiTokenScope.templatesRead])
   op lint(@body body: LintEmailInput):
     | LintEmailResult
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | BadRequestProblem
     | UnprocessableEntityProblem;
@@ -141,7 +144,12 @@ namespace EmailSchema {
    * the document as `doc` on a Template, Broadcast or Automation email step.
    */
   @get
-  op get(): EmailSchemaResult | UnauthorizedProblem | TooManyRequestsProblem;
+  @extension("x-required-scopes", #[ApiTokenScope.templatesRead])
+  op get():
+    | EmailSchemaResult
+    | UnauthorizedProblem
+    | ForbiddenProblem
+    | TooManyRequestsProblem;
 }
 
 @route("/emails")
@@ -158,6 +166,7 @@ namespace Emails {
    * is still in flight returns 409.
    */
   @post
+  @extension("x-required-scopes", #[ApiTokenScope.emailsSend])
   op send(
     @body body: SendTransactionalEmailInput,
 
@@ -170,6 +179,7 @@ namespace Emails {
       }
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | ConflictProblem

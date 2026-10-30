@@ -99,7 +99,7 @@ func (s *stubAPI) seen() recorded {
 // fakeAuth accepts the token "good"; any other token is unauthorized, "boom" is an outage.
 type fakeAuth struct{}
 
-func (fakeAuth) HandleBearerAuth(ctx context.Context, _ externalapi.OperationName, t externalapi.BearerAuth) (context.Context, error) {
+func (fakeAuth) Authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error) {
 	switch t.Token {
 	case "good":
 		return apiauth.WithTokenAuth(ctx, &apiauth.TokenAuth{Scopes: []string{"mcp:send"}}), nil

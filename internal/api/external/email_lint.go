@@ -15,10 +15,6 @@ import (
 // and the send planner, with the Workspace's Brand kit. What cannot render is an error;
 // everything else is a warning. It needs only the right to read Templates, as it stores nothing.
 func (h *Handlers) EmailLintLint(ctx context.Context, req *externalapi.LintEmailInput) (externalapi.EmailLintLintRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesRead) {
-		res := externalapi.EmailLintLintUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	if req.Body.Set == req.Doc.Set {
 		res := externalapi.EmailLintLintUnprocessableEntity(problem(http.StatusUnprocessableEntity, "send a body or a doc, not both and not neither"))
 		return &res, nil

@@ -120,8 +120,8 @@ func TestExternalIntegrationsArchiveNeedsTheWriteScope(t *testing.T) {
 
 	archive, err := reader.IntegrationsArchive(context.Background(), externalapi.IntegrationsArchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsArchiveUnauthorized{}, archive)
+	assert.IsType(t, &externalapi.IntegrationsArchiveForbidden{}, archive)
 	unarchive, err := reader.IntegrationsUnarchive(context.Background(), externalapi.IntegrationsUnarchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsUnarchiveUnauthorized{}, unarchive)
+	assert.IsType(t, &externalapi.IntegrationsUnarchiveForbidden{}, unarchive)
 }

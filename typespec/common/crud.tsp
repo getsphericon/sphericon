@@ -1,9 +1,11 @@
 import "@typespec/http";
 import "@typespec/rest";
+import "@typespec/openapi";
 
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -160,13 +162,17 @@ interface WorkspaceCrudUnique<
 /**
  * Flat, token-scoped CRUD for the external (public) API. No parent nesting —
  * `/<segment>` and `/<segment>/{id}`. Every operation can return 401
- * (bearer-token auth). `WriteConflict` defaults to `never` (no 409); resources
- * with a unique key use `ExternalCrudUnique`.
+ * (bearer-token auth) and 403 (a token without the scope the operation declares,
+ * ADR 0061). `ReadScope` gates list and get, `WriteScope` create and update.
+ * `WriteConflict` defaults to `never` (no 409); resources with a unique key use
+ * `ExternalCrudUnique`.
  */
 interface ExternalCrudKept<
   Resource extends {},
   CreateInput,
   UpdateInput,
+  ReadScope extends valueof ApiTokenScope,
+  WriteScope extends valueof ApiTokenScope,
   WriteConflict = never,
   ListFilter extends {} = {}
 > {
@@ -174,10 +180,12 @@ interface ExternalCrudKept<
   @listsResource(Resource)
   @get
   @autoRoute
+  @extension("x-required-scopes", #[ReadScope])
   list(...ResourceCollectionParameters<Resource>, ...PageQuery, ...ListFilter):
     | Page<Resource>
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
 
@@ -185,6 +193,7 @@ interface ExternalCrudKept<
   @createsResource(Resource)
   @post
   @autoRoute
+  @extension("x-required-scopes", #[WriteScope])
   create(...ResourceCollectionParameters<Resource>, @body body: CreateInput):
     | {
         @statusCode statusCode: 201;
@@ -192,6 +201,7 @@ interface ExternalCrudKept<
       }
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | WriteConflict
     | UnprocessableEntityProblem;
@@ -200,10 +210,12 @@ interface ExternalCrudKept<
   @readsResource(Resource)
   @get
   @autoRoute
+  @extension("x-required-scopes", #[ReadScope])
   get(...ResourceParameters<Resource>):
     | Resource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
@@ -211,37 +223,46 @@ interface ExternalCrudKept<
   @updatesResource(Resource)
   @put
   @autoRoute
+  @extension("x-required-scopes", #[WriteScope])
   update(...ResourceParameters<Resource>, @body body: UpdateInput):
     | Resource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | WriteConflict
     | UnprocessableEntityProblem;
 }
 
-/** Flat external CRUD of a resource that is archived instead of deleted (ADR 0049). */
+/** Flat external CRUD of a resource that is archived instead of deleted (ADR 0049).
+ * Archiving and restoring need `WriteScope`. */
 interface ExternalCrudArchivable<
   Resource extends {},
   CreateInput,
   UpdateInput,
+  ReadScope extends valueof ApiTokenScope,
+  WriteScope extends valueof ApiTokenScope,
   WriteConflict = never
 >
   extends ExternalCrudKept<
       Resource,
       CreateInput,
       UpdateInput,
+      ReadScope,
+      WriteScope,
       WriteConflict,
       ArchivedFilter
     > {
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")
   @autoRoute
+  @extension("x-required-scopes", #[WriteScope])
   archive(...ResourceParameters<Resource>):
     | Resource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | InUseProblem;
@@ -249,18 +270,25 @@ interface ExternalCrudArchivable<
   /** Restore an archived resource */
   @action("unarchive")
   @autoRoute
+  @extension("x-required-scopes", #[WriteScope])
   unarchive(...ResourceParameters<Resource>):
     | Resource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 }
 
+/** Flat external CRUD with a delete, which needs `DeleteScope` (the write scope of most
+ * resources; deleting a Contact erases it and needs contacts:erase). */
 interface ExternalCrud<
   Resource extends {},
   CreateInput,
   UpdateInput,
+  ReadScope extends valueof ApiTokenScope,
+  WriteScope extends valueof ApiTokenScope,
+  DeleteScope extends valueof ApiTokenScope,
   WriteConflict = never,
   DeleteDenied = never,
   ListFilter extends {} = {}
@@ -269,6 +297,8 @@ interface ExternalCrud<
       Resource,
       CreateInput,
       UpdateInput,
+      ReadScope,
+      WriteScope,
       WriteConflict,
       ListFilter
     > {
@@ -276,10 +306,12 @@ interface ExternalCrud<
   @deletesResource(Resource)
   @delete
   @autoRoute
+  @extension("x-required-scopes", #[DeleteScope])
   delete(...ResourceParameters<Resource>):
     | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem
@@ -291,12 +323,18 @@ interface ExternalCrudUnique<
   Resource extends {},
   CreateInput,
   UpdateInput,
+  ReadScope extends valueof ApiTokenScope,
+  WriteScope extends valueof ApiTokenScope,
+  DeleteScope extends valueof ApiTokenScope,
   DeleteDenied = never
 >
   extends ExternalCrud<
       Resource,
       CreateInput,
       UpdateInput,
+      ReadScope,
+      WriteScope,
+      DeleteScope,
       ConflictProblem,
       DeleteDenied
     > {}

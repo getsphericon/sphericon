@@ -23,7 +23,7 @@ func TestExternalAuditListNeedsTheAuditReadScope(t *testing.T) {
 		c := env.ExternalScoped(t, scopes...)
 		res, err := c.AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &externalapi.AuditEntriesListUnauthorized{}, res, "scopes %v are refused", scopes)
+		assert.IsType(t, &externalapi.AuditEntriesListForbidden{}, res, "scopes %v are refused", scopes)
 	}
 
 	res, err := env.ExternalScoped(t, "audit:read").AuditEntriesList(ctx, externalapi.AuditEntriesListParams{})

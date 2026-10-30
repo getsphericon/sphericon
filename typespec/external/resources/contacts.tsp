@@ -111,7 +111,10 @@ interface Contacts
   extends ExternalCrudUnique<
       ContactResource,
       CreateContactInput,
-      UpdateContactInput
+      UpdateContactInput,
+      ApiTokenScope.contactsRead,
+      ApiTokenScope.contactsWrite,
+      ApiTokenScope.contactsErase
     > {
   /**
    * Export everything held about one contact as a streamed JSON download: the
@@ -122,6 +125,7 @@ interface Contacts
    */
   @collectionAction(ContactResource, "export")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.contactsRead])
   export(
     ...ResourceCollectionParameters<ContactResource>,
 
@@ -135,6 +139,7 @@ interface Contacts
     | ContactExportTypedDownload
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
@@ -147,6 +152,7 @@ interface Contacts
   @collectionAction(ContactResource, "erase")
   @delete
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.contactsErase])
   eraseBy(
     ...ResourceCollectionParameters<ContactResource>,
 
@@ -159,6 +165,7 @@ interface Contacts
     | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 }
@@ -228,9 +235,11 @@ model UpsertContactsResult {
 namespace ContactsBatch {
   /** Upsert up to 1000 contacts by alias keys; a failing item does not affect the others */
   @post
+  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
   op upsert(@body body: UpsertContactsInput):
     | UpsertContactsResult
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | BadRequestProblem
     | UnprocessableEntityProblem;

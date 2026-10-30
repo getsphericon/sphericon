@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using TypeSpec.Rest;
 
 namespace Sphericon;
@@ -66,6 +67,7 @@ namespace Suppressions {
    * reason. Lifting a suppression is not available through the API.
    */
   @post
+  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
   op create(@body body: CreateSuppressionInput):
     | {
         @statusCode statusCode: 201;
@@ -73,6 +75,7 @@ namespace Suppressions {
       }
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
 }
@@ -85,6 +88,7 @@ namespace Unsubscribes {
    * `broadcasts`). Idempotent. Resubscribing is not available through the API.
    */
   @post
+  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
   op create(@body body: CreateUnsubscribeInput):
     | {
         @statusCode statusCode: 201;
@@ -92,6 +96,7 @@ namespace Unsubscribes {
       }
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
 }

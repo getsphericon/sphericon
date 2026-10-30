@@ -21,11 +21,6 @@ import (
 // repeated key replays the recorded outcome instead of sending again, and a key whose first
 // request is still in flight returns 409.
 func (h *Handlers) EmailsSend(ctx context.Context, req *externalapi.SendTransactionalEmailInput, params externalapi.EmailsSendParams) (externalapi.EmailsSendRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeEmailsSend) {
-		res := externalapi.EmailsSendUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	res, err := h.transactional.Send(ctx, auth.TokenScoped(ctx), transactional.Request{
 		TemplateID:     int64(req.TemplateId),
 		Destination:    string(req.Destination),

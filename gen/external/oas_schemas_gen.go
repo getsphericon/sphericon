@@ -500,6 +500,10 @@ type AuditEntriesListBadRequest ProblemDetails
 
 func (*AuditEntriesListBadRequest) auditEntriesListRes() {}
 
+type AuditEntriesListForbidden ProblemDetails
+
+func (*AuditEntriesListForbidden) auditEntriesListRes() {}
+
 type AuditEntriesListPaymentRequired ProblemDetails
 
 func (*AuditEntriesListPaymentRequired) auditEntriesListRes() {}
@@ -1254,6 +1258,10 @@ type AutomationsActivateBadRequest ProblemDetails
 
 func (*AutomationsActivateBadRequest) automationsActivateRes() {}
 
+type AutomationsActivateForbidden ProblemDetails
+
+func (*AutomationsActivateForbidden) automationsActivateRes() {}
+
 type AutomationsActivateNotFound ProblemDetails
 
 func (*AutomationsActivateNotFound) automationsActivateRes() {}
@@ -1270,6 +1278,10 @@ type AutomationsArchiveBadRequest ProblemDetails
 
 func (*AutomationsArchiveBadRequest) automationsArchiveRes() {}
 
+type AutomationsArchiveForbidden ProblemDetails
+
+func (*AutomationsArchiveForbidden) automationsArchiveRes() {}
+
 type AutomationsArchiveNotFound ProblemDetails
 
 func (*AutomationsArchiveNotFound) automationsArchiveRes() {}
@@ -1281,6 +1293,10 @@ func (*AutomationsArchiveUnauthorized) automationsArchiveRes() {}
 type AutomationsCreateBadRequest ProblemDetails
 
 func (*AutomationsCreateBadRequest) automationsCreateRes() {}
+
+type AutomationsCreateForbidden ProblemDetails
+
+func (*AutomationsCreateForbidden) automationsCreateRes() {}
 
 type AutomationsCreateUnauthorized ProblemDetails
 
@@ -1294,6 +1310,10 @@ type AutomationsDeactivateBadRequest ProblemDetails
 
 func (*AutomationsDeactivateBadRequest) automationsDeactivateRes() {}
 
+type AutomationsDeactivateForbidden ProblemDetails
+
+func (*AutomationsDeactivateForbidden) automationsDeactivateRes() {}
+
 type AutomationsDeactivateNotFound ProblemDetails
 
 func (*AutomationsDeactivateNotFound) automationsDeactivateRes() {}
@@ -1305,6 +1325,10 @@ func (*AutomationsDeactivateUnauthorized) automationsDeactivateRes() {}
 type AutomationsDeleteBadRequest ProblemDetails
 
 func (*AutomationsDeleteBadRequest) automationsDeleteRes() {}
+
+type AutomationsDeleteForbidden ProblemDetails
+
+func (*AutomationsDeleteForbidden) automationsDeleteRes() {}
 
 // AutomationsDeleteNoContent is response for AutomationsDelete operation.
 type AutomationsDeleteNoContent struct{}
@@ -1327,6 +1351,10 @@ type AutomationsDryRunHttpStepBadRequest ProblemDetails
 
 func (*AutomationsDryRunHttpStepBadRequest) automationsDryRunHttpStepRes() {}
 
+type AutomationsDryRunHttpStepForbidden ProblemDetails
+
+func (*AutomationsDryRunHttpStepForbidden) automationsDryRunHttpStepRes() {}
+
 type AutomationsDryRunHttpStepNotFound ProblemDetails
 
 func (*AutomationsDryRunHttpStepNotFound) automationsDryRunHttpStepRes() {}
@@ -1343,6 +1371,10 @@ type AutomationsGetBadRequest ProblemDetails
 
 func (*AutomationsGetBadRequest) automationsGetRes() {}
 
+type AutomationsGetForbidden ProblemDetails
+
+func (*AutomationsGetForbidden) automationsGetRes() {}
+
 type AutomationsGetNotFound ProblemDetails
 
 func (*AutomationsGetNotFound) automationsGetRes() {}
@@ -1354,6 +1386,10 @@ func (*AutomationsGetUnauthorized) automationsGetRes() {}
 type AutomationsListBadRequest ProblemDetails
 
 func (*AutomationsListBadRequest) automationsListRes() {}
+
+type AutomationsListForbidden ProblemDetails
+
+func (*AutomationsListForbidden) automationsListRes() {}
 
 // Paginated response.
 type AutomationsListOK struct {
@@ -1433,6 +1469,10 @@ type AutomationsUnarchiveBadRequest ProblemDetails
 
 func (*AutomationsUnarchiveBadRequest) automationsUnarchiveRes() {}
 
+type AutomationsUnarchiveForbidden ProblemDetails
+
+func (*AutomationsUnarchiveForbidden) automationsUnarchiveRes() {}
+
 type AutomationsUnarchiveNotFound ProblemDetails
 
 func (*AutomationsUnarchiveNotFound) automationsUnarchiveRes() {}
@@ -1444,6 +1484,10 @@ func (*AutomationsUnarchiveUnauthorized) automationsUnarchiveRes() {}
 type AutomationsUpdateBadRequest ProblemDetails
 
 func (*AutomationsUpdateBadRequest) automationsUpdateRes() {}
+
+type AutomationsUpdateForbidden ProblemDetails
+
+func (*AutomationsUpdateForbidden) automationsUpdateRes() {}
 
 type AutomationsUpdateNotFound ProblemDetails
 
@@ -1481,6 +1525,14 @@ func (s *BearerAuth) SetToken(val string) {
 func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
 }
+
+type BrandKitGetForbidden ProblemDetails
+
+func (*BrandKitGetForbidden) brandKitGetRes() {}
+
+type BrandKitGetUnauthorized ProblemDetails
+
+func (*BrandKitGetUnauthorized) brandKitGetRes() {}
 
 // The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a
 // message in these values. A Workspace that has not saved one has the defaults and `saved` false.
@@ -2084,6 +2136,10 @@ type BroadcastsArchiveBadRequest ProblemDetails
 
 func (*BroadcastsArchiveBadRequest) broadcastsArchiveRes() {}
 
+type BroadcastsArchiveForbidden ProblemDetails
+
+func (*BroadcastsArchiveForbidden) broadcastsArchiveRes() {}
+
 type BroadcastsArchiveNotFound ProblemDetails
 
 func (*BroadcastsArchiveNotFound) broadcastsArchiveRes() {}
@@ -2100,6 +2156,10 @@ type BroadcastsCreateBadRequest ProblemDetails
 
 func (*BroadcastsCreateBadRequest) broadcastsCreateRes() {}
 
+type BroadcastsCreateForbidden ProblemDetails
+
+func (*BroadcastsCreateForbidden) broadcastsCreateRes() {}
+
 type BroadcastsCreateUnauthorized ProblemDetails
 
 func (*BroadcastsCreateUnauthorized) broadcastsCreateRes() {}
@@ -2111,6 +2171,10 @@ func (*BroadcastsCreateUnprocessableEntity) broadcastsCreateRes() {}
 type BroadcastsDeleteBadRequest ProblemDetails
 
 func (*BroadcastsDeleteBadRequest) broadcastsDeleteRes() {}
+
+type BroadcastsDeleteForbidden ProblemDetails
+
+func (*BroadcastsDeleteForbidden) broadcastsDeleteRes() {}
 
 // BroadcastsDeleteNoContent is response for BroadcastsDelete operation.
 type BroadcastsDeleteNoContent struct{}
@@ -2133,6 +2197,10 @@ type BroadcastsGetBadRequest ProblemDetails
 
 func (*BroadcastsGetBadRequest) broadcastsGetRes() {}
 
+type BroadcastsGetForbidden ProblemDetails
+
+func (*BroadcastsGetForbidden) broadcastsGetRes() {}
+
 type BroadcastsGetNotFound ProblemDetails
 
 func (*BroadcastsGetNotFound) broadcastsGetRes() {}
@@ -2144,6 +2212,10 @@ func (*BroadcastsGetUnauthorized) broadcastsGetRes() {}
 type BroadcastsListBadRequest ProblemDetails
 
 func (*BroadcastsListBadRequest) broadcastsListRes() {}
+
+type BroadcastsListForbidden ProblemDetails
+
+func (*BroadcastsListForbidden) broadcastsListRes() {}
 
 // Paginated response.
 type BroadcastsListOK struct {
@@ -2223,6 +2295,10 @@ type BroadcastsReportBadRequest ProblemDetails
 
 func (*BroadcastsReportBadRequest) broadcastsReportRes() {}
 
+type BroadcastsReportForbidden ProblemDetails
+
+func (*BroadcastsReportForbidden) broadcastsReportRes() {}
+
 type BroadcastsReportNotFound ProblemDetails
 
 func (*BroadcastsReportNotFound) broadcastsReportRes() {}
@@ -2234,6 +2310,10 @@ func (*BroadcastsReportUnauthorized) broadcastsReportRes() {}
 type BroadcastsScheduleBadRequest ProblemDetails
 
 func (*BroadcastsScheduleBadRequest) broadcastsScheduleRes() {}
+
+type BroadcastsScheduleForbidden ProblemDetails
+
+func (*BroadcastsScheduleForbidden) broadcastsScheduleRes() {}
 
 type BroadcastsScheduleNotFound ProblemDetails
 
@@ -2251,6 +2331,10 @@ type BroadcastsSetSegmentBadRequest ProblemDetails
 
 func (*BroadcastsSetSegmentBadRequest) broadcastsSetSegmentRes() {}
 
+type BroadcastsSetSegmentForbidden ProblemDetails
+
+func (*BroadcastsSetSegmentForbidden) broadcastsSetSegmentRes() {}
+
 type BroadcastsSetSegmentNotFound ProblemDetails
 
 func (*BroadcastsSetSegmentNotFound) broadcastsSetSegmentRes() {}
@@ -2266,6 +2350,10 @@ func (*BroadcastsSetSegmentUnprocessableEntity) broadcastsSetSegmentRes() {}
 type BroadcastsTestSendBadRequest ProblemDetails
 
 func (*BroadcastsTestSendBadRequest) broadcastsTestSendRes() {}
+
+type BroadcastsTestSendForbidden ProblemDetails
+
+func (*BroadcastsTestSendForbidden) broadcastsTestSendRes() {}
 
 // BroadcastsTestSendNoContent is response for BroadcastsTestSend operation.
 type BroadcastsTestSendNoContent struct{}
@@ -2288,6 +2376,10 @@ type BroadcastsUnarchiveBadRequest ProblemDetails
 
 func (*BroadcastsUnarchiveBadRequest) broadcastsUnarchiveRes() {}
 
+type BroadcastsUnarchiveForbidden ProblemDetails
+
+func (*BroadcastsUnarchiveForbidden) broadcastsUnarchiveRes() {}
+
 type BroadcastsUnarchiveNotFound ProblemDetails
 
 func (*BroadcastsUnarchiveNotFound) broadcastsUnarchiveRes() {}
@@ -2299,6 +2391,10 @@ func (*BroadcastsUnarchiveUnauthorized) broadcastsUnarchiveRes() {}
 type BroadcastsUnscheduleBadRequest ProblemDetails
 
 func (*BroadcastsUnscheduleBadRequest) broadcastsUnscheduleRes() {}
+
+type BroadcastsUnscheduleForbidden ProblemDetails
+
+func (*BroadcastsUnscheduleForbidden) broadcastsUnscheduleRes() {}
 
 type BroadcastsUnscheduleNotFound ProblemDetails
 
@@ -2315,6 +2411,10 @@ func (*BroadcastsUnscheduleUnprocessableEntity) broadcastsUnscheduleRes() {}
 type BroadcastsUpdateBadRequest ProblemDetails
 
 func (*BroadcastsUpdateBadRequest) broadcastsUpdateRes() {}
+
+type BroadcastsUpdateForbidden ProblemDetails
+
+func (*BroadcastsUpdateForbidden) broadcastsUpdateRes() {}
 
 type BroadcastsUpdateNotFound ProblemDetails
 
@@ -2738,14 +2838,26 @@ func (s *CapturedMessageSurface) UnmarshalText(data []byte) error {
 	}
 }
 
+type CapturedMessagesDeleteAllForbidden ProblemDetails
+
+func (*CapturedMessagesDeleteAllForbidden) capturedMessagesDeleteAllRes() {}
+
 // CapturedMessagesDeleteAllNoContent is response for CapturedMessagesDeleteAll operation.
 type CapturedMessagesDeleteAllNoContent struct{}
 
 func (*CapturedMessagesDeleteAllNoContent) capturedMessagesDeleteAllRes() {}
 
+type CapturedMessagesDeleteAllUnauthorized ProblemDetails
+
+func (*CapturedMessagesDeleteAllUnauthorized) capturedMessagesDeleteAllRes() {}
+
 type CapturedMessagesDeleteBadRequest ProblemDetails
 
 func (*CapturedMessagesDeleteBadRequest) capturedMessagesDeleteRes() {}
+
+type CapturedMessagesDeleteForbidden ProblemDetails
+
+func (*CapturedMessagesDeleteForbidden) capturedMessagesDeleteRes() {}
 
 // CapturedMessagesDeleteNoContent is response for CapturedMessagesDelete operation.
 type CapturedMessagesDeleteNoContent struct{}
@@ -2764,6 +2876,10 @@ type CapturedMessagesGetBadRequest ProblemDetails
 
 func (*CapturedMessagesGetBadRequest) capturedMessagesGetRes() {}
 
+type CapturedMessagesGetForbidden ProblemDetails
+
+func (*CapturedMessagesGetForbidden) capturedMessagesGetRes() {}
+
 type CapturedMessagesGetNotFound ProblemDetails
 
 func (*CapturedMessagesGetNotFound) capturedMessagesGetRes() {}
@@ -2775,6 +2891,10 @@ func (*CapturedMessagesGetUnauthorized) capturedMessagesGetRes() {}
 type CapturedMessagesListBadRequest ProblemDetails
 
 func (*CapturedMessagesListBadRequest) capturedMessagesListRes() {}
+
+type CapturedMessagesListForbidden ProblemDetails
+
+func (*CapturedMessagesListForbidden) capturedMessagesListRes() {}
 
 // Paginated response.
 type CapturedMessagesListOK struct {
@@ -4602,6 +4722,10 @@ type ContactsBatchUpsertBadRequest ProblemDetails
 
 func (*ContactsBatchUpsertBadRequest) contactsBatchUpsertRes() {}
 
+type ContactsBatchUpsertForbidden ProblemDetails
+
+func (*ContactsBatchUpsertForbidden) contactsBatchUpsertRes() {}
+
 type ContactsBatchUpsertUnauthorized ProblemDetails
 
 func (*ContactsBatchUpsertUnauthorized) contactsBatchUpsertRes() {}
@@ -4618,6 +4742,10 @@ type ContactsCreateConflict ProblemDetails
 
 func (*ContactsCreateConflict) contactsCreateRes() {}
 
+type ContactsCreateForbidden ProblemDetails
+
+func (*ContactsCreateForbidden) contactsCreateRes() {}
+
 type ContactsCreateUnauthorized ProblemDetails
 
 func (*ContactsCreateUnauthorized) contactsCreateRes() {}
@@ -4629,6 +4757,10 @@ func (*ContactsCreateUnprocessableEntity) contactsCreateRes() {}
 type ContactsDeleteBadRequest ProblemDetails
 
 func (*ContactsDeleteBadRequest) contactsDeleteRes() {}
+
+type ContactsDeleteForbidden ProblemDetails
+
+func (*ContactsDeleteForbidden) contactsDeleteRes() {}
 
 // ContactsDeleteNoContent is response for ContactsDelete operation.
 type ContactsDeleteNoContent struct{}
@@ -4651,6 +4783,10 @@ type ContactsEraseByBadRequest ProblemDetails
 
 func (*ContactsEraseByBadRequest) contactsEraseByRes() {}
 
+type ContactsEraseByForbidden ProblemDetails
+
+func (*ContactsEraseByForbidden) contactsEraseByRes() {}
+
 // ContactsEraseByNoContent is response for ContactsEraseBy operation.
 type ContactsEraseByNoContent struct{}
 
@@ -4667,6 +4803,10 @@ func (*ContactsEraseByUnauthorized) contactsEraseByRes() {}
 type ContactsExportBadRequest ProblemDetails
 
 func (*ContactsExportBadRequest) contactsExportRes() {}
+
+type ContactsExportForbidden ProblemDetails
+
+func (*ContactsExportForbidden) contactsExportRes() {}
 
 type ContactsExportNotFound ProblemDetails
 
@@ -4722,6 +4862,10 @@ type ContactsGetBadRequest ProblemDetails
 
 func (*ContactsGetBadRequest) contactsGetRes() {}
 
+type ContactsGetForbidden ProblemDetails
+
+func (*ContactsGetForbidden) contactsGetRes() {}
+
 type ContactsGetNotFound ProblemDetails
 
 func (*ContactsGetNotFound) contactsGetRes() {}
@@ -4733,6 +4877,10 @@ func (*ContactsGetUnauthorized) contactsGetRes() {}
 type ContactsListBadRequest ProblemDetails
 
 func (*ContactsListBadRequest) contactsListRes() {}
+
+type ContactsListForbidden ProblemDetails
+
+func (*ContactsListForbidden) contactsListRes() {}
 
 // Paginated response.
 type ContactsListOK struct {
@@ -4815,6 +4963,10 @@ func (*ContactsUpdateBadRequest) contactsUpdateRes() {}
 type ContactsUpdateConflict ProblemDetails
 
 func (*ContactsUpdateConflict) contactsUpdateRes() {}
+
+type ContactsUpdateForbidden ProblemDetails
+
+func (*ContactsUpdateForbidden) contactsUpdateRes() {}
 
 type ContactsUpdateNotFound ProblemDetails
 
@@ -5650,6 +5802,10 @@ func (s *CustomFieldType) UnmarshalText(data []byte) error {
 	}
 }
 
+type CustomFieldsListForbidden ProblemDetails
+
+func (*CustomFieldsListForbidden) customFieldsListRes() {}
+
 // Paginated response.
 type CustomFieldsListOK struct {
 	// List of items.
@@ -5715,6 +5871,10 @@ func (s *CustomFieldsListOK) SetTotalPages(val int32) {
 }
 
 func (*CustomFieldsListOK) customFieldsListRes() {}
+
+type CustomFieldsListUnauthorized ProblemDetails
+
+func (*CustomFieldsListUnauthorized) customFieldsListRes() {}
 
 // A DNS record the caller publishes to authenticate a Sending domain.
 // Ref: #/components/schemas/DnsRecord
@@ -5887,6 +6047,10 @@ type EmailLintLintBadRequest ProblemDetails
 
 func (*EmailLintLintBadRequest) emailLintLintRes() {}
 
+type EmailLintLintForbidden ProblemDetails
+
+func (*EmailLintLintForbidden) emailLintLintRes() {}
+
 type EmailLintLintUnauthorized ProblemDetails
 
 func (*EmailLintLintUnauthorized) emailLintLintRes() {}
@@ -5947,6 +6111,14 @@ func (s *EmailSchemaAttribute) SetAllowed(val []string) {
 func (s *EmailSchemaAttribute) SetRule(val string) {
 	s.Rule = val
 }
+
+type EmailSchemaGetForbidden ProblemDetails
+
+func (*EmailSchemaGetForbidden) emailSchemaGetRes() {}
+
+type EmailSchemaGetUnauthorized ProblemDetails
+
+func (*EmailSchemaGetUnauthorized) emailSchemaGetRes() {}
 
 // The editor's document format: what an agent writes as `doc`.
 // Ref: #/components/schemas/EmailSchemaResult
@@ -6111,6 +6283,10 @@ func (*EmailsSendBadRequest) emailsSendRes() {}
 type EmailsSendConflict ProblemDetails
 
 func (*EmailsSendConflict) emailsSendRes() {}
+
+type EmailsSendForbidden ProblemDetails
+
+func (*EmailsSendForbidden) emailsSendRes() {}
 
 type EmailsSendNotFound ProblemDetails
 
@@ -6409,6 +6585,10 @@ type EnrollmentsGetBadRequest ProblemDetails
 
 func (*EnrollmentsGetBadRequest) enrollmentsGetRes() {}
 
+type EnrollmentsGetForbidden ProblemDetails
+
+func (*EnrollmentsGetForbidden) enrollmentsGetRes() {}
+
 type EnrollmentsGetNotFound ProblemDetails
 
 func (*EnrollmentsGetNotFound) enrollmentsGetRes() {}
@@ -6420,6 +6600,10 @@ func (*EnrollmentsGetUnauthorized) enrollmentsGetRes() {}
 type EnrollmentsListBadRequest ProblemDetails
 
 func (*EnrollmentsListBadRequest) enrollmentsListRes() {}
+
+type EnrollmentsListForbidden ProblemDetails
+
+func (*EnrollmentsListForbidden) enrollmentsListRes() {}
 
 type EnrollmentsListNotFound ProblemDetails
 
@@ -6517,6 +6701,10 @@ func (s *EventActionResource) SetAction(val string) {
 type EventActionsListBadRequest ProblemDetails
 
 func (*EventActionsListBadRequest) eventActionsListRes() {}
+
+type EventActionsListForbidden ProblemDetails
+
+func (*EventActionsListForbidden) eventActionsListRes() {}
 
 // Paginated response.
 type EventActionsListOK struct {
@@ -6783,6 +6971,10 @@ type EventsBatchSubmitBadRequest ProblemDetails
 
 func (*EventsBatchSubmitBadRequest) eventsBatchSubmitRes() {}
 
+type EventsBatchSubmitForbidden ProblemDetails
+
+func (*EventsBatchSubmitForbidden) eventsBatchSubmitRes() {}
+
 type EventsBatchSubmitUnauthorized ProblemDetails
 
 func (*EventsBatchSubmitUnauthorized) eventsBatchSubmitRes() {}
@@ -6794,6 +6986,10 @@ func (*EventsBatchSubmitUnprocessableEntity) eventsBatchSubmitRes() {}
 type EventsCreateBadRequest ProblemDetails
 
 func (*EventsCreateBadRequest) eventsCreateRes() {}
+
+type EventsCreateForbidden ProblemDetails
+
+func (*EventsCreateForbidden) eventsCreateRes() {}
 
 // EventsCreateNoContent is response for EventsCreate operation.
 type EventsCreateNoContent struct{}
@@ -6811,6 +7007,10 @@ func (*EventsCreateUnprocessableEntity) eventsCreateRes() {}
 type ExportAuditBadRequest ProblemDetails
 
 func (*ExportAuditBadRequest) exportAuditRes() {}
+
+type ExportAuditForbidden ProblemDetails
+
+func (*ExportAuditForbidden) exportAuditRes() {}
 
 type ExportAuditNotFound ProblemDetails
 
@@ -6866,6 +7066,10 @@ type ExportContactsBadRequest ProblemDetails
 
 func (*ExportContactsBadRequest) exportContactsRes() {}
 
+type ExportContactsForbidden ProblemDetails
+
+func (*ExportContactsForbidden) exportContactsRes() {}
+
 type ExportContactsNotFound ProblemDetails
 
 func (*ExportContactsNotFound) exportContactsRes() {}
@@ -6919,6 +7123,10 @@ func (*ExportContactsUnauthorized) exportContactsRes() {}
 type ExportErasuresBadRequest ProblemDetails
 
 func (*ExportErasuresBadRequest) exportErasuresRes() {}
+
+type ExportErasuresForbidden ProblemDetails
+
+func (*ExportErasuresForbidden) exportErasuresRes() {}
 
 type ExportErasuresNotFound ProblemDetails
 
@@ -6974,6 +7182,10 @@ type ExportEventsBadRequest ProblemDetails
 
 func (*ExportEventsBadRequest) exportEventsRes() {}
 
+type ExportEventsForbidden ProblemDetails
+
+func (*ExportEventsForbidden) exportEventsRes() {}
+
 type ExportEventsNotFound ProblemDetails
 
 func (*ExportEventsNotFound) exportEventsRes() {}
@@ -7027,6 +7239,10 @@ func (*ExportEventsUnauthorized) exportEventsRes() {}
 type ExportMessagesBadRequest ProblemDetails
 
 func (*ExportMessagesBadRequest) exportMessagesRes() {}
+
+type ExportMessagesForbidden ProblemDetails
+
+func (*ExportMessagesForbidden) exportMessagesRes() {}
 
 type ExportMessagesNotFound ProblemDetails
 
@@ -7910,6 +8126,10 @@ type IntegrationsArchiveBadRequest ProblemDetails
 
 func (*IntegrationsArchiveBadRequest) integrationsArchiveRes() {}
 
+type IntegrationsArchiveForbidden ProblemDetails
+
+func (*IntegrationsArchiveForbidden) integrationsArchiveRes() {}
+
 type IntegrationsArchiveNotFound ProblemDetails
 
 func (*IntegrationsArchiveNotFound) integrationsArchiveRes() {}
@@ -7926,6 +8146,10 @@ type IntegrationsCreateConflict ProblemDetails
 
 func (*IntegrationsCreateConflict) integrationsCreateRes() {}
 
+type IntegrationsCreateForbidden ProblemDetails
+
+func (*IntegrationsCreateForbidden) integrationsCreateRes() {}
+
 type IntegrationsCreateUnauthorized ProblemDetails
 
 func (*IntegrationsCreateUnauthorized) integrationsCreateRes() {}
@@ -7938,6 +8162,10 @@ type IntegrationsGetBadRequest ProblemDetails
 
 func (*IntegrationsGetBadRequest) integrationsGetRes() {}
 
+type IntegrationsGetForbidden ProblemDetails
+
+func (*IntegrationsGetForbidden) integrationsGetRes() {}
+
 type IntegrationsGetNotFound ProblemDetails
 
 func (*IntegrationsGetNotFound) integrationsGetRes() {}
@@ -7949,6 +8177,10 @@ func (*IntegrationsGetUnauthorized) integrationsGetRes() {}
 type IntegrationsListBadRequest ProblemDetails
 
 func (*IntegrationsListBadRequest) integrationsListRes() {}
+
+type IntegrationsListForbidden ProblemDetails
+
+func (*IntegrationsListForbidden) integrationsListRes() {}
 
 // Paginated response.
 type IntegrationsListOK struct {
@@ -8028,6 +8260,10 @@ type IntegrationsRegenerateKeyBadRequest ProblemDetails
 
 func (*IntegrationsRegenerateKeyBadRequest) integrationsRegenerateKeyRes() {}
 
+type IntegrationsRegenerateKeyForbidden ProblemDetails
+
+func (*IntegrationsRegenerateKeyForbidden) integrationsRegenerateKeyRes() {}
+
 type IntegrationsRegenerateKeyNotFound ProblemDetails
 
 func (*IntegrationsRegenerateKeyNotFound) integrationsRegenerateKeyRes() {}
@@ -8044,6 +8280,10 @@ type IntegrationsUnarchiveConflict ProblemDetails
 
 func (*IntegrationsUnarchiveConflict) integrationsUnarchiveRes() {}
 
+type IntegrationsUnarchiveForbidden ProblemDetails
+
+func (*IntegrationsUnarchiveForbidden) integrationsUnarchiveRes() {}
+
 type IntegrationsUnarchiveNotFound ProblemDetails
 
 func (*IntegrationsUnarchiveNotFound) integrationsUnarchiveRes() {}
@@ -8059,6 +8299,10 @@ func (*IntegrationsUpdateBadRequest) integrationsUpdateRes() {}
 type IntegrationsUpdateConflict ProblemDetails
 
 func (*IntegrationsUpdateConflict) integrationsUpdateRes() {}
+
+type IntegrationsUpdateForbidden ProblemDetails
+
+func (*IntegrationsUpdateForbidden) integrationsUpdateRes() {}
 
 type IntegrationsUpdateNotFound ProblemDetails
 
@@ -11287,6 +11531,10 @@ func (s *PresetResourceParamsSchema) init() PresetResourceParamsSchema {
 	return m
 }
 
+type PresetsListForbidden ProblemDetails
+
+func (*PresetsListForbidden) presetsListRes() {}
+
 // Paginated response.
 type PresetsListOK struct {
 	// List of items.
@@ -11352,6 +11600,10 @@ func (s *PresetsListOK) SetTotalPages(val int32) {
 }
 
 func (*PresetsListOK) presetsListRes() {}
+
+type PresetsListUnauthorized ProblemDetails
+
+func (*PresetsListUnauthorized) presetsListRes() {}
 
 // Request body for previewing a condition's segment.
 // Ref: #/components/schemas/PreviewSegmentInput
@@ -11648,12 +11900,6 @@ func (s *ProblemDetails) SetRetryAfter(val OptInt32) {
 func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
-
-func (*ProblemDetails) brandKitGetRes()               {}
-func (*ProblemDetails) capturedMessagesDeleteAllRes() {}
-func (*ProblemDetails) customFieldsListRes()          {}
-func (*ProblemDetails) emailSchemaGetRes()            {}
-func (*ProblemDetails) presetsListRes()               {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -12471,6 +12717,10 @@ type RuleFiringsListBadRequest ProblemDetails
 
 func (*RuleFiringsListBadRequest) ruleFiringsListRes() {}
 
+type RuleFiringsListForbidden ProblemDetails
+
+func (*RuleFiringsListForbidden) ruleFiringsListRes() {}
+
 type RuleFiringsListNotFound ProblemDetails
 
 func (*RuleFiringsListNotFound) ruleFiringsListRes() {}
@@ -12727,6 +12977,10 @@ type RulesActivateBadRequest ProblemDetails
 
 func (*RulesActivateBadRequest) rulesActivateRes() {}
 
+type RulesActivateForbidden ProblemDetails
+
+func (*RulesActivateForbidden) rulesActivateRes() {}
+
 type RulesActivateNotFound ProblemDetails
 
 func (*RulesActivateNotFound) rulesActivateRes() {}
@@ -12743,6 +12997,10 @@ type RulesArchiveBadRequest ProblemDetails
 
 func (*RulesArchiveBadRequest) rulesArchiveRes() {}
 
+type RulesArchiveForbidden ProblemDetails
+
+func (*RulesArchiveForbidden) rulesArchiveRes() {}
+
 type RulesArchiveNotFound ProblemDetails
 
 func (*RulesArchiveNotFound) rulesArchiveRes() {}
@@ -12754,6 +13012,10 @@ func (*RulesArchiveUnauthorized) rulesArchiveRes() {}
 type RulesCreateBadRequest ProblemDetails
 
 func (*RulesCreateBadRequest) rulesCreateRes() {}
+
+type RulesCreateForbidden ProblemDetails
+
+func (*RulesCreateForbidden) rulesCreateRes() {}
 
 type RulesCreateUnauthorized ProblemDetails
 
@@ -12767,6 +13029,10 @@ type RulesDeactivateBadRequest ProblemDetails
 
 func (*RulesDeactivateBadRequest) rulesDeactivateRes() {}
 
+type RulesDeactivateForbidden ProblemDetails
+
+func (*RulesDeactivateForbidden) rulesDeactivateRes() {}
+
 type RulesDeactivateNotFound ProblemDetails
 
 func (*RulesDeactivateNotFound) rulesDeactivateRes() {}
@@ -12778,6 +13044,10 @@ func (*RulesDeactivateUnauthorized) rulesDeactivateRes() {}
 type RulesDeleteBadRequest ProblemDetails
 
 func (*RulesDeleteBadRequest) rulesDeleteRes() {}
+
+type RulesDeleteForbidden ProblemDetails
+
+func (*RulesDeleteForbidden) rulesDeleteRes() {}
 
 // RulesDeleteNoContent is response for RulesDelete operation.
 type RulesDeleteNoContent struct{}
@@ -12800,6 +13070,10 @@ type RulesDryRunBadRequest ProblemDetails
 
 func (*RulesDryRunBadRequest) rulesDryRunRes() {}
 
+type RulesDryRunForbidden ProblemDetails
+
+func (*RulesDryRunForbidden) rulesDryRunRes() {}
+
 type RulesDryRunNotFound ProblemDetails
 
 func (*RulesDryRunNotFound) rulesDryRunRes() {}
@@ -12812,6 +13086,10 @@ type RulesGetBadRequest ProblemDetails
 
 func (*RulesGetBadRequest) rulesGetRes() {}
 
+type RulesGetForbidden ProblemDetails
+
+func (*RulesGetForbidden) rulesGetRes() {}
+
 type RulesGetNotFound ProblemDetails
 
 func (*RulesGetNotFound) rulesGetRes() {}
@@ -12823,6 +13101,10 @@ func (*RulesGetUnauthorized) rulesGetRes() {}
 type RulesListBadRequest ProblemDetails
 
 func (*RulesListBadRequest) rulesListRes() {}
+
+type RulesListForbidden ProblemDetails
+
+func (*RulesListForbidden) rulesListRes() {}
 
 // Paginated response.
 type RulesListOK struct {
@@ -12902,6 +13184,10 @@ type RulesUnarchiveBadRequest ProblemDetails
 
 func (*RulesUnarchiveBadRequest) rulesUnarchiveRes() {}
 
+type RulesUnarchiveForbidden ProblemDetails
+
+func (*RulesUnarchiveForbidden) rulesUnarchiveRes() {}
+
 type RulesUnarchiveNotFound ProblemDetails
 
 func (*RulesUnarchiveNotFound) rulesUnarchiveRes() {}
@@ -12913,6 +13199,10 @@ func (*RulesUnarchiveUnauthorized) rulesUnarchiveRes() {}
 type RulesUpdateBadRequest ProblemDetails
 
 func (*RulesUpdateBadRequest) rulesUpdateRes() {}
+
+type RulesUpdateForbidden ProblemDetails
+
+func (*RulesUpdateForbidden) rulesUpdateRes() {}
 
 type RulesUpdateNotFound ProblemDetails
 
@@ -13030,6 +13320,10 @@ type SegmentsArchiveBadRequest ProblemDetails
 
 func (*SegmentsArchiveBadRequest) segmentsArchiveRes() {}
 
+type SegmentsArchiveForbidden ProblemDetails
+
+func (*SegmentsArchiveForbidden) segmentsArchiveRes() {}
+
 type SegmentsArchiveNotFound ProblemDetails
 
 func (*SegmentsArchiveNotFound) segmentsArchiveRes() {}
@@ -13041,6 +13335,10 @@ func (*SegmentsArchiveUnauthorized) segmentsArchiveRes() {}
 type SegmentsCreateBadRequest ProblemDetails
 
 func (*SegmentsCreateBadRequest) segmentsCreateRes() {}
+
+type SegmentsCreateForbidden ProblemDetails
+
+func (*SegmentsCreateForbidden) segmentsCreateRes() {}
 
 type SegmentsCreateUnauthorized ProblemDetails
 
@@ -13054,6 +13352,10 @@ type SegmentsGetBadRequest ProblemDetails
 
 func (*SegmentsGetBadRequest) segmentsGetRes() {}
 
+type SegmentsGetForbidden ProblemDetails
+
+func (*SegmentsGetForbidden) segmentsGetRes() {}
+
 type SegmentsGetNotFound ProblemDetails
 
 func (*SegmentsGetNotFound) segmentsGetRes() {}
@@ -13065,6 +13367,10 @@ func (*SegmentsGetUnauthorized) segmentsGetRes() {}
 type SegmentsListBadRequest ProblemDetails
 
 func (*SegmentsListBadRequest) segmentsListRes() {}
+
+type SegmentsListForbidden ProblemDetails
+
+func (*SegmentsListForbidden) segmentsListRes() {}
 
 // Paginated response.
 type SegmentsListOK struct {
@@ -13144,6 +13450,10 @@ type SegmentsPreviewBadRequest ProblemDetails
 
 func (*SegmentsPreviewBadRequest) segmentsPreviewRes() {}
 
+type SegmentsPreviewForbidden ProblemDetails
+
+func (*SegmentsPreviewForbidden) segmentsPreviewRes() {}
+
 type SegmentsPreviewUnauthorized ProblemDetails
 
 func (*SegmentsPreviewUnauthorized) segmentsPreviewRes() {}
@@ -13156,6 +13466,10 @@ type SegmentsUnarchiveBadRequest ProblemDetails
 
 func (*SegmentsUnarchiveBadRequest) segmentsUnarchiveRes() {}
 
+type SegmentsUnarchiveForbidden ProblemDetails
+
+func (*SegmentsUnarchiveForbidden) segmentsUnarchiveRes() {}
+
 type SegmentsUnarchiveNotFound ProblemDetails
 
 func (*SegmentsUnarchiveNotFound) segmentsUnarchiveRes() {}
@@ -13167,6 +13481,10 @@ func (*SegmentsUnarchiveUnauthorized) segmentsUnarchiveRes() {}
 type SegmentsUpdateBadRequest ProblemDetails
 
 func (*SegmentsUpdateBadRequest) segmentsUpdateRes() {}
+
+type SegmentsUpdateForbidden ProblemDetails
+
+func (*SegmentsUpdateForbidden) segmentsUpdateRes() {}
 
 type SegmentsUpdateNotFound ProblemDetails
 
@@ -13461,6 +13779,10 @@ func (*SendTransactionalEmailResponse) emailsSendRes() {}
 type SendingDomainRatesListBadRequest ProblemDetails
 
 func (*SendingDomainRatesListBadRequest) sendingDomainRatesListRes() {}
+
+type SendingDomainRatesListForbidden ProblemDetails
+
+func (*SendingDomainRatesListForbidden) sendingDomainRatesListRes() {}
 
 // Paginated response.
 type SendingDomainRatesListOK struct {
@@ -13787,6 +14109,10 @@ type SendingDomainsArchiveBadRequest ProblemDetails
 
 func (*SendingDomainsArchiveBadRequest) sendingDomainsArchiveRes() {}
 
+type SendingDomainsArchiveForbidden ProblemDetails
+
+func (*SendingDomainsArchiveForbidden) sendingDomainsArchiveRes() {}
+
 type SendingDomainsArchiveNotFound ProblemDetails
 
 func (*SendingDomainsArchiveNotFound) sendingDomainsArchiveRes() {}
@@ -13803,6 +14129,10 @@ type SendingDomainsCreateConflict ProblemDetails
 
 func (*SendingDomainsCreateConflict) sendingDomainsCreateRes() {}
 
+type SendingDomainsCreateForbidden ProblemDetails
+
+func (*SendingDomainsCreateForbidden) sendingDomainsCreateRes() {}
+
 type SendingDomainsCreateUnauthorized ProblemDetails
 
 func (*SendingDomainsCreateUnauthorized) sendingDomainsCreateRes() {}
@@ -13815,6 +14145,10 @@ type SendingDomainsGetBadRequest ProblemDetails
 
 func (*SendingDomainsGetBadRequest) sendingDomainsGetRes() {}
 
+type SendingDomainsGetForbidden ProblemDetails
+
+func (*SendingDomainsGetForbidden) sendingDomainsGetRes() {}
+
 type SendingDomainsGetNotFound ProblemDetails
 
 func (*SendingDomainsGetNotFound) sendingDomainsGetRes() {}
@@ -13826,6 +14160,10 @@ func (*SendingDomainsGetUnauthorized) sendingDomainsGetRes() {}
 type SendingDomainsListBadRequest ProblemDetails
 
 func (*SendingDomainsListBadRequest) sendingDomainsListRes() {}
+
+type SendingDomainsListForbidden ProblemDetails
+
+func (*SendingDomainsListForbidden) sendingDomainsListRes() {}
 
 // Paginated response.
 type SendingDomainsListOK struct {
@@ -13909,6 +14247,10 @@ type SendingDomainsUnarchiveConflict ProblemDetails
 
 func (*SendingDomainsUnarchiveConflict) sendingDomainsUnarchiveRes() {}
 
+type SendingDomainsUnarchiveForbidden ProblemDetails
+
+func (*SendingDomainsUnarchiveForbidden) sendingDomainsUnarchiveRes() {}
+
 type SendingDomainsUnarchiveNotFound ProblemDetails
 
 func (*SendingDomainsUnarchiveNotFound) sendingDomainsUnarchiveRes() {}
@@ -13925,6 +14267,10 @@ type SendingDomainsUpdateConflict ProblemDetails
 
 func (*SendingDomainsUpdateConflict) sendingDomainsUpdateRes() {}
 
+type SendingDomainsUpdateForbidden ProblemDetails
+
+func (*SendingDomainsUpdateForbidden) sendingDomainsUpdateRes() {}
+
 type SendingDomainsUpdateNotFound ProblemDetails
 
 func (*SendingDomainsUpdateNotFound) sendingDomainsUpdateRes() {}
@@ -13940,6 +14286,10 @@ func (*SendingDomainsUpdateUnprocessableEntity) sendingDomainsUpdateRes() {}
 type SendingDomainsVerifyBadRequest ProblemDetails
 
 func (*SendingDomainsVerifyBadRequest) sendingDomainsVerifyRes() {}
+
+type SendingDomainsVerifyForbidden ProblemDetails
+
+func (*SendingDomainsVerifyForbidden) sendingDomainsVerifyRes() {}
 
 type SendingDomainsVerifyNotFound ProblemDetails
 
@@ -14520,6 +14870,10 @@ type SuppressionsCreateBadRequest ProblemDetails
 
 func (*SuppressionsCreateBadRequest) suppressionsCreateRes() {}
 
+type SuppressionsCreateForbidden ProblemDetails
+
+func (*SuppressionsCreateForbidden) suppressionsCreateRes() {}
+
 type SuppressionsCreateUnauthorized ProblemDetails
 
 func (*SuppressionsCreateUnauthorized) suppressionsCreateRes() {}
@@ -14576,6 +14930,10 @@ type TagsApplyBadRequest ProblemDetails
 
 func (*TagsApplyBadRequest) tagsApplyRes() {}
 
+type TagsApplyForbidden ProblemDetails
+
+func (*TagsApplyForbidden) tagsApplyRes() {}
+
 type TagsApplyNotFound ProblemDetails
 
 func (*TagsApplyNotFound) tagsApplyRes() {}
@@ -14591,6 +14949,10 @@ func (*TagsApplyUnprocessableEntity) tagsApplyRes() {}
 type TagsDeleteBadRequest ProblemDetails
 
 func (*TagsDeleteBadRequest) tagsDeleteRes() {}
+
+type TagsDeleteForbidden ProblemDetails
+
+func (*TagsDeleteForbidden) tagsDeleteRes() {}
 
 // TagsDeleteNoContent is response for TagsDelete operation.
 type TagsDeleteNoContent struct{}
@@ -14612,6 +14974,10 @@ func (*TagsListBadRequest) tagsListRes() {}
 type TagsListForContactBadRequest ProblemDetails
 
 func (*TagsListForContactBadRequest) tagsListForContactRes() {}
+
+type TagsListForContactForbidden ProblemDetails
+
+func (*TagsListForContactForbidden) tagsListForContactRes() {}
 
 type TagsListForContactNotFound ProblemDetails
 
@@ -14691,6 +15057,10 @@ type TagsListForContactUnprocessableEntity ProblemDetails
 
 func (*TagsListForContactUnprocessableEntity) tagsListForContactRes() {}
 
+type TagsListForbidden ProblemDetails
+
+func (*TagsListForbidden) tagsListRes() {}
+
 // Paginated response.
 type TagsListOK struct {
 	// List of items.
@@ -14768,6 +15138,10 @@ func (*TagsListUnprocessableEntity) tagsListRes() {}
 type TagsRemoveBadRequest ProblemDetails
 
 func (*TagsRemoveBadRequest) tagsRemoveRes() {}
+
+type TagsRemoveForbidden ProblemDetails
+
+func (*TagsRemoveForbidden) tagsRemoveRes() {}
 
 // TagsRemoveNoContent is response for TagsRemove operation.
 type TagsRemoveNoContent struct{}
@@ -14903,6 +15277,10 @@ type TemplatesCreateBadRequest ProblemDetails
 
 func (*TemplatesCreateBadRequest) templatesCreateRes() {}
 
+type TemplatesCreateForbidden ProblemDetails
+
+func (*TemplatesCreateForbidden) templatesCreateRes() {}
+
 type TemplatesCreateUnauthorized ProblemDetails
 
 func (*TemplatesCreateUnauthorized) templatesCreateRes() {}
@@ -14914,6 +15292,10 @@ func (*TemplatesCreateUnprocessableEntity) templatesCreateRes() {}
 type TemplatesDeleteBadRequest ProblemDetails
 
 func (*TemplatesDeleteBadRequest) templatesDeleteRes() {}
+
+type TemplatesDeleteForbidden ProblemDetails
+
+func (*TemplatesDeleteForbidden) templatesDeleteRes() {}
 
 // TemplatesDeleteNoContent is response for TemplatesDelete operation.
 type TemplatesDeleteNoContent struct{}
@@ -14936,6 +15318,10 @@ type TemplatesGetBadRequest ProblemDetails
 
 func (*TemplatesGetBadRequest) templatesGetRes() {}
 
+type TemplatesGetForbidden ProblemDetails
+
+func (*TemplatesGetForbidden) templatesGetRes() {}
+
 type TemplatesGetNotFound ProblemDetails
 
 func (*TemplatesGetNotFound) templatesGetRes() {}
@@ -14947,6 +15333,10 @@ func (*TemplatesGetUnauthorized) templatesGetRes() {}
 type TemplatesListBadRequest ProblemDetails
 
 func (*TemplatesListBadRequest) templatesListRes() {}
+
+type TemplatesListForbidden ProblemDetails
+
+func (*TemplatesListForbidden) templatesListRes() {}
 
 // Paginated response.
 type TemplatesListOK struct {
@@ -15025,6 +15415,10 @@ func (*TemplatesListUnprocessableEntity) templatesListRes() {}
 type TemplatesUpdateBadRequest ProblemDetails
 
 func (*TemplatesUpdateBadRequest) templatesUpdateRes() {}
+
+type TemplatesUpdateForbidden ProblemDetails
+
+func (*TemplatesUpdateForbidden) templatesUpdateRes() {}
 
 type TemplatesUpdateNotFound ProblemDetails
 
@@ -15391,6 +15785,10 @@ func (*UnsubscribeResource) unsubscribesCreateRes() {}
 type UnsubscribesCreateBadRequest ProblemDetails
 
 func (*UnsubscribesCreateBadRequest) unsubscribesCreateRes() {}
+
+type UnsubscribesCreateForbidden ProblemDetails
+
+func (*UnsubscribesCreateForbidden) unsubscribesCreateRes() {}
 
 type UnsubscribesCreateUnauthorized ProblemDetails
 
@@ -16591,6 +16989,10 @@ type WebhooksCreateBadRequest ProblemDetails
 
 func (*WebhooksCreateBadRequest) webhooksCreateRes() {}
 
+type WebhooksCreateForbidden ProblemDetails
+
+func (*WebhooksCreateForbidden) webhooksCreateRes() {}
+
 type WebhooksCreateUnauthorized ProblemDetails
 
 func (*WebhooksCreateUnauthorized) webhooksCreateRes() {}
@@ -16602,6 +17004,10 @@ func (*WebhooksCreateUnprocessableEntity) webhooksCreateRes() {}
 type WebhooksDeleteBadRequest ProblemDetails
 
 func (*WebhooksDeleteBadRequest) webhooksDeleteRes() {}
+
+type WebhooksDeleteForbidden ProblemDetails
+
+func (*WebhooksDeleteForbidden) webhooksDeleteRes() {}
 
 // WebhooksDeleteNoContent is response for WebhooksDelete operation.
 type WebhooksDeleteNoContent struct{}
@@ -16624,6 +17030,10 @@ type WebhooksGetBadRequest ProblemDetails
 
 func (*WebhooksGetBadRequest) webhooksGetRes() {}
 
+type WebhooksGetForbidden ProblemDetails
+
+func (*WebhooksGetForbidden) webhooksGetRes() {}
+
 type WebhooksGetNotFound ProblemDetails
 
 func (*WebhooksGetNotFound) webhooksGetRes() {}
@@ -16635,6 +17045,10 @@ func (*WebhooksGetUnauthorized) webhooksGetRes() {}
 type WebhooksListBadRequest ProblemDetails
 
 func (*WebhooksListBadRequest) webhooksListRes() {}
+
+type WebhooksListForbidden ProblemDetails
+
+func (*WebhooksListForbidden) webhooksListRes() {}
 
 // Paginated response.
 type WebhooksListOK struct {
@@ -16714,6 +17128,10 @@ type WebhooksRegenerateSecretBadRequest ProblemDetails
 
 func (*WebhooksRegenerateSecretBadRequest) webhooksRegenerateSecretRes() {}
 
+type WebhooksRegenerateSecretForbidden ProblemDetails
+
+func (*WebhooksRegenerateSecretForbidden) webhooksRegenerateSecretRes() {}
+
 type WebhooksRegenerateSecretNotFound ProblemDetails
 
 func (*WebhooksRegenerateSecretNotFound) webhooksRegenerateSecretRes() {}
@@ -16725,6 +17143,10 @@ func (*WebhooksRegenerateSecretUnauthorized) webhooksRegenerateSecretRes() {}
 type WebhooksTestBadRequest ProblemDetails
 
 func (*WebhooksTestBadRequest) webhooksTestRes() {}
+
+type WebhooksTestForbidden ProblemDetails
+
+func (*WebhooksTestForbidden) webhooksTestRes() {}
 
 type WebhooksTestNotFound ProblemDetails
 
@@ -16741,6 +17163,10 @@ func (*WebhooksTestUnprocessableEntity) webhooksTestRes() {}
 type WebhooksUpdateBadRequest ProblemDetails
 
 func (*WebhooksUpdateBadRequest) webhooksUpdateRes() {}
+
+type WebhooksUpdateForbidden ProblemDetails
+
+func (*WebhooksUpdateForbidden) webhooksUpdateRes() {}
 
 type WebhooksUpdateNotFound ProblemDetails
 
