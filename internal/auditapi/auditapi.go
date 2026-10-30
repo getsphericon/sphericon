@@ -5,7 +5,6 @@ package auditapi
 
 import (
 	"encoding/json"
-	"errors"
 	"reflect"
 	"strconv"
 	"time"
@@ -14,10 +13,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrBadCursor is returned for a cursor that is not a positive entry id.
-var ErrBadCursor = errors.New("invalid cursor")
+var ErrBadCursor = validation.UnknownReference("auditapi: invalid cursor", "errors.audit_cursor_invalid")
 
 // Page parses the optional cursor (empty starts from the newest entry).
 func Page(cursor string) (int64, error) {

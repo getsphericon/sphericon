@@ -8,6 +8,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -27,9 +28,6 @@ var (
 	ErrInvitationLinkNotFound = validation.NotFound("accounts: invitation not found or expired", "errors.invitation_link_not_found")
 	// ErrAlreadyMember means the invited address already has a Membership in the Workspace.
 	ErrAlreadyMember = validation.Conflict("accounts: invited email is already a member", "errors.already_member")
-	// ErrCredentialsRequired means the invited address has no Verified User, so the
-	// invitee must give a name and a password to accept.
-	ErrCredentialsRequired = errors.New("accounts: invitation needs a name and a password")
 	// ErrSignInRequired means the invited address belongs to a Verified User and no
 	// session was presented: only that User's own session may accept.
 	ErrSignInRequired = validation.Unauthorized("accounts: sign in to accept this invitation", "errors.invitation_sign_in_required")
@@ -40,6 +38,15 @@ var (
 	// completes an Unverified User lost the race to another one.
 	ErrAlreadyVerified = errors.New("accounts: the email is already verified")
 )
+
+// credentialsRequired refuses accepting an Invitation for an address with no Verified User
+// without a name and a password: the invitee sets up the account, so both are required.
+func credentialsRequired() *validation.FieldsError {
+	return &validation.FieldsError{Fields: map[string][]string{
+		validation.FieldName:     {i18n.T("errors.name_required", nil)},
+		validation.FieldPassword: {i18n.T("errors.password_required", nil)},
+	}}
+}
 
 // generateInviteToken returns a random, URL-safe invitation token: the raw value
 // that travels in the invite link and is never stored.

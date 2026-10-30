@@ -1,0 +1,24 @@
+id: no-hand-written-problem-in-external
+snapshots:
+  "func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsGetParams) (externalapi.ContactsGetRes, error) {\n\tres := externalapi.ContactsGetNotFound(problem(http.StatusNotFound, \"contact not found\"))\n\treturn &res, nil\n}\n":
+    labels:
+      - source: externalapi.ContactsGetNotFound
+        style: primary
+        start: 136
+        end: 167
+  "func tokenNotFound() externalapi.AuthTokensDeleteRes {\n\treturn &externalapi.AuthTokensDeleteNotFound{Detail: externalapi.NewOptString(\"token not found\")}\n}\n":
+    labels:
+      - source: externalapi.AuthTokensDeleteNotFound
+        style: primary
+        start: 64
+        end: 100
+  "func unprocessable(detail string) externalapi.ProblemDetails {\n\treturn externalapi.ProblemDetails{Detail: externalapi.NewOptString(detail)}\n}\n":
+    labels:
+      - source: 'externalapi.ProblemDetails{Detail: externalapi.NewOptString(detail)}'
+        style: primary
+        start: 71
+        end: 139
+      - source: externalapi.ProblemDetails
+        style: secondary
+        start: 71
+        end: 97

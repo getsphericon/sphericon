@@ -106,7 +106,7 @@ test('an address nothing holds says nothing is held', async () => {
 test('a rejected address shows the problem instead of a result', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
-    handleSiteContactsLookup(() => problem(400, { detail: 'invalid email address' })),
+    handleSiteContactsLookup(() => problem(422, { detail: 'not a valid email address' })),
   )
 
   const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)

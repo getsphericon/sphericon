@@ -3,7 +3,6 @@ package external
 import (
 	"context"
 	"errors"
-	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -15,24 +14,17 @@ import (
 // and the send planner, with the Workspace's Brand kit. What cannot render is an error;
 // everything else is a warning. It needs only the right to read Templates, as it stores nothing.
 func (h *Handlers) EmailLintLint(ctx context.Context, req *externalapi.LintEmailInput) (externalapi.EmailLintLintRes, error) {
-	if req.Body.Set == req.Doc.Set {
-		res := externalapi.EmailLintLintUnprocessableEntity(problem(http.StatusUnprocessableEntity, "send a body or a doc, not both and not neither"))
-		return &res, nil
+	subject := req.Subject.Value
+	// A document is rendered as a save would render it; one that cannot be is the error finding.
+	body, err := h.templates.LintBody(ctx, &subject, convert.StringPtr(req.Body), convert.DocJSON(req.Doc.Value, req.Doc.Set))
+	if errors.Is(err, emailrender.ErrInvalidContent) {
+		return &externalapi.LintEmailResult{
+			Errors:   []externalapi.LintFinding{invalidContent(err)},
+			Warnings: []externalapi.LintFinding{},
+		}, nil
 	}
-	subject, body := req.Subject.Value, req.Body.Value
-	if req.Doc.Set {
-		// A document is rendered as a save would render it; one that cannot be is the error finding.
-		authored, err := h.templates.Prepare(ctx, &subject, convert.DocJSON(req.Doc.Value, true))
-		if errors.Is(err, emailrender.ErrInvalidContent) {
-			return &externalapi.LintEmailResult{
-				Errors:   []externalapi.LintFinding{invalidContent(err)},
-				Warnings: []externalapi.LintFinding{},
-			}, nil
-		}
-		if err != nil {
-			return nil, err
-		}
-		body = authored.Body
+	if err != nil {
+		return nil, err
 	}
 	report, err := h.brandKit.Lint(ctx, auth.TokenScoped(ctx), subject, body)
 	if err != nil {

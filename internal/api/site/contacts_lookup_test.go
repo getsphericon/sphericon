@@ -108,7 +108,7 @@ func TestSiteContactsLookupRejectsAnInvalidAddress(t *testing.T) {
 
 	res := lookup(t, c, fixtures.AcmePublicID, "not an address")
 
-	assert.IsType(t, &siteapi.SiteContactsLookupBadRequest{}, res)
+	assert.IsType(t, &siteapi.SiteContactsLookupUnprocessableEntity{}, res)
 }
 
 // A padded, mixed-case address is trimmed and lowercased, not refused by the

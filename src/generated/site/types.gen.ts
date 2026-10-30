@@ -7641,13 +7641,13 @@ export type SiteOAuthDescribeData = {
 
 export type SiteOAuthDescribeErrors = {
   /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteOAuthDescribeError = SiteOAuthDescribeErrors[keyof SiteOAuthDescribeErrors];
@@ -7670,10 +7670,6 @@ export type SiteOAuthDecideData = {
 
 export type SiteOAuthDecideErrors = {
   /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -7681,6 +7677,10 @@ export type SiteOAuthDecideErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteOAuthDecideError = SiteOAuthDecideErrors[keyof SiteOAuthDecideErrors];
@@ -9948,7 +9948,7 @@ export type SiteContactsEraseData = {
   };
   query: {
     /**
-     * The email address to erase, as typed: trimmed and validated by the handler
+     * The email address to erase, as typed: trimmed and validated by the erasure module
      */
     email: string;
   };
@@ -9957,10 +9957,6 @@ export type SiteContactsEraseData = {
 
 export type SiteContactsEraseErrors = {
   /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -9968,6 +9964,10 @@ export type SiteContactsEraseErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteContactsEraseError = SiteContactsEraseErrors[keyof SiteContactsEraseErrors];
@@ -10005,10 +10005,6 @@ export type SiteContactsExportData = {
 
 export type SiteContactsExportErrors = {
   /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -10016,6 +10012,10 @@ export type SiteContactsExportErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteContactsExportError = SiteContactsExportErrors[keyof SiteContactsExportErrors];
@@ -10040,7 +10040,7 @@ export type SiteContactsLookupData = {
   };
   query: {
     /**
-     * The email address, as typed: trimmed and validated by the handler, not by the format check
+     * The email address, as typed: trimmed and validated by the erasure module, not by the format check
      */
     email: string;
   };
@@ -10049,10 +10049,6 @@ export type SiteContactsLookupData = {
 
 export type SiteContactsLookupErrors = {
   /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -10060,6 +10056,10 @@ export type SiteContactsLookupErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
 };
 
 export type SiteContactsLookupError = SiteContactsLookupErrors[keyof SiteContactsLookupErrors];

@@ -274,7 +274,7 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, suppressedResult.Status)
 	heldResult, ok := frozen.(*externalapi.EmailsSendUnprocessableEntity)
 	require.Truef(t, ok, "got %T", frozen)
-	assert.Equal(t, outbound.Detail(holds.ReasonSuspended), heldResult.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), heldResult.Detail.Value)
 	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.AcmeID)).CountX(ctx)
 	assert.Equal(t, before, after, "neither message reached the inbox")
 }

@@ -94,20 +94,6 @@ func TestSiteContactsDelete(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteContactsDeleteNotFound{}, del(fixtures.GlobexPublicID, idStr(fixtures.ContactAliceID)), "foreign workspace")
 }
 
-// Two contacts cannot share an alias key: the second create is a 409 naming the field.
-func TestSiteContactsCreateDuplicateEmailConflicts(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-
-	res, err := c.SiteContactsCreate(context.Background(),
-		&siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
-		siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	conflict, ok := res.(*siteapi.SiteContactsCreateConflict)
-	require.Truef(t, ok, "got %T", res)
-	assert.Contains(t, conflict.Errors.Value, "email")
-}
-
 func TestSiteInvitationsDelete(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)

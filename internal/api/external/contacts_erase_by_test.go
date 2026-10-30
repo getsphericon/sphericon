@@ -90,14 +90,14 @@ func TestExternalContactsEraseByNeedsExactlyOneKnownIdentifier(t *testing.T) {
 
 	none, err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsEraseByBadRequest{}, none)
+	assert.IsType(t, &externalapi.ContactsEraseByUnprocessableEntity{}, none)
 
 	both, err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email:     externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
 		VisitorId: externalapi.NewOptString("vis-anonymous-301"),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsEraseByBadRequest{}, both)
+	assert.IsType(t, &externalapi.ContactsEraseByUnprocessableEntity{}, both)
 
 	missing, err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress("nobody@initech.test"),

@@ -151,18 +151,26 @@ func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, 
 		All(ctx)
 }
 
+// ErrResetOwnSecondFactor refuses a caller resetting their own Second factor as a member's: they
+// disable it in their account, which takes a password and a code.
+var ErrResetOwnSecondFactor = validation.RefuseField("member", "accounts: cannot reset your own second factor", "errors.second_factor_reset_self")
+
 // SecondFactorResetTarget loads the Membership targetID of the Workspace s as the target of a
-// Second factor reset by a caller holding callerRole: resetting an Owner's needs owners:manage,
-// refused as Require refuses it. A target outside the Workspace is an ent NotFound error.
-func SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, callerRole membership.Role, targetID int64) (*ent.Membership, error) {
+// Second factor reset by the User callerID holding callerRole: resetting an Owner's needs
+// owners:manage, refused as Require refuses it, and nobody resets their own
+// (ErrResetOwnSecondFactor). A target outside the Workspace is ErrMemberNotFound.
+func SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, callerID int64, callerRole membership.Role, targetID int64) (*ent.Membership, error) {
 	target, err := s.Membership().Get(ctx, targetID)
 	if err != nil {
-		return nil, err
+		return nil, memberTarget(err)
 	}
 	if roles.IsOwner(target.Role) {
 		if err := Require(callerRole, PermOwnersManage); err != nil {
 			return nil, err
 		}
+	}
+	if target.UserID == callerID {
+		return nil, ErrResetOwnSecondFactor
 	}
 	return target, nil
 }
@@ -865,7 +873,7 @@ type InvitationAcceptance struct {
 // attached only with their own session (ErrSignInRequired without one, ErrWrongAccount
 // for another User's), decided on the row read inside the transaction, and is asked nothing
 // more: consent follows the User, not the Workspace (ADR 0062). For an address with no User
-// or an Unverified User (ADR 0030) the name and password are required (ErrCredentialsRequired
+// or an Unverified User (ADR 0030) the name and password are required (a *validation.FieldsError naming both
 // otherwise) and the Sign-up items are answered as on the sign-up form (a
 // *validation.FieldsError refuses the answers): the link proves control of the address, so
 // the User is created, or the Unverified User's row completed (name and password set,
@@ -977,7 +985,7 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 	}
 	name := strings.TrimSpace(account.name)
 	if name == "" || account.password == "" {
-		return nil, acceptProof{}, ErrCredentialsRequired
+		return nil, acceptProof{}, credentialsRequired()
 	}
 	if account.refused != nil {
 		return nil, acceptProof{}, account.refused

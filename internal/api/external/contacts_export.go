@@ -2,8 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -20,14 +18,6 @@ func (h *Handlers) ContactsExport(ctx context.Context, params externalapi.Contac
 		contactID = new(int64(v))
 	}
 	c, err := contactexport.Find(ctx, s, contactID, contactexport.Ref(params.Email.Get()))
-	if errors.Is(err, contactexport.ErrIdentifier) {
-		res := externalapi.ContactsExportBadRequest(problem(http.StatusBadRequest, "pass exactly one of id or email"))
-		return &res, nil
-	}
-	if errors.Is(err, contactexport.ErrNotFound) {
-		res := externalapi.ContactsExportNotFound(problem(http.StatusNotFound, "contact not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

@@ -167,13 +167,13 @@ interface SiteContacts
   ):
     | SiteContactExportDownload
     | SiteContactExportTypedDownload
-    | BadRequestProblem
+    | UnprocessableEntityProblem
     | ForbiddenProblem
     | NotFoundProblem;
 
   /**
    * Look up what the Workspace holds for one email address (a Privacy request):
-   * counts only. The address is trimmed and lowercased; an invalid one is rejected.
+   * counts only. The address is trimmed and lowercased; an invalid one is refused (422).
    * An address nothing holds answers with zeros, not 404. Owner or admin only.
    */
   @get
@@ -183,11 +183,11 @@ interface SiteContacts
   lookup(
     ...ResourceCollectionParameters<SiteContactResource>,
 
-    /** The email address, as typed: trimmed and validated by the handler, not by the format check */
+    /** The email address, as typed: trimmed and validated by the erasure module, not by the format check */
     @maxLength(320) @query email: string,
   ):
     | SiteContactHoldings
-    | BadRequestProblem
+    | UnprocessableEntityProblem
     | ForbiddenProblem
     | NotFoundProblem;
 
@@ -205,9 +205,13 @@ interface SiteContacts
   erase(
     ...ResourceCollectionParameters<SiteContactResource>,
 
-    /** The email address to erase, as typed: trimmed and validated by the handler */
+    /** The email address to erase, as typed: trimmed and validated by the erasure module */
     @maxLength(320) @query email: string,
-  ): NoContentResponse | BadRequestProblem | ForbiddenProblem | NotFoundProblem;
+  ):
+    | NoContentResponse
+    | UnprocessableEntityProblem
+    | ForbiddenProblem
+    | NotFoundProblem;
 }
 
 @@doc(

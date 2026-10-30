@@ -2,11 +2,8 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -38,10 +35,6 @@ func (h *Handlers) SiteCapturedMessagesList(ctx context.Context, params siteapi.
 func (h *Handlers) SiteCapturedMessagesGet(ctx context.Context, params siteapi.SiteCapturedMessagesGetParams) (siteapi.SiteCapturedMessagesGetRes, error) {
 	s := workspaceScope(ctx)
 	row, err := h.captured.Get(ctx, s, int64(params.ID))
-	if errors.Is(err, capturedmessages.ErrNotFound) {
-		v := siteapi.SiteCapturedMessagesGetNotFound(problem(http.StatusNotFound, err.Error()))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -53,10 +46,6 @@ func (h *Handlers) SiteCapturedMessagesGet(ctx context.Context, params siteapi.S
 func (h *Handlers) SiteCapturedMessagesDelete(ctx context.Context, params siteapi.SiteCapturedMessagesDeleteParams) (siteapi.SiteCapturedMessagesDeleteRes, error) {
 	s := workspaceScope(ctx)
 	err := h.captured.Delete(ctx, s, int64(params.ID))
-	if errors.Is(err, capturedmessages.ErrNotFound) {
-		v := siteapi.SiteCapturedMessagesDeleteNotFound(problem(http.StatusNotFound, err.Error()))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

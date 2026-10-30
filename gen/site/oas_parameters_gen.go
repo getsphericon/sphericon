@@ -7975,7 +7975,7 @@ type SiteContactsEraseParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
 	// (ADR 0043).
 	WorkspaceId WorkspaceId
-	// The email address to erase, as typed: trimmed and validated by the handler.
+	// The email address to erase, as typed: trimmed and validated by the erasure module.
 	Email string
 }
 
@@ -8781,7 +8781,7 @@ type SiteContactsLookupParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
 	// (ADR 0043).
 	WorkspaceId WorkspaceId
-	// The email address, as typed: trimmed and validated by the handler, not by the format check.
+	// The email address, as typed: trimmed and validated by the erasure module, not by the format check.
 	Email string
 }
 

@@ -1,0 +1,37 @@
+id: no-hand-written-problem-in-external
+language: Go
+severity: error
+message: "rule 15: an /api handler writes a refusal's problem by hand; fix: return the module's sentinel refusal (validation.Refuse/RefuseField/NotFound/Conflict/ConflictField/Forbidden/Unauthorized/Denied/Unverified/LinkInvalid/Incomplete/UnknownReference) and let refusalProblem in internal/server answer it"
+note: >-
+  The /api twin of no-hand-written-problem-in-site (review rule 15): the module that decides a
+  refusal returns a sentinel whose kind carries its status and code, and the server's error handler
+  writes the problem, alike on /site and /api. A handler that calls problem, builds an
+  externalapi.*ProblemDetails literal or names an operation's error response writes a second
+  mapping of the decision, next to the handler rather than the module, which drifts from /site.
+  The files under `ignores` keep an answer no refusal kind gives; a new file is covered at once.
+rule:
+  any:
+    - kind: call_expression
+      has:
+        field: function
+        kind: identifier
+        regex: ^problem$
+    - kind: composite_literal
+      has:
+        field: type
+        regex: ^externalapi\.\w*ProblemDetails$
+    # An operation's error response, however its body was built: converted to (a selector) or
+    # built as a literal (a qualified type).
+    - kind: selector_expression
+      regex: &response ^externalapi\.\w+(BadRequest|Unauthorized|PaymentRequired|Forbidden|NotFound|Conflict|Gone|PreconditionRequired|UnprocessableEntity)$
+    - kind: qualified_type
+      regex: *response
+files:
+  - internal/api/external/**/*.go
+ignores:
+  - '**/*_test.go'
+  - '**/*_gen.go'
+  # The helper the file below calls.
+  - internal/api/external/problem.go
+  # No refusal kind fits the 402 of a missing Enterprise license.
+  - internal/api/external/audit.go

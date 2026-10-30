@@ -18,6 +18,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/net/html"
+
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // confirmTTL is how long a double-opt-in confirmation link stays valid. Unlike
@@ -172,17 +174,23 @@ func (t *Tracker) unsubToken(target UnsubTarget) (string, error) {
 	})
 }
 
-// DecodeUnsub validates a scoped-unsubscribe token and returns its target.
+// ErrLinkInvalid is a link token that is malformed, signed with another key or missing a claim
+// its link needs: a mailed link that does not stand. A confirmation link past its TTL is one too,
+// and IsExpired tells it apart.
+var ErrLinkInvalid = validation.LinkInvalid("tracking: invalid link token", "errors.tracking_link_invalid")
+
+// DecodeUnsub validates a scoped-unsubscribe token and returns its target; a token that does
+// not stand is ErrLinkInvalid.
 func (t *Tracker) DecodeUnsub(token string) (UnsubTarget, error) {
 	var c unsubClaims
 	if err := t.parse(token, &c); err != nil {
-		return UnsubTarget{}, err
+		return UnsubTarget{}, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
 	}
 	if c.Source == "" {
-		return UnsubTarget{}, errors.New("tracking: missing src claim")
+		return UnsubTarget{}, ErrLinkInvalid.With("missing src claim")
 	}
 	if c.WorkspaceID == 0 {
-		return UnsubTarget{}, errors.New("tracking: missing ws claim")
+		return UnsubTarget{}, ErrLinkInvalid.With("missing ws claim")
 	}
 	return UnsubTarget{Source: c.Source, Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID, BroadcastID: c.BroadcastID}, nil
 }
@@ -218,17 +226,18 @@ func IsExpired(err error) bool {
 
 // DecodeConfirm validates a confirmation token and returns its target. It
 // rejects a token whose exp has passed (and requires exp to be present), so an
-// expired link cannot confirm — the endpoint surfaces that as "request a new one".
+// expired link cannot confirm — the endpoint surfaces that as "request a new one". A token
+// that does not stand, expired or not, is ErrLinkInvalid.
 func (t *Tracker) DecodeConfirm(token string) (ConfirmTarget, error) {
 	var c confirmClaims
 	if err := t.parse(token, &c, jwt.WithExpirationRequired()); err != nil {
-		return ConfirmTarget{}, err
+		return ConfirmTarget{}, fmt.Errorf("%w: %w", ErrLinkInvalid, err)
 	}
 	if c.Destination == "" {
-		return ConfirmTarget{}, errors.New("tracking: missing dest claim")
+		return ConfirmTarget{}, ErrLinkInvalid.With("missing dest claim")
 	}
 	if c.WorkspaceID == 0 {
-		return ConfirmTarget{}, errors.New("tracking: missing ws claim")
+		return ConfirmTarget{}, ErrLinkInvalid.With("missing ws claim")
 	}
 	return ConfirmTarget{Destination: c.Destination, WorkspaceID: c.WorkspaceID, ContactID: c.ContactID}, nil
 }

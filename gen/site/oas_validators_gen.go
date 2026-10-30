@@ -3252,14 +3252,6 @@ func (s *SiteContactsDeleteNotFound) Validate() error {
 	return nil
 }
 
-func (s *SiteContactsEraseBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *SiteContactsEraseForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3276,7 +3268,7 @@ func (s *SiteContactsEraseNotFound) Validate() error {
 	return nil
 }
 
-func (s *SiteContactsExportBadRequest) Validate() error {
+func (s *SiteContactsEraseUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3293,6 +3285,14 @@ func (s *SiteContactsExportForbidden) Validate() error {
 }
 
 func (s *SiteContactsExportNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteContactsExportUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3380,14 +3380,6 @@ func (s *SiteContactsListUnprocessableEntity) Validate() error {
 	return nil
 }
 
-func (s *SiteContactsLookupBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *SiteContactsLookupForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3397,6 +3389,14 @@ func (s *SiteContactsLookupForbidden) Validate() error {
 }
 
 func (s *SiteContactsLookupNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteContactsLookupUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5828,14 +5828,6 @@ func (s SiteOAuthAuthorizationRequestRequiredPermissions) Validate() error {
 	return nil
 }
 
-func (s *SiteOAuthDecideBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *SiteOAuthDecideForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5845,6 +5837,14 @@ func (s *SiteOAuthDecideForbidden) Validate() error {
 }
 
 func (s *SiteOAuthDecideNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteOAuthDecideUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5875,7 +5875,7 @@ func (s *SiteOAuthDecisionInput) Validate() error {
 	return nil
 }
 
-func (s *SiteOAuthDescribeBadRequest) Validate() error {
+func (s *SiteOAuthDescribeNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5883,7 +5883,7 @@ func (s *SiteOAuthDescribeBadRequest) Validate() error {
 	return nil
 }
 
-func (s *SiteOAuthDescribeNotFound) Validate() error {
+func (s *SiteOAuthDescribeUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

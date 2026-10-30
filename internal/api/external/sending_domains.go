@@ -2,8 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -43,11 +41,7 @@ func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.Cr
 	row, err := h.sendingDomains.Create(ctx, auth.TokenScoped(ctx), sendingdomains.CreateInput{
 		Domain: req.Domain, Selector: req.DkimSelector.Or(""),
 	})
-	switch {
-	case errors.Is(err, sendingdomains.ErrAlreadyExists):
-		res := externalapi.SendingDomainsCreateConflict(problem(http.StatusConflict, err.Error()))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := h.sendingDomainResource(row)
@@ -58,10 +52,6 @@ func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.Cr
 func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.SendingDomainsGetParams) (externalapi.SendingDomainsGetRes, error) {
 	id := int64(params.ID)
 	row, err := h.sendingDomains.Get(ctx, auth.TokenScoped(ctx), id)
-	if ent.IsNotFound(err) {
-		res := externalapi.SendingDomainsGetNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +65,7 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 	row, err := h.sendingDomains.Update(ctx, auth.TokenScoped(ctx), id, sendingdomains.UpdateInput{
 		Selector: convert.Ptr(req.DkimSelector),
 	})
-	switch {
-	case ent.IsNotFound(err):
-		res := externalapi.SendingDomainsUpdateNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := h.sendingDomainResource(row)
@@ -92,10 +78,6 @@ func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
 	err := h.sendingDomains.Archive(ctx, s, id)
-	if ent.IsNotFound(err) {
-		res := externalapi.SendingDomainsArchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -112,14 +94,7 @@ func (h *Handlers) SendingDomainsUnarchive(ctx context.Context, params externala
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
 	err := h.sendingDomains.Unarchive(ctx, s, id)
-	switch {
-	case errors.Is(err, sendingdomains.ErrAlreadyExists):
-		res := externalapi.SendingDomainsUnarchiveConflict(problem(http.StatusConflict, "this domain was added again; archive that one first"))
-		return &res, nil
-	case ent.IsNotFound(err):
-		res := externalapi.SendingDomainsUnarchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	row, err := h.sendingDomains.Get(ctx, s, id)
@@ -136,10 +111,6 @@ func (h *Handlers) SendingDomainsVerify(ctx context.Context, params externalapi.
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
 	row, err := h.sendingDomains.Verify(ctx, s, id)
-	if ent.IsNotFound(err) {
-		res := externalapi.SendingDomainsVerifyNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

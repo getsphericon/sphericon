@@ -76,7 +76,7 @@ namespace SiteOAuth {
         @statusCode statusCode: 200;
         @body body: SiteOAuthAuthorizationRequest;
       }
-    | BadRequestProblem
+    | UnprocessableEntityProblem
     | NotFoundProblem;
 
   /** Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role lacks is refused (403 permission_required). */
@@ -86,7 +86,7 @@ namespace SiteOAuth {
         @statusCode statusCode: 200;
         @body body: SiteOAuthDecisionResult;
       }
-    | BadRequestProblem
+    | UnprocessableEntityProblem
     | ForbiddenProblem
     | NotFoundProblem;
 }

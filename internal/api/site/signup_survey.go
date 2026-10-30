@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -18,20 +16,10 @@ func (h *Handlers) SiteSignupSurveySubmit(ctx context.Context, req *siteapi.Site
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	err := h.signupSurvey.Submit(ctx, a.UserID, answersOf(req))
-	var otherText *signupsurvey.OtherTextError
-	switch {
-	case err == nil:
-		return &siteapi.SiteSignupSurveySubmitNoContent{}, nil
-	case errors.Is(err, signupsurvey.ErrNotDue):
-		v := siteapi.SiteSignupSurveySubmitConflict(problem(http.StatusConflict, "the sign-up survey is not due"))
-		return &v, nil
-	case errors.As(err, &otherText):
-		v := siteapi.SiteSignupSurveySubmitUnprocessableEntity(problemWithErrors(http.StatusUnprocessableEntity,
-			otherText.Error(), map[string][]string{otherText.Field: {otherText.Error()}}))
-		return &v, nil
+	if err := h.signupSurvey.Submit(ctx, a.UserID, answersOf(req)); err != nil {
+		return nil, err
 	}
-	return nil, err
+	return &siteapi.SiteSignupSurveySubmitNoContent{}, nil
 }
 
 // answersOf maps the request to the module's answers; every value was checked against the

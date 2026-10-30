@@ -16,12 +16,12 @@ import (
 func (h *Handlers) SitePublicConfirmationsPerform(ctx context.Context, params siteapi.SitePublicConfirmationsPerformParams) (siteapi.SitePublicConfirmationsPerformRes, error) {
 	target, err := h.tracker.DecodeConfirm(params.Token)
 	if tracking.IsExpired(err) {
+		// Kept by hand: no refusal kind is a 410, the answer that offers a new link.
 		v := siteapi.SitePublicConfirmationsPerformGone(problem(http.StatusGone, "confirmation link expired"))
 		return &v, nil
 	}
 	if err != nil {
-		v := siteapi.SitePublicConfirmationsPerformBadRequest(problem(http.StatusBadRequest, "invalid token"))
-		return &v, nil
+		return nil, err
 	}
 	if err := consent.RecordConfirmation(ctx, h.bus, target, clientip.FromContext(ctx)); err != nil {
 		return nil, fmt.Errorf("record confirmation: %w", err)
@@ -34,8 +34,7 @@ func (h *Handlers) SitePublicConfirmationsPerform(ctx context.Context, params si
 func (h *Handlers) SitePublicUnsubscribesPerform(ctx context.Context, params siteapi.SitePublicUnsubscribesPerformParams) (siteapi.SitePublicUnsubscribesPerformRes, error) {
 	target, err := h.tracker.DecodeUnsub(params.Token)
 	if err != nil {
-		v := problem(http.StatusBadRequest, "invalid token")
-		return &v, nil
+		return nil, err
 	}
 	if err := consent.RecordUnsubscribe(ctx, h.bus, target); err != nil {
 		return nil, fmt.Errorf("record unsubscribe: %w", err)

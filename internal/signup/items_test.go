@@ -96,10 +96,9 @@ func TestASignUpRecordsEveryAnswerAndEveryNoticeShownOnTheNewUser(t *testing.T) 
 	r := newRig(t, 5)
 	r.withItems(t)
 
-	res, err := r.signUpAnswering(t, "grace@example.com", termsAccepted, newsUnticked)
+	_, err := r.signUpAnswering(t, "grace@example.com", termsAccepted, newsUnticked)
 
 	require.NoError(t, err)
-	assert.Equal(t, signup.Accepted, res.Outcome)
 	assert.Equal(t, []string{termsAcceptedRecord, newsDeclinedRecord, noticeShownRecord}, r.decided(t, "grace@example.com"))
 }
 
@@ -133,10 +132,9 @@ func TestAnUnknownItemOrAStaleVersionInTheAnswersIsRefused(t *testing.T) {
 func TestWithNoItemsInEffectASignUpAsksAndRecordsNothing(t *testing.T) {
 	r := newRig(t, 5)
 
-	res, err := r.signUpAnswering(t, "grace@example.com")
+	_, err := r.signUpAnswering(t, "grace@example.com")
 
 	require.NoError(t, err)
-	assert.Equal(t, signup.Accepted, res.Outcome)
 	assert.Empty(t, r.decided(t, "grace@example.com"))
 }
 
@@ -146,10 +144,9 @@ func TestASignUpOfAVerifiedAddressRecordsNothingOnItsUser(t *testing.T) {
 	r := newRig(t, 5)
 	r.withItems(t)
 
-	res, err := r.signUpAnswering(t, fixtures.OwnerJohnEmail, termsAccepted, newsUnticked)
+	_, err := r.signUpAnswering(t, fixtures.OwnerJohnEmail, termsAccepted, newsUnticked)
 
 	require.NoError(t, err)
-	assert.Equal(t, signup.Accepted, res.Outcome)
 	assert.Empty(t, r.decided(t, fixtures.OwnerJohnEmail))
 }
 

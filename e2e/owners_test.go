@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,9 @@ func assertOneRefused(t *testing.T, w *Workspace, errs []error) {
 	failed := 0
 	for _, err := range errs {
 		if err != nil {
-			require.ErrorIs(t, err, accounts.ErrLastOwner)
+			// Whichever change came second is refused, as a demotion or as a removal.
+			lastOwner := errors.Is(err, accounts.ErrDemoteLastOwner) || errors.Is(err, accounts.ErrRemoveLastOwner)
+			require.Truef(t, lastOwner, "refused for another reason: %v", err)
 			failed++
 		}
 	}

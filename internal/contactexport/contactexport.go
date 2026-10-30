@@ -12,7 +12,6 @@ package contactexport
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"strconv"
 	"strings"
@@ -29,16 +28,17 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // pageSize bounds how many rows of a large collection are held at once.
 const pageSize = 500
 
 // ErrNotFound means no Contact in the Workspace matches the identifier.
-var ErrNotFound = errors.New("contactexport: contact not found")
+var ErrNotFound = validation.NotFound("contactexport: contact not found", "errors.contact_not_found")
 
 // ErrIdentifier means the request named neither or both of id and email.
-var ErrIdentifier = errors.New("contactexport: exactly one of id or email is required")
+var ErrIdentifier = validation.Refuse("contactexport: exactly one of id or email is required", "errors.contact_export_identifier")
 
 // Ref is the optional string of a query parameter read as "(value, present)": nil
 // when absent. It lets a handler pass its generated Opt parameters straight to Find.
@@ -50,8 +50,8 @@ func Ref[T ~string](v T, ok bool) *string {
 }
 
 // Find resolves the Contact to export by exactly one of its id or email, inside
-// the Workspace of s: another Workspace's Contact is not found. Both surfaces map its
-// two errors (ErrIdentifier: bad request; ErrNotFound) the same way.
+// the Workspace of s: another Workspace's Contact is not found. Its two refusals
+// (ErrIdentifier, ErrNotFound) answer alike on both surfaces.
 func Find(ctx context.Context, s *ent.Scoped, id *int64, email *string) (*ent.Contact, error) {
 	if (id == nil) == (email == nil) {
 		return nil, ErrIdentifier

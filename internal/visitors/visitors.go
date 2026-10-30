@@ -87,7 +87,7 @@ func Identify(ctx context.Context, bus *events.Bus, s *ent.Scoped, input Identif
 	})
 }
 
-// Collect refuses the whole batch with an *events.RejectionError when an event claims a
+// Collect refuses the whole batch with events.ErrRejected when an event claims a
 // reserved action: delivery, consent and Contact lifecycle facts are the system's alone.
 func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []CollectEventInput) error {
 	for _, evt := range evts {

@@ -72,6 +72,12 @@ func RefuseField(field, text, key string) *RefusalError {
 	return &RefusalError{kind: KindRefused, field: field, text: text, key: key}
 }
 
+// ConflictField is Conflict for a subject whose state refuses one request field, named by its json
+// name: the answer lists the message under that field (an address another Contact already has).
+func ConflictField(field, text, key string) *RefusalError {
+	return &RefusalError{kind: KindConflict, field: field, text: text, key: key}
+}
+
 // NotFound makes the sentinel for a subject that does not exist in this Workspace (KindNotFound).
 func NotFound(text, key string) *RefusalError {
 	return &RefusalError{kind: KindNotFound, text: text, key: key}
@@ -140,7 +146,7 @@ func (r *RefusalError) Error() string { return r.text }
 func (r *RefusalError) Kind() Kind { return r.kind }
 
 // Field is the json name of the request field the refusal is about, "" when it is about no one
-// field.
+// field. A refusal of any kind may name one.
 func (r *RefusalError) Field() string { return r.field }
 
 // Message is the refusal's text in the instance locale.
@@ -162,6 +168,23 @@ func (e *detailedError) Unwrap() error   { return e.base }
 type messaged interface {
 	error
 	Message() string
+}
+
+// Shown is the text a user is shown for err when it is a refusal of a domain module (a
+// RefusalError, an Error or a FieldsError in its chain), and false for any other error, whose text
+// is not written for a user. A result that reports several items at once (a batch) words each
+// failed item with it.
+func Shown(err error) (string, bool) {
+	if form, ok := errors.AsType[*FieldsError](err); ok {
+		return form.Detail(), true
+	}
+	if invalid, ok := errors.AsType[*Error](err); ok {
+		return invalid.Message, true
+	}
+	if _, ok := errors.AsType[*RefusalError](err); ok {
+		return Message(err), true
+	}
+	return "", false
 }
 
 // Message is the text to show a user for a domain error: the message of the refusal in its

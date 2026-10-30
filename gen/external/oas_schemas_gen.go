@@ -4858,10 +4858,6 @@ type ContactsDeleteUnprocessableEntity ProblemDetails
 
 func (*ContactsDeleteUnprocessableEntity) contactsDeleteRes() {}
 
-type ContactsEraseByBadRequest ProblemDetails
-
-func (*ContactsEraseByBadRequest) contactsEraseByRes() {}
-
 type ContactsEraseByForbidden ProblemDetails
 
 func (*ContactsEraseByForbidden) contactsEraseByRes() {}
@@ -4879,9 +4875,9 @@ type ContactsEraseByUnauthorized ProblemDetails
 
 func (*ContactsEraseByUnauthorized) contactsEraseByRes() {}
 
-type ContactsExportBadRequest ProblemDetails
+type ContactsEraseByUnprocessableEntity ProblemDetails
 
-func (*ContactsExportBadRequest) contactsExportRes() {}
+func (*ContactsEraseByUnprocessableEntity) contactsEraseByRes() {}
 
 type ContactsExportForbidden ProblemDetails
 
@@ -4936,6 +4932,10 @@ func (*ContactsExportOKApplicationOctetStreamHeaders) contactsExportRes() {}
 type ContactsExportUnauthorized ProblemDetails
 
 func (*ContactsExportUnauthorized) contactsExportRes() {}
+
+type ContactsExportUnprocessableEntity ProblemDetails
+
+func (*ContactsExportUnprocessableEntity) contactsExportRes() {}
 
 type ContactsGetBadRequest ProblemDetails
 

@@ -23,11 +23,6 @@ func fieldType(t *testing.T, env *testhelper.TestEnv, key string) customfield.Ty
 	return f.Type
 }
 
-func TestConflictErrorNamesTheField(t *testing.T) {
-	err := &contacts.ConflictError{Field: contacts.FieldSubjectID}
-	assert.Equal(t, "contacts: subject_id already exists", err.Error())
-}
-
 func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)

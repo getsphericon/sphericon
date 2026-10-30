@@ -149,8 +149,8 @@ func TestABatchItemFailureIsWordedForTheCaller(t *testing.T) {
 	require.Truef(t, ok, "got %T", res)
 	require.Len(t, out.Results, 2)
 
-	assert.Equal(t, (&contacts.ConflictError{Field: contacts.FieldPhone}).Message(), out.Results[0].Error.Or(""))
-	assert.Equal(t, contacts.ErrIdentityRequired.Error(), out.Results[1].Error.Or(""))
+	assert.Equal(t, contacts.ErrPhoneTaken.Message(), out.Results[0].Error.Or(""))
+	assert.Equal(t, contacts.ErrIdentityRequired.Message(), out.Results[1].Error.Or(""))
 }
 
 // errStorageDown is a storage failure whose words name an address the caller must never see.

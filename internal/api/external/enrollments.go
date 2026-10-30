@@ -2,15 +2,12 @@ package external
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -21,10 +18,6 @@ func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.Enrol
 		status = string(v)
 	}
 	page, err := h.automations.Enrollments(ctx, auth.TokenScoped(ctx), int64(params.AutomationId), status, pagination.ParamsOf(params.Page, params.PageSize))
-	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.EnrollmentsListNotFound(problem(http.StatusNotFound, "automation not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +34,6 @@ func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.Enrol
 
 func (h *Handlers) EnrollmentsGet(ctx context.Context, params externalapi.EnrollmentsGetParams) (externalapi.EnrollmentsGetRes, error) {
 	r, err := h.automations.Enrollment(ctx, auth.TokenScoped(ctx), int64(params.AutomationId), int64(params.EnrollmentId))
-	if errors.Is(err, automations.ErrNotFound) {
-		res := externalapi.EnrollmentsGetNotFound(problem(http.StatusNotFound, "enrollment not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

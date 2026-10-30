@@ -15,7 +15,7 @@ package apitokens
 
 import (
 	"context"
-	"errors"
+	"crypto/subtle"
 	"slices"
 	"strings"
 	"time"
@@ -29,11 +29,24 @@ import (
 
 var (
 	// ErrScopeEscalation: a token asked to mint a scope it does not hold itself.
-	ErrScopeEscalation = errors.New("apitokens: cannot grant a scope the minting token lacks")
+	ErrScopeEscalation = validation.Denied("apitokens: cannot grant a scope the minting token lacks", "errors.token_scope_escalation")
 	// ErrNotFound: no such token in this Workspace (unknown or foreign); for Revoke and
 	// Rename, also one already revoked.
-	ErrNotFound = errors.New("apitokens: token not found")
+	ErrNotFound = validation.NotFound("apitokens: token not found", "errors.token_not_found")
+	// ErrBootstrapTokenInvalid: the instance has no bootstrap token, or the request presented
+	// another one.
+	ErrBootstrapTokenInvalid = validation.Unauthorized("apitokens: invalid bootstrap token", "errors.bootstrap_token_invalid")
 )
+
+// CheckBootstrap admits a request for the first token by the instance's bootstrap token: the one
+// presented must be the one configured, compared in constant time, and an instance without one
+// admits none (ErrBootstrapTokenInvalid).
+func CheckBootstrap(configured, presented string) error {
+	if configured == "" || subtle.ConstantTimeCompare([]byte(presented), []byte(configured)) != 1 {
+		return ErrBootstrapTokenInvalid
+	}
+	return nil
+}
 
 // nameEmpty refuses a token name that is blank after trimming.
 func nameEmpty() *validation.Error {

@@ -42,9 +42,8 @@ func TestSendRefusesARequestThatCannotBeSent(t *testing.T) {
 		Destination: "a@example.com",
 		Variables:   map[string]json.RawMessage{"name": json.RawMessage(`{oops`)},
 	})
-	var invalid *transactional.InvalidVariablesError
-	require.ErrorAs(t, err, &invalid)
-	assert.Equal(t, "name", invalid.Name)
+	require.ErrorIs(t, err, transactional.ErrInvalidVariables)
+	require.ErrorContains(t, err, `variable "name"`)
 
 	left, err := env.DB.OutboundMessage.Query().Where(outboundmessage.Destination("a@example.com")).Count(ctx)
 	require.NoError(t, err)

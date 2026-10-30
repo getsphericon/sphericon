@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/assert"
@@ -294,4 +295,73 @@ func TestABlankWorkspaceNameIsRefusedOnItsField(t *testing.T) {
 	assert.JSONEq(t, want, created.body)
 	assert.Equal(t, http.StatusUnprocessableEntity, renamed.status)
 	assert.JSONEq(t, want, renamed.body)
+}
+
+// A conflict that names a request field answers 409 with the message under that field, alike on
+// both surfaces: an alias key another Contact already has.
+func TestAConflictOnAFieldAnswers409UnderTheFieldAlikeOnBothSurfaces(t *testing.T) {
+	env := testhelper.Setup(t)
+	var site, ext answer
+	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
+	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsWrite)), capture(&ext))
+
+	_, err := siteClient.SiteContactsCreate(t.Context(), &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
+		siteapi.SiteContactsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	_, err = extClient.ContactsCreate(t.Context(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)})
+	require.NoError(t, err)
+
+	want := `{"status":409,"title":"Conflict","detail":"email already exists","errors":{"email":["email already exists"]}}`
+	assert.Equal(t, http.StatusConflict, site.status)
+	assert.JSONEq(t, want, site.body)
+	assert.Equal(t, http.StatusConflict, ext.status)
+	assert.JSONEq(t, want, ext.body)
+}
+
+// A Test send of a Workspace whose sending is held is refused with the hold's reason (422), alike
+// on both surfaces: the outbound module refuses it and the error handler renders it.
+func TestAHeldTestSendAnswers422AlikeOnBothSurfaces(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.SuspendWorkspace(t.Context(), fixtures.AcmeID, time.Now())
+	var site, ext answer
+	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
+	extClient := env.ExternalVia(t, env.ScopedBearer(t,
+		string(externalapi.ApiTokenScopeBroadcastsRead), string(externalapi.ApiTokenScopeBroadcastsWrite)), capture(&ext))
+
+	_, err := siteClient.SiteBroadcastsTestSend(t.Context(), &siteapi.SiteTestSendBroadcastInput{Email: fixtures.OwnerJohnEmail},
+		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID})
+	require.NoError(t, err)
+	_, err = extClient.BroadcastsTestSend(t.Context(), &externalapi.TestSendBroadcastInput{Email: fixtures.OwnerJohnEmail},
+		externalapi.BroadcastsTestSendParams{ID: fixtures.BroadcastDraftID})
+	require.NoError(t, err)
+
+	want := `{"status":422,"title":"Unprocessable Entity","detail":"the message was not sent: sending is suspended for this workspace"}`
+	assert.Equal(t, http.StatusUnprocessableEntity, site.status)
+	assert.JSONEq(t, want, site.body)
+	assert.Equal(t, http.StatusUnprocessableEntity, ext.status)
+	assert.JSONEq(t, want, ext.body)
+}
+
+// Restoring an archived Sending domain whose domain was added again is refused (409), alike on
+// both surfaces.
+func TestRestoringASendingDomainAddedAgainAnswers409AlikeOnBothSurfaces(t *testing.T) {
+	env := testhelper.Setup(t)
+	var site, ext answer
+	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
+	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeSendingDomainsWrite)), capture(&ext))
+	again, err := siteClient.SiteSendingDomainsCreate(t.Context(), &siteapi.SiteCreateSendingDomainInput{Domain: fixtures.SendingDomainArchivedDomain},
+		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteSendingDomainResource{}, again)
+
+	_, err = siteClient.SiteSendingDomainsUnarchive(t.Context(), siteapi.SiteSendingDomainsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.SendingDomainArchivedID})
+	require.NoError(t, err)
+	_, err = extClient.SendingDomainsUnarchive(t.Context(), externalapi.SendingDomainsUnarchiveParams{ID: fixtures.SendingDomainArchivedID})
+	require.NoError(t, err)
+
+	want := `{"status":409,"title":"Conflict","detail":"this domain was added again; archive that one first"}`
+	assert.Equal(t, http.StatusConflict, site.status)
+	assert.JSONEq(t, want, site.body)
+	assert.Equal(t, http.StatusConflict, ext.status)
+	assert.JSONEq(t, want, ext.body)
 }

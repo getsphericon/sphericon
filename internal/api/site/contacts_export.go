@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
@@ -20,14 +18,6 @@ func (h *Handlers) SiteContactsExport(ctx context.Context, params siteapi.SiteCo
 		contactID = new(int64(v))
 	}
 	c, err := contactexport.Find(ctx, scoped, contactID, contactexport.Ref(params.Email.Get()))
-	if errors.Is(err, contactexport.ErrIdentifier) {
-		res := siteapi.SiteContactsExportBadRequest(problem(http.StatusBadRequest, "pass exactly one of id or email"))
-		return &res, nil
-	}
-	if errors.Is(err, contactexport.ErrNotFound) {
-		res := siteapi.SiteContactsExportNotFound(problem(http.StatusNotFound, "contact not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

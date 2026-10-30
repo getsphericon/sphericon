@@ -16,13 +16,13 @@ package events
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // TopicDomainEvents is the single watermill topic all domain events flow through.
@@ -72,25 +72,20 @@ func DedupKey(source string, workspaceID int64, clientEventID string) string {
 	return fmt.Sprintf("%s:%d:%s", source, workspaceID, clientEventID)
 }
 
-// RejectionError is why a customer's Event was refused. Its message is worded for the caller.
-type RejectionError struct{ Reason string }
+// ErrRejected is a customer's Event the platform refuses; Reject makes it With the reason, worded
+// for the caller.
+var ErrRejected = validation.Refuse("events: event rejected", "errors.event_rejected")
 
-func (r *RejectionError) Error() string { return r.Reason }
-
-// AsRejection reports whether err is a RejectionError, and which.
-func AsRejection(err error) (*RejectionError, bool) {
-	var r *RejectionError
-	ok := errors.As(err, &r)
-	return r, ok
-}
+// Reject is the refusal of a customer's Event for reason.
+func Reject(reason string) error { return ErrRejected.With(reason) }
 
 // CheckAction refuses an action that is empty or reserved for the system.
 func CheckAction(action string) error {
 	switch {
 	case strings.TrimSpace(action) == "":
-		return &RejectionError{"subject id and action are required"}
+		return Reject("subject id and action are required")
 	case ReservedAction(action):
-		return &RejectionError{fmt.Sprintf("action %q is reserved for the system", action)}
+		return Reject(fmt.Sprintf("action %q is reserved for the system", action))
 	}
 	return nil
 }

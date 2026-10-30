@@ -54,11 +54,10 @@ func TestIngestEachIsolatesItems(t *testing.T) {
 
 	require.Len(t, errs, 5)
 	require.NoError(t, errs[0])
-	var rejection *events.RejectionError
-	require.ErrorAs(t, errs[1], &rejection, "blank subject id")
-	require.ErrorAs(t, errs[2], &rejection, "blank action")
+	require.ErrorIs(t, errs[1], events.ErrRejected, "blank subject id")
+	require.ErrorIs(t, errs[2], events.ErrRejected, "blank action")
 	require.Error(t, errs[3])
-	require.NotErrorAs(t, errs[3], &rejection)
+	require.NotErrorIs(t, errs[3], events.ErrRejected)
 	require.NoError(t, errs[4], "an earlier failure does not affect later items")
 
 	got := outboxCollected(t, env)
@@ -107,9 +106,8 @@ func TestIngestSkipsAnEventItAlreadyStored(t *testing.T) {
 
 func rejected(t *testing.T, err error) string {
 	t.Helper()
-	var rejection *events.RejectionError
-	require.ErrorAs(t, err, &rejection)
-	return rejection.Reason
+	require.ErrorIs(t, err, events.ErrRejected)
+	return err.Error()
 }
 
 // The system's own actions are never a customer's Event, in any case or spelling.

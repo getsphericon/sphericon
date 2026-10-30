@@ -192,9 +192,6 @@ func TestEverySignUpDoesTheSameWorkWhateverTheAddress(t *testing.T) {
 	unverified := r.signUp(t, "Mallory", fixtures.FreshUnverifiedUserEmail, password)
 	verified := r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
 
-	assert.Equal(t, signup.Accepted, fresh.Outcome)
-	assert.Equal(t, signup.Accepted, unverified.Outcome)
-	assert.Equal(t, signup.Accepted, verified.Outcome)
 	assert.NotEmpty(t, fresh.Browser)
 	assert.NotEmpty(t, unverified.Browser)
 	assert.NotEmpty(t, verified.Browser)
@@ -246,7 +243,6 @@ func TestASignUpThatLosesARaceEndsAsARepeatedSignUpOfTheWinner(t *testing.T) {
 
 	res := r.signUp(t, "Mallory", fixtures.FreshUnverifiedUserEmail, password)
 
-	assert.Equal(t, signup.Accepted, res.Outcome)
 	assert.NotEmpty(t, res.Browser)
 	winner := r.user(t, fixtures.FreshUnverifiedUserEmail)
 	assert.True(t, credentials.VerifyPassword(winner.PasswordHash, password), "the loser replaced the winner's password")
@@ -259,9 +255,8 @@ func TestASignUpPastTheMailBudgetQueuesAJobThatDeliversNothing(t *testing.T) {
 	r := newRig(t, 1)
 
 	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
-	res := r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
+	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
 
-	assert.Equal(t, signup.Accepted, res.Outcome)
 	assert.Equal(t, []bool{true, false}, []bool{r.queue.jobs[0].Send, r.queue.jobs[1].Send})
 }
 
@@ -285,7 +280,6 @@ func TestWithVerificationOffASignUpMakesAVerifiedUserAndWelcomesIt(t *testing.T)
 
 	res := r.signUp(t, "Grace", "grace@example.com", password)
 
-	assert.Equal(t, signup.Accepted, res.Outcome)
 	assert.Empty(t, res.Browser)
 	u := r.user(t, "grace@example.com")
 	assert.NotNil(t, u.EmailVerifiedAt)
@@ -297,9 +291,9 @@ func TestWithVerificationOffATakenAddressIsTheAnswer(t *testing.T) {
 	r := newRig(t, 5, verificationOff)
 	john := r.user(t, fixtures.OwnerJohnEmail)
 
-	res := r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
+	_, err := r.module.SignUp(t.Context(), signup.Input{Name: "Mallory", Email: fixtures.OwnerJohnEmail, Password: password})
 
-	assert.Equal(t, signup.Taken, res.Outcome)
+	require.ErrorIs(t, err, signup.ErrEmailTaken)
 	assert.Empty(t, r.queue.jobs)
 	assert.Equal(t, john.PasswordHash, r.user(t, fixtures.OwnerJohnEmail).PasswordHash)
 }

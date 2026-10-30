@@ -3353,8 +3353,8 @@
               }
             }
           },
-          "400": {
-            "description": "RFC 7807 bad request response",
+          "404": {
+            "description": "RFC 7807 not found response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3363,8 +3363,8 @@
               }
             }
           },
-          "404": {
-            "description": "RFC 7807 not found response",
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3391,16 +3391,6 @@
               }
             }
           },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -3413,6 +3403,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6715,7 +6715,7 @@
             "name": "email",
             "in": "query",
             "required": true,
-            "description": "The email address to erase, as typed: trimmed and validated by the handler",
+            "description": "The email address to erase, as typed: trimmed and validated by the erasure module",
             "schema": {
               "type": "string",
               "maxLength": 320
@@ -6726,16 +6726,6 @@
         "responses": {
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           },
           "403": {
             "description": "RFC 7807 forbidden response",
@@ -6749,6 +6739,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6816,16 +6816,6 @@
               }
             }
           },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -6845,6 +6835,16 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Site Contacts"],
@@ -6854,7 +6854,7 @@
     "/workspaces/{workspaceId}/contacts/lookup": {
       "get": {
         "operationId": "SiteContacts_lookup",
-        "description": "Look up what the Workspace holds for one email address (a Privacy request):\ncounts only. The address is trimmed and lowercased; an invalid one is rejected.\nAn address nothing holds answers with zeros, not 404. Owner or admin only.",
+        "description": "Look up what the Workspace holds for one email address (a Privacy request):\ncounts only. The address is trimmed and lowercased; an invalid one is refused (422).\nAn address nothing holds answers with zeros, not 404. Owner or admin only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteContactResourceParentKey"
@@ -6863,7 +6863,7 @@
             "name": "email",
             "in": "query",
             "required": true,
-            "description": "The email address, as typed: trimmed and validated by the handler, not by the format check",
+            "description": "The email address, as typed: trimmed and validated by the erasure module, not by the format check",
             "schema": {
               "type": "string",
               "maxLength": 320
@@ -6882,16 +6882,6 @@
               }
             }
           },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -6904,6 +6894,16 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {

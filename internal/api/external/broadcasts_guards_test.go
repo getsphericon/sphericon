@@ -51,20 +51,17 @@ func TestExternalBroadcastsRefuseABlankName(t *testing.T) {
 	}
 }
 
-// A provider failure on a test send is a 422 with the cause, never a 500, and
-// the broadcast stays a draft.
+// A provider failure on a test send is a fault of the send, not a refusal of the request: a 500
+// that says nothing of the cause, and the broadcast stays a draft.
 func TestExternalBroadcastTestSendReportsAFailedSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, authorScopes...)
 	env.CustomerMail.SetErr(errors.New("smtp unavailable"))
 
-	res, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"},
+	_, err := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"},
 		externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
-	require.NoError(t, err)
-	unprocessable, ok := res.(*externalapi.BroadcastsTestSendUnprocessableEntity)
-	require.Truef(t, ok, "got %T", res)
-	assert.Contains(t, unprocessable.Detail.Value, "smtp unavailable")
+	require.ErrorContains(t, err, "unexpected status code: 500")
 	assert.Empty(t, env.CustomerMail.Messages())
 	assert.Equal(t, broadcast.StatusDraft, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
 }

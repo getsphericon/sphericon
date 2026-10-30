@@ -18,36 +18,35 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/contacts"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/templates"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// Domain errors of a request that cannot be sent as asked.
+// Domain errors of a request that cannot be sent as asked. A send Outbound holds is
+// outbound.ErrHeld, and a Template that cannot render with these variables is
+// emailrender.ErrInvalidContent, each with its reason.
 var (
 	// ErrEmptyDestination: the address is empty once normalized.
-	ErrEmptyDestination = errors.New("transactional: destination must not be empty")
+	ErrEmptyDestination = validation.Refuse("transactional: destination must not be empty", "errors.destination_empty")
 	// ErrTemplateNotFound: no such Template in the Workspace.
-	ErrTemplateNotFound = errors.New("transactional: template not found")
+	ErrTemplateNotFound = validation.NotFound("transactional: template not found", "errors.template_not_found")
+	// ErrInvalidVariables: a per-call variable is not valid JSON; it is made With the variable
+	// and why.
+	ErrInvalidVariables = validation.Refuse("transactional: invalid variables", "errors.variables_invalid")
+	// ErrInProgress: a send with this Idempotency-Key is still in flight.
+	ErrInProgress = validation.Conflict("transactional: a send with this key is in progress", "errors.send_in_progress")
+	// ErrReplayedFailed: the Idempotency-Key was spent by a send that failed; retry under a new
+	// key.
+	ErrReplayedFailed = validation.Conflict("transactional: a send with this key failed", "errors.send_key_failed")
 	// ErrInvariant: Outbound answered with something a Transactional request can never get.
 	// It is a bug, reported loudly, not a refusal the caller can act on.
 	ErrInvariant = errors.New("transactional: invariant violated")
 )
 
-// InvalidVariablesError reports that a per-call variable is not valid JSON.
-type InvalidVariablesError struct {
-	Name string
-	Err  error
-}
-
-func (e *InvalidVariablesError) Error() string {
-	return fmt.Sprintf("variable %q: %v", e.Name, e.Err)
-}
-
-func (e *InvalidVariablesError) Unwrap() error { return e.Err }
-
-// Status is how a Transactional request ended. It is closed: each value is a final answer or a
-// reversible refusal, and a Deferral is not among them.
+// Status is how a Transactional request that was not refused ended.
 type Status string
 
 const (
@@ -55,26 +54,15 @@ const (
 	Sent Status = "sent"
 	// Suppressed: Suppression, the global hard floor, forbids the destination.
 	Suppressed Status = "suppressed"
-	// FailedRender: the Template cannot be rendered with these variables; Reason says why.
-	FailedRender Status = "failed_render"
-	// ReplayedFailed: the Idempotency-Key was spent by a send that failed; retry under a new key.
-	ReplayedFailed Status = "replayed_failed"
-	// InProgress: a send with this Idempotency-Key is still in flight.
-	InProgress Status = "in_progress"
-	// Held: a reversible hold on the Workspace or its Sending domain; Reason is the hold.
-	Held Status = "held"
 )
 
 // Result is the answer to a Request.
 type Result struct {
 	Status Status
-	// MessageID is the Outbound message of a Sent or Suppressed request.
+	// MessageID is the Outbound message of the request.
 	MessageID int64
 	// Destination is the normalized address.
 	Destination string
-	// Reason explains FailedRender (the render error) and Held (a hold reason; see
-	// outbound.Detail).
-	Reason string
 }
 
 // Request is one Transactional send. Variables are raw JSON values, decoded here to their
@@ -143,13 +131,13 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		Track:       req.Track,
 	}))
 	if errors.Is(err, outbound.ErrInProgress) {
-		return Result{Status: InProgress, Destination: dest}, nil
+		return Result{}, ErrInProgress
 	}
 	if err != nil {
 		return Result{}, fmt.Errorf("transactional send: %w", err)
 	}
 
-	out := Result{MessageID: res.MessageID, Destination: dest, Reason: res.Reason}
+	out := Result{MessageID: res.MessageID, Destination: dest}
 	switch res.Outcome {
 	case outbound.Sent:
 		out.Status = Sent
@@ -157,13 +145,13 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		// Transactional skips only on Suppression (the global hard floor).
 		out.Status = Suppressed
 	case outbound.Failed:
-		out.Status = FailedRender
 		if res.Replayed {
 			// A failed key is spent: the caller should retry under a fresh key.
-			out.Status = ReplayedFailed
+			return Result{}, ErrReplayedFailed
 		}
+		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
 	case outbound.Held:
-		out.Status = Held
+		return Result{}, outbound.ErrHeld.With(outbound.Detail(res.Reason))
 	default:
 		// Deferral, and Refused (a Test send's outcome): a Transactional request is neither
 		// reserved against the Send rate limit nor a Test send.
@@ -178,7 +166,7 @@ func decodeVariables(raw map[string]json.RawMessage) (map[string]any, error) {
 	for k, v := range raw {
 		var val any
 		if err := json.Unmarshal(v, &val); err != nil {
-			return nil, &InvalidVariablesError{Name: k, Err: err}
+			return nil, ErrInvalidVariables.With(fmt.Sprintf("variable %q: %v", k, err))
 		}
 		out[k] = val
 	}

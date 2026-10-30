@@ -2,7 +2,6 @@ package erasure
 
 import (
 	"context"
-	"errors"
 	"net/mail"
 	"strings"
 
@@ -13,10 +12,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrInvalidEmail means the address of a Privacy request is not a plain email address.
-var ErrInvalidEmail = errors.New("erasure: invalid email address")
+var ErrInvalidEmail = validation.RefuseField("email", "erasure: invalid email address", "errors.privacy_email_invalid")
 
 // Holdings is what a Workspace holds for one email address, as counts (a Privacy
 // request lookup). Nothing held is the zero value.
@@ -37,7 +37,7 @@ func canonicalEmail(raw string) string { return strings.ToLower(strings.TrimSpac
 // NormalizeEmail returns the canonical form of an address and rejects anything that is
 // not a single plain address (no display name, no list). Callers hand the raw input to
 // Lookup and ByEmail, which normalize themselves; a handler calls this only to answer
-// 400 for an invalid address before it acts.
+// ErrInvalidEmail for an invalid address before it acts.
 func NormalizeEmail(raw string) (string, error) {
 	email := canonicalEmail(raw)
 	addr, err := mail.ParseAddress(email)

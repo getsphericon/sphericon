@@ -2399,14 +2399,6 @@ func (s *ContactsDeleteUnprocessableEntity) Validate() error {
 	return nil
 }
 
-func (s *ContactsEraseByBadRequest) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *ContactsEraseByForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2431,7 +2423,7 @@ func (s *ContactsEraseByUnauthorized) Validate() error {
 	return nil
 }
 
-func (s *ContactsExportBadRequest) Validate() error {
+func (s *ContactsEraseByUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2456,6 +2448,14 @@ func (s *ContactsExportNotFound) Validate() error {
 }
 
 func (s *ContactsExportUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ContactsExportUnprocessableEntity) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

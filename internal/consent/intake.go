@@ -2,7 +2,6 @@ package consent
 
 import (
 	"context"
-	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
@@ -12,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Intake: consent changes made by an authenticated caller (the SPA, an API token,
@@ -20,11 +20,11 @@ import (
 
 var (
 	// ErrDestinationEmpty: the destination is blank after normalization.
-	ErrDestinationEmpty = errors.New("consent: destination must not be empty")
+	ErrDestinationEmpty = validation.RefuseField("destination", "consent: destination must not be empty", "errors.destination_empty")
 	// ErrInvalidSource: the sending source is not broadcasts, everything or automation:<id>.
-	ErrInvalidSource = errors.New("consent: sendingSource must be broadcasts, everything or automation:<id>")
+	ErrInvalidSource = validation.RefuseField("sendingSource", "consent: sendingSource must be broadcasts, everything or automation:<id>", "errors.sending_source_invalid")
 	// ErrUnknownAutomation: the automation:<id> source names no Automation of this Workspace.
-	ErrUnknownAutomation = errors.New("consent: unknown automation in sendingSource")
+	ErrUnknownAutomation = validation.RefuseField("sendingSource", "consent: unknown automation in sendingSource", "errors.sending_source_automation_unknown")
 )
 
 // Unsubscribe records an opt-out of destination from a sending source, with the

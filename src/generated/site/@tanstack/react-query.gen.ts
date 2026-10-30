@@ -2397,7 +2397,7 @@ export const siteContactsLookupQueryKey = (options: Options<SiteContactsLookupDa
 
 /**
  * Look up what the Workspace holds for one email address (a Privacy request):
- * counts only. The address is trimmed and lowercased; an invalid one is rejected.
+ * counts only. The address is trimmed and lowercased; an invalid one is refused (422).
  * An address nothing holds answers with zeros, not 404. Owner or admin only.
  */
 export const siteContactsLookupOptions = (options: Options<SiteContactsLookupData>) => queryOptions<SiteContactsLookupResponse, SiteContactsLookupError, SiteContactsLookupResponse, ReturnType<typeof siteContactsLookupQueryKey>>({

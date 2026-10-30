@@ -106,11 +106,11 @@ func validMetadataURL(raw string) error {
 	u, err := url.Parse(raw)
 	switch {
 	case err != nil || u.Host == "":
-		return fmt.Errorf("%w: client_id is not a valid URL", ErrInvalidRequest)
+		return ErrInvalidRequest.With("client_id is not a valid URL")
 	case u.Scheme != "https":
-		return fmt.Errorf("%w: a client_id URL must use https", ErrInvalidRequest)
+		return ErrInvalidRequest.With("a client_id URL must use https")
 	case u.Fragment != "" || u.User != nil || u.Path == "" || u.Path == "/":
-		return fmt.Errorf("%w: client_id must be an https URL with a path, and no fragment or credentials", ErrInvalidRequest)
+		return ErrInvalidRequest.With("client_id must be an https URL with a path, and no fragment or credentials")
 	}
 	return nil
 }
@@ -122,24 +122,24 @@ func (s *Service) fetchMetadata(ctx context.Context, clientID string) (*metadata
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, clientID, http.NoBody)
 	if err != nil {
-		return nil, 0, fmt.Errorf("%w: client_id is not a valid URL", ErrInvalidRequest)
+		return nil, 0, ErrInvalidRequest.With("client_id is not a valid URL")
 	}
 	req.Header.Set("Accept", "application/json")
 	resp, err := s.fetcher.Do(req)
 	if err != nil {
-		return nil, 0, fmt.Errorf("%w: the client metadata document could not be fetched", ErrInvalidRequest)
+		return nil, 0, ErrInvalidRequest.With("the client metadata document could not be fetched")
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return nil, 0, fmt.Errorf("%w: the client metadata document could not be fetched", ErrInvalidRequest)
+		return nil, 0, ErrInvalidRequest.With("the client metadata document could not be fetched")
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxMetadataBytes+1))
 	if err != nil || len(body) > maxMetadataBytes {
-		return nil, 0, fmt.Errorf("%w: the client metadata document is unreadable or larger than %d bytes", ErrInvalidRequest, maxMetadataBytes)
+		return nil, 0, ErrInvalidRequest.With(fmt.Sprintf("the client metadata document is unreadable or larger than %d bytes", maxMetadataBytes))
 	}
 	var doc metadataDocument
 	if err := json.Unmarshal(body, &doc); err != nil {
-		return nil, 0, fmt.Errorf("%w: the client metadata document is not a JSON object", ErrInvalidRequest)
+		return nil, 0, ErrInvalidRequest.With("the client metadata document is not a JSON object")
 	}
 	if err := doc.validate(clientID); err != nil {
 		return nil, 0, err
@@ -150,15 +150,15 @@ func (s *Service) fetchMetadata(ctx context.Context, clientID string) (*metadata
 func (d *metadataDocument) validate(clientID string) error {
 	switch {
 	case d.ClientID != clientID:
-		return fmt.Errorf("%w: client_id in the metadata document does not match its URL", ErrInvalidRequest)
+		return ErrInvalidRequest.With("client_id in the metadata document does not match its URL")
 	case len(d.RedirectURIs) == 0 || len(d.RedirectURIs) > maxRedirectURIs:
-		return fmt.Errorf("%w: the metadata document needs between 1 and %d redirect_uris", ErrInvalidRequest, maxRedirectURIs)
+		return ErrInvalidRequest.With(fmt.Sprintf("the metadata document needs between 1 and %d redirect_uris", maxRedirectURIs))
 	case d.TokenEndpointAuthMethod != "" && d.TokenEndpointAuthMethod != "none":
-		return fmt.Errorf("%w: only token_endpoint_auth_method none is supported", ErrInvalidRequest)
+		return ErrInvalidRequest.With("only token_endpoint_auth_method none is supported")
 	}
 	for _, u := range d.RedirectURIs {
 		if !validRedirectURI(u) {
-			return fmt.Errorf("%w: redirect_uris must be https URLs (or http on a loopback host) without a fragment", ErrInvalidRequest)
+			return ErrInvalidRequest.With("redirect_uris must be https URLs (or http on a loopback host) without a fragment")
 		}
 	}
 	return nil

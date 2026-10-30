@@ -2,7 +2,6 @@ package accounts
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -29,14 +28,13 @@ var (
 	// ErrProofStale: the proof no longer fits the User: the User's password was set or removed
 	// between the proof and the transaction that locked the row.
 	ErrProofStale = validation.Refuse("accounts: the deletion proof no longer fits the user", "errors.delete_user_proof_stale")
-	// ErrSoleOwner: the User is the only Owner of a live Workspace. It is an ErrLastOwner, the
-	// same rule as any Owner change.
+	// ErrSoleOwner: the User is the only Owner of a live Workspace, the rule of any Owner change.
 	ErrSoleOwner = validation.Refuse("accounts: the user is the only owner of live workspaces", "errors.delete_user_only_owner")
 )
 
 // DeletionRefusedError is a User deletion refused by Reason, one of the rules above: nothing is
 // deleted. For ErrSoleOwner, Workspaces says which Workspaces to hand over or delete first.
-// errors.Is matches Reason (and ErrLastOwner for ErrSoleOwner).
+// errors.Is matches Reason.
 type DeletionRefusedError struct {
 	Reason *validation.RefusalError
 	// Workspaces are the live Workspaces the User solely owns, in ascending id order.
@@ -51,13 +49,8 @@ func (e *DeletionRefusedError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Reason.Error(), strings.Join(names, ", "))
 }
 
-// Unwrap is the rule that refused the deletion, and ErrLastOwner for a sole Owner.
-func (e *DeletionRefusedError) Unwrap() []error {
-	if errors.Is(e.Reason, ErrSoleOwner) {
-		return []error{e.Reason, ErrLastOwner}
-	}
-	return []error{e.Reason}
-}
+// Unwrap is the rule that refused the deletion.
+func (e *DeletionRefusedError) Unwrap() error { return e.Reason }
 
 // refuseDeletion is the deletion refused by reason.
 func refuseDeletion(reason *validation.RefusalError) error {
@@ -102,8 +95,8 @@ type DeleteProof struct {
 // belongs to, in ascending Workspace id order, so two co-Owners deleting at once serialize
 // on the Workspace and cannot deadlock: the later one reads the earlier one's outcome. Only
 // then does it read the User's Memberships and Roles that the decision rests on, so a
-// concurrent change cannot leave them stale. It refuses with ErrSoleOwner (an ErrLastOwner,
-// naming the Workspaces) while the User is the only Owner of a Workspace that is not in its deletion
+// concurrent change cannot leave them stale. It refuses with ErrSoleOwner (naming the
+// Workspaces) while the User is the only Owner of a Workspace that is not in its deletion
 // window (ADR 0043); a sole-owned Workspace in the window does not block and is erased on
 // schedule. Every Membership then goes through its Workspace's scope with the User as actor
 // of a `membership.delete` Audit entry (Audit entries that name the User are never

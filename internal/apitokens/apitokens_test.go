@@ -98,3 +98,9 @@ func TestRevokeRetiresOnceAndIsWorkspaceScoped(t *testing.T) {
 	require.ErrorIs(t, apitokens.Revoke(ctx, s, id), apitokens.ErrNotFound, "already revoked")
 	assert.ErrorIs(t, apitokens.Revoke(ctx, s, 999999), apitokens.ErrNotFound)
 }
+
+func TestCheckBootstrapAdmitsOnlyTheConfiguredToken(t *testing.T) {
+	require.NoError(t, apitokens.CheckBootstrap("boot-secret", "boot-secret"))
+	require.ErrorIs(t, apitokens.CheckBootstrap("boot-secret", "another"), apitokens.ErrBootstrapTokenInvalid)
+	require.ErrorIs(t, apitokens.CheckBootstrap("", ""), apitokens.ErrBootstrapTokenInvalid, "an instance without one admits none")
+}

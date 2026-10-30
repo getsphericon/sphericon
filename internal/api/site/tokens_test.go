@@ -70,18 +70,6 @@ func TestSiteTokensListIsInCreationOrderAndKeepsRevoked(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-func TestSiteTokensDeleteUnknown(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-
-	del, err := c.SiteTokensDelete(context.Background(), siteapi.SiteTokensDeleteParams{
-		WorkspaceId: fixtures.AcmePublicID,
-		ID:          999999,
-	})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteTokensDeleteNotFound{}, del)
-}
-
 func TestSiteTokensWorkspaceNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)

@@ -11489,10 +11489,6 @@ type SiteContactsDeleteNotFound ProblemDetails
 
 func (*SiteContactsDeleteNotFound) siteContactsDeleteRes() {}
 
-type SiteContactsEraseBadRequest ProblemDetails
-
-func (*SiteContactsEraseBadRequest) siteContactsEraseRes() {}
-
 type SiteContactsEraseForbidden ProblemDetails
 
 func (*SiteContactsEraseForbidden) siteContactsEraseRes() {}
@@ -11506,9 +11502,9 @@ type SiteContactsEraseNotFound ProblemDetails
 
 func (*SiteContactsEraseNotFound) siteContactsEraseRes() {}
 
-type SiteContactsExportBadRequest ProblemDetails
+type SiteContactsEraseUnprocessableEntity ProblemDetails
 
-func (*SiteContactsExportBadRequest) siteContactsExportRes() {}
+func (*SiteContactsEraseUnprocessableEntity) siteContactsEraseRes() {}
 
 type SiteContactsExportForbidden ProblemDetails
 
@@ -11559,6 +11555,10 @@ func (s *SiteContactsExportOKApplicationOctetStreamHeaders) SetResponse(val Site
 }
 
 func (*SiteContactsExportOKApplicationOctetStreamHeaders) siteContactsExportRes() {}
+
+type SiteContactsExportUnprocessableEntity ProblemDetails
+
+func (*SiteContactsExportUnprocessableEntity) siteContactsExportRes() {}
 
 type SiteContactsGetBadRequest ProblemDetails
 
@@ -11646,10 +11646,6 @@ type SiteContactsListUnprocessableEntity ProblemDetails
 
 func (*SiteContactsListUnprocessableEntity) siteContactsListRes() {}
 
-type SiteContactsLookupBadRequest ProblemDetails
-
-func (*SiteContactsLookupBadRequest) siteContactsLookupRes() {}
-
 type SiteContactsLookupForbidden ProblemDetails
 
 func (*SiteContactsLookupForbidden) siteContactsLookupRes() {}
@@ -11657,6 +11653,10 @@ func (*SiteContactsLookupForbidden) siteContactsLookupRes() {}
 type SiteContactsLookupNotFound ProblemDetails
 
 func (*SiteContactsLookupNotFound) siteContactsLookupRes() {}
+
+type SiteContactsLookupUnprocessableEntity ProblemDetails
+
+func (*SiteContactsLookupUnprocessableEntity) siteContactsLookupRes() {}
 
 type SiteContactsUpdateBadRequest ProblemDetails
 
@@ -16078,10 +16078,6 @@ func (s *SiteOAuthAuthorizationRequestRequiredPermissions) init() SiteOAuthAutho
 	return m
 }
 
-type SiteOAuthDecideBadRequest ProblemDetails
-
-func (*SiteOAuthDecideBadRequest) siteOAuthDecideRes() {}
-
 type SiteOAuthDecideForbidden ProblemDetails
 
 func (*SiteOAuthDecideForbidden) siteOAuthDecideRes() {}
@@ -16089,6 +16085,10 @@ func (*SiteOAuthDecideForbidden) siteOAuthDecideRes() {}
 type SiteOAuthDecideNotFound ProblemDetails
 
 func (*SiteOAuthDecideNotFound) siteOAuthDecideRes() {}
+
+type SiteOAuthDecideUnprocessableEntity ProblemDetails
+
+func (*SiteOAuthDecideUnprocessableEntity) siteOAuthDecideRes() {}
 
 // The user's decision on an authorization request.
 // Ref: #/components/schemas/SiteOAuthDecisionInput
@@ -16219,13 +16219,13 @@ func (s *SiteOAuthDecisionResult) SetRedirectUrl(val string) {
 
 func (*SiteOAuthDecisionResult) siteOAuthDecideRes() {}
 
-type SiteOAuthDescribeBadRequest ProblemDetails
-
-func (*SiteOAuthDescribeBadRequest) siteOAuthDescribeRes() {}
-
 type SiteOAuthDescribeNotFound ProblemDetails
 
 func (*SiteOAuthDescribeNotFound) siteOAuthDescribeRes() {}
+
+type SiteOAuthDescribeUnprocessableEntity ProblemDetails
+
+func (*SiteOAuthDescribeUnprocessableEntity) siteOAuthDescribeRes() {}
 
 // An optional consent in effect, with the User's current answer to it (ADR 0062).
 // Ref: #/components/schemas/SiteOptionalConsent

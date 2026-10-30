@@ -2,8 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -15,16 +13,11 @@ import (
 // absent (404), like the Audit log read is without its license.
 func (h *Handlers) ExportAudit(ctx context.Context, params externalapi.ExportAuditParams) (externalapi.ExportAuditRes, error) {
 	if !h.exportLicensed() || !h.audit.Licensed() {
-		res := externalapi.ExportAuditNotFound(problem(http.StatusNotFound, "not found"))
-		return &res, nil
+		return nil, exportstream.ErrNotOffered
 	}
 
 	limit := int(params.Limit.Value)
 	page, err := exportstream.Audit(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
-	if errors.Is(err, exportstream.ErrBadCursor) {
-		res := externalapi.ExportAuditBadRequest(problem(http.StatusBadRequest, "invalid cursor"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

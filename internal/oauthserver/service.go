@@ -13,8 +13,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
-	"fmt"
 	"maps"
 	"net/url"
 	"slices"
@@ -24,15 +22,16 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
 var (
 	// ErrUnknownClient means the client_id was never registered.
-	ErrUnknownClient = errors.New("unknown client")
+	ErrUnknownClient = validation.NotFound("unknown client", "errors.oauth_client_unknown")
 	// ErrInvalidRequest means the authorization request is malformed or does not
 	// match the client's registration (the message is safe to show).
-	ErrInvalidRequest = errors.New("invalid authorization request")
+	ErrInvalidRequest = validation.Refuse("invalid authorization request", "errors.oauth_request_invalid")
 )
 
 const (
@@ -99,7 +98,7 @@ func (s *Service) Describe(ctx context.Context, clientID, redirectURI, scope str
 	}
 	granted, send, setup := requestedScopes(scope)
 	if strings.TrimSpace(scope) != "" && len(granted)+len(send)+len(setup) == 0 {
-		return nil, fmt.Errorf("%w: no supported scope requested", ErrInvalidRequest)
+		return nil, ErrInvalidRequest.With("no supported scope requested")
 	}
 	return &Request{
 		ClientName: client.Name, ClientHost: ClientHost(clientID), LocalRedirect: isLoopback(redirectURI),
@@ -119,11 +118,11 @@ func (s *Service) Decide(ctx context.Context, d Decision) (string, error) {
 		return redirectWith(d.RedirectURI, url.Values{"error": {"access_denied"}}, d.State)
 	}
 	if !validPKCE(d.CodeChallenge) {
-		return "", fmt.Errorf("%w: code_challenge must be a PKCE S256 challenge", ErrInvalidRequest)
+		return "", ErrInvalidRequest.With("code_challenge must be a PKCE S256 challenge")
 	}
 	granted, send, setup := requestedScopes(d.Scope)
 	if strings.TrimSpace(d.Scope) != "" && len(granted)+len(send)+len(setup) == 0 {
-		return "", fmt.Errorf("%w: no supported scope requested", ErrInvalidRequest)
+		return "", ErrInvalidRequest.With("no supported scope requested")
 	}
 	if d.AllowSend {
 		granted = append(granted, send...)
@@ -171,7 +170,7 @@ func (s *Service) client(ctx context.Context, clientID, redirectURI string) (*en
 		return nil, err
 	}
 	if !slices.Contains(c.RedirectUris, redirectURI) {
-		return nil, fmt.Errorf("%w: redirect_uri is not registered for this client", ErrInvalidRequest)
+		return nil, ErrInvalidRequest.With("redirect_uri is not registered for this client")
 	}
 	return c, nil
 }
@@ -179,7 +178,7 @@ func (s *Service) client(ctx context.Context, clientID, redirectURI string) (*en
 func redirectWith(redirectURI string, params url.Values, state string) (string, error) {
 	u, err := url.Parse(redirectURI)
 	if err != nil {
-		return "", fmt.Errorf("%w: bad redirect_uri", ErrInvalidRequest)
+		return "", ErrInvalidRequest.With("bad redirect_uri")
 	}
 	q := u.Query()
 	maps.Copy(q, params)

@@ -1,0 +1,31 @@
+id: no-hand-written-problem-in-external
+valid:
+  - |
+    func (h *Handlers) TagsDelete(ctx context.Context, params externalapi.TagsDeleteParams) (externalapi.TagsDeleteRes, error) {
+    	if err := h.tags.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID)); err != nil {
+    		return nil, err
+    	}
+    	return &externalapi.TagsDeleteNoContent{}, nil
+    }
+  - |
+    func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) (externalapi.ContactsEraseByRes, error) {
+    	id, err := erasure.ByEmailOrVisitorID(convert.StringPtr(params.Email), convert.StringPtr(params.VisitorId))
+    	if err != nil {
+    		return nil, err
+    	}
+    	return &externalapi.ContactsEraseByNoContent{}, nil
+    }
+invalid:
+  - |
+    func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsGetParams) (externalapi.ContactsGetRes, error) {
+    	res := externalapi.ContactsGetNotFound(problem(http.StatusNotFound, "contact not found"))
+    	return &res, nil
+    }
+  - |
+    func unprocessable(detail string) externalapi.ProblemDetails {
+    	return externalapi.ProblemDetails{Detail: externalapi.NewOptString(detail)}
+    }
+  - |
+    func tokenNotFound() externalapi.AuthTokensDeleteRes {
+    	return &externalapi.AuthTokensDeleteNotFound{Detail: externalapi.NewOptString("token not found")}
+    }
