@@ -30,8 +30,9 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMember
 	return &items, nil
 }
 
-// SiteMembershipsUpdate changes a member's role. Owner/admin only; only an owner
-// may grant the owner role, and the last owner can never be demoted.
+// SiteMembershipsUpdate changes a member's role (members:manage); granting the owner role or
+// changing an owner's needs owners:manage (refused 403 permission_required), and the last owner
+// can never be demoted.
 func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteUpdateMembershipInput, params siteapi.SiteMembershipsUpdateParams) (siteapi.SiteMembershipsUpdateRes, error) {
 	s := workspaceScope(ctx)
 
@@ -41,9 +42,6 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 	switch {
 	case ent.IsNotFound(err):
 		v := siteapi.SiteMembershipsUpdateNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	case errors.Is(err, accounts.ErrOwnerOnly):
-		v := siteapi.SiteMembershipsUpdateForbidden(problem(http.StatusForbidden, "only an owner may grant the owner role or change an owner's role"))
 		return &v, nil
 	case errors.Is(err, accounts.ErrLastOwner):
 		v := siteapi.SiteMembershipsUpdateUnprocessableEntity(problemWithErrors(
@@ -59,8 +57,8 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 	return &resource, nil
 }
 
-// SiteMembershipsDelete removes a member. Owner/admin only; the last owner cannot
-// be removed.
+// SiteMembershipsDelete removes a member (members:manage); removing an owner needs
+// owners:manage, and the last owner cannot be removed.
 func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.SiteMembershipsDeleteParams) (siteapi.SiteMembershipsDeleteRes, error) {
 	s := workspaceScope(ctx)
 
@@ -70,9 +68,6 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 	switch {
 	case ent.IsNotFound(err):
 		v := siteapi.SiteMembershipsDeleteNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	case errors.Is(err, accounts.ErrOwnerOnly):
-		v := siteapi.SiteMembershipsDeleteForbidden(problem(http.StatusForbidden, "only an owner may remove an owner"))
 		return &v, nil
 	case errors.Is(err, accounts.ErrLastOwner):
 		v := siteapi.SiteMembershipsDeleteUnprocessableEntity(problemWithErrors(
@@ -88,7 +83,7 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 }
 
 // SiteMembershipsResetSecondFactor resets a member's Second factor (ADR 0020):
-// owner/admin only, owner-only for an owner's. It ends every session of the member
+// second_factor:manage, and owners:manage for an owner's. It ends every session of the member
 // and records `user.second_factor_reset` in this Workspace; the acting session is
 // someone else's, so nothing is reissued. A member resets nobody, and nobody resets
 // their own here (disabling takes a password and a code).
@@ -100,9 +95,6 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	switch {
 	case ent.IsNotFound(err):
 		v := siteapi.SiteMembershipsResetSecondFactorNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	case errors.Is(err, accounts.ErrOwnerOnly):
-		v := siteapi.SiteMembershipsResetSecondFactorForbidden(problem(http.StatusForbidden, "only an owner may reset an owner's second factor"))
 		return &v, nil
 	case err != nil:
 		return nil, err

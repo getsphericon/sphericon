@@ -1,0 +1,55 @@
+id: access-is-a-permission-tsx
+language: Tsx
+severity: error
+message: "rule 15: every access decision is a Permission (ADR 0061), and no code compares a Role; fix: ask can(workspace, '<permission>') from src/utils/permissions.ts, and add the Permission to the contract when none fits"
+note: >-
+  The client reads a Membership's Permissions from its Workspace and keeps no Role table of its own.
+  A `role` compared with 'owner', 'admin' or 'member' (or a `case` of one in a switch on a role)
+  is a second copy of the server's table, which drifts when a Role changes.
+rule:
+  any:
+    - kind: binary_expression
+      all:
+        - has:
+            field: operator
+            regex: ^(===|!==|==|!=)$
+        - has:
+            kind: string
+            regex: ^['"](owner|admin|member)['"]$
+        - has:
+            any:
+              - kind: identifier
+                regex: ^role$
+              - kind: member_expression
+                has:
+                  field: property
+                  regex: ^role$
+    - kind: switch_case
+      has:
+        field: value
+        kind: string
+        regex: ^['"](owner|admin|member)['"]$
+      inside:
+        kind: switch_statement
+        stopBy: end
+        has:
+          field: value
+          has:
+            any:
+              - kind: identifier
+                regex: ^role$
+              - kind: member_expression
+                has:
+                  field: property
+                  regex: ^role$
+files:
+  - src/**/*.ts
+  - src/**/*.tsx
+  - packages/**/*.ts
+  - packages/**/*.tsx
+ignores:
+  - src/generated/**
+  - packages/*/src/generated/**
+  - '**/*.gen.ts'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'

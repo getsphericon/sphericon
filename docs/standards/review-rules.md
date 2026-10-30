@@ -114,3 +114,5 @@ or `AGENTS.md`.
     no credential, or an invalid one. 403: a valid credential without the scope or Permission. 404:
     not found, or a Workspace the caller is not a member of. A handler returns the module's error;
     the server's error handler turns it into the problem, so no handler writes the same mapping again.
+    Every access decision is a Permission (ADR 0061): no code, server or client, decides access by
+    comparing a Role.

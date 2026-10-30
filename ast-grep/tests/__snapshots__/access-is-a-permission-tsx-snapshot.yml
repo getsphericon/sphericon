@@ -1,0 +1,96 @@
+id: access-is-a-permission-tsx
+snapshots:
+  const admin = 'admin' !== current.role:
+    labels:
+      - source: "'admin' !== current.role"
+        style: primary
+        start: 14
+        end: 38
+      - source: '!=='
+        style: secondary
+        start: 22
+        end: 25
+      - source: "'admin'"
+        style: secondary
+        start: 14
+        end: 21
+      - source: role
+        style: secondary
+        start: 34
+        end: 38
+      - source: current.role
+        style: secondary
+        start: 26
+        end: 38
+  const owner = workspace.role === 'owner':
+    labels:
+      - source: workspace.role === 'owner'
+        style: primary
+        start: 14
+        end: 40
+      - source: ===
+        style: secondary
+        start: 29
+        end: 32
+      - source: "'owner'"
+        style: secondary
+        start: 33
+        end: 40
+      - source: role
+        style: secondary
+        start: 24
+        end: 28
+      - source: workspace.role
+        style: secondary
+        start: 14
+        end: 28
+  const plain = role === 'member':
+    labels:
+      - source: role === 'member'
+        style: primary
+        start: 14
+        end: 31
+      - source: ===
+        style: secondary
+        start: 19
+        end: 22
+      - source: "'member'"
+        style: secondary
+        start: 23
+        end: 31
+      - source: role
+        style: secondary
+        start: 14
+        end: 18
+  "switch (workspace.role) {\n  case 'owner':\n    show()\n}\n":
+    labels:
+      - source: |-
+          case 'owner':
+              show()
+        style: primary
+        start: 28
+        end: 52
+      - source: role
+        style: secondary
+        start: 18
+        end: 22
+      - source: workspace.role
+        style: secondary
+        start: 8
+        end: 22
+      - source: workspace.role
+        style: secondary
+        start: 8
+        end: 22
+      - source: |-
+          switch (workspace.role) {
+            case 'owner':
+              show()
+          }
+        style: secondary
+        start: 0
+        end: 54
+      - source: "'owner'"
+        style: secondary
+        start: 33
+        end: 40

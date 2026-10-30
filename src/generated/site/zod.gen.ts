@@ -162,8 +162,11 @@ export const zPermission = z.enum([
   'revenue:configure',
   'brand_kit:manage',
   'join_domains:manage',
+  'holds:resolve',
   'account_link:open',
-  'workspace:delete'
+  'workspace:delete',
+  'owners:manage',
+  'instance:manage'
 ]);
 
 /**

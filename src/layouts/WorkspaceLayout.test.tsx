@@ -166,7 +166,9 @@ test('a workspace held and suspended shows both banners', async () => {
 test.each(['owner', 'admin'] as const)(
   'a hold with an action URL links the %s to it',
   async (role) => {
-    worker.use(list([workspace({ role, holds: [HOLD_WITH_ACTION] })]))
+    worker.use(
+      list([workspace({ role, permissions: ['holds:resolve'], holds: [HOLD_WITH_ACTION] })]),
+    )
     const { screen } = await renderWithRouter(<WorkspaceLayout />, MOUNT)
 
     await expect

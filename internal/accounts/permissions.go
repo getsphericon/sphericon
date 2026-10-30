@@ -52,8 +52,11 @@ var grants = []grant{
 	row(PermRevenueConfigure, "errors.permission.revenue_configure", ownerAndAdmin),
 	row(PermBrandKitManage, "errors.permission.brand_kit_manage", ownerAndAdmin),
 	row(PermJoinDomainsManage, "errors.permission.join_domains_manage", ownerAndAdmin),
+	row(PermHoldsResolve, "errors.permission.holds_resolve", ownerAndAdmin),
 	row(PermAccountLinkOpen, "errors.permission.account_link_open", ownerOnly),
 	row(PermWorkspaceDelete, "errors.permission.workspace_delete", ownerOnly),
+	row(PermOwnersManage, "errors.permission.owners_manage", ownerOnly),
+	row(PermInstanceManage, "errors.permission.instance_manage", ownerOnly),
 }
 
 // Allows reports whether role holds the Permission p. A Permission outside the table is held

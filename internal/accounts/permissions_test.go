@@ -71,12 +71,21 @@ var matrix = []cell{
 	{accounts.PermJoinDomainsManage, membership.RoleOwner, true},
 	{accounts.PermJoinDomainsManage, membership.RoleAdmin, true},
 	{accounts.PermJoinDomainsManage, membership.RoleMember, false},
+	{accounts.PermHoldsResolve, membership.RoleOwner, true},
+	{accounts.PermHoldsResolve, membership.RoleAdmin, true},
+	{accounts.PermHoldsResolve, membership.RoleMember, false},
 	{accounts.PermAccountLinkOpen, membership.RoleOwner, true},
 	{accounts.PermAccountLinkOpen, membership.RoleAdmin, false},
 	{accounts.PermAccountLinkOpen, membership.RoleMember, false},
 	{accounts.PermWorkspaceDelete, membership.RoleOwner, true},
 	{accounts.PermWorkspaceDelete, membership.RoleAdmin, false},
 	{accounts.PermWorkspaceDelete, membership.RoleMember, false},
+	{accounts.PermOwnersManage, membership.RoleOwner, true},
+	{accounts.PermOwnersManage, membership.RoleAdmin, false},
+	{accounts.PermOwnersManage, membership.RoleMember, false},
+	{accounts.PermInstanceManage, membership.RoleOwner, true},
+	{accounts.PermInstanceManage, membership.RoleAdmin, false},
+	{accounts.PermInstanceManage, membership.RoleMember, false},
 }
 
 func TestAllowsFollowsEveryCellOfThePermissionMatrix(t *testing.T) {
@@ -103,6 +112,6 @@ func TestTheMatrixCoversEveryPermissionOfTheContract(t *testing.T) {
 func TestPermissionsListsWhatARoleHoldsInTableOrder(t *testing.T) {
 	all := lo.Map(siteapi.Permission("").AllValues(), func(p siteapi.Permission, _ int) accounts.Permission { return accounts.Permission(p) })
 	assert.Equal(t, all, accounts.Permissions(membership.RoleOwner))
-	assert.Equal(t, lo.Without(all, accounts.PermAccountLinkOpen, accounts.PermWorkspaceDelete), accounts.Permissions(membership.RoleAdmin))
+	assert.Equal(t, lo.Without(all, accounts.PermAccountLinkOpen, accounts.PermWorkspaceDelete, accounts.PermOwnersManage, accounts.PermInstanceManage), accounts.Permissions(membership.RoleAdmin))
 	assert.Empty(t, accounts.Permissions(membership.RoleMember))
 }

@@ -186,8 +186,8 @@ func TestSiteMembershipsRoleManagement(t *testing.T) {
 	assert.Equal(t, siteapi.SiteMembershipRoleAdmin, got.Role)
 }
 
-// An admin manages ordinary members but may not touch an owner — only an owner
-// can modify or remove another owner.
+// An admin manages ordinary members but may not touch an owner: modifying or removing an owner
+// needs owners:manage, which only an owner holds (ADR 0061).
 func TestSiteMembershipsAdminCannotTouchOwner(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -207,12 +207,14 @@ func TestSiteMembershipsAdminCannotTouchOwner(t *testing.T) {
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteMembershipsUpdateForbidden{}, demote)
+	require.IsType(t, &siteapi.SiteMembershipsUpdateForbidden{}, demote)
+	assert.Equal(t, siteapi.ProblemCodePermissionRequired, demote.(*siteapi.SiteMembershipsUpdateForbidden).Code.Value)
 
 	// ...nor remove them.
 	del, err := admin.SiteMembershipsDelete(ctx, siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeOwnerMembershipID)})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteMembershipsDeleteForbidden{}, del)
+	require.IsType(t, &siteapi.SiteMembershipsDeleteForbidden{}, del)
+	assert.Equal(t, siteapi.ProblemCodePermissionRequired, del.(*siteapi.SiteMembershipsDeleteForbidden).Code.Value)
 }
 
 func idStr(id int64) siteapi.EntityId {

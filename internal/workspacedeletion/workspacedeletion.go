@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
@@ -214,7 +215,7 @@ func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*e
 // Workspaces a User owns, it names the ones that have no other Owner to restore them.
 func (m *Module) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int64]bool, error) {
 	owners, err := m.client.Membership.Query().
-		Where(membership.WorkspaceIDIn(workspaceIDs...), accounts.OwnerMembership()).
+		Where(membership.WorkspaceIDIn(workspaceIDs...), roles.Owners()).
 		All(ctx)
 	if err != nil {
 		return nil, err

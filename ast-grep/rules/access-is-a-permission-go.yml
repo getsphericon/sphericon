@@ -1,0 +1,43 @@
+id: access-is-a-permission-go
+language: Go
+severity: error
+message: 'rule 15: every access decision is a Permission (ADR 0061), and no code compares a Role; fix: ask accounts.Allows/accounts.Require (accounts.HoldersOf in a query) for a Permission, or, for a fact that is not access (the last owner, whom to mail), call a function of internal/accounts/roles'
+note: >-
+  A Role is a named set of Permissions, and the table from Role to Permissions lives in
+  internal/accounts/permissions.go alone. Code that compares a Role with membership.RoleOwner,
+  RoleAdmin or RoleMember (`==`, `!=`, a `case`, or `membership.RoleEQ` and its kin in a query)
+  keeps a second copy of that table, which drifts when a Role changes (the package may be imported
+  under another name, `entmembership`, and an Invitation's Role is a Role too). Access asks a Permission;
+  a fact about a Role that is not access (the owner invariants, whom to mail) asks
+  roles.IsOwner/IsAdmin/IsMember or roles.Owners(), the one other place that compares. Setting a
+  Role (`SetRole(membership.RoleOwner)`) is not a comparison.
+rule:
+  any:
+    - kind: binary_expression
+      all:
+        - has:
+            field: operator
+            regex: ^(==|!=)$
+        - has:
+            kind: selector_expression
+            regex: ^\w+\.Role(Owner|Admin|Member)$
+    - kind: call_expression
+      has:
+        field: function
+        regex: ^(\w*membership|invitation)\.Role(EQ|NEQ|In|NotIn)$
+    - kind: expression_case
+      has:
+        field: value
+        has:
+          kind: selector_expression
+          regex: ^\w+\.Role(Owner|Admin|Member)$
+files:
+  - '**/*.go'
+ignores:
+  # The Permission table and the named Role facts: the two places that compare a Role.
+  - internal/accounts/permissions.go
+  - internal/accounts/roles/roles.go
+  - '**/*_test.go'
+  - '**/*_gen.go'
+  - ent/**
+  - gen/**

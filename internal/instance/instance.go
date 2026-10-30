@@ -148,20 +148,28 @@ func (m *Module) Report(ctx context.Context) (telemetryapi.TelemetryReport, erro
 	return BuildReport(ctx, m.ent, m.host, m.now())
 }
 
-// IsOwner reports whether the User is an Owner of the oldest existing Workspace: the next
-// oldest when that one is deleted, every Owner when there are several, and a transfer
-// follows the role. These Owners alone decide about the Instance.
-func (m *Module) IsOwner(ctx context.Context, userID int64) (bool, error) {
+// Authorize is nil when the User's Membership in the oldest existing Workspace holds the
+// Permission instance:manage (an owner, ADR 0061), and otherwise that Permission's refusal (403
+// permission_required). Every owner holds it, but only the holders in the oldest Workspace decide
+// about the Instance: the next oldest when that one is deleted, every holder when there are
+// several, and a transfer follows the Role.
+func (m *Module) Authorize(ctx context.Context, userID int64) error {
+	// No live Workspace, or no Membership in the oldest, is no Role, which holds nothing.
+	var role membership.Role
 	oldest, err := m.ent.Workspace.Query().Where(accounts.Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
-	if ent.IsNotFound(err) {
-		return false, nil
+	if err != nil && !ent.IsNotFound(err) {
+		return err
 	}
-	if err != nil {
-		return false, err
+	if err == nil {
+		mem, err := m.ent.Membership.Query().Where(membership.UserID(userID), membership.WorkspaceID(oldest)).Only(ctx)
+		if err != nil && !ent.IsNotFound(err) {
+			return err
+		}
+		if err == nil {
+			role = mem.Role
+		}
 	}
-	return m.ent.Membership.Query().
-		Where(membership.UserID(userID), membership.WorkspaceID(oldest), accounts.OwnerMembership()).
-		Exist(ctx)
+	return accounts.Require(role, accounts.PermInstanceManage)
 }
 
 // Setting is the effective Telemetry report setting right now.

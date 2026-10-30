@@ -17,6 +17,7 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -175,7 +176,7 @@ func (w *Workspace) AddOwner() []int64 {
 func (w *Workspace) OwnerMembershipIDs() []int64 {
 	w.t.Helper()
 	ids, err := w.scoped.Membership().Query().
-		Where(membership.RoleEQ(membership.RoleOwner)).
+		Where(roles.Owners()).
 		Order(ent.Asc(membership.FieldID)).
 		IDs(w.t.Context())
 	require.NoError(w.t, err)

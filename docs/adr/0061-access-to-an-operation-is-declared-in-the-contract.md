@@ -29,7 +29,8 @@ surface, and refused unless declared.
 - **A rule about one record is a Policy in its module.** "Only an owner changes an owner" and "a
   Workspace keeps an owner" are refused by `accounts` inside the operation, and so is any future
   rule that reads the record (an author editing only their own draft). No handler calls a Policy, so
-  every surface gets it.
+  every surface gets it. A Policy that decides who may act asks a Permission, never a Role: "only an
+  owner changes an owner" is the Permission `owners:manage`, asked when the change touches an owner.
 - **One middleware does the `/site` work of `membershipFor`.** An ogen middleware reads the
   operation and its `workspaceId`, loads the caller's Membership through `accounts.Accounts.Scope`,
   applies the Two-factor requirement ([[0020-session-expiry-epoch-and-two-step-login]]), checks the
@@ -79,8 +80,17 @@ surface, and refused unless declared.
 | `revenue:configure`      | the Reporting currency and the Attribution window     |   ✓   |   ✓   |        |
 | `brand_kit:manage`       | the Brand kit and its starter Templates               |   ✓   |   ✓   |        |
 | `join_domains:manage`    | Join domains and the Domain join switch               |   ✓   |   ✓   |        |
+| `holds:resolve`          | the action link of a Hold (a member is told to ask)   |   ✓   |   ✓   |        |
 | `account_link:open`      | the Account link, which proves who an Owner is        |   ✓   |       |        |
 | `workspace:delete`       | deleting and restoring the Workspace                  |   ✓   |       |        |
+| `owners:manage`          | granting the owner Role; changing, removing an owner  |   ✓   |       |        |
+| `instance:manage`        | the Instance state, used in the oldest Workspace only |   ✓   |       |        |
+
+`holds:resolve`, `owners:manage` (resetting an owner's Second factor too) and `instance:manage`
+were added later, when every Role comparison that decided access became a Permission. No code
+compares a Role outside the table above and the named Role facts of `internal/accounts/roles` (the
+last owner, whom to mail); the ast-grep rules `access-is-a-permission-go` and
+`access-is-a-permission-tsx` refuse one.
 
 An owner differs from an admin by ownership and the irreversible: deleting the Workspace, the
 Account link ([[0009-usage-metering-and-operator-holds]]) and the owner Policies. Time zone, Brand

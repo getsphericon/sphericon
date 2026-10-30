@@ -3,26 +3,22 @@ package site
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/instance"
 )
 
-// instanceOwner reports whether the caller is an Owner of the oldest Workspace, the only
-// users who may read or change the Instance state (ADR 0032).
-func (h *Handlers) instanceOwner(ctx context.Context) (bool, error) {
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		return false, nil
+// authorizeInstance is nil when the caller holds instance:manage in the oldest Workspace, the
+// only users who may read or change the Instance state (ADR 0032, ADR 0061), and otherwise the
+// Permission's refusal, which the server answers 403 permission_required.
+func (h *Handlers) authorizeInstance(ctx context.Context) error {
+	// The security handler lets no anonymous caller through; one would be no User, refused.
+	var userID int64
+	if a := auth.GetSiteAuth(ctx); a != nil {
+		userID = a.UserID
 	}
-	return h.instance.IsOwner(ctx, a.UserID)
-}
-
-func instanceForbidden() siteapi.ProblemDetails {
-	return problem(http.StatusForbidden, i18n.T("errors.instance_owner_only", nil))
+	return h.instance.Authorize(ctx, userID)
 }
 
 func instanceState(s instance.State) *siteapi.SiteInstanceState {
@@ -42,11 +38,8 @@ func instanceState(s instance.State) *siteapi.SiteInstanceState {
 
 // SiteInstanceGetState returns the Instance state to an Owner of the oldest Workspace.
 func (h *Handlers) SiteInstanceGetState(ctx context.Context) (siteapi.SiteInstanceGetStateRes, error) {
-	if ok, err := h.instanceOwner(ctx); err != nil {
+	if err := h.authorizeInstance(ctx); err != nil {
 		return nil, err
-	} else if !ok {
-		v := instanceForbidden()
-		return &v, nil
 	}
 	s, err := h.instance.State(ctx)
 	if err != nil {
@@ -58,11 +51,8 @@ func (h *Handlers) SiteInstanceGetState(ctx context.Context) (siteapi.SiteInstan
 // SiteInstanceSetTelemetry stores the Owner's Telemetry report choice; 409 while the
 // environment decides.
 func (h *Handlers) SiteInstanceSetTelemetry(ctx context.Context, req *siteapi.SiteInstanceTelemetryInput) (siteapi.SiteInstanceSetTelemetryRes, error) {
-	if ok, err := h.instanceOwner(ctx); err != nil {
+	if err := h.authorizeInstance(ctx); err != nil {
 		return nil, err
-	} else if !ok {
-		v := siteapi.SiteInstanceSetTelemetryForbidden(instanceForbidden())
-		return &v, nil
 	}
 	s, err := h.instance.SetTelemetry(ctx, req.Enabled)
 	if err != nil {
@@ -73,11 +63,8 @@ func (h *Handlers) SiteInstanceSetTelemetry(ctx context.Context, req *siteapi.Si
 
 // SiteInstanceAcknowledgeNotice records that an Owner saw the one-time notice.
 func (h *Handlers) SiteInstanceAcknowledgeNotice(ctx context.Context) (siteapi.SiteInstanceAcknowledgeNoticeRes, error) {
-	if ok, err := h.instanceOwner(ctx); err != nil {
+	if err := h.authorizeInstance(ctx); err != nil {
 		return nil, err
-	} else if !ok {
-		v := instanceForbidden()
-		return &v, nil
 	}
 	s, err := h.instance.AcknowledgeNotice(ctx)
 	if err != nil {
@@ -90,11 +77,8 @@ func (h *Handlers) SiteInstanceAcknowledgeNotice(ctx context.Context) (siteapi.S
 // would send it now, whether or not sending is on. It is the body of the same builder the
 // daily sender uses, so the Owner reads the real payload.
 func (h *Handlers) SiteInstancePreviewTelemetryReport(ctx context.Context) (siteapi.SiteInstancePreviewTelemetryReportRes, error) {
-	if ok, err := h.instanceOwner(ctx); err != nil {
+	if err := h.authorizeInstance(ctx); err != nil {
 		return nil, err
-	} else if !ok {
-		v := instanceForbidden()
-		return &v, nil
 	}
 	report, err := h.instance.Report(ctx)
 	if err != nil {
