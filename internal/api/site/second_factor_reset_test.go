@@ -49,7 +49,7 @@ func TestOwnerResetsAMembersSecondFactorAndEndsTheirSessions(t *testing.T) {
 
 func TestAdminResetsAMembersSecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context()))
+	require.NoError(t, env.FeedDB.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context()))
 
 	res := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
 
@@ -77,7 +77,7 @@ func TestSecondFactorResetNeedsAMembershipInTheWorkspace(t *testing.T) {
 
 func TestAdminCannotResetAnOwnersSecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context()))
+	require.NoError(t, env.FeedDB.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context()))
 
 	res := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexOwnerMembershipID)
 

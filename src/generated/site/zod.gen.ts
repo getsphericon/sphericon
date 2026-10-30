@@ -111,6 +111,16 @@ export const zGrantableScope = z.enum([
 ]);
 
 /**
+ * The label a Staff member gives a published Legal document version, unique per item
+ */
+export const zLegalDocumentLabel = z.string().min(1).max(64);
+
+/**
+ * A Legal document's text, in Markdown
+ */
+export const zLegalDocumentMarkdown = z.string().max(100000);
+
+/**
  * What a lint finding is about (ADR 0040)
  */
 export const zLintCode = z.enum([
@@ -175,9 +185,9 @@ export const zPermission = z.enum([
 export const zProblemCode = z.enum([
   'second_factor_required',
   'email_verification_required',
-  'signup_closed',
   'permission_required',
-  'migrations_pending'
+  'migrations_pending',
+  'acceptance_pending'
 ]);
 
 /**
@@ -235,6 +245,25 @@ export const zSendScope = z.enum([
 export const zSetupScope = z.enum(['sending_domains:write', 'integrations:write']);
 
 /**
+ * A Sign-up item's key: its address, and the last segment of its Legal document's public page
+ */
+export const zSignupItemKey = z.string().min(1).max(64).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+
+/**
+ * What a Sign-up item asks of a person (ADR 0062)
+ */
+export const zSignupItemKind = z.enum([
+  'required_acceptance',
+  'optional_consent',
+  'notice'
+]);
+
+/**
+ * A Sign-up item's title: what the sign-up form shows
+ */
+export const zSignupItemTitle = z.string().min(1).max(200);
+
+/**
  * The metric of a Sending domain that is over a warning limit of the abuse detector
  */
 export const zSiteAbuseMetric = z.enum(['complaint', 'bounce']);
@@ -251,13 +280,18 @@ export const zSiteAbuseWarning = z.object({
 });
 
 /**
- * Accept an invite. For an address with no User or an Unverified User, name + password
- * are required (422 otherwise). For a Verified User the body is not read: the session of
- * that same User is the proof.
+ * A required acceptance the screen showed: the item's key and the label of the version shown
  */
-export const zSiteAcceptInvitationInput = z.object({
-  name: z.exactOptional(z.string()),
-  password: z.exactOptional(z.string())
+export const zSiteAcceptance = z.object({
+  key: zSignupItemKey,
+  version: zLegalDocumentLabel
+});
+
+/**
+ * The required acceptances a User accepts after a new version was published (ADR 0062)
+ */
+export const zSiteAcceptPendingInput = z.object({
+  items: z.array(zSiteAcceptance)
 });
 
 /**
@@ -1004,6 +1038,24 @@ export const zSiteOAuthDecisionResult = z.object({
 });
 
 /**
+ * A change of the User's answer to an optional consent
+ */
+export const zSiteOptionalConsentChange = z.object({
+  version: zLegalDocumentLabel,
+  accepted: z.boolean()
+});
+
+/**
+ * A User's current answer to an optional consent: the decision of their latest Consent record on
+ * it (ADR 0062)
+ */
+export const zSiteOptionalConsentDecision = z.enum([
+  'accepted',
+  'declined',
+  'withdrawn'
+]);
+
+/**
  * The browser's answer to the request options: the W3C `AuthenticationResponseJSON`
  * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library.
  */
@@ -1169,6 +1221,16 @@ export const zSitePasskeyCreationOptions = z.object({
  */
 export const zSitePasskeyRegistrationBegun = z.object({
   options: zSitePasskeyCreationOptions
+});
+
+/**
+ * A Sign-in provider's sign-up held for the Sign-up items (ADR 0062): who the provider proved,
+ * for the screen that asks the items. No User exists yet.
+ */
+export const zSitePendingSignup = z.object({
+  provider: z.string(),
+  email: zEmailAddress,
+  name: z.string()
 });
 
 /**
@@ -1478,17 +1540,6 @@ export const zSiteSetupProgress = z.object({
 });
 
 /**
- * Sign up with a name, an email and a password. The User stays Unverified until the
- * address is proven (ADR 0030); the password is trusted only when the verification link
- * is opened in the Sign-up browser.
- */
-export const zSiteSignUpInput = z.object({
-  name: z.string(),
-  email: zEmailAddress,
-  password: z.exactOptional(z.string())
-});
-
-/**
  * Why a provider sign-in did not start a session. The callback redirects to `/login` with
  * one of these as the `error` query parameter, and the SPA renders it through i18n.
  */
@@ -1499,7 +1550,6 @@ export const zSiteSigninError = z.enum([
   'provider_unavailable',
   'email_unverified',
   'email_not_trusted',
-  'signup_closed',
   'identity_in_use',
   'invitation_email_mismatch',
   'invitation_invalid'
@@ -1509,6 +1559,13 @@ export const zSiteSigninError = z.enum([
  * The "this was not me" link of the notice mailed when a Sign-in provider was linked to an account
  */
 export const zSiteSigninNotMeInput = z.object({
+  token: z.string()
+});
+
+/**
+ * Decline a pending sign-up
+ */
+export const zSiteSigninPendingDeclineInput = z.object({
   token: z.string()
 });
 
@@ -1551,6 +1608,66 @@ export const zSiteSignupGoal = z.enum([
   'migrating',
   'other'
 ]);
+
+/**
+ * A Sign-up item in effect, with the label of its current Legal document version: what the
+ * sign-up form asks (ADR 0062)
+ */
+export const zSiteSignupItem = z.object({
+  key: zSignupItemKey,
+  title: z.string(),
+  kind: zSignupItemKind,
+  version: zLegalDocumentLabel
+});
+
+/**
+ * A person's answer to one Sign-up item the form showed (ADR 0062). An item named that is not in
+ * effect, a version that is not its current one, or an item named twice refuses the form.
+ */
+export const zSiteSignupItemAnswer = z.object({
+  key: zSignupItemKey,
+  version: zLegalDocumentLabel,
+  accepted: z.exactOptional(z.boolean())
+});
+
+/**
+ * Accept an invite. For an address with no User or an Unverified User, name + password
+ * are required (422 otherwise), and the Sign-up items are answered as on the sign-up form. For a
+ * Verified User the body is not read: the session of that same User is the proof, and consent
+ * follows the User, so nothing is asked again (ADR 0062).
+ */
+export const zSiteAcceptInvitationInput = z.object({
+  name: z.exactOptional(z.string()),
+  password: z.exactOptional(z.string()),
+  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
+});
+
+/**
+ * Sign up with a name, an email and a password. The User stays Unverified until the
+ * address is proven (ADR 0030); the password is trusted only when the verification link
+ * is opened in the Sign-up browser.
+ */
+export const zSiteSignUpInput = z.object({
+  name: z.string(),
+  email: zEmailAddress,
+  password: z.exactOptional(z.string()),
+  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
+});
+
+/**
+ * The answers that complete a pending sign-up
+ */
+export const zSiteSigninPendingSubmitInput = z.object({
+  token: z.string(),
+  signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
+});
+
+/**
+ * The Sign-up items in effect, in the order of the sign-up form
+ */
+export const zSiteSignupItemList = z.object({
+  items: z.array(zSiteSignupItem)
+});
 
 /**
  * What the User does (Sign-up survey, first question)
@@ -2413,6 +2530,17 @@ export const zSiteJoinDomainResource = z.object({
 });
 
 /**
+ * The current version of a Sign-up item's Legal document
+ */
+export const zSiteLegalDocument = z.object({
+  key: zSignupItemKey,
+  title: z.string(),
+  version: zLegalDocumentLabel,
+  markdown: zLegalDocumentMarkdown,
+  publishedAt: zTimestamp
+});
+
+/**
  * One Linked identity of the authenticated User (ADR 0048): a Sign-in provider the User
  * can sign in with. The provider's subject is never returned.
  */
@@ -2441,6 +2569,24 @@ export const zSiteMembershipResource = z.object({
   role: zSiteMembershipRole,
   source: z.exactOptional(zSiteMembershipSource),
   createdAt: zTimestamp
+});
+
+/**
+ * An optional consent in effect, with the User's current answer to it (ADR 0062)
+ */
+export const zSiteOptionalConsent = z.object({
+  key: zSignupItemKey,
+  title: z.string(),
+  version: zLegalDocumentLabel,
+  decision: z.exactOptional(zSiteOptionalConsentDecision),
+  decidedAt: z.exactOptional(zTimestamp)
+});
+
+/**
+ * The optional consents in effect, in the order of the sign-up form
+ */
+export const zSiteOptionalConsentList = z.object({
+  items: z.array(zSiteOptionalConsent)
 });
 
 /**
@@ -2567,6 +2713,7 @@ export const zSiteUserResource = z.object({
   email: zEmailAddress,
   emailVerified: z.boolean(),
   signupSurveyDue: z.boolean(),
+  acceptancesPending: z.array(zSiteSignupItem),
   createdAt: zTimestamp
 });
 
@@ -3261,6 +3408,29 @@ export const zSiteAuthSignUpBody = zSiteSignUpInput;
 
 export const zSiteAuthSigninNotMeBody = zSiteSigninNotMeInput;
 
+export const zSiteAuthSigninPendingQuery = z.object({
+  token: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAuthSigninPendingResponse = zSitePendingSignup;
+
+export const zSiteAuthSigninPendingSubmitBody = zSiteSigninPendingSubmitInput;
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteAuthSigninPendingSubmitResponse = z.void();
+
+export const zSiteAuthSigninPendingDeclineBody = zSiteSigninPendingDeclineInput;
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteAuthSigninPendingDeclineResponse = z.void();
+
 /**
  * The request has succeeded.
  */
@@ -3338,6 +3508,15 @@ export const zSitePublicInvitationsAcceptPath = z.object({
   token: z.string()
 });
 
+export const zSiteLegalDocumentsGetPath = z.object({
+  key: zSignupItemKey
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteLegalDocumentsGetResponse = zSiteLegalDocument;
+
 /**
  * The request has succeeded.
  */
@@ -3349,6 +3528,13 @@ export const zSiteUserUpdateMeBody = zSiteUpdateMeInput;
  * The request has succeeded.
  */
 export const zSiteUserUpdateMeResponse = zSiteUserResource;
+
+export const zSiteUserAcceptPendingBody = zSiteAcceptPendingInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteUserAcceptPendingResponse = zSiteUserResource;
 
 export const zSiteUserDeleteUserBody = zSiteDeleteUserInput;
 
@@ -3382,6 +3568,22 @@ export const zSiteIdentitiesLinkPath = z.object({
 export const zSiteIdentitiesLinkQuery = z.object({
   return_to: z.exactOptional(z.string())
 });
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteOptionalConsentsListResponse = zSiteOptionalConsentList;
+
+export const zSiteOptionalConsentsSetBody = zSiteOptionalConsentChange;
+
+export const zSiteOptionalConsentsSetPath = z.object({
+  key: zSignupItemKey
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteOptionalConsentsSetResponse = zSiteOptionalConsent;
 
 /**
  * The request has succeeded.
@@ -3506,6 +3708,11 @@ export const zSitePresetsListResponse = z.array(zSitePresetResource);
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteSchemaApplyMigrationsResponse = z.void();
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteLegalDocumentsSignupItemsResponse = zSiteSignupItemList;
 
 export const zSitePublicUnsubscribesPerformPath = z.object({
   token: z.string()

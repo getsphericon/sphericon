@@ -83,11 +83,11 @@ func TestScopedClientIsolation(t *testing.T) {
 		t.Run(e.Name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
-			scoped := env.DB.Scoped(acme)
+			scoped := env.FeedDB.Scoped(acme)
 
-			own, err := e.IDs(ctx, env.DB, acme)
+			own, err := e.IDs(ctx, env.FeedDB, acme)
 			require.NoError(t, err)
-			foreign, err := e.IDs(ctx, env.DB, globex)
+			foreign, err := e.IDs(ctx, env.FeedDB, globex)
 			require.NoError(t, err)
 			require.NotEmpty(t, own, "add a %s fixture row to Acme", e.Name)
 			require.NotEmpty(t, foreign, "add a %s fixture row to Globex", e.Name)
@@ -112,19 +112,19 @@ func TestScopedClientIsolation(t *testing.T) {
 				require.NoError(t, err)
 				assert.Zero(t, n, "Delete().Where")
 
-				after, err := e.IDs(ctx, env.DB, globex)
+				after, err := e.IDs(ctx, env.FeedDB, globex)
 				require.NoError(t, err)
 				assert.Equal(t, foreign, after, "the foreign rows are untouched")
 			})
 
 			t.Run("a foreign reference is refused", func(t *testing.T) {
 				for _, ref := range e.Refs {
-					target := firstID(ctx, t, env.DB, entities, ref.Target, globex)
+					target := firstID(ctx, t, env.FeedDB, entities, ref.Target, globex)
 					err := ref.Set(ctx, scoped, own[0], target)
 					require.ErrorIs(t, err, ent.ErrNotInWorkspace, "ref %s -> %s", ref.Name, ref.Target)
 
 					// The same reference to an own row is accepted.
-					ownTarget := firstID(ctx, t, env.DB, entities, ref.Target, acme)
+					ownTarget := firstID(ctx, t, env.FeedDB, entities, ref.Target, acme)
 					assert.NotErrorIs(t, ref.Set(ctx, scoped, own[0], ownTarget), ent.ErrNotInWorkspace, "own ref %s -> %s", ref.Name, ref.Target)
 				}
 			})
@@ -133,7 +133,7 @@ func TestScopedClientIsolation(t *testing.T) {
 				// The foreign fixture row is re-created without its workspace_id:
 				// the new row lands in Acme only because the scoped create set it.
 				clearSingleton(ctx, t, scoped, e, own)
-				ws, err := replantInAcme(ctx, t, env.DB, entities, e, foreign[0])
+				ws, err := replantInAcme(ctx, t, env.FeedDB, entities, e, foreign[0])
 				require.NoError(t, err)
 				assert.Equal(t, acme, ws)
 

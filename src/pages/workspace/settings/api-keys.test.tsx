@@ -41,6 +41,7 @@ test('shows the API keys of the workspace', async () => {
         email: 'ann@acme.com',
         emailVerified: true,
         signupSurveyDue: false,
+        acceptancesPending: [],
         createdAt: '2026-01-01T00:00:00Z',
       },
     }),

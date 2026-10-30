@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/passkey"
@@ -180,6 +181,20 @@ func (_c *UserCreate) SetNillableSignupSurveyDueAt(v *time.Time) *UserCreate {
 	return _c
 }
 
+// SetFeedPosition sets the "feed_position" field.
+func (_c *UserCreate) SetFeedPosition(v int64) *UserCreate {
+	_c.mutation.SetFeedPosition(v)
+	return _c
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_c *UserCreate) SetNillableFeedPosition(v *int64) *UserCreate {
+	if v != nil {
+		_c.SetFeedPosition(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *UserCreate) SetID(v int64) *UserCreate {
 	_c.mutation.SetID(v)
@@ -280,6 +295,21 @@ func (_c *UserCreate) SetSignupSurveyResponse(v *SignupSurveyResponse) *UserCrea
 	return _c.SetSignupSurveyResponseID(v.ID)
 }
 
+// AddConsentRecordIDs adds the "consent_records" edge to the ConsentRecord entity by IDs.
+func (_c *UserCreate) AddConsentRecordIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddConsentRecordIDs(ids...)
+	return _c
+}
+
+// AddConsentRecords adds the "consent_records" edges to the ConsentRecord entity.
+func (_c *UserCreate) AddConsentRecords(v ...*ConsentRecord) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddConsentRecordIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_c *UserCreate) Mutation() *UserMutation {
 	return _c.mutation
@@ -331,6 +361,10 @@ func (_c *UserCreate) defaults() {
 		v := user.DefaultSecondFactorLastStep
 		_c.mutation.SetSecondFactorLastStep(v)
 	}
+	if _, ok := _c.mutation.FeedPosition(); !ok {
+		v := user.DefaultFeedPosition
+		_c.mutation.SetFeedPosition(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -362,6 +396,9 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.SecondFactorLastStep(); !ok {
 		return &ValidationError{Name: "second_factor_last_step", err: errors.New(`ent: missing required field "User.second_factor_last_step"`)}
+	}
+	if _, ok := _c.mutation.FeedPosition(); !ok {
+		return &ValidationError{Name: "feed_position", err: errors.New(`ent: missing required field "User.feed_position"`)}
 	}
 	return nil
 }
@@ -443,6 +480,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SignupSurveyDueAt(); ok {
 		_spec.SetField(user.FieldSignupSurveyDueAt, field.TypeTime, value)
 		_node.SignupSurveyDueAt = &value
+	}
+	if value, ok := _c.mutation.FeedPosition(); ok {
+		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)
+		_node.FeedPosition = value
 	}
 	if nodes := _c.mutation.MembershipsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -533,6 +574,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(signupsurveyresponse.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ConsentRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConsentRecordsTable,
+			Columns: []string{user.ConsentRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentrecord.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -769,6 +826,24 @@ func (u *UserUpsert) UpdateSignupSurveyDueAt() *UserUpsert {
 // ClearSignupSurveyDueAt clears the value of the "signup_survey_due_at" field.
 func (u *UserUpsert) ClearSignupSurveyDueAt() *UserUpsert {
 	u.SetNull(user.FieldSignupSurveyDueAt)
+	return u
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (u *UserUpsert) SetFeedPosition(v int64) *UserUpsert {
+	u.Set(user.FieldFeedPosition, v)
+	return u
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *UserUpsert) UpdateFeedPosition() *UserUpsert {
+	u.SetExcluded(user.FieldFeedPosition)
+	return u
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *UserUpsert) AddFeedPosition(v int64) *UserUpsert {
+	u.Add(user.FieldFeedPosition, v)
 	return u
 }
 
@@ -1030,6 +1105,27 @@ func (u *UserUpsertOne) UpdateSignupSurveyDueAt() *UserUpsertOne {
 func (u *UserUpsertOne) ClearSignupSurveyDueAt() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearSignupSurveyDueAt()
+	})
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (u *UserUpsertOne) SetFeedPosition(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetFeedPosition(v)
+	})
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *UserUpsertOne) AddFeedPosition(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddFeedPosition(v)
+	})
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateFeedPosition() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateFeedPosition()
 	})
 }
 
@@ -1457,6 +1553,27 @@ func (u *UserUpsertBulk) UpdateSignupSurveyDueAt() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearSignupSurveyDueAt() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearSignupSurveyDueAt()
+	})
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (u *UserUpsertBulk) SetFeedPosition(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetFeedPosition(v)
+	})
+}
+
+// AddFeedPosition adds v to the "feed_position" field.
+func (u *UserUpsertBulk) AddFeedPosition(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddFeedPosition(v)
+	})
+}
+
+// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateFeedPosition() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateFeedPosition()
 	})
 }
 

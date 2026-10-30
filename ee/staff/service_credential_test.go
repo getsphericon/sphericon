@@ -21,7 +21,7 @@ import (
 	entcredential "github.com/getsphericon/sphericon/ent/servicecredential"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -142,7 +142,7 @@ func TestAnUnknownMalformedRevokedOrExpiredCredentialIsRefused(t *testing.T) {
 func TestACredentialExpiresWhenTheClockPassesItsExpiry(t *testing.T) {
 	h := newHarness(t)
 	in := time.Hour
-	issued, err := h.env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{
+	issued, err := h.env.StaffEnterprise.IssueServiceCredential(t.Context(), staff.IssueInput{
 		Name: "service-c", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}, ExpiresAt: new(h.clock.now().Add(in)),
 	})
 	require.NoError(t, err)
@@ -165,7 +165,7 @@ func TestTwoActiveCredentialsOfOneServiceWorkAtOnce(t *testing.T) {
 func TestIssuingShowsTheValueOnceAndStoresOnlyAHash(t *testing.T) {
 	h := newHarness(t)
 
-	issued, err := h.env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{
+	issued, err := h.env.StaffEnterprise.IssueServiceCredential(t.Context(), staff.IssueInput{
 		Name: " service-c ", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeHoldsWrite, serviceapi.ServiceScopeUsageRead, serviceapi.ServiceScopeUsageRead},
 	})
 	require.NoError(t, err)
@@ -195,7 +195,7 @@ func TestIssuingRefusesABadInput(t *testing.T) {
 		"past expiry":   {staff.IssueInput{Name: "s", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}, ExpiresAt: &past}, staff.ErrInvalidCredential},
 	} {
 		t.Run(name, func(t *testing.T) {
-			_, err := h.env.StaffMembers.IssueServiceCredential(t.Context(), tc.in)
+			_, err := h.env.StaffEnterprise.IssueServiceCredential(t.Context(), tc.in)
 			require.ErrorIs(t, err, tc.want)
 		})
 	}
@@ -204,7 +204,7 @@ func TestIssuingRefusesABadInput(t *testing.T) {
 func TestRotatingIssuesASecondCredentialAndLeavesTheFirstActive(t *testing.T) {
 	h := newHarness(t)
 
-	rotated, err := h.env.StaffMembers.RotateServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID, nil)
+	rotated, err := h.env.StaffEnterprise.RotateServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID, nil)
 	require.NoError(t, err)
 
 	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, rotated.Name)
@@ -217,10 +217,10 @@ func TestRotatingARevokedOrExpiredOrMissingCredentialIsRefused(t *testing.T) {
 	h := newHarness(t)
 
 	for _, id := range []int{fixtures.ServiceCredentialRevokedID, fixtures.ServiceCredentialExpiredID} {
-		_, err := h.env.StaffMembers.RotateServiceCredential(t.Context(), int64(id), nil)
+		_, err := h.env.StaffEnterprise.RotateServiceCredential(t.Context(), int64(id), nil)
 		require.ErrorIs(t, err, staff.ErrCredentialInactive)
 	}
-	_, err := h.env.StaffMembers.RotateServiceCredential(t.Context(), 999999, nil)
+	_, err := h.env.StaffEnterprise.RotateServiceCredential(t.Context(), 999999, nil)
 	require.ErrorIs(t, err, staff.ErrCredentialNotFound)
 }
 
@@ -228,20 +228,20 @@ func TestARevokedCredentialIsRefusedAtOnceAndRevokingTwiceChangesNothing(t *test
 	h := newHarness(t)
 	require.Equal(t, http.StatusOK, getIdentity(t, h.env.Internal, primary).Code)
 
-	require.NoError(t, h.env.StaffMembers.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID))
+	require.NoError(t, h.env.StaffEnterprise.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID))
 	firstRevoked := h.env.DB.ServiceCredential.GetX(t.Context(), fixtures.ServiceCredentialPrimaryID).RevokedAt
 	h.clock.t = h.clock.t.Add(time.Hour)
-	require.NoError(t, h.env.StaffMembers.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID))
+	require.NoError(t, h.env.StaffEnterprise.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID))
 
 	assert.Equal(t, http.StatusUnauthorized, getIdentity(t, h.env.Internal, primary).Code)
 	assert.Equal(t, http.StatusOK, getIdentity(t, h.env.Internal, second).Code, "its sibling is untouched")
 	assert.Equal(t, firstRevoked, h.env.DB.ServiceCredential.GetX(t.Context(), fixtures.ServiceCredentialPrimaryID).RevokedAt)
-	require.ErrorIs(t, h.env.StaffMembers.RevokeServiceCredential(t.Context(), 999999), staff.ErrCredentialNotFound)
+	require.ErrorIs(t, h.env.StaffEnterprise.RevokeServiceCredential(t.Context(), 999999), staff.ErrCredentialNotFound)
 }
 
 func TestTheListShowsEachCredentialsStateAndWhenItWasLastUsed(t *testing.T) {
 	h := newHarness(t)
-	before, err := h.env.StaffMembers.ServiceCredentials(t.Context(), fixtures.ServiceCredentialPrimaryName)
+	before, err := h.env.StaffEnterprise.ServiceCredentials(t.Context(), fixtures.ServiceCredentialPrimaryName)
 	require.NoError(t, err)
 	require.NotEmpty(t, before)
 	for _, c := range before {
@@ -250,7 +250,7 @@ func TestTheListShowsEachCredentialsStateAndWhenItWasLastUsed(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, getIdentity(t, h.env.Internal, primary).Code)
 
-	listed, err := h.env.StaffMembers.ServiceCredentials(t.Context(), fixtures.ServiceCredentialPrimaryName)
+	listed, err := h.env.StaffEnterprise.ServiceCredentials(t.Context(), fixtures.ServiceCredentialPrimaryName)
 	require.NoError(t, err)
 	for _, c := range listed {
 		assert.Equal(t, fixtures.ServiceCredentialPrimaryName, c.Name)
@@ -260,7 +260,7 @@ func TestTheListShowsEachCredentialsStateAndWhenItWasLastUsed(t *testing.T) {
 	assert.EqualValues(t, fixtures.ServiceCredentialPrimaryID, used[0].ID)
 	assert.WithinDuration(t, h.clock.now(), *used[0].LastUsedAt, time.Millisecond, "at the clock's time")
 
-	all, err := h.env.StaffMembers.ServiceCredentials(t.Context(), "")
+	all, err := h.env.StaffEnterprise.ServiceCredentials(t.Context(), "")
 	require.NoError(t, err)
 	assert.Greater(t, len(all), len(listed), "no name lists every service's")
 }
@@ -268,7 +268,7 @@ func TestTheListShowsEachCredentialsStateAndWhenItWasLastUsed(t *testing.T) {
 func TestACredentialCannotActOutsideItsScopes(t *testing.T) {
 	h := newHarness(t)
 	needsHolds := map[string][]serviceapi.ServiceScope{"NeedsHolds": {serviceapi.ServiceScopeHoldsWrite}, "NeedsNothing": nil}
-	security := staff.NewServiceSecurity(h.env.StaffMembers, needsHolds)
+	security := staff.NewServiceSecurity(h.env.StaffEnterprise, needsHolds)
 
 	_, err := security.HandleBearerAuth(t.Context(), "NeedsHolds", serviceapi.BearerAuth{Token: readOnly})
 	require.ErrorIs(t, err, staff.ErrForbidden, "a valid credential without the scope")
@@ -294,7 +294,7 @@ func TestEveryServiceOperationDeclaresItsScopes(t *testing.T) {
 func TestNoEndpointMintsOrChangesACredential(t *testing.T) {
 	surfaces := map[string][]string{
 		"service": staff.ServiceOperations(),
-		"staff":   methodNames(reflect.TypeFor[staffapi.Handler]()),
+		"staff":   methodNames(reflect.TypeFor[staffeeapi.Handler]()),
 	}
 	for surface, ops := range surfaces {
 		require.NotEmpty(t, ops, surface)
@@ -352,10 +352,10 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	assert.Equal(t, strconv.Itoa(fixtures.ServiceCredentialPrimaryID), *stored.ActorID)
 
 	console, _ := h.staffSession(t)
-	page := h.auditPage(t, console, fixtures.AcmePublicID, staffapi.StaffWorkspaceAuditListParams{})
-	shown, listed := lo.Find(page.Items, func(e staffapi.StaffAuditEntryResource) bool { return e.Target.Name.Value == "attributed-tag" })
+	page := h.auditPage(t, console, fixtures.AcmePublicID, staffeeapi.StaffWorkspaceAuditListParams{})
+	shown, listed := lo.Find(page.Items, func(e staffeeapi.StaffAuditEntryResource) bool { return e.Target.Name.Value == "attributed-tag" })
 	require.True(t, listed, "the StaffMember console lists the entry")
-	assert.Equal(t, staffapi.StaffAuditActorKindService, shown.Actor.Kind)
+	assert.Equal(t, staffeeapi.StaffAuditActorKindService, shown.Actor.Kind)
 	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, shown.Actor.Name.Value)
 
 	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
@@ -374,14 +374,14 @@ func TestWithoutALicenseNothingIsServedAndTheModuleRefuses(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 
 	assert.Equal(t, http.StatusNotFound, getIdentity(t, env.Internal, primary).Code, "the service endpoints are not routed without the license")
-	_, err := env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{Name: "s", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}})
+	_, err := env.StaffEnterprise.IssueServiceCredential(t.Context(), staff.IssueInput{Name: "s", Scopes: []serviceapi.ServiceScope{serviceapi.ServiceScopeUsageRead}})
 	require.ErrorIs(t, err, staff.ErrNotLicensed)
-	_, err = env.StaffMembers.RotateServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID, nil)
+	_, err = env.StaffEnterprise.RotateServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID, nil)
 	require.ErrorIs(t, err, staff.ErrNotLicensed)
-	require.ErrorIs(t, env.StaffMembers.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID), staff.ErrNotLicensed)
-	_, err = env.StaffMembers.ServiceCredentials(t.Context(), "")
+	require.ErrorIs(t, env.StaffEnterprise.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID), staff.ErrNotLicensed)
+	_, err = env.StaffEnterprise.ServiceCredentials(t.Context(), "")
 	require.ErrorIs(t, err, staff.ErrNotLicensed)
-	_, err = env.StaffMembers.AuthenticateService(t.Context(), primary)
+	_, err = env.StaffEnterprise.AuthenticateService(t.Context(), primary)
 	require.ErrorIs(t, err, staff.ErrUnauthorized, "a valid value is refused without the license")
 	assert.Equal(t, http.StatusNotFound, getIdentity(t, env.Server, primary).Code)
 }

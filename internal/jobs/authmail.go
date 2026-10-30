@@ -178,7 +178,7 @@ func authMailCopy(flow string) (subjectID, path, introID string) {
 	case flowEmailChange:
 		return "email.email_change.subject", "/confirm-email-change", "email.email_change.intro"
 	case flowUserDeletion:
-		return "email.user_deletion.subject", "/account/delete", "email.user_deletion.intro"
+		return "email.user_deletion.subject", "/delete-account", "email.user_deletion.intro"
 	default:
 		return "", "", ""
 	}

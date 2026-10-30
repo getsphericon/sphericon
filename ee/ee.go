@@ -8,6 +8,7 @@ package ee
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -23,13 +24,13 @@ import (
 	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/secrets"
+	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
 // Edition is the Enterprise surface of one running instance.
@@ -44,30 +45,30 @@ type Edition struct {
 	Export *export.Streams
 	// Consumers are the extra bus subscribers (events.RegisterSubscribers).
 	Consumers []events.Consumer
-	// Staff members is the platform Staff member store and its login (ADR 0026); every call
-	// refuses without the `staff` license.
-	StaffMembers *staff.Module
+	// Staff is the domain of the console's Enterprise sections and of the service endpoints
+	// (ADR 0026); every call refuses without the `staff` license.
+	Staff *staff.Module
 
-	staffSessions *staff.Sessions
+	staffSessions *staffmembers.Sessions
 	abuseCfg      abuse.Config
 	now           func() time.Time
 }
 
 // New builds the Edition for a license. Subscribers are always registered and each
 // checks the license itself, so a key added later needs no rewiring and an unlicensed
-// instance stores nothing. The Staff member configuration is validated only when the
-// `staff` feature is licensed: an unlicensed instance needs none of it. The Audit log
-// records its export through bus, which is built before the Edition and takes the
-// Edition's ent hooks from Hooks.
-func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, cipher *secrets.Cipher, siteSecrets []string, staffCfg staff.Config) (*Edition, error) {
+// instance stores nothing. The Enterprise sections of the Staff console take the core Staff
+// member's sessions (staffSessions, nil while its sign-in is off), so the `staff` feature
+// refuses to start without them. The Audit log records its export through bus, which is
+// built before the Edition and takes the Edition's ent hooks from Hooks.
+func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, staffSessions *staffmembers.Sessions, staffCfg staff.Config) (*Edition, error) {
 	auditLog := audit.NewLog(lic, bus)
 	e := &Edition{
-		lic:          lic,
-		client:       client,
-		Audit:        auditLog,
-		Export:       export.New(lic),
-		Consumers:    []events.Consumer{audit.Consumer(client, lic), export.Consumer(client, lic)},
-		StaffMembers: staff.NewModule(client, lic, auditLog, cipher, staffCfg),
+		lic:       lic,
+		client:    client,
+		Audit:     auditLog,
+		Export:    export.New(lic),
+		Consumers: []events.Consumer{audit.Consumer(client, lic), export.Consumer(client, lic)},
+		Staff:     staff.NewModule(client, lic, auditLog, staffCfg),
 	}
 	e.abuseCfg = abuse.Config{Limits: staffCfg.Abuse, SupportEmail: staffCfg.SupportEmail}
 	e.now = staffCfg.Clock
@@ -75,10 +76,10 @@ func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, cipher *s
 		e.now = time.Now
 	}
 	if lic.Has(licensekey.FeatureStaff) {
-		if err := staffCfg.Validate(siteSecrets); err != nil {
-			return nil, err
+		if staffSessions == nil {
+			return nil, errors.New("SPHERICON_STAFF_JWT_SECRET is required with the staff license: the console's Enterprise sections need the Staff member's sign-in")
 		}
-		e.staffSessions = staff.NewSessions(client, lic, staffCfg)
+		e.staffSessions = staffSessions
 	}
 	return e, nil
 }
@@ -97,18 +98,19 @@ func Hooks(lic *licensekey.License, now func() time.Time) []entgo.Hook {
 	return []entgo.Hook{usage.Hook(lic, now)}
 }
 
-// Staff is the /staff API (ADR 0026) for the composition root to mount, or nil
-// without the `staff` license, in which case the whole surface answers 404.
+// StaffSections is the Enterprise part of the /staff API (ADR 0026, ADR 0063) for the
+// composition root to mount behind the core one, or nil without the `staff` license, in
+// which case its routes answer 404.
 //
 // The surface suspends Workspaces through the core mechanism, so it takes the event bus
 // and the system (platform) sender that tells the owner.
-func (e *Edition) Staff(bus *events.Bus, sender messaging.EmailSender) interface {
-	Server(opts ...staffapi.ServerOption) (http.Handler, error)
+func (e *Edition) StaffSections(bus *events.Bus, sender messaging.EmailSender) interface {
+	Server(opts ...staffeeapi.ServerOption) (http.Handler, error)
 } {
 	if e.staffSessions == nil {
 		return nil
 	}
-	return staff.NewSurface(e.StaffMembers, e.staffSessions, bus, sender)
+	return staff.NewSurface(e.Staff, e.staffSessions, bus, sender)
 }
 
 // Service is the service endpoints of the Staff surface (ADR 0026) for the
@@ -120,7 +122,7 @@ func (e *Edition) Service(bus *events.Bus) interface {
 	if e.staffSessions == nil {
 		return nil
 	}
-	return staff.NewServiceSurface(e.StaffMembers, bus)
+	return staff.NewServiceSurface(e.Staff, bus)
 }
 
 // Holds is the read side of a Workspace's freezes on the send chokepoint (ADR 0009, 0015).
@@ -149,7 +151,7 @@ func (e *Edition) Abuse(bus *events.Bus, sender messaging.EmailSender) *abuse.De
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
 // without the `staff` license.
-func (e *Edition) AbuseWatch() abusewatch.Watch { return abuseWatchAdapter{e.StaffMembers.Watch()} }
+func (e *Edition) AbuseWatch() abusewatch.Watch { return abuseWatchAdapter{e.Staff.Watch()} }
 
 type abuseWatchAdapter struct{ watch *abuse.Watch }
 

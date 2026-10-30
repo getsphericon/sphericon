@@ -14,24 +14,24 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-// StaffSignupSurveyGetParams is parameters of StaffSignupSurvey_get operation.
-type StaffSignupSurveyGetParams struct {
-	UserId EntityId
+// StaffSignupItemsArchiveParams is parameters of StaffSignupItems_archive operation.
+type StaffSignupItemsArchiveParams struct {
+	ID EntityId
 }
 
-func unpackStaffSignupSurveyGetParams(packed middleware.Parameters) (params StaffSignupSurveyGetParams) {
+func unpackStaffSignupItemsArchiveParams(packed middleware.Parameters) (params StaffSignupItemsArchiveParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "userId",
+			Name: "id",
 			In:   "path",
 		}
-		params.UserId = packed[key].(EntityId)
+		params.ID = packed[key].(EntityId)
 	}
 	return params
 }
 
-func decodeStaffSignupSurveyGetParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupSurveyGetParams, _ error) {
-	// Decode path: userId.
+func decodeStaffSignupItemsArchiveParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupItemsArchiveParams, _ error) {
+	// Decode path: id.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -43,14 +43,14 @@ func decodeStaffSignupSurveyGetParams(args [1]string, argsEscaped bool, r *http.
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "userId",
+				Param:   "id",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				var paramsDotUserIdVal int64
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -62,12 +62,12 @@ func decodeStaffSignupSurveyGetParams(args [1]string, argsEscaped bool, r *http.
 						return err
 					}
 
-					paramsDotUserIdVal = c
+					paramsDotIDVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.UserId = EntityId(paramsDotUserIdVal)
+				params.ID = EntityId(paramsDotIDVal)
 				return nil
 			}(); err != nil {
 				return err
@@ -78,7 +78,7 @@ func decodeStaffSignupSurveyGetParams(args [1]string, argsEscaped bool, r *http.
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "userId",
+			Name: "id",
 			In:   "path",
 			Err:  err,
 		}
@@ -86,47 +86,24 @@ func decodeStaffSignupSurveyGetParams(args [1]string, argsEscaped bool, r *http.
 	return params, nil
 }
 
-// StaffWorkspaceAuditListParams is parameters of StaffWorkspaceAudit_list operation.
-type StaffWorkspaceAuditListParams struct {
-	WorkspaceId WorkspaceId
-	// Cursor from a previous page.
-	Cursor OptString `json:",omitempty,omitzero"`
-	// Page size.
-	Limit OptInt32 `json:",omitempty,omitzero"`
+// StaffSignupItemsGetParams is parameters of StaffSignupItems_get operation.
+type StaffSignupItemsGetParams struct {
+	ID EntityId
 }
 
-func unpackStaffWorkspaceAuditListParams(packed middleware.Parameters) (params StaffWorkspaceAuditListParams) {
+func unpackStaffSignupItemsGetParams(packed middleware.Parameters) (params StaffSignupItemsGetParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "cursor",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Cursor = v.(OptString)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "limit",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Limit = v.(OptInt32)
-		}
+		params.ID = packed[key].(EntityId)
 	}
 	return params
 }
 
-func decodeStaffWorkspaceAuditListParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffWorkspaceAuditListParams, _ error) {
-	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode path: workspaceId.
+func decodeStaffSignupItemsGetParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupItemsGetParams, _ error) {
+	// Decode path: id.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -138,39 +115,31 @@ func decodeStaffWorkspaceAuditListParams(args [1]string, argsEscaped bool, r *ht
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
+				Param:   "id",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
 
-					paramsDotWorkspaceIdVal = c
+					paramsDotIDVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
+				params.ID = EntityId(paramsDotIDVal)
 				return nil
 			}(); err != nil {
 				return err
@@ -181,144 +150,32 @@ func decodeStaffWorkspaceAuditListParams(args [1]string, argsEscaped bool, r *ht
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
-			Err:  err,
-		}
-	}
-	// Decode query: cursor.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "cursor",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotCursorVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotCursorVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Cursor.SetTo(paramsDotCursorVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "cursor",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Set default value for query: limit.
-	{
-		val := int32(25)
-		params.Limit.SetTo(val)
-	}
-	// Decode query: limit.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "limit",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotLimitVal int32
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToInt32(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotLimitVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Limit.SetTo(paramsDotLimitVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-			if err := func() error {
-				if value, ok := params.Limit.Get(); ok {
-					if err := func() error {
-						if err := (validate.Int{
-							MinSet:        true,
-							Min:           1,
-							MaxSet:        true,
-							Max:           100,
-							MinExclusive:  false,
-							MaxExclusive:  false,
-							MultipleOfSet: false,
-							MultipleOf:    0,
-							Pattern:       nil,
-						}).Validate(int64(value)); err != nil {
-							return errors.Wrap(err, "int")
-						}
-						return nil
-					}(); err != nil {
-						return err
-					}
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "limit",
-			In:   "query",
 			Err:  err,
 		}
 	}
 	return params, nil
 }
 
-// StaffWorkspacesExemptParams is parameters of StaffWorkspaces_exempt operation.
-type StaffWorkspacesExemptParams struct {
-	WorkspaceId WorkspaceId
+// StaffSignupItemsListVersionsParams is parameters of StaffSignupItems_listVersions operation.
+type StaffSignupItemsListVersionsParams struct {
+	ID EntityId
 }
 
-func unpackStaffWorkspacesExemptParams(packed middleware.Parameters) (params StaffWorkspacesExemptParams) {
+func unpackStaffSignupItemsListVersionsParams(packed middleware.Parameters) (params StaffSignupItemsListVersionsParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
+		params.ID = packed[key].(EntityId)
 	}
 	return params
 }
 
-func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffWorkspacesExemptParams, _ error) {
-	// Decode path: workspaceId.
+func decodeStaffSignupItemsListVersionsParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupItemsListVersionsParams, _ error) {
+	// Decode path: id.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -330,39 +187,31 @@ func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
+				Param:   "id",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
 
-					paramsDotWorkspaceIdVal = c
+					paramsDotIDVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
+				params.ID = EntityId(paramsDotIDVal)
 				return nil
 			}(); err != nil {
 				return err
@@ -373,7 +222,7 @@ func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 			Err:  err,
 		}
@@ -381,24 +230,24 @@ func decodeStaffWorkspacesExemptParams(args [1]string, argsEscaped bool, r *http
 	return params, nil
 }
 
-// StaffWorkspacesGetParams is parameters of StaffWorkspaces_get operation.
-type StaffWorkspacesGetParams struct {
-	WorkspaceId WorkspaceId
+// StaffSignupItemsPublishParams is parameters of StaffSignupItems_publish operation.
+type StaffSignupItemsPublishParams struct {
+	ID EntityId
 }
 
-func unpackStaffWorkspacesGetParams(packed middleware.Parameters) (params StaffWorkspacesGetParams) {
+func unpackStaffSignupItemsPublishParams(packed middleware.Parameters) (params StaffSignupItemsPublishParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
+		params.ID = packed[key].(EntityId)
 	}
 	return params
 }
 
-func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffWorkspacesGetParams, _ error) {
-	// Decode path: workspaceId.
+func decodeStaffSignupItemsPublishParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupItemsPublishParams, _ error) {
+	// Decode path: id.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -410,39 +259,31 @@ func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Re
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
+				Param:   "id",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
 
-					paramsDotWorkspaceIdVal = c
+					paramsDotIDVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
+				params.ID = EntityId(paramsDotIDVal)
 				return nil
 			}(); err != nil {
 				return err
@@ -453,7 +294,7 @@ func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 			Err:  err,
 		}
@@ -461,321 +302,24 @@ func decodeStaffWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Re
 	return params, nil
 }
 
-// StaffWorkspacesListParams is parameters of StaffWorkspaces_list operation.
-type StaffWorkspacesListParams struct {
-	// Only Workspaces in this review state.
-	Review OptStaffWorkspaceReview `json:",omitempty,omitzero"`
-	// Only Workspaces whose id or name contains this text; the name matches case-insensitively, the id
-	// exactly.
-	Search OptString `json:",omitempty,omitzero"`
-	// Page number (1-based).
-	Page OptInt32 `json:",omitempty,omitzero"`
-	// Page size.
-	PageSize OptInt32 `json:",omitempty,omitzero"`
+// StaffSignupItemsSaveDraftParams is parameters of StaffSignupItems_saveDraft operation.
+type StaffSignupItemsSaveDraftParams struct {
+	ID EntityId
 }
 
-func unpackStaffWorkspacesListParams(packed middleware.Parameters) (params StaffWorkspacesListParams) {
+func unpackStaffSignupItemsSaveDraftParams(packed middleware.Parameters) (params StaffSignupItemsSaveDraftParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "review",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Review = v.(OptStaffWorkspaceReview)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "search",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Search = v.(OptString)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "page",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Page = v.(OptInt32)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "pageSize",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.PageSize = v.(OptInt32)
-		}
-	}
-	return params
-}
-
-func decodeStaffWorkspacesListParams(args [0]string, argsEscaped bool, r *http.Request) (params StaffWorkspacesListParams, _ error) {
-	q := uri.NewQueryDecoder(r.URL.Query())
-	// Decode query: review.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "review",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotReviewVal StaffWorkspaceReview
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotReviewVal = StaffWorkspaceReview(c)
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Review.SetTo(paramsDotReviewVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-			if err := func() error {
-				if value, ok := params.Review.Get(); ok {
-					if err := func() error {
-						if err := value.Validate(); err != nil {
-							return err
-						}
-						return nil
-					}(); err != nil {
-						return err
-					}
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "review",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: search.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "search",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSearchVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotSearchVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Search.SetTo(paramsDotSearchVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "search",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Set default value for query: page.
-	{
-		val := int32(1)
-		params.Page.SetTo(val)
-	}
-	// Decode query: page.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "page",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotPageVal int32
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToInt32(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotPageVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Page.SetTo(paramsDotPageVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-			if err := func() error {
-				if value, ok := params.Page.Get(); ok {
-					if err := func() error {
-						if err := (validate.Int{
-							MinSet:        true,
-							Min:           1,
-							MaxSet:        false,
-							Max:           0,
-							MinExclusive:  false,
-							MaxExclusive:  false,
-							MultipleOfSet: false,
-							MultipleOf:    0,
-							Pattern:       nil,
-						}).Validate(int64(value)); err != nil {
-							return errors.Wrap(err, "int")
-						}
-						return nil
-					}(); err != nil {
-						return err
-					}
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "page",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Set default value for query: pageSize.
-	{
-		val := int32(25)
-		params.PageSize.SetTo(val)
-	}
-	// Decode query: pageSize.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "pageSize",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotPageSizeVal int32
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToInt32(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotPageSizeVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.PageSize.SetTo(paramsDotPageSizeVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-			if err := func() error {
-				if value, ok := params.PageSize.Get(); ok {
-					if err := func() error {
-						if err := (validate.Int{
-							MinSet:        true,
-							Min:           1,
-							MaxSet:        true,
-							Max:           100,
-							MinExclusive:  false,
-							MaxExclusive:  false,
-							MultipleOfSet: false,
-							MultipleOf:    0,
-							Pattern:       nil,
-						}).Validate(int64(value)); err != nil {
-							return errors.Wrap(err, "int")
-						}
-						return nil
-					}(); err != nil {
-						return err
-					}
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "pageSize",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// StaffWorkspacesSuspendParams is parameters of StaffWorkspaces_suspend operation.
-type StaffWorkspacesSuspendParams struct {
-	WorkspaceId WorkspaceId
-}
-
-func unpackStaffWorkspacesSuspendParams(packed middleware.Parameters) (params StaffWorkspacesSuspendParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
+		params.ID = packed[key].(EntityId)
 	}
 	return params
 }
 
-func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffWorkspacesSuspendParams, _ error) {
-	// Decode path: workspaceId.
+func decodeStaffSignupItemsSaveDraftParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupItemsSaveDraftParams, _ error) {
+	// Decode path: id.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -787,39 +331,31 @@ func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *htt
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
+				Param:   "id",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
 
-					paramsDotWorkspaceIdVal = c
+					paramsDotIDVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
+				params.ID = EntityId(paramsDotIDVal)
 				return nil
 			}(); err != nil {
 				return err
@@ -830,7 +366,7 @@ func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *htt
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 			Err:  err,
 		}
@@ -838,24 +374,24 @@ func decodeStaffWorkspacesSuspendParams(args [1]string, argsEscaped bool, r *htt
 	return params, nil
 }
 
-// StaffWorkspacesUnexemptParams is parameters of StaffWorkspaces_unexempt operation.
-type StaffWorkspacesUnexemptParams struct {
-	WorkspaceId WorkspaceId
+// StaffSignupItemsUpdateParams is parameters of StaffSignupItems_update operation.
+type StaffSignupItemsUpdateParams struct {
+	ID EntityId
 }
 
-func unpackStaffWorkspacesUnexemptParams(packed middleware.Parameters) (params StaffWorkspacesUnexemptParams) {
+func unpackStaffSignupItemsUpdateParams(packed middleware.Parameters) (params StaffSignupItemsUpdateParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
+		params.ID = packed[key].(EntityId)
 	}
 	return params
 }
 
-func decodeStaffWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffWorkspacesUnexemptParams, _ error) {
-	// Decode path: workspaceId.
+func decodeStaffSignupItemsUpdateParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffSignupItemsUpdateParams, _ error) {
+	// Decode path: id.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -867,39 +403,31 @@ func decodeStaffWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *ht
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
+				Param:   "id",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
 			})
 
 			if err := func() error {
-				var paramsDotWorkspaceIdVal string
+				var paramsDotIDVal int64
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
 						return err
 					}
 
-					c, err := conv.ToString(val)
+					c, err := conv.ToStringInt64(val)
 					if err != nil {
 						return err
 					}
 
-					paramsDotWorkspaceIdVal = c
+					paramsDotIDVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
+				params.ID = EntityId(paramsDotIDVal)
 				return nil
 			}(); err != nil {
 				return err
@@ -910,87 +438,7 @@ func decodeStaffWorkspacesUnexemptParams(args [1]string, argsEscaped bool, r *ht
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// StaffWorkspacesUnsuspendParams is parameters of StaffWorkspaces_unsuspend operation.
-type StaffWorkspacesUnsuspendParams struct {
-	WorkspaceId WorkspaceId
-}
-
-func unpackStaffWorkspacesUnsuspendParams(packed middleware.Parameters) (params StaffWorkspacesUnsuspendParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "workspaceId",
-			In:   "path",
-		}
-		params.WorkspaceId = packed[key].(WorkspaceId)
-	}
-	return params
-}
-
-func decodeStaffWorkspacesUnsuspendParams(args [1]string, argsEscaped bool, r *http.Request) (params StaffWorkspacesUnsuspendParams, _ error) {
-	// Decode path: workspaceId.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "workspaceId",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				var paramsDotWorkspaceIdVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotWorkspaceIdVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
-				return nil
-			}(); err != nil {
-				return err
-			}
-			if err := func() error {
-				if err := params.WorkspaceId.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "workspaceId",
+			Name: "id",
 			In:   "path",
 			Err:  err,
 		}

@@ -116,8 +116,8 @@ type acceptForm struct {
 }
 
 // SitePublicInvitationsAccept turns an invite into a Membership: it attaches an
-// Verified User (their own session) or sets up the account (name + password), then
-// joins them to the workspace. Link possession authorizes an address with no Verified
+// Verified User (their own session) or sets up the account (name + password and the
+// answers to the Sign-up items, ADR 0062), then joins them to the workspace. Link possession authorizes an address with no Verified
 // User; a Verified User's address also needs that User's session.
 func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi.SiteAcceptInvitationInput, params siteapi.SitePublicInvitationsAcceptParams) (siteapi.SitePublicInvitationsAcceptRes, error) {
 	inv, err := h.accounts.PendingInvitation(ctx, params.Token)
@@ -139,7 +139,9 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 		return nil, err
 	}
 
-	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)
+	err = h.accounts.AcceptInvitation(ctx, inv, accounts.InvitationAcceptance{
+		Name: strings.TrimSpace(name), Password: password, SignupItems: signupAnswers(req.SignupItems), SessionEmail: sessionEmail,
+	})
 	if errors.Is(err, accounts.ErrCredentialsRequired) {
 		// No Verified User for the address: the invitee sets up the account. Kept by hand: a
 		// refused form of two fields would read "check the name and password", not this detail.

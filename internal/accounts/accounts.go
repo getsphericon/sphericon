@@ -21,16 +21,19 @@ import (
 	"golang.org/x/text/currency"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts/roles"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/reportday"
+	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/workspaceid"
 )
@@ -45,8 +48,14 @@ type Accounts struct {
 	ent         *ent.Client
 	bus         *events.Bus
 	passwords   *credentials.Hasher
+	consents    Consents
 	newPublicID func() string
-	signup      SignupRule
+}
+
+// Consents answers a form's answers against the Sign-up items in effect: the Consent records they
+// make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check).
+type Consents interface {
+	Check(ctx context.Context, answers []consentrecords.Answer, source consentrecord.Source) (consentrecords.Consents, error)
 }
 
 // Option tunes Accounts.
@@ -59,9 +68,10 @@ func WithWorkspaceIDs(generate func() string) Option {
 }
 
 // New builds Accounts over the ent client; the bus opens the transactions that
-// span several writes, and passwords hashes the passwords a User sets.
-func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, opts ...Option) *Accounts {
-	a := &Accounts{ent: client, bus: bus, passwords: passwords, newPublicID: workspaceid.New}
+// span several writes, passwords hashes the passwords a User sets, and consents answers the
+// Sign-up items an account set up from an Invitation is asked (ADR 0062).
+func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, consents Consents, opts ...Option) *Accounts {
+	a := &Accounts{ent: client, bus: bus, passwords: passwords, consents: consents, newPublicID: workspaceid.New}
 	for _, opt := range opts {
 		opt(a)
 	}
@@ -467,24 +477,43 @@ func (a *Accounts) EmailTaken(ctx context.Context, email string) (bool, error) {
 	return a.ent.User.Query().Where(user.Email(NormalizeEmail(email))).Exist(ctx)
 }
 
-// CreateUnverified creates an Unverified User (ADR 0030): a name, an email and the password hash
-// from the Sign-up form, no Membership. The password goes live only when the address
-// is verified from the Sign-up browser, or replaced on the link. The unique index on the email refuses a taken address (see
-// db.IsUniqueViolation). surveyDue marks the User as owing the Sign-up survey (the Instance asks it).
-func (a *Accounts) CreateUnverified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
-	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).
-		SetNillableSignupSurveyDueAt(surveyDueAt(surveyDue)).Save(ctx)
+// CreateUnverified creates the Unverified User of a Sign-up (ADR 0030): its name, email and
+// password hash from the Sign-up form, no Membership, and in the same transaction the Consent
+// records of its answers to the Sign-up items (ADR 0062). The password goes live only when the
+// address is verified from the Sign-up browser, or replaced on the link. The unique index on the
+// email refuses a taken address (see db.IsUniqueViolation). SurveyDue marks the User as owing the
+// Sign-up survey (the Instance asks it).
+func (a *Accounts) CreateUnverified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+	var created *ent.User
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		u, err := tx.User.Create().SetName(n.Name).SetEmail(n.Email).SetPasswordHash(n.PasswordHash).
+			SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue)).Save(ctx)
+		if err != nil {
+			return err
+		}
+		created = u
+		return consentrecords.Write(ctx, tx, u.ID, n.Consents)
+	})
+	return created, err
 }
 
 // ReplaceUnverifiedPassword is a repeated Sign-up of an address (ADR 0030): it
 // stores the new password hash on the User while it is still Unverified, which ends
-// every verification link minted over the earlier hash. A Verified User is left
-// untouched. It returns the User as it stands afterwards.
-func (a *Accounts) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string) (*ent.User, error) {
-	_, err := a.ent.User.Update().
-		Where(user.ID(id), user.EmailVerifiedAtIsNil()).
-		SetPasswordHash(passwordHash).
-		Save(ctx)
+// every verification link minted over the earlier hash, and adds the Consent records of the
+// repeated Sign-up's answers in the same transaction. A Verified User is left
+// untouched, records included: whoever signed up has not proven the address. It returns the User
+// as it stands afterwards.
+func (a *Accounts) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string, consents consentrecords.Consents) (*ent.User, error) {
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		n, err := tx.User.Update().
+			Where(user.ID(id), user.EmailVerifiedAtIsNil()).
+			SetPasswordHash(passwordHash).
+			Save(ctx)
+		if err != nil || n == 0 {
+			return err
+		}
+		return consentrecords.Write(ctx, tx, id, consents)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +523,13 @@ func (a *Accounts) ReplaceUnverifiedPassword(ctx context.Context, id int64, pass
 // CreateUser creates a User whose email is already proven, with a password hash: a
 // User made by the platform itself rather than by a Sign-up.
 func (a *Accounts) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	return a.ent.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
+	var u *ent.User
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		var err error
+		u, err = tx.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(time.Now()).Save(ctx)
+		return err
+	})
+	return u, err
 }
 
 // markVerified completes an Unverified User's row: it stamps the Verified email, bumps the
@@ -538,44 +573,36 @@ const FirstWorkspaceName = "Personal"
 // next: the joined Workspace, else the first one.
 // ErrAlreadyVerified when the User is no longer Unverified (a used link).
 func (a *Accounts) VerifyEmail(ctx context.Context, id int64, passwordHash *string) (u *ent.User, landing *ent.Workspace, err error) {
-	// The link follows a Sign-up, so the User exists: the sign-up gate permits.
-	return a.verified(ctx, &proof{SignupPermits: true}, func(tx *ent.Client) (*ent.User, error) {
+	return a.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
 		return markVerified(ctx, tx, id, "", passwordHash)
 	})
 }
 
 // SignUpVerified is a Sign-up on an install that does not require email
-// verification (ADR 0030): in one transaction it checks the Instance's sign-up rule
-// (ErrSignupClosed, ADR 0060), creates a User that is Verified at once with its password, and
-// the first Workspace (FirstWorkspaceName), exactly as VerifyEmail does. The unique index on the
-// email refuses a taken address (see db.IsUniqueViolation). surveyDue marks the User as owing
-// the Sign-up survey.
-func (a *Accounts) SignUpVerified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
-	return a.createVerified(ctx, true, name, email, passwordHash, surveyDue)
-}
-
-// createVerified is the transaction of SignUpVerified; gated says whether the sign-up rule applies.
-// `sphericon user create-owner` is no public sign-up and is not gated.
-func (a *Accounts) createVerified(ctx context.Context, gated bool, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
-	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client) (*ent.User, error) {
-		if gated {
-			if err := a.permitSignup(ctx, tx); err != nil {
-				return nil, err
-			}
-		}
-		return tx.User.Create().
-			SetName(name).
-			SetEmail(email).
-			SetPasswordHash(passwordHash).
+// verification (ADR 0030): in one transaction it creates a User that is Verified at once with
+// its password and the Consent records of its answers (ADR 0062), and the first Workspace
+// (FirstWorkspaceName), exactly as VerifyEmail does. The
+// unique index on the email refuses a taken address (see db.IsUniqueViolation). SurveyDue marks
+// the User as owing the Sign-up survey.
+func (a *Accounts) SignUpVerified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+	u, _, err := a.verified(ctx, noJoin, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
+		u, err := tx.User.Create().
+			SetName(n.Name).
+			SetEmail(n.Email).
+			SetPasswordHash(n.PasswordHash).
 			SetEmailVerifiedAt(time.Now()).
-			SetNillableSignupSurveyDueAt(surveyDueAt(surveyDue)).
+			SetNillableSignupSurveyDueAt(surveyDueAt(n.SurveyDue)).
 			Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return u, consentrecords.Write(ctx, tx, u.ID, n.Consents)
 	})
 	return u, err
 }
 
-// CreateOwner is the Instance operator's way to make a first Owner on an Instance that
-// closed sign-up (ADR 0042): a Verified User with a generated password and its first
+// CreateOwner is the Instance operator's way to make an Owner from a shell (ADR 0042): a
+// Verified User with a generated password and its first
 // Workspace, named FirstWorkspaceName, exactly as SignUpVerified makes them. The password
 // is returned once; an address that does not parse is refused, and the unique index on the
 // email refuses a taken one (see db.IsUniqueViolation).
@@ -588,35 +615,40 @@ func (a *Accounts) CreateOwner(ctx context.Context, email, name string) (passwor
 	if err != nil {
 		return "", err
 	}
-	if _, err := a.createVerified(ctx, false, name, email, hash, false); err != nil {
+	if _, err := a.SignUpVerified(ctx, signup.NewUser{Name: name, Email: email, PasswordHash: hash}); err != nil {
 		return "", err
 	}
 	return password, nil
 }
 
-// noJoin is the proof of a step that proves nothing (an Instance with verification off
-// stamps only verified_at), so it takes no part in domain join (ADR 0051).
-var noJoin *proof
+// provenNow and noJoin say whether a step that makes a User Verified also proved the address
+// (stamped email_proven_at from empty), which makes it a domain-join step (ADR 0051). An
+// Instance with verification off stamps only verified_at, which proves nothing.
+const (
+	provenNow = true
+	noJoin    = false
+)
 
 // verified is what makes a User Verified, shared by VerifyEmail, SignUpVerified and the
-// provider sign-in: write stores the User's verified state; then, when p is not nil (the
-// step stamped email_proven_at from empty), the domain-join step runs with it; then the User's first Workspace is created and
-// `user.email_verify` recorded in its Audit log, all in one transaction. landing is the
-// Workspace the User goes to next: the one joined by domain, else the first.
-func (a *Accounts) verified(ctx context.Context, p *proof, write func(tx *ent.Client) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
+// provider sign-in: write stores the User's verified state (and whatever else its step writes,
+// on the same publisher); then, when proven (the step stamped email_proven_at from empty), the
+// domain-join step runs; then the User's first Workspace is created and `user.email_verify`
+// recorded in its Audit log, all in one transaction. landing is the Workspace the User goes to
+// next: the one joined by domain, else the first.
+func (a *Accounts) verified(ctx context.Context, proven bool, write func(tx *ent.Client, pub events.Publisher) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
 	for {
 		var verified *ent.User
 		var landing *ent.Workspace
 		written := false
 		err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-			u, err := write(tx)
+			u, err := write(tx, pub)
 			if err != nil {
 				return err
 			}
 			written = true
 			var joined *ent.Workspace
-			if p != nil {
-				if joined, err = applyDomainJoin(ctx, tx, pub, u, *p); err != nil {
+			if proven {
+				if joined, err = applyDomainJoin(ctx, tx, pub, u); err != nil {
 					return err
 				}
 			}
@@ -669,7 +701,7 @@ func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHa
 		}
 		saved = u
 		if stamped {
-			if _, err := applyDomainJoin(ctx, tx, pub, u, proof{SignupPermits: true}); err != nil {
+			if _, err := applyDomainJoin(ctx, tx, pub, u); err != nil {
 				return err
 			}
 		}
@@ -791,7 +823,7 @@ func (a *Accounts) ChangeEmail(ctx context.Context, id int64, newEmail string) e
 		if err != nil {
 			return err
 		}
-		_, err = applyDomainJoin(ctx, tx, pub, u, proof{SignupPermits: true})
+		_, err = applyDomainJoin(ctx, tx, pub, u)
 		return err
 	})
 }
@@ -801,11 +833,7 @@ func (a *Accounts) ChangeEmail(ctx context.Context, id int64, newEmail string) e
 // front. ErrInvitationLinkNotFound when there is none.
 func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.Invitation, error) {
 	inv, err := a.ent.Invitation.Query().
-		Where(
-			invitation.TokenHash(HashInviteToken(token)),
-			invitation.AcceptedAtIsNil(),
-			invitation.ExpiresAtGT(time.Now()),
-		).
+		Where(invitation.TokenHash(HashInviteToken(token)), pendingInvitation(time.Now())).
 		WithWorkspace().
 		Only(ctx)
 	if ent.IsNotFound(err) {
@@ -814,75 +842,114 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 	return inv, err
 }
 
-// AcceptInvitation turns a pending Invitation into a Membership. sessionEmail is the
-// login email of the session the request carried ("" for none). A Verified User is
+// pendingInvitation is the one definition of an Invitation still pending at now: not accepted
+// and not expired.
+func pendingInvitation(now time.Time) predicate.Invitation {
+	return invitation.And(invitation.AcceptedAtIsNil(), invitation.ExpiresAtGT(now))
+}
+
+// InvitationAcceptance is what the person who follows an Invitation link gives.
+type InvitationAcceptance struct {
+	// Name and Password set up the account of an address no Verified User holds.
+	Name     string
+	Password string
+	// SignupItems is that account's answers to the Sign-up items (ADR 0062).
+	SignupItems []consentrecords.Answer
+	// SessionEmail is the login email of the session the request carried ("" for none).
+	SessionEmail string
+}
+
+// AcceptInvitation turns a pending Invitation into a Membership. A Verified User is
 // attached only with their own session (ErrSignInRequired without one, ErrWrongAccount
-// for another User's), decided on the row read inside the transaction. For an address with
-// no User or an Unverified User (ADR 0030) the name and password are required
-// (ErrCredentialsRequired otherwise): the link proves control of the address, so the
-// User is created, or the Unverified User's row completed (name and password set,
-// Verified email stamped, session epoch bumped, `user.email_verify` audited), and
-// nothing the person who signed up set survives; if the address was verified meanwhile that is
-// ErrSignInRequired too (wrapping ErrAlreadyVerified): the address now has a Verified User,
-// who signs in to accept. A Verified User is attached as is. The Membership is created (a
-// duplicate is not an error), the Invitation marked accepted and the acceptance
-// audited, all in one transaction.
-func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
-	err := a.acceptInvitation(ctx, inv, name, password, sessionEmail)
+// for another User's), decided on the row read inside the transaction, and is asked nothing
+// more: consent follows the User, not the Workspace (ADR 0062). For an address with no User
+// or an Unverified User (ADR 0030) the name and password are required (ErrCredentialsRequired
+// otherwise) and the Sign-up items are answered as on the sign-up form (a
+// *validation.FieldsError refuses the answers): the link proves control of the address, so
+// the User is created, or the Unverified User's row completed (name and password set,
+// Verified email stamped, session epoch bumped, `user.email_verify` audited), and nothing
+// the person who signed up set survives but their Consent records, which are only added to:
+// the answers are recorded after them with the source Invitation, and the latest per item is
+// the current one. If the address was verified meanwhile that is ErrSignInRequired too
+// (wrapping ErrAlreadyVerified): the address now has a Verified User, who signs in to accept. The
+// Membership is created (a duplicate is not an error), the Invitation marked accepted and
+// the acceptance audited, all in one transaction.
+func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, in InvitationAcceptance) error {
+	// The answers are checked before the transaction, which says on the row it reads whether
+	// they are asked at all.
+	consents, err := a.consents.Check(ctx, in.SignupItems, consentrecord.SourceInvitation)
+	refused, itemsRefused := errors.AsType[*validation.FieldsError](err)
+	if err != nil && !itemsRefused {
+		return err
+	}
+	account := newAccount{name: in.Name, password: in.Password, consents: consents, refused: refused}
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		return a.acceptInvitationIn(ctx, tx, pub, inv, account, in.SessionEmail)
+	})
 	if errors.Is(err, ErrAlreadyVerified) {
 		return fmt.Errorf("%w: %w", ErrSignInRequired, err)
 	}
 	return err
 }
 
-func (a *Accounts) acceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
+// acceptInvitationIn is AcceptInvitation in the caller's transaction tx, publishing on pub. account
+// sets up the account of an address no Verified User holds; a caller that accepts for a Verified
+// User by its proof of the address (sessionEmail) passes none.
+func (a *Accounts) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub events.Publisher, inv *ent.Invitation, account newAccount, sessionEmail string) error {
 	role := membership.Role(inv.Role)
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, proven, err := invitee(ctx, tx, a.passwords, inv, name, password, sessionEmail)
-		if err != nil {
+	u, proven, err := invitee(ctx, tx, a.passwords, inv, account, sessionEmail)
+	if err != nil {
+		return err
+	}
+
+	ts := tx.Scoped(inv.WorkspaceID)
+	actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
+	existing, err := ensureMembership(ctx, ts, u, role)
+	if err != nil {
+		return err
+	}
+	if existing != nil && roles.IsMember(existing.Role) && roles.IsAdmin(role) {
+		// An explicit Invitation raises a member to admin; it never lowers a Role.
+		if err := raiseToAdmin(ctx, ts, pub, inv, actor, u, existing); err != nil {
 			return err
 		}
+	}
 
-		ts := tx.Scoped(inv.WorkspaceID)
-		actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
-		existing, err := ensureMembership(ctx, ts, u, role)
-		if err != nil {
+	if proven.now {
+		// The address was proven now, so the domain-join step runs after the explicit
+		// Invitation's Membership (which then wins: a Workspace the Invitation names is
+		// not joined twice). Accepting an Invitation is untouched by the sign-up gate.
+		if _, err := applyDomainJoin(ctx, tx, pub, u); err != nil {
 			return err
 		}
-		if existing != nil && roles.IsMember(existing.Role) && roles.IsAdmin(role) {
-			// An explicit Invitation raises a member to admin; it never lowers a Role.
-			if err := raiseToAdmin(ctx, ts, pub, inv, actor, u, existing); err != nil {
-				return err
-			}
-		}
+	}
 
-		if proven.now {
-			// The address was proven now, so the domain-join step runs after the explicit
-			// Invitation's Membership (which then wins: a Workspace the Invitation names is
-			// not joined twice). Accepting an Invitation is untouched by the sign-up gate.
-			if _, err := applyDomainJoin(ctx, tx, pub, u, proof{SignupPermits: true}); err != nil {
-				return err
-			}
-		}
-
-		if err := ts.Invitation().UpdateOneID(inv.ID).SetAcceptedAt(time.Now()).Exec(ctx); err != nil {
+	if err := ts.Invitation().UpdateOneID(inv.ID).SetAcceptedAt(time.Now()).Exec(ctx); err != nil {
+		return err
+	}
+	if proven.byInvitation {
+		if err := RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserEmailVerify, nil, inv.WorkspaceID); err != nil {
 			return err
 		}
-		if proven.byInvitation {
-			if err := RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserEmailVerify, nil, inv.WorkspaceID); err != nil {
-				return err
-			}
-		}
-		return events.RecordAudit(ctx, pub, &events.AuditEntry{
-			WorkspaceID: inv.WorkspaceID,
-			Actor:       actor,
-			Action:      events.ActionInvitationAccept,
-			TargetType:  invitation.Label,
-			TargetID:    strconv.FormatInt(inv.ID, 10),
-			TargetName:  inv.Email,
-			Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
-		})
+	}
+	return events.RecordAudit(ctx, pub, &events.AuditEntry{
+		WorkspaceID: inv.WorkspaceID,
+		Actor:       actor,
+		Action:      events.ActionInvitationAccept,
+		TargetType:  invitation.Label,
+		TargetID:    strconv.FormatInt(inv.ID, 10),
+		TargetName:  inv.Email,
+		Diff:        map[string]any{invitation.FieldRole: events.Became(string(inv.Role))},
 	})
+}
+
+// newAccount is what sets up the account of an invited address no Verified User holds: the name,
+// the password, and the Consent records of the answers to the Sign-up items or their refusal.
+type newAccount struct {
+	name     string
+	password string
+	consents consentrecords.Consents
+	refused  *validation.FieldsError
 }
 
 // acceptProof says how accepting an Invitation proved the address.
@@ -895,8 +962,9 @@ type acceptProof struct {
 }
 
 // invitee resolves the User an Invitation is accepted by: a Verified User by their own session,
-// any other address by the name and password the link's holder sets (ADR 0030).
-func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, name, password, sessionEmail string) (*ent.User, acceptProof, error) {
+// any other address by the account the link's holder sets up (ADR 0030), with the Consent
+// records of its answers (ADR 0062).
+func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, account newAccount, sessionEmail string) (*ent.User, acceptProof, error) {
 	u, err := tx.User.Query().Where(user.EmailEqualFold(inv.Email)).Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, acceptProof{}, err
@@ -905,11 +973,14 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 		now, err := proveByOwnSession(ctx, tx, u, inv.Email, sessionEmail)
 		return u, acceptProof{now: now}, err
 	}
-	name = strings.TrimSpace(name)
-	if name == "" || password == "" {
+	name := strings.TrimSpace(account.name)
+	if name == "" || account.password == "" {
 		return nil, acceptProof{}, ErrCredentialsRequired
 	}
-	hash, herr := passwords.Hash(password)
+	if account.refused != nil {
+		return nil, acceptProof{}, account.refused
+	}
+	hash, herr := passwords.Hash(account.password)
 	if herr != nil {
 		return nil, acceptProof{}, herr
 	}
@@ -929,6 +1000,9 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 		}
 	}
 	if err != nil {
+		return nil, acceptProof{}, err
+	}
+	if err := consentrecords.Write(ctx, tx, u.ID, account.consents); err != nil {
 		return nil, acceptProof{}, err
 	}
 	return u, acceptProof{now: true, byInvitation: true}, nil

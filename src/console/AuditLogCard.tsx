@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
-import { staffWorkspaceAuditListOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
-import type { StaffAuditEntryResource } from '../generated/staff/types.gen.ts'
+import { staffWorkspaceAuditListOptions } from '../generated/staffee/@tanstack/react-query.gen.ts'
+import type { StaffAuditEntryResource } from '../generated/staffee/types.gen.ts'
 import { formatDateTime } from '../utils/datetime.ts'
 
 const PAGE_SIZE = 25

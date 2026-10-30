@@ -38,7 +38,6 @@ const (
 	ReasonProviderUnavailable Reason = "provider_unavailable"
 	ReasonEmailUnverified     Reason = "email_unverified"
 	ReasonEmailNotTrusted     Reason = "email_not_trusted"
-	ReasonSignupClosed        Reason = "signup_closed"
 	ReasonIdentityInUse       Reason = "identity_in_use"
 	// ReasonInvitationEmailMismatch: accepting an Invitation needs the provider's trusted
 	// email to be the invited address. ReasonInvitationInvalid: the Invitation is not pending.
@@ -50,7 +49,7 @@ const (
 func Reasons() []Reason {
 	return []Reason{
 		ReasonDenied, ReasonProviderError, ReasonInvalidState, ReasonProviderUnavailable,
-		ReasonEmailUnverified, ReasonEmailNotTrusted, ReasonSignupClosed, ReasonIdentityInUse,
+		ReasonEmailUnverified, ReasonEmailNotTrusted, ReasonIdentityInUse,
 		ReasonInvitationEmailMismatch, ReasonInvitationInvalid,
 	}
 }

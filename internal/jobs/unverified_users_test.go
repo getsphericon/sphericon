@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,7 +23,7 @@ const unverifiedRetention = 7 * 24 * time.Hour
 
 func pruneUnverified(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
-	w := jobs.NewPruneUnverifiedUsersWorker(accounts.New(env.DB, env.Bus, testhelper.Passwords()), retention)
+	w := jobs.NewPruneUnverifiedUsersWorker(accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords), retention)
 	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneUnverifiedUsersArgs]{JobRow: &rivertype.JobRow{}}))
 }
 
@@ -67,13 +68,13 @@ func TestPruneUnverifiedUsersDisabledByZeroRetention(t *testing.T) {
 
 func TestPrunedAddressKeepsItsInvitationAndTheInviteeCanAcceptIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 
 	pruneUnverified(t, env, unverifiedRetention)
 
 	inv, err := env.DB.Scoped(fixtures.GlobexID).Invitation().Get(t.Context(), fixtures.InvitationStaleUnverifiedID)
 	require.NoError(t, err, "an Invitation references an email, not a User")
-	require.NoError(t, acc.AcceptInvitation(t.Context(), inv, "Real Owner", "a-strong-password-1", ""))
+	require.NoError(t, acc.AcceptInvitation(t.Context(), inv, accounts.InvitationAcceptance{Name: "Real Owner", Password: "a-strong-password-1"}))
 	owner, err := acc.UserByEmail(t.Context(), fixtures.StaleUnverifiedUserEmail)
 	require.NoError(t, err)
 	assert.NotNil(t, owner.EmailVerifiedAt)
@@ -82,13 +83,13 @@ func TestPrunedAddressKeepsItsInvitationAndTheInviteeCanAcceptIt(t *testing.T) {
 
 func TestAddressCanSignUpOnlyAfterItsStaleUserIsPruned(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	taken, err := acc.EmailTaken(t.Context(), fixtures.StaleUnverifiedUserEmail)
 	require.NoError(t, err)
 	require.True(t, taken, "the address is held until pruned")
 
 	pruneUnverified(t, env, unverifiedRetention)
 
-	_, err = acc.CreateUnverified(t.Context(), "Real Owner", fixtures.StaleUnverifiedUserEmail, "signed-up-hash", false)
+	_, err = acc.CreateUnverified(t.Context(), signup.NewUser{Name: "Real Owner", Email: fixtures.StaleUnverifiedUserEmail, PasswordHash: "signed-up-hash"})
 	require.NoError(t, err)
 }

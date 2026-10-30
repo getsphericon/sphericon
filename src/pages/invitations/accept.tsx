@@ -12,22 +12,27 @@ import {
 import { useForm } from '@mantine/form'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
+import { SignupItemFields } from '../../components/SignupItemFields.tsx'
 import {
+  siteLegalDocumentsSignupItemsOptions,
   sitePublicInvitationsAcceptMutation,
   sitePublicInvitationsLookupOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zSiteSigninError } from '../../generated/site/zod.gen.ts'
+import { useAcceptanceWatch } from '../../hooks/useAcceptanceWatch.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { Route as acceptInvitationRoute } from '../../routes/invitations/$token.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
+import { signupItemAnswers } from '../../utils/signupItems.ts'
 
 export function AcceptInvitationPage() {
   const { t } = useTranslation()
@@ -38,6 +43,9 @@ export function AcceptInvitationPage() {
   const location = useLocation()
   // Set when the server's provider callback sent the person back here without joining.
   const signinError = zSiteSigninError.safeParse(useSearch({ strict: false }).error).data
+  // A signed-in User with a required acceptance pending (ADR 0062) is refused the session probe
+  // and the accept alike: they go to the accept-or-sign-out screen first.
+  useAcceptanceWatch()
 
   const lookup = useQuery({
     ...sitePublicInvitationsLookupOptions({ path: { token } }),
@@ -54,6 +62,11 @@ export function AcceptInvitationPage() {
   })
 
   const form = useForm({ initialValues: { name: '', password: '' } })
+  // The Sign-up items in effect (ADR 0062), asked only of an invitee who sets up an account:
+  // consent follows an existing User, so joining with a session answers none.
+  const itemsQuery = useQuery(siteLegalDocumentsSignupItemsOptions())
+  const items = itemsQuery.data?.items ?? []
+  const [ticked, setTicked] = useState<Record<string, boolean>>({})
 
   const mutation = useMutation({
     ...sitePublicInvitationsAcceptMutation(),
@@ -103,9 +116,15 @@ export function AcceptInvitationPage() {
   const signedIn = session.isSuccess
 
   const handleSubmit = (values: { name: string; password: string }) => {
+    // With no items the form sends no answers at all, as it did before items existed.
+    const signupItems = signupItemAnswers(items, ticked)
     mutation.mutate({
       path: { token },
-      body: { name: values.name.trim(), password: values.password },
+      body: {
+        name: values.name.trim(),
+        password: values.password,
+        ...(signupItems && { signupItems }),
+      },
     })
   }
 
@@ -137,6 +156,12 @@ export function AcceptInvitationPage() {
             autoComplete="new-password"
             required
             {...form.getInputProps('password')}
+          />
+          <SignupItemFields
+            items={items}
+            ticked={ticked}
+            onTick={(key, checked) => setTicked((current) => ({ ...current, [key]: checked }))}
+            error={mutation.error}
           />
           <Button type="submit" loading={mutation.isPending}>
             {t(($) => $.acceptInvitation.acceptButton)}

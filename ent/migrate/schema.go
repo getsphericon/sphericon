@@ -590,6 +590,50 @@ var (
 			},
 		},
 	}
+	// ConsentRecordsColumns holds the columns for the "consent_records" table.
+	ConsentRecordsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "decision", Type: field.TypeEnum, Enums: []string{"accepted", "declined", "withdrawn", "shown"}},
+		{Name: "source", Type: field.TypeEnum, Enums: []string{"sign_up_form", "provider_screen", "invitation", "re_acceptance", "account_settings"}},
+		{Name: "ip", Type: field.TypeString, Nullable: true},
+		{Name: "user_agent", Type: field.TypeString, Nullable: true},
+		{Name: "version_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+	}
+	// ConsentRecordsTable holds the schema information for the "consent_records" table.
+	ConsentRecordsTable = &schema.Table{
+		Name:       "consent_records",
+		Columns:    ConsentRecordsColumns,
+		PrimaryKey: []*schema.Column{ConsentRecordsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "consent_records_legal_document_versions_consent_records",
+				Columns:    []*schema.Column{ConsentRecordsColumns[7]},
+				RefColumns: []*schema.Column{LegalDocumentVersionsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "consent_records_users_consent_records",
+				Columns:    []*schema.Column{ConsentRecordsColumns[8]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "consentrecord_user_id_id",
+				Unique:  false,
+				Columns: []*schema.Column{ConsentRecordsColumns[8], ConsentRecordsColumns[0]},
+			},
+			{
+				Name:    "consentrecord_version_id",
+				Unique:  false,
+				Columns: []*schema.Column{ConsentRecordsColumns[7]},
+			},
+		},
+	}
 	// ContactsColumns holds the columns for the "contacts" table.
 	ContactsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1095,6 +1139,71 @@ var (
 				Name:    "joindomain_last_checked_at",
 				Unique:  false,
 				Columns: []*schema.Column{JoinDomainsColumns[6]},
+			},
+		},
+	}
+	// LegalDocumentDraftsColumns holds the columns for the "legal_document_drafts" table.
+	LegalDocumentDraftsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "markdown", Type: field.TypeString, Size: 2147483647},
+		{Name: "item_id", Type: field.TypeInt64, Unique: true},
+	}
+	// LegalDocumentDraftsTable holds the schema information for the "legal_document_drafts" table.
+	LegalDocumentDraftsTable = &schema.Table{
+		Name:       "legal_document_drafts",
+		Columns:    LegalDocumentDraftsColumns,
+		PrimaryKey: []*schema.Column{LegalDocumentDraftsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "legal_document_drafts_signup_items_draft",
+				Columns:    []*schema.Column{LegalDocumentDraftsColumns[4]},
+				RefColumns: []*schema.Column{SignupItemsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// LegalDocumentVersionsColumns holds the columns for the "legal_document_versions" table.
+	LegalDocumentVersionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "label", Type: field.TypeString, Size: 64, SchemaType: map[string]string{"postgres": "varchar(64)"}},
+		{Name: "markdown", Type: field.TypeString, Size: 2147483647},
+		{Name: "published_at", Type: field.TypeTime},
+		{Name: "published_by_id", Type: field.TypeInt64},
+		{Name: "item_id", Type: field.TypeInt64},
+	}
+	// LegalDocumentVersionsTable holds the schema information for the "legal_document_versions" table.
+	LegalDocumentVersionsTable = &schema.Table{
+		Name:       "legal_document_versions",
+		Columns:    LegalDocumentVersionsColumns,
+		PrimaryKey: []*schema.Column{LegalDocumentVersionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "legal_document_versions_staff_members_published_by",
+				Columns:    []*schema.Column{LegalDocumentVersionsColumns[6]},
+				RefColumns: []*schema.Column{StaffMembersColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "legal_document_versions_signup_items_versions",
+				Columns:    []*schema.Column{LegalDocumentVersionsColumns[7]},
+				RefColumns: []*schema.Column{SignupItemsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "legaldocumentversion_item_id_label",
+				Unique:  true,
+				Columns: []*schema.Column{LegalDocumentVersionsColumns[7], LegalDocumentVersionsColumns[3]},
+			},
+			{
+				Name:    "legaldocumentversion_published_by_id",
+				Unique:  false,
+				Columns: []*schema.Column{LegalDocumentVersionsColumns[6]},
 			},
 		},
 	}
@@ -1604,6 +1713,49 @@ var (
 		Columns:    PasskeyChallengesColumns,
 		PrimaryKey: []*schema.Column{PasskeyChallengesColumns[0]},
 	}
+	// PendingSignupsColumns holds the columns for the "pending_signups" table.
+	PendingSignupsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "provider", Type: field.TypeString},
+		{Name: "subject", Type: field.TypeString},
+		{Name: "email", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString, Default: ""},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "invitation_id", Type: field.TypeInt64, Nullable: true},
+	}
+	// PendingSignupsTable holds the schema information for the "pending_signups" table.
+	PendingSignupsTable = &schema.Table{
+		Name:       "pending_signups",
+		Columns:    PendingSignupsColumns,
+		PrimaryKey: []*schema.Column{PendingSignupsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "pending_signups_invitations_pending_signups",
+				Columns:    []*schema.Column{PendingSignupsColumns[8]},
+				RefColumns: []*schema.Column{InvitationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "pendingsignup_provider_subject",
+				Unique:  true,
+				Columns: []*schema.Column{PendingSignupsColumns[3], PendingSignupsColumns[4]},
+			},
+			{
+				Name:    "pendingsignup_invitation_id",
+				Unique:  false,
+				Columns: []*schema.Column{PendingSignupsColumns[8]},
+			},
+			{
+				Name:    "pendingsignup_expires_at",
+				Unique:  false,
+				Columns: []*schema.Column{PendingSignupsColumns[7]},
+			},
+		},
+	}
 	// PrivateRelayRangesColumns holds the columns for the "private_relay_ranges" table.
 	PrivateRelayRangesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2024,6 +2176,34 @@ var (
 		Columns:    ServiceCredentialsColumns,
 		PrimaryKey: []*schema.Column{ServiceCredentialsColumns[0]},
 	}
+	// SignupItemsColumns holds the columns for the "signup_items" table.
+	SignupItemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
+		{Name: "key", Type: field.TypeString, Unique: true, Size: 64, SchemaType: map[string]string{"postgres": "varchar(64)"}},
+		{Name: "title", Type: field.TypeString, Size: 200, SchemaType: map[string]string{"postgres": "varchar(200)"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"required_acceptance", "optional_consent", "notice"}},
+		{Name: "position", Type: field.TypeInt},
+		{Name: "mailings_consent", Type: field.TypeBool, Default: false},
+	}
+	// SignupItemsTable holds the schema information for the "signup_items" table.
+	SignupItemsTable = &schema.Table{
+		Name:       "signup_items",
+		Columns:    SignupItemsColumns,
+		PrimaryKey: []*schema.Column{SignupItemsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "signupitem_mailings_consent",
+				Unique:  true,
+				Columns: []*schema.Column{SignupItemsColumns[8]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "mailings_consent",
+				},
+			},
+		},
+	}
 	// SignupSurveyResponsesColumns holds the columns for the "signup_survey_responses" table.
 	SignupSurveyResponsesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2270,12 +2450,20 @@ var (
 		{Name: "second_factor_confirmed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "second_factor_last_step", Type: field.TypeInt64, Default: 0},
 		{Name: "signup_survey_due_at", Type: field.TypeTime, Nullable: true},
+		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "user_feed_position_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[13], UsersColumns[0]},
+			},
+		},
 	}
 	// UserIdentitiesColumns holds the columns for the "user_identities" table.
 	UserIdentitiesColumns = []*schema.Column{
@@ -2309,6 +2497,27 @@ var (
 				Name:    "useridentity_user_id",
 				Unique:  false,
 				Columns: []*schema.Column{UserIdentitiesColumns[5]},
+			},
+		},
+	}
+	// UserTombstonesColumns holds the columns for the "user_tombstones" table.
+	UserTombstonesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "user_id", Type: field.TypeInt64, Unique: true},
+		{Name: "feed_position", Type: field.TypeInt64},
+	}
+	// UserTombstonesTable holds the schema information for the "user_tombstones" table.
+	UserTombstonesTable = &schema.Table{
+		Name:       "user_tombstones",
+		Columns:    UserTombstonesColumns,
+		PrimaryKey: []*schema.Column{UserTombstonesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "usertombstone_feed_position_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserTombstonesColumns[4], UserTombstonesColumns[3]},
 			},
 		},
 	}
@@ -2446,6 +2655,7 @@ var (
 		BroadcastRecipientsTable,
 		CapturedMessagesTable,
 		ConfirmationsTable,
+		ConsentRecordsTable,
 		ContactsTable,
 		ContactTagsTable,
 		CustomFieldsTable,
@@ -2458,6 +2668,8 @@ var (
 		IntegrationsTable,
 		InvitationsTable,
 		JoinDomainsTable,
+		LegalDocumentDraftsTable,
+		LegalDocumentVersionsTable,
 		MembershipsTable,
 		OauthClientsTable,
 		OauthCodesTable,
@@ -2467,6 +2679,7 @@ var (
 		OutboundMessagesTable,
 		PasskeysTable,
 		PasskeyChallengesTable,
+		PendingSignupsTable,
 		PrivateRelayRangesTable,
 		RecoveryCodesTable,
 		RulesTable,
@@ -2478,6 +2691,7 @@ var (
 		SendLimitersTable,
 		SendingDomainsTable,
 		ServiceCredentialsTable,
+		SignupItemsTable,
 		SignupSurveyResponsesTable,
 		StaffMembersTable,
 		SuppressionsTable,
@@ -2487,6 +2701,7 @@ var (
 		UsagesTable,
 		UsersTable,
 		UserIdentitiesTable,
+		UserTombstonesTable,
 		VisitorsTable,
 		WebhookEndpointsTable,
 		WorkspacesTable,
@@ -2574,6 +2789,15 @@ func init() {
 		"confirmations_channel_check":    "channel IN ('email')",
 		"confirmations_provenance_check": "provenance IN ('double_opt_in', 'grandfathered', 'imported')",
 	}
+	ConsentRecordsTable.ForeignKeys[0].RefTable = LegalDocumentVersionsTable
+	ConsentRecordsTable.ForeignKeys[1].RefTable = UsersTable
+	ConsentRecordsTable.Annotation = &entsql.Annotation{
+		Table: "consent_records",
+	}
+	ConsentRecordsTable.Annotation.Checks = map[string]string{
+		"consent_records_decision_check": "decision IN ('accepted', 'declined', 'withdrawn', 'shown')",
+		"consent_records_source_check":   "source IN ('sign_up_form', 'provider_screen', 'invitation', 're_acceptance', 'account_settings')",
+	}
 	ContactsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ContactsTable.Annotation = &entsql.Annotation{
 		Table: "contacts",
@@ -2641,6 +2865,15 @@ func init() {
 	JoinDomainsTable.Annotation = &entsql.Annotation{
 		Table: "join_domains",
 	}
+	LegalDocumentDraftsTable.ForeignKeys[0].RefTable = SignupItemsTable
+	LegalDocumentDraftsTable.Annotation = &entsql.Annotation{
+		Table: "legal_document_drafts",
+	}
+	LegalDocumentVersionsTable.ForeignKeys[0].RefTable = StaffMembersTable
+	LegalDocumentVersionsTable.ForeignKeys[1].RefTable = SignupItemsTable
+	LegalDocumentVersionsTable.Annotation = &entsql.Annotation{
+		Table: "legal_document_versions",
+	}
 	MembershipsTable.ForeignKeys[0].RefTable = UsersTable
 	MembershipsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	MembershipsTable.Annotation = &entsql.Annotation{
@@ -2702,6 +2935,10 @@ func init() {
 	PasskeyChallengesTable.Annotation = &entsql.Annotation{
 		Table: "passkey_challenges",
 	}
+	PendingSignupsTable.ForeignKeys[0].RefTable = InvitationsTable
+	PendingSignupsTable.Annotation = &entsql.Annotation{
+		Table: "pending_signups",
+	}
 	PrivateRelayRangesTable.Annotation = &entsql.Annotation{
 		Table: "private_relay_ranges",
 	}
@@ -2758,6 +2995,13 @@ func init() {
 	}
 	ServiceCredentialsTable.Annotation = &entsql.Annotation{
 		Table: "service_credentials",
+	}
+	SignupItemsTable.Annotation = &entsql.Annotation{
+		Table: "signup_items",
+	}
+	SignupItemsTable.Annotation.Checks = map[string]string{
+		"signup_items_kind_check":             "kind IN ('required_acceptance', 'optional_consent', 'notice')",
+		"signup_items_mailings_consent_check": "NOT mailings_consent OR kind = 'optional_consent'",
 	}
 	SignupSurveyResponsesTable.ForeignKeys[0].RefTable = UsersTable
 	SignupSurveyResponsesTable.Annotation = &entsql.Annotation{

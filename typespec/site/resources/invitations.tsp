@@ -104,11 +104,19 @@ model SiteInvitationLookupResult {
 }
 
 /** Accept an invite. For an address with no User or an Unverified User, name + password
- * are required (422 otherwise). For a Verified User the body is not read: the session of
- * that same User is the proof. */
+ * are required (422 otherwise), and the Sign-up items are answered as on the sign-up form. For a
+ * Verified User the body is not read: the session of that same User is the proof, and consent
+ * follows the User, so nothing is asked again (ADR 0062). */
 model SiteAcceptInvitationInput {
   name?: string;
   password?: string;
+
+  /** The answers to the Sign-up items in effect, read only when the accept sets up the account
+   * (ADR 0062). Every required acceptance must be answered ticked at its current version, or the
+   * field `signupItems.<key>` is refused; an optional consent left out is not recorded. Each
+   * answered item is recorded as accepted or declined, and each notice in effect as shown, with
+   * the source Invitation. Absent with no items in effect. */
+  signupItems?: SiteSignupItemAnswer[];
 }
 
 // Opened from the invite link. Not workspace-scoped. Lookup is session-less; accept

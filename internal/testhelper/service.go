@@ -43,7 +43,7 @@ func (env *TestEnv) serviceClientOn(t *testing.T, transport ht.Client, value str
 // The credential belongs to the service called name and carries exactly scopes.
 func (env *TestEnv) IssueServiceCredential(t *testing.T, name string, scopes ...serviceapi.ServiceScope) string {
 	t.Helper()
-	issued, err := env.StaffMembers.IssueServiceCredential(t.Context(), staff.IssueInput{Name: name, Scopes: scopes})
+	issued, err := env.StaffEnterprise.IssueServiceCredential(t.Context(), staff.IssueInput{Name: name, Scopes: scopes})
 	require.NoError(t, err)
 	return issued.Value
 }

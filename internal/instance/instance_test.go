@@ -24,7 +24,7 @@ func TestAuthorizePassesToTheNextOldestWorkspaceWhenTheOldestIsDeleted(t *testin
 	require.NoError(t, mod.Authorize(ctx, fixtures.OwnerJohnID))
 	require.ErrorIs(t, mod.Authorize(ctx, fixtures.OwnerJaneID), refusal)
 
-	require.NoError(t, env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).Exec(ctx))
+	require.NoError(t, env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).Exec(ctx))
 
 	require.ErrorIs(t, mod.Authorize(ctx, fixtures.OwnerJohnID), refusal)
 	require.NoError(t, mod.Authorize(ctx, fixtures.OwnerJaneID))

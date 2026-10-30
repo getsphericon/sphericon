@@ -36,65 +36,68 @@ type Handler interface {
 	//
 	// GET /me
 	StaffMeGet(ctx context.Context) (StaffMeGetRes, error)
-	// StaffSignupSurveyCounts implements StaffSignupSurvey_counts operation.
+	// StaffSignupItemsArchive implements StaffSignupItems_archive operation.
 	//
-	// The Sign-up survey answers, counted per question. Read only.
+	// Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its published
+	// versions stay. Archiving an archived item changes nothing, and an archived item is never restored.
+	// The item that stands for consent to the operator's mailings is refused (422) until it is unmarked.
 	//
-	// GET /signup-survey
-	StaffSignupSurveyCounts(ctx context.Context) (StaffSignupSurveyCountsRes, error)
-	// StaffSignupSurveyGet implements StaffSignupSurvey_get operation.
+	// POST /signup-items/{id}/archive
+	StaffSignupItemsArchive(ctx context.Context, params StaffSignupItemsArchiveParams) (StaffSignupItemsArchiveRes, error)
+	// StaffSignupItemsCreate implements StaffSignupItems_create operation.
 	//
-	// One User's answers. 404 when the User is unknown or has not answered the survey.
+	// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
+	// a second mailings consent are refused (422).
 	//
-	// GET /signup-survey/users/{userId}
-	StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (StaffSignupSurveyGetRes, error)
-	// StaffWorkspaceAuditList implements StaffWorkspaceAudit_list operation.
+	// POST /signup-items
+	StaffSignupItemsCreate(ctx context.Context, req *StaffSignupItemInput) (StaffSignupItemsCreateRes, error)
+	// StaffSignupItemsGet implements StaffSignupItems_get operation.
 	//
-	// One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing
-	// is then recorded.
+	// One Sign-up item.
 	//
-	// GET /workspaces/{workspaceId}/audit-entries
-	StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (StaffWorkspaceAuditListRes, error)
-	// StaffWorkspacesExempt implements StaffWorkspaces_exempt operation.
+	// GET /signup-items/{id}
+	StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (StaffSignupItemsGetRes, error)
+	// StaffSignupItemsList implements StaffSignupItems_list operation.
 	//
-	// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
-	// automatically, but stays listed with its rates and can still be suspended by hand. Audited.
-	// Idempotent.
+	// The Instance's Sign-up items, archived ones included, in the order of the sign-up form.
 	//
-	// POST /workspaces/{workspaceId}/exempt
-	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (StaffWorkspacesExemptRes, error)
-	// StaffWorkspacesGet implements StaffWorkspaces_get operation.
+	// GET /signup-items
+	StaffSignupItemsList(ctx context.Context) (StaffSignupItemsListRes, error)
+	// StaffSignupItemsListVersions implements StaffSignupItems_listVersions operation.
 	//
-	// One Workspace's metadata, suspension state, rates and send volume.
+	// Every published version of the item's Legal document with who published it and when, the latest
+	// first.
 	//
-	// GET /workspaces/{workspaceId}
-	StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (StaffWorkspacesGetRes, error)
-	// StaffWorkspacesList implements StaffWorkspaces_list operation.
+	// GET /signup-items/{id}/versions
+	StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (StaffSignupItemsListVersionsRes, error)
+	// StaffSignupItemsPublish implements StaffSignupItems_publish operation.
 	//
-	// List all Workspaces, newest first, optionally narrowed by an id or name search.
+	// Publish the draft as a new version under a label: it takes effect at once, and is never changed or
+	// removed afterwards. A label the item already has, and an item without a draft, are refused (422).
 	//
-	// GET /workspaces
-	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error)
-	// StaffWorkspacesSuspend implements StaffWorkspaces_suspend operation.
+	// POST /signup-items/{id}/versions
+	StaffSignupItemsPublish(ctx context.Context, req *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (StaffSignupItemsPublishRes, error)
+	// StaffSignupItemsReorder implements StaffSignupItems_reorder operation.
 	//
-	// Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the signed-in Staff
-	// member. Idempotent: an already-suspended Workspace is left as it was.
+	// Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
+	// every item's id exactly once is refused (422).
 	//
-	// POST /workspaces/{workspaceId}/suspend
-	StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (StaffWorkspacesSuspendRes, error)
-	// StaffWorkspacesUnexempt implements StaffWorkspaces_unexempt operation.
+	// PUT /signup-items/order
+	StaffSignupItemsReorder(ctx context.Context, req *StaffSignupItemOrder) (StaffSignupItemsReorderRes, error)
+	// StaffSignupItemsSaveDraft implements StaffSignupItems_saveDraft operation.
 	//
-	// Police a Workspace by the abuse detector again. Audited. Idempotent.
+	// Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
+	// until it is published.
 	//
-	// POST /workspaces/{workspaceId}/unexempt
-	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (StaffWorkspacesUnexemptRes, error)
-	// StaffWorkspacesUnsuspend implements StaffWorkspaces_unsuspend operation.
+	// PUT /signup-items/{id}/draft
+	StaffSignupItemsSaveDraft(ctx context.Context, req *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (StaffSignupItemsSaveDraftRes, error)
+	// StaffSignupItemsUpdate implements StaffSignupItems_update operation.
 	//
-	// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is
-	// left as it was.
+	// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent
+	// or is archived, and a second mailings consent are refused (422).
 	//
-	// POST /workspaces/{workspaceId}/unsuspend
-	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (StaffWorkspacesUnsuspendRes, error)
+	// PATCH /signup-items/{id}
+	StaffSignupItemsUpdate(ctx context.Context, req *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (StaffSignupItemsUpdateRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

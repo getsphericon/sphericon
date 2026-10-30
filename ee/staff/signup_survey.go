@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
@@ -31,27 +31,27 @@ func (m *Module) SignupSurveyResponse(ctx context.Context, userID int64) (*ent.S
 
 // StaffSignupSurveyCounts is the Sign-up survey answers counted per question. The aggregate has
 // no single source row, so it is built here from the counts.
-func (h *Handlers) StaffSignupSurveyCounts(ctx context.Context) (staffapi.StaffSignupSurveyCountsRes, error) {
+func (h *Handlers) StaffSignupSurveyCounts(ctx context.Context) (staffeeapi.StaffSignupSurveyCountsRes, error) {
 	c, err := h.module.SignupSurveyCounts(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &staffapi.StaffSignupSurveyCounts{
+	return &staffeeapi.StaffSignupSurveyCounts{
 		Responses: narrow.Int32(c.Responses),
-		Role: choiceCounts(c.Role, func(choice string, n int32) staffapi.StaffSignupRoleCount {
-			return staffapi.StaffSignupRoleCount{Choice: staffapi.StaffSignupRole(choice), Count: n}
+		Role: choiceCounts(c.Role, func(choice string, n int32) staffeeapi.StaffSignupRoleCount {
+			return staffeeapi.StaffSignupRoleCount{Choice: staffeeapi.StaffSignupRole(choice), Count: n}
 		}),
 		RoleOtherTexts: otherTexts(c.Role),
-		CompanySize: choiceCounts(c.CompanySize, func(choice string, n int32) staffapi.StaffSignupCompanySizeCount {
-			return staffapi.StaffSignupCompanySizeCount{Choice: staffapi.StaffSignupCompanySize(choice), Count: n}
+		CompanySize: choiceCounts(c.CompanySize, func(choice string, n int32) staffeeapi.StaffSignupCompanySizeCount {
+			return staffeeapi.StaffSignupCompanySizeCount{Choice: staffeeapi.StaffSignupCompanySize(choice), Count: n}
 		}),
 		CompanySizeOtherTexts: otherTexts(c.CompanySize),
-		MainGoal: choiceCounts(c.MainGoal, func(choice string, n int32) staffapi.StaffSignupGoalCount {
-			return staffapi.StaffSignupGoalCount{Choice: staffapi.StaffSignupGoal(choice), Count: n}
+		MainGoal: choiceCounts(c.MainGoal, func(choice string, n int32) staffeeapi.StaffSignupGoalCount {
+			return staffeeapi.StaffSignupGoalCount{Choice: staffeeapi.StaffSignupGoal(choice), Count: n}
 		}),
 		MainGoalOtherTexts: otherTexts(c.MainGoal),
-		HeardFrom: choiceCounts(c.HeardFrom, func(choice string, n int32) staffapi.StaffSignupSourceCount {
-			return staffapi.StaffSignupSourceCount{Choice: staffapi.StaffSignupSource(choice), Count: n}
+		HeardFrom: choiceCounts(c.HeardFrom, func(choice string, n int32) staffeeapi.StaffSignupSourceCount {
+			return staffeeapi.StaffSignupSourceCount{Choice: staffeeapi.StaffSignupSource(choice), Count: n}
 		}),
 		HeardFromOtherTexts: otherTexts(c.HeardFrom),
 	}, nil
@@ -65,21 +65,21 @@ func choiceCounts[T any](t signupsurvey.Tally, build func(choice string, count i
 	return out
 }
 
-func otherTexts(t signupsurvey.Tally) []staffapi.StaffSignupOtherTextCount {
-	out := make([]staffapi.StaffSignupOtherTextCount, len(t.Others))
+func otherTexts(t signupsurvey.Tally) []staffeeapi.StaffSignupOtherTextCount {
+	out := make([]staffeeapi.StaffSignupOtherTextCount, len(t.Others))
 	for i, o := range t.Others {
-		out[i] = staffapi.StaffSignupOtherTextCount{Text: o.Text, Count: narrow.Int32(o.Count)}
+		out[i] = staffeeapi.StaffSignupOtherTextCount{Text: o.Text, Count: narrow.Int32(o.Count)}
 	}
 	return out
 }
 
 // StaffSignupSurveyGet is one User's Sign-up survey answers.
-func (h *Handlers) StaffSignupSurveyGet(ctx context.Context, params staffapi.StaffSignupSurveyGetParams) (staffapi.StaffSignupSurveyGetRes, error) {
+func (h *Handlers) StaffSignupSurveyGet(ctx context.Context, params staffeeapi.StaffSignupSurveyGetParams) (staffeeapi.StaffSignupSurveyGetRes, error) {
 	row, err := h.module.SignupSurveyResponse(ctx, int64(params.UserId))
 	if ent.IsNotFound(err) {
 		p := notFoundProblem()
-		p.Detail = staffapi.NewOptString(i18n.T("errors.signup_survey_response_not_found", nil))
-		v := staffapi.StaffSignupSurveyGetNotFound(p)
+		p.Detail = staffeeapi.NewOptString(i18n.T("errors.signup_survey_response_not_found", nil))
+		v := staffeeapi.StaffSignupSurveyGetNotFound(p)
 		return &v, nil
 	}
 	if err != nil {

@@ -11,6 +11,9 @@ enum ServiceScope {
   /** Read the Workspaces and their owners */
   workspacesRead: "workspaces:read",
 
+  /** Read the Users and their consent to the operator's mailings */
+  usersRead: "users:read",
+
   /** Read the verified Tracking domain hosts */
   domainsRead: "domains:read",
 

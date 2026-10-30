@@ -48,6 +48,7 @@ var catalogColumns = []struct {
 	{"destination", "Destination", false},
 	{"provider", "Provider", false},
 	{"subject", "Subject", false},
+	{"label", "Label", false},
 }
 
 type constant struct {

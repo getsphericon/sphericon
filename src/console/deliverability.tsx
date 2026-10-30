@@ -1,7 +1,7 @@
 import { Card, Group, Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import type { StaffDeliverability, StaffRate } from '../generated/staff/types.gen.ts'
+import type { StaffDeliverability, StaffRate } from '../generated/staffee/types.gen.ts'
 import { resolveLocale } from '../i18n.ts'
 import { formatPercent } from '../utils/percent.ts'
 

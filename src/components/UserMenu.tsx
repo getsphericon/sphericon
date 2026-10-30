@@ -6,18 +6,16 @@ import {
   IconSettings,
   IconUser,
 } from '@tabler/icons-react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import {
-  siteAuthLogoutMutation,
   siteUserGetMeOptions,
   siteWorkspacesAccountLinkMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
+import { useLogout } from '../hooks/useLogout.ts'
 import { useNotify } from '../hooks/useNotify.ts'
 import { Route as profileRoute } from '../routes/account/index.tsx'
-import { Route as loginRoute } from '../routes/login.tsx'
 import { Route as settingsRoute } from '../routes/workspaces/$workspaceId/settings/index.tsx'
 import { DeletedWorkspacesMenuSection } from './DeletedWorkspacesMenuSection.tsx'
 import { MenuItemLink } from './RouterLink.tsx'
@@ -25,9 +23,7 @@ import { MenuItemLink } from './RouterLink.tsx'
 // UserMenu is the header account dropdown: the signed-in User's block (it opens the profile),
 // workspace settings, logout.
 // `workspaceId` is the active workspace (absent in the account layout); the workspace
-// settings item only renders when one is set. Logout calls the site logout
-// operation, which clears the session cookie; we then drop cached queries and
-// route to login.
+// settings item only renders when one is set. Logout is useLogout.
 export function UserMenu({
   workspaceId,
   label,
@@ -39,8 +35,6 @@ export function UserMenu({
 }) {
   const { t } = useTranslation()
   const notify = useNotify()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const me = useQuery(siteUserGetMeOptions()).data
 
   // The Account link: the server mints a short-lived token and names the page; the
@@ -57,20 +51,7 @@ export function UserMenu({
     },
   })
 
-  const logoutMutation = useMutation({
-    ...siteAuthLogoutMutation(),
-    onSuccess: async () => {
-      queryClient.clear()
-      await navigate({ to: loginRoute.to })
-    },
-    onError: () => {
-      notify({
-        color: 'red',
-        title: t(($) => $.userMenu.logoutErrorTitle),
-        message: t(($) => $.userMenu.logoutErrorTitle),
-      })
-    },
-  })
+  const logoutMutation = useLogout()
 
   return (
     <Menu position="bottom-end" withinPortal>

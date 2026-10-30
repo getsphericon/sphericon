@@ -17,7 +17,19 @@ var (
 	rn5AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn17AllowedHeaders = map[string]string{
+	rn11AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn14AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn9AllowedHeaders = map[string]string{
+		"PATCH": "Content-Type",
+	}
+	rn15AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn13AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 )
@@ -201,9 +213,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-			case 's': // Prefix: "signup-survey"
+			case 's': // Prefix: "signup-items"
 
-				if l := len("signup-survey"); len(elem) >= l && elem[0:l] == "signup-survey" {
+				if l := len("signup-items"); len(elem) >= l && elem[0:l] == "signup-items" {
 					elem = elem[l:]
 				} else {
 					break
@@ -212,74 +224,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if len(elem) == 0 {
 					switch r.Method {
 					case "GET":
-						s.handleStaffSignupSurveyCountsRequest([0]string{}, elemIsEscaped, w, r)
+						s.handleStaffSignupItemsListRequest([0]string{}, elemIsEscaped, w, r)
+					case "POST":
+						s.handleStaffSignupItemsCreateRequest([0]string{}, elemIsEscaped, w, r)
 					default:
 						s.notAllowed(w, r, notAllowedParams{
-							allowedMethods: "GET",
-							allowedHeaders: nil,
-							acceptPost:     "",
-							acceptPatch:    "",
-						})
-					}
-
-					return
-				}
-				switch elem[0] {
-				case '/': // Prefix: "/users/"
-
-					if l := len("/users/"); len(elem) >= l && elem[0:l] == "/users/" {
-						elem = elem[l:]
-					} else {
-						break
-					}
-
-					// Param: "userId"
-					// Leaf parameter, slashes are prohibited
-					idx := strings.IndexByte(elem, '/')
-					if idx >= 0 {
-						break
-					}
-					args[0] = elem
-					elem = ""
-
-					if len(elem) == 0 {
-						// Leaf node.
-						switch r.Method {
-						case "GET":
-							s.handleStaffSignupSurveyGetRequest([1]string{
-								args[0],
-							}, elemIsEscaped, w, r)
-						default:
-							s.notAllowed(w, r, notAllowedParams{
-								allowedMethods: "GET",
-								allowedHeaders: nil,
-								acceptPost:     "",
-								acceptPatch:    "",
-							})
-						}
-
-						return
-					}
-
-				}
-
-			case 'w': // Prefix: "workspaces"
-
-				if l := len("workspaces"); len(elem) >= l && elem[0:l] == "workspaces" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					switch r.Method {
-					case "GET":
-						s.handleStaffWorkspacesListRequest([0]string{}, elemIsEscaped, w, r)
-					default:
-						s.notAllowed(w, r, notAllowedParams{
-							allowedMethods: "GET",
-							allowedHeaders: nil,
-							acceptPost:     "",
+							allowedMethods: "GET,POST",
+							allowedHeaders: rn11AllowedHeaders,
+							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
 					}
@@ -295,7 +247,38 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 
-					// Param: "workspaceId"
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'o': // Prefix: "order"
+						origElem := elem
+						if l := len("order"); len(elem) >= l && elem[0:l] == "order" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "PUT":
+								s.handleStaffSignupItemsReorderRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "PUT",
+									allowedHeaders: rn14AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					}
+					// Param: "id"
 					// Match until "/"
 					idx := strings.IndexByte(elem, '/')
 					if idx < 0 {
@@ -307,15 +290,19 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if len(elem) == 0 {
 						switch r.Method {
 						case "GET":
-							s.handleStaffWorkspacesGetRequest([1]string{
+							s.handleStaffSignupItemsGetRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						case "PATCH":
+							s.handleStaffSignupItemsUpdateRequest([1]string{
 								args[0],
 							}, elemIsEscaped, w, r)
 						default:
 							s.notAllowed(w, r, notAllowedParams{
-								allowedMethods: "GET",
-								allowedHeaders: nil,
+								allowedMethods: "GET,PATCH",
+								allowedHeaders: rn9AllowedHeaders,
 								acceptPost:     "",
-								acceptPatch:    "",
+								acceptPatch:    "application/json",
 							})
 						}
 
@@ -334,9 +321,63 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							break
 						}
 						switch elem[0] {
-						case 'a': // Prefix: "audit-entries"
+						case 'a': // Prefix: "archive"
 
-							if l := len("audit-entries"); len(elem) >= l && elem[0:l] == "audit-entries" {
+							if l := len("archive"); len(elem) >= l && elem[0:l] == "archive" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleStaffSignupItemsArchiveRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'd': // Prefix: "draft"
+
+							if l := len("draft"); len(elem) >= l && elem[0:l] == "draft" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "PUT":
+									s.handleStaffSignupItemsSaveDraftRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "PUT",
+										allowedHeaders: rn15AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'v': // Prefix: "versions"
+
+							if l := len("versions"); len(elem) >= l && elem[0:l] == "versions" {
 								elem = elem[l:]
 							} else {
 								break
@@ -346,141 +387,23 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								// Leaf node.
 								switch r.Method {
 								case "GET":
-									s.handleStaffWorkspaceAuditListRequest([1]string{
+									s.handleStaffSignupItemsListVersionsRequest([1]string{
 										args[0],
 									}, elemIsEscaped, w, r)
-								default:
-									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "GET",
-										allowedHeaders: nil,
-										acceptPost:     "",
-										acceptPatch:    "",
-									})
-								}
-
-								return
-							}
-
-						case 'e': // Prefix: "exempt"
-
-							if l := len("exempt"); len(elem) >= l && elem[0:l] == "exempt" {
-								elem = elem[l:]
-							} else {
-								break
-							}
-
-							if len(elem) == 0 {
-								// Leaf node.
-								switch r.Method {
 								case "POST":
-									s.handleStaffWorkspacesExemptRequest([1]string{
+									s.handleStaffSignupItemsPublishRequest([1]string{
 										args[0],
 									}, elemIsEscaped, w, r)
 								default:
 									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "POST",
-										allowedHeaders: nil,
-										acceptPost:     "",
-										acceptPatch:    "",
-									})
-								}
-
-								return
-							}
-
-						case 's': // Prefix: "suspend"
-
-							if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
-								elem = elem[l:]
-							} else {
-								break
-							}
-
-							if len(elem) == 0 {
-								// Leaf node.
-								switch r.Method {
-								case "POST":
-									s.handleStaffWorkspacesSuspendRequest([1]string{
-										args[0],
-									}, elemIsEscaped, w, r)
-								default:
-									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "POST",
-										allowedHeaders: rn17AllowedHeaders,
+										allowedMethods: "GET,POST",
+										allowedHeaders: rn13AllowedHeaders,
 										acceptPost:     "application/json",
 										acceptPatch:    "",
 									})
 								}
 
 								return
-							}
-
-						case 'u': // Prefix: "un"
-
-							if l := len("un"); len(elem) >= l && elem[0:l] == "un" {
-								elem = elem[l:]
-							} else {
-								break
-							}
-
-							if len(elem) == 0 {
-								break
-							}
-							switch elem[0] {
-							case 'e': // Prefix: "exempt"
-
-								if l := len("exempt"); len(elem) >= l && elem[0:l] == "exempt" {
-									elem = elem[l:]
-								} else {
-									break
-								}
-
-								if len(elem) == 0 {
-									// Leaf node.
-									switch r.Method {
-									case "POST":
-										s.handleStaffWorkspacesUnexemptRequest([1]string{
-											args[0],
-										}, elemIsEscaped, w, r)
-									default:
-										s.notAllowed(w, r, notAllowedParams{
-											allowedMethods: "POST",
-											allowedHeaders: nil,
-											acceptPost:     "",
-											acceptPatch:    "",
-										})
-									}
-
-									return
-								}
-
-							case 's': // Prefix: "suspend"
-
-								if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
-									elem = elem[l:]
-								} else {
-									break
-								}
-
-								if len(elem) == 0 {
-									// Leaf node.
-									switch r.Method {
-									case "POST":
-										s.handleStaffWorkspacesUnsuspendRequest([1]string{
-											args[0],
-										}, elemIsEscaped, w, r)
-									default:
-										s.notAllowed(w, r, notAllowedParams{
-											allowedMethods: "POST",
-											allowedHeaders: nil,
-											acceptPost:     "",
-											acceptPatch:    "",
-										})
-									}
-
-									return
-								}
-
 							}
 
 						}
@@ -717,9 +640,9 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					}
 				}
 
-			case 's': // Prefix: "signup-survey"
+			case 's': // Prefix: "signup-items"
 
-				if l := len("signup-survey"); len(elem) >= l && elem[0:l] == "signup-survey" {
+				if l := len("signup-items"); len(elem) >= l && elem[0:l] == "signup-items" {
 					elem = elem[l:]
 				} else {
 					break
@@ -728,71 +651,20 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 				if len(elem) == 0 {
 					switch method {
 					case "GET":
-						r.name = StaffSignupSurveyCountsOperation
+						r.name = StaffSignupItemsListOperation
 						r.summary = ""
-						r.operationID = "StaffSignupSurvey_counts"
+						r.operationID = "StaffSignupItems_list"
 						r.operationGroup = ""
-						r.pathPattern = "/signup-survey"
+						r.pathPattern = "/signup-items"
 						r.args = args
 						r.count = 0
 						return r, true
-					default:
-						return
-					}
-				}
-				switch elem[0] {
-				case '/': // Prefix: "/users/"
-
-					if l := len("/users/"); len(elem) >= l && elem[0:l] == "/users/" {
-						elem = elem[l:]
-					} else {
-						break
-					}
-
-					// Param: "userId"
-					// Leaf parameter, slashes are prohibited
-					idx := strings.IndexByte(elem, '/')
-					if idx >= 0 {
-						break
-					}
-					args[0] = elem
-					elem = ""
-
-					if len(elem) == 0 {
-						// Leaf node.
-						switch method {
-						case "GET":
-							r.name = StaffSignupSurveyGetOperation
-							r.summary = ""
-							r.operationID = "StaffSignupSurvey_get"
-							r.operationGroup = ""
-							r.pathPattern = "/signup-survey/users/{userId}"
-							r.args = args
-							r.count = 1
-							return r, true
-						default:
-							return
-						}
-					}
-
-				}
-
-			case 'w': // Prefix: "workspaces"
-
-				if l := len("workspaces"); len(elem) >= l && elem[0:l] == "workspaces" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					switch method {
-					case "GET":
-						r.name = StaffWorkspacesListOperation
+					case "POST":
+						r.name = StaffSignupItemsCreateOperation
 						r.summary = ""
-						r.operationID = "StaffWorkspaces_list"
+						r.operationID = "StaffSignupItems_create"
 						r.operationGroup = ""
-						r.pathPattern = "/workspaces"
+						r.pathPattern = "/signup-items"
 						r.args = args
 						r.count = 0
 						return r, true
@@ -809,7 +681,38 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 
-					// Param: "workspaceId"
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'o': // Prefix: "order"
+						origElem := elem
+						if l := len("order"); len(elem) >= l && elem[0:l] == "order" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "PUT":
+								r.name = StaffSignupItemsReorderOperation
+								r.summary = ""
+								r.operationID = "StaffSignupItems_reorder"
+								r.operationGroup = ""
+								r.pathPattern = "/signup-items/order"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					}
+					// Param: "id"
 					// Match until "/"
 					idx := strings.IndexByte(elem, '/')
 					if idx < 0 {
@@ -821,11 +724,20 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					if len(elem) == 0 {
 						switch method {
 						case "GET":
-							r.name = StaffWorkspacesGetOperation
+							r.name = StaffSignupItemsGetOperation
 							r.summary = ""
-							r.operationID = "StaffWorkspaces_get"
+							r.operationID = "StaffSignupItems_get"
 							r.operationGroup = ""
-							r.pathPattern = "/workspaces/{workspaceId}"
+							r.pathPattern = "/signup-items/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "PATCH":
+							r.name = StaffSignupItemsUpdateOperation
+							r.summary = ""
+							r.operationID = "StaffSignupItems_update"
+							r.operationGroup = ""
+							r.pathPattern = "/signup-items/{id}"
 							r.args = args
 							r.count = 1
 							return r, true
@@ -846,9 +758,59 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							break
 						}
 						switch elem[0] {
-						case 'a': // Prefix: "audit-entries"
+						case 'a': // Prefix: "archive"
 
-							if l := len("audit-entries"); len(elem) >= l && elem[0:l] == "audit-entries" {
+							if l := len("archive"); len(elem) >= l && elem[0:l] == "archive" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = StaffSignupItemsArchiveOperation
+									r.summary = ""
+									r.operationID = "StaffSignupItems_archive"
+									r.operationGroup = ""
+									r.pathPattern = "/signup-items/{id}/archive"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'd': // Prefix: "draft"
+
+							if l := len("draft"); len(elem) >= l && elem[0:l] == "draft" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "PUT":
+									r.name = StaffSignupItemsSaveDraftOperation
+									r.summary = ""
+									r.operationID = "StaffSignupItems_saveDraft"
+									r.operationGroup = ""
+									r.pathPattern = "/signup-items/{id}/draft"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'v': // Prefix: "versions"
+
+							if l := len("versions"); len(elem) >= l && elem[0:l] == "versions" {
 								elem = elem[l:]
 							} else {
 								break
@@ -858,131 +820,26 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								// Leaf node.
 								switch method {
 								case "GET":
-									r.name = StaffWorkspaceAuditListOperation
+									r.name = StaffSignupItemsListVersionsOperation
 									r.summary = ""
-									r.operationID = "StaffWorkspaceAudit_list"
+									r.operationID = "StaffSignupItems_listVersions"
 									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{workspaceId}/audit-entries"
+									r.pathPattern = "/signup-items/{id}/versions"
 									r.args = args
 									r.count = 1
 									return r, true
-								default:
-									return
-								}
-							}
-
-						case 'e': // Prefix: "exempt"
-
-							if l := len("exempt"); len(elem) >= l && elem[0:l] == "exempt" {
-								elem = elem[l:]
-							} else {
-								break
-							}
-
-							if len(elem) == 0 {
-								// Leaf node.
-								switch method {
 								case "POST":
-									r.name = StaffWorkspacesExemptOperation
+									r.name = StaffSignupItemsPublishOperation
 									r.summary = ""
-									r.operationID = "StaffWorkspaces_exempt"
+									r.operationID = "StaffSignupItems_publish"
 									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{workspaceId}/exempt"
+									r.pathPattern = "/signup-items/{id}/versions"
 									r.args = args
 									r.count = 1
 									return r, true
 								default:
 									return
 								}
-							}
-
-						case 's': // Prefix: "suspend"
-
-							if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
-								elem = elem[l:]
-							} else {
-								break
-							}
-
-							if len(elem) == 0 {
-								// Leaf node.
-								switch method {
-								case "POST":
-									r.name = StaffWorkspacesSuspendOperation
-									r.summary = ""
-									r.operationID = "StaffWorkspaces_suspend"
-									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{workspaceId}/suspend"
-									r.args = args
-									r.count = 1
-									return r, true
-								default:
-									return
-								}
-							}
-
-						case 'u': // Prefix: "un"
-
-							if l := len("un"); len(elem) >= l && elem[0:l] == "un" {
-								elem = elem[l:]
-							} else {
-								break
-							}
-
-							if len(elem) == 0 {
-								break
-							}
-							switch elem[0] {
-							case 'e': // Prefix: "exempt"
-
-								if l := len("exempt"); len(elem) >= l && elem[0:l] == "exempt" {
-									elem = elem[l:]
-								} else {
-									break
-								}
-
-								if len(elem) == 0 {
-									// Leaf node.
-									switch method {
-									case "POST":
-										r.name = StaffWorkspacesUnexemptOperation
-										r.summary = ""
-										r.operationID = "StaffWorkspaces_unexempt"
-										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{workspaceId}/unexempt"
-										r.args = args
-										r.count = 1
-										return r, true
-									default:
-										return
-									}
-								}
-
-							case 's': // Prefix: "suspend"
-
-								if l := len("suspend"); len(elem) >= l && elem[0:l] == "suspend" {
-									elem = elem[l:]
-								} else {
-									break
-								}
-
-								if len(elem) == 0 {
-									// Leaf node.
-									switch method {
-									case "POST":
-										r.name = StaffWorkspacesUnsuspendOperation
-										r.summary = ""
-										r.operationID = "StaffWorkspaces_unsuspend"
-										r.operationGroup = ""
-										r.pathPattern = "/workspaces/{workspaceId}/unsuspend"
-										r.args = args
-										r.count = 1
-										return r, true
-									default:
-										return
-									}
-								}
-
 							}
 
 						}

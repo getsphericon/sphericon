@@ -38,6 +38,8 @@ const (
 	FieldSecondFactorLastStep = "second_factor_last_step"
 	// FieldSignupSurveyDueAt holds the string denoting the signup_survey_due_at field in the database.
 	FieldSignupSurveyDueAt = "signup_survey_due_at"
+	// FieldFeedPosition holds the string denoting the feed_position field in the database.
+	FieldFeedPosition = "feed_position"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
 	EdgeMemberships = "memberships"
 	// EdgeSentInvitations holds the string denoting the sent_invitations edge name in mutations.
@@ -50,6 +52,8 @@ const (
 	EdgeIdentities = "identities"
 	// EdgeSignupSurveyResponse holds the string denoting the signup_survey_response edge name in mutations.
 	EdgeSignupSurveyResponse = "signup_survey_response"
+	// EdgeConsentRecords holds the string denoting the consent_records edge name in mutations.
+	EdgeConsentRecords = "consent_records"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// MembershipsTable is the table that holds the memberships relation/edge.
@@ -94,6 +98,13 @@ const (
 	SignupSurveyResponseInverseTable = "signup_survey_responses"
 	// SignupSurveyResponseColumn is the table column denoting the signup_survey_response relation/edge.
 	SignupSurveyResponseColumn = "user_id"
+	// ConsentRecordsTable is the table that holds the consent_records relation/edge.
+	ConsentRecordsTable = "consent_records"
+	// ConsentRecordsInverseTable is the table name for the ConsentRecord entity.
+	// It exists in this package in order to avoid circular dependency with the "consentrecord" package.
+	ConsentRecordsInverseTable = "consent_records"
+	// ConsentRecordsColumn is the table column denoting the consent_records relation/edge.
+	ConsentRecordsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -111,6 +122,7 @@ var Columns = []string{
 	FieldSecondFactorConfirmedAt,
 	FieldSecondFactorLastStep,
 	FieldSignupSurveyDueAt,
+	FieldFeedPosition,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -138,6 +150,8 @@ var (
 	DefaultSessionEpoch int64
 	// DefaultSecondFactorLastStep holds the default value on creation for the "second_factor_last_step" field.
 	DefaultSecondFactorLastStep int64
+	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
+	DefaultFeedPosition int64
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -206,6 +220,11 @@ func BySecondFactorLastStep(opts ...sql.OrderTermOption) OrderOption {
 // BySignupSurveyDueAt orders the results by the signup_survey_due_at field.
 func BySignupSurveyDueAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSignupSurveyDueAt, opts...).ToFunc()
+}
+
+// ByFeedPosition orders the results by the feed_position field.
+func ByFeedPosition(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFeedPosition, opts...).ToFunc()
 }
 
 // ByMembershipsCount orders the results by memberships count.
@@ -284,6 +303,20 @@ func BySignupSurveyResponseField(field string, opts ...sql.OrderTermOption) Orde
 		sqlgraph.OrderByNeighborTerms(s, newSignupSurveyResponseStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByConsentRecordsCount orders the results by consent_records count.
+func ByConsentRecordsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConsentRecordsStep(), opts...)
+	}
+}
+
+// ByConsentRecords orders the results by consent_records terms.
+func ByConsentRecords(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConsentRecordsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newMembershipsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -324,5 +357,12 @@ func newSignupSurveyResponseStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SignupSurveyResponseInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, false, SignupSurveyResponseTable, SignupSurveyResponseColumn),
+	)
+}
+func newConsentRecordsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConsentRecordsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConsentRecordsTable, ConsentRecordsColumn),
 	)
 }

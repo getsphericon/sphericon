@@ -6,133 +6,125 @@ package resources
 import (
 	abuse "github.com/getsphericon/sphericon/ee/abuse"
 	ent "github.com/getsphericon/sphericon/ent"
-	staff "github.com/getsphericon/sphericon/gen/staff"
+	staffee "github.com/getsphericon/sphericon/gen/staffee"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
 )
 
 type StaffConverterImpl struct{}
 
-func (c *StaffConverterImpl) AbuseToResource(source *ent.Workspace) staff.StaffAbuse {
-	var staffapiStaffAbuse staff.StaffAbuse
+func (c *StaffConverterImpl) AbuseToResource(source *ent.Workspace) staffee.StaffAbuse {
+	var staffeeapiStaffAbuse staffee.StaffAbuse
 	if source != nil {
-		staffapiStaffAbuse.Exempt = (*source).AbuseExempt
-		staffapiStaffAbuse.ClearedAt = optNilTimestamp((*source).ClearedAt)
-		staffapiStaffAbuse.WarningNotifiedAt = optNilTimestamp((*source).AbuseWarningNotifiedAt)
-		staffapiStaffAbuse.FreezeNotifiedAt = optNilTimestamp((*source).AbuseFreezeNotifiedAt)
+		staffeeapiStaffAbuse.Exempt = (*source).AbuseExempt
+		staffeeapiStaffAbuse.ClearedAt = optNilTimestamp((*source).ClearedAt)
+		staffeeapiStaffAbuse.WarningNotifiedAt = optNilTimestamp((*source).AbuseWarningNotifiedAt)
+		staffeeapiStaffAbuse.FreezeNotifiedAt = optNilTimestamp((*source).AbuseFreezeNotifiedAt)
 	}
-	return staffapiStaffAbuse
+	return staffeeapiStaffAbuse
 }
-func (c *StaffConverterImpl) AuditEntryToResource(source auditapi.View) staff.StaffAuditEntryResource {
-	var staffapiStaffAuditEntryResource staff.StaffAuditEntryResource
-	staffapiStaffAuditEntryResource.ID = staff.EntityId(source.ID)
-	staffapiStaffAuditEntryResource.OccurredAt = staffTimestamp(source.OccurredAt)
-	staffapiStaffAuditEntryResource.Actor = staffAuditActor(source)
-	staffapiStaffAuditEntryResource.Action = source.Action
-	staffapiStaffAuditEntryResource.Target = staffAuditTarget(source)
-	staffapiStaffAuditEntryResource.Diff = staffAuditDiff(source.Diff)
-	staffapiStaffAuditEntryResource.RequestId = nilableString(source.RequestID)
-	staffapiStaffAuditEntryResource.IP = nilableString(source.IP)
-	staffapiStaffAuditEntryResource.UserAgent = nilableString(source.UserAgent)
-	return staffapiStaffAuditEntryResource
+func (c *StaffConverterImpl) AuditEntryToResource(source auditapi.View) staffee.StaffAuditEntryResource {
+	var staffeeapiStaffAuditEntryResource staffee.StaffAuditEntryResource
+	staffeeapiStaffAuditEntryResource.ID = staffee.EntityId(source.ID)
+	staffeeapiStaffAuditEntryResource.OccurredAt = staffTimestamp(source.OccurredAt)
+	staffeeapiStaffAuditEntryResource.Actor = staffAuditActor(source)
+	staffeeapiStaffAuditEntryResource.Action = source.Action
+	staffeeapiStaffAuditEntryResource.Target = staffAuditTarget(source)
+	staffeeapiStaffAuditEntryResource.Diff = staffAuditDiff(source.Diff)
+	staffeeapiStaffAuditEntryResource.RequestId = nilableString(source.RequestID)
+	staffeeapiStaffAuditEntryResource.IP = nilableString(source.IP)
+	staffeeapiStaffAuditEntryResource.UserAgent = nilableString(source.UserAgent)
+	return staffeeapiStaffAuditEntryResource
 }
-func (c *StaffConverterImpl) BreachToWarning(source abuse.Breach) staff.StaffAbuseWarning {
-	var staffapiStaffAbuseWarning staff.StaffAbuseWarning
-	staffapiStaffAbuseWarning.Domain = source.Domain
-	staffapiStaffAbuseWarning.Metric = staff.StaffAbuseMetric(source.Metric)
-	staffapiStaffAbuseWarning.Rate = breachRate(source)
-	return staffapiStaffAbuseWarning
+func (c *StaffConverterImpl) BreachToWarning(source abuse.Breach) staffee.StaffAbuseWarning {
+	var staffeeapiStaffAbuseWarning staffee.StaffAbuseWarning
+	staffeeapiStaffAbuseWarning.Domain = source.Domain
+	staffeeapiStaffAbuseWarning.Metric = staffee.StaffAbuseMetric(source.Metric)
+	staffeeapiStaffAbuseWarning.Rate = breachRate(source)
+	return staffeeapiStaffAbuseWarning
 }
-func (c *StaffConverterImpl) DeliverabilityToResource(source abuse.Deliverability) staff.StaffDeliverability {
-	var staffapiStaffDeliverability staff.StaffDeliverability
-	staffapiStaffDeliverability.WindowHours = windowHours(source.Window)
-	staffapiStaffDeliverability.VolumeFloor = count(source.VolumeFloor)
-	staffapiStaffDeliverability.SendVolume = count(source.SendVolume)
+func (c *StaffConverterImpl) DeliverabilityToResource(source abuse.Deliverability) staffee.StaffDeliverability {
+	var staffeeapiStaffDeliverability staffee.StaffDeliverability
+	staffeeapiStaffDeliverability.WindowHours = windowHours(source.Window)
+	staffeeapiStaffDeliverability.VolumeFloor = count(source.VolumeFloor)
+	staffeeapiStaffDeliverability.SendVolume = count(source.SendVolume)
 	if source.Domains != nil {
-		staffapiStaffDeliverability.Domains = make([]staff.StaffDomainRates, len(source.Domains))
+		staffeeapiStaffDeliverability.Domains = make([]staffee.StaffDomainRates, len(source.Domains))
 		for i := 0; i < len(source.Domains); i++ {
-			staffapiStaffDeliverability.Domains[i] = c.DomainRatesToResource(source.Domains[i])
+			staffeeapiStaffDeliverability.Domains[i] = c.DomainRatesToResource(source.Domains[i])
 		}
 	}
-	return staffapiStaffDeliverability
+	return staffeeapiStaffDeliverability
 }
-func (c *StaffConverterImpl) DomainRatesToResource(source abuse.DomainRates) staff.StaffDomainRates {
-	var staffapiStaffDomainRates staff.StaffDomainRates
-	staffapiStaffDomainRates.SendingDomainId = staff.EntityId(source.SendingDomainID)
-	staffapiStaffDomainRates.Domain = source.Domain
-	staffapiStaffDomainRates.ComplaintRate = c.RateToResource(source.Complaint)
-	staffapiStaffDomainRates.BounceRate = c.RateToResource(source.Bounce)
-	return staffapiStaffDomainRates
+func (c *StaffConverterImpl) DomainRatesToResource(source abuse.DomainRates) staffee.StaffDomainRates {
+	var staffeeapiStaffDomainRates staffee.StaffDomainRates
+	staffeeapiStaffDomainRates.SendingDomainId = staffee.EntityId(source.SendingDomainID)
+	staffeeapiStaffDomainRates.Domain = source.Domain
+	staffeeapiStaffDomainRates.ComplaintRate = c.RateToResource(source.Complaint)
+	staffeeapiStaffDomainRates.BounceRate = c.RateToResource(source.Bounce)
+	return staffeeapiStaffDomainRates
 }
-func (c *StaffConverterImpl) HoldToResource(source *ent.Hold) staff.StaffHold {
-	var staffapiStaffHold staff.StaffHold
+func (c *StaffConverterImpl) HoldToResource(source *ent.Hold) staffee.StaffHold {
+	var staffeeapiStaffHold staffee.StaffHold
 	if source != nil {
-		staffapiStaffHold.Key = (*source).Key
-		staffapiStaffHold.ReasonCode = (*source).ReasonCode
-		staffapiStaffHold.Message = (*source).Message
-		staffapiStaffHold.CreatedAt = staffTimestamp((*source).CreatedAt)
-		staffapiStaffHold.ExpiresAt = staffTimestamp((*source).ExpiresAt)
-		staffapiStaffHold.SetBy = (*source).SetBy
-		staffapiStaffHold.ActionUrl = nilableString((*source).ActionURL)
+		staffeeapiStaffHold.Key = (*source).Key
+		staffeeapiStaffHold.ReasonCode = (*source).ReasonCode
+		staffeeapiStaffHold.Message = (*source).Message
+		staffeeapiStaffHold.CreatedAt = staffTimestamp((*source).CreatedAt)
+		staffeeapiStaffHold.ExpiresAt = staffTimestamp((*source).ExpiresAt)
+		staffeeapiStaffHold.SetBy = (*source).SetBy
+		staffeeapiStaffHold.ActionUrl = nilableString((*source).ActionURL)
 	}
-	return staffapiStaffHold
+	return staffeeapiStaffHold
 }
-func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staff.StaffRate {
-	var staffapiStaffRate staff.StaffRate
-	staffapiStaffRate.Numerator = count(source.Numerator)
-	staffapiStaffRate.Denominator = count(source.Denominator)
-	staffapiStaffRate.Rate = nilFloat64(source.Rate)
-	return staffapiStaffRate
+func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staffee.StaffRate {
+	var staffeeapiStaffRate staffee.StaffRate
+	staffeeapiStaffRate.Numerator = count(source.Numerator)
+	staffeeapiStaffRate.Denominator = count(source.Denominator)
+	staffeeapiStaffRate.Rate = nilFloat64(source.Rate)
+	return staffeeapiStaffRate
 }
-func (c *StaffConverterImpl) SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staff.StaffSignupSurveyResponseResource {
-	var staffapiStaffSignupSurveyResponseResource staff.StaffSignupSurveyResponseResource
+func (c *StaffConverterImpl) SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffee.StaffSignupSurveyResponseResource {
+	var staffeeapiStaffSignupSurveyResponseResource staffee.StaffSignupSurveyResponseResource
 	if source != nil {
-		staffapiStaffSignupSurveyResponseResource.UserId = staff.EntityId((*source).UserID)
-		staffapiStaffSignupSurveyResponseResource.Role = staff.StaffSignupRole((*source).Role)
-		staffapiStaffSignupSurveyResponseResource.RoleOtherText = nilableString((*source).RoleOtherText)
-		staffapiStaffSignupSurveyResponseResource.CompanySize = staff.StaffSignupCompanySize((*source).CompanySize)
-		staffapiStaffSignupSurveyResponseResource.CompanySizeOtherText = nilableString((*source).CompanySizeOtherText)
-		staffapiStaffSignupSurveyResponseResource.MainGoal = staff.StaffSignupGoal((*source).MainGoal)
-		staffapiStaffSignupSurveyResponseResource.MainGoalOtherText = nilableString((*source).MainGoalOtherText)
-		staffapiStaffSignupSurveyResponseResource.HeardFrom = optNilSource((*source).HeardFrom)
-		staffapiStaffSignupSurveyResponseResource.HeardFromOtherText = nilableString((*source).HeardFromOtherText)
-		staffapiStaffSignupSurveyResponseResource.AnsweredAt = staffTimestamp((*source).CreatedAt)
+		staffeeapiStaffSignupSurveyResponseResource.UserId = staffee.EntityId((*source).UserID)
+		staffeeapiStaffSignupSurveyResponseResource.Role = staffee.StaffSignupRole((*source).Role)
+		staffeeapiStaffSignupSurveyResponseResource.RoleOtherText = nilableString((*source).RoleOtherText)
+		staffeeapiStaffSignupSurveyResponseResource.CompanySize = staffee.StaffSignupCompanySize((*source).CompanySize)
+		staffeeapiStaffSignupSurveyResponseResource.CompanySizeOtherText = nilableString((*source).CompanySizeOtherText)
+		staffeeapiStaffSignupSurveyResponseResource.MainGoal = staffee.StaffSignupGoal((*source).MainGoal)
+		staffeeapiStaffSignupSurveyResponseResource.MainGoalOtherText = nilableString((*source).MainGoalOtherText)
+		staffeeapiStaffSignupSurveyResponseResource.HeardFrom = optNilSource((*source).HeardFrom)
+		staffeeapiStaffSignupSurveyResponseResource.HeardFromOtherText = nilableString((*source).HeardFromOtherText)
+		staffeeapiStaffSignupSurveyResponseResource.AnsweredAt = staffTimestamp((*source).CreatedAt)
 	}
-	return staffapiStaffSignupSurveyResponseResource
+	return staffeeapiStaffSignupSurveyResponseResource
 }
-func (c *StaffConverterImpl) StaffMemberToResource(source *ent.StaffMember) staff.StaffResource {
-	var staffapiStaffResource staff.StaffResource
+func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) staffee.StaffWorkspaceDetailResource {
+	var staffeeapiStaffWorkspaceDetailResource staffee.StaffWorkspaceDetailResource
 	if source != nil {
-		staffapiStaffResource.ID = staff.EntityId((*source).ID)
-		staffapiStaffResource.Email = staff.EmailAddress((*source).Email)
+		staffeeapiStaffWorkspaceDetailResource.ID = staffee.WorkspaceId((*source).PublicID)
+		staffeeapiStaffWorkspaceDetailResource.Name = (*source).Name
+		staffeeapiStaffWorkspaceDetailResource.CreatedAt = staffTimestamp((*source).CreatedAt)
+		staffeeapiStaffWorkspaceDetailResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
+		staffeeapiStaffWorkspaceDetailResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
+		staffeeapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension(source)
+		staffeeapiStaffWorkspaceDetailResource.Exempt = (*source).AbuseExempt
+		staffeeapiStaffWorkspaceDetailResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
 	}
-	return staffapiStaffResource
+	return staffeeapiStaffWorkspaceDetailResource
 }
-func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) staff.StaffWorkspaceDetailResource {
-	var staffapiStaffWorkspaceDetailResource staff.StaffWorkspaceDetailResource
+func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staffee.StaffWorkspaceResource {
+	var staffeeapiStaffWorkspaceResource staffee.StaffWorkspaceResource
 	if source != nil {
-		staffapiStaffWorkspaceDetailResource.ID = staff.WorkspaceId((*source).PublicID)
-		staffapiStaffWorkspaceDetailResource.Name = (*source).Name
-		staffapiStaffWorkspaceDetailResource.CreatedAt = staffTimestamp((*source).CreatedAt)
-		staffapiStaffWorkspaceDetailResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
-		staffapiStaffWorkspaceDetailResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
-		staffapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension(source)
-		staffapiStaffWorkspaceDetailResource.Exempt = (*source).AbuseExempt
-		staffapiStaffWorkspaceDetailResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
+		staffeeapiStaffWorkspaceResource.ID = staffee.WorkspaceId((*source).PublicID)
+		staffeeapiStaffWorkspaceResource.Name = (*source).Name
+		staffeeapiStaffWorkspaceResource.CreatedAt = staffTimestamp((*source).CreatedAt)
+		staffeeapiStaffWorkspaceResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
+		staffeeapiStaffWorkspaceResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
+		staffeeapiStaffWorkspaceResource.Suspension = workspaceSuspension(source)
+		staffeeapiStaffWorkspaceResource.Exempt = (*source).AbuseExempt
+		staffeeapiStaffWorkspaceResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
 	}
-	return staffapiStaffWorkspaceDetailResource
-}
-func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staff.StaffWorkspaceResource {
-	var staffapiStaffWorkspaceResource staff.StaffWorkspaceResource
-	if source != nil {
-		staffapiStaffWorkspaceResource.ID = staff.WorkspaceId((*source).PublicID)
-		staffapiStaffWorkspaceResource.Name = (*source).Name
-		staffapiStaffWorkspaceResource.CreatedAt = staffTimestamp((*source).CreatedAt)
-		staffapiStaffWorkspaceResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
-		staffapiStaffWorkspaceResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
-		staffapiStaffWorkspaceResource.Suspension = workspaceSuspension(source)
-		staffapiStaffWorkspaceResource.Exempt = (*source).AbuseExempt
-		staffapiStaffWorkspaceResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
-	}
-	return staffapiStaffWorkspaceResource
+	return staffeeapiStaffWorkspaceResource
 }

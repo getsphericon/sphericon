@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -59,6 +60,9 @@ func (Invitation) Edges() []ent.Edge {
 			Ref("sent_invitations").
 			Field("invited_by").
 			Unique(),
+		// A Sign-in provider's sign-up held for the Sign-up items goes with its Invitation (ADR 0062).
+		edge.To("pending_signups", PendingSignup.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 

@@ -93,48 +93,117 @@ func (s *EntityId) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes float64 as json.
-func (o NilFloat64) Encode(e *jx.Encoder) {
-	if o.Null {
-		e.Null()
-		return
-	}
-	e.Float64(float64(o.Value))
+// Encode encodes LegalDocumentLabel as json.
+func (s LegalDocumentLabel) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
 }
 
-// Decode decodes float64 from json.
-func (o *NilFloat64) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode NilFloat64 to nil")
+// Decode decodes LegalDocumentLabel from json.
+func (s *LegalDocumentLabel) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LegalDocumentLabel to nil")
 	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
 			return err
 		}
-
-		var v float64
-		o.Value = v
-		o.Null = true
 		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
 	}
-	o.Null = false
-	v, err := d.Float64()
-	if err != nil {
-		return err
-	}
-	o.Value = float64(v)
+	*s = LegalDocumentLabel(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s NilFloat64) MarshalJSON() ([]byte, error) {
+func (s LegalDocumentLabel) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *NilFloat64) UnmarshalJSON(data []byte) error {
+func (s *LegalDocumentLabel) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes LegalDocumentMarkdown as json.
+func (s LegalDocumentMarkdown) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes LegalDocumentMarkdown from json.
+func (s *LegalDocumentMarkdown) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode LegalDocumentMarkdown to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = LegalDocumentMarkdown(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s LegalDocumentMarkdown) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *LegalDocumentMarkdown) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes bool as json.
+func (o OptBool) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Bool(bool(o.Value))
+}
+
+// Decode decodes bool from json.
+func (o *OptBool) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptBool to nil")
+	}
+	o.Set = true
+	v, err := d.Bool()
+	if err != nil {
+		return err
+	}
+	o.Value = bool(v)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptBool) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptBool) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -174,36 +243,20 @@ func (s *OptInt32) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes StaffAbuseWarning as json.
-func (o OptNilStaffAbuseWarning) Encode(e *jx.Encoder) {
+// Encode encodes LegalDocumentMarkdown as json.
+func (o OptLegalDocumentMarkdown) Encode(e *jx.Encoder) {
 	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
 		return
 	}
 	o.Value.Encode(e)
 }
 
-// Decode decodes StaffAbuseWarning from json.
-func (o *OptNilStaffAbuseWarning) Decode(d *jx.Decoder) error {
+// Decode decodes LegalDocumentMarkdown from json.
+func (o *OptLegalDocumentMarkdown) Decode(d *jx.Decoder) error {
 	if o == nil {
-		return errors.New("invalid: unable to decode OptNilStaffAbuseWarning to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v StaffAbuseWarning
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
+		return errors.New("invalid: unable to decode OptLegalDocumentMarkdown to nil")
 	}
 	o.Set = true
-	o.Null = false
 	if err := o.Value.Decode(d); err != nil {
 		return err
 	}
@@ -211,262 +264,14 @@ func (o *OptNilStaffAbuseWarning) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s OptNilStaffAbuseWarning) MarshalJSON() ([]byte, error) {
+func (s OptLegalDocumentMarkdown) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilStaffAbuseWarning) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffAuditEntryResourceDiff as json.
-func (o OptNilStaffAuditEntryResourceDiff) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes StaffAuditEntryResourceDiff from json.
-func (o *OptNilStaffAuditEntryResourceDiff) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilStaffAuditEntryResourceDiff to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v StaffAuditEntryResourceDiff
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	o.Value = make(StaffAuditEntryResourceDiff)
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilStaffAuditEntryResourceDiff) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilStaffAuditEntryResourceDiff) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffSignupSource as json.
-func (o OptNilStaffSignupSource) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	e.Str(string(o.Value))
-}
-
-// Decode decodes StaffSignupSource from json.
-func (o *OptNilStaffSignupSource) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilStaffSignupSource to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v StaffSignupSource
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilStaffSignupSource) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilStaffSignupSource) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffSuspension as json.
-func (o OptNilStaffSuspension) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes StaffSuspension from json.
-func (o *OptNilStaffSuspension) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilStaffSuspension to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v StaffSuspension
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilStaffSuspension) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilStaffSuspension) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes string as json.
-func (o OptNilString) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	e.Str(string(o.Value))
-}
-
-// Decode decodes string from json.
-func (o *OptNilString) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilString to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v string
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	v, err := d.Str()
-	if err != nil {
-		return err
-	}
-	o.Value = string(v)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilString) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilString) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes Timestamp as json.
-func (o OptNilTimestamp) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes Timestamp from json.
-func (o *OptNilTimestamp) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilTimestamp to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v Timestamp
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilTimestamp) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilTimestamp) UnmarshalJSON(data []byte) error {
+func (s *OptLegalDocumentMarkdown) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -605,6 +410,39 @@ func (s *OptProblemDetailsFields) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SignupItemTitle as json.
+func (o OptSignupItemTitle) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes SignupItemTitle from json.
+func (o *OptSignupItemTitle) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptSignupItemTitle to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptSignupItemTitle) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptSignupItemTitle) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes StaffEnrolment as json.
 func (o OptStaffEnrolment) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -634,6 +472,39 @@ func (s OptStaffEnrolment) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptStaffEnrolment) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffLegalDocumentVersion as json.
+func (o OptStaffLegalDocumentVersion) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes StaffLegalDocumentVersion from json.
+func (o *OptStaffLegalDocumentVersion) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptStaffLegalDocumentVersion to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptStaffLegalDocumentVersion) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptStaffLegalDocumentVersion) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -673,6 +544,39 @@ func (s *OptString) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes Timestamp as json.
+func (o OptTimestamp) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes Timestamp from json.
+func (o *OptTimestamp) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptTimestamp to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptTimestamp) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptTimestamp) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes ProblemCode as json.
 func (s ProblemCode) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -693,12 +597,12 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeSecondFactorRequired
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
-	case ProblemCodeSignupClosed:
-		*s = ProblemCodeSignupClosed
 	case ProblemCodePermissionRequired:
 		*s = ProblemCodePermissionRequired
 	case ProblemCodeMigrationsPending:
 		*s = ProblemCodeMigrationsPending
+	case ProblemCodeAcceptancePending:
+		*s = ProblemCodeAcceptancePending
 	default:
 		*s = ProblemCode(v)
 	}
@@ -1240,1342 +1144,124 @@ func (s *ProblemDetailsFields) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode implements json.Marshaler.
-func (s *StaffAbuse) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
+// Encode encodes SignupItemKey as json.
+func (s SignupItemKey) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
 }
 
-// encodeFields encodes fields.
-func (s *StaffAbuse) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("exempt")
-		e.Bool(s.Exempt)
-	}
-	{
-		if s.ClearedAt.Set {
-			e.FieldStart("clearedAt")
-			s.ClearedAt.Encode(e)
-		}
-	}
-	{
-		if s.WarningNotifiedAt.Set {
-			e.FieldStart("warningNotifiedAt")
-			s.WarningNotifiedAt.Encode(e)
-		}
-	}
-	{
-		if s.FreezeNotifiedAt.Set {
-			e.FieldStart("freezeNotifiedAt")
-			s.FreezeNotifiedAt.Encode(e)
-		}
-	}
-	{
-		if s.Warning.Set {
-			e.FieldStart("warning")
-			s.Warning.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfStaffAbuse = [5]string{
-	0: "exempt",
-	1: "clearedAt",
-	2: "warningNotifiedAt",
-	3: "freezeNotifiedAt",
-	4: "warning",
-}
-
-// Decode decodes StaffAbuse from json.
-func (s *StaffAbuse) Decode(d *jx.Decoder) error {
+// Decode decodes SignupItemKey from json.
+func (s *SignupItemKey) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffAbuse to nil")
+		return errors.New("invalid: unable to decode SignupItemKey to nil")
 	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "exempt":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Bool()
-				s.Exempt = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"exempt\"")
-			}
-		case "clearedAt":
-			if err := func() error {
-				s.ClearedAt.Reset()
-				if err := s.ClearedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"clearedAt\"")
-			}
-		case "warningNotifiedAt":
-			if err := func() error {
-				s.WarningNotifiedAt.Reset()
-				if err := s.WarningNotifiedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"warningNotifiedAt\"")
-			}
-		case "freezeNotifiedAt":
-			if err := func() error {
-				s.FreezeNotifiedAt.Reset()
-				if err := s.FreezeNotifiedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"freezeNotifiedAt\"")
-			}
-		case "warning":
-			if err := func() error {
-				s.Warning.Reset()
-				if err := s.Warning.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"warning\"")
-			}
-		default:
-			return d.Skip()
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
 		}
 		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffAbuse")
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
 	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffAbuse) {
-					name = jsonFieldsNameOfStaffAbuse[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
+	*s = SignupItemKey(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffAbuse) MarshalJSON() ([]byte, error) {
+func (s SignupItemKey) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAbuse) UnmarshalJSON(data []byte) error {
+func (s *SignupItemKey) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes StaffAbuseMetric as json.
-func (s StaffAbuseMetric) Encode(e *jx.Encoder) {
+// Encode encodes SignupItemKind as json.
+func (s SignupItemKind) Encode(e *jx.Encoder) {
 	e.Str(string(s))
 }
 
-// Decode decodes StaffAbuseMetric from json.
-func (s *StaffAbuseMetric) Decode(d *jx.Decoder) error {
+// Decode decodes SignupItemKind from json.
+func (s *SignupItemKind) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffAbuseMetric to nil")
+		return errors.New("invalid: unable to decode SignupItemKind to nil")
 	}
 	v, err := d.StrBytes()
 	if err != nil {
 		return err
 	}
 	// Try to use constant string.
-	switch StaffAbuseMetric(v) {
-	case StaffAbuseMetricComplaint:
-		*s = StaffAbuseMetricComplaint
-	case StaffAbuseMetricBounce:
-		*s = StaffAbuseMetricBounce
+	switch SignupItemKind(v) {
+	case SignupItemKindRequiredAcceptance:
+		*s = SignupItemKindRequiredAcceptance
+	case SignupItemKindOptionalConsent:
+		*s = SignupItemKindOptionalConsent
+	case SignupItemKindNotice:
+		*s = SignupItemKindNotice
 	default:
-		*s = StaffAbuseMetric(v)
+		*s = SignupItemKind(v)
 	}
 
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s StaffAbuseMetric) MarshalJSON() ([]byte, error) {
+func (s SignupItemKind) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAbuseMetric) UnmarshalJSON(data []byte) error {
+func (s *SignupItemKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode implements json.Marshaler.
-func (s *StaffAbuseWarning) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
+// Encode encodes SignupItemTitle as json.
+func (s SignupItemTitle) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
 }
 
-// encodeFields encodes fields.
-func (s *StaffAbuseWarning) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("domain")
-		e.Str(s.Domain)
-	}
-	{
-		e.FieldStart("metric")
-		s.Metric.Encode(e)
-	}
-	{
-		e.FieldStart("rate")
-		e.Float64(s.Rate)
-	}
-}
-
-var jsonFieldsNameOfStaffAbuseWarning = [3]string{
-	0: "domain",
-	1: "metric",
-	2: "rate",
-}
-
-// Decode decodes StaffAbuseWarning from json.
-func (s *StaffAbuseWarning) Decode(d *jx.Decoder) error {
+// Decode decodes SignupItemTitle from json.
+func (s *SignupItemTitle) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffAbuseWarning to nil")
+		return errors.New("invalid: unable to decode SignupItemTitle to nil")
 	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "domain":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Str()
-				s.Domain = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"domain\"")
-			}
-		case "metric":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				if err := s.Metric.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"metric\"")
-			}
-		case "rate":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Float64()
-				s.Rate = float64(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"rate\"")
-			}
-		default:
-			return d.Skip()
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
 		}
 		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffAbuseWarning")
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
 	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffAbuseWarning) {
-					name = jsonFieldsNameOfStaffAbuseWarning[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
+	*s = SignupItemTitle(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffAbuseWarning) MarshalJSON() ([]byte, error) {
+func (s SignupItemTitle) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAbuseWarning) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffAuditActor) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffAuditActor) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("kind")
-		s.Kind.Encode(e)
-	}
-	{
-		if s.ID.Set {
-			e.FieldStart("id")
-			s.ID.Encode(e)
-		}
-	}
-	{
-		if s.Name.Set {
-			e.FieldStart("name")
-			s.Name.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfStaffAuditActor = [3]string{
-	0: "kind",
-	1: "id",
-	2: "name",
-}
-
-// Decode decodes StaffAuditActor from json.
-func (s *StaffAuditActor) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffAuditActor to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "kind":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Kind.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"kind\"")
-			}
-		case "id":
-			if err := func() error {
-				s.ID.Reset()
-				if err := s.ID.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"id\"")
-			}
-		case "name":
-			if err := func() error {
-				s.Name.Reset()
-				if err := s.Name.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"name\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffAuditActor")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffAuditActor) {
-					name = jsonFieldsNameOfStaffAuditActor[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffAuditActor) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAuditActor) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffAuditActorKind as json.
-func (s StaffAuditActorKind) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes StaffAuditActorKind from json.
-func (s *StaffAuditActorKind) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffAuditActorKind to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch StaffAuditActorKind(v) {
-	case StaffAuditActorKindUser:
-		*s = StaffAuditActorKindUser
-	case StaffAuditActorKindAPIToken:
-		*s = StaffAuditActorKindAPIToken
-	case StaffAuditActorKindStaff:
-		*s = StaffAuditActorKindStaff
-	case StaffAuditActorKindService:
-		*s = StaffAuditActorKindService
-	case StaffAuditActorKindSystem:
-		*s = StaffAuditActorKindSystem
-	default:
-		*s = StaffAuditActorKind(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s StaffAuditActorKind) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAuditActorKind) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffAuditEntryList) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffAuditEntryList) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("items")
-		e.ArrStart()
-		for _, elem := range s.Items {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		if s.NextCursor.Set {
-			e.FieldStart("nextCursor")
-			s.NextCursor.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfStaffAuditEntryList = [2]string{
-	0: "items",
-	1: "nextCursor",
-}
-
-// Decode decodes StaffAuditEntryList from json.
-func (s *StaffAuditEntryList) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffAuditEntryList to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "items":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				s.Items = make([]StaffAuditEntryResource, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffAuditEntryResource
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Items = append(s.Items, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"items\"")
-			}
-		case "nextCursor":
-			if err := func() error {
-				s.NextCursor.Reset()
-				if err := s.NextCursor.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"nextCursor\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffAuditEntryList")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffAuditEntryList) {
-					name = jsonFieldsNameOfStaffAuditEntryList[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffAuditEntryList) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAuditEntryList) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffAuditEntryResource) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffAuditEntryResource) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("id")
-		s.ID.Encode(e)
-	}
-	{
-		e.FieldStart("occurredAt")
-		s.OccurredAt.Encode(e)
-	}
-	{
-		e.FieldStart("actor")
-		s.Actor.Encode(e)
-	}
-	{
-		e.FieldStart("action")
-		e.Str(s.Action)
-	}
-	{
-		e.FieldStart("target")
-		s.Target.Encode(e)
-	}
-	{
-		if s.Diff.Set {
-			e.FieldStart("diff")
-			s.Diff.Encode(e)
-		}
-	}
-	{
-		if s.RequestId.Set {
-			e.FieldStart("requestId")
-			s.RequestId.Encode(e)
-		}
-	}
-	{
-		if s.IP.Set {
-			e.FieldStart("ip")
-			s.IP.Encode(e)
-		}
-	}
-	{
-		if s.UserAgent.Set {
-			e.FieldStart("userAgent")
-			s.UserAgent.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfStaffAuditEntryResource = [9]string{
-	0: "id",
-	1: "occurredAt",
-	2: "actor",
-	3: "action",
-	4: "target",
-	5: "diff",
-	6: "requestId",
-	7: "ip",
-	8: "userAgent",
-}
-
-// Decode decodes StaffAuditEntryResource from json.
-func (s *StaffAuditEntryResource) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffAuditEntryResource to nil")
-	}
-	var requiredBitSet [2]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "id":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.ID.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"id\"")
-			}
-		case "occurredAt":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				if err := s.OccurredAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"occurredAt\"")
-			}
-		case "actor":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				if err := s.Actor.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"actor\"")
-			}
-		case "action":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				v, err := d.Str()
-				s.Action = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"action\"")
-			}
-		case "target":
-			requiredBitSet[0] |= 1 << 4
-			if err := func() error {
-				if err := s.Target.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target\"")
-			}
-		case "diff":
-			if err := func() error {
-				s.Diff.Reset()
-				if err := s.Diff.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"diff\"")
-			}
-		case "requestId":
-			if err := func() error {
-				s.RequestId.Reset()
-				if err := s.RequestId.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"requestId\"")
-			}
-		case "ip":
-			if err := func() error {
-				s.IP.Reset()
-				if err := s.IP.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"ip\"")
-			}
-		case "userAgent":
-			if err := func() error {
-				s.UserAgent.Reset()
-				if err := s.UserAgent.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"userAgent\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffAuditEntryResource")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
-		0b00011111,
-		0b00000000,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffAuditEntryResource) {
-					name = jsonFieldsNameOfStaffAuditEntryResource[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffAuditEntryResource) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAuditEntryResource) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s StaffAuditEntryResourceDiff) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields implements json.Marshaler.
-func (s StaffAuditEntryResourceDiff) encodeFields(e *jx.Encoder) {
-	for k, elem := range s {
-		e.FieldStart(k)
-
-		if len(elem) != 0 {
-			e.Raw(elem)
-		}
-	}
-}
-
-// Decode decodes StaffAuditEntryResourceDiff from json.
-func (s *StaffAuditEntryResourceDiff) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffAuditEntryResourceDiff to nil")
-	}
-	m := s.init()
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		var elem jx.Raw
-		if err := func() error {
-			v, err := d.RawAppend(nil)
-			elem = jx.Raw(v)
-			if err != nil {
-				return err
-			}
-			return nil
-		}(); err != nil {
-			return errors.Wrapf(err, "decode field %q", k)
-		}
-		m[string(k)] = elem
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffAuditEntryResourceDiff")
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s StaffAuditEntryResourceDiff) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAuditEntryResourceDiff) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffAuditTarget) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffAuditTarget) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("type")
-		e.Str(s.Type)
-	}
-	{
-		if s.ID.Set {
-			e.FieldStart("id")
-			s.ID.Encode(e)
-		}
-	}
-	{
-		if s.Name.Set {
-			e.FieldStart("name")
-			s.Name.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfStaffAuditTarget = [3]string{
-	0: "type",
-	1: "id",
-	2: "name",
-}
-
-// Decode decodes StaffAuditTarget from json.
-func (s *StaffAuditTarget) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffAuditTarget to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "type":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Str()
-				s.Type = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"type\"")
-			}
-		case "id":
-			if err := func() error {
-				s.ID.Reset()
-				if err := s.ID.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"id\"")
-			}
-		case "name":
-			if err := func() error {
-				s.Name.Reset()
-				if err := s.Name.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"name\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffAuditTarget")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffAuditTarget) {
-					name = jsonFieldsNameOfStaffAuditTarget[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffAuditTarget) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffAuditTarget) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffDeliverability) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffDeliverability) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("windowHours")
-		e.Int32(s.WindowHours)
-	}
-	{
-		e.FieldStart("volumeFloor")
-		e.Int32(s.VolumeFloor)
-	}
-	{
-		e.FieldStart("sendVolume")
-		e.Int32(s.SendVolume)
-	}
-	{
-		e.FieldStart("domains")
-		e.ArrStart()
-		for _, elem := range s.Domains {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-}
-
-var jsonFieldsNameOfStaffDeliverability = [4]string{
-	0: "windowHours",
-	1: "volumeFloor",
-	2: "sendVolume",
-	3: "domains",
-}
-
-// Decode decodes StaffDeliverability from json.
-func (s *StaffDeliverability) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffDeliverability to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "windowHours":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Int32()
-				s.WindowHours = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"windowHours\"")
-			}
-		case "volumeFloor":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Int32()
-				s.VolumeFloor = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"volumeFloor\"")
-			}
-		case "sendVolume":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Int32()
-				s.SendVolume = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"sendVolume\"")
-			}
-		case "domains":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				s.Domains = make([]StaffDomainRates, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffDomainRates
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Domains = append(s.Domains, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"domains\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffDeliverability")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00001111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffDeliverability) {
-					name = jsonFieldsNameOfStaffDeliverability[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffDeliverability) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffDeliverability) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffDomainRates) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffDomainRates) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("sendingDomainId")
-		s.SendingDomainId.Encode(e)
-	}
-	{
-		e.FieldStart("domain")
-		e.Str(s.Domain)
-	}
-	{
-		e.FieldStart("complaintRate")
-		s.ComplaintRate.Encode(e)
-	}
-	{
-		e.FieldStart("bounceRate")
-		s.BounceRate.Encode(e)
-	}
-}
-
-var jsonFieldsNameOfStaffDomainRates = [4]string{
-	0: "sendingDomainId",
-	1: "domain",
-	2: "complaintRate",
-	3: "bounceRate",
-}
-
-// Decode decodes StaffDomainRates from json.
-func (s *StaffDomainRates) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffDomainRates to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "sendingDomainId":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.SendingDomainId.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"sendingDomainId\"")
-			}
-		case "domain":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.Domain = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"domain\"")
-			}
-		case "complaintRate":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				if err := s.ComplaintRate.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"complaintRate\"")
-			}
-		case "bounceRate":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				if err := s.BounceRate.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"bounceRate\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffDomainRates")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00001111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffDomainRates) {
-					name = jsonFieldsNameOfStaffDomainRates[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffDomainRates) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffDomainRates) UnmarshalJSON(data []byte) error {
+func (s *SignupItemTitle) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -2711,71 +1397,54 @@ func (s *StaffEnrolment) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *StaffExemptionChange) Encode(e *jx.Encoder) {
+func (s *StaffLegalDocumentDraftInput) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *StaffExemptionChange) encodeFields(e *jx.Encoder) {
+func (s *StaffLegalDocumentDraftInput) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("changed")
-		e.Bool(s.Changed)
-	}
-	{
-		e.FieldStart("workspace")
-		s.Workspace.Encode(e)
+		e.FieldStart("markdown")
+		s.Markdown.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfStaffExemptionChange = [2]string{
-	0: "changed",
-	1: "workspace",
+var jsonFieldsNameOfStaffLegalDocumentDraftInput = [1]string{
+	0: "markdown",
 }
 
-// Decode decodes StaffExemptionChange from json.
-func (s *StaffExemptionChange) Decode(d *jx.Decoder) error {
+// Decode decodes StaffLegalDocumentDraftInput from json.
+func (s *StaffLegalDocumentDraftInput) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffExemptionChange to nil")
+		return errors.New("invalid: unable to decode StaffLegalDocumentDraftInput to nil")
 	}
 	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "changed":
+		case "markdown":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Bool()
-				s.Changed = bool(v)
-				if err != nil {
+				if err := s.Markdown.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"changed\"")
-			}
-		case "workspace":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				if err := s.Workspace.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"workspace\"")
+				return errors.Wrap(err, "decode field \"markdown\"")
 			}
 		default:
 			return d.Skip()
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode StaffExemptionChange")
+		return errors.Wrap(err, "decode StaffLegalDocumentDraftInput")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -2787,8 +1456,8 @@ func (s *StaffExemptionChange) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffExemptionChange) {
-					name = jsonFieldsNameOfStaffExemptionChange[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfStaffLegalDocumentDraftInput) {
+					name = jsonFieldsNameOfStaffLegalDocumentDraftInput[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -2809,167 +1478,67 @@ func (s *StaffExemptionChange) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffExemptionChange) MarshalJSON() ([]byte, error) {
+func (s *StaffLegalDocumentDraftInput) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffExemptionChange) UnmarshalJSON(data []byte) error {
+func (s *StaffLegalDocumentDraftInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *StaffHold) Encode(e *jx.Encoder) {
+func (s *StaffLegalDocumentPublishInput) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *StaffHold) encodeFields(e *jx.Encoder) {
+func (s *StaffLegalDocumentPublishInput) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("key")
-		e.Str(s.Key)
-	}
-	{
-		e.FieldStart("reasonCode")
-		e.Str(s.ReasonCode)
-	}
-	{
-		e.FieldStart("message")
-		e.Str(s.Message)
-	}
-	{
-		e.FieldStart("createdAt")
-		s.CreatedAt.Encode(e)
-	}
-	{
-		e.FieldStart("expiresAt")
-		s.ExpiresAt.Encode(e)
-	}
-	{
-		e.FieldStart("setBy")
-		e.Str(s.SetBy)
-	}
-	{
-		if s.ActionUrl.Set {
-			e.FieldStart("actionUrl")
-			s.ActionUrl.Encode(e)
-		}
+		e.FieldStart("label")
+		s.Label.Encode(e)
 	}
 }
 
-var jsonFieldsNameOfStaffHold = [7]string{
-	0: "key",
-	1: "reasonCode",
-	2: "message",
-	3: "createdAt",
-	4: "expiresAt",
-	5: "setBy",
-	6: "actionUrl",
+var jsonFieldsNameOfStaffLegalDocumentPublishInput = [1]string{
+	0: "label",
 }
 
-// Decode decodes StaffHold from json.
-func (s *StaffHold) Decode(d *jx.Decoder) error {
+// Decode decodes StaffLegalDocumentPublishInput from json.
+func (s *StaffLegalDocumentPublishInput) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffHold to nil")
+		return errors.New("invalid: unable to decode StaffLegalDocumentPublishInput to nil")
 	}
 	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "key":
+		case "label":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Str()
-				s.Key = string(v)
-				if err != nil {
+				if err := s.Label.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"key\"")
-			}
-		case "reasonCode":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.ReasonCode = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"reasonCode\"")
-			}
-		case "message":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Str()
-				s.Message = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"message\"")
-			}
-		case "createdAt":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				if err := s.CreatedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"createdAt\"")
-			}
-		case "expiresAt":
-			requiredBitSet[0] |= 1 << 4
-			if err := func() error {
-				if err := s.ExpiresAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"expiresAt\"")
-			}
-		case "setBy":
-			requiredBitSet[0] |= 1 << 5
-			if err := func() error {
-				v, err := d.Str()
-				s.SetBy = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"setBy\"")
-			}
-		case "actionUrl":
-			if err := func() error {
-				s.ActionUrl.Reset()
-				if err := s.ActionUrl.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"actionUrl\"")
+				return errors.Wrap(err, "decode field \"label\"")
 			}
 		default:
 			return d.Skip()
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode StaffHold")
+		return errors.Wrap(err, "decode StaffLegalDocumentPublishInput")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00111111,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -2981,8 +1550,8 @@ func (s *StaffHold) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffHold) {
-					name = jsonFieldsNameOfStaffHold[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfStaffLegalDocumentPublishInput) {
+					name = jsonFieldsNameOfStaffLegalDocumentPublishInput[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -3003,14 +1572,244 @@ func (s *StaffHold) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffHold) MarshalJSON() ([]byte, error) {
+func (s *StaffLegalDocumentPublishInput) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffHold) UnmarshalJSON(data []byte) error {
+func (s *StaffLegalDocumentPublishInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *StaffLegalDocumentVersion) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StaffLegalDocumentVersion) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("label")
+		s.Label.Encode(e)
+	}
+	{
+		e.FieldStart("publishedAt")
+		s.PublishedAt.Encode(e)
+	}
+	{
+		e.FieldStart("publishedBy")
+		s.PublishedBy.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfStaffLegalDocumentVersion = [3]string{
+	0: "label",
+	1: "publishedAt",
+	2: "publishedBy",
+}
+
+// Decode decodes StaffLegalDocumentVersion from json.
+func (s *StaffLegalDocumentVersion) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffLegalDocumentVersion to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "label":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Label.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"label\"")
+			}
+		case "publishedAt":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.PublishedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"publishedAt\"")
+			}
+		case "publishedBy":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.PublishedBy.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"publishedBy\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StaffLegalDocumentVersion")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStaffLegalDocumentVersion) {
+					name = jsonFieldsNameOfStaffLegalDocumentVersion[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffLegalDocumentVersion) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffLegalDocumentVersion) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *StaffLegalDocumentVersionList) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StaffLegalDocumentVersionList) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("items")
+		e.ArrStart()
+		for _, elem := range s.Items {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfStaffLegalDocumentVersionList = [1]string{
+	0: "items",
+}
+
+// Decode decodes StaffLegalDocumentVersionList from json.
+func (s *StaffLegalDocumentVersionList) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffLegalDocumentVersionList to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "items":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Items = make([]StaffLegalDocumentVersion, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem StaffLegalDocumentVersion
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Items = append(s.Items, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"items\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StaffLegalDocumentVersionList")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStaffLegalDocumentVersionList) {
+					name = jsonFieldsNameOfStaffLegalDocumentVersionList[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffLegalDocumentVersionList) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffLegalDocumentVersionList) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -3297,134 +2096,6 @@ func (s *StaffLoginResult) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *StaffRate) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffRate) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("numerator")
-		e.Int32(s.Numerator)
-	}
-	{
-		e.FieldStart("denominator")
-		e.Int32(s.Denominator)
-	}
-	{
-		e.FieldStart("rate")
-		s.Rate.Encode(e)
-	}
-}
-
-var jsonFieldsNameOfStaffRate = [3]string{
-	0: "numerator",
-	1: "denominator",
-	2: "rate",
-}
-
-// Decode decodes StaffRate from json.
-func (s *StaffRate) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffRate to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "numerator":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Int32()
-				s.Numerator = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"numerator\"")
-			}
-		case "denominator":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Int32()
-				s.Denominator = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"denominator\"")
-			}
-		case "rate":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				if err := s.Rate.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"rate\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffRate")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffRate) {
-					name = jsonFieldsNameOfStaffRate[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffRate) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffRate) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
 func (s *StaffResource) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -3646,1639 +2317,73 @@ func (s *StaffSecondFactorInput) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes StaffSignupCompanySize as json.
-func (s StaffSignupCompanySize) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes StaffSignupCompanySize from json.
-func (s *StaffSignupCompanySize) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupCompanySize to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch StaffSignupCompanySize(v) {
-	case StaffSignupCompanySize1:
-		*s = StaffSignupCompanySize1
-	case StaffSignupCompanySize210:
-		*s = StaffSignupCompanySize210
-	case StaffSignupCompanySize1150:
-		*s = StaffSignupCompanySize1150
-	case StaffSignupCompanySize51200:
-		*s = StaffSignupCompanySize51200
-	case StaffSignupCompanySize2011000:
-		*s = StaffSignupCompanySize2011000
-	case StaffSignupCompanySize1000Plus:
-		*s = StaffSignupCompanySize1000Plus
-	case StaffSignupCompanySizeOther:
-		*s = StaffSignupCompanySizeOther
-	default:
-		*s = StaffSignupCompanySize(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s StaffSignupCompanySize) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupCompanySize) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode implements json.Marshaler.
-func (s *StaffSignupCompanySizeCount) Encode(e *jx.Encoder) {
+func (s *StaffSignupItemInput) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *StaffSignupCompanySizeCount) encodeFields(e *jx.Encoder) {
+func (s *StaffSignupItemInput) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("choice")
-		s.Choice.Encode(e)
-	}
-	{
-		e.FieldStart("count")
-		e.Int32(s.Count)
-	}
-}
-
-var jsonFieldsNameOfStaffSignupCompanySizeCount = [2]string{
-	0: "choice",
-	1: "count",
-}
-
-// Decode decodes StaffSignupCompanySizeCount from json.
-func (s *StaffSignupCompanySizeCount) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupCompanySizeCount to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "choice":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Choice.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"choice\"")
-			}
-		case "count":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Int32()
-				s.Count = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"count\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSignupCompanySizeCount")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSignupCompanySizeCount) {
-					name = jsonFieldsNameOfStaffSignupCompanySizeCount[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupCompanySizeCount) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupCompanySizeCount) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffSignupGoal as json.
-func (s StaffSignupGoal) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes StaffSignupGoal from json.
-func (s *StaffSignupGoal) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupGoal to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch StaffSignupGoal(v) {
-	case StaffSignupGoalBroadcasts:
-		*s = StaffSignupGoalBroadcasts
-	case StaffSignupGoalAutomations:
-		*s = StaffSignupGoalAutomations
-	case StaffSignupGoalTracking:
-		*s = StaffSignupGoalTracking
-	case StaffSignupGoalMigrating:
-		*s = StaffSignupGoalMigrating
-	case StaffSignupGoalOther:
-		*s = StaffSignupGoalOther
-	default:
-		*s = StaffSignupGoal(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s StaffSignupGoal) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupGoal) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSignupGoalCount) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSignupGoalCount) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("choice")
-		s.Choice.Encode(e)
+		e.FieldStart("key")
+		s.Key.Encode(e)
 	}
 	{
-		e.FieldStart("count")
-		e.Int32(s.Count)
+		e.FieldStart("title")
+		s.Title.Encode(e)
 	}
-}
-
-var jsonFieldsNameOfStaffSignupGoalCount = [2]string{
-	0: "choice",
-	1: "count",
-}
-
-// Decode decodes StaffSignupGoalCount from json.
-func (s *StaffSignupGoalCount) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupGoalCount to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "choice":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Choice.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"choice\"")
-			}
-		case "count":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Int32()
-				s.Count = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"count\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSignupGoalCount")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSignupGoalCount) {
-					name = jsonFieldsNameOfStaffSignupGoalCount[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupGoalCount) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupGoalCount) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSignupOtherTextCount) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSignupOtherTextCount) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("text")
-		e.Str(s.Text)
-	}
-	{
-		e.FieldStart("count")
-		e.Int32(s.Count)
-	}
-}
-
-var jsonFieldsNameOfStaffSignupOtherTextCount = [2]string{
-	0: "text",
-	1: "count",
-}
-
-// Decode decodes StaffSignupOtherTextCount from json.
-func (s *StaffSignupOtherTextCount) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupOtherTextCount to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "text":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Str()
-				s.Text = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"text\"")
-			}
-		case "count":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Int32()
-				s.Count = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"count\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSignupOtherTextCount")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSignupOtherTextCount) {
-					name = jsonFieldsNameOfStaffSignupOtherTextCount[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupOtherTextCount) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupOtherTextCount) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffSignupRole as json.
-func (s StaffSignupRole) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes StaffSignupRole from json.
-func (s *StaffSignupRole) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupRole to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch StaffSignupRole(v) {
-	case StaffSignupRoleFounder:
-		*s = StaffSignupRoleFounder
-	case StaffSignupRoleMarketer:
-		*s = StaffSignupRoleMarketer
-	case StaffSignupRoleDeveloper:
-		*s = StaffSignupRoleDeveloper
-	case StaffSignupRoleProduct:
-		*s = StaffSignupRoleProduct
-	case StaffSignupRoleOther:
-		*s = StaffSignupRoleOther
-	default:
-		*s = StaffSignupRole(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s StaffSignupRole) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupRole) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSignupRoleCount) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSignupRoleCount) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("choice")
-		s.Choice.Encode(e)
-	}
-	{
-		e.FieldStart("count")
-		e.Int32(s.Count)
-	}
-}
-
-var jsonFieldsNameOfStaffSignupRoleCount = [2]string{
-	0: "choice",
-	1: "count",
-}
-
-// Decode decodes StaffSignupRoleCount from json.
-func (s *StaffSignupRoleCount) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupRoleCount to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "choice":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Choice.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"choice\"")
-			}
-		case "count":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Int32()
-				s.Count = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"count\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSignupRoleCount")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSignupRoleCount) {
-					name = jsonFieldsNameOfStaffSignupRoleCount[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupRoleCount) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupRoleCount) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffSignupSource as json.
-func (s StaffSignupSource) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes StaffSignupSource from json.
-func (s *StaffSignupSource) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupSource to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch StaffSignupSource(v) {
-	case StaffSignupSourceSearch:
-		*s = StaffSignupSourceSearch
-	case StaffSignupSourceGithub:
-		*s = StaffSignupSourceGithub
-	case StaffSignupSourceSocial:
-		*s = StaffSignupSourceSocial
-	case StaffSignupSourceRecommendation:
-		*s = StaffSignupSourceRecommendation
-	case StaffSignupSourceOther:
-		*s = StaffSignupSourceOther
-	default:
-		*s = StaffSignupSource(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s StaffSignupSource) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupSource) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSignupSourceCount) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSignupSourceCount) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("choice")
-		s.Choice.Encode(e)
-	}
-	{
-		e.FieldStart("count")
-		e.Int32(s.Count)
-	}
-}
-
-var jsonFieldsNameOfStaffSignupSourceCount = [2]string{
-	0: "choice",
-	1: "count",
-}
-
-// Decode decodes StaffSignupSourceCount from json.
-func (s *StaffSignupSourceCount) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupSourceCount to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "choice":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Choice.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"choice\"")
-			}
-		case "count":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Int32()
-				s.Count = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"count\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSignupSourceCount")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSignupSourceCount) {
-					name = jsonFieldsNameOfStaffSignupSourceCount[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupSourceCount) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupSourceCount) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSignupSurveyCounts) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSignupSurveyCounts) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("responses")
-		e.Int32(s.Responses)
-	}
-	{
-		e.FieldStart("role")
-		e.ArrStart()
-		for _, elem := range s.Role {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("roleOtherTexts")
-		e.ArrStart()
-		for _, elem := range s.RoleOtherTexts {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("companySize")
-		e.ArrStart()
-		for _, elem := range s.CompanySize {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("companySizeOtherTexts")
-		e.ArrStart()
-		for _, elem := range s.CompanySizeOtherTexts {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("mainGoal")
-		e.ArrStart()
-		for _, elem := range s.MainGoal {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("mainGoalOtherTexts")
-		e.ArrStart()
-		for _, elem := range s.MainGoalOtherTexts {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("heardFrom")
-		e.ArrStart()
-		for _, elem := range s.HeardFrom {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("heardFromOtherTexts")
-		e.ArrStart()
-		for _, elem := range s.HeardFromOtherTexts {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-}
-
-var jsonFieldsNameOfStaffSignupSurveyCounts = [9]string{
-	0: "responses",
-	1: "role",
-	2: "roleOtherTexts",
-	3: "companySize",
-	4: "companySizeOtherTexts",
-	5: "mainGoal",
-	6: "mainGoalOtherTexts",
-	7: "heardFrom",
-	8: "heardFromOtherTexts",
-}
-
-// Decode decodes StaffSignupSurveyCounts from json.
-func (s *StaffSignupSurveyCounts) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupSurveyCounts to nil")
-	}
-	var requiredBitSet [2]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "responses":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Int32()
-				s.Responses = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"responses\"")
-			}
-		case "role":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				s.Role = make([]StaffSignupRoleCount, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffSignupRoleCount
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Role = append(s.Role, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"role\"")
-			}
-		case "roleOtherTexts":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				s.RoleOtherTexts = make([]StaffSignupOtherTextCount, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffSignupOtherTextCount
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.RoleOtherTexts = append(s.RoleOtherTexts, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"roleOtherTexts\"")
-			}
-		case "companySize":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				s.CompanySize = make([]StaffSignupCompanySizeCount, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffSignupCompanySizeCount
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.CompanySize = append(s.CompanySize, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"companySize\"")
-			}
-		case "companySizeOtherTexts":
-			requiredBitSet[0] |= 1 << 4
-			if err := func() error {
-				s.CompanySizeOtherTexts = make([]StaffSignupOtherTextCount, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffSignupOtherTextCount
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.CompanySizeOtherTexts = append(s.CompanySizeOtherTexts, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"companySizeOtherTexts\"")
-			}
-		case "mainGoal":
-			requiredBitSet[0] |= 1 << 5
-			if err := func() error {
-				s.MainGoal = make([]StaffSignupGoalCount, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffSignupGoalCount
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.MainGoal = append(s.MainGoal, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"mainGoal\"")
-			}
-		case "mainGoalOtherTexts":
-			requiredBitSet[0] |= 1 << 6
-			if err := func() error {
-				s.MainGoalOtherTexts = make([]StaffSignupOtherTextCount, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffSignupOtherTextCount
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.MainGoalOtherTexts = append(s.MainGoalOtherTexts, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"mainGoalOtherTexts\"")
-			}
-		case "heardFrom":
-			requiredBitSet[0] |= 1 << 7
-			if err := func() error {
-				s.HeardFrom = make([]StaffSignupSourceCount, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffSignupSourceCount
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.HeardFrom = append(s.HeardFrom, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"heardFrom\"")
-			}
-		case "heardFromOtherTexts":
-			requiredBitSet[1] |= 1 << 0
-			if err := func() error {
-				s.HeardFromOtherTexts = make([]StaffSignupOtherTextCount, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffSignupOtherTextCount
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.HeardFromOtherTexts = append(s.HeardFromOtherTexts, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"heardFromOtherTexts\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSignupSurveyCounts")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
-		0b11111111,
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSignupSurveyCounts) {
-					name = jsonFieldsNameOfStaffSignupSurveyCounts[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupSurveyCounts) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupSurveyCounts) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffSignupSurveyGetNotFound as json.
-func (s *StaffSignupSurveyGetNotFound) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffSignupSurveyGetNotFound from json.
-func (s *StaffSignupSurveyGetNotFound) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupSurveyGetNotFound to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffSignupSurveyGetNotFound(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupSurveyGetNotFound) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupSurveyGetNotFound) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffSignupSurveyGetUnauthorized as json.
-func (s *StaffSignupSurveyGetUnauthorized) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffSignupSurveyGetUnauthorized from json.
-func (s *StaffSignupSurveyGetUnauthorized) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupSurveyGetUnauthorized to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffSignupSurveyGetUnauthorized(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupSurveyGetUnauthorized) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupSurveyGetUnauthorized) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSignupSurveyResponseResource) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSignupSurveyResponseResource) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("userId")
-		s.UserId.Encode(e)
-	}
-	{
-		e.FieldStart("role")
-		s.Role.Encode(e)
-	}
-	{
-		if s.RoleOtherText.Set {
-			e.FieldStart("roleOtherText")
-			s.RoleOtherText.Encode(e)
-		}
-	}
-	{
-		e.FieldStart("companySize")
-		s.CompanySize.Encode(e)
-	}
-	{
-		if s.CompanySizeOtherText.Set {
-			e.FieldStart("companySizeOtherText")
-			s.CompanySizeOtherText.Encode(e)
-		}
-	}
-	{
-		e.FieldStart("mainGoal")
-		s.MainGoal.Encode(e)
-	}
-	{
-		if s.MainGoalOtherText.Set {
-			e.FieldStart("mainGoalOtherText")
-			s.MainGoalOtherText.Encode(e)
-		}
-	}
-	{
-		if s.HeardFrom.Set {
-			e.FieldStart("heardFrom")
-			s.HeardFrom.Encode(e)
-		}
-	}
-	{
-		if s.HeardFromOtherText.Set {
-			e.FieldStart("heardFromOtherText")
-			s.HeardFromOtherText.Encode(e)
-		}
-	}
-	{
-		e.FieldStart("answeredAt")
-		s.AnsweredAt.Encode(e)
-	}
-}
-
-var jsonFieldsNameOfStaffSignupSurveyResponseResource = [10]string{
-	0: "userId",
-	1: "role",
-	2: "roleOtherText",
-	3: "companySize",
-	4: "companySizeOtherText",
-	5: "mainGoal",
-	6: "mainGoalOtherText",
-	7: "heardFrom",
-	8: "heardFromOtherText",
-	9: "answeredAt",
-}
-
-// Decode decodes StaffSignupSurveyResponseResource from json.
-func (s *StaffSignupSurveyResponseResource) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSignupSurveyResponseResource to nil")
-	}
-	var requiredBitSet [2]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "userId":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.UserId.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"userId\"")
-			}
-		case "role":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				if err := s.Role.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"role\"")
-			}
-		case "roleOtherText":
-			if err := func() error {
-				s.RoleOtherText.Reset()
-				if err := s.RoleOtherText.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"roleOtherText\"")
-			}
-		case "companySize":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				if err := s.CompanySize.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"companySize\"")
-			}
-		case "companySizeOtherText":
-			if err := func() error {
-				s.CompanySizeOtherText.Reset()
-				if err := s.CompanySizeOtherText.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"companySizeOtherText\"")
-			}
-		case "mainGoal":
-			requiredBitSet[0] |= 1 << 5
-			if err := func() error {
-				if err := s.MainGoal.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"mainGoal\"")
-			}
-		case "mainGoalOtherText":
-			if err := func() error {
-				s.MainGoalOtherText.Reset()
-				if err := s.MainGoalOtherText.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"mainGoalOtherText\"")
-			}
-		case "heardFrom":
-			if err := func() error {
-				s.HeardFrom.Reset()
-				if err := s.HeardFrom.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"heardFrom\"")
-			}
-		case "heardFromOtherText":
-			if err := func() error {
-				s.HeardFromOtherText.Reset()
-				if err := s.HeardFromOtherText.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"heardFromOtherText\"")
-			}
-		case "answeredAt":
-			requiredBitSet[1] |= 1 << 1
-			if err := func() error {
-				if err := s.AnsweredAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"answeredAt\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSignupSurveyResponseResource")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
-		0b00101011,
-		0b00000010,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSignupSurveyResponseResource) {
-					name = jsonFieldsNameOfStaffSignupSurveyResponseResource[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSignupSurveyResponseResource) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSignupSurveyResponseResource) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSuspendInput) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSuspendInput) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("reason")
-		e.Str(s.Reason)
-	}
-}
-
-var jsonFieldsNameOfStaffSuspendInput = [1]string{
-	0: "reason",
-}
-
-// Decode decodes StaffSuspendInput from json.
-func (s *StaffSuspendInput) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSuspendInput to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "reason":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Str()
-				s.Reason = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"reason\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSuspendInput")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSuspendInput) {
-					name = jsonFieldsNameOfStaffSuspendInput[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSuspendInput) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSuspendInput) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSuspension) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSuspension) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("at")
-		s.At.Encode(e)
-	}
-	{
-		e.FieldStart("actor")
-		s.Actor.Encode(e)
-	}
-	{
-		if s.Reason.Set {
-			e.FieldStart("reason")
-			s.Reason.Encode(e)
-		}
-	}
-}
-
-var jsonFieldsNameOfStaffSuspension = [3]string{
-	0: "at",
-	1: "actor",
-	2: "reason",
-}
-
-// Decode decodes StaffSuspension from json.
-func (s *StaffSuspension) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSuspension to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "at":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.At.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"at\"")
-			}
-		case "actor":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				if err := s.Actor.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"actor\"")
-			}
-		case "reason":
-			if err := func() error {
-				s.Reason.Reset()
-				if err := s.Reason.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"reason\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSuspension")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSuspension) {
-					name = jsonFieldsNameOfStaffSuspension[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSuspension) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSuspension) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSuspensionActor) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSuspensionActor) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("kind")
 		s.Kind.Encode(e)
 	}
 	{
-		if s.ID.Set {
-			e.FieldStart("id")
-			s.ID.Encode(e)
+		if s.MailingsConsent.Set {
+			e.FieldStart("mailingsConsent")
+			s.MailingsConsent.Encode(e)
 		}
 	}
 }
 
-var jsonFieldsNameOfStaffSuspensionActor = [2]string{
-	0: "kind",
-	1: "id",
+var jsonFieldsNameOfStaffSignupItemInput = [4]string{
+	0: "key",
+	1: "title",
+	2: "kind",
+	3: "mailingsConsent",
 }
 
-// Decode decodes StaffSuspensionActor from json.
-func (s *StaffSuspensionActor) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemInput from json.
+func (s *StaffSignupItemInput) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffSuspensionActor to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemInput to nil")
 	}
 	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "kind":
+		case "key":
 			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Key.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "title":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Title.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"title\"")
+			}
+		case "kind":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				if err := s.Kind.Decode(d); err != nil {
 					return err
@@ -5287,562 +2392,26 @@ func (s *StaffSuspensionActor) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"kind\"")
 			}
-		case "id":
+		case "mailingsConsent":
 			if err := func() error {
-				s.ID.Reset()
-				if err := s.ID.Decode(d); err != nil {
+				s.MailingsConsent.Reset()
+				if err := s.MailingsConsent.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"id\"")
+				return errors.Wrap(err, "decode field \"mailingsConsent\"")
 			}
 		default:
 			return d.Skip()
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode StaffSuspensionActor")
+		return errors.Wrap(err, "decode StaffSignupItemInput")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSuspensionActor) {
-					name = jsonFieldsNameOfStaffSuspensionActor[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSuspensionActor) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSuspensionActor) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffSuspensionActorKind as json.
-func (s StaffSuspensionActorKind) Encode(e *jx.Encoder) {
-	e.Str(string(s))
-}
-
-// Decode decodes StaffSuspensionActorKind from json.
-func (s *StaffSuspensionActorKind) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSuspensionActorKind to nil")
-	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch StaffSuspensionActorKind(v) {
-	case StaffSuspensionActorKindSystem:
-		*s = StaffSuspensionActorKindSystem
-	case StaffSuspensionActorKindCli:
-		*s = StaffSuspensionActorKindCli
-	case StaffSuspensionActorKindStaff:
-		*s = StaffSuspensionActorKindStaff
-	default:
-		*s = StaffSuspensionActorKind(v)
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s StaffSuspensionActorKind) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSuspensionActorKind) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffSuspensionChange) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffSuspensionChange) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("changed")
-		e.Bool(s.Changed)
-	}
-	{
-		e.FieldStart("workspace")
-		s.Workspace.Encode(e)
-	}
-}
-
-var jsonFieldsNameOfStaffSuspensionChange = [2]string{
-	0: "changed",
-	1: "workspace",
-}
-
-// Decode decodes StaffSuspensionChange from json.
-func (s *StaffSuspensionChange) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffSuspensionChange to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "changed":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Bool()
-				s.Changed = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"changed\"")
-			}
-		case "workspace":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				if err := s.Workspace.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"workspace\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffSuspensionChange")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffSuspensionChange) {
-					name = jsonFieldsNameOfStaffSuspensionChange[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffSuspensionChange) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffSuspensionChange) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffWorkspaceAuditListBadRequest as json.
-func (s *StaffWorkspaceAuditListBadRequest) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffWorkspaceAuditListBadRequest from json.
-func (s *StaffWorkspaceAuditListBadRequest) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspaceAuditListBadRequest to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffWorkspaceAuditListBadRequest(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspaceAuditListBadRequest) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspaceAuditListBadRequest) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffWorkspaceAuditListNotFound as json.
-func (s *StaffWorkspaceAuditListNotFound) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffWorkspaceAuditListNotFound from json.
-func (s *StaffWorkspaceAuditListNotFound) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspaceAuditListNotFound to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffWorkspaceAuditListNotFound(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspaceAuditListNotFound) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspaceAuditListNotFound) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffWorkspaceAuditListUnauthorized as json.
-func (s *StaffWorkspaceAuditListUnauthorized) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffWorkspaceAuditListUnauthorized from json.
-func (s *StaffWorkspaceAuditListUnauthorized) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspaceAuditListUnauthorized to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffWorkspaceAuditListUnauthorized(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspaceAuditListUnauthorized) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspaceAuditListUnauthorized) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *StaffWorkspaceDetailResource) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("id")
-		s.ID.Encode(e)
-	}
-	{
-		e.FieldStart("name")
-		e.Str(s.Name)
-	}
-	{
-		e.FieldStart("createdAt")
-		s.CreatedAt.Encode(e)
-	}
-	{
-		if s.DiscardedAt.Set {
-			e.FieldStart("discardedAt")
-			s.DiscardedAt.Encode(e)
-		}
-	}
-	{
-		if s.ErasedAt.Set {
-			e.FieldStart("erasedAt")
-			s.ErasedAt.Encode(e)
-		}
-	}
-	{
-		if s.Suspension.Set {
-			e.FieldStart("suspension")
-			s.Suspension.Encode(e)
-		}
-	}
-	{
-		e.FieldStart("exempt")
-		e.Bool(s.Exempt)
-	}
-	{
-		e.FieldStart("warned")
-		e.Bool(s.Warned)
-	}
-	{
-		e.FieldStart("holds")
-		e.ArrStart()
-		for _, elem := range s.Holds {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
-	}
-	{
-		e.FieldStart("deliverability")
-		s.Deliverability.Encode(e)
-	}
-	{
-		e.FieldStart("abuse")
-		s.Abuse.Encode(e)
-	}
-}
-
-var jsonFieldsNameOfStaffWorkspaceDetailResource = [11]string{
-	0:  "id",
-	1:  "name",
-	2:  "createdAt",
-	3:  "discardedAt",
-	4:  "erasedAt",
-	5:  "suspension",
-	6:  "exempt",
-	7:  "warned",
-	8:  "holds",
-	9:  "deliverability",
-	10: "abuse",
-}
-
-// Decode decodes StaffWorkspaceDetailResource from json.
-func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspaceDetailResource to nil")
-	}
-	var requiredBitSet [2]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "id":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.ID.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"id\"")
-			}
-		case "name":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"name\"")
-			}
-		case "createdAt":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				if err := s.CreatedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"createdAt\"")
-			}
-		case "discardedAt":
-			if err := func() error {
-				s.DiscardedAt.Reset()
-				if err := s.DiscardedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"discardedAt\"")
-			}
-		case "erasedAt":
-			if err := func() error {
-				s.ErasedAt.Reset()
-				if err := s.ErasedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"erasedAt\"")
-			}
-		case "suspension":
-			if err := func() error {
-				s.Suspension.Reset()
-				if err := s.Suspension.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"suspension\"")
-			}
-		case "exempt":
-			requiredBitSet[0] |= 1 << 6
-			if err := func() error {
-				v, err := d.Bool()
-				s.Exempt = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"exempt\"")
-			}
-		case "warned":
-			requiredBitSet[0] |= 1 << 7
-			if err := func() error {
-				v, err := d.Bool()
-				s.Warned = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"warned\"")
-			}
-		case "holds":
-			requiredBitSet[1] |= 1 << 0
-			if err := func() error {
-				s.Holds = make([]StaffHold, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffHold
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Holds = append(s.Holds, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"holds\"")
-			}
-		case "deliverability":
-			requiredBitSet[1] |= 1 << 1
-			if err := func() error {
-				if err := s.Deliverability.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"deliverability\"")
-			}
-		case "abuse":
-			requiredBitSet[1] |= 1 << 2
-			if err := func() error {
-				if err := s.Abuse.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"abuse\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode StaffWorkspaceDetailResource")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
-		0b11000111,
 		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -5855,8 +2424,8 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffWorkspaceDetailResource) {
-					name = jsonFieldsNameOfStaffWorkspaceDetailResource[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfStaffSignupItemInput) {
+					name = jsonFieldsNameOfStaffSignupItemInput[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -5877,84 +2446,306 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspaceDetailResource) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemInput) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspaceDetailResource) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *StaffWorkspaceResource) Encode(e *jx.Encoder) {
+func (s *StaffSignupItemList) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *StaffWorkspaceResource) encodeFields(e *jx.Encoder) {
+func (s *StaffSignupItemList) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("items")
+		e.ArrStart()
+		for _, elem := range s.Items {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfStaffSignupItemList = [1]string{
+	0: "items",
+}
+
+// Decode decodes StaffSignupItemList from json.
+func (s *StaffSignupItemList) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemList to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "items":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Items = make([]StaffSignupItemResource, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem StaffSignupItemResource
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Items = append(s.Items, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"items\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StaffSignupItemList")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStaffSignupItemList) {
+					name = jsonFieldsNameOfStaffSignupItemList[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemList) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemList) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *StaffSignupItemOrder) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StaffSignupItemOrder) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("ids")
+		e.ArrStart()
+		for _, elem := range s.Ids {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfStaffSignupItemOrder = [1]string{
+	0: "ids",
+}
+
+// Decode decodes StaffSignupItemOrder from json.
+func (s *StaffSignupItemOrder) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemOrder to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "ids":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				s.Ids = make([]EntityId, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem EntityId
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Ids = append(s.Ids, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ids\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode StaffSignupItemOrder")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfStaffSignupItemOrder) {
+					name = jsonFieldsNameOfStaffSignupItemOrder[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemOrder) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemOrder) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *StaffSignupItemResource) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *StaffSignupItemResource) encodeFields(e *jx.Encoder) {
 	{
 		e.FieldStart("id")
 		s.ID.Encode(e)
 	}
 	{
-		e.FieldStart("name")
-		e.Str(s.Name)
+		e.FieldStart("key")
+		s.Key.Encode(e)
+	}
+	{
+		e.FieldStart("title")
+		s.Title.Encode(e)
+	}
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("position")
+		e.Int32(s.Position)
+	}
+	{
+		e.FieldStart("mailingsConsent")
+		e.Bool(s.MailingsConsent)
+	}
+	{
+		if s.Draft.Set {
+			e.FieldStart("draft")
+			s.Draft.Encode(e)
+		}
+	}
+	{
+		if s.CurrentVersion.Set {
+			e.FieldStart("currentVersion")
+			s.CurrentVersion.Encode(e)
+		}
+	}
+	{
+		if s.ArchivedAt.Set {
+			e.FieldStart("archivedAt")
+			s.ArchivedAt.Encode(e)
+		}
 	}
 	{
 		e.FieldStart("createdAt")
 		s.CreatedAt.Encode(e)
 	}
-	{
-		if s.DiscardedAt.Set {
-			e.FieldStart("discardedAt")
-			s.DiscardedAt.Encode(e)
-		}
-	}
-	{
-		if s.ErasedAt.Set {
-			e.FieldStart("erasedAt")
-			s.ErasedAt.Encode(e)
-		}
-	}
-	{
-		if s.Suspension.Set {
-			e.FieldStart("suspension")
-			s.Suspension.Encode(e)
-		}
-	}
-	{
-		e.FieldStart("exempt")
-		e.Bool(s.Exempt)
-	}
-	{
-		e.FieldStart("warned")
-		e.Bool(s.Warned)
-	}
 }
 
-var jsonFieldsNameOfStaffWorkspaceResource = [8]string{
+var jsonFieldsNameOfStaffSignupItemResource = [10]string{
 	0: "id",
-	1: "name",
-	2: "createdAt",
-	3: "discardedAt",
-	4: "erasedAt",
-	5: "suspension",
-	6: "exempt",
-	7: "warned",
+	1: "key",
+	2: "title",
+	3: "kind",
+	4: "position",
+	5: "mailingsConsent",
+	6: "draft",
+	7: "currentVersion",
+	8: "archivedAt",
+	9: "createdAt",
 }
 
-// Decode decodes StaffWorkspaceResource from json.
-func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemResource from json.
+func (s *StaffSignupItemResource) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspaceResource to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemResource to nil")
 	}
-	var requiredBitSet [1]uint8
+	var requiredBitSet [2]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -5968,20 +2759,92 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"id\"")
 			}
-		case "name":
+		case "key":
 			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
-				v, err := d.Str()
-				s.Name = string(v)
+				if err := s.Key.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"key\"")
+			}
+		case "title":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Title.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"title\"")
+			}
+		case "kind":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "position":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int32()
+				s.Position = int32(v)
 				if err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"name\"")
+				return errors.Wrap(err, "decode field \"position\"")
+			}
+		case "mailingsConsent":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Bool()
+				s.MailingsConsent = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"mailingsConsent\"")
+			}
+		case "draft":
+			if err := func() error {
+				s.Draft.Reset()
+				if err := s.Draft.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"draft\"")
+			}
+		case "currentVersion":
+			if err := func() error {
+				s.CurrentVersion.Reset()
+				if err := s.CurrentVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"currentVersion\"")
+			}
+		case "archivedAt":
+			if err := func() error {
+				s.ArchivedAt.Reset()
+				if err := s.ArchivedAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 2
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -5990,71 +2853,18 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
-		case "discardedAt":
-			if err := func() error {
-				s.DiscardedAt.Reset()
-				if err := s.DiscardedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"discardedAt\"")
-			}
-		case "erasedAt":
-			if err := func() error {
-				s.ErasedAt.Reset()
-				if err := s.ErasedAt.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"erasedAt\"")
-			}
-		case "suspension":
-			if err := func() error {
-				s.Suspension.Reset()
-				if err := s.Suspension.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"suspension\"")
-			}
-		case "exempt":
-			requiredBitSet[0] |= 1 << 6
-			if err := func() error {
-				v, err := d.Bool()
-				s.Exempt = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"exempt\"")
-			}
-		case "warned":
-			requiredBitSet[0] |= 1 << 7
-			if err := func() error {
-				v, err := d.Bool()
-				s.Warned = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"warned\"")
-			}
 		default:
 			return d.Skip()
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode StaffWorkspaceResource")
+		return errors.Wrap(err, "decode StaffSignupItemResource")
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b11000111,
+	for i, mask := range [2]uint8{
+		0b00111111,
+		0b00000010,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -6066,8 +2876,8 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 				bitIdx := bits.TrailingZeros8(result)
 				fieldIdx := i*8 + bitIdx
 				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffWorkspaceResource) {
-					name = jsonFieldsNameOfStaffWorkspaceResource[fieldIdx]
+				if fieldIdx < len(jsonFieldsNameOfStaffSignupItemResource) {
+					name = jsonFieldsNameOfStaffSignupItemResource[fieldIdx]
 				} else {
 					name = strconv.Itoa(fieldIdx)
 				}
@@ -6088,355 +2898,109 @@ func (s *StaffWorkspaceResource) Decode(d *jx.Decoder) error {
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspaceResource) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemResource) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspaceResource) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffWorkspacesExemptNotFound as json.
-func (s *StaffWorkspacesExemptNotFound) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffWorkspacesExemptNotFound from json.
-func (s *StaffWorkspacesExemptNotFound) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesExemptNotFound to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffWorkspacesExemptNotFound(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesExemptNotFound) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesExemptNotFound) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffWorkspacesExemptUnauthorized as json.
-func (s *StaffWorkspacesExemptUnauthorized) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffWorkspacesExemptUnauthorized from json.
-func (s *StaffWorkspacesExemptUnauthorized) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesExemptUnauthorized to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffWorkspacesExemptUnauthorized(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesExemptUnauthorized) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesExemptUnauthorized) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffWorkspacesGetNotFound as json.
-func (s *StaffWorkspacesGetNotFound) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffWorkspacesGetNotFound from json.
-func (s *StaffWorkspacesGetNotFound) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesGetNotFound to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffWorkspacesGetNotFound(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesGetNotFound) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesGetNotFound) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes StaffWorkspacesGetUnauthorized as json.
-func (s *StaffWorkspacesGetUnauthorized) Encode(e *jx.Encoder) {
-	unwrapped := (*ProblemDetails)(s)
-
-	unwrapped.Encode(e)
-}
-
-// Decode decodes StaffWorkspacesGetUnauthorized from json.
-func (s *StaffWorkspacesGetUnauthorized) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesGetUnauthorized to nil")
-	}
-	var unwrapped ProblemDetails
-	if err := func() error {
-		if err := unwrapped.Decode(d); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = StaffWorkspacesGetUnauthorized(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesGetUnauthorized) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesGetUnauthorized) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemResource) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
 // Encode implements json.Marshaler.
-func (s *StaffWorkspacesListOK) Encode(e *jx.Encoder) {
+func (s *StaffSignupItemUpdate) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *StaffWorkspacesListOK) encodeFields(e *jx.Encoder) {
+func (s *StaffSignupItemUpdate) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("items")
-		e.ArrStart()
-		for _, elem := range s.Items {
-			elem.Encode(e)
+		if s.Title.Set {
+			e.FieldStart("title")
+			s.Title.Encode(e)
 		}
-		e.ArrEnd()
 	}
 	{
-		e.FieldStart("page")
-		e.Int32(s.Page)
-	}
-	{
-		e.FieldStart("pageSize")
-		e.Int32(s.PageSize)
-	}
-	{
-		e.FieldStart("totalItems")
-		e.Int32(s.TotalItems)
-	}
-	{
-		e.FieldStart("totalPages")
-		e.Int32(s.TotalPages)
+		if s.MailingsConsent.Set {
+			e.FieldStart("mailingsConsent")
+			s.MailingsConsent.Encode(e)
+		}
 	}
 }
 
-var jsonFieldsNameOfStaffWorkspacesListOK = [5]string{
-	0: "items",
-	1: "page",
-	2: "pageSize",
-	3: "totalItems",
-	4: "totalPages",
+var jsonFieldsNameOfStaffSignupItemUpdate = [2]string{
+	0: "title",
+	1: "mailingsConsent",
 }
 
-// Decode decodes StaffWorkspacesListOK from json.
-func (s *StaffWorkspacesListOK) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemUpdate from json.
+func (s *StaffSignupItemUpdate) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesListOK to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemUpdate to nil")
 	}
-	var requiredBitSet [1]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "items":
-			requiredBitSet[0] |= 1 << 0
+		case "title":
 			if err := func() error {
-				s.Items = make([]StaffWorkspaceResource, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem StaffWorkspaceResource
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Items = append(s.Items, elem)
-					return nil
-				}); err != nil {
+				s.Title.Reset()
+				if err := s.Title.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"items\"")
+				return errors.Wrap(err, "decode field \"title\"")
 			}
-		case "page":
-			requiredBitSet[0] |= 1 << 1
+		case "mailingsConsent":
 			if err := func() error {
-				v, err := d.Int32()
-				s.Page = int32(v)
-				if err != nil {
+				s.MailingsConsent.Reset()
+				if err := s.MailingsConsent.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"page\"")
-			}
-		case "pageSize":
-			requiredBitSet[0] |= 1 << 2
-			if err := func() error {
-				v, err := d.Int32()
-				s.PageSize = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"pageSize\"")
-			}
-		case "totalItems":
-			requiredBitSet[0] |= 1 << 3
-			if err := func() error {
-				v, err := d.Int32()
-				s.TotalItems = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"totalItems\"")
-			}
-		case "totalPages":
-			requiredBitSet[0] |= 1 << 4
-			if err := func() error {
-				v, err := d.Int32()
-				s.TotalPages = int32(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"totalPages\"")
+				return errors.Wrap(err, "decode field \"mailingsConsent\"")
 			}
 		default:
 			return d.Skip()
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode StaffWorkspacesListOK")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00011111,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfStaffWorkspacesListOK) {
-					name = jsonFieldsNameOfStaffWorkspacesListOK[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
+		return errors.Wrap(err, "decode StaffSignupItemUpdate")
 	}
 
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesListOK) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemUpdate) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesListOK) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemUpdate) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes StaffWorkspacesSuspendNotFound as json.
-func (s *StaffWorkspacesSuspendNotFound) Encode(e *jx.Encoder) {
+// Encode encodes StaffSignupItemsArchiveNotFound as json.
+func (s *StaffSignupItemsArchiveNotFound) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes StaffWorkspacesSuspendNotFound from json.
-func (s *StaffWorkspacesSuspendNotFound) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemsArchiveNotFound from json.
+func (s *StaffSignupItemsArchiveNotFound) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesSuspendNotFound to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemsArchiveNotFound to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6447,34 +3011,34 @@ func (s *StaffWorkspacesSuspendNotFound) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = StaffWorkspacesSuspendNotFound(unwrapped)
+	*s = StaffSignupItemsArchiveNotFound(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesSuspendNotFound) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemsArchiveNotFound) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesSuspendNotFound) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemsArchiveNotFound) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes StaffWorkspacesSuspendUnauthorized as json.
-func (s *StaffWorkspacesSuspendUnauthorized) Encode(e *jx.Encoder) {
+// Encode encodes StaffSignupItemsArchiveUnauthorized as json.
+func (s *StaffSignupItemsArchiveUnauthorized) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes StaffWorkspacesSuspendUnauthorized from json.
-func (s *StaffWorkspacesSuspendUnauthorized) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemsArchiveUnauthorized from json.
+func (s *StaffSignupItemsArchiveUnauthorized) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesSuspendUnauthorized to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemsArchiveUnauthorized to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6485,34 +3049,34 @@ func (s *StaffWorkspacesSuspendUnauthorized) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = StaffWorkspacesSuspendUnauthorized(unwrapped)
+	*s = StaffSignupItemsArchiveUnauthorized(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesSuspendUnauthorized) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemsArchiveUnauthorized) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesSuspendUnauthorized) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemsArchiveUnauthorized) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes StaffWorkspacesSuspendUnprocessableEntity as json.
-func (s *StaffWorkspacesSuspendUnprocessableEntity) Encode(e *jx.Encoder) {
+// Encode encodes StaffSignupItemsArchiveUnprocessableEntity as json.
+func (s *StaffSignupItemsArchiveUnprocessableEntity) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes StaffWorkspacesSuspendUnprocessableEntity from json.
-func (s *StaffWorkspacesSuspendUnprocessableEntity) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemsArchiveUnprocessableEntity from json.
+func (s *StaffSignupItemsArchiveUnprocessableEntity) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesSuspendUnprocessableEntity to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemsArchiveUnprocessableEntity to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6523,34 +3087,34 @@ func (s *StaffWorkspacesSuspendUnprocessableEntity) Decode(d *jx.Decoder) error 
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = StaffWorkspacesSuspendUnprocessableEntity(unwrapped)
+	*s = StaffSignupItemsArchiveUnprocessableEntity(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesSuspendUnprocessableEntity) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemsArchiveUnprocessableEntity) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesSuspendUnprocessableEntity) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemsArchiveUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes StaffWorkspacesUnexemptNotFound as json.
-func (s *StaffWorkspacesUnexemptNotFound) Encode(e *jx.Encoder) {
+// Encode encodes StaffSignupItemsCreateUnauthorized as json.
+func (s *StaffSignupItemsCreateUnauthorized) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes StaffWorkspacesUnexemptNotFound from json.
-func (s *StaffWorkspacesUnexemptNotFound) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemsCreateUnauthorized from json.
+func (s *StaffSignupItemsCreateUnauthorized) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesUnexemptNotFound to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemsCreateUnauthorized to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6561,34 +3125,34 @@ func (s *StaffWorkspacesUnexemptNotFound) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = StaffWorkspacesUnexemptNotFound(unwrapped)
+	*s = StaffSignupItemsCreateUnauthorized(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesUnexemptNotFound) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemsCreateUnauthorized) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesUnexemptNotFound) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemsCreateUnauthorized) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes StaffWorkspacesUnexemptUnauthorized as json.
-func (s *StaffWorkspacesUnexemptUnauthorized) Encode(e *jx.Encoder) {
+// Encode encodes StaffSignupItemsCreateUnprocessableEntity as json.
+func (s *StaffSignupItemsCreateUnprocessableEntity) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes StaffWorkspacesUnexemptUnauthorized from json.
-func (s *StaffWorkspacesUnexemptUnauthorized) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemsCreateUnprocessableEntity from json.
+func (s *StaffSignupItemsCreateUnprocessableEntity) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesUnexemptUnauthorized to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemsCreateUnprocessableEntity to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6599,34 +3163,34 @@ func (s *StaffWorkspacesUnexemptUnauthorized) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = StaffWorkspacesUnexemptUnauthorized(unwrapped)
+	*s = StaffSignupItemsCreateUnprocessableEntity(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesUnexemptUnauthorized) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemsCreateUnprocessableEntity) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesUnexemptUnauthorized) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemsCreateUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes StaffWorkspacesUnsuspendNotFound as json.
-func (s *StaffWorkspacesUnsuspendNotFound) Encode(e *jx.Encoder) {
+// Encode encodes StaffSignupItemsGetNotFound as json.
+func (s *StaffSignupItemsGetNotFound) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes StaffWorkspacesUnsuspendNotFound from json.
-func (s *StaffWorkspacesUnsuspendNotFound) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemsGetNotFound from json.
+func (s *StaffSignupItemsGetNotFound) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesUnsuspendNotFound to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemsGetNotFound to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6637,34 +3201,34 @@ func (s *StaffWorkspacesUnsuspendNotFound) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = StaffWorkspacesUnsuspendNotFound(unwrapped)
+	*s = StaffSignupItemsGetNotFound(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesUnsuspendNotFound) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemsGetNotFound) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesUnsuspendNotFound) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemsGetNotFound) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes StaffWorkspacesUnsuspendUnauthorized as json.
-func (s *StaffWorkspacesUnsuspendUnauthorized) Encode(e *jx.Encoder) {
+// Encode encodes StaffSignupItemsGetUnauthorized as json.
+func (s *StaffSignupItemsGetUnauthorized) Encode(e *jx.Encoder) {
 	unwrapped := (*ProblemDetails)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes StaffWorkspacesUnsuspendUnauthorized from json.
-func (s *StaffWorkspacesUnsuspendUnauthorized) Decode(d *jx.Decoder) error {
+// Decode decodes StaffSignupItemsGetUnauthorized from json.
+func (s *StaffSignupItemsGetUnauthorized) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode StaffWorkspacesUnsuspendUnauthorized to nil")
+		return errors.New("invalid: unable to decode StaffSignupItemsGetUnauthorized to nil")
 	}
 	var unwrapped ProblemDetails
 	if err := func() error {
@@ -6675,19 +3239,475 @@ func (s *StaffWorkspacesUnsuspendUnauthorized) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = StaffWorkspacesUnsuspendUnauthorized(unwrapped)
+	*s = StaffSignupItemsGetUnauthorized(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *StaffWorkspacesUnsuspendUnauthorized) MarshalJSON() ([]byte, error) {
+func (s *StaffSignupItemsGetUnauthorized) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *StaffWorkspacesUnsuspendUnauthorized) UnmarshalJSON(data []byte) error {
+func (s *StaffSignupItemsGetUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsListVersionsNotFound as json.
+func (s *StaffSignupItemsListVersionsNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsListVersionsNotFound from json.
+func (s *StaffSignupItemsListVersionsNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsListVersionsNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsListVersionsNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsListVersionsNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsListVersionsNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsListVersionsUnauthorized as json.
+func (s *StaffSignupItemsListVersionsUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsListVersionsUnauthorized from json.
+func (s *StaffSignupItemsListVersionsUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsListVersionsUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsListVersionsUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsListVersionsUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsListVersionsUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsPublishNotFound as json.
+func (s *StaffSignupItemsPublishNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsPublishNotFound from json.
+func (s *StaffSignupItemsPublishNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsPublishNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsPublishNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsPublishNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsPublishNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsPublishUnauthorized as json.
+func (s *StaffSignupItemsPublishUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsPublishUnauthorized from json.
+func (s *StaffSignupItemsPublishUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsPublishUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsPublishUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsPublishUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsPublishUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsPublishUnprocessableEntity as json.
+func (s *StaffSignupItemsPublishUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsPublishUnprocessableEntity from json.
+func (s *StaffSignupItemsPublishUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsPublishUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsPublishUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsPublishUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsPublishUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsReorderUnauthorized as json.
+func (s *StaffSignupItemsReorderUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsReorderUnauthorized from json.
+func (s *StaffSignupItemsReorderUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsReorderUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsReorderUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsReorderUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsReorderUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsReorderUnprocessableEntity as json.
+func (s *StaffSignupItemsReorderUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsReorderUnprocessableEntity from json.
+func (s *StaffSignupItemsReorderUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsReorderUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsReorderUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsReorderUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsReorderUnprocessableEntity) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsSaveDraftNotFound as json.
+func (s *StaffSignupItemsSaveDraftNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsSaveDraftNotFound from json.
+func (s *StaffSignupItemsSaveDraftNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsSaveDraftNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsSaveDraftNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsSaveDraftNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsSaveDraftNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsSaveDraftUnauthorized as json.
+func (s *StaffSignupItemsSaveDraftUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsSaveDraftUnauthorized from json.
+func (s *StaffSignupItemsSaveDraftUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsSaveDraftUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsSaveDraftUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsSaveDraftUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsSaveDraftUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsUpdateNotFound as json.
+func (s *StaffSignupItemsUpdateNotFound) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsUpdateNotFound from json.
+func (s *StaffSignupItemsUpdateNotFound) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsUpdateNotFound to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsUpdateNotFound(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsUpdateNotFound) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsUpdateNotFound) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsUpdateUnauthorized as json.
+func (s *StaffSignupItemsUpdateUnauthorized) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsUpdateUnauthorized from json.
+func (s *StaffSignupItemsUpdateUnauthorized) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsUpdateUnauthorized to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsUpdateUnauthorized(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsUpdateUnauthorized) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsUpdateUnauthorized) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StaffSignupItemsUpdateUnprocessableEntity as json.
+func (s *StaffSignupItemsUpdateUnprocessableEntity) Encode(e *jx.Encoder) {
+	unwrapped := (*ProblemDetails)(s)
+
+	unwrapped.Encode(e)
+}
+
+// Decode decodes StaffSignupItemsUpdateUnprocessableEntity from json.
+func (s *StaffSignupItemsUpdateUnprocessableEntity) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StaffSignupItemsUpdateUnprocessableEntity to nil")
+	}
+	var unwrapped ProblemDetails
+	if err := func() error {
+		if err := unwrapped.Decode(d); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StaffSignupItemsUpdateUnprocessableEntity(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *StaffSignupItemsUpdateUnprocessableEntity) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StaffSignupItemsUpdateUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -6728,46 +3748,6 @@ func (s Timestamp) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *Timestamp) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes WorkspaceId as json.
-func (s WorkspaceId) Encode(e *jx.Encoder) {
-	unwrapped := string(s)
-
-	e.Str(unwrapped)
-}
-
-// Decode decodes WorkspaceId from json.
-func (s *WorkspaceId) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode WorkspaceId to nil")
-	}
-	var unwrapped string
-	if err := func() error {
-		v, err := d.Str()
-		unwrapped = string(v)
-		if err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "alias")
-	}
-	*s = WorkspaceId(unwrapped)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s WorkspaceId) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *WorkspaceId) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -12,6 +13,12 @@ model SiteSignUpInput {
   /** Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated
    * Sign-up of the address replaces it. */
   password?: string;
+
+  /** The answers to the Sign-up items in effect (ADR 0062). Every required acceptance must be
+   * answered ticked at its current version, or the field `signupItems.<key>` is refused; an
+   * optional consent left out is not recorded. Each answered item is recorded as accepted or
+   * declined, and each notice in effect as shown. Absent with no items in effect. */
+  signupItems?: SiteSignupItemAnswer[];
 }
 
 /** Sign in with an email and password. The email is a plain string: a malformed
@@ -87,6 +94,35 @@ model SiteSigninNotMeInput {
   token: string;
 }
 
+/** A Sign-in provider's sign-up held for the Sign-up items (ADR 0062): who the provider proved,
+ * for the screen that asks the items. No User exists yet. */
+model SitePendingSignup {
+  /** The provider's display name (`Google`) */
+  provider: string;
+
+  /** The address the User will get */
+  email: EmailAddress;
+
+  /** The provider's name of the person; empty when it gave none */
+  name: string;
+}
+
+/** The answers that complete a pending sign-up */
+model SiteSigninPendingSubmitInput {
+  /** The signed reference from the screen's URL */
+  token: string;
+
+  /** The answers to the Sign-up items in effect, by the rules of the sign-up form's
+   * `signupItems` */
+  signupItems?: SiteSignupItemAnswer[];
+}
+
+/** Decline a pending sign-up */
+model SiteSigninPendingDeclineInput {
+  /** The signed reference from the screen's URL */
+  token: string;
+}
+
 /** One Sign-in provider an Instance offers (ADR 0048) */
 model SiteSigninProvider {
   /** The registry name, the path segment of its `start` and `callback` operations */
@@ -123,9 +159,6 @@ enum SiteSigninError {
   /** The provider's proof of the address is not accepted (a Google address that is neither Gmail nor a hosted domain) */
   emailNotTrusted: "email_not_trusted",
 
-  /** The Instance closed public sign-up (ADR 0042) */
-  signupClosed: "signup_closed",
-
   /** Linking only: the provider account is already linked to another User */
   identityInUse: "identity_in_use",
 
@@ -148,9 +181,7 @@ namespace SiteAuth {
    * (422 otherwise). On an Instance that does not require email verification (the selfhosted Mode) there is no
    * mail to carry that notice and no link: the request creates a Verified User with its
    * first Workspace at once (202, no session and no cookie: the User signs in next), and
-   * a taken address answers 409. An Instance whose sign-up is closed
-   * (ADR 0042, 0060) answers 403 with code `signup_closed`
-   * before anything is read or created; accepting an Invitation still works. */
+   * a taken address answers 409. Sign-up is open on every Instance (ADR 0063). */
   @useAuth(NoAuth)
   @post
   @route("/sign-up")
@@ -161,7 +192,6 @@ namespace SiteAuth {
         /** The Sign-up browser cookie, absent when the install does not require verification */
         @header("Set-Cookie") setCookie?: string;
       }
-    | ForbiddenProblem
     | ConflictProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;
@@ -255,7 +285,10 @@ namespace SiteAuth {
    * Always answers 302: to `return_to` (or `/`) with the session cookie when the sign-in
    * succeeds, and to `/login?error=<code>` (see SiteSigninError) when it does not. A known
    * identity signs in; a new, trusted email creates a Verified User with its first Workspace
-   * and no mail. A User with a Second factor gets no session and no cookie: the redirect is
+   * and no mail; while the Instance has Sign-up items in effect it creates no User yet and the
+   * redirect is to `/signin-pending?token=<reference>` (plus `redirect` when the flow had a
+   * `return_to`), the screen that asks the items and completes the sign-up through
+   * `/auth/signin-pending` (ADR 0062). A User with a Second factor gets no session and no cookie: the redirect is
    * to `/login?challenge=<token>`, the challenge of `/auth/second-factor` (ADR 0020), which
    * a TOTP or Recovery code finishes under the Login throttle. Every parameter is optional so that a denied consent (`error` only) or a
    * stray visit reaches the handler and gets the same redirect as any other refusal. */
@@ -290,8 +323,47 @@ namespace SiteAuth {
     @header("Set-Cookie") setCookie?: string;
   };
 
-  /** End the session on this browser: clears the session cookie. */
+  /** A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up
+   * items. The token is the signed reference of the callback's redirect, valid for ten minutes;
+   * an expired, completed, declined or forged one answers 400. */
   @useAuth(NoAuth)
+  @get
+  @route("/signin-pending")
+  op signinPending(@query token: string): SitePendingSignup | BadRequestProblem;
+
+  /** Complete a pending sign-up with the answers to the Sign-up items: creates the User with its
+   * Verified email, its Linked identity, its first Workspace (and the Membership of the
+   * Invitation the flow began from) and the Consent records (source `provider_screen`) in one
+   * transaction, and starts the session. A required acceptance not ticked answers 422 under
+   * `signupItems.<key>` and keeps the pending sign-up; an item not in effect or a stale version
+   * answers 422 under `signupItems`. An expired, completed, declined or forged token answers 400,
+   * and so does one whose address or provider account was taken meanwhile. */
+  @useAuth(NoAuth)
+  @post
+  @route("/signin-pending")
+  op signinPendingSubmit(@body body: SiteSigninPendingSubmitInput):
+    | {
+        @statusCode statusCode: 204;
+
+        /** The session cookie of the new User */
+        @header("Set-Cookie") setCookie: string;
+      }
+    | BadRequestProblem
+    | UnprocessableEntityProblem;
+
+  /** Decline a pending sign-up: it is deleted and nothing is created. Answers 204 also for a
+   * token that names nothing any more. */
+  @useAuth(NoAuth)
+  @post
+  @route("/signin-pending/decline")
+  op signinPendingDecline(
+    @body body: SiteSigninPendingDeclineInput,
+  ): NoContentResponse;
+
+  /** End the session on this browser: clears the session cookie. Answered while an
+   * acceptance is pending (ADR 0062), so a gated User can sign out. */
+  @useAuth(NoAuth)
+  @extension("x-allowed-while-acceptance-pending", true)
   @post
   @route("/logout")
   op logout(): {

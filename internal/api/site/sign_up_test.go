@@ -153,7 +153,7 @@ func TestLoginRefusesAnUnverifiedUserWithATypedAnswerAndNoSession(t *testing.T) 
 // second-factor challenge is issued either.
 func TestLoginRefusesAnUnverifiedUserEvenWithAPasswordAndASecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.User.UpdateOneID(fixtures.SecondFactorSamID).ClearEmailVerifiedAt().Exec(t.Context()))
+	require.NoError(t, env.FeedDB.User.UpdateOneID(fixtures.SecondFactorSamID).ClearEmailVerifiedAt().Exec(t.Context()))
 
 	rec := postLogin(t, env, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword)
 
@@ -231,7 +231,7 @@ func TestAnOldLinkNeverVerifiesAChangedAddress(t *testing.T) {
 	token := signUpLink(t, env, "Grace Hopper", "grace@example.com")
 	u, err := env.DB.User.Query().Where(entuser.Email("grace@example.com")).Only(t.Context())
 	require.NoError(t, err)
-	require.NoError(t, env.DB.User.UpdateOneID(u.ID).SetEmail("grace@elsewhere.example").Exec(t.Context()))
+	require.NoError(t, env.FeedDB.User.UpdateOneID(u.ID).SetEmail("grace@elsewhere.example").Exec(t.Context()))
 
 	assert.IsType(t, &siteapi.SiteAuthVerifyEmailBadRequest{}, verify(t, env, token, "grace-password-1"))
 
@@ -314,7 +314,7 @@ func TestWithTheGateOffSigningUpNeedsAPasswordAndRefusesATakenAddress(t *testing
 
 func TestWithTheGateOffLoginHasNoVerificationCheck(t *testing.T) {
 	env := gateOff(t)
-	require.NoError(t, env.DB.User.UpdateOneID(fixtures.OwnerJohnID).ClearEmailVerifiedAt().Exec(t.Context()))
+	require.NoError(t, env.FeedDB.User.UpdateOneID(fixtures.OwnerJohnID).ClearEmailVerifiedAt().Exec(t.Context()))
 
 	assert.Equal(t, http.StatusOK, loginStatus(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
 }

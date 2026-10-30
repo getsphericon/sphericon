@@ -1,16 +1,18 @@
 import { Button, Card, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useInterval } from '@mantine/hooks'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
+import { SignupItemFields } from '../../components/SignupItemFields.tsx'
 import {
   siteAuthSignUpMutation,
   siteAuthResendVerificationMutation,
+  siteLegalDocumentsSignupItemsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSignUpInput } from '../../generated/site/types.gen.ts'
 import { useApiErrorMessage } from '../../hooks/useApiErrorMessage.ts'
@@ -18,6 +20,7 @@ import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { requiresEmailVerification } from '../../instance.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
+import { signupItemAnswers } from '../../utils/signupItems.ts'
 
 // Seconds the resend button waits after a send; the server's per-IP limit stays the real gate.
 const RESEND_COOLDOWN_SECONDS = 60
@@ -32,6 +35,10 @@ export function SignUpPage() {
   // The address the verification link went to; set once the Sign-up is accepted.
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [created, setCreated] = useState(false)
+  // The Sign-up items in effect (ADR 0062) and the boxes the person ticked: none at first.
+  const itemsQuery = useQuery(siteLegalDocumentsSignupItemsOptions())
+  const items = itemsQuery.data?.items ?? []
+  const [ticked, setTicked] = useState<Record<string, boolean>>({})
 
   const [cooldown, setCooldown] = useState(0)
   const ticker = useInterval(() => setCooldown((seconds) => Math.max(0, seconds - 1)), 1000)
@@ -50,7 +57,7 @@ export function SignUpPage() {
     }
   }, [cooldown, ticker])
 
-  const form = useForm<Required<SiteSignUpInput> & { confirm: string }>({
+  const form = useForm<Required<Omit<SiteSignUpInput, 'signupItems'>> & { confirm: string }>({
     initialValues: {
       name: '',
       email: '',
@@ -83,12 +90,15 @@ export function SignUpPage() {
     },
   })
 
-  const handleSubmit = (values: Required<SiteSignUpInput>) => {
+  const handleSubmit = (values: Required<Omit<SiteSignUpInput, 'signupItems'>>) => {
+    // With no items the form sends no answers at all, as it did before items existed.
+    const signupItems = signupItemAnswers(items, ticked)
     signUpMutation.mutate({
       body: {
         name: values.name.trim(),
         email: values.email.trim(),
         password: values.password,
+        ...(signupItems && { signupItems }),
       },
     })
   }
@@ -170,6 +180,13 @@ export function SignUpPage() {
             autoComplete="new-password"
             required
             {...form.getInputProps('confirm')}
+          />
+
+          <SignupItemFields
+            items={items}
+            ticked={ticked}
+            onTick={(key, checked) => setTicked((current) => ({ ...current, [key]: checked }))}
+            error={signUpMutation.error}
           />
 
           <Group justify="space-between" align="center">

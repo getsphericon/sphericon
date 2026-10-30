@@ -27,16 +27,17 @@ type ProviderLogin struct {
 	// TrustFailure is why the provider's proof of Email is not accepted ("" when it is).
 	TrustFailure signin.Reason
 	// Invitation is the pending Invitation the sign-in is to accept, nil for a plain sign-in.
-	// It needs the provider's trusted email to be the invited address, and it opens a closed
-	// sign-up for that address, as accepting an Invitation by password does (ADR 0042).
+	// It needs the provider's trusted email to be the invited address.
 	Invitation *ent.Invitation
 	// SurveyDue marks a User this sign-in creates as owing the Sign-up survey (the Instance asks
 	// it). An Invitation sign-in never marks it, nor does a sign-in that creates nobody.
 	SurveyDue bool
-
-	// invited is set by SignInWithIdentity for an Invitation sign-in: the Invitation opens a
-	// closed sign-up (ADR 0060), so neither the decision nor the transaction applies the rule.
-	invited bool
+	// SignupItemsInEffect: the Instance asks Sign-up items, so a sign-in that would create a User
+	// keeps a pending sign-up instead (ADR 0062).
+	SignupItemsInEffect bool
+	// Now is the time of the sign-in by the caller's clock; a pending sign-up is open until
+	// PendingSignupTTL after it.
+	Now time.Time
 }
 
 // SigninRefusedError is a sign-in the decision refused; Reason is what the person is told.
@@ -49,8 +50,12 @@ func (e *SigninRefusedError) Error() string {
 // ProviderSignin is the User a provider sign-in is for, and what the sign-in did to the
 // account.
 type ProviderSignin struct {
-	// User is the account as it stands after the sign-in (its session epoch included).
+	// User is the account as it stands after the sign-in (its session epoch included); nil when
+	// the sign-in is Pending.
 	User *ent.User
+	// Pending is the pending sign-up the sign-in kept instead of creating a User, until the
+	// person answers the Sign-up items (ADR 0062); nil otherwise.
+	Pending *ent.PendingSignup
 	// Created: the User was made by this sign-in.
 	Created bool
 	// LinkedIdentityID is the new Linked identity when the sign-in linked the provider
@@ -80,11 +85,14 @@ func (a *Accounts) SignInWithIdentity(ctx context.Context, in ProviderLogin) (*P
 	if in.TrustFailure == "" && !strings.EqualFold(strings.TrimSpace(in.Email), in.Invitation.Email) {
 		return nil, &SigninRefusedError{Reason: signin.ReasonInvitationEmailMismatch}
 	}
-	in.invited = true
 	in.SurveyDue = false
 	signedIn, err := a.signIn(ctx, in)
 	if err != nil {
 		return nil, err
+	}
+	if signedIn.Pending != nil {
+		// The pending sign-up keeps the Invitation, which its completion accepts.
+		return signedIn, nil
 	}
 	if !strings.EqualFold(signedIn.User.Email, in.Invitation.Email) {
 		// A Linked identity of an account with another address: nothing was created.
@@ -92,7 +100,7 @@ func (a *Accounts) SignInWithIdentity(ctx context.Context, in ProviderLogin) (*P
 	}
 	// The provider's proof of the address is the session proof AcceptInvitation asks of a
 	// Verified User.
-	if err := a.AcceptInvitation(ctx, in.Invitation, "", "", signedIn.User.Email); err != nil {
+	if err := a.AcceptInvitation(ctx, in.Invitation, InvitationAcceptance{SessionEmail: signedIn.User.Email}); err != nil {
 		return nil, err
 	}
 	return signedIn, nil
@@ -101,21 +109,11 @@ func (a *Accounts) SignInWithIdentity(ctx context.Context, in ProviderLogin) (*P
 // signIn is SignInWithIdentity without an Invitation.
 func (a *Accounts) signIn(ctx context.Context, in ProviderLogin) (*ProviderSignin, error) {
 	for attempt := 0; ; attempt++ {
-		known, holder, err := a.signinFacts(ctx, in)
+		known, holder, err := signinFacts(ctx, a.ent, in)
 		if err != nil {
 			return nil, err
 		}
-		open := in.invited
-		if !open {
-			if open, err = a.SignupOpen(ctx); err != nil {
-				return nil, err
-			}
-		}
-		facts := SigninFacts{KnownIdentity: known != nil, TrustFailure: in.TrustFailure, SignupOpen: open}
-		if holder != nil {
-			facts.EmailHolder = &EmailHolder{Verified: holder.EmailVerifiedAt != nil, Proven: holder.EmailProvenAt != nil}
-		}
-		decision := DecideSignin(facts)
+		decision := DecideSignin(factsOf(known, holder, in))
 		switch decision.Outcome {
 		case SigninKnown:
 			return &ProviderSignin{User: known}, nil
@@ -126,14 +124,19 @@ func (a *Accounts) signIn(ctx context.Context, in ProviderLogin) (*ProviderSigni
 				// User and identity are now visible.
 				continue
 			}
-			if errors.Is(err, ErrSignupClosed) {
-				// Another Sign-up took the first place between the facts and the write.
-				return nil, &SigninRefusedError{Reason: signin.ReasonSignupClosed}
-			}
 			if err != nil {
 				return nil, err
 			}
 			return &ProviderSignin{User: created, Created: true}, nil
+		case SigninPending:
+			held, err := a.holdPending(ctx, in)
+			if db.IsUniqueViolation(err) && attempt == 0 {
+				continue // the same sign-in raced itself: read the facts again
+			}
+			if err != nil {
+				return nil, err
+			}
+			return &ProviderSignin{Pending: held}, nil
 		case SigninLink:
 			linked, identityID, err := a.linkToHolder(ctx, holder.ID, in)
 			if db.IsUniqueViolation(err) && attempt == 0 {
@@ -160,12 +163,12 @@ func (a *Accounts) signIn(ctx context.Context, in ProviderLogin) (*ProviderSigni
 	}
 }
 
-// signinFacts loads the User whose Linked identity is the provider's subject, and the User
-// that holds the provider's email (looked up case-insensitively: the unique index is
+// signinFacts loads, through c, the User whose Linked identity is the provider's subject, and the
+// User that holds the provider's email (looked up case-insensitively: the unique index is
 // case-sensitive, so a different spelling of a held address must not create a duplicate).
 // The email is read only when the provider's proof of it is accepted.
-func (a *Accounts) signinFacts(ctx context.Context, in ProviderLogin) (known, holder *ent.User, err error) {
-	identity, err := a.ent.UserIdentity.Query().
+func signinFacts(ctx context.Context, c *ent.Client, in ProviderLogin) (known, holder *ent.User, err error) {
+	identity, err := c.UserIdentity.Query().
 		Where(useridentity.Provider(in.Provider), useridentity.Subject(in.Subject)).
 		WithUser().
 		Only(ctx)
@@ -178,11 +181,20 @@ func (a *Accounts) signinFacts(ctx context.Context, in ProviderLogin) (known, ho
 	if in.TrustFailure != "" || in.Email == "" {
 		return nil, nil, nil
 	}
-	holder, err = a.ent.User.Query().Where(user.EmailEqualFold(in.Email)).First(ctx)
+	holder, err = c.User.Query().Where(user.EmailEqualFold(in.Email)).First(ctx)
 	if ent.IsNotFound(err) {
 		return nil, nil, nil
 	}
 	return nil, holder, err
+}
+
+// factsOf is the decision's facts of the Users signinFacts loaded for the provider's answer in.
+func factsOf(known, holder *ent.User, in ProviderLogin) SigninFacts {
+	facts := SigninFacts{KnownIdentity: known != nil, TrustFailure: in.TrustFailure, SignupItemsInEffect: in.SignupItemsInEffect}
+	if holder != nil {
+		facts.EmailHolder = &EmailHolder{Verified: holder.EmailVerifiedAt != nil, Proven: holder.EmailProvenAt != nil}
+	}
+	return facts
 }
 
 // createFromProvider creates a Verified User for a trusted provider email, with the Linked
@@ -190,34 +202,35 @@ func (a *Accounts) signinFacts(ctx context.Context, in ProviderLogin) (known, ho
 // Sign-up does when its link is followed (ADR 0030). The User has no password: the
 // provider proved the address, so no mail is sent. Its email is proven now.
 func (a *Accounts) createFromProvider(ctx context.Context, in ProviderLogin) (*ent.User, error) {
+	u, _, err := a.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
+		return createProviderUser(ctx, tx, in)
+	})
+	return u, err
+}
+
+// createProviderUser writes the Verified User of a trusted provider email and its Linked identity
+// in tx: the provider's name, or the address's local part when it gave none, and no password.
+func createProviderUser(ctx context.Context, tx *ent.Client, in ProviderLogin) (*ent.User, error) {
 	email := strings.TrimSpace(in.Email)
 	name := strings.TrimSpace(in.Name)
 	if name == "" {
 		name, _, _ = strings.Cut(email, "@")
 	}
-	u, _, err := a.verified(ctx, &proof{SignupPermits: true}, func(tx *ent.Client) (*ent.User, error) {
-		if !in.invited {
-			if err := a.permitSignup(ctx, tx); err != nil {
-				return nil, err
-			}
-		}
-		now := time.Now()
-		u, err := tx.User.Create().
-			SetName(name).
-			SetEmail(email).
-			SetEmailVerifiedAt(now).
-			SetEmailProvenAt(now).
-			SetNillableSignupSurveyDueAt(surveyDueAt(in.SurveyDue)).
-			Save(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if err := tx.UserIdentity.Create().SetUserID(u.ID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx); err != nil {
-			return nil, err
-		}
-		return u, nil
-	})
-	return u, err
+	now := time.Now()
+	u, err := tx.User.Create().
+		SetName(name).
+		SetEmail(email).
+		SetEmailVerifiedAt(now).
+		SetEmailProvenAt(now).
+		SetNillableSignupSurveyDueAt(surveyDueAt(in.SurveyDue)).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.UserIdentity.Create().SetUserID(u.ID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx); err != nil {
+		return nil, err
+	}
+	return u, nil
 }
 
 var (
@@ -334,7 +347,7 @@ func (a *Accounts) linkToHolder(ctx context.Context, holderID int64, in Provider
 			return err
 		}
 		if stamped > 0 {
-			if _, err := applyDomainJoin(ctx, tx, pub, linked, proof{SignupPermits: true}); err != nil {
+			if _, err := applyDomainJoin(ctx, tx, pub, linked); err != nil {
 				return err
 			}
 		}
@@ -354,31 +367,37 @@ func (a *Accounts) linkToHolder(ctx context.Context, holderID int64, in Provider
 // give it. A pending Invitation to the address is not touched. ErrAlreadyVerified when the
 // User is no longer Unverified.
 func (a *Accounts) takeOver(ctx context.Context, holderID int64, in ProviderLogin) (*ent.User, error) {
-	name := strings.TrimSpace(in.Name)
-	u, _, err := a.verified(ctx, &proof{SignupPermits: true}, func(tx *ent.Client) (*ent.User, error) {
-		now := time.Now()
-		upd := tx.User.Update().
-			Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).
-			SetEmailVerifiedAt(now).
-			SetEmailProvenAt(now).
-			ClearPasswordHash().
-			AddSessionEpoch(1)
-		if name != "" {
-			upd = upd.SetName(name)
-		}
-		n, err := upd.Save(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if n == 0 {
-			return nil, ErrAlreadyVerified
-		}
-		if err := tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx); err != nil {
-			return nil, err
-		}
-		return tx.User.Get(ctx, holderID)
+	u, _, err := a.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
+		return takeOverIn(ctx, tx, holderID, in)
 	})
 	return u, err
+}
+
+// takeOverIn writes the take-over of the Unverified User holderID in tx: Verified with the
+// provider's name, no password, earlier sessions ended, and the Linked identity. ErrAlreadyVerified
+// when the User is no longer Unverified.
+func takeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin) (*ent.User, error) {
+	now := time.Now()
+	upd := tx.User.Update().
+		Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).
+		SetEmailVerifiedAt(now).
+		SetEmailProvenAt(now).
+		ClearPasswordHash().
+		AddSessionEpoch(1)
+	if name := strings.TrimSpace(in.Name); name != "" {
+		upd = upd.SetName(name)
+	}
+	n, err := upd.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		return nil, ErrAlreadyVerified
+	}
+	if err := tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Exec(ctx); err != nil {
+		return nil, err
+	}
+	return tx.User.Get(ctx, holderID)
 }
 
 // UndoLink removes one Linked identity of a User and ends every session of the User: the

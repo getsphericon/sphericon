@@ -10,7 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -60,17 +60,17 @@ func (h *harness) suspendAs(t *testing.T, by suspension.Actor) {
 func TestTheConsoleShowsSystemAndCLISuspensionsWithoutAnActorId(t *testing.T) {
 	for name, tc := range map[string]struct {
 		by   suspension.Actor
-		kind staffapi.StaffSuspensionActorKind
+		kind staffeeapi.StaffSuspensionActorKind
 	}{
-		"system": {suspension.System, staffapi.StaffSuspensionActorKindSystem},
-		"cli":    {suspension.CLI, staffapi.StaffSuspensionActorKindCli},
+		"system": {suspension.System, staffeeapi.StaffSuspensionActorKindSystem},
+		"cli":    {suspension.CLI, staffeeapi.StaffSuspensionActorKindCli},
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := newHarness(t)
 			c, _ := h.staffSession(t)
 			h.suspendAs(t, tc.by)
 
-			acme, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffapi.StaffWorkspaceDetailResource)
+			acme, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 			require.True(t, ok)
 			require.True(t, acme.Suspension.Set)
 			assert.Equal(t, tc.kind, acme.Suspension.Value.Actor.Kind)

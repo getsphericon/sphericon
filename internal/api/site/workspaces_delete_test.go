@@ -166,7 +166,7 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteWorkspacesRestoreNotFound{}, res, "a stranger cannot tell it exists")
 
 	// Past the window the Workspace is no longer restorable.
-	env.DB.Workspace.UpdateOneID(fixtures.InitechID).
+	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).
 		SetDiscardedAt(time.Now().Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(ctx)
 	res, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
 	require.NoError(t, err)

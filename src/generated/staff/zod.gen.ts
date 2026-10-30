@@ -15,14 +15,24 @@ export const zEmailAddress = z.email().max(320);
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
 /**
+ * The label a Staff member gives a published Legal document version, unique per item
+ */
+export const zLegalDocumentLabel = z.string().min(1).max(64);
+
+/**
+ * A Legal document's text, in Markdown
+ */
+export const zLegalDocumentMarkdown = z.string().max(100000);
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum([
   'second_factor_required',
   'email_verification_required',
-  'signup_closed',
   'permission_required',
-  'migrations_pending'
+  'migrations_pending',
+  'acceptance_pending'
 ]);
 
 /**
@@ -52,6 +62,13 @@ export const zProblemDetails = z.object({
   fields: z.exactOptional(z.record(z.string(), z.string())),
   retryAfter: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   debug: z.exactOptional(zProblemDebug)
+});
+
+/**
+ * RFC 7807 bad request response
+ */
+export const zBadRequestProblem = z.object({
+  body: zProblemDetails
 });
 
 /**
@@ -91,47 +108,23 @@ export const zPreconditionRequiredProblem = z.object({
 });
 
 /**
- * Which metric of a Sending domain breached the abuse detector's warning limit
+ * A Sign-up item's key: its address, and the last segment of its Legal document's public page
  */
-export const zStaffAbuseMetric = z.enum(['complaint', 'bounce']);
+export const zSignupItemKey = z.string().min(1).max(64).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
 
 /**
- * A Sending domain in the warning tier (ADR 0026), by the detector's own computation
+ * What a Sign-up item asks of a person (ADR 0062)
  */
-export const zStaffAbuseWarning = z.object({
-  domain: z.string(),
-  metric: zStaffAbuseMetric,
-  rate: z.number()
-});
-
-/**
- * Who performed an audited change, as the Workspace's own team sees it
- */
-export const zStaffAuditActorKind = z.enum([
-  'user',
-  'api_token',
-  'staff',
-  'service',
-  'system'
+export const zSignupItemKind = z.enum([
+  'required_acceptance',
+  'optional_consent',
+  'notice'
 ]);
 
 /**
- * The actor of an Audit entry
+ * A Sign-up item's title: what the sign-up form shows
  */
-export const zStaffAuditActor = z.object({
-  kind: zStaffAuditActorKind,
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
-});
-
-/**
- * What an audited change was done to
- */
-export const zStaffAuditTarget = z.object({
-  type: z.string(),
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
-});
+export const zSignupItemTitle = z.string().min(1).max(200);
 
 /**
  * A TOTP secret awaiting its first confirming code
@@ -140,6 +133,20 @@ export const zStaffEnrolment = z.object({
   secret: z.string(),
   uri: z.string(),
   qrCode: z.string()
+});
+
+/**
+ * Save the draft of an item's Legal document
+ */
+export const zStaffLegalDocumentDraftInput = z.object({
+  markdown: zLegalDocumentMarkdown
+});
+
+/**
+ * Publish the draft as a new version
+ */
+export const zStaffLegalDocumentPublishInput = z.object({
+  label: zLegalDocumentLabel
 });
 
 /**
@@ -166,36 +173,6 @@ export const zStaffLoginResult = z.object({
 });
 
 /**
- * A rate as the (numerator, denominator, rate) triple (ADR 0011)
- */
-export const zStaffRate = z.object({
-  numerator: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  denominator: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  rate: z.number().nullable()
-});
-
-/**
- * The Complaint and Bounce rates of one Sending domain over the trailing window
- */
-export const zStaffDomainRates = z.object({
-  sendingDomainId: zEntityId,
-  domain: z.string(),
-  complaintRate: zStaffRate,
-  bounceRate: zStaffRate
-});
-
-/**
- * A Workspace's deliverability over the trailing window: the rates of ADR 0011 per
- * Sending domain, and how much it sent. Counts only, never message content.
- */
-export const zStaffDeliverability = z.object({
-  windowHours: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  volumeFloor: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  sendVolume: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  domains: z.array(zStaffDomainRates)
-});
-
-/**
  * The authenticated platform Staff member (shown to customers only as "Sphericon staff")
  */
 export const zStaffResource = z.object({
@@ -212,215 +189,73 @@ export const zStaffSecondFactorInput = z.object({
 });
 
 /**
- * How many people work at the User's company (second question)
+ * Add a Sign-up item. It goes after the existing ones.
  */
-export const zStaffSignupCompanySize = z.enum([
-  '1',
-  '2_10',
-  '11_50',
-  '51_200',
-  '201_1000',
-  '1000_plus',
-  'other'
-]);
-
-/**
- * How many Users chose a company size
- */
-export const zStaffSignupCompanySizeCount = z.object({
-  choice: zStaffSignupCompanySize,
-  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+export const zStaffSignupItemInput = z.object({
+  key: zSignupItemKey,
+  title: zSignupItemTitle,
+  kind: zSignupItemKind,
+  mailingsConsent: z.exactOptional(z.boolean())
 });
 
 /**
- * What the User mainly wants to do with the product (third question)
+ * The new order of the sign-up form: the id of every Sign-up item, archived ones included, each
+ * once
  */
-export const zStaffSignupGoal = z.enum([
-  'broadcasts',
-  'automations',
-  'tracking',
-  'migrating',
-  'other'
-]);
-
-/**
- * How many Users chose a main goal
- */
-export const zStaffSignupGoalCount = z.object({
-  choice: zStaffSignupGoal,
-  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+export const zStaffSignupItemOrder = z.object({
+  ids: z.array(zEntityId)
 });
 
 /**
- * An `other` text and how many Users wrote it
+ * Change a Sign-up item
  */
-export const zStaffSignupOtherTextCount = z.object({
-  text: z.string(),
-  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+export const zStaffSignupItemUpdate = z.object({
+  title: z.exactOptional(zSignupItemTitle),
+  mailingsConsent: z.exactOptional(z.boolean())
 });
-
-/**
- * What the User does (Sign-up survey, first question)
- */
-export const zStaffSignupRole = z.enum([
-  'founder',
-  'marketer',
-  'developer',
-  'product',
-  'other'
-]);
-
-/**
- * How many Users chose a role
- */
-export const zStaffSignupRoleCount = z.object({
-  choice: zStaffSignupRole,
-  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export const zStaffSignupSource = z.enum([
-  'search',
-  'github',
-  'social',
-  'recommendation',
-  'other'
-]);
-
-/**
- * How many Users chose a source
- */
-export const zStaffSignupSourceCount = z.object({
-  choice: zStaffSignupSource,
-  count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * The Sign-up survey answers of every User who answered, counted per question. A choice nobody
- * made is absent from its list; a question's `other` texts are listed with their counts, most
- * frequent first.
- */
-export const zStaffSignupSurveyCounts = z.object({
-  responses: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  role: z.array(zStaffSignupRoleCount),
-  roleOtherTexts: z.array(zStaffSignupOtherTextCount),
-  companySize: z.array(zStaffSignupCompanySizeCount),
-  companySizeOtherTexts: z.array(zStaffSignupOtherTextCount),
-  mainGoal: z.array(zStaffSignupGoalCount),
-  mainGoalOtherTexts: z.array(zStaffSignupOtherTextCount),
-  heardFrom: z.array(zStaffSignupSourceCount),
-  heardFromOtherTexts: z.array(zStaffSignupOtherTextCount)
-});
-
-/**
- * Why a Workspace is being suspended; the owner is told
- */
-export const zStaffSuspendInput = z.object({
-  reason: z.string().min(1)
-});
-
-/**
- * Who set a Workspace suspension (ADR 0026)
- */
-export const zStaffSuspensionActorKind = z.enum([
-  'system',
-  'cli',
-  'staff'
-]);
-
-/**
- * The actor of a suspension. Unlike a customer, a Staff member sees the real Staff member id.
- */
-export const zStaffSuspensionActor = z.object({
-  kind: zStaffSuspensionActorKind,
-  id: z.exactOptional(z.string().nullable())
-});
-
-/**
- * Which Workspaces the list surfaces for review
- */
-export const zStaffWorkspaceReview = z.enum([
-  'warned',
-  'systemFrozen',
-  'deleted'
-]);
 
 export const zTimeZoneName = z.string();
 
 export const zTimestamp = z.iso.datetime();
 
 /**
- * A Workspace's standing with the abuse detector (ADR 0026)
+ * A published Legal document version, as the console shows it
  */
-export const zStaffAbuse = z.object({
-  exempt: z.boolean(),
-  clearedAt: z.exactOptional(zTimestamp.nullable()),
-  warningNotifiedAt: z.exactOptional(zTimestamp.nullable()),
-  freezeNotifiedAt: z.exactOptional(zTimestamp.nullable()),
-  warning: z.exactOptional(zStaffAbuseWarning.nullable())
+export const zStaffLegalDocumentVersion = z.object({
+  label: zLegalDocumentLabel,
+  publishedAt: zTimestamp,
+  publishedBy: zStaffResource
 });
 
 /**
- * One immutable Audit entry of a Workspace. Secrets are never recorded; they appear as changed only.
+ * Every published version of an item's Legal document, the latest (the current one) first
  */
-export const zStaffAuditEntryResource = z.object({
+export const zStaffLegalDocumentVersionList = z.object({
+  items: z.array(zStaffLegalDocumentVersion)
+});
+
+/**
+ * A Sign-up item of the Instance (ADR 0062) with its Legal document's draft and current
+ * version
+ */
+export const zStaffSignupItemResource = z.object({
   id: zEntityId,
-  occurredAt: zTimestamp,
-  actor: zStaffAuditActor,
-  action: z.string(),
-  target: zStaffAuditTarget,
-  diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
-  requestId: z.exactOptional(z.string().nullable()),
-  ip: z.exactOptional(z.string().nullable()),
-  userAgent: z.exactOptional(z.string().nullable())
+  key: zSignupItemKey,
+  title: zSignupItemTitle,
+  kind: zSignupItemKind,
+  position: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  mailingsConsent: z.boolean(),
+  draft: z.exactOptional(zLegalDocumentMarkdown),
+  currentVersion: z.exactOptional(zStaffLegalDocumentVersion),
+  archivedAt: z.exactOptional(zTimestamp),
+  createdAt: zTimestamp
 });
 
 /**
- * A page of a Workspace's Audit log, newest first
+ * The Instance's Sign-up items, in the order of the sign-up form
  */
-export const zStaffAuditEntryList = z.object({
-  items: z.array(zStaffAuditEntryResource),
-  nextCursor: z.exactOptional(z.string().nullable())
-});
-
-/**
- * An active Staff hold on a Workspace, as the console shows it (read only)
- */
-export const zStaffHold = z.object({
-  key: z.string(),
-  reasonCode: z.string(),
-  message: z.string(),
-  createdAt: zTimestamp,
-  expiresAt: zTimestamp,
-  setBy: z.string(),
-  actionUrl: z.exactOptional(z.string().nullable())
-});
-
-/**
- * One User's answers to the Sign-up survey. A User who has not answered has none.
- */
-export const zStaffSignupSurveyResponseResource = z.object({
-  userId: zEntityId,
-  role: zStaffSignupRole,
-  roleOtherText: z.exactOptional(z.string().nullable()),
-  companySize: zStaffSignupCompanySize,
-  companySizeOtherText: z.exactOptional(z.string().nullable()),
-  mainGoal: zStaffSignupGoal,
-  mainGoalOtherText: z.exactOptional(z.string().nullable()),
-  heardFrom: z.exactOptional(zStaffSignupSource.nullable()),
-  heardFromOtherText: z.exactOptional(z.string().nullable()),
-  answeredAt: zTimestamp
-});
-
-/**
- * A Workspace's suspension state (ADR 0007)
- */
-export const zStaffSuspension = z.object({
-  at: zTimestamp,
-  actor: zStaffSuspensionActor,
-  reason: z.exactOptional(z.string().nullable())
+export const zStaffSignupItemList = z.object({
+  items: z.array(zStaffSignupItemResource)
 });
 
 /**
@@ -481,78 +316,6 @@ export const zInUseProblem = z.object({
  */
 export const zWorkspaceId = z.string().regex(/^[0-9A-Za-z]{8}$/);
 
-/**
- * A Workspace with its deliverability and active holds, as the detail page shows it
- */
-export const zStaffWorkspaceDetailResource = z.object({
-  id: zWorkspaceId,
-  name: z.string(),
-  createdAt: zTimestamp,
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
-  erasedAt: z.exactOptional(zTimestamp.nullable()),
-  suspension: z.exactOptional(zStaffSuspension.nullable()),
-  exempt: z.boolean(),
-  warned: z.boolean(),
-  holds: z.array(zStaffHold),
-  deliverability: zStaffDeliverability,
-  abuse: zStaffAbuse
-});
-
-/**
- * A Workspace as the Staff console sees it: metadata only, never Contacts,
- * content or Events (ADR 0026).
- */
-export const zStaffWorkspaceResource = z.object({
-  id: zWorkspaceId,
-  name: z.string(),
-  createdAt: zTimestamp,
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
-  erasedAt: z.exactOptional(zTimestamp.nullable()),
-  suspension: z.exactOptional(zStaffSuspension.nullable()),
-  exempt: z.boolean(),
-  warned: z.boolean()
-});
-
-/**
- * The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
- * anything changed
- */
-export const zStaffExemptionChange = z.object({
-  changed: z.boolean(),
-  workspace: zStaffWorkspaceResource
-});
-
-/**
- * The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether
- * anything changed (suspending a suspended Workspace and unsuspending an active one
- * change nothing).
- */
-export const zStaffSuspensionChange = z.object({
-  changed: z.boolean(),
-  workspace: zStaffWorkspaceResource
-});
-
-/**
- * Page number (1-based)
- */
-export const zPageQueryPage = z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(1);
-
-/**
- * Page size
- */
-export const zPageQueryPageSize = z.int().gte(1).lte(100).default(25);
-
-/**
- * Only Workspaces in this review state
- */
-export const zStaffWorkspaceSearchReview = zStaffWorkspaceReview;
-
-/**
- * Only Workspaces whose id or name contains this text; the name matches case-insensitively,
- * the id exactly
- */
-export const zStaffWorkspaceSearchSearch = z.string();
-
 export const zStaffAuthLoginBody = zStaffLoginInput;
 
 /**
@@ -580,92 +343,78 @@ export const zStaffMeGetResponse = zStaffResource;
 /**
  * The request has succeeded.
  */
-export const zStaffSignupSurveyCountsResponse = zStaffSignupSurveyCounts;
+export const zStaffSignupItemsListResponse = zStaffSignupItemList;
 
-export const zStaffSignupSurveyGetPath = z.object({
-  userId: zEntityId
+export const zStaffSignupItemsCreateBody = zStaffSignupItemInput;
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zStaffSignupItemsCreateResponse = zStaffSignupItemResource;
+
+export const zStaffSignupItemsReorderBody = zStaffSignupItemOrder;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffSignupItemsReorderResponse = zStaffSignupItemList;
+
+export const zStaffSignupItemsGetPath = z.object({
+  id: zEntityId
 });
 
 /**
  * The request has succeeded.
  */
-export const zStaffSignupSurveyGetResponse = zStaffSignupSurveyResponseResource;
+export const zStaffSignupItemsGetResponse = zStaffSignupItemResource;
 
-export const zStaffWorkspacesListQuery = z.object({
-  review: z.exactOptional(zStaffWorkspaceReview),
-  search: z.exactOptional(z.string()),
-  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().gte(1).lte(100).optional().default(25)
-});
+export const zStaffSignupItemsUpdateBody = zStaffSignupItemUpdate;
 
-/**
- * Paginated response
- */
-export const zStaffWorkspacesListResponse = z.object({
-  items: z.array(zStaffWorkspaceResource),
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-export const zStaffWorkspacesGetPath = z.object({
-  workspaceId: zWorkspaceId
+export const zStaffSignupItemsUpdatePath = z.object({
+  id: zEntityId
 });
 
 /**
  * The request has succeeded.
  */
-export const zStaffWorkspacesGetResponse = zStaffWorkspaceDetailResource;
+export const zStaffSignupItemsUpdateResponse = zStaffSignupItemResource;
 
-export const zStaffWorkspaceAuditListPath = z.object({
-  workspaceId: zWorkspaceId
-});
-
-export const zStaffWorkspaceAuditListQuery = z.object({
-  cursor: z.exactOptional(z.string()),
-  limit: z.int().gte(1).lte(100).optional().default(25)
+export const zStaffSignupItemsArchivePath = z.object({
+  id: zEntityId
 });
 
 /**
  * The request has succeeded.
  */
-export const zStaffWorkspaceAuditListResponse = zStaffAuditEntryList;
+export const zStaffSignupItemsArchiveResponse = zStaffSignupItemResource;
 
-export const zStaffWorkspacesExemptPath = z.object({
-  workspaceId: zWorkspaceId
+export const zStaffSignupItemsSaveDraftBody = zStaffLegalDocumentDraftInput;
+
+export const zStaffSignupItemsSaveDraftPath = z.object({
+  id: zEntityId
 });
 
 /**
  * The request has succeeded.
  */
-export const zStaffWorkspacesExemptResponse = zStaffExemptionChange;
+export const zStaffSignupItemsSaveDraftResponse = zStaffSignupItemResource;
 
-export const zStaffWorkspacesSuspendBody = zStaffSuspendInput;
-
-export const zStaffWorkspacesSuspendPath = z.object({
-  workspaceId: zWorkspaceId
+export const zStaffSignupItemsListVersionsPath = z.object({
+  id: zEntityId
 });
 
 /**
  * The request has succeeded.
  */
-export const zStaffWorkspacesSuspendResponse = zStaffSuspensionChange;
+export const zStaffSignupItemsListVersionsResponse = zStaffLegalDocumentVersionList;
 
-export const zStaffWorkspacesUnexemptPath = z.object({
-  workspaceId: zWorkspaceId
+export const zStaffSignupItemsPublishBody = zStaffLegalDocumentPublishInput;
+
+export const zStaffSignupItemsPublishPath = z.object({
+  id: zEntityId
 });
 
 /**
- * The request has succeeded.
+ * The request has succeeded and a new resource has been created as a result.
  */
-export const zStaffWorkspacesUnexemptResponse = zStaffExemptionChange;
-
-export const zStaffWorkspacesUnsuspendPath = z.object({
-  workspaceId: zWorkspaceId
-});
-
-/**
- * The request has succeeded.
- */
-export const zStaffWorkspacesUnsuspendResponse = zStaffSuspensionChange;
+export const zStaffSignupItemsPublishResponse = zStaffSignupItemResource;

@@ -28,11 +28,13 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apicollect "github.com/getsphericon/sphericon/internal/api/collect"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
+	apistaff "github.com/getsphericon/sphericon/internal/api/staff"
 	"github.com/getsphericon/sphericon/internal/clientip"
 	dbpkg "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -43,6 +45,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/server/spa"
+	"github.com/getsphericon/sphericon/internal/signupitems"
+	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
 // New builds the top-level net/http handler wiring the three ogen-generated
@@ -85,9 +89,10 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		mux.Handle("GET "+accountlink.JWKSPath, jwksHandler(site.AccountLink.JWKS()))
 	}
 
-	// Staff member API — /staff (ADR 0026): the platform staff surface, its own cookie and
-	// secret. Without the `staff` license there is no handler and the whole prefix
-	// answers 404, so it never falls through to the SPA shell below.
+	// Staff member API — /staff (ADR 0026, ADR 0063): the platform staff surface, its own
+	// cookie and secret, on every Instance. Without the Staff member secret there is no
+	// handler and the whole prefix answers 404, so it never falls through to the SPA shell
+	// below.
 	if staff == nil {
 		staff = http.NotFoundHandler()
 	}
@@ -167,12 +172,21 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, client, mux, trackingH)), nil
 }
 
+// ExternalSecurity is the Bearer-token handler of /api and of /mcp, which rides the same token
+// auth: built from the external API's Deps, so both meet the same acceptance gate and the same
+// clock.
+func ExternalSecurity(client *ent.Client, deps apiexternal.Deps) *apiauth.ExternalSecurityHandler {
+	return apiauth.NewExternalSecurityHandler(apiauth.ExternalSecurityDeps{
+		Ent: client, Bus: deps.Bus, ConsentRecords: deps.ConsentRecords, Clock: deps.Clock,
+	})
+}
+
 // NewExternalAPI builds the external API (/api) ogen server: Bearer API-token
 // auth, RFC 7807 errors, mounted under the /api prefix.
 func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, error) {
 	return externalapi.NewServer(
 		apiexternal.NewHandlers(deps),
-		apiauth.NewExternalSecurityHandler(client, deps.Bus, deps.Clock),
+		ExternalSecurity(client, deps),
 		externalapi.WithPathPrefix("/api"),
 		externalapi.WithErrorHandler(problemErrorHandler),
 	)
@@ -181,19 +195,32 @@ func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, er
 // staffPrefix mounts the Staff surface (ADR 0026).
 const staffPrefix = paths.Staff
 
-// StaffSurface is the Enterprise Staff member API (ee/staff), built into an ogen
-// server here so it renders errors like the other surfaces.
-type StaffSurface interface {
-	Server(opts ...staffapi.ServerOption) (http.Handler, error)
+// StaffSections is the Enterprise part of the Staff member API (ee/staff), served under the
+// same prefix behind the core one.
+type StaffSections interface {
+	Server(opts ...staffeeapi.ServerOption) (http.Handler, error)
 }
 
-// NewStaffAPI builds the /staff ogen server with RFC 7807 errors. A nil surface
-// (no `staff` license) yields a nil handler, which New mounts as a 404.
-func NewStaffAPI(surface StaffSurface) (http.Handler, error) {
-	if surface == nil {
+// NewStaffAPI builds the /staff handler with RFC 7807 errors: the core ogen server
+// (internal/api/staff) over the Staff member module and the Sign-up items, whose not-found handler is the
+// Enterprise ogen server, so each contract routes its own paths and none is restated here.
+// While the Staff sign-in is off (no Staff member secret) there is no handler, which New
+// mounts as a 404; nil sections (no `staff` license) leave every path the core does not
+// route a 404.
+func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, sections StaffSections) (http.Handler, error) {
+	core := apistaff.NewSurface(members, items)
+	if core == nil {
 		return nil, nil
 	}
-	return surface.Server(staffapi.WithErrorHandler(problemErrorHandler))
+	rest := http.NotFoundHandler()
+	if sections != nil {
+		h, err := sections.Server(staffeeapi.WithErrorHandler(problemErrorHandler))
+		if err != nil {
+			return nil, err
+		}
+		rest = h
+	}
+	return core.Server(staffapi.WithErrorHandler(problemErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
 }
 
 // ServiceSurface is the service endpoints of the Staff surface (ee/staff), built

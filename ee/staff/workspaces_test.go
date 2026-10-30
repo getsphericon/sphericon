@@ -13,7 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ent/event"
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -34,29 +34,29 @@ func requireMetadataOnly(t *testing.T, w map[string]any) {
 
 // staffSession logs the enrolled fixture Staff member in and returns a client bearing
 // the session, and the cookie for raw requests.
-func (h *harness) staffSession(t *testing.T) (*staffapi.Client, *http.Cookie) {
+func (h *harness) staffSession(t *testing.T) (*staffeeapi.Client, *http.Cookie) {
 	t.Helper()
 	cookie := h.session(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword, fixtures.StaffEnrolledTotpSecret)
-	return h.env.StaffWithToken(t, cookie.Value), cookie
+	return h.env.StaffEnterpriseWithToken(t, cookie.Value), cookie
 }
 
-func (h *harness) listWorkspaces(t *testing.T, c *staffapi.Client, params staffapi.StaffWorkspacesListParams) *staffapi.StaffWorkspacesListOK {
+func (h *harness) listWorkspaces(t *testing.T, c *staffeeapi.Client, params staffeeapi.StaffWorkspacesListParams) *staffeeapi.StaffWorkspacesListOK {
 	t.Helper()
 	res, err := c.StaffWorkspacesList(t.Context(), params)
 	require.NoError(t, err)
-	page, ok := res.(*staffapi.StaffWorkspacesListOK)
+	page, ok := res.(*staffeeapi.StaffWorkspacesListOK)
 	require.Truef(t, ok, "got %T", res)
 	return page
 }
 
-func (h *harness) getWorkspace(t *testing.T, c *staffapi.Client, id string) staffapi.StaffWorkspacesGetRes {
+func (h *harness) getWorkspace(t *testing.T, c *staffeeapi.Client, id string) staffeeapi.StaffWorkspacesGetRes {
 	t.Helper()
-	res, err := c.StaffWorkspacesGet(t.Context(), staffapi.StaffWorkspacesGetParams{WorkspaceId: staffapi.WorkspaceId(id)})
+	res, err := c.StaffWorkspacesGet(t.Context(), staffeeapi.StaffWorkspacesGetParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
 	require.NoError(t, err)
 	return res
 }
 
-func names(items []staffapi.StaffWorkspaceResource) []string {
+func names(items []staffeeapi.StaffWorkspaceResource) []string {
 	out := make([]string, 0, len(items))
 	for i := range items {
 		out = append(out, items[i].Name)
@@ -68,7 +68,7 @@ func TestTheWorkspaceListShowsEveryWorkspaceNewestFirst(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{PageSize: staffapi.NewOptInt32(100)})
+	page := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{PageSize: staffeeapi.NewOptInt32(100)})
 
 	anchors := []string{"Brightpath", "Cyberdyne", "Aviato", "Pied Piper", "Wayne", "Kramerica", "Vandelay", "Soylent", "Hooli", "Umbrella", "Initech", "Globex", "Acme"}
 	listed := lo.Filter(names(page.Items), func(name string, _ int) bool { return slices.Contains(anchors, name) })
@@ -82,9 +82,9 @@ func TestTheWorkspaceListIsPaginated(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	everyone := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{PageSize: staffapi.NewOptInt32(100)})
-	second := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{
-		Page: staffapi.NewOptInt32(2), PageSize: staffapi.NewOptInt32(2),
+	everyone := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{PageSize: staffeeapi.NewOptInt32(100)})
+	second := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{
+		Page: staffeeapi.NewOptInt32(2), PageSize: staffeeapi.NewOptInt32(2),
 	})
 
 	assert.Equal(t, names(everyone.Items[2:4]), names(second.Items), "the second page is the third and fourth Workspace")
@@ -97,8 +97,8 @@ func TestTheWorkspaceListSearchesByIdOrName(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	search := func(q string) *staffapi.StaffWorkspacesListOK {
-		return h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Search: staffapi.NewOptString(q)})
+	search := func(q string) *staffeeapi.StaffWorkspacesListOK {
+		return h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Search: staffeeapi.NewOptString(q)})
 	}
 	partial := search("OOL")
 	byID := search(fixtures.WaynePublicID)
@@ -121,7 +121,7 @@ func TestASuspendedWorkspaceShowsItsActorReasonAndTime(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Search: staffapi.NewOptString("hooli")})
+	page := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Search: staffeeapi.NewOptString("hooli")})
 
 	require.Len(t, page.Items, 1)
 	hooli := page.Items[0]
@@ -131,7 +131,7 @@ func TestASuspendedWorkspaceShowsItsActorReasonAndTime(t *testing.T) {
 	s := hooli.Suspension.Value
 	// The fixture time is a wall-clock value; allow for the zone it is read in.
 	assert.WithinDuration(t, time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC), time.Time(s.At), 24*time.Hour)
-	assert.Equal(t, staffapi.StaffSuspensionActorKindStaff, s.Actor.Kind)
+	assert.Equal(t, staffeeapi.StaffSuspensionActorKindStaff, s.Actor.Kind)
 	assert.Equal(t, "op-fixture", s.Actor.ID.Value, "a StaffMember sees the real StaffMember id")
 	assert.Equal(t, "abuse report", s.Reason.Value)
 }
@@ -140,16 +140,16 @@ func TestTheDetailShowsMetadataAndTheSuspensionState(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	acme, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffapi.StaffWorkspaceDetailResource)
+	acme, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.EqualValues(t, fixtures.AcmePublicID, acme.ID)
 	assert.Equal(t, fixtures.AcmeName, acme.Name)
 	assert.False(t, acme.Suspension.Set, "an active Workspace has no suspension")
 
-	hooli, ok := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffapi.StaffWorkspaceDetailResource)
+	hooli, ok := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	require.True(t, hooli.Suspension.Set)
-	assert.Equal(t, staffapi.StaffSuspensionActorKindStaff, hooli.Suspension.Value.Actor.Kind)
+	assert.Equal(t, staffeeapi.StaffSuspensionActorKindStaff, hooli.Suspension.Value.Actor.Kind)
 	assert.Equal(t, "op-fixture", hooli.Suspension.Value.Actor.ID.Value)
 	assert.Equal(t, "abuse report", hooli.Suspension.Value.Reason.Value)
 }
@@ -158,7 +158,7 @@ func TestAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	assert.IsType(t, &staffapi.StaffWorkspacesGetNotFound{}, h.getWorkspace(t, c, "NoSuchId"))
+	assert.IsType(t, &staffeeapi.StaffWorkspacesGetNotFound{}, h.getWorkspace(t, c, "NoSuchId"))
 }
 
 // An id that is not 8 base62 characters is refused by the contract as a 400 problem, before a handler runs.
@@ -218,20 +218,20 @@ func TestTheWorkspaceEndpointsAnswer404WithoutTheLicense(t *testing.T) {
 // Fixtures (events.yml): mail.soylent.test sent 8, 1 hard bounce, 1 soft bounce and 1
 // complaint in the last 24 hours, plus a send 48 hours ago outside the window;
 // idle.soylent.test has no traffic.
-func soylentDeliverability(t *testing.T, h *harness) staffapi.StaffDeliverability {
+func soylentDeliverability(t *testing.T, h *harness) staffeeapi.StaffDeliverability {
 	t.Helper()
 	c, _ := h.staffSession(t)
 	return soylentDeliverabilityAs(t, h, c)
 }
 
-func soylentDeliverabilityAs(t *testing.T, h *harness, c *staffapi.Client) staffapi.StaffDeliverability {
+func soylentDeliverabilityAs(t *testing.T, h *harness, c *staffeeapi.Client) staffeeapi.StaffDeliverability {
 	t.Helper()
-	soylent, ok := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffapi.StaffWorkspaceDetailResource)
+	soylent, ok := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	return soylent.Deliverability
 }
 
-func domainRates(t *testing.T, d staffapi.StaffDeliverability, domain string) staffapi.StaffDomainRates {
+func domainRates(t *testing.T, d staffeeapi.StaffDeliverability, domain string) staffeeapi.StaffDomainRates {
 	t.Helper()
 	for _, r := range d.Domains {
 		if r.Domain == domain {
@@ -239,7 +239,7 @@ func domainRates(t *testing.T, d staffapi.StaffDeliverability, domain string) st
 		}
 	}
 	require.Failf(t, "domain not listed", "%s", domain)
-	return staffapi.StaffDomainRates{}
+	return staffeeapi.StaffDomainRates{}
 }
 
 func TestBelowTheVolumeFloorTheRatesAreUndefinedButTheCountsShow(t *testing.T) {
@@ -296,15 +296,15 @@ func TestAWorkspaceWithoutSendingDomainsHasNoRatesAndNoVolume(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	hooli, ok := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffapi.StaffWorkspaceDetailResource)
+	hooli, ok := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.Empty(t, hooli.Deliverability.Domains)
 	assert.EqualValues(t, 0, hooli.Deliverability.SendVolume)
 }
 
-func (h *harness) acmeHolds(t *testing.T, c *staffapi.Client) []staffapi.StaffHold {
+func (h *harness) acmeHolds(t *testing.T, c *staffeeapi.Client) []staffeeapi.StaffHold {
 	t.Helper()
-	detail, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffapi.StaffWorkspaceDetailResource)
+	detail, ok := h.getWorkspace(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	return detail.Holds
 }
@@ -332,7 +332,7 @@ func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T)
 	h.clock.t = h.clock.t.Add(2 * time.Hour)
 
 	assert.Empty(t, h.acmeHolds(t, c), "the fixture's lapsed hold and the expired one are not active")
-	globex, ok := h.getWorkspace(t, c, fixtures.GlobexPublicID).(*staffapi.StaffWorkspaceDetailResource)
+	globex, ok := h.getWorkspace(t, c, fixtures.GlobexPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.Empty(t, globex.Holds)
 }
@@ -341,16 +341,16 @@ func TestTheWorkspaceListHidesADeletedWorkspaceUnlessFilteredToDeleted(t *testin
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 	discardedAt := time.Now().UTC().Truncate(time.Second)
-	before := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
-	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetDiscardedAt(discardedAt).ExecX(t.Context())
+	before := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{})
+	h.env.FeedDB.Workspace.UpdateOneID(fixtures.GlobexID).SetDiscardedAt(discardedAt).ExecX(t.Context())
 
-	all := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{})
-	deleted := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewDeleted)})
+	all := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{})
+	deleted := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewDeleted)})
 
 	assert.NotContains(t, names(all.Items), "Globex")
 	assert.Equal(t, before.TotalItems-1, all.TotalItems)
 	require.Equal(t, []string{"Bluth", "Globex"}, names(deleted.Items))
-	globex, found := lo.Find(deleted.Items, func(w staffapi.StaffWorkspaceResource) bool { return w.Name == "Globex" })
+	globex, found := lo.Find(deleted.Items, func(w staffeeapi.StaffWorkspaceResource) bool { return w.Name == "Globex" })
 	require.True(t, found)
 	got, ok := globex.DiscardedAt.Get()
 	require.True(t, ok)

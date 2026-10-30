@@ -11817,9 +11817,9 @@ type ProblemCode string
 const (
 	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
 	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
-	ProblemCodeSignupClosed              ProblemCode = "signup_closed"
 	ProblemCodePermissionRequired        ProblemCode = "permission_required"
 	ProblemCodeMigrationsPending         ProblemCode = "migrations_pending"
+	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
 )
 
 // AllValues returns all ProblemCode values.
@@ -11827,9 +11827,9 @@ func (ProblemCode) AllValues() []ProblemCode {
 	return []ProblemCode{
 		ProblemCodeSecondFactorRequired,
 		ProblemCodeEmailVerificationRequired,
-		ProblemCodeSignupClosed,
 		ProblemCodePermissionRequired,
 		ProblemCodeMigrationsPending,
+		ProblemCodeAcceptancePending,
 	}
 }
 
@@ -11840,11 +11840,11 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ProblemCodeEmailVerificationRequired:
 		return []byte(s), nil
-	case ProblemCodeSignupClosed:
-		return []byte(s), nil
 	case ProblemCodePermissionRequired:
 		return []byte(s), nil
 	case ProblemCodeMigrationsPending:
+		return []byte(s), nil
+	case ProblemCodeAcceptancePending:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -11860,14 +11860,14 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
 		return nil
-	case ProblemCodeSignupClosed:
-		*s = ProblemCodeSignupClosed
-		return nil
 	case ProblemCodePermissionRequired:
 		*s = ProblemCodePermissionRequired
 		return nil
 	case ProblemCodeMigrationsPending:
 		*s = ProblemCodeMigrationsPending
+		return nil
+	case ProblemCodeAcceptancePending:
+		*s = ProblemCodeAcceptancePending
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

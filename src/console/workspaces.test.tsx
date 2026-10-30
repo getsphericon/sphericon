@@ -1,17 +1,17 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleStaffWorkspacesList } from '../generated/staff/msw.gen.ts'
-import type { StaffWorkspaceResource } from '../generated/staff/types.gen.ts'
-import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
-import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
+import { handleStaffWorkspacesList } from '../generated/staffee/msw.gen.ts'
+import type { StaffWorkspaceResource } from '../generated/staffee/types.gen.ts'
+import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
+import { Route as consoleWorkspacesRoute } from '../routes/console/_authed/_enterprise/workspaces.index.tsx'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'
 import { ConsoleWorkspacesPage } from './workspaces.tsx'
 
-const HOME = routeMount(consoleHomeRoute)
+const HOME = routeMount(consoleWorkspacesRoute)
 
 function workspace(over: Partial<StaffWorkspaceResource> = {}): StaffWorkspaceResource {
   return {

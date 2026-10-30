@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -27,6 +28,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
+	"github.com/getsphericon/sphericon/ent/legaldocumentdraft"
+	"github.com/getsphericon/sphericon/ent/legaldocumentversion"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
@@ -36,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
+	"github.com/getsphericon/sphericon/ent/pendingsignup"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/rule"
@@ -48,6 +52,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -57,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
+	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -325,6 +331,21 @@ func init() {
 	confirmationDescDestination := confirmationFields[2].Descriptor()
 	// confirmation.DestinationValidator is a validator for the "destination" field. It is called by the builders before save.
 	confirmation.DestinationValidator = confirmationDescDestination.Validators[0].(func(string) error)
+	consentrecordMixin := schema.ConsentRecord{}.Mixin()
+	consentrecordMixinFields0 := consentrecordMixin[0].Fields()
+	_ = consentrecordMixinFields0
+	consentrecordFields := schema.ConsentRecord{}.Fields()
+	_ = consentrecordFields
+	// consentrecordDescCreatedAt is the schema descriptor for created_at field.
+	consentrecordDescCreatedAt := consentrecordMixinFields0[0].Descriptor()
+	// consentrecord.DefaultCreatedAt holds the default value on creation for the created_at field.
+	consentrecord.DefaultCreatedAt = consentrecordDescCreatedAt.Default.(func() time.Time)
+	// consentrecordDescUpdatedAt is the schema descriptor for updated_at field.
+	consentrecordDescUpdatedAt := consentrecordMixinFields0[1].Descriptor()
+	// consentrecord.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	consentrecord.DefaultUpdatedAt = consentrecordDescUpdatedAt.Default.(func() time.Time)
+	// consentrecord.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	consentrecord.UpdateDefaultUpdatedAt = consentrecordDescUpdatedAt.UpdateDefault.(func() time.Time)
 	contactMixin := schema.Contact{}.Mixin()
 	contactMixinFields0 := contactMixin[0].Fields()
 	_ = contactMixinFields0
@@ -602,6 +623,54 @@ func init() {
 	joindomainDescToken := joindomainFields[2].Descriptor()
 	// joindomain.TokenValidator is a validator for the "token" field. It is called by the builders before save.
 	joindomain.TokenValidator = joindomainDescToken.Validators[0].(func(string) error)
+	legaldocumentdraftMixin := schema.LegalDocumentDraft{}.Mixin()
+	legaldocumentdraftMixinFields0 := legaldocumentdraftMixin[0].Fields()
+	_ = legaldocumentdraftMixinFields0
+	legaldocumentdraftFields := schema.LegalDocumentDraft{}.Fields()
+	_ = legaldocumentdraftFields
+	// legaldocumentdraftDescCreatedAt is the schema descriptor for created_at field.
+	legaldocumentdraftDescCreatedAt := legaldocumentdraftMixinFields0[0].Descriptor()
+	// legaldocumentdraft.DefaultCreatedAt holds the default value on creation for the created_at field.
+	legaldocumentdraft.DefaultCreatedAt = legaldocumentdraftDescCreatedAt.Default.(func() time.Time)
+	// legaldocumentdraftDescUpdatedAt is the schema descriptor for updated_at field.
+	legaldocumentdraftDescUpdatedAt := legaldocumentdraftMixinFields0[1].Descriptor()
+	// legaldocumentdraft.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	legaldocumentdraft.DefaultUpdatedAt = legaldocumentdraftDescUpdatedAt.Default.(func() time.Time)
+	// legaldocumentdraft.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	legaldocumentdraft.UpdateDefaultUpdatedAt = legaldocumentdraftDescUpdatedAt.UpdateDefault.(func() time.Time)
+	legaldocumentversionMixin := schema.LegalDocumentVersion{}.Mixin()
+	legaldocumentversionMixinFields0 := legaldocumentversionMixin[0].Fields()
+	_ = legaldocumentversionMixinFields0
+	legaldocumentversionFields := schema.LegalDocumentVersion{}.Fields()
+	_ = legaldocumentversionFields
+	// legaldocumentversionDescCreatedAt is the schema descriptor for created_at field.
+	legaldocumentversionDescCreatedAt := legaldocumentversionMixinFields0[0].Descriptor()
+	// legaldocumentversion.DefaultCreatedAt holds the default value on creation for the created_at field.
+	legaldocumentversion.DefaultCreatedAt = legaldocumentversionDescCreatedAt.Default.(func() time.Time)
+	// legaldocumentversionDescUpdatedAt is the schema descriptor for updated_at field.
+	legaldocumentversionDescUpdatedAt := legaldocumentversionMixinFields0[1].Descriptor()
+	// legaldocumentversion.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	legaldocumentversion.DefaultUpdatedAt = legaldocumentversionDescUpdatedAt.Default.(func() time.Time)
+	// legaldocumentversion.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	legaldocumentversion.UpdateDefaultUpdatedAt = legaldocumentversionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// legaldocumentversionDescLabel is the schema descriptor for label field.
+	legaldocumentversionDescLabel := legaldocumentversionFields[2].Descriptor()
+	// legaldocumentversion.LabelValidator is a validator for the "label" field. It is called by the builders before save.
+	legaldocumentversion.LabelValidator = func() func(string) error {
+		validators := legaldocumentversionDescLabel.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(label string) error {
+			for _, fn := range fns {
+				if err := fn(label); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	membershipMixin := schema.Membership{}.Mixin()
 	membershipMixinFields0 := membershipMixin[0].Fields()
 	_ = membershipMixinFields0
@@ -813,6 +882,37 @@ func init() {
 	passkeychallengeDescChallenge := passkeychallengeFields[1].Descriptor()
 	// passkeychallenge.ChallengeValidator is a validator for the "challenge" field. It is called by the builders before save.
 	passkeychallenge.ChallengeValidator = passkeychallengeDescChallenge.Validators[0].(func(string) error)
+	pendingsignupMixin := schema.PendingSignup{}.Mixin()
+	pendingsignupMixinFields0 := pendingsignupMixin[0].Fields()
+	_ = pendingsignupMixinFields0
+	pendingsignupFields := schema.PendingSignup{}.Fields()
+	_ = pendingsignupFields
+	// pendingsignupDescCreatedAt is the schema descriptor for created_at field.
+	pendingsignupDescCreatedAt := pendingsignupMixinFields0[0].Descriptor()
+	// pendingsignup.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pendingsignup.DefaultCreatedAt = pendingsignupDescCreatedAt.Default.(func() time.Time)
+	// pendingsignupDescUpdatedAt is the schema descriptor for updated_at field.
+	pendingsignupDescUpdatedAt := pendingsignupMixinFields0[1].Descriptor()
+	// pendingsignup.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	pendingsignup.DefaultUpdatedAt = pendingsignupDescUpdatedAt.Default.(func() time.Time)
+	// pendingsignup.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	pendingsignup.UpdateDefaultUpdatedAt = pendingsignupDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// pendingsignupDescProvider is the schema descriptor for provider field.
+	pendingsignupDescProvider := pendingsignupFields[1].Descriptor()
+	// pendingsignup.ProviderValidator is a validator for the "provider" field. It is called by the builders before save.
+	pendingsignup.ProviderValidator = pendingsignupDescProvider.Validators[0].(func(string) error)
+	// pendingsignupDescSubject is the schema descriptor for subject field.
+	pendingsignupDescSubject := pendingsignupFields[2].Descriptor()
+	// pendingsignup.SubjectValidator is a validator for the "subject" field. It is called by the builders before save.
+	pendingsignup.SubjectValidator = pendingsignupDescSubject.Validators[0].(func(string) error)
+	// pendingsignupDescEmail is the schema descriptor for email field.
+	pendingsignupDescEmail := pendingsignupFields[3].Descriptor()
+	// pendingsignup.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	pendingsignup.EmailValidator = pendingsignupDescEmail.Validators[0].(func(string) error)
+	// pendingsignupDescName is the schema descriptor for name field.
+	pendingsignupDescName := pendingsignupFields[4].Descriptor()
+	// pendingsignup.DefaultName holds the default value on creation for the name field.
+	pendingsignup.DefaultName = pendingsignupDescName.Default.(string)
 	privaterelayrangeMixin := schema.PrivateRelayRange{}.Mixin()
 	privaterelayrangeMixinFields0 := privaterelayrangeMixin[0].Fields()
 	_ = privaterelayrangeMixinFields0
@@ -1046,6 +1146,61 @@ func init() {
 	servicecredentialDescScopes := servicecredentialFields[4].Descriptor()
 	// servicecredential.DefaultScopes holds the default value on creation for the scopes field.
 	servicecredential.DefaultScopes = servicecredentialDescScopes.Default.([]string)
+	signupitemMixin := schema.SignupItem{}.Mixin()
+	signupitemMixinFields0 := signupitemMixin[0].Fields()
+	_ = signupitemMixinFields0
+	signupitemFields := schema.SignupItem{}.Fields()
+	_ = signupitemFields
+	// signupitemDescCreatedAt is the schema descriptor for created_at field.
+	signupitemDescCreatedAt := signupitemMixinFields0[0].Descriptor()
+	// signupitem.DefaultCreatedAt holds the default value on creation for the created_at field.
+	signupitem.DefaultCreatedAt = signupitemDescCreatedAt.Default.(func() time.Time)
+	// signupitemDescUpdatedAt is the schema descriptor for updated_at field.
+	signupitemDescUpdatedAt := signupitemMixinFields0[1].Descriptor()
+	// signupitem.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	signupitem.DefaultUpdatedAt = signupitemDescUpdatedAt.Default.(func() time.Time)
+	// signupitem.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	signupitem.UpdateDefaultUpdatedAt = signupitemDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// signupitemDescKey is the schema descriptor for key field.
+	signupitemDescKey := signupitemFields[1].Descriptor()
+	// signupitem.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	signupitem.KeyValidator = func() func(string) error {
+		validators := signupitemDescKey.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(key string) error {
+			for _, fn := range fns {
+				if err := fn(key); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// signupitemDescTitle is the schema descriptor for title field.
+	signupitemDescTitle := signupitemFields[2].Descriptor()
+	// signupitem.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	signupitem.TitleValidator = func() func(string) error {
+		validators := signupitemDescTitle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(title string) error {
+			for _, fn := range fns {
+				if err := fn(title); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// signupitemDescMailingsConsent is the schema descriptor for mailings_consent field.
+	signupitemDescMailingsConsent := signupitemFields[5].Descriptor()
+	// signupitem.DefaultMailingsConsent holds the default value on creation for the mailings_consent field.
+	signupitem.DefaultMailingsConsent = signupitemDescMailingsConsent.Default.(bool)
 	signupsurveyresponseMixin := schema.SignupSurveyResponse{}.Mixin()
 	signupsurveyresponseMixinFields0 := signupsurveyresponseMixin[0].Fields()
 	_ = signupsurveyresponseMixinFields0
@@ -1244,6 +1399,10 @@ func init() {
 	userDescSecondFactorLastStep := userFields[9].Descriptor()
 	// user.DefaultSecondFactorLastStep holds the default value on creation for the second_factor_last_step field.
 	user.DefaultSecondFactorLastStep = userDescSecondFactorLastStep.Default.(int64)
+	// userDescFeedPosition is the schema descriptor for feed_position field.
+	userDescFeedPosition := userFields[11].Descriptor()
+	// user.DefaultFeedPosition holds the default value on creation for the feed_position field.
+	user.DefaultFeedPosition = userDescFeedPosition.Default.(int64)
 	useridentityMixin := schema.UserIdentity{}.Mixin()
 	useridentityMixinFields0 := useridentityMixin[0].Fields()
 	_ = useridentityMixinFields0
@@ -1267,6 +1426,21 @@ func init() {
 	useridentityDescSubject := useridentityFields[3].Descriptor()
 	// useridentity.SubjectValidator is a validator for the "subject" field. It is called by the builders before save.
 	useridentity.SubjectValidator = useridentityDescSubject.Validators[0].(func(string) error)
+	usertombstoneMixin := schema.UserTombstone{}.Mixin()
+	usertombstoneMixinFields0 := usertombstoneMixin[0].Fields()
+	_ = usertombstoneMixinFields0
+	usertombstoneFields := schema.UserTombstone{}.Fields()
+	_ = usertombstoneFields
+	// usertombstoneDescCreatedAt is the schema descriptor for created_at field.
+	usertombstoneDescCreatedAt := usertombstoneMixinFields0[0].Descriptor()
+	// usertombstone.DefaultCreatedAt holds the default value on creation for the created_at field.
+	usertombstone.DefaultCreatedAt = usertombstoneDescCreatedAt.Default.(func() time.Time)
+	// usertombstoneDescUpdatedAt is the schema descriptor for updated_at field.
+	usertombstoneDescUpdatedAt := usertombstoneMixinFields0[1].Descriptor()
+	// usertombstone.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	usertombstone.DefaultUpdatedAt = usertombstoneDescUpdatedAt.Default.(func() time.Time)
+	// usertombstone.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	usertombstone.UpdateDefaultUpdatedAt = usertombstoneDescUpdatedAt.UpdateDefault.(func() time.Time)
 	visitorMixin := schema.Visitor{}.Mixin()
 	visitorMixinFields0 := visitorMixin[0].Fields()
 	_ = visitorMixinFields0

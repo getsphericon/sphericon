@@ -136,6 +136,34 @@ func encodeSiteAuthSigninNotMeRequest(
 	return nil
 }
 
+func encodeSiteAuthSigninPendingDeclineRequest(
+	req *SiteSigninPendingDeclineInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteAuthSigninPendingSubmitRequest(
+	req *SiteSigninPendingSubmitInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeSiteAuthVerifyEmailRequest(
 	req *SiteVerifyEmailInput,
 	r *http.Request,
@@ -390,6 +418,20 @@ func encodeSiteMembershipsUpdateRequest(
 
 func encodeSiteOAuthDecideRequest(
 	req *SiteOAuthDecisionInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteOptionalConsentsSetRequest(
+	req *SiteOptionalConsentChange,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -726,6 +768,20 @@ func encodeSiteTokensCreateRequest(
 
 func encodeSiteTokensUpdateRequest(
 	req *SiteUpdateTokenInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteUserAcceptPendingRequest(
+	req *SiteAcceptPendingInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

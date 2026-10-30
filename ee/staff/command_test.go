@@ -2,7 +2,6 @@ package staff_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 	"time"
 
@@ -14,44 +13,7 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 )
 
-const newStaffEmail = "new-staff@sphericon.test"
-
 var commandNow = time.Date(2026, time.March, 1, 12, 0, 0, 0, time.UTC)
-
-func TestReportCreatedShowsTheOneTimePasswordOnce(t *testing.T) {
-	var out bytes.Buffer
-
-	err := staff.ReportCreated(&out, newStaffEmail, "one-time-pw", nil)
-
-	require.NoError(t, err)
-	assert.Contains(t, out.String(), "password (shown once): one-time-pw")
-	assert.Contains(t, out.String(), "enrols a TOTP at first login")
-}
-
-func TestReportCreatedExplainsARefusal(t *testing.T) {
-	duplicate := staff.ReportCreated(&bytes.Buffer{}, newStaffEmail, "", fmt.Errorf("create: %w", staff.ErrDuplicate))
-	unlicensed := staff.ReportCreated(&bytes.Buffer{}, newStaffEmail, "", staff.ErrNotLicensed)
-
-	require.ErrorContains(t, duplicate, "already exists; nothing changed")
-	require.ErrorContains(t, unlicensed, "no staff license")
-}
-
-func TestReportTOTPResetSaysTheStaffReenrols(t *testing.T) {
-	var out bytes.Buffer
-
-	err := staff.ReportTOTPReset(&out, newStaffEmail, nil)
-
-	require.NoError(t, err)
-	assert.Contains(t, out.String(), "re-enrol")
-}
-
-func TestReportTOTPResetExplainsARefusal(t *testing.T) {
-	unknown := staff.ReportTOTPReset(&bytes.Buffer{}, "nobody@sphericon.test", staff.ErrNotFound)
-	unlicensed := staff.ReportTOTPReset(&bytes.Buffer{}, newStaffEmail, staff.ErrNotLicensed)
-
-	require.ErrorContains(t, unknown, "no staff with email")
-	require.ErrorContains(t, unlicensed, "no staff license")
-}
 
 func TestReportIssuedShowsTheValueOnceWithItsScopesAndExpiry(t *testing.T) {
 	expires := commandNow.Add(24 * time.Hour)

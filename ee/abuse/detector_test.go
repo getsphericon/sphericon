@@ -354,7 +354,7 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 
 func TestAWorkspaceInItsDeletionWindowIsNotJudged(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.UpdateOneID(fixtures.VandelayID).SetDiscardedAt(at(overDay)).ExecX(t.Context())
+	env.FeedDB.Workspace.UpdateOneID(fixtures.VandelayID).SetDiscardedAt(at(overDay)).ExecX(t.Context())
 
 	summary, err := detector(t, env).Run(t.Context(), at(overDay))
 

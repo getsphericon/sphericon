@@ -260,6 +260,52 @@ func (s *HoldSetResult) SetHold(val HoldResource) {
 
 func (*HoldSetResult) serviceHoldsSetRes() {}
 
+// NewOptEmailAddress returns new OptEmailAddress with value set to v.
+func NewOptEmailAddress(v EmailAddress) OptEmailAddress {
+	return OptEmailAddress{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEmailAddress is optional EmailAddress.
+type OptEmailAddress struct {
+	Value EmailAddress
+	Set   bool
+}
+
+// IsSet returns true if OptEmailAddress was set.
+func (o OptEmailAddress) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEmailAddress) Reset() {
+	var v EmailAddress
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEmailAddress) SetTo(v EmailAddress) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEmailAddress) Get() (v EmailAddress, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEmailAddress) Or(d EmailAddress) EmailAddress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptInt32 returns new OptInt32 with value set to v.
 func NewOptInt32(v int32) OptInt32 {
 	return OptInt32{
@@ -672,6 +718,52 @@ func (o OptString) Or(d string) string {
 	return d
 }
 
+// NewOptTimestamp returns new OptTimestamp with value set to v.
+func NewOptTimestamp(v Timestamp) OptTimestamp {
+	return OptTimestamp{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTimestamp is optional Timestamp.
+type OptTimestamp struct {
+	Value Timestamp
+	Set   bool
+}
+
+// IsSet returns true if OptTimestamp was set.
+func (o OptTimestamp) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTimestamp) Reset() {
+	var v Timestamp
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTimestamp) SetTo(v Timestamp) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTimestamp) Get() (v Timestamp, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTimestamp) Or(d Timestamp) Timestamp {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
 type ProblemCode string
@@ -679,9 +771,9 @@ type ProblemCode string
 const (
 	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
 	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
-	ProblemCodeSignupClosed              ProblemCode = "signup_closed"
 	ProblemCodePermissionRequired        ProblemCode = "permission_required"
 	ProblemCodeMigrationsPending         ProblemCode = "migrations_pending"
+	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
 )
 
 // AllValues returns all ProblemCode values.
@@ -689,9 +781,9 @@ func (ProblemCode) AllValues() []ProblemCode {
 	return []ProblemCode{
 		ProblemCodeSecondFactorRequired,
 		ProblemCodeEmailVerificationRequired,
-		ProblemCodeSignupClosed,
 		ProblemCodePermissionRequired,
 		ProblemCodeMigrationsPending,
+		ProblemCodeAcceptancePending,
 	}
 }
 
@@ -702,11 +794,11 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ProblemCodeEmailVerificationRequired:
 		return []byte(s), nil
-	case ProblemCodeSignupClosed:
-		return []byte(s), nil
 	case ProblemCodePermissionRequired:
 		return []byte(s), nil
 	case ProblemCodeMigrationsPending:
+		return []byte(s), nil
+	case ProblemCodeAcceptancePending:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -722,14 +814,14 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
 		return nil
-	case ProblemCodeSignupClosed:
-		*s = ProblemCodeSignupClosed
-		return nil
 	case ProblemCodePermissionRequired:
 		*s = ProblemCodePermissionRequired
 		return nil
 	case ProblemCodeMigrationsPending:
 		*s = ProblemCodeMigrationsPending
+		return nil
+	case ProblemCodeAcceptancePending:
+		*s = ProblemCodeAcceptancePending
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -1030,6 +1122,7 @@ func (*ProblemDetailsHeaders) serviceHoldsSetRes()             {}
 func (*ProblemDetailsHeaders) serviceIdentityGetRes()          {}
 func (*ProblemDetailsHeaders) serviceTrackingHostFeedListRes() {}
 func (*ProblemDetailsHeaders) serviceUsageListRes()            {}
+func (*ProblemDetailsHeaders) serviceUserFeedListRes()         {}
 func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes()    {}
 func (*ProblemDetailsHeaders) serviceWorkspaceUsageGetRes()    {}
 
@@ -1111,6 +1204,7 @@ type ServiceScope string
 const (
 	ServiceScopeUsageRead      ServiceScope = "usage:read"
 	ServiceScopeWorkspacesRead ServiceScope = "workspaces:read"
+	ServiceScopeUsersRead      ServiceScope = "users:read"
 	ServiceScopeDomainsRead    ServiceScope = "domains:read"
 	ServiceScopeHoldsWrite     ServiceScope = "holds:write"
 )
@@ -1120,6 +1214,7 @@ func (ServiceScope) AllValues() []ServiceScope {
 	return []ServiceScope{
 		ServiceScopeUsageRead,
 		ServiceScopeWorkspacesRead,
+		ServiceScopeUsersRead,
 		ServiceScopeDomainsRead,
 		ServiceScopeHoldsWrite,
 	}
@@ -1131,6 +1226,8 @@ func (s ServiceScope) MarshalText() ([]byte, error) {
 	case ServiceScopeUsageRead:
 		return []byte(s), nil
 	case ServiceScopeWorkspacesRead:
+		return []byte(s), nil
+	case ServiceScopeUsersRead:
 		return []byte(s), nil
 	case ServiceScopeDomainsRead:
 		return []byte(s), nil
@@ -1149,6 +1246,9 @@ func (s *ServiceScope) UnmarshalText(data []byte) error {
 		return nil
 	case ServiceScopeWorkspacesRead:
 		*s = ServiceScopeWorkspacesRead
+		return nil
+	case ServiceScopeUsersRead:
+		*s = ServiceScopeUsersRead
 		return nil
 	case ServiceScopeDomainsRead:
 		*s = ServiceScopeDomainsRead
@@ -1398,6 +1498,167 @@ func (*ServiceUsageListOK) serviceUsageListRes() {}
 type ServiceUsageListUnauthorized ProblemDetails
 
 func (*ServiceUsageListUnauthorized) serviceUsageListRes() {}
+
+type ServiceUserFeedListBadRequest ProblemDetails
+
+func (*ServiceUserFeedListBadRequest) serviceUserFeedListRes() {}
+
+type ServiceUserFeedListForbidden ProblemDetails
+
+func (*ServiceUserFeedListForbidden) serviceUserFeedListRes() {}
+
+type ServiceUserFeedListUnauthorized ProblemDetails
+
+func (*ServiceUserFeedListUnauthorized) serviceUserFeedListRes() {}
+
+// One page of the Users feed.
+// Ref: #/components/schemas/ServiceUserFeedPage
+type ServiceUserFeedPage struct {
+	// Users created or changed after the requested cursor, in change order.
+	Items []ServiceUserResource `json:"items"`
+	// Pass it back as the cursor to read what follows this page. It is the requested cursor itself when
+	// the page is empty. Saving it is what advances the caller: the core keeps no position of its own.
+	NextCursor string `json:"nextCursor"`
+	// Whether more entries follow this page right now.
+	HasMore bool `json:"hasMore"`
+}
+
+// GetItems returns the value of Items.
+func (s *ServiceUserFeedPage) GetItems() []ServiceUserResource {
+	return s.Items
+}
+
+// GetNextCursor returns the value of NextCursor.
+func (s *ServiceUserFeedPage) GetNextCursor() string {
+	return s.NextCursor
+}
+
+// GetHasMore returns the value of HasMore.
+func (s *ServiceUserFeedPage) GetHasMore() bool {
+	return s.HasMore
+}
+
+// SetItems sets the value of Items.
+func (s *ServiceUserFeedPage) SetItems(val []ServiceUserResource) {
+	s.Items = val
+}
+
+// SetNextCursor sets the value of NextCursor.
+func (s *ServiceUserFeedPage) SetNextCursor(val string) {
+	s.NextCursor = val
+}
+
+// SetHasMore sets the value of HasMore.
+func (s *ServiceUserFeedPage) SetHasMore(val bool) {
+	s.HasMore = val
+}
+
+func (*ServiceUserFeedPage) serviceUserFeedListRes() {}
+
+// A User as the feed reports it, with their current consent to the operator's mailings (ADR 0062). A
+// deleted User is a tombstone: only its id and when it was deleted, nothing else of theirs is kept.
+// Ref: #/components/schemas/ServiceUserResource
+type ServiceUserResource struct {
+	// The User id.
+	ID EntityId `json:"id"`
+	// The User's current name; absent on a tombstone.
+	Name OptString `json:"name"`
+	// The User's current email; absent on a tombstone.
+	Email OptEmailAddress `json:"email"`
+	// When the User confirmed their email; absent while it is unverified and on a tombstone.
+	EmailVerifiedAt OptNilTimestamp `json:"emailVerifiedAt"`
+	// When the User was created; absent on a tombstone.
+	CreatedAt OptTimestamp `json:"createdAt"`
+	// When the User was deleted; absent while the User exists. A tombstone carries nothing else: the
+	// control plane erases the User from its mailing list.
+	DeletedAt OptNilTimestamp `json:"deletedAt"`
+	// Whether the User's latest decision on the Sign-up item that stands for consent to the operator's
+	// mailings is an acceptance. False when they declined or withdrew it, never answered it, on a
+	// tombstone, and when no item stands for it.
+	MailingsConsent bool `json:"mailingsConsent"`
+	// When the User made that latest decision; absent when they never answered the item.
+	MailingsConsentChangedAt OptNilTimestamp `json:"mailingsConsentChangedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *ServiceUserResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *ServiceUserResource) GetName() OptString {
+	return s.Name
+}
+
+// GetEmail returns the value of Email.
+func (s *ServiceUserResource) GetEmail() OptEmailAddress {
+	return s.Email
+}
+
+// GetEmailVerifiedAt returns the value of EmailVerifiedAt.
+func (s *ServiceUserResource) GetEmailVerifiedAt() OptNilTimestamp {
+	return s.EmailVerifiedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *ServiceUserResource) GetCreatedAt() OptTimestamp {
+	return s.CreatedAt
+}
+
+// GetDeletedAt returns the value of DeletedAt.
+func (s *ServiceUserResource) GetDeletedAt() OptNilTimestamp {
+	return s.DeletedAt
+}
+
+// GetMailingsConsent returns the value of MailingsConsent.
+func (s *ServiceUserResource) GetMailingsConsent() bool {
+	return s.MailingsConsent
+}
+
+// GetMailingsConsentChangedAt returns the value of MailingsConsentChangedAt.
+func (s *ServiceUserResource) GetMailingsConsentChangedAt() OptNilTimestamp {
+	return s.MailingsConsentChangedAt
+}
+
+// SetID sets the value of ID.
+func (s *ServiceUserResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *ServiceUserResource) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetEmail sets the value of Email.
+func (s *ServiceUserResource) SetEmail(val OptEmailAddress) {
+	s.Email = val
+}
+
+// SetEmailVerifiedAt sets the value of EmailVerifiedAt.
+func (s *ServiceUserResource) SetEmailVerifiedAt(val OptNilTimestamp) {
+	s.EmailVerifiedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *ServiceUserResource) SetCreatedAt(val OptTimestamp) {
+	s.CreatedAt = val
+}
+
+// SetDeletedAt sets the value of DeletedAt.
+func (s *ServiceUserResource) SetDeletedAt(val OptNilTimestamp) {
+	s.DeletedAt = val
+}
+
+// SetMailingsConsent sets the value of MailingsConsent.
+func (s *ServiceUserResource) SetMailingsConsent(val bool) {
+	s.MailingsConsent = val
+}
+
+// SetMailingsConsentChangedAt sets the value of MailingsConsentChangedAt.
+func (s *ServiceUserResource) SetMailingsConsentChangedAt(val OptNilTimestamp) {
+	s.MailingsConsentChangedAt = val
+}
 
 type ServiceWorkspaceFeedListBadRequest ProblemDetails
 

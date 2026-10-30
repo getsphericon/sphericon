@@ -7,22 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func (h *harness) auditEntries(t *testing.T, c *staffapi.Client, workspaceID string, params staffapi.StaffWorkspaceAuditListParams) staffapi.StaffWorkspaceAuditListRes {
+func (h *harness) auditEntries(t *testing.T, c *staffeeapi.Client, workspaceID string, params staffeeapi.StaffWorkspaceAuditListParams) staffeeapi.StaffWorkspaceAuditListRes {
 	t.Helper()
-	params.WorkspaceId = staffapi.WorkspaceId(workspaceID)
+	params.WorkspaceId = staffeeapi.WorkspaceId(workspaceID)
 	res, err := c.StaffWorkspaceAuditList(t.Context(), params)
 	require.NoError(t, err)
 	return res
 }
 
-func (h *harness) auditPage(t *testing.T, c *staffapi.Client, workspaceID string, params staffapi.StaffWorkspaceAuditListParams) *staffapi.StaffAuditEntryList {
+func (h *harness) auditPage(t *testing.T, c *staffeeapi.Client, workspaceID string, params staffeeapi.StaffWorkspaceAuditListParams) *staffeeapi.StaffAuditEntryList {
 	t.Helper()
-	page, ok := h.auditEntries(t, c, workspaceID, params).(*staffapi.StaffAuditEntryList)
+	page, ok := h.auditEntries(t, c, workspaceID, params).(*staffeeapi.StaffAuditEntryList)
 	require.True(t, ok, "an audit page")
 	return page
 }
@@ -31,7 +31,7 @@ func TestTheWorkspaceAuditLogListsThatWorkspacesEntriesNewestFirst(t *testing.T)
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	page := h.auditPage(t, c, fixtures.GlobexPublicID, staffapi.StaffWorkspaceAuditListParams{})
+	page := h.auditPage(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{})
 
 	ids := make([]int64, 0, len(page.Items))
 	for _, e := range page.Items {
@@ -46,29 +46,29 @@ func TestTheWorkspaceAuditLogIsPaginatedByCursor(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	first := h.auditPage(t, c, fixtures.GlobexPublicID, staffapi.StaffWorkspaceAuditListParams{Limit: staffapi.NewOptInt32(2)})
+	first := h.auditPage(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{Limit: staffeeapi.NewOptInt32(2)})
 	require.Len(t, first.Items, 2)
 	cursor, ok := first.NextCursor.Get()
 	require.True(t, ok)
 
-	second := h.auditPage(t, c, fixtures.GlobexPublicID, staffapi.StaffWorkspaceAuditListParams{
-		Limit: staffapi.NewOptInt32(2), Cursor: staffapi.NewOptString(cursor),
+	second := h.auditPage(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{
+		Limit: staffeeapi.NewOptInt32(2), Cursor: staffeeapi.NewOptString(cursor),
 	})
 	require.Len(t, second.Items, 2)
-	assert.Equal(t, staffapi.EntityId(4), second.Items[0].ID)
-	assert.Equal(t, staffapi.EntityId(3), second.Items[1].ID)
+	assert.Equal(t, staffeeapi.EntityId(4), second.Items[0].ID)
+	assert.Equal(t, staffeeapi.EntityId(3), second.Items[1].ID)
 }
 
 func TestAStaffMembersEntryShowsAsSphericonStaffWithoutTheStaffId(t *testing.T) {
 	h := newHarness(t)
 	c, cookie := h.staffSession(t)
 
-	page := h.auditPage(t, c, fixtures.InitechPublicID, staffapi.StaffWorkspaceAuditListParams{})
+	page := h.auditPage(t, c, fixtures.InitechPublicID, staffeeapi.StaffWorkspaceAuditListParams{})
 
 	require.Len(t, page.Items, 2)
 	staff := page.Items[1]
-	assert.Equal(t, staffapi.EntityId(int64(fixtures.InitechAuditStaffSuspendID)), staff.ID)
-	assert.Equal(t, staffapi.StaffAuditActorKindStaff, staff.Actor.Kind)
+	assert.Equal(t, staffeeapi.EntityId(int64(fixtures.InitechAuditStaffSuspendID)), staff.ID)
+	assert.Equal(t, staffeeapi.StaffAuditActorKindStaff, staff.Actor.Kind)
 	assert.Equal(t, "Sphericon staff", staff.Actor.Name.Value)
 	assert.False(t, staff.Actor.ID.IsSet() && !staff.Actor.ID.IsNull(), "no StaffMember id")
 
@@ -82,11 +82,11 @@ func TestTheWorkspaceAuditLogRefusesABadCursorAndAnUnknownWorkspace(t *testing.T
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	bad := h.auditEntries(t, c, fixtures.GlobexPublicID, staffapi.StaffWorkspaceAuditListParams{Cursor: staffapi.NewOptString("nope")})
-	assert.IsType(t, &staffapi.StaffWorkspaceAuditListBadRequest{}, bad)
+	bad := h.auditEntries(t, c, fixtures.GlobexPublicID, staffeeapi.StaffWorkspaceAuditListParams{Cursor: staffeeapi.NewOptString("nope")})
+	assert.IsType(t, &staffeeapi.StaffWorkspaceAuditListBadRequest{}, bad)
 
-	missing := h.auditEntries(t, c, "NoSuchId", staffapi.StaffWorkspaceAuditListParams{})
-	assert.IsType(t, &staffapi.StaffWorkspaceAuditListNotFound{}, missing)
+	missing := h.auditEntries(t, c, "NoSuchId", staffeeapi.StaffWorkspaceAuditListParams{})
+	assert.IsType(t, &staffeeapi.StaffWorkspaceAuditListNotFound{}, missing)
 }
 
 func TestTheWorkspaceAuditLogRequiresAnStaffSession(t *testing.T) {

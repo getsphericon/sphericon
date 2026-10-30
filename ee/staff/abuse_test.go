@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -19,18 +19,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func (h *harness) setExempt(t *testing.T, c *staffapi.Client, id string, exempt bool) *staffapi.StaffExemptionChange {
+func (h *harness) setExempt(t *testing.T, c *staffeeapi.Client, id string, exempt bool) *staffeeapi.StaffExemptionChange {
 	t.Helper()
-	wid := staffapi.WorkspaceId(id)
+	wid := staffeeapi.WorkspaceId(id)
 	var res any
 	var err error
 	if exempt {
-		res, err = c.StaffWorkspacesExempt(t.Context(), staffapi.StaffWorkspacesExemptParams{WorkspaceId: wid})
+		res, err = c.StaffWorkspacesExempt(t.Context(), staffeeapi.StaffWorkspacesExemptParams{WorkspaceId: wid})
 	} else {
-		res, err = c.StaffWorkspacesUnexempt(t.Context(), staffapi.StaffWorkspacesUnexemptParams{WorkspaceId: wid})
+		res, err = c.StaffWorkspacesUnexempt(t.Context(), staffeeapi.StaffWorkspacesUnexemptParams{WorkspaceId: wid})
 	}
 	require.NoError(t, err)
-	change, ok := res.(*staffapi.StaffExemptionChange)
+	change, ok := res.(*staffeeapi.StaffExemptionChange)
 	require.Truef(t, ok, "got %T", res)
 	return change
 }
@@ -61,22 +61,22 @@ func TestExemptingAnUnknownWorkspaceIsNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, err := c.StaffWorkspacesExempt(t.Context(), staffapi.StaffWorkspacesExemptParams{WorkspaceId: "NoSuchId"})
+	res, err := c.StaffWorkspacesExempt(t.Context(), staffeeapi.StaffWorkspacesExemptParams{WorkspaceId: "NoSuchId"})
 
 	require.NoError(t, err)
-	assert.IsType(t, &staffapi.StaffWorkspacesExemptNotFound{}, res)
+	assert.IsType(t, &staffeeapi.StaffWorkspacesExemptNotFound{}, res)
 }
 
 func TestAnExemptWorkspaceStaysListedAndCanStillBeSuspendedByHand(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	page := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Search: staffapi.NewOptString(fixtures.KramericaPublicID)})
+	page := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Search: staffeeapi.NewOptString(fixtures.KramericaPublicID)})
 	res := h.suspend(t, c, fixtures.KramericaPublicID, "verified abuse")
 
 	require.Len(t, page.Items, 1)
 	assert.True(t, page.Items[0].Exempt)
-	change, ok := res.(*staffapi.StaffSuspensionChange)
+	change, ok := res.(*staffeeapi.StaffSuspensionChange)
 	require.True(t, ok)
 	assert.True(t, change.Changed)
 }
@@ -84,12 +84,12 @@ func TestAnExemptWorkspaceStaysListedAndCanStillBeSuspendedByHand(t *testing.T) 
 func TestUnsuspendingFromTheConsoleRecordsTheClearance(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	before := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffapi.StaffWorkspaceDetailResource)
+	before := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.False(t, before.Abuse.ClearedAt.Set)
 
 	h.unsuspend(t, c, fixtures.HooliPublicID)
 
-	after := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffapi.StaffWorkspaceDetailResource)
+	after := h.getWorkspace(t, c, fixtures.HooliPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, after.Abuse.ClearedAt.Set)
 	assert.WithinDuration(t, time.Now(), time.Time(after.Abuse.ClearedAt.Value), time.Minute)
 }
@@ -101,8 +101,8 @@ func TestTheListSurfacesWarnedAndSystemFrozenWorkspaces(t *testing.T) {
 	require.NoError(t, err)
 	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetAbuseWarningNotifiedAt(time.Now()).ExecX(t.Context())
 
-	frozen := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewSystemFrozen)})
-	warned := h.listWorkspaces(t, c, staffapi.StaffWorkspacesListParams{Review: staffapi.NewOptStaffWorkspaceReview(staffapi.StaffWorkspaceReviewWarned)})
+	frozen := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewSystemFrozen)})
+	warned := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewWarned)})
 
 	assert.Equal(t, []string{"Vandelay"}, names(frozen.Items), "Hooli was suspended by a StaffMember, not the system")
 	assert.Equal(t, []string{"Globex"}, names(warned.Items))
@@ -115,7 +115,7 @@ func TestTheDetailShowsTheDetectorsStandingAndLastNotices(t *testing.T) {
 	notified := time.Now().Add(-time.Hour)
 	h.env.DB.Workspace.UpdateOneID(fixtures.SoylentID).SetAbuseWarningNotifiedAt(notified).ExecX(t.Context())
 
-	detail := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffapi.StaffWorkspaceDetailResource)
+	detail := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 
 	require.True(t, detail.Abuse.Warning.Set, "its rates are over the limits")
 	assert.Equal(t, "mail.soylent.test", detail.Abuse.Warning.Value.Domain)
@@ -129,7 +129,7 @@ func TestAnExemptWorkspaceHasNoWarningButKeepsItsRates(t *testing.T) {
 	c, _ := h.staffSession(t)
 	h.setExempt(t, c, fixtures.SoylentPublicID, true)
 
-	detail := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffapi.StaffWorkspaceDetailResource)
+	detail := h.getWorkspace(t, c, fixtures.SoylentPublicID).(*staffeeapi.StaffWorkspaceDetailResource)
 
 	assert.False(t, detail.Abuse.Warning.Set)
 	assert.True(t, detail.Abuse.Exempt)

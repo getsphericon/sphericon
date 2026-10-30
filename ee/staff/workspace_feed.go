@@ -3,7 +3,6 @@ package staff
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -12,10 +11,11 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrInvalidFeedCursor refuses a cursor the feed never handed out.
-var ErrInvalidFeedCursor = errors.New("staff: the cursor is not one the workspace feed returned")
+var ErrInvalidFeedCursor = validation.UnknownReference("staff: the cursor is not one the feed returned", "errors.feed_cursor_invalid")
 
 // FeedEntry is a Workspace as the feed reports it: its identity and all of its owners.
 type FeedEntry struct {

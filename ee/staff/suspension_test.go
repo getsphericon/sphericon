@@ -11,25 +11,25 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/outbound"
 )
 
-func (h *harness) suspend(t *testing.T, c *staffapi.Client, id, reason string) staffapi.StaffWorkspacesSuspendRes {
+func (h *harness) suspend(t *testing.T, c *staffeeapi.Client, id, reason string) staffeeapi.StaffWorkspacesSuspendRes {
 	t.Helper()
-	res, err := c.StaffWorkspacesSuspend(t.Context(), &staffapi.StaffSuspendInput{Reason: reason},
-		staffapi.StaffWorkspacesSuspendParams{WorkspaceId: staffapi.WorkspaceId(id)})
+	res, err := c.StaffWorkspacesSuspend(t.Context(), &staffeeapi.StaffSuspendInput{Reason: reason},
+		staffeeapi.StaffWorkspacesSuspendParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
 	require.NoError(t, err)
 	return res
 }
 
-func (h *harness) unsuspend(t *testing.T, c *staffapi.Client, id string) staffapi.StaffWorkspacesUnsuspendRes {
+func (h *harness) unsuspend(t *testing.T, c *staffeeapi.Client, id string) staffeeapi.StaffWorkspacesUnsuspendRes {
 	t.Helper()
 	res, err := c.StaffWorkspacesUnsuspend(t.Context(),
-		staffapi.StaffWorkspacesUnsuspendParams{WorkspaceId: staffapi.WorkspaceId(id)})
+		staffeeapi.StaffWorkspacesUnsuspendParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
 	require.NoError(t, err)
 	return res
 }
@@ -47,16 +47,16 @@ func TestAnStaffSuspendsAndUnsuspendsAWorkspace(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	res, ok := h.suspend(t, c, fixtures.AcmePublicID, "abuse report").(*staffapi.StaffSuspensionChange)
+	res, ok := h.suspend(t, c, fixtures.AcmePublicID, "abuse report").(*staffeeapi.StaffSuspensionChange)
 	require.True(t, ok)
 	assert.True(t, res.Changed)
 	require.True(t, res.Workspace.Suspension.IsSet())
 	s := res.Workspace.Suspension.Value
-	assert.Equal(t, staffapi.StaffSuspensionActorKindStaff, s.Actor.Kind)
+	assert.Equal(t, staffeeapi.StaffSuspensionActorKindStaff, s.Actor.Kind)
 	assert.Equal(t, strconv.Itoa(fixtures.StaffEnrolledID), s.Actor.ID.Value, "the session's StaffMember id is the actor")
 	assert.Equal(t, "abuse report", s.Reason.Value)
 
-	res, ok = h.unsuspend(t, c, fixtures.AcmePublicID).(*staffapi.StaffSuspensionChange)
+	res, ok = h.unsuspend(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffSuspensionChange)
 	require.True(t, ok)
 	assert.True(t, res.Changed)
 	assert.False(t, res.Workspace.Suspension.IsSet())
@@ -67,12 +67,12 @@ func TestSuspendingTwiceAndUnsuspendingAnActiveWorkspaceChangeNothing(t *testing
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	again, ok := h.unsuspend(t, c, fixtures.AcmePublicID).(*staffapi.StaffSuspensionChange)
+	again, ok := h.unsuspend(t, c, fixtures.AcmePublicID).(*staffeeapi.StaffSuspensionChange)
 	require.True(t, ok)
 	assert.False(t, again.Changed, "an active Workspace stays as it was")
 
 	h.suspend(t, c, fixtures.AcmePublicID, "first")
-	second, ok := h.suspend(t, c, fixtures.AcmePublicID, "second").(*staffapi.StaffSuspensionChange)
+	second, ok := h.suspend(t, c, fixtures.AcmePublicID, "second").(*staffeeapi.StaffSuspensionChange)
 	require.True(t, ok)
 	assert.False(t, second.Changed)
 	assert.Equal(t, "first", second.Workspace.Suspension.Value.Reason.Value, "the first reason stands")
@@ -84,7 +84,7 @@ func TestSuspendRequiresAReason(t *testing.T) {
 	c, _ := h.staffSession(t)
 
 	res := h.suspend(t, c, fixtures.AcmePublicID, "   ")
-	assert.IsType(t, &staffapi.StaffWorkspacesSuspendUnprocessableEntity{}, res)
+	assert.IsType(t, &staffeeapi.StaffWorkspacesSuspendUnprocessableEntity{}, res)
 	assert.Nil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
 }
 
@@ -92,17 +92,17 @@ func TestSuspendAndUnsuspendAnUnknownWorkspaceAreNotFound(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 
-	assert.IsType(t, &staffapi.StaffWorkspacesSuspendNotFound{}, h.suspend(t, c, "NoSuchId", "abuse"))
-	assert.IsType(t, &staffapi.StaffWorkspacesUnsuspendNotFound{}, h.unsuspend(t, c, "NoSuchId"))
+	assert.IsType(t, &staffeeapi.StaffWorkspacesSuspendNotFound{}, h.suspend(t, c, "NoSuchId", "abuse"))
+	assert.IsType(t, &staffeeapi.StaffWorkspacesUnsuspendNotFound{}, h.unsuspend(t, c, "NoSuchId"))
 }
 
 func TestSuspensionActionsNeedAnStaffSession(t *testing.T) {
 	h := newHarness(t)
 
-	res, err := h.env.StaffAnonymous(t).StaffWorkspacesSuspend(t.Context(), &staffapi.StaffSuspendInput{Reason: "x"},
-		staffapi.StaffWorkspacesSuspendParams{WorkspaceId: fixtures.AcmePublicID})
+	res, err := h.env.StaffEnterpriseWithToken(t, "").StaffWorkspacesSuspend(t.Context(), &staffeeapi.StaffSuspendInput{Reason: "x"},
+		staffeeapi.StaffWorkspacesSuspendParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &staffapi.StaffWorkspacesSuspendUnauthorized{}, res)
+	assert.IsType(t, &staffeeapi.StaffWorkspacesSuspendUnauthorized{}, res)
 	assert.Nil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
 }
 

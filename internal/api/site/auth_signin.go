@@ -95,20 +95,33 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 		}
 	}
 
+	asked, err := h.signupItems.Asked(ctx)
+	if err != nil {
+		return nil, err
+	}
 	signedIn, err := h.accounts.SignInWithIdentity(ctx, accounts.ProviderLogin{
-		Provider:     params.Provider,
-		Subject:      profile.Subject,
-		Email:        profile.Email,
-		Name:         profile.Name,
-		TrustFailure: h.signin.Trust(params.Provider, profile),
-		Invitation:   invite,
-		SurveyDue:    h.signupSurvey.Enabled(),
+		Provider:            params.Provider,
+		Subject:             profile.Subject,
+		Email:               profile.Email,
+		Name:                profile.Name,
+		TrustFailure:        h.signin.Trust(params.Provider, profile),
+		Invitation:          invite,
+		SurveyDue:           h.signupSurvey.Enabled(),
+		SignupItemsInEffect: asked,
+		Now:                 h.now(),
 	})
 	if refused, ok := errors.AsType[*accounts.SigninRefusedError](err); ok {
 		return h.signinRefused(flow, refused.Reason), nil
 	}
 	if err != nil {
 		return nil, err
+	}
+	if signedIn.Pending != nil {
+		token, err := h.pendingReference(signedIn.Pending)
+		if err != nil {
+			return nil, err
+		}
+		return h.signinHeld(flow, token), nil
 	}
 	if signedIn.LinkedIdentityID != 0 {
 		h.noticeIdentityLinked(ctx, signedIn.User, params.Provider, signedIn.LinkedIdentityID)

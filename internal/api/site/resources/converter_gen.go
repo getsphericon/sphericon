@@ -11,11 +11,13 @@ import (
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
+	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
 )
 
 type ConverterImpl struct{}
@@ -386,6 +388,15 @@ func (c *ConverterImpl) JoinDomainToResource(source *ent.JoinDomain) site.SiteJo
 	}
 	return siteapiSiteJoinDomainResource
 }
+func (c *ConverterImpl) LegalDocumentToSite(source signupitems.Document) site.SiteLegalDocument {
+	var siteapiSiteLegalDocument site.SiteLegalDocument
+	siteapiSiteLegalDocument.Key = site.SignupItemKey(source.Key)
+	siteapiSiteLegalDocument.Title = source.Title
+	siteapiSiteLegalDocument.Version = site.LegalDocumentLabel(source.Label)
+	siteapiSiteLegalDocument.Markdown = site.LegalDocumentMarkdown(source.Markdown)
+	siteapiSiteLegalDocument.PublishedAt = timestamp(source.PublishedAt)
+	return siteapiSiteLegalDocument
+}
 func (c *ConverterImpl) LinkClicksToResource(source []linkclicks.Clicks) []site.SiteLinkClicks {
 	var siteapiSiteLinkClicksList []site.SiteLinkClicks
 	if source != nil {
@@ -420,6 +431,25 @@ func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMe
 		siteapiSiteMembershipResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteMembershipResource
+}
+func (c *ConverterImpl) OptionalConsentToSite(source consentrecords.OptionalConsent) site.SiteOptionalConsent {
+	var siteapiSiteOptionalConsent site.SiteOptionalConsent
+	siteapiSiteOptionalConsent.Key = site.SignupItemKey(source.Key)
+	siteapiSiteOptionalConsent.Title = source.Title
+	siteapiSiteOptionalConsent.Version = site.LegalDocumentLabel(source.Version)
+	siteapiSiteOptionalConsent.Decision = optConsentDecision(source.Decision)
+	siteapiSiteOptionalConsent.DecidedAt = optTimestamp(source.DecidedAt)
+	return siteapiSiteOptionalConsent
+}
+func (c *ConverterImpl) OptionalConsentsToSite(source []consentrecords.OptionalConsent) []site.SiteOptionalConsent {
+	var siteapiSiteOptionalConsentList []site.SiteOptionalConsent
+	if source != nil {
+		siteapiSiteOptionalConsentList = make([]site.SiteOptionalConsent, len(source))
+		for i := 0; i < len(source); i++ {
+			siteapiSiteOptionalConsentList[i] = c.OptionalConsentToSite(source[i])
+		}
+	}
+	return siteapiSiteOptionalConsentList
 }
 func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) site.ContactExportOutboundMessage {
 	var siteapiContactExportOutboundMessage site.ContactExportOutboundMessage
@@ -456,6 +486,16 @@ func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey 
 		siteapiSitePasskey.LastUsedAt = optTimestamp((*source).LastUsedAt)
 	}
 	return siteapiSitePasskey
+}
+func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site.SitePendingSignup {
+	var pSiteapiSitePendingSignup *site.SitePendingSignup
+	if source != nil {
+		var siteapiSitePendingSignup site.SitePendingSignup
+		siteapiSitePendingSignup.Email = site.EmailAddress((*source).Email)
+		siteapiSitePendingSignup.Name = (*source).Name
+		pSiteapiSitePendingSignup = &siteapiSitePendingSignup
+	}
+	return pSiteapiSitePendingSignup
 }
 func (c *ConverterImpl) RevenueSettingsToResource(source *ent.Workspace) site.SiteRevenueSettingsResource {
 	var siteapiSiteRevenueSettingsResource site.SiteRevenueSettingsResource
@@ -583,6 +623,24 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) sit
 	siteapiSiteSesConfig.Endpoint = omitEmpty(source.Endpoint)
 	siteapiSiteSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
 	return siteapiSiteSesConfig
+}
+func (c *ConverterImpl) SignupItemToSite(source signupitems.Document) site.SiteSignupItem {
+	var siteapiSiteSignupItem site.SiteSignupItem
+	siteapiSiteSignupItem.Key = site.SignupItemKey(source.Key)
+	siteapiSiteSignupItem.Title = source.Title
+	siteapiSiteSignupItem.Kind = site.SignupItemKind(source.Kind)
+	siteapiSiteSignupItem.Version = site.LegalDocumentLabel(source.Label)
+	return siteapiSiteSignupItem
+}
+func (c *ConverterImpl) SignupItemsToSite(source []signupitems.Document) []site.SiteSignupItem {
+	var siteapiSiteSignupItemList []site.SiteSignupItem
+	if source != nil {
+		siteapiSiteSignupItemList = make([]site.SiteSignupItem, len(source))
+		for i := 0; i < len(source); i++ {
+			siteapiSiteSignupItemList[i] = c.SignupItemToSite(source[i])
+		}
+	}
+	return siteapiSiteSignupItemList
 }
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SiteSmtpConfig {
 	var siteapiSiteSmtpConfig site.SiteSmtpConfig

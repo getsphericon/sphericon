@@ -37,7 +37,7 @@ func logged(t *testing.T, env *testhelper.TestEnv, domain string) []trackinghost
 // in that order, so the edge never serves a name the Workspace no longer owns.
 func TestRenamingAVerifiedHostRemovesTheOldNameAndAddsTheNewOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	umbrella := env.DB.Scoped(fixtures.UmbrellaID)
+	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
 
 	require.NoError(t, umbrella.SendingDomain().UpdateOneID(fixtures.SendingDomainTrackingServingID).
 		SetDomain("renamed.umbrella.test").Exec(t.Context()))
@@ -52,7 +52,7 @@ func TestRenamingAVerifiedHostRemovesTheOldNameAndAddsTheNewOne(t *testing.T) {
 func TestRenamingAPendingHostLogsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	require.NoError(t, env.DB.Scoped(fixtures.UmbrellaID).SendingDomain().
+	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().
 		UpdateOneID(fixtures.SendingDomainTrackingPendingID).
 		SetDomain("renamed-pending.umbrella.test").Exec(t.Context()))
 
@@ -62,7 +62,7 @@ func TestRenamingAPendingHostLogsNothing(t *testing.T) {
 
 func TestACreatedHostIsLoggedOnlyWhenItIsAlreadyVerified(t *testing.T) {
 	env := testhelper.Setup(t)
-	umbrella := env.DB.Scoped(fixtures.UmbrellaID)
+	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
 	create := func(domain string) *ent.SendingDomainScopedCreate {
 		// test writes: the hook fires on this write
 		return umbrella.SendingDomain().Create().
@@ -85,7 +85,7 @@ func TestACreatedHostIsLoggedOnlyWhenItIsAlreadyVerified(t *testing.T) {
 func TestEditingAnUnrelatedColumnOfAServingHostLogsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	require.NoError(t, env.DB.Scoped(fixtures.UmbrellaID).SendingDomain().
+	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().
 		UpdateOneID(fixtures.SendingDomainTrackingServingID).
 		SetDkimSelector("rotated").Exec(t.Context()))
 
@@ -117,7 +117,7 @@ func TestPlainClientRefusesAChangeToAVerifiedHost(t *testing.T) {
 // answer the change log gives for the row (an archive logs the host as removed).
 func TestServingSelectsVerifiedHostsThatAreNotArchived(t *testing.T) {
 	env := testhelper.Setup(t)
-	umbrella := env.DB.Scoped(fixtures.UmbrellaID)
+	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
 	ids := func() []int64 {
 		got, err := env.DB.SendingDomain.Query().Where(trackinghostlog.Serving()).IDs(t.Context())
 		require.NoError(t, err)

@@ -1,7 +1,8 @@
 import { Divider, Stack, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import { Route as deleteRoute } from '../../routes/account/delete.tsx'
+import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { Route as deleteRoute } from '../../routes/delete-account.tsx'
 import { DeleteUserForm } from './DeleteUserForm.tsx'
 
 // ConfirmUserDeletionPage is where the mailed link of a User with no password lands (User
@@ -12,10 +13,12 @@ export function ConfirmUserDeletionPage() {
   const { token } = deleteRoute.useSearch()
 
   return (
-    <Stack maw={420}>
-      <Title order={2}>{t(($) => $.profile.deleteUserSectionTitle)}</Title>
-      <Divider />
-      <DeleteUserForm token={token} />
-    </Stack>
+    <CenteredLayout maw={420}>
+      <Stack>
+        <Title order={2}>{t(($) => $.profile.deleteUserSectionTitle)}</Title>
+        <Divider />
+        <DeleteUserForm token={token} />
+      </Stack>
+    </CenteredLayout>
   )
 }

@@ -468,7 +468,8 @@ Taking a row out of working lists while keeping it, by stamping `discarded_at`; 
 clears the stamp. It is the one mechanism behind what the UI calls Archive (a Broadcast, an
 Automation, a Segment, a Rule: a list view of the archived ones restores them), Remove (an
 Integration, a Sending domain: no view of the removed, restorable through the API only) or Delete
-(a Workspace, restorable for its window). A discarded row is hidden from
+(a Workspace, restorable for its window). A Sign-up item is archived for good: it stays listed,
+marked archived, and is never restored. A discarded row is hidden from
 lists and from new work, but not from history: reports still count it. A row that other live
 work depends on cannot be discarded. **Purge** is the physical removal, allowed only for what
 has no history (a draft Broadcast, an Automation with no Enrollments) and for erasure. The
@@ -710,8 +711,8 @@ each carrying a Role — a Workspace is never owned by a single User directly.
 _Avoid_: Account, member, customer, owner
 
 **Sign-up**:
-A person creating a User for themself, with a password or through a Sign-in provider, on an
-Instance whose sign-up is open. The new User stays an Unverified User until its address is proven.
+A person creating a User for themself, with a password or through a Sign-in provider. Sign-up is
+open on every Instance (ADR 0063). The new User stays an Unverified User until its address is proven.
 _Avoid_: Registration, register, signup (one word)
 
 **Leaving**:
@@ -723,7 +724,7 @@ _Avoid_: Quit, unjoin, self-removal (removal is what an Owner does to another Me
 **User deletion**:
 A User's own immediate and irreversible removal of themself: their Memberships, Linked
 identities, Second factor, Recovery codes and Passkeys go, every session ends, and the address can sign up
-again as a new User where sign-up is open. Refused while the User is the only Owner of any Workspace. Invitations the
+again as a new User. Refused while the User is the only Owner of any Workspace. Invitations the
 User sent stay valid without a sender; Audit entries that name the User keep the id and the name
 snapshot. It never touches a Contact or a Staff member (a Contact has its own Erasure).
 _Avoid_: Account deletion, closing an account, deactivation, Erasure (that is a Contact's)
@@ -757,8 +758,7 @@ A Membership created because its member proved an address on a Workspace's verif
 (ADR 0051): Role `member`, source `domain`. A Workspace has one switch for it, off by default, that
 only an Owner changes. It happens at the moment an address becomes a Proven email and never later:
 an address proven before the switch was turned on joins nobody, and turning it on adds and invites
-no one. It never admits a new User on an Instance with closed sign-up, ignores a suspended
-Workspace or one in its deletion window, and sends no mail. It is audited as `membership.domain_join`
+no one. It ignores a suspended Workspace or one in its deletion window, and sends no mail. It is audited as `membership.domain_join`
 with the system as the actor.
 _Avoid_: Auto-join, domain capture, domain-based signup
 
@@ -766,7 +766,7 @@ _Avoid_: Auto-join, domain capture, domain-based signup
 An external service that proves a person's email address so they can sign up or log in without a
 password of ours: Google, GitHub. The Instance operator enables one by setting its OAuth client id
 and secret; a provider replaces only the password step (an enrolled Second factor, the Login throttle
-and sign-up gates still apply). A person's own account at a provider, not an organization's
+still apply). A person's own account at a provider, not an organization's
 identity system: per-Workspace federation stays Enterprise (ADR 0014).
 _Avoid_: SSO, social login, OAuth provider (that is the OAuth server for MCP clients)
 
@@ -779,6 +779,14 @@ notice with a "this was not me" link that unlinks it and ends every session. If 
 never proven (an install with verification off marks it Verified without proof), the link also
 clears the password, so whoever proves the address is the one who controls it.
 _Avoid_: Social account, connected account
+
+**Pending sign-up**:
+What a Sign-in provider proved about a person who has no account yet (the subject, a trusted email,
+a name, the Invitation the flow began from), kept for ten minutes while the Instance asks its Sign-up
+items. No User exists until the person answers them: their answers create the User, its Linked
+identity, its first Workspace and the Consent records together; declining deletes it, and a job
+deletes one left unanswered. A known Linked identity never has one.
+_Avoid_: Draft account, half-registered user
 
 **Taken address**:
 An email that already belongs to a User. Nobody but its owner may learn that it is taken: a
@@ -884,18 +892,22 @@ the Instance serves: a **required acceptance** (a checkbox without which no User
 **optional consent** (an unticked checkbox sign-up never depends on) or a **notice** (a link, nothing
 to tick). Each has its own Legal document, and one may stand for consent to the operator's mailings.
 An Instance has none until a Staff member adds them: the core ships no legal text and knows no law.
-_Avoid_: Consent (for the item), checkbox, terms (as the general name)
+An item no longer asked is archived (a **Discard**), never deleted.
+_Avoid_: Consent (for the item), checkbox, terms (as the general name), retire
 
 **Legal document**:
 The text of a Sign-up item, kept in the Instance's database in the Instance's one language and shown
 on a fixed public page of the app. Publishing makes an immutable version that takes effect at once; a
 new version of a required acceptance stops every User who has not accepted it at an
-accept-or-sign-out screen.
+accept-or-sign-out screen and refuses their Connections until they accept; the Workspace's API
+tokens keep working.
 _Avoid_: Policy page, terms URL
 
 **Consent record**:
 One decision of a User on one version of a Sign-up item's Legal document (accepted, declined or
-withdrawn), with when and where it was made and the IP address and user agent it came from. Records
+withdrawn, or shown for a notice), with when and where it was made (the sign-up form, the provider
+screen, an Invitation, a re-acceptance or account settings) and the IP address and user agent it
+came from. Records
 are only added, never changed; the latest per item is the User's current answer. It belongs to the
 User, not a Workspace, and is unrelated to a Contact's consent proof.
 _Avoid_: Acceptance flag, opt-in (alone)
@@ -928,7 +940,7 @@ _Avoid_: Meter, counter, quota (quota is an allowance, not a measurement)
 **Service credential**:
 A machine identity of the Staff surface, next to the human Staff member and not a User: a bearer value
 that lets a service call the service endpoints without a login, held by no Workspace and no
-Membership. It carries a name, a set of scopes (read usage, read Workspaces, write holds) and an
+Membership. It carries a name, a set of scopes (read usage, read Workspaces, read Users, write holds) and an
 optional expiry, and records when it was last used. Created, rotated and revoked only by the
 `sphericon service-credential` command (no endpoint can mint or change one); the value is shown once
 and only a hash is stored. A service may hold two active credentials at once so a rotation has no

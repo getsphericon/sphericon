@@ -1785,6 +1785,10 @@ func (s *InUseProblemDetailsFields) init() InUseProblemDetailsFields {
 	return m
 }
 
+type LegalDocumentLabel string
+
+type LegalDocumentMarkdown string
+
 // What a lint finding is about (ADR 0040).
 // Ref: #/components/schemas/LintCode
 type LintCode string
@@ -4918,6 +4922,52 @@ func (o OptSiteMessageRevenue) Or(d SiteMessageRevenue) SiteMessageRevenue {
 	return d
 }
 
+// NewOptSiteOptionalConsentDecision returns new OptSiteOptionalConsentDecision with value set to v.
+func NewOptSiteOptionalConsentDecision(v SiteOptionalConsentDecision) OptSiteOptionalConsentDecision {
+	return OptSiteOptionalConsentDecision{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteOptionalConsentDecision is optional SiteOptionalConsentDecision.
+type OptSiteOptionalConsentDecision struct {
+	Value SiteOptionalConsentDecision
+	Set   bool
+}
+
+// IsSet returns true if OptSiteOptionalConsentDecision was set.
+func (o OptSiteOptionalConsentDecision) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteOptionalConsentDecision) Reset() {
+	var v SiteOptionalConsentDecision
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteOptionalConsentDecision) SetTo(v SiteOptionalConsentDecision) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteOptionalConsentDecision) Get() (v SiteOptionalConsentDecision, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteOptionalConsentDecision) Or(d SiteOptionalConsentDecision) SiteOptionalConsentDecision {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSitePasskeyAuthenticatorSelection returns new OptSitePasskeyAuthenticatorSelection with value set to v.
 func NewOptSitePasskeyAuthenticatorSelection(v SitePasskeyAuthenticatorSelection) OptSitePasskeyAuthenticatorSelection {
 	return OptSitePasskeyAuthenticatorSelection{
@@ -5934,9 +5984,9 @@ type ProblemCode string
 const (
 	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
 	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
-	ProblemCodeSignupClosed              ProblemCode = "signup_closed"
 	ProblemCodePermissionRequired        ProblemCode = "permission_required"
 	ProblemCodeMigrationsPending         ProblemCode = "migrations_pending"
+	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
 )
 
 // AllValues returns all ProblemCode values.
@@ -5944,9 +5994,9 @@ func (ProblemCode) AllValues() []ProblemCode {
 	return []ProblemCode{
 		ProblemCodeSecondFactorRequired,
 		ProblemCodeEmailVerificationRequired,
-		ProblemCodeSignupClosed,
 		ProblemCodePermissionRequired,
 		ProblemCodeMigrationsPending,
+		ProblemCodeAcceptancePending,
 	}
 }
 
@@ -5957,11 +6007,11 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ProblemCodeEmailVerificationRequired:
 		return []byte(s), nil
-	case ProblemCodeSignupClosed:
-		return []byte(s), nil
 	case ProblemCodePermissionRequired:
 		return []byte(s), nil
 	case ProblemCodeMigrationsPending:
+		return []byte(s), nil
+	case ProblemCodeAcceptancePending:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -5977,14 +6027,14 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
 		return nil
-	case ProblemCodeSignupClosed:
-		*s = ProblemCodeSignupClosed
-		return nil
 	case ProblemCodePermissionRequired:
 		*s = ProblemCodePermissionRequired
 		return nil
 	case ProblemCodeMigrationsPending:
 		*s = ProblemCodeMigrationsPending
+		return nil
+	case ProblemCodeAcceptancePending:
+		*s = ProblemCodeAcceptancePending
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -6204,6 +6254,7 @@ func (*ProblemDetails) siteAnalyticsSubscribedPeopleRes()      {}
 func (*ProblemDetails) siteAuthConfirmEmailChangeRes()         {}
 func (*ProblemDetails) siteAuthSecondFactorRes()               {}
 func (*ProblemDetails) siteAuthSigninNotMeRes()                {}
+func (*ProblemDetails) siteAuthSigninPendingRes()              {}
 func (*ProblemDetails) siteAuthSigninStartRes()                {}
 func (*ProblemDetails) siteBrandKitGetRes()                    {}
 func (*ProblemDetails) siteCapturedMessagesDeleteAllRes()      {}
@@ -6217,6 +6268,7 @@ func (*ProblemDetails) siteInstanceGetStateRes()               {}
 func (*ProblemDetails) siteInstancePreviewTelemetryReportRes() {}
 func (*ProblemDetails) siteIntegrationsListRes()               {}
 func (*ProblemDetails) siteInvitationsListRes()                {}
+func (*ProblemDetails) siteLegalDocumentsGetRes()              {}
 func (*ProblemDetails) siteMembershipsListRes()                {}
 func (*ProblemDetails) sitePasskeyLoginBeginRes()              {}
 func (*ProblemDetails) sitePasskeyLoginFinishRes()             {}
@@ -6227,6 +6279,7 @@ func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
 func (*ProblemDetails) siteSchemaApplyMigrationsRes()          {}
 func (*ProblemDetails) siteSetupChecklistGetRes()              {}
 func (*ProblemDetails) siteTokensListRes()                     {}
+func (*ProblemDetails) siteUserAcceptPendingRes()              {}
 func (*ProblemDetails) siteWorkspacesGetRevenueSettingsRes()   {}
 
 // Validation errors grouped by field.
@@ -6440,6 +6493,58 @@ func (s *SetupScope) UnmarshalText(data []byte) error {
 	}
 }
 
+type SignupItemKey string
+
+// What a Sign-up item asks of a person (ADR 0062).
+// Ref: #/components/schemas/SignupItemKind
+type SignupItemKind string
+
+const (
+	SignupItemKindRequiredAcceptance SignupItemKind = "required_acceptance"
+	SignupItemKindOptionalConsent    SignupItemKind = "optional_consent"
+	SignupItemKindNotice             SignupItemKind = "notice"
+)
+
+// AllValues returns all SignupItemKind values.
+func (SignupItemKind) AllValues() []SignupItemKind {
+	return []SignupItemKind{
+		SignupItemKindRequiredAcceptance,
+		SignupItemKindOptionalConsent,
+		SignupItemKindNotice,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SignupItemKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SignupItemKindRequiredAcceptance:
+		return []byte(s), nil
+	case SignupItemKindOptionalConsent:
+		return []byte(s), nil
+	case SignupItemKindNotice:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SignupItemKind) UnmarshalText(data []byte) error {
+	switch SignupItemKind(data) {
+	case SignupItemKindRequiredAcceptance:
+		*s = SignupItemKindRequiredAcceptance
+		return nil
+	case SignupItemKindOptionalConsent:
+		*s = SignupItemKindOptionalConsent
+		return nil
+	case SignupItemKindNotice:
+		*s = SignupItemKindNotice
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The metric of a Sending domain that is over a warning limit of the abuse detector.
 // Ref: #/components/schemas/SiteAbuseMetric
 type SiteAbuseMetric string
@@ -6527,12 +6632,19 @@ func (s *SiteAbuseWarning) SetRate(val float64) {
 }
 
 // Accept an invite. For an address with no User or an Unverified User, name + password are required
-// (422 otherwise). For a Verified User the body is not read: the session of that same User is the
-// proof.
+// (422 otherwise), and the Sign-up items are answered as on the sign-up form. For a Verified User the
+// body is not read: the session of that same User is the proof, and consent follows the User, so
+// nothing is asked again (ADR 0062).
 // Ref: #/components/schemas/SiteAcceptInvitationInput
 type SiteAcceptInvitationInput struct {
 	Name     OptString `json:"name"`
 	Password OptString `json:"password"`
+	// The answers to the Sign-up items in effect, read only when the accept sets up the account (ADR
+	// 0062). Every required acceptance must be answered ticked at its current version, or the field
+	// `signupItems.<key>` is refused; an optional consent left out is not recorded. Each answered item is
+	// recorded as accepted or declined, and each notice in effect as shown, with the source Invitation.
+	// Absent with no items in effect.
+	SignupItems []SiteSignupItemAnswer `json:"signupItems"`
 }
 
 // GetName returns the value of Name.
@@ -6545,6 +6657,11 @@ func (s *SiteAcceptInvitationInput) GetPassword() OptString {
 	return s.Password
 }
 
+// GetSignupItems returns the value of SignupItems.
+func (s *SiteAcceptInvitationInput) GetSignupItems() []SiteSignupItemAnswer {
+	return s.SignupItems
+}
+
 // SetName sets the value of Name.
 func (s *SiteAcceptInvitationInput) SetName(val OptString) {
 	s.Name = val
@@ -6553,6 +6670,56 @@ func (s *SiteAcceptInvitationInput) SetName(val OptString) {
 // SetPassword sets the value of Password.
 func (s *SiteAcceptInvitationInput) SetPassword(val OptString) {
 	s.Password = val
+}
+
+// SetSignupItems sets the value of SignupItems.
+func (s *SiteAcceptInvitationInput) SetSignupItems(val []SiteSignupItemAnswer) {
+	s.SignupItems = val
+}
+
+// The required acceptances a User accepts after a new version was published (ADR 0062).
+// Ref: #/components/schemas/SiteAcceptPendingInput
+type SiteAcceptPendingInput struct {
+	// Every pending acceptance, at the version the screen showed.
+	Items []SiteAcceptance `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteAcceptPendingInput) GetItems() []SiteAcceptance {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *SiteAcceptPendingInput) SetItems(val []SiteAcceptance) {
+	s.Items = val
+}
+
+// A required acceptance the screen showed: the item's key and the label of the version shown.
+// Ref: #/components/schemas/SiteAcceptance
+type SiteAcceptance struct {
+	Key SignupItemKey `json:"key"`
+	// The label of the version the screen showed.
+	Version LegalDocumentLabel `json:"version"`
+}
+
+// GetKey returns the value of Key.
+func (s *SiteAcceptance) GetKey() SignupItemKey {
+	return s.Key
+}
+
+// GetVersion returns the value of Version.
+func (s *SiteAcceptance) GetVersion() LegalDocumentLabel {
+	return s.Version
+}
+
+// SetKey sets the value of Key.
+func (s *SiteAcceptance) SetKey(val SignupItemKey) {
+	s.Key = val
+}
+
+// SetVersion sets the value of Version.
+func (s *SiteAcceptance) SetVersion(val LegalDocumentLabel) {
+	s.Version = val
 }
 
 // A short-lived signed token that proves who the Owner is to the external account page, with the
@@ -8131,10 +8298,6 @@ type SiteAuthSignUpConflict ProblemDetails
 
 func (*SiteAuthSignUpConflict) siteAuthSignUpRes() {}
 
-type SiteAuthSignUpForbidden ProblemDetails
-
-func (*SiteAuthSignUpForbidden) siteAuthSignUpRes() {}
-
 type SiteAuthSignUpUnprocessableEntity ProblemDetails
 
 func (*SiteAuthSignUpUnprocessableEntity) siteAuthSignUpRes() {}
@@ -8169,6 +8332,34 @@ func (s *SiteAuthSigninCallbackFound) SetSetCookie(val OptString) {
 type SiteAuthSigninNotMeOK struct{}
 
 func (*SiteAuthSigninNotMeOK) siteAuthSigninNotMeRes() {}
+
+// SiteAuthSigninPendingDeclineNoContent is response for SiteAuthSigninPendingDecline operation.
+type SiteAuthSigninPendingDeclineNoContent struct{}
+
+type SiteAuthSigninPendingSubmitBadRequest ProblemDetails
+
+func (*SiteAuthSigninPendingSubmitBadRequest) siteAuthSigninPendingSubmitRes() {}
+
+// SiteAuthSigninPendingSubmitNoContent is response for SiteAuthSigninPendingSubmit operation.
+type SiteAuthSigninPendingSubmitNoContent struct {
+	SetCookie string
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteAuthSigninPendingSubmitNoContent) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteAuthSigninPendingSubmitNoContent) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+func (*SiteAuthSigninPendingSubmitNoContent) siteAuthSigninPendingSubmitRes() {}
+
+type SiteAuthSigninPendingSubmitUnprocessableEntity ProblemDetails
+
+func (*SiteAuthSigninPendingSubmitUnprocessableEntity) siteAuthSigninPendingSubmitRes() {}
 
 // SiteAuthSigninStartFound is response for SiteAuthSigninStart operation.
 type SiteAuthSigninStartFound struct {
@@ -15057,6 +15248,71 @@ type SiteJoinDomainsVerifyUnprocessableEntity ProblemDetails
 
 func (*SiteJoinDomainsVerifyUnprocessableEntity) siteJoinDomainsVerifyRes() {}
 
+// The current version of a Sign-up item's Legal document.
+// Ref: #/components/schemas/SiteLegalDocument
+type SiteLegalDocument struct {
+	Key SignupItemKey `json:"key"`
+	// The item's title.
+	Title string `json:"title"`
+	// The label of the version.
+	Version  LegalDocumentLabel    `json:"version"`
+	Markdown LegalDocumentMarkdown `json:"markdown"`
+	// When the version was published, and took effect.
+	PublishedAt Timestamp `json:"publishedAt"`
+}
+
+// GetKey returns the value of Key.
+func (s *SiteLegalDocument) GetKey() SignupItemKey {
+	return s.Key
+}
+
+// GetTitle returns the value of Title.
+func (s *SiteLegalDocument) GetTitle() string {
+	return s.Title
+}
+
+// GetVersion returns the value of Version.
+func (s *SiteLegalDocument) GetVersion() LegalDocumentLabel {
+	return s.Version
+}
+
+// GetMarkdown returns the value of Markdown.
+func (s *SiteLegalDocument) GetMarkdown() LegalDocumentMarkdown {
+	return s.Markdown
+}
+
+// GetPublishedAt returns the value of PublishedAt.
+func (s *SiteLegalDocument) GetPublishedAt() Timestamp {
+	return s.PublishedAt
+}
+
+// SetKey sets the value of Key.
+func (s *SiteLegalDocument) SetKey(val SignupItemKey) {
+	s.Key = val
+}
+
+// SetTitle sets the value of Title.
+func (s *SiteLegalDocument) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetVersion sets the value of Version.
+func (s *SiteLegalDocument) SetVersion(val LegalDocumentLabel) {
+	s.Version = val
+}
+
+// SetMarkdown sets the value of Markdown.
+func (s *SiteLegalDocument) SetMarkdown(val LegalDocumentMarkdown) {
+	s.Markdown = val
+}
+
+// SetPublishedAt sets the value of PublishedAt.
+func (s *SiteLegalDocument) SetPublishedAt(val Timestamp) {
+	s.PublishedAt = val
+}
+
+func (*SiteLegalDocument) siteLegalDocumentsGetRes() {}
+
 // How often one link of a broadcast's or an automation's emails was clicked.
 // Ref: #/components/schemas/SiteLinkClicks
 type SiteLinkClicks struct {
@@ -15970,6 +16226,177 @@ func (*SiteOAuthDescribeBadRequest) siteOAuthDescribeRes() {}
 type SiteOAuthDescribeNotFound ProblemDetails
 
 func (*SiteOAuthDescribeNotFound) siteOAuthDescribeRes() {}
+
+// An optional consent in effect, with the User's current answer to it (ADR 0062).
+// Ref: #/components/schemas/SiteOptionalConsent
+type SiteOptionalConsent struct {
+	Key SignupItemKey `json:"key"`
+	// What the form shows.
+	Title string `json:"title"`
+	// The label of the current version, the one a change answers.
+	Version LegalDocumentLabel `json:"version"`
+	// The User's current answer; absent when they never answered, as a User who signed up before the item
+	// existed.
+	Decision OptSiteOptionalConsentDecision `json:"decision"`
+	// When the current answer was given; absent with no answer.
+	DecidedAt OptTimestamp `json:"decidedAt"`
+}
+
+// GetKey returns the value of Key.
+func (s *SiteOptionalConsent) GetKey() SignupItemKey {
+	return s.Key
+}
+
+// GetTitle returns the value of Title.
+func (s *SiteOptionalConsent) GetTitle() string {
+	return s.Title
+}
+
+// GetVersion returns the value of Version.
+func (s *SiteOptionalConsent) GetVersion() LegalDocumentLabel {
+	return s.Version
+}
+
+// GetDecision returns the value of Decision.
+func (s *SiteOptionalConsent) GetDecision() OptSiteOptionalConsentDecision {
+	return s.Decision
+}
+
+// GetDecidedAt returns the value of DecidedAt.
+func (s *SiteOptionalConsent) GetDecidedAt() OptTimestamp {
+	return s.DecidedAt
+}
+
+// SetKey sets the value of Key.
+func (s *SiteOptionalConsent) SetKey(val SignupItemKey) {
+	s.Key = val
+}
+
+// SetTitle sets the value of Title.
+func (s *SiteOptionalConsent) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetVersion sets the value of Version.
+func (s *SiteOptionalConsent) SetVersion(val LegalDocumentLabel) {
+	s.Version = val
+}
+
+// SetDecision sets the value of Decision.
+func (s *SiteOptionalConsent) SetDecision(val OptSiteOptionalConsentDecision) {
+	s.Decision = val
+}
+
+// SetDecidedAt sets the value of DecidedAt.
+func (s *SiteOptionalConsent) SetDecidedAt(val OptTimestamp) {
+	s.DecidedAt = val
+}
+
+func (*SiteOptionalConsent) siteOptionalConsentsSetRes() {}
+
+// A change of the User's answer to an optional consent.
+// Ref: #/components/schemas/SiteOptionalConsentChange
+type SiteOptionalConsentChange struct {
+	// The label of the version the page showed; one that is no longer current refuses the change.
+	Version LegalDocumentLabel `json:"version"`
+	// True gives the consent, false withdraws it.
+	Accepted bool `json:"accepted"`
+}
+
+// GetVersion returns the value of Version.
+func (s *SiteOptionalConsentChange) GetVersion() LegalDocumentLabel {
+	return s.Version
+}
+
+// GetAccepted returns the value of Accepted.
+func (s *SiteOptionalConsentChange) GetAccepted() bool {
+	return s.Accepted
+}
+
+// SetVersion sets the value of Version.
+func (s *SiteOptionalConsentChange) SetVersion(val LegalDocumentLabel) {
+	s.Version = val
+}
+
+// SetAccepted sets the value of Accepted.
+func (s *SiteOptionalConsentChange) SetAccepted(val bool) {
+	s.Accepted = val
+}
+
+// A User's current answer to an optional consent: the decision of their latest Consent record on it
+// (ADR 0062).
+// Ref: #/components/schemas/SiteOptionalConsentDecision
+type SiteOptionalConsentDecision string
+
+const (
+	SiteOptionalConsentDecisionAccepted  SiteOptionalConsentDecision = "accepted"
+	SiteOptionalConsentDecisionDeclined  SiteOptionalConsentDecision = "declined"
+	SiteOptionalConsentDecisionWithdrawn SiteOptionalConsentDecision = "withdrawn"
+)
+
+// AllValues returns all SiteOptionalConsentDecision values.
+func (SiteOptionalConsentDecision) AllValues() []SiteOptionalConsentDecision {
+	return []SiteOptionalConsentDecision{
+		SiteOptionalConsentDecisionAccepted,
+		SiteOptionalConsentDecisionDeclined,
+		SiteOptionalConsentDecisionWithdrawn,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteOptionalConsentDecision) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteOptionalConsentDecisionAccepted:
+		return []byte(s), nil
+	case SiteOptionalConsentDecisionDeclined:
+		return []byte(s), nil
+	case SiteOptionalConsentDecisionWithdrawn:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteOptionalConsentDecision) UnmarshalText(data []byte) error {
+	switch SiteOptionalConsentDecision(data) {
+	case SiteOptionalConsentDecisionAccepted:
+		*s = SiteOptionalConsentDecisionAccepted
+		return nil
+	case SiteOptionalConsentDecisionDeclined:
+		*s = SiteOptionalConsentDecisionDeclined
+		return nil
+	case SiteOptionalConsentDecisionWithdrawn:
+		*s = SiteOptionalConsentDecisionWithdrawn
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The optional consents in effect, in the order of the sign-up form.
+// Ref: #/components/schemas/SiteOptionalConsentList
+type SiteOptionalConsentList struct {
+	Items []SiteOptionalConsent `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteOptionalConsentList) GetItems() []SiteOptionalConsent {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *SiteOptionalConsentList) SetItems(val []SiteOptionalConsent) {
+	s.Items = val
+}
+
+type SiteOptionalConsentsSetNotFound ProblemDetails
+
+func (*SiteOptionalConsentsSetNotFound) siteOptionalConsentsSetRes() {}
+
+type SiteOptionalConsentsSetUnprocessableEntity ProblemDetails
+
+func (*SiteOptionalConsentsSetUnprocessableEntity) siteOptionalConsentsSetRes() {}
 
 // One Passkey of the authenticated User (ADR 0051). Its public key and credential id are never
 // returned.
@@ -17174,6 +17601,50 @@ func (*SitePasskeysRenameNotFound) sitePasskeysRenameRes() {}
 type SitePasskeysRenameUnprocessableEntity ProblemDetails
 
 func (*SitePasskeysRenameUnprocessableEntity) sitePasskeysRenameRes() {}
+
+// A Sign-in provider's sign-up held for the Sign-up items (ADR 0062): who the provider proved, for the
+// screen that asks the items. No User exists yet.
+// Ref: #/components/schemas/SitePendingSignup
+type SitePendingSignup struct {
+	// The provider's display name (`Google`).
+	Provider string `json:"provider"`
+	// The address the User will get.
+	Email EmailAddress `json:"email"`
+	// The provider's name of the person; empty when it gave none.
+	Name string `json:"name"`
+}
+
+// GetProvider returns the value of Provider.
+func (s *SitePendingSignup) GetProvider() string {
+	return s.Provider
+}
+
+// GetEmail returns the value of Email.
+func (s *SitePendingSignup) GetEmail() EmailAddress {
+	return s.Email
+}
+
+// GetName returns the value of Name.
+func (s *SitePendingSignup) GetName() string {
+	return s.Name
+}
+
+// SetProvider sets the value of Provider.
+func (s *SitePendingSignup) SetProvider(val string) {
+	s.Provider = val
+}
+
+// SetEmail sets the value of Email.
+func (s *SitePendingSignup) SetEmail(val EmailAddress) {
+	s.Email = val
+}
+
+// SetName sets the value of Name.
+func (s *SitePendingSignup) SetName(val string) {
+	s.Name = val
+}
+
+func (*SitePendingSignup) siteAuthSigninPendingRes() {}
 
 // A Preset the Instance offers.
 // Ref: #/components/schemas/SitePresetResource
@@ -20036,6 +20507,11 @@ type SiteSignUpInput struct {
 	// Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated Sign-up of the
 	// address replaces it.
 	Password OptString `json:"password"`
+	// The answers to the Sign-up items in effect (ADR 0062). Every required acceptance must be answered
+	// ticked at its current version, or the field `signupItems.<key>` is refused; an optional consent left
+	// out is not recorded. Each answered item is recorded as accepted or declined, and each notice in
+	// effect as shown. Absent with no items in effect.
+	SignupItems []SiteSignupItemAnswer `json:"signupItems"`
 }
 
 // GetName returns the value of Name.
@@ -20053,6 +20529,11 @@ func (s *SiteSignUpInput) GetPassword() OptString {
 	return s.Password
 }
 
+// GetSignupItems returns the value of SignupItems.
+func (s *SiteSignUpInput) GetSignupItems() []SiteSignupItemAnswer {
+	return s.SignupItems
+}
+
 // SetName sets the value of Name.
 func (s *SiteSignUpInput) SetName(val string) {
 	s.Name = val
@@ -20066,6 +20547,11 @@ func (s *SiteSignUpInput) SetEmail(val EmailAddress) {
 // SetPassword sets the value of Password.
 func (s *SiteSignUpInput) SetPassword(val OptString) {
 	s.Password = val
+}
+
+// SetSignupItems sets the value of SignupItems.
+func (s *SiteSignUpInput) SetSignupItems(val []SiteSignupItemAnswer) {
+	s.SignupItems = val
 }
 
 // The "this was not me" link of the notice mailed when a Sign-in provider was linked to an account.
@@ -20082,6 +20568,52 @@ func (s *SiteSigninNotMeInput) GetToken() string {
 // SetToken sets the value of Token.
 func (s *SiteSigninNotMeInput) SetToken(val string) {
 	s.Token = val
+}
+
+// Decline a pending sign-up.
+// Ref: #/components/schemas/SiteSigninPendingDeclineInput
+type SiteSigninPendingDeclineInput struct {
+	// The signed reference from the screen's URL.
+	Token string `json:"token"`
+}
+
+// GetToken returns the value of Token.
+func (s *SiteSigninPendingDeclineInput) GetToken() string {
+	return s.Token
+}
+
+// SetToken sets the value of Token.
+func (s *SiteSigninPendingDeclineInput) SetToken(val string) {
+	s.Token = val
+}
+
+// The answers that complete a pending sign-up.
+// Ref: #/components/schemas/SiteSigninPendingSubmitInput
+type SiteSigninPendingSubmitInput struct {
+	// The signed reference from the screen's URL.
+	Token string `json:"token"`
+	// The answers to the Sign-up items in effect, by the rules of the sign-up form's `signupItems`.
+	SignupItems []SiteSignupItemAnswer `json:"signupItems"`
+}
+
+// GetToken returns the value of Token.
+func (s *SiteSigninPendingSubmitInput) GetToken() string {
+	return s.Token
+}
+
+// GetSignupItems returns the value of SignupItems.
+func (s *SiteSigninPendingSubmitInput) GetSignupItems() []SiteSignupItemAnswer {
+	return s.SignupItems
+}
+
+// SetToken sets the value of Token.
+func (s *SiteSigninPendingSubmitInput) SetToken(val string) {
+	s.Token = val
+}
+
+// SetSignupItems sets the value of SignupItems.
+func (s *SiteSigninPendingSubmitInput) SetSignupItems(val []SiteSignupItemAnswer) {
+	s.SignupItems = val
 }
 
 // One Sign-in provider an Instance offers (ADR 0048).
@@ -20270,6 +20802,116 @@ func (s *SiteSignupGoal) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// A Sign-up item in effect, with the label of its current Legal document version: what the sign-up
+// form asks (ADR 0062).
+// Ref: #/components/schemas/SiteSignupItem
+type SiteSignupItem struct {
+	Key SignupItemKey `json:"key"`
+	// What the form shows.
+	Title string         `json:"title"`
+	Kind  SignupItemKind `json:"kind"`
+	// The label of the current version, the one a person accepts.
+	Version LegalDocumentLabel `json:"version"`
+}
+
+// GetKey returns the value of Key.
+func (s *SiteSignupItem) GetKey() SignupItemKey {
+	return s.Key
+}
+
+// GetTitle returns the value of Title.
+func (s *SiteSignupItem) GetTitle() string {
+	return s.Title
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteSignupItem) GetKind() SignupItemKind {
+	return s.Kind
+}
+
+// GetVersion returns the value of Version.
+func (s *SiteSignupItem) GetVersion() LegalDocumentLabel {
+	return s.Version
+}
+
+// SetKey sets the value of Key.
+func (s *SiteSignupItem) SetKey(val SignupItemKey) {
+	s.Key = val
+}
+
+// SetTitle sets the value of Title.
+func (s *SiteSignupItem) SetTitle(val string) {
+	s.Title = val
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteSignupItem) SetKind(val SignupItemKind) {
+	s.Kind = val
+}
+
+// SetVersion sets the value of Version.
+func (s *SiteSignupItem) SetVersion(val LegalDocumentLabel) {
+	s.Version = val
+}
+
+// A person's answer to one Sign-up item the form showed (ADR 0062). An item named that is not in
+// effect, a version that is not its current one, or an item named twice refuses the form.
+// Ref: #/components/schemas/SiteSignupItemAnswer
+type SiteSignupItemAnswer struct {
+	Key SignupItemKey `json:"key"`
+	// The label of the version the form showed.
+	Version LegalDocumentLabel `json:"version"`
+	// Whether the box was ticked; absent is unticked. A notice has no box, and its answer only names the
+	// version shown.
+	Accepted OptBool `json:"accepted"`
+}
+
+// GetKey returns the value of Key.
+func (s *SiteSignupItemAnswer) GetKey() SignupItemKey {
+	return s.Key
+}
+
+// GetVersion returns the value of Version.
+func (s *SiteSignupItemAnswer) GetVersion() LegalDocumentLabel {
+	return s.Version
+}
+
+// GetAccepted returns the value of Accepted.
+func (s *SiteSignupItemAnswer) GetAccepted() OptBool {
+	return s.Accepted
+}
+
+// SetKey sets the value of Key.
+func (s *SiteSignupItemAnswer) SetKey(val SignupItemKey) {
+	s.Key = val
+}
+
+// SetVersion sets the value of Version.
+func (s *SiteSignupItemAnswer) SetVersion(val LegalDocumentLabel) {
+	s.Version = val
+}
+
+// SetAccepted sets the value of Accepted.
+func (s *SiteSignupItemAnswer) SetAccepted(val OptBool) {
+	s.Accepted = val
+}
+
+// The Sign-up items in effect, in the order of the sign-up form.
+// Ref: #/components/schemas/SiteSignupItemList
+type SiteSignupItemList struct {
+	Items []SiteSignupItem `json:"items"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteSignupItemList) GetItems() []SiteSignupItem {
+	return s.Items
+}
+
+// SetItems sets the value of Items.
+func (s *SiteSignupItemList) SetItems(val []SiteSignupItem) {
+	s.Items = val
 }
 
 // What the User does (Sign-up survey, first question).
@@ -22800,6 +23442,12 @@ type SiteUserResource struct {
 	// and never the Instance setting. True after a public sign-up on an Instance that asks, until the
 	// survey is answered.
 	SignupSurveyDue bool `json:"signupSurveyDue"`
+	// The required acceptances whose current version the User has not accepted, in the order of the
+	// sign-up form (ADR 0062). While any is listed, every operation that is not marked
+	// `x-allowed-while-acceptance-pending` refuses the User with 403 `acceptance_pending`; the app shows
+	// the texts and accepts them with `acceptPending` before any other page. Empty for a User who holds
+	// every current version.
+	AcceptancesPending []SiteSignupItem `json:"acceptancesPending"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -22827,6 +23475,11 @@ func (s *SiteUserResource) GetEmailVerified() bool {
 // GetSignupSurveyDue returns the value of SignupSurveyDue.
 func (s *SiteUserResource) GetSignupSurveyDue() bool {
 	return s.SignupSurveyDue
+}
+
+// GetAcceptancesPending returns the value of AcceptancesPending.
+func (s *SiteUserResource) GetAcceptancesPending() []SiteSignupItem {
+	return s.AcceptancesPending
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -22859,10 +23512,17 @@ func (s *SiteUserResource) SetSignupSurveyDue(val bool) {
 	s.SignupSurveyDue = val
 }
 
+// SetAcceptancesPending sets the value of AcceptancesPending.
+func (s *SiteUserResource) SetAcceptancesPending(val []SiteSignupItem) {
+	s.AcceptancesPending = val
+}
+
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteUserResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
+
+func (*SiteUserResource) siteUserAcceptPendingRes() {}
 
 // SiteUserResourceHeaders wraps SiteUserResource with response headers.
 type SiteUserResourceHeaders struct {

@@ -38,7 +38,7 @@ every caller (regenerate afterwards), rather than layering the new design over t
 API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. Never
 hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
 `src/generated/` / `packages/analytics/src/generated/` / `packages/node/src/generated/`, `src/routeTree.gen.ts`, or the `*_gen.go` files in the
-`internal/api/{site,external}/resources` packages, `ee/staff/resources`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_scopes_gen.go`, `internal/api/auth/external_permissions_gen.go`, `internal/accounts/grant_permissions_gen.go`, `internal/accounts/permissions_gen.go`, `internal/apitokens/scopes_gen.go` and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
+`internal/api/{site,external,staff}/resources` packages, `ee/staff/resources`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_scopes_gen.go`, `internal/api/auth/external_permissions_gen.go`, `internal/accounts/grant_permissions_gen.go`, `internal/accounts/permissions_gen.go`, `internal/apitokens/scopes_gen.go` and `internal/fixtures/catalog_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
 
 Pipeline diagram, goverter and what is generated: `docs/agents/codegen.md`.
 

@@ -17590,6 +17590,18 @@ func (x *InvitationScopedCreate) SetInviter(v *User) *InvitationScopedCreate {
 	return x
 }
 
+// AddPendingSignupIDs adds the "pending_signups" edge to the PendingSignup entity by IDs.
+func (x *InvitationScopedCreate) AddPendingSignupIDs(ids ...int64) *InvitationScopedCreate {
+	x.b.AddPendingSignupIDs(ids...)
+	return x
+}
+
+// AddPendingSignups adds the "pending_signups" edges to the PendingSignup entity.
+func (x *InvitationScopedCreate) AddPendingSignups(v ...*PendingSignup) *InvitationScopedCreate {
+	x.b.AddPendingSignups(v...)
+	return x
+}
+
 func (x *InvitationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -18014,6 +18026,36 @@ func (x *InvitationScopedUpdateOne) ClearInviter() *InvitationScopedUpdateOne {
 	return x
 }
 
+// AddPendingSignupIDs adds the "pending_signups" edge to the PendingSignup entity by IDs.
+func (x *InvitationScopedUpdateOne) AddPendingSignupIDs(ids ...int64) *InvitationScopedUpdateOne {
+	x.b.AddPendingSignupIDs(ids...)
+	return x
+}
+
+// AddPendingSignups adds the "pending_signups" edges to the PendingSignup entity.
+func (x *InvitationScopedUpdateOne) AddPendingSignups(v ...*PendingSignup) *InvitationScopedUpdateOne {
+	x.b.AddPendingSignups(v...)
+	return x
+}
+
+// ClearPendingSignups clears the "pending_signups" edges to the PendingSignup entity.
+func (x *InvitationScopedUpdateOne) ClearPendingSignups() *InvitationScopedUpdateOne {
+	x.b.ClearPendingSignups()
+	return x
+}
+
+// RemovePendingSignupIDs removes the "pending_signups" edge to PendingSignup entities by IDs.
+func (x *InvitationScopedUpdateOne) RemovePendingSignupIDs(ids ...int64) *InvitationScopedUpdateOne {
+	x.b.RemovePendingSignupIDs(ids...)
+	return x
+}
+
+// RemovePendingSignups removes "pending_signups" edges to PendingSignup entities.
+func (x *InvitationScopedUpdateOne) RemovePendingSignups(v ...*PendingSignup) *InvitationScopedUpdateOne {
+	x.b.RemovePendingSignups(v...)
+	return x
+}
+
 func (x *InvitationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -18181,6 +18223,36 @@ func (x *InvitationScopedUpdate) SetInviter(v *User) *InvitationScopedUpdate {
 // ClearInviter clears the "inviter" edge to the User entity.
 func (x *InvitationScopedUpdate) ClearInviter() *InvitationScopedUpdate {
 	x.b.ClearInviter()
+	return x
+}
+
+// AddPendingSignupIDs adds the "pending_signups" edge to the PendingSignup entity by IDs.
+func (x *InvitationScopedUpdate) AddPendingSignupIDs(ids ...int64) *InvitationScopedUpdate {
+	x.b.AddPendingSignupIDs(ids...)
+	return x
+}
+
+// AddPendingSignups adds the "pending_signups" edges to the PendingSignup entity.
+func (x *InvitationScopedUpdate) AddPendingSignups(v ...*PendingSignup) *InvitationScopedUpdate {
+	x.b.AddPendingSignups(v...)
+	return x
+}
+
+// ClearPendingSignups clears the "pending_signups" edges to the PendingSignup entity.
+func (x *InvitationScopedUpdate) ClearPendingSignups() *InvitationScopedUpdate {
+	x.b.ClearPendingSignups()
+	return x
+}
+
+// RemovePendingSignupIDs removes the "pending_signups" edge to PendingSignup entities by IDs.
+func (x *InvitationScopedUpdate) RemovePendingSignupIDs(ids ...int64) *InvitationScopedUpdate {
+	x.b.RemovePendingSignupIDs(ids...)
+	return x
+}
+
+// RemovePendingSignups removes "pending_signups" edges to PendingSignup entities.
+func (x *InvitationScopedUpdate) RemovePendingSignups(v ...*PendingSignup) *InvitationScopedUpdate {
+	x.b.RemovePendingSignups(v...)
 	return x
 }
 

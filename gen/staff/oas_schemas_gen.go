@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-faster/errors"
-	"github.com/go-faster/jx"
 )
 
 type ApiKeyAuth struct {
@@ -38,45 +37,50 @@ type EmailAddress string
 
 type EntityId int64
 
-// NewNilFloat64 returns new NilFloat64 with value set to v.
-func NewNilFloat64(v float64) NilFloat64 {
-	return NilFloat64{
+type LegalDocumentLabel string
+
+type LegalDocumentMarkdown string
+
+// NewOptBool returns new OptBool with value set to v.
+func NewOptBool(v bool) OptBool {
+	return OptBool{
 		Value: v,
+		Set:   true,
 	}
 }
 
-// NilFloat64 is nullable float64.
-type NilFloat64 struct {
-	Value float64
-	Null  bool
+// OptBool is optional bool.
+type OptBool struct {
+	Value bool
+	Set   bool
+}
+
+// IsSet returns true if OptBool was set.
+func (o OptBool) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptBool) Reset() {
+	var v bool
+	o.Value = v
+	o.Set = false
 }
 
 // SetTo sets value to v.
-func (o *NilFloat64) SetTo(v float64) {
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o NilFloat64) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *NilFloat64) SetToNull() {
-	o.Null = true
-	var v float64
+func (o *OptBool) SetTo(v bool) {
+	o.Set = true
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o NilFloat64) Get() (v float64, ok bool) {
-	if o.Null {
+func (o OptBool) Get() (v bool, ok bool) {
+	if !o.Set {
 		return v, false
 	}
 	return o.Value, true
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o NilFloat64) Or(d float64) float64 {
+func (o OptBool) Or(d bool) bool {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -129,60 +133,38 @@ func (o OptInt32) Or(d int32) int32 {
 	return d
 }
 
-// NewOptNilStaffAbuseWarning returns new OptNilStaffAbuseWarning with value set to v.
-func NewOptNilStaffAbuseWarning(v StaffAbuseWarning) OptNilStaffAbuseWarning {
-	return OptNilStaffAbuseWarning{
+// NewOptLegalDocumentMarkdown returns new OptLegalDocumentMarkdown with value set to v.
+func NewOptLegalDocumentMarkdown(v LegalDocumentMarkdown) OptLegalDocumentMarkdown {
+	return OptLegalDocumentMarkdown{
 		Value: v,
 		Set:   true,
 	}
 }
 
-// OptNilStaffAbuseWarning is optional nullable StaffAbuseWarning.
-type OptNilStaffAbuseWarning struct {
-	Value StaffAbuseWarning
+// OptLegalDocumentMarkdown is optional LegalDocumentMarkdown.
+type OptLegalDocumentMarkdown struct {
+	Value LegalDocumentMarkdown
 	Set   bool
-	Null  bool
 }
 
-// IsSet returns true if OptNilStaffAbuseWarning was set.
-func (o OptNilStaffAbuseWarning) IsSet() bool { return o.Set }
+// IsSet returns true if OptLegalDocumentMarkdown was set.
+func (o OptLegalDocumentMarkdown) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptNilStaffAbuseWarning) Reset() {
-	var v StaffAbuseWarning
+func (o *OptLegalDocumentMarkdown) Reset() {
+	var v LegalDocumentMarkdown
 	o.Value = v
 	o.Set = false
-	o.Null = false
 }
 
 // SetTo sets value to v.
-func (o *OptNilStaffAbuseWarning) SetTo(v StaffAbuseWarning) {
+func (o *OptLegalDocumentMarkdown) SetTo(v LegalDocumentMarkdown) {
 	o.Set = true
-	o.Null = false
 	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilStaffAbuseWarning) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilStaffAbuseWarning) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v StaffAbuseWarning
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilStaffAbuseWarning) IsEmpty() bool {
-	return !o.Set && !o.Null
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptNilStaffAbuseWarning) Get() (v StaffAbuseWarning, ok bool) {
-	if o.Null {
-		return v, false
-	}
+func (o OptLegalDocumentMarkdown) Get() (v LegalDocumentMarkdown, ok bool) {
 	if !o.Set {
 		return v, false
 	}
@@ -190,347 +172,7 @@ func (o OptNilStaffAbuseWarning) Get() (v StaffAbuseWarning, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptNilStaffAbuseWarning) Or(d StaffAbuseWarning) StaffAbuseWarning {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilStaffAuditEntryResourceDiff returns new OptNilStaffAuditEntryResourceDiff with value set to v.
-func NewOptNilStaffAuditEntryResourceDiff(v StaffAuditEntryResourceDiff) OptNilStaffAuditEntryResourceDiff {
-	return OptNilStaffAuditEntryResourceDiff{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilStaffAuditEntryResourceDiff is optional nullable StaffAuditEntryResourceDiff.
-type OptNilStaffAuditEntryResourceDiff struct {
-	Value StaffAuditEntryResourceDiff
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilStaffAuditEntryResourceDiff was set.
-func (o OptNilStaffAuditEntryResourceDiff) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilStaffAuditEntryResourceDiff) Reset() {
-	var v StaffAuditEntryResourceDiff
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilStaffAuditEntryResourceDiff) SetTo(v StaffAuditEntryResourceDiff) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilStaffAuditEntryResourceDiff) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilStaffAuditEntryResourceDiff) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v StaffAuditEntryResourceDiff
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilStaffAuditEntryResourceDiff) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilStaffAuditEntryResourceDiff) Get() (v StaffAuditEntryResourceDiff, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilStaffAuditEntryResourceDiff) Or(d StaffAuditEntryResourceDiff) StaffAuditEntryResourceDiff {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilStaffSignupSource returns new OptNilStaffSignupSource with value set to v.
-func NewOptNilStaffSignupSource(v StaffSignupSource) OptNilStaffSignupSource {
-	return OptNilStaffSignupSource{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilStaffSignupSource is optional nullable StaffSignupSource.
-type OptNilStaffSignupSource struct {
-	Value StaffSignupSource
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilStaffSignupSource was set.
-func (o OptNilStaffSignupSource) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilStaffSignupSource) Reset() {
-	var v StaffSignupSource
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilStaffSignupSource) SetTo(v StaffSignupSource) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilStaffSignupSource) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilStaffSignupSource) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v StaffSignupSource
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilStaffSignupSource) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilStaffSignupSource) Get() (v StaffSignupSource, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilStaffSignupSource) Or(d StaffSignupSource) StaffSignupSource {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilStaffSuspension returns new OptNilStaffSuspension with value set to v.
-func NewOptNilStaffSuspension(v StaffSuspension) OptNilStaffSuspension {
-	return OptNilStaffSuspension{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilStaffSuspension is optional nullable StaffSuspension.
-type OptNilStaffSuspension struct {
-	Value StaffSuspension
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilStaffSuspension was set.
-func (o OptNilStaffSuspension) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilStaffSuspension) Reset() {
-	var v StaffSuspension
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilStaffSuspension) SetTo(v StaffSuspension) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilStaffSuspension) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilStaffSuspension) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v StaffSuspension
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilStaffSuspension) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilStaffSuspension) Get() (v StaffSuspension, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilStaffSuspension) Or(d StaffSuspension) StaffSuspension {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilString returns new OptNilString with value set to v.
-func NewOptNilString(v string) OptNilString {
-	return OptNilString{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilString is optional nullable string.
-type OptNilString struct {
-	Value string
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilString was set.
-func (o OptNilString) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilString) Reset() {
-	var v string
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilString) SetTo(v string) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilString) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilString) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v string
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilString) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilString) Get() (v string, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilString) Or(d string) string {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilTimestamp returns new OptNilTimestamp with value set to v.
-func NewOptNilTimestamp(v Timestamp) OptNilTimestamp {
-	return OptNilTimestamp{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilTimestamp is optional nullable Timestamp.
-type OptNilTimestamp struct {
-	Value Timestamp
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilTimestamp was set.
-func (o OptNilTimestamp) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilTimestamp) Reset() {
-	var v Timestamp
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilTimestamp) SetTo(v Timestamp) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilTimestamp) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilTimestamp) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v Timestamp
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilTimestamp) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilTimestamp) Get() (v Timestamp, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilTimestamp) Or(d Timestamp) Timestamp {
+func (o OptLegalDocumentMarkdown) Or(d LegalDocumentMarkdown) LegalDocumentMarkdown {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -721,6 +363,52 @@ func (o OptProblemDetailsFields) Or(d ProblemDetailsFields) ProblemDetailsFields
 	return d
 }
 
+// NewOptSignupItemTitle returns new OptSignupItemTitle with value set to v.
+func NewOptSignupItemTitle(v SignupItemTitle) OptSignupItemTitle {
+	return OptSignupItemTitle{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSignupItemTitle is optional SignupItemTitle.
+type OptSignupItemTitle struct {
+	Value SignupItemTitle
+	Set   bool
+}
+
+// IsSet returns true if OptSignupItemTitle was set.
+func (o OptSignupItemTitle) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSignupItemTitle) Reset() {
+	var v SignupItemTitle
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSignupItemTitle) SetTo(v SignupItemTitle) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSignupItemTitle) Get() (v SignupItemTitle, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSignupItemTitle) Or(d SignupItemTitle) SignupItemTitle {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptStaffEnrolment returns new OptStaffEnrolment with value set to v.
 func NewOptStaffEnrolment(v StaffEnrolment) OptStaffEnrolment {
 	return OptStaffEnrolment{
@@ -767,38 +455,38 @@ func (o OptStaffEnrolment) Or(d StaffEnrolment) StaffEnrolment {
 	return d
 }
 
-// NewOptStaffWorkspaceReview returns new OptStaffWorkspaceReview with value set to v.
-func NewOptStaffWorkspaceReview(v StaffWorkspaceReview) OptStaffWorkspaceReview {
-	return OptStaffWorkspaceReview{
+// NewOptStaffLegalDocumentVersion returns new OptStaffLegalDocumentVersion with value set to v.
+func NewOptStaffLegalDocumentVersion(v StaffLegalDocumentVersion) OptStaffLegalDocumentVersion {
+	return OptStaffLegalDocumentVersion{
 		Value: v,
 		Set:   true,
 	}
 }
 
-// OptStaffWorkspaceReview is optional StaffWorkspaceReview.
-type OptStaffWorkspaceReview struct {
-	Value StaffWorkspaceReview
+// OptStaffLegalDocumentVersion is optional StaffLegalDocumentVersion.
+type OptStaffLegalDocumentVersion struct {
+	Value StaffLegalDocumentVersion
 	Set   bool
 }
 
-// IsSet returns true if OptStaffWorkspaceReview was set.
-func (o OptStaffWorkspaceReview) IsSet() bool { return o.Set }
+// IsSet returns true if OptStaffLegalDocumentVersion was set.
+func (o OptStaffLegalDocumentVersion) IsSet() bool { return o.Set }
 
 // Reset unsets value.
-func (o *OptStaffWorkspaceReview) Reset() {
-	var v StaffWorkspaceReview
+func (o *OptStaffLegalDocumentVersion) Reset() {
+	var v StaffLegalDocumentVersion
 	o.Value = v
 	o.Set = false
 }
 
 // SetTo sets value to v.
-func (o *OptStaffWorkspaceReview) SetTo(v StaffWorkspaceReview) {
+func (o *OptStaffLegalDocumentVersion) SetTo(v StaffLegalDocumentVersion) {
 	o.Set = true
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o OptStaffWorkspaceReview) Get() (v StaffWorkspaceReview, ok bool) {
+func (o OptStaffLegalDocumentVersion) Get() (v StaffLegalDocumentVersion, ok bool) {
 	if !o.Set {
 		return v, false
 	}
@@ -806,7 +494,7 @@ func (o OptStaffWorkspaceReview) Get() (v StaffWorkspaceReview, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o OptStaffWorkspaceReview) Or(d StaffWorkspaceReview) StaffWorkspaceReview {
+func (o OptStaffLegalDocumentVersion) Or(d StaffLegalDocumentVersion) StaffLegalDocumentVersion {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -859,6 +547,52 @@ func (o OptString) Or(d string) string {
 	return d
 }
 
+// NewOptTimestamp returns new OptTimestamp with value set to v.
+func NewOptTimestamp(v Timestamp) OptTimestamp {
+	return OptTimestamp{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTimestamp is optional Timestamp.
+type OptTimestamp struct {
+	Value Timestamp
+	Set   bool
+}
+
+// IsSet returns true if OptTimestamp was set.
+func (o OptTimestamp) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTimestamp) Reset() {
+	var v Timestamp
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTimestamp) SetTo(v Timestamp) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTimestamp) Get() (v Timestamp, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTimestamp) Or(d Timestamp) Timestamp {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
 type ProblemCode string
@@ -866,9 +600,9 @@ type ProblemCode string
 const (
 	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
 	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
-	ProblemCodeSignupClosed              ProblemCode = "signup_closed"
 	ProblemCodePermissionRequired        ProblemCode = "permission_required"
 	ProblemCodeMigrationsPending         ProblemCode = "migrations_pending"
+	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
 )
 
 // AllValues returns all ProblemCode values.
@@ -876,9 +610,9 @@ func (ProblemCode) AllValues() []ProblemCode {
 	return []ProblemCode{
 		ProblemCodeSecondFactorRequired,
 		ProblemCodeEmailVerificationRequired,
-		ProblemCodeSignupClosed,
 		ProblemCodePermissionRequired,
 		ProblemCodeMigrationsPending,
+		ProblemCodeAcceptancePending,
 	}
 }
 
@@ -889,11 +623,11 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ProblemCodeEmailVerificationRequired:
 		return []byte(s), nil
-	case ProblemCodeSignupClosed:
-		return []byte(s), nil
 	case ProblemCodePermissionRequired:
 		return []byte(s), nil
 	case ProblemCodeMigrationsPending:
+		return []byte(s), nil
+	case ProblemCodeAcceptancePending:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -909,14 +643,14 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
 		return nil
-	case ProblemCodeSignupClosed:
-		*s = ProblemCodeSignupClosed
-		return nil
 	case ProblemCodePermissionRequired:
 		*s = ProblemCodePermissionRequired
 		return nil
 	case ProblemCodeMigrationsPending:
 		*s = ProblemCodeMigrationsPending
+		return nil
+	case ProblemCodeAcceptancePending:
+		*s = ProblemCodeAcceptancePending
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -1126,12 +860,11 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) staffAuthLoginRes()          {}
-func (*ProblemDetails) staffAuthLogoutRes()         {}
-func (*ProblemDetails) staffAuthSecondFactorRes()   {}
-func (*ProblemDetails) staffMeGetRes()              {}
-func (*ProblemDetails) staffSignupSurveyCountsRes() {}
-func (*ProblemDetails) staffWorkspacesListRes()     {}
+func (*ProblemDetails) staffAuthLoginRes()        {}
+func (*ProblemDetails) staffAuthLogoutRes()       {}
+func (*ProblemDetails) staffAuthSecondFactorRes() {}
+func (*ProblemDetails) staffMeGetRes()            {}
+func (*ProblemDetails) staffSignupItemsListRes()  {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -1219,94 +952,35 @@ func (s *ProblemDetailsHeaders) SetResponse(val ProblemDetails) {
 func (*ProblemDetailsHeaders) staffAuthLoginRes()        {}
 func (*ProblemDetailsHeaders) staffAuthSecondFactorRes() {}
 
-// A Workspace's standing with the abuse detector (ADR 0026).
-// Ref: #/components/schemas/StaffAbuse
-type StaffAbuse struct {
-	// Exempt from the detector: neither warned nor frozen automatically.
-	Exempt bool `json:"exempt"`
-	// When a Staff member last lifted a suspension; the detector counts only Events after it.
-	ClearedAt OptNilTimestamp `json:"clearedAt"`
-	// When the owners were told of the current warning; absent outside an episode.
-	WarningNotifiedAt OptNilTimestamp `json:"warningNotifiedAt"`
-	// When the owners were last told of a suspension.
-	FreezeNotifiedAt OptNilTimestamp `json:"freezeNotifiedAt"`
-	// Present while the Workspace is in the warning tier, computed now.
-	Warning OptNilStaffAbuseWarning `json:"warning"`
-}
+type SignupItemKey string
 
-// GetExempt returns the value of Exempt.
-func (s *StaffAbuse) GetExempt() bool {
-	return s.Exempt
-}
-
-// GetClearedAt returns the value of ClearedAt.
-func (s *StaffAbuse) GetClearedAt() OptNilTimestamp {
-	return s.ClearedAt
-}
-
-// GetWarningNotifiedAt returns the value of WarningNotifiedAt.
-func (s *StaffAbuse) GetWarningNotifiedAt() OptNilTimestamp {
-	return s.WarningNotifiedAt
-}
-
-// GetFreezeNotifiedAt returns the value of FreezeNotifiedAt.
-func (s *StaffAbuse) GetFreezeNotifiedAt() OptNilTimestamp {
-	return s.FreezeNotifiedAt
-}
-
-// GetWarning returns the value of Warning.
-func (s *StaffAbuse) GetWarning() OptNilStaffAbuseWarning {
-	return s.Warning
-}
-
-// SetExempt sets the value of Exempt.
-func (s *StaffAbuse) SetExempt(val bool) {
-	s.Exempt = val
-}
-
-// SetClearedAt sets the value of ClearedAt.
-func (s *StaffAbuse) SetClearedAt(val OptNilTimestamp) {
-	s.ClearedAt = val
-}
-
-// SetWarningNotifiedAt sets the value of WarningNotifiedAt.
-func (s *StaffAbuse) SetWarningNotifiedAt(val OptNilTimestamp) {
-	s.WarningNotifiedAt = val
-}
-
-// SetFreezeNotifiedAt sets the value of FreezeNotifiedAt.
-func (s *StaffAbuse) SetFreezeNotifiedAt(val OptNilTimestamp) {
-	s.FreezeNotifiedAt = val
-}
-
-// SetWarning sets the value of Warning.
-func (s *StaffAbuse) SetWarning(val OptNilStaffAbuseWarning) {
-	s.Warning = val
-}
-
-// Which metric of a Sending domain breached the abuse detector's warning limit.
-// Ref: #/components/schemas/StaffAbuseMetric
-type StaffAbuseMetric string
+// What a Sign-up item asks of a person (ADR 0062).
+// Ref: #/components/schemas/SignupItemKind
+type SignupItemKind string
 
 const (
-	StaffAbuseMetricComplaint StaffAbuseMetric = "complaint"
-	StaffAbuseMetricBounce    StaffAbuseMetric = "bounce"
+	SignupItemKindRequiredAcceptance SignupItemKind = "required_acceptance"
+	SignupItemKindOptionalConsent    SignupItemKind = "optional_consent"
+	SignupItemKindNotice             SignupItemKind = "notice"
 )
 
-// AllValues returns all StaffAbuseMetric values.
-func (StaffAbuseMetric) AllValues() []StaffAbuseMetric {
-	return []StaffAbuseMetric{
-		StaffAbuseMetricComplaint,
-		StaffAbuseMetricBounce,
+// AllValues returns all SignupItemKind values.
+func (SignupItemKind) AllValues() []SignupItemKind {
+	return []SignupItemKind{
+		SignupItemKindRequiredAcceptance,
+		SignupItemKindOptionalConsent,
+		SignupItemKindNotice,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
-func (s StaffAbuseMetric) MarshalText() ([]byte, error) {
+func (s SignupItemKind) MarshalText() ([]byte, error) {
 	switch s {
-	case StaffAbuseMetricComplaint:
+	case SignupItemKindRequiredAcceptance:
 		return []byte(s), nil
-	case StaffAbuseMetricBounce:
+	case SignupItemKindOptionalConsent:
+		return []byte(s), nil
+	case SignupItemKindNotice:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -1314,359 +988,23 @@ func (s StaffAbuseMetric) MarshalText() ([]byte, error) {
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
-func (s *StaffAbuseMetric) UnmarshalText(data []byte) error {
-	switch StaffAbuseMetric(data) {
-	case StaffAbuseMetricComplaint:
-		*s = StaffAbuseMetricComplaint
+func (s *SignupItemKind) UnmarshalText(data []byte) error {
+	switch SignupItemKind(data) {
+	case SignupItemKindRequiredAcceptance:
+		*s = SignupItemKindRequiredAcceptance
 		return nil
-	case StaffAbuseMetricBounce:
-		*s = StaffAbuseMetricBounce
+	case SignupItemKindOptionalConsent:
+		*s = SignupItemKindOptionalConsent
 		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A Sending domain in the warning tier (ADR 0026), by the detector's own computation.
-// Ref: #/components/schemas/StaffAbuseWarning
-type StaffAbuseWarning struct {
-	Domain string           `json:"domain"`
-	Metric StaffAbuseMetric `json:"metric"`
-	// The rate, 0–1.
-	Rate float64 `json:"rate"`
-}
-
-// GetDomain returns the value of Domain.
-func (s *StaffAbuseWarning) GetDomain() string {
-	return s.Domain
-}
-
-// GetMetric returns the value of Metric.
-func (s *StaffAbuseWarning) GetMetric() StaffAbuseMetric {
-	return s.Metric
-}
-
-// GetRate returns the value of Rate.
-func (s *StaffAbuseWarning) GetRate() float64 {
-	return s.Rate
-}
-
-// SetDomain sets the value of Domain.
-func (s *StaffAbuseWarning) SetDomain(val string) {
-	s.Domain = val
-}
-
-// SetMetric sets the value of Metric.
-func (s *StaffAbuseWarning) SetMetric(val StaffAbuseMetric) {
-	s.Metric = val
-}
-
-// SetRate sets the value of Rate.
-func (s *StaffAbuseWarning) SetRate(val float64) {
-	s.Rate = val
-}
-
-// The actor of an Audit entry.
-// Ref: #/components/schemas/StaffAuditActor
-type StaffAuditActor struct {
-	// The kind of actor; a staff member carries no id and the name "Sphericon staff"; a service is a
-	// Service credential, named as the Staff member who issued it chose.
-	Kind StaffAuditActorKind `json:"kind"`
-	// The actor's id (a User id or an API token id); absent for the system and a staff member.
-	ID OptNilString `json:"id"`
-	// Display name snapshot taken when the entry was written.
-	Name OptNilString `json:"name"`
-}
-
-// GetKind returns the value of Kind.
-func (s *StaffAuditActor) GetKind() StaffAuditActorKind {
-	return s.Kind
-}
-
-// GetID returns the value of ID.
-func (s *StaffAuditActor) GetID() OptNilString {
-	return s.ID
-}
-
-// GetName returns the value of Name.
-func (s *StaffAuditActor) GetName() OptNilString {
-	return s.Name
-}
-
-// SetKind sets the value of Kind.
-func (s *StaffAuditActor) SetKind(val StaffAuditActorKind) {
-	s.Kind = val
-}
-
-// SetID sets the value of ID.
-func (s *StaffAuditActor) SetID(val OptNilString) {
-	s.ID = val
-}
-
-// SetName sets the value of Name.
-func (s *StaffAuditActor) SetName(val OptNilString) {
-	s.Name = val
-}
-
-// Who performed an audited change, as the Workspace's own team sees it.
-// Ref: #/components/schemas/StaffAuditActorKind
-type StaffAuditActorKind string
-
-const (
-	StaffAuditActorKindUser     StaffAuditActorKind = "user"
-	StaffAuditActorKindAPIToken StaffAuditActorKind = "api_token"
-	StaffAuditActorKindStaff    StaffAuditActorKind = "staff"
-	StaffAuditActorKindService  StaffAuditActorKind = "service"
-	StaffAuditActorKindSystem   StaffAuditActorKind = "system"
-)
-
-// AllValues returns all StaffAuditActorKind values.
-func (StaffAuditActorKind) AllValues() []StaffAuditActorKind {
-	return []StaffAuditActorKind{
-		StaffAuditActorKindUser,
-		StaffAuditActorKindAPIToken,
-		StaffAuditActorKindStaff,
-		StaffAuditActorKindService,
-		StaffAuditActorKindSystem,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s StaffAuditActorKind) MarshalText() ([]byte, error) {
-	switch s {
-	case StaffAuditActorKindUser:
-		return []byte(s), nil
-	case StaffAuditActorKindAPIToken:
-		return []byte(s), nil
-	case StaffAuditActorKindStaff:
-		return []byte(s), nil
-	case StaffAuditActorKindService:
-		return []byte(s), nil
-	case StaffAuditActorKindSystem:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *StaffAuditActorKind) UnmarshalText(data []byte) error {
-	switch StaffAuditActorKind(data) {
-	case StaffAuditActorKindUser:
-		*s = StaffAuditActorKindUser
-		return nil
-	case StaffAuditActorKindAPIToken:
-		*s = StaffAuditActorKindAPIToken
-		return nil
-	case StaffAuditActorKindStaff:
-		*s = StaffAuditActorKindStaff
-		return nil
-	case StaffAuditActorKindService:
-		*s = StaffAuditActorKindService
-		return nil
-	case StaffAuditActorKindSystem:
-		*s = StaffAuditActorKindSystem
+	case SignupItemKindNotice:
+		*s = SignupItemKindNotice
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
 
-// A page of a Workspace's Audit log, newest first.
-// Ref: #/components/schemas/StaffAuditEntryList
-type StaffAuditEntryList struct {
-	Items []StaffAuditEntryResource `json:"items"`
-	// Pass as `cursor` for the next page; absent on the last page.
-	NextCursor OptNilString `json:"nextCursor"`
-}
-
-// GetItems returns the value of Items.
-func (s *StaffAuditEntryList) GetItems() []StaffAuditEntryResource {
-	return s.Items
-}
-
-// GetNextCursor returns the value of NextCursor.
-func (s *StaffAuditEntryList) GetNextCursor() OptNilString {
-	return s.NextCursor
-}
-
-// SetItems sets the value of Items.
-func (s *StaffAuditEntryList) SetItems(val []StaffAuditEntryResource) {
-	s.Items = val
-}
-
-// SetNextCursor sets the value of NextCursor.
-func (s *StaffAuditEntryList) SetNextCursor(val OptNilString) {
-	s.NextCursor = val
-}
-
-func (*StaffAuditEntryList) staffWorkspaceAuditListRes() {}
-
-// One immutable Audit entry of a Workspace. Secrets are never recorded; they appear as changed only.
-// Ref: #/components/schemas/StaffAuditEntryResource
-type StaffAuditEntryResource struct {
-	// Unique identifier.
-	ID EntityId `json:"id"`
-	// When the change happened.
-	OccurredAt Timestamp `json:"occurredAt"`
-	// Who did it.
-	Actor StaffAuditActor `json:"actor"`
-	// What was done, as `<entity>.<verb>`.
-	Action string `json:"action"`
-	// What it was done to.
-	Target StaffAuditTarget `json:"target"`
-	// Before/after of the changed fields.
-	Diff OptNilStaffAuditEntryResourceDiff `json:"diff"`
-	// Request id of the change.
-	RequestId OptNilString `json:"requestId"`
-	// Client address of the change.
-	IP OptNilString `json:"ip"`
-	// Client user agent of the change.
-	UserAgent OptNilString `json:"userAgent"`
-}
-
-// GetID returns the value of ID.
-func (s *StaffAuditEntryResource) GetID() EntityId {
-	return s.ID
-}
-
-// GetOccurredAt returns the value of OccurredAt.
-func (s *StaffAuditEntryResource) GetOccurredAt() Timestamp {
-	return s.OccurredAt
-}
-
-// GetActor returns the value of Actor.
-func (s *StaffAuditEntryResource) GetActor() StaffAuditActor {
-	return s.Actor
-}
-
-// GetAction returns the value of Action.
-func (s *StaffAuditEntryResource) GetAction() string {
-	return s.Action
-}
-
-// GetTarget returns the value of Target.
-func (s *StaffAuditEntryResource) GetTarget() StaffAuditTarget {
-	return s.Target
-}
-
-// GetDiff returns the value of Diff.
-func (s *StaffAuditEntryResource) GetDiff() OptNilStaffAuditEntryResourceDiff {
-	return s.Diff
-}
-
-// GetRequestId returns the value of RequestId.
-func (s *StaffAuditEntryResource) GetRequestId() OptNilString {
-	return s.RequestId
-}
-
-// GetIP returns the value of IP.
-func (s *StaffAuditEntryResource) GetIP() OptNilString {
-	return s.IP
-}
-
-// GetUserAgent returns the value of UserAgent.
-func (s *StaffAuditEntryResource) GetUserAgent() OptNilString {
-	return s.UserAgent
-}
-
-// SetID sets the value of ID.
-func (s *StaffAuditEntryResource) SetID(val EntityId) {
-	s.ID = val
-}
-
-// SetOccurredAt sets the value of OccurredAt.
-func (s *StaffAuditEntryResource) SetOccurredAt(val Timestamp) {
-	s.OccurredAt = val
-}
-
-// SetActor sets the value of Actor.
-func (s *StaffAuditEntryResource) SetActor(val StaffAuditActor) {
-	s.Actor = val
-}
-
-// SetAction sets the value of Action.
-func (s *StaffAuditEntryResource) SetAction(val string) {
-	s.Action = val
-}
-
-// SetTarget sets the value of Target.
-func (s *StaffAuditEntryResource) SetTarget(val StaffAuditTarget) {
-	s.Target = val
-}
-
-// SetDiff sets the value of Diff.
-func (s *StaffAuditEntryResource) SetDiff(val OptNilStaffAuditEntryResourceDiff) {
-	s.Diff = val
-}
-
-// SetRequestId sets the value of RequestId.
-func (s *StaffAuditEntryResource) SetRequestId(val OptNilString) {
-	s.RequestId = val
-}
-
-// SetIP sets the value of IP.
-func (s *StaffAuditEntryResource) SetIP(val OptNilString) {
-	s.IP = val
-}
-
-// SetUserAgent sets the value of UserAgent.
-func (s *StaffAuditEntryResource) SetUserAgent(val OptNilString) {
-	s.UserAgent = val
-}
-
-// Before/after of the changed fields.
-type StaffAuditEntryResourceDiff map[string]jx.Raw
-
-func (s *StaffAuditEntryResourceDiff) init() StaffAuditEntryResourceDiff {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
-
-// What an audited change was done to.
-// Ref: #/components/schemas/StaffAuditTarget
-type StaffAuditTarget struct {
-	// Entity type, e.g. membership.
-	Type string `json:"type"`
-	// The target's id.
-	ID OptNilString `json:"id"`
-	// Name snapshot taken when the entry was written.
-	Name OptNilString `json:"name"`
-}
-
-// GetType returns the value of Type.
-func (s *StaffAuditTarget) GetType() string {
-	return s.Type
-}
-
-// GetID returns the value of ID.
-func (s *StaffAuditTarget) GetID() OptNilString {
-	return s.ID
-}
-
-// GetName returns the value of Name.
-func (s *StaffAuditTarget) GetName() OptNilString {
-	return s.Name
-}
-
-// SetType sets the value of Type.
-func (s *StaffAuditTarget) SetType(val string) {
-	s.Type = val
-}
-
-// SetID sets the value of ID.
-func (s *StaffAuditTarget) SetID(val OptNilString) {
-	s.ID = val
-}
-
-// SetName sets the value of Name.
-func (s *StaffAuditTarget) SetName(val OptNilString) {
-	s.Name = val
-}
+type SignupItemTitle string
 
 // StaffAuthLogoutNoContent is response for StaffAuthLogout operation.
 type StaffAuthLogoutNoContent struct {
@@ -1684,113 +1022,6 @@ func (s *StaffAuthLogoutNoContent) SetSetCookie(val string) {
 }
 
 func (*StaffAuthLogoutNoContent) staffAuthLogoutRes() {}
-
-// A Workspace's deliverability over the trailing window: the rates of ADR 0011 per Sending domain, and
-// how much it sent. Counts only, never message content.
-// Ref: #/components/schemas/StaffDeliverability
-type StaffDeliverability struct {
-	// Length of the trailing window, in hours.
-	WindowHours int32 `json:"windowHours"`
-	// Fewest sends in the window (per Sending domain) for a rate to be defined.
-	VolumeFloor int32 `json:"volumeFloor"`
-	// Messages sent in the window across all Sending domains.
-	SendVolume int32 `json:"sendVolume"`
-	// One entry per Sending domain, oldest first.
-	Domains []StaffDomainRates `json:"domains"`
-}
-
-// GetWindowHours returns the value of WindowHours.
-func (s *StaffDeliverability) GetWindowHours() int32 {
-	return s.WindowHours
-}
-
-// GetVolumeFloor returns the value of VolumeFloor.
-func (s *StaffDeliverability) GetVolumeFloor() int32 {
-	return s.VolumeFloor
-}
-
-// GetSendVolume returns the value of SendVolume.
-func (s *StaffDeliverability) GetSendVolume() int32 {
-	return s.SendVolume
-}
-
-// GetDomains returns the value of Domains.
-func (s *StaffDeliverability) GetDomains() []StaffDomainRates {
-	return s.Domains
-}
-
-// SetWindowHours sets the value of WindowHours.
-func (s *StaffDeliverability) SetWindowHours(val int32) {
-	s.WindowHours = val
-}
-
-// SetVolumeFloor sets the value of VolumeFloor.
-func (s *StaffDeliverability) SetVolumeFloor(val int32) {
-	s.VolumeFloor = val
-}
-
-// SetSendVolume sets the value of SendVolume.
-func (s *StaffDeliverability) SetSendVolume(val int32) {
-	s.SendVolume = val
-}
-
-// SetDomains sets the value of Domains.
-func (s *StaffDeliverability) SetDomains(val []StaffDomainRates) {
-	s.Domains = val
-}
-
-// The Complaint and Bounce rates of one Sending domain over the trailing window.
-// Ref: #/components/schemas/StaffDomainRates
-type StaffDomainRates struct {
-	// Sending domain id.
-	SendingDomainId EntityId `json:"sendingDomainId"`
-	// The domain the rates are for.
-	Domain string `json:"domain"`
-	// Complaints over delivered mail; the rate is null when nothing was delivered in the window.
-	ComplaintRate StaffRate `json:"complaintRate"`
-	// Hard bounces over sent.
-	BounceRate StaffRate `json:"bounceRate"`
-}
-
-// GetSendingDomainId returns the value of SendingDomainId.
-func (s *StaffDomainRates) GetSendingDomainId() EntityId {
-	return s.SendingDomainId
-}
-
-// GetDomain returns the value of Domain.
-func (s *StaffDomainRates) GetDomain() string {
-	return s.Domain
-}
-
-// GetComplaintRate returns the value of ComplaintRate.
-func (s *StaffDomainRates) GetComplaintRate() StaffRate {
-	return s.ComplaintRate
-}
-
-// GetBounceRate returns the value of BounceRate.
-func (s *StaffDomainRates) GetBounceRate() StaffRate {
-	return s.BounceRate
-}
-
-// SetSendingDomainId sets the value of SendingDomainId.
-func (s *StaffDomainRates) SetSendingDomainId(val EntityId) {
-	s.SendingDomainId = val
-}
-
-// SetDomain sets the value of Domain.
-func (s *StaffDomainRates) SetDomain(val string) {
-	s.Domain = val
-}
-
-// SetComplaintRate sets the value of ComplaintRate.
-func (s *StaffDomainRates) SetComplaintRate(val StaffRate) {
-	s.ComplaintRate = val
-}
-
-// SetBounceRate sets the value of BounceRate.
-func (s *StaffDomainRates) SetBounceRate(val StaffRate) {
-	s.BounceRate = val
-}
 
 // A TOTP secret awaiting its first confirming code.
 // Ref: #/components/schemas/StaffEnrolment
@@ -1833,124 +1064,97 @@ func (s *StaffEnrolment) SetQrCode(val string) {
 	s.QrCode = val
 }
 
-// The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether anything changed.
-// Ref: #/components/schemas/StaffExemptionChange
-type StaffExemptionChange struct {
-	Changed   bool                   `json:"changed"`
-	Workspace StaffWorkspaceResource `json:"workspace"`
+// Save the draft of an item's Legal document.
+// Ref: #/components/schemas/StaffLegalDocumentDraftInput
+type StaffLegalDocumentDraftInput struct {
+	Markdown LegalDocumentMarkdown `json:"markdown"`
 }
 
-// GetChanged returns the value of Changed.
-func (s *StaffExemptionChange) GetChanged() bool {
-	return s.Changed
+// GetMarkdown returns the value of Markdown.
+func (s *StaffLegalDocumentDraftInput) GetMarkdown() LegalDocumentMarkdown {
+	return s.Markdown
 }
 
-// GetWorkspace returns the value of Workspace.
-func (s *StaffExemptionChange) GetWorkspace() StaffWorkspaceResource {
-	return s.Workspace
+// SetMarkdown sets the value of Markdown.
+func (s *StaffLegalDocumentDraftInput) SetMarkdown(val LegalDocumentMarkdown) {
+	s.Markdown = val
 }
 
-// SetChanged sets the value of Changed.
-func (s *StaffExemptionChange) SetChanged(val bool) {
-	s.Changed = val
+// Publish the draft as a new version.
+// Ref: #/components/schemas/StaffLegalDocumentPublishInput
+type StaffLegalDocumentPublishInput struct {
+	// Unique among the item's versions.
+	Label LegalDocumentLabel `json:"label"`
 }
 
-// SetWorkspace sets the value of Workspace.
-func (s *StaffExemptionChange) SetWorkspace(val StaffWorkspaceResource) {
-	s.Workspace = val
+// GetLabel returns the value of Label.
+func (s *StaffLegalDocumentPublishInput) GetLabel() LegalDocumentLabel {
+	return s.Label
 }
 
-func (*StaffExemptionChange) staffWorkspacesExemptRes()   {}
-func (*StaffExemptionChange) staffWorkspacesUnexemptRes() {}
-
-// An active Staff hold on a Workspace, as the console shows it (read only).
-// Ref: #/components/schemas/StaffHold
-type StaffHold struct {
-	// Unique per Workspace, chosen by the setter.
-	Key string `json:"key"`
-	// Machine reason code.
-	ReasonCode string `json:"reasonCode"`
-	// The message the setter gave for the Owner.
-	Message string `json:"message"`
-	// When the hold was first set.
-	CreatedAt Timestamp `json:"createdAt"`
-	// When the hold lapses unless renewed.
-	ExpiresAt Timestamp `json:"expiresAt"`
-	// Who set it: the name of its Service credential.
-	SetBy string `json:"setBy"`
-	// Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given.
-	ActionUrl OptNilString `json:"actionUrl"`
+// SetLabel sets the value of Label.
+func (s *StaffLegalDocumentPublishInput) SetLabel(val LegalDocumentLabel) {
+	s.Label = val
 }
 
-// GetKey returns the value of Key.
-func (s *StaffHold) GetKey() string {
-	return s.Key
+// A published Legal document version, as the console shows it.
+// Ref: #/components/schemas/StaffLegalDocumentVersion
+type StaffLegalDocumentVersion struct {
+	// The label it was published with.
+	Label LegalDocumentLabel `json:"label"`
+	// When it was published, and took effect.
+	PublishedAt Timestamp `json:"publishedAt"`
+	// The Staff member who published it.
+	PublishedBy StaffResource `json:"publishedBy"`
 }
 
-// GetReasonCode returns the value of ReasonCode.
-func (s *StaffHold) GetReasonCode() string {
-	return s.ReasonCode
+// GetLabel returns the value of Label.
+func (s *StaffLegalDocumentVersion) GetLabel() LegalDocumentLabel {
+	return s.Label
 }
 
-// GetMessage returns the value of Message.
-func (s *StaffHold) GetMessage() string {
-	return s.Message
+// GetPublishedAt returns the value of PublishedAt.
+func (s *StaffLegalDocumentVersion) GetPublishedAt() Timestamp {
+	return s.PublishedAt
 }
 
-// GetCreatedAt returns the value of CreatedAt.
-func (s *StaffHold) GetCreatedAt() Timestamp {
-	return s.CreatedAt
+// GetPublishedBy returns the value of PublishedBy.
+func (s *StaffLegalDocumentVersion) GetPublishedBy() StaffResource {
+	return s.PublishedBy
 }
 
-// GetExpiresAt returns the value of ExpiresAt.
-func (s *StaffHold) GetExpiresAt() Timestamp {
-	return s.ExpiresAt
+// SetLabel sets the value of Label.
+func (s *StaffLegalDocumentVersion) SetLabel(val LegalDocumentLabel) {
+	s.Label = val
 }
 
-// GetSetBy returns the value of SetBy.
-func (s *StaffHold) GetSetBy() string {
-	return s.SetBy
+// SetPublishedAt sets the value of PublishedAt.
+func (s *StaffLegalDocumentVersion) SetPublishedAt(val Timestamp) {
+	s.PublishedAt = val
 }
 
-// GetActionUrl returns the value of ActionUrl.
-func (s *StaffHold) GetActionUrl() OptNilString {
-	return s.ActionUrl
+// SetPublishedBy sets the value of PublishedBy.
+func (s *StaffLegalDocumentVersion) SetPublishedBy(val StaffResource) {
+	s.PublishedBy = val
 }
 
-// SetKey sets the value of Key.
-func (s *StaffHold) SetKey(val string) {
-	s.Key = val
+// Every published version of an item's Legal document, the latest (the current one) first.
+// Ref: #/components/schemas/StaffLegalDocumentVersionList
+type StaffLegalDocumentVersionList struct {
+	Items []StaffLegalDocumentVersion `json:"items"`
 }
 
-// SetReasonCode sets the value of ReasonCode.
-func (s *StaffHold) SetReasonCode(val string) {
-	s.ReasonCode = val
+// GetItems returns the value of Items.
+func (s *StaffLegalDocumentVersionList) GetItems() []StaffLegalDocumentVersion {
+	return s.Items
 }
 
-// SetMessage sets the value of Message.
-func (s *StaffHold) SetMessage(val string) {
-	s.Message = val
+// SetItems sets the value of Items.
+func (s *StaffLegalDocumentVersionList) SetItems(val []StaffLegalDocumentVersion) {
+	s.Items = val
 }
 
-// SetCreatedAt sets the value of CreatedAt.
-func (s *StaffHold) SetCreatedAt(val Timestamp) {
-	s.CreatedAt = val
-}
-
-// SetExpiresAt sets the value of ExpiresAt.
-func (s *StaffHold) SetExpiresAt(val Timestamp) {
-	s.ExpiresAt = val
-}
-
-// SetSetBy sets the value of SetBy.
-func (s *StaffHold) SetSetBy(val string) {
-	s.SetBy = val
-}
-
-// SetActionUrl sets the value of ActionUrl.
-func (s *StaffHold) SetActionUrl(val OptNilString) {
-	s.ActionUrl = val
-}
+func (*StaffLegalDocumentVersionList) staffSignupItemsListVersionsRes() {}
 
 // Sign in with an email and password. The email is a plain string: a malformed address must answer
 // like an unknown one.
@@ -2068,48 +1272,6 @@ func (s *StaffLoginResult) SetEnrolment(val OptStaffEnrolment) {
 
 func (*StaffLoginResult) staffAuthLoginRes() {}
 
-// A rate as the (numerator, denominator, rate) triple (ADR 0011).
-// Ref: #/components/schemas/StaffRate
-type StaffRate struct {
-	// Events counted against the rate.
-	Numerator int32 `json:"numerator"`
-	// The population the rate is over.
-	Denominator int32 `json:"denominator"`
-	// Numerator / denominator; null (undefined) when fewer sends than the volume floor were made in the
-	// window, never reported as 0.
-	Rate NilFloat64 `json:"rate"`
-}
-
-// GetNumerator returns the value of Numerator.
-func (s *StaffRate) GetNumerator() int32 {
-	return s.Numerator
-}
-
-// GetDenominator returns the value of Denominator.
-func (s *StaffRate) GetDenominator() int32 {
-	return s.Denominator
-}
-
-// GetRate returns the value of Rate.
-func (s *StaffRate) GetRate() NilFloat64 {
-	return s.Rate
-}
-
-// SetNumerator sets the value of Numerator.
-func (s *StaffRate) SetNumerator(val int32) {
-	s.Numerator = val
-}
-
-// SetDenominator sets the value of Denominator.
-func (s *StaffRate) SetDenominator(val int32) {
-	s.Denominator = val
-}
-
-// SetRate sets the value of Rate.
-func (s *StaffRate) SetRate(val NilFloat64) {
-	s.Rate = val
-}
-
 // The authenticated platform Staff member (shown to customers only as "Sphericon staff").
 // Ref: #/components/schemas/StaffResource
 type StaffResource struct {
@@ -2197,1231 +1359,330 @@ func (s *StaffSecondFactorInput) SetCode(val string) {
 	s.Code = val
 }
 
-// How many people work at the User's company (second question).
-// Ref: #/components/schemas/StaffSignupCompanySize
-type StaffSignupCompanySize string
-
-const (
-	StaffSignupCompanySize1        StaffSignupCompanySize = "1"
-	StaffSignupCompanySize210      StaffSignupCompanySize = "2_10"
-	StaffSignupCompanySize1150     StaffSignupCompanySize = "11_50"
-	StaffSignupCompanySize51200    StaffSignupCompanySize = "51_200"
-	StaffSignupCompanySize2011000  StaffSignupCompanySize = "201_1000"
-	StaffSignupCompanySize1000Plus StaffSignupCompanySize = "1000_plus"
-	StaffSignupCompanySizeOther    StaffSignupCompanySize = "other"
-)
-
-// AllValues returns all StaffSignupCompanySize values.
-func (StaffSignupCompanySize) AllValues() []StaffSignupCompanySize {
-	return []StaffSignupCompanySize{
-		StaffSignupCompanySize1,
-		StaffSignupCompanySize210,
-		StaffSignupCompanySize1150,
-		StaffSignupCompanySize51200,
-		StaffSignupCompanySize2011000,
-		StaffSignupCompanySize1000Plus,
-		StaffSignupCompanySizeOther,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s StaffSignupCompanySize) MarshalText() ([]byte, error) {
-	switch s {
-	case StaffSignupCompanySize1:
-		return []byte(s), nil
-	case StaffSignupCompanySize210:
-		return []byte(s), nil
-	case StaffSignupCompanySize1150:
-		return []byte(s), nil
-	case StaffSignupCompanySize51200:
-		return []byte(s), nil
-	case StaffSignupCompanySize2011000:
-		return []byte(s), nil
-	case StaffSignupCompanySize1000Plus:
-		return []byte(s), nil
-	case StaffSignupCompanySizeOther:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *StaffSignupCompanySize) UnmarshalText(data []byte) error {
-	switch StaffSignupCompanySize(data) {
-	case StaffSignupCompanySize1:
-		*s = StaffSignupCompanySize1
-		return nil
-	case StaffSignupCompanySize210:
-		*s = StaffSignupCompanySize210
-		return nil
-	case StaffSignupCompanySize1150:
-		*s = StaffSignupCompanySize1150
-		return nil
-	case StaffSignupCompanySize51200:
-		*s = StaffSignupCompanySize51200
-		return nil
-	case StaffSignupCompanySize2011000:
-		*s = StaffSignupCompanySize2011000
-		return nil
-	case StaffSignupCompanySize1000Plus:
-		*s = StaffSignupCompanySize1000Plus
-		return nil
-	case StaffSignupCompanySizeOther:
-		*s = StaffSignupCompanySizeOther
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How many Users chose a company size.
-// Ref: #/components/schemas/StaffSignupCompanySizeCount
-type StaffSignupCompanySizeCount struct {
-	Choice StaffSignupCompanySize `json:"choice"`
-	Count  int32                  `json:"count"`
-}
-
-// GetChoice returns the value of Choice.
-func (s *StaffSignupCompanySizeCount) GetChoice() StaffSignupCompanySize {
-	return s.Choice
-}
-
-// GetCount returns the value of Count.
-func (s *StaffSignupCompanySizeCount) GetCount() int32 {
-	return s.Count
-}
-
-// SetChoice sets the value of Choice.
-func (s *StaffSignupCompanySizeCount) SetChoice(val StaffSignupCompanySize) {
-	s.Choice = val
-}
-
-// SetCount sets the value of Count.
-func (s *StaffSignupCompanySizeCount) SetCount(val int32) {
-	s.Count = val
-}
-
-// What the User mainly wants to do with the product (third question).
-// Ref: #/components/schemas/StaffSignupGoal
-type StaffSignupGoal string
-
-const (
-	StaffSignupGoalBroadcasts  StaffSignupGoal = "broadcasts"
-	StaffSignupGoalAutomations StaffSignupGoal = "automations"
-	StaffSignupGoalTracking    StaffSignupGoal = "tracking"
-	StaffSignupGoalMigrating   StaffSignupGoal = "migrating"
-	StaffSignupGoalOther       StaffSignupGoal = "other"
-)
-
-// AllValues returns all StaffSignupGoal values.
-func (StaffSignupGoal) AllValues() []StaffSignupGoal {
-	return []StaffSignupGoal{
-		StaffSignupGoalBroadcasts,
-		StaffSignupGoalAutomations,
-		StaffSignupGoalTracking,
-		StaffSignupGoalMigrating,
-		StaffSignupGoalOther,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s StaffSignupGoal) MarshalText() ([]byte, error) {
-	switch s {
-	case StaffSignupGoalBroadcasts:
-		return []byte(s), nil
-	case StaffSignupGoalAutomations:
-		return []byte(s), nil
-	case StaffSignupGoalTracking:
-		return []byte(s), nil
-	case StaffSignupGoalMigrating:
-		return []byte(s), nil
-	case StaffSignupGoalOther:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *StaffSignupGoal) UnmarshalText(data []byte) error {
-	switch StaffSignupGoal(data) {
-	case StaffSignupGoalBroadcasts:
-		*s = StaffSignupGoalBroadcasts
-		return nil
-	case StaffSignupGoalAutomations:
-		*s = StaffSignupGoalAutomations
-		return nil
-	case StaffSignupGoalTracking:
-		*s = StaffSignupGoalTracking
-		return nil
-	case StaffSignupGoalMigrating:
-		*s = StaffSignupGoalMigrating
-		return nil
-	case StaffSignupGoalOther:
-		*s = StaffSignupGoalOther
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How many Users chose a main goal.
-// Ref: #/components/schemas/StaffSignupGoalCount
-type StaffSignupGoalCount struct {
-	Choice StaffSignupGoal `json:"choice"`
-	Count  int32           `json:"count"`
-}
-
-// GetChoice returns the value of Choice.
-func (s *StaffSignupGoalCount) GetChoice() StaffSignupGoal {
-	return s.Choice
-}
-
-// GetCount returns the value of Count.
-func (s *StaffSignupGoalCount) GetCount() int32 {
-	return s.Count
-}
-
-// SetChoice sets the value of Choice.
-func (s *StaffSignupGoalCount) SetChoice(val StaffSignupGoal) {
-	s.Choice = val
-}
-
-// SetCount sets the value of Count.
-func (s *StaffSignupGoalCount) SetCount(val int32) {
-	s.Count = val
-}
-
-// An `other` text and how many Users wrote it.
-// Ref: #/components/schemas/StaffSignupOtherTextCount
-type StaffSignupOtherTextCount struct {
-	Text  string `json:"text"`
-	Count int32  `json:"count"`
-}
-
-// GetText returns the value of Text.
-func (s *StaffSignupOtherTextCount) GetText() string {
-	return s.Text
-}
-
-// GetCount returns the value of Count.
-func (s *StaffSignupOtherTextCount) GetCount() int32 {
-	return s.Count
-}
-
-// SetText sets the value of Text.
-func (s *StaffSignupOtherTextCount) SetText(val string) {
-	s.Text = val
-}
-
-// SetCount sets the value of Count.
-func (s *StaffSignupOtherTextCount) SetCount(val int32) {
-	s.Count = val
-}
-
-// What the User does (Sign-up survey, first question).
-// Ref: #/components/schemas/StaffSignupRole
-type StaffSignupRole string
-
-const (
-	StaffSignupRoleFounder   StaffSignupRole = "founder"
-	StaffSignupRoleMarketer  StaffSignupRole = "marketer"
-	StaffSignupRoleDeveloper StaffSignupRole = "developer"
-	StaffSignupRoleProduct   StaffSignupRole = "product"
-	StaffSignupRoleOther     StaffSignupRole = "other"
-)
-
-// AllValues returns all StaffSignupRole values.
-func (StaffSignupRole) AllValues() []StaffSignupRole {
-	return []StaffSignupRole{
-		StaffSignupRoleFounder,
-		StaffSignupRoleMarketer,
-		StaffSignupRoleDeveloper,
-		StaffSignupRoleProduct,
-		StaffSignupRoleOther,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s StaffSignupRole) MarshalText() ([]byte, error) {
-	switch s {
-	case StaffSignupRoleFounder:
-		return []byte(s), nil
-	case StaffSignupRoleMarketer:
-		return []byte(s), nil
-	case StaffSignupRoleDeveloper:
-		return []byte(s), nil
-	case StaffSignupRoleProduct:
-		return []byte(s), nil
-	case StaffSignupRoleOther:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *StaffSignupRole) UnmarshalText(data []byte) error {
-	switch StaffSignupRole(data) {
-	case StaffSignupRoleFounder:
-		*s = StaffSignupRoleFounder
-		return nil
-	case StaffSignupRoleMarketer:
-		*s = StaffSignupRoleMarketer
-		return nil
-	case StaffSignupRoleDeveloper:
-		*s = StaffSignupRoleDeveloper
-		return nil
-	case StaffSignupRoleProduct:
-		*s = StaffSignupRoleProduct
-		return nil
-	case StaffSignupRoleOther:
-		*s = StaffSignupRoleOther
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How many Users chose a role.
-// Ref: #/components/schemas/StaffSignupRoleCount
-type StaffSignupRoleCount struct {
-	Choice StaffSignupRole `json:"choice"`
-	Count  int32           `json:"count"`
-}
-
-// GetChoice returns the value of Choice.
-func (s *StaffSignupRoleCount) GetChoice() StaffSignupRole {
-	return s.Choice
-}
-
-// GetCount returns the value of Count.
-func (s *StaffSignupRoleCount) GetCount() int32 {
-	return s.Count
-}
-
-// SetChoice sets the value of Choice.
-func (s *StaffSignupRoleCount) SetChoice(val StaffSignupRole) {
-	s.Choice = val
-}
-
-// SetCount sets the value of Count.
-func (s *StaffSignupRoleCount) SetCount(val int32) {
-	s.Count = val
-}
-
-// Where the User heard about the product (fourth question, optional).
-// Ref: #/components/schemas/StaffSignupSource
-type StaffSignupSource string
-
-const (
-	StaffSignupSourceSearch         StaffSignupSource = "search"
-	StaffSignupSourceGithub         StaffSignupSource = "github"
-	StaffSignupSourceSocial         StaffSignupSource = "social"
-	StaffSignupSourceRecommendation StaffSignupSource = "recommendation"
-	StaffSignupSourceOther          StaffSignupSource = "other"
-)
-
-// AllValues returns all StaffSignupSource values.
-func (StaffSignupSource) AllValues() []StaffSignupSource {
-	return []StaffSignupSource{
-		StaffSignupSourceSearch,
-		StaffSignupSourceGithub,
-		StaffSignupSourceSocial,
-		StaffSignupSourceRecommendation,
-		StaffSignupSourceOther,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s StaffSignupSource) MarshalText() ([]byte, error) {
-	switch s {
-	case StaffSignupSourceSearch:
-		return []byte(s), nil
-	case StaffSignupSourceGithub:
-		return []byte(s), nil
-	case StaffSignupSourceSocial:
-		return []byte(s), nil
-	case StaffSignupSourceRecommendation:
-		return []byte(s), nil
-	case StaffSignupSourceOther:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *StaffSignupSource) UnmarshalText(data []byte) error {
-	switch StaffSignupSource(data) {
-	case StaffSignupSourceSearch:
-		*s = StaffSignupSourceSearch
-		return nil
-	case StaffSignupSourceGithub:
-		*s = StaffSignupSourceGithub
-		return nil
-	case StaffSignupSourceSocial:
-		*s = StaffSignupSourceSocial
-		return nil
-	case StaffSignupSourceRecommendation:
-		*s = StaffSignupSourceRecommendation
-		return nil
-	case StaffSignupSourceOther:
-		*s = StaffSignupSourceOther
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How many Users chose a source.
-// Ref: #/components/schemas/StaffSignupSourceCount
-type StaffSignupSourceCount struct {
-	Choice StaffSignupSource `json:"choice"`
-	Count  int32             `json:"count"`
-}
-
-// GetChoice returns the value of Choice.
-func (s *StaffSignupSourceCount) GetChoice() StaffSignupSource {
-	return s.Choice
-}
-
-// GetCount returns the value of Count.
-func (s *StaffSignupSourceCount) GetCount() int32 {
-	return s.Count
-}
-
-// SetChoice sets the value of Choice.
-func (s *StaffSignupSourceCount) SetChoice(val StaffSignupSource) {
-	s.Choice = val
-}
-
-// SetCount sets the value of Count.
-func (s *StaffSignupSourceCount) SetCount(val int32) {
-	s.Count = val
-}
-
-// The Sign-up survey answers of every User who answered, counted per question. A choice nobody made is
-// absent from its list; a question's `other` texts are listed with their counts, most frequent first.
-// Ref: #/components/schemas/StaffSignupSurveyCounts
-type StaffSignupSurveyCounts struct {
-	// How many Users answered the survey.
-	Responses             int32                         `json:"responses"`
-	Role                  []StaffSignupRoleCount        `json:"role"`
-	RoleOtherTexts        []StaffSignupOtherTextCount   `json:"roleOtherTexts"`
-	CompanySize           []StaffSignupCompanySizeCount `json:"companySize"`
-	CompanySizeOtherTexts []StaffSignupOtherTextCount   `json:"companySizeOtherTexts"`
-	MainGoal              []StaffSignupGoalCount        `json:"mainGoal"`
-	MainGoalOtherTexts    []StaffSignupOtherTextCount   `json:"mainGoalOtherTexts"`
-	// Only the Users who answered the optional question are counted.
-	HeardFrom           []StaffSignupSourceCount    `json:"heardFrom"`
-	HeardFromOtherTexts []StaffSignupOtherTextCount `json:"heardFromOtherTexts"`
-}
-
-// GetResponses returns the value of Responses.
-func (s *StaffSignupSurveyCounts) GetResponses() int32 {
-	return s.Responses
-}
-
-// GetRole returns the value of Role.
-func (s *StaffSignupSurveyCounts) GetRole() []StaffSignupRoleCount {
-	return s.Role
-}
-
-// GetRoleOtherTexts returns the value of RoleOtherTexts.
-func (s *StaffSignupSurveyCounts) GetRoleOtherTexts() []StaffSignupOtherTextCount {
-	return s.RoleOtherTexts
-}
-
-// GetCompanySize returns the value of CompanySize.
-func (s *StaffSignupSurveyCounts) GetCompanySize() []StaffSignupCompanySizeCount {
-	return s.CompanySize
-}
-
-// GetCompanySizeOtherTexts returns the value of CompanySizeOtherTexts.
-func (s *StaffSignupSurveyCounts) GetCompanySizeOtherTexts() []StaffSignupOtherTextCount {
-	return s.CompanySizeOtherTexts
-}
-
-// GetMainGoal returns the value of MainGoal.
-func (s *StaffSignupSurveyCounts) GetMainGoal() []StaffSignupGoalCount {
-	return s.MainGoal
-}
-
-// GetMainGoalOtherTexts returns the value of MainGoalOtherTexts.
-func (s *StaffSignupSurveyCounts) GetMainGoalOtherTexts() []StaffSignupOtherTextCount {
-	return s.MainGoalOtherTexts
-}
-
-// GetHeardFrom returns the value of HeardFrom.
-func (s *StaffSignupSurveyCounts) GetHeardFrom() []StaffSignupSourceCount {
-	return s.HeardFrom
-}
-
-// GetHeardFromOtherTexts returns the value of HeardFromOtherTexts.
-func (s *StaffSignupSurveyCounts) GetHeardFromOtherTexts() []StaffSignupOtherTextCount {
-	return s.HeardFromOtherTexts
-}
-
-// SetResponses sets the value of Responses.
-func (s *StaffSignupSurveyCounts) SetResponses(val int32) {
-	s.Responses = val
-}
-
-// SetRole sets the value of Role.
-func (s *StaffSignupSurveyCounts) SetRole(val []StaffSignupRoleCount) {
-	s.Role = val
-}
-
-// SetRoleOtherTexts sets the value of RoleOtherTexts.
-func (s *StaffSignupSurveyCounts) SetRoleOtherTexts(val []StaffSignupOtherTextCount) {
-	s.RoleOtherTexts = val
-}
-
-// SetCompanySize sets the value of CompanySize.
-func (s *StaffSignupSurveyCounts) SetCompanySize(val []StaffSignupCompanySizeCount) {
-	s.CompanySize = val
-}
-
-// SetCompanySizeOtherTexts sets the value of CompanySizeOtherTexts.
-func (s *StaffSignupSurveyCounts) SetCompanySizeOtherTexts(val []StaffSignupOtherTextCount) {
-	s.CompanySizeOtherTexts = val
-}
-
-// SetMainGoal sets the value of MainGoal.
-func (s *StaffSignupSurveyCounts) SetMainGoal(val []StaffSignupGoalCount) {
-	s.MainGoal = val
-}
-
-// SetMainGoalOtherTexts sets the value of MainGoalOtherTexts.
-func (s *StaffSignupSurveyCounts) SetMainGoalOtherTexts(val []StaffSignupOtherTextCount) {
-	s.MainGoalOtherTexts = val
-}
-
-// SetHeardFrom sets the value of HeardFrom.
-func (s *StaffSignupSurveyCounts) SetHeardFrom(val []StaffSignupSourceCount) {
-	s.HeardFrom = val
-}
-
-// SetHeardFromOtherTexts sets the value of HeardFromOtherTexts.
-func (s *StaffSignupSurveyCounts) SetHeardFromOtherTexts(val []StaffSignupOtherTextCount) {
-	s.HeardFromOtherTexts = val
-}
-
-func (*StaffSignupSurveyCounts) staffSignupSurveyCountsRes() {}
-
-type StaffSignupSurveyGetNotFound ProblemDetails
-
-func (*StaffSignupSurveyGetNotFound) staffSignupSurveyGetRes() {}
-
-type StaffSignupSurveyGetUnauthorized ProblemDetails
-
-func (*StaffSignupSurveyGetUnauthorized) staffSignupSurveyGetRes() {}
-
-// One User's answers to the Sign-up survey. A User who has not answered has none.
-// Ref: #/components/schemas/StaffSignupSurveyResponseResource
-type StaffSignupSurveyResponseResource struct {
-	// The answering User's id.
-	UserId EntityId `json:"userId"`
-	// What the User does.
-	Role StaffSignupRole `json:"role"`
-	// What the User does, when `role` is `other`.
-	RoleOtherText OptNilString `json:"roleOtherText"`
-	// How many people work at the User's company.
-	CompanySize StaffSignupCompanySize `json:"companySize"`
-	// The company size, when `companySize` is `other`.
-	CompanySizeOtherText OptNilString `json:"companySizeOtherText"`
-	// What the User mainly wants to do with the product.
-	MainGoal StaffSignupGoal `json:"mainGoal"`
-	// The main goal, when `mainGoal` is `other`.
-	MainGoalOtherText OptNilString `json:"mainGoalOtherText"`
-	// Where the User heard about the product; absent when the optional question was skipped.
-	HeardFrom OptNilStaffSignupSource `json:"heardFrom"`
-	// Where the User heard about the product, when `heardFrom` is `other`.
-	HeardFromOtherText OptNilString `json:"heardFromOtherText"`
-	// When the User answered.
-	AnsweredAt Timestamp `json:"answeredAt"`
-}
-
-// GetUserId returns the value of UserId.
-func (s *StaffSignupSurveyResponseResource) GetUserId() EntityId {
-	return s.UserId
-}
-
-// GetRole returns the value of Role.
-func (s *StaffSignupSurveyResponseResource) GetRole() StaffSignupRole {
-	return s.Role
-}
-
-// GetRoleOtherText returns the value of RoleOtherText.
-func (s *StaffSignupSurveyResponseResource) GetRoleOtherText() OptNilString {
-	return s.RoleOtherText
-}
-
-// GetCompanySize returns the value of CompanySize.
-func (s *StaffSignupSurveyResponseResource) GetCompanySize() StaffSignupCompanySize {
-	return s.CompanySize
-}
-
-// GetCompanySizeOtherText returns the value of CompanySizeOtherText.
-func (s *StaffSignupSurveyResponseResource) GetCompanySizeOtherText() OptNilString {
-	return s.CompanySizeOtherText
-}
-
-// GetMainGoal returns the value of MainGoal.
-func (s *StaffSignupSurveyResponseResource) GetMainGoal() StaffSignupGoal {
-	return s.MainGoal
-}
-
-// GetMainGoalOtherText returns the value of MainGoalOtherText.
-func (s *StaffSignupSurveyResponseResource) GetMainGoalOtherText() OptNilString {
-	return s.MainGoalOtherText
-}
-
-// GetHeardFrom returns the value of HeardFrom.
-func (s *StaffSignupSurveyResponseResource) GetHeardFrom() OptNilStaffSignupSource {
-	return s.HeardFrom
-}
-
-// GetHeardFromOtherText returns the value of HeardFromOtherText.
-func (s *StaffSignupSurveyResponseResource) GetHeardFromOtherText() OptNilString {
-	return s.HeardFromOtherText
-}
-
-// GetAnsweredAt returns the value of AnsweredAt.
-func (s *StaffSignupSurveyResponseResource) GetAnsweredAt() Timestamp {
-	return s.AnsweredAt
-}
-
-// SetUserId sets the value of UserId.
-func (s *StaffSignupSurveyResponseResource) SetUserId(val EntityId) {
-	s.UserId = val
-}
-
-// SetRole sets the value of Role.
-func (s *StaffSignupSurveyResponseResource) SetRole(val StaffSignupRole) {
-	s.Role = val
-}
-
-// SetRoleOtherText sets the value of RoleOtherText.
-func (s *StaffSignupSurveyResponseResource) SetRoleOtherText(val OptNilString) {
-	s.RoleOtherText = val
-}
-
-// SetCompanySize sets the value of CompanySize.
-func (s *StaffSignupSurveyResponseResource) SetCompanySize(val StaffSignupCompanySize) {
-	s.CompanySize = val
-}
-
-// SetCompanySizeOtherText sets the value of CompanySizeOtherText.
-func (s *StaffSignupSurveyResponseResource) SetCompanySizeOtherText(val OptNilString) {
-	s.CompanySizeOtherText = val
-}
-
-// SetMainGoal sets the value of MainGoal.
-func (s *StaffSignupSurveyResponseResource) SetMainGoal(val StaffSignupGoal) {
-	s.MainGoal = val
-}
-
-// SetMainGoalOtherText sets the value of MainGoalOtherText.
-func (s *StaffSignupSurveyResponseResource) SetMainGoalOtherText(val OptNilString) {
-	s.MainGoalOtherText = val
-}
-
-// SetHeardFrom sets the value of HeardFrom.
-func (s *StaffSignupSurveyResponseResource) SetHeardFrom(val OptNilStaffSignupSource) {
-	s.HeardFrom = val
-}
-
-// SetHeardFromOtherText sets the value of HeardFromOtherText.
-func (s *StaffSignupSurveyResponseResource) SetHeardFromOtherText(val OptNilString) {
-	s.HeardFromOtherText = val
-}
-
-// SetAnsweredAt sets the value of AnsweredAt.
-func (s *StaffSignupSurveyResponseResource) SetAnsweredAt(val Timestamp) {
-	s.AnsweredAt = val
-}
-
-func (*StaffSignupSurveyResponseResource) staffSignupSurveyGetRes() {}
-
-// Why a Workspace is being suspended; the owner is told.
-// Ref: #/components/schemas/StaffSuspendInput
-type StaffSuspendInput struct {
-	// The reason, required: the Workspace owner is told why sending stopped.
-	Reason string `json:"reason"`
-}
-
-// GetReason returns the value of Reason.
-func (s *StaffSuspendInput) GetReason() string {
-	return s.Reason
-}
-
-// SetReason sets the value of Reason.
-func (s *StaffSuspendInput) SetReason(val string) {
-	s.Reason = val
-}
-
-// A Workspace's suspension state (ADR 0007).
-// Ref: #/components/schemas/StaffSuspension
-type StaffSuspension struct {
-	// When outbound sending was suspended.
-	At Timestamp `json:"at"`
-	// Who suspended it.
-	Actor StaffSuspensionActor `json:"actor"`
-	// Why, as given by the actor.
-	Reason OptNilString `json:"reason"`
-}
-
-// GetAt returns the value of At.
-func (s *StaffSuspension) GetAt() Timestamp {
-	return s.At
-}
-
-// GetActor returns the value of Actor.
-func (s *StaffSuspension) GetActor() StaffSuspensionActor {
-	return s.Actor
-}
-
-// GetReason returns the value of Reason.
-func (s *StaffSuspension) GetReason() OptNilString {
-	return s.Reason
-}
-
-// SetAt sets the value of At.
-func (s *StaffSuspension) SetAt(val Timestamp) {
-	s.At = val
-}
-
-// SetActor sets the value of Actor.
-func (s *StaffSuspension) SetActor(val StaffSuspensionActor) {
-	s.Actor = val
-}
-
-// SetReason sets the value of Reason.
-func (s *StaffSuspension) SetReason(val OptNilString) {
-	s.Reason = val
-}
-
-// The actor of a suspension. Unlike a customer, a Staff member sees the real Staff member id.
-// Ref: #/components/schemas/StaffSuspensionActor
-type StaffSuspensionActor struct {
-	Kind StaffSuspensionActorKind `json:"kind"`
-	// The Staff member id; present only for the `staff` kind.
-	ID OptNilString `json:"id"`
+// Add a Sign-up item. It goes after the existing ones.
+// Ref: #/components/schemas/StaffSignupItemInput
+type StaffSignupItemInput struct {
+	// Unique across the Instance, and never changed.
+	Key   SignupItemKey   `json:"key"`
+	Title SignupItemTitle `json:"title"`
+	// Never changed.
+	Kind SignupItemKind `json:"kind"`
+	// Mark the item as consent to the operator's mailings: only an optional consent, and only one item of
+	// the Instance.
+	MailingsConsent OptBool `json:"mailingsConsent"`
+}
+
+// GetKey returns the value of Key.
+func (s *StaffSignupItemInput) GetKey() SignupItemKey {
+	return s.Key
+}
+
+// GetTitle returns the value of Title.
+func (s *StaffSignupItemInput) GetTitle() SignupItemTitle {
+	return s.Title
 }
 
 // GetKind returns the value of Kind.
-func (s *StaffSuspensionActor) GetKind() StaffSuspensionActorKind {
+func (s *StaffSignupItemInput) GetKind() SignupItemKind {
 	return s.Kind
 }
 
-// GetID returns the value of ID.
-func (s *StaffSuspensionActor) GetID() OptNilString {
-	return s.ID
+// GetMailingsConsent returns the value of MailingsConsent.
+func (s *StaffSignupItemInput) GetMailingsConsent() OptBool {
+	return s.MailingsConsent
+}
+
+// SetKey sets the value of Key.
+func (s *StaffSignupItemInput) SetKey(val SignupItemKey) {
+	s.Key = val
+}
+
+// SetTitle sets the value of Title.
+func (s *StaffSignupItemInput) SetTitle(val SignupItemTitle) {
+	s.Title = val
 }
 
 // SetKind sets the value of Kind.
-func (s *StaffSuspensionActor) SetKind(val StaffSuspensionActorKind) {
+func (s *StaffSignupItemInput) SetKind(val SignupItemKind) {
 	s.Kind = val
 }
 
-// SetID sets the value of ID.
-func (s *StaffSuspensionActor) SetID(val OptNilString) {
-	s.ID = val
+// SetMailingsConsent sets the value of MailingsConsent.
+func (s *StaffSignupItemInput) SetMailingsConsent(val OptBool) {
+	s.MailingsConsent = val
 }
 
-// Who set a Workspace suspension (ADR 0026).
-// Ref: #/components/schemas/StaffSuspensionActorKind
-type StaffSuspensionActorKind string
-
-const (
-	StaffSuspensionActorKindSystem StaffSuspensionActorKind = "system"
-	StaffSuspensionActorKindCli    StaffSuspensionActorKind = "cli"
-	StaffSuspensionActorKindStaff  StaffSuspensionActorKind = "staff"
-)
-
-// AllValues returns all StaffSuspensionActorKind values.
-func (StaffSuspensionActorKind) AllValues() []StaffSuspensionActorKind {
-	return []StaffSuspensionActorKind{
-		StaffSuspensionActorKindSystem,
-		StaffSuspensionActorKindCli,
-		StaffSuspensionActorKindStaff,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s StaffSuspensionActorKind) MarshalText() ([]byte, error) {
-	switch s {
-	case StaffSuspensionActorKindSystem:
-		return []byte(s), nil
-	case StaffSuspensionActorKindCli:
-		return []byte(s), nil
-	case StaffSuspensionActorKindStaff:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *StaffSuspensionActorKind) UnmarshalText(data []byte) error {
-	switch StaffSuspensionActorKind(data) {
-	case StaffSuspensionActorKindSystem:
-		*s = StaffSuspensionActorKindSystem
-		return nil
-	case StaffSuspensionActorKindCli:
-		*s = StaffSuspensionActorKindCli
-		return nil
-	case StaffSuspensionActorKindStaff:
-		*s = StaffSuspensionActorKindStaff
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether anything changed
-// (suspending a suspended Workspace and unsuspending an active one change nothing).
-// Ref: #/components/schemas/StaffSuspensionChange
-type StaffSuspensionChange struct {
-	Changed   bool                   `json:"changed"`
-	Workspace StaffWorkspaceResource `json:"workspace"`
-}
-
-// GetChanged returns the value of Changed.
-func (s *StaffSuspensionChange) GetChanged() bool {
-	return s.Changed
-}
-
-// GetWorkspace returns the value of Workspace.
-func (s *StaffSuspensionChange) GetWorkspace() StaffWorkspaceResource {
-	return s.Workspace
-}
-
-// SetChanged sets the value of Changed.
-func (s *StaffSuspensionChange) SetChanged(val bool) {
-	s.Changed = val
-}
-
-// SetWorkspace sets the value of Workspace.
-func (s *StaffSuspensionChange) SetWorkspace(val StaffWorkspaceResource) {
-	s.Workspace = val
-}
-
-func (*StaffSuspensionChange) staffWorkspacesSuspendRes()   {}
-func (*StaffSuspensionChange) staffWorkspacesUnsuspendRes() {}
-
-type StaffWorkspaceAuditListBadRequest ProblemDetails
-
-func (*StaffWorkspaceAuditListBadRequest) staffWorkspaceAuditListRes() {}
-
-type StaffWorkspaceAuditListNotFound ProblemDetails
-
-func (*StaffWorkspaceAuditListNotFound) staffWorkspaceAuditListRes() {}
-
-type StaffWorkspaceAuditListUnauthorized ProblemDetails
-
-func (*StaffWorkspaceAuditListUnauthorized) staffWorkspaceAuditListRes() {}
-
-// A Workspace with its deliverability and active holds, as the detail page shows it.
-// Ref: #/components/schemas/StaffWorkspaceDetailResource
-type StaffWorkspaceDetailResource struct {
-	// The Workspace id: its short opaque public address (ADR 0043).
-	ID   WorkspaceId `json:"id"`
-	Name string      `json:"name"`
-	// When the Workspace was created.
-	CreatedAt Timestamp `json:"createdAt"`
-	// When the Workspace was deleted; present from deletion until a restore (ADR 0043).
-	DiscardedAt OptNilTimestamp `json:"discardedAt"`
-	// When the Workspace's data was erased; the row stays as a tombstone.
-	ErasedAt OptNilTimestamp `json:"erasedAt"`
-	// Present only while sending is suspended.
-	Suspension OptNilStaffSuspension `json:"suspension"`
-	// Exempt from the abuse detector (set by a Staff member).
-	Exempt bool `json:"exempt"`
-	// The owners were warned and the Workspace has not left the warning tier since.
-	Warned bool `json:"warned"`
-	// Active Staff holds by key; a lapsed hold is not listed.
-	Holds          []StaffHold         `json:"holds"`
-	Deliverability StaffDeliverability `json:"deliverability"`
-	Abuse          StaffAbuse          `json:"abuse"`
-}
-
-// GetID returns the value of ID.
-func (s *StaffWorkspaceDetailResource) GetID() WorkspaceId {
-	return s.ID
-}
-
-// GetName returns the value of Name.
-func (s *StaffWorkspaceDetailResource) GetName() string {
-	return s.Name
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *StaffWorkspaceDetailResource) GetCreatedAt() Timestamp {
-	return s.CreatedAt
-}
-
-// GetDiscardedAt returns the value of DiscardedAt.
-func (s *StaffWorkspaceDetailResource) GetDiscardedAt() OptNilTimestamp {
-	return s.DiscardedAt
-}
-
-// GetErasedAt returns the value of ErasedAt.
-func (s *StaffWorkspaceDetailResource) GetErasedAt() OptNilTimestamp {
-	return s.ErasedAt
-}
-
-// GetSuspension returns the value of Suspension.
-func (s *StaffWorkspaceDetailResource) GetSuspension() OptNilStaffSuspension {
-	return s.Suspension
-}
-
-// GetExempt returns the value of Exempt.
-func (s *StaffWorkspaceDetailResource) GetExempt() bool {
-	return s.Exempt
-}
-
-// GetWarned returns the value of Warned.
-func (s *StaffWorkspaceDetailResource) GetWarned() bool {
-	return s.Warned
-}
-
-// GetHolds returns the value of Holds.
-func (s *StaffWorkspaceDetailResource) GetHolds() []StaffHold {
-	return s.Holds
-}
-
-// GetDeliverability returns the value of Deliverability.
-func (s *StaffWorkspaceDetailResource) GetDeliverability() StaffDeliverability {
-	return s.Deliverability
-}
-
-// GetAbuse returns the value of Abuse.
-func (s *StaffWorkspaceDetailResource) GetAbuse() StaffAbuse {
-	return s.Abuse
-}
-
-// SetID sets the value of ID.
-func (s *StaffWorkspaceDetailResource) SetID(val WorkspaceId) {
-	s.ID = val
-}
-
-// SetName sets the value of Name.
-func (s *StaffWorkspaceDetailResource) SetName(val string) {
-	s.Name = val
-}
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *StaffWorkspaceDetailResource) SetCreatedAt(val Timestamp) {
-	s.CreatedAt = val
-}
-
-// SetDiscardedAt sets the value of DiscardedAt.
-func (s *StaffWorkspaceDetailResource) SetDiscardedAt(val OptNilTimestamp) {
-	s.DiscardedAt = val
-}
-
-// SetErasedAt sets the value of ErasedAt.
-func (s *StaffWorkspaceDetailResource) SetErasedAt(val OptNilTimestamp) {
-	s.ErasedAt = val
-}
-
-// SetSuspension sets the value of Suspension.
-func (s *StaffWorkspaceDetailResource) SetSuspension(val OptNilStaffSuspension) {
-	s.Suspension = val
-}
-
-// SetExempt sets the value of Exempt.
-func (s *StaffWorkspaceDetailResource) SetExempt(val bool) {
-	s.Exempt = val
-}
-
-// SetWarned sets the value of Warned.
-func (s *StaffWorkspaceDetailResource) SetWarned(val bool) {
-	s.Warned = val
-}
-
-// SetHolds sets the value of Holds.
-func (s *StaffWorkspaceDetailResource) SetHolds(val []StaffHold) {
-	s.Holds = val
-}
-
-// SetDeliverability sets the value of Deliverability.
-func (s *StaffWorkspaceDetailResource) SetDeliverability(val StaffDeliverability) {
-	s.Deliverability = val
-}
-
-// SetAbuse sets the value of Abuse.
-func (s *StaffWorkspaceDetailResource) SetAbuse(val StaffAbuse) {
-	s.Abuse = val
-}
-
-func (*StaffWorkspaceDetailResource) staffWorkspacesGetRes() {}
-
-// A Workspace as the Staff console sees it: metadata only, never Contacts, content or Events (ADR
-// 0026).
-// Ref: #/components/schemas/StaffWorkspaceResource
-type StaffWorkspaceResource struct {
-	// The Workspace id: its short opaque public address (ADR 0043).
-	ID   WorkspaceId `json:"id"`
-	Name string      `json:"name"`
-	// When the Workspace was created.
-	CreatedAt Timestamp `json:"createdAt"`
-	// When the Workspace was deleted; present from deletion until a restore (ADR 0043).
-	DiscardedAt OptNilTimestamp `json:"discardedAt"`
-	// When the Workspace's data was erased; the row stays as a tombstone.
-	ErasedAt OptNilTimestamp `json:"erasedAt"`
-	// Present only while sending is suspended.
-	Suspension OptNilStaffSuspension `json:"suspension"`
-	// Exempt from the abuse detector (set by a Staff member).
-	Exempt bool `json:"exempt"`
-	// The owners were warned and the Workspace has not left the warning tier since.
-	Warned bool `json:"warned"`
-}
-
-// GetID returns the value of ID.
-func (s *StaffWorkspaceResource) GetID() WorkspaceId {
-	return s.ID
-}
-
-// GetName returns the value of Name.
-func (s *StaffWorkspaceResource) GetName() string {
-	return s.Name
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *StaffWorkspaceResource) GetCreatedAt() Timestamp {
-	return s.CreatedAt
-}
-
-// GetDiscardedAt returns the value of DiscardedAt.
-func (s *StaffWorkspaceResource) GetDiscardedAt() OptNilTimestamp {
-	return s.DiscardedAt
-}
-
-// GetErasedAt returns the value of ErasedAt.
-func (s *StaffWorkspaceResource) GetErasedAt() OptNilTimestamp {
-	return s.ErasedAt
-}
-
-// GetSuspension returns the value of Suspension.
-func (s *StaffWorkspaceResource) GetSuspension() OptNilStaffSuspension {
-	return s.Suspension
-}
-
-// GetExempt returns the value of Exempt.
-func (s *StaffWorkspaceResource) GetExempt() bool {
-	return s.Exempt
-}
-
-// GetWarned returns the value of Warned.
-func (s *StaffWorkspaceResource) GetWarned() bool {
-	return s.Warned
-}
-
-// SetID sets the value of ID.
-func (s *StaffWorkspaceResource) SetID(val WorkspaceId) {
-	s.ID = val
-}
-
-// SetName sets the value of Name.
-func (s *StaffWorkspaceResource) SetName(val string) {
-	s.Name = val
-}
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *StaffWorkspaceResource) SetCreatedAt(val Timestamp) {
-	s.CreatedAt = val
-}
-
-// SetDiscardedAt sets the value of DiscardedAt.
-func (s *StaffWorkspaceResource) SetDiscardedAt(val OptNilTimestamp) {
-	s.DiscardedAt = val
-}
-
-// SetErasedAt sets the value of ErasedAt.
-func (s *StaffWorkspaceResource) SetErasedAt(val OptNilTimestamp) {
-	s.ErasedAt = val
-}
-
-// SetSuspension sets the value of Suspension.
-func (s *StaffWorkspaceResource) SetSuspension(val OptNilStaffSuspension) {
-	s.Suspension = val
-}
-
-// SetExempt sets the value of Exempt.
-func (s *StaffWorkspaceResource) SetExempt(val bool) {
-	s.Exempt = val
-}
-
-// SetWarned sets the value of Warned.
-func (s *StaffWorkspaceResource) SetWarned(val bool) {
-	s.Warned = val
-}
-
-// Which Workspaces the list surfaces for review.
-// Ref: #/components/schemas/StaffWorkspaceReview
-type StaffWorkspaceReview string
-
-const (
-	StaffWorkspaceReviewWarned       StaffWorkspaceReview = "warned"
-	StaffWorkspaceReviewSystemFrozen StaffWorkspaceReview = "systemFrozen"
-	StaffWorkspaceReviewDeleted      StaffWorkspaceReview = "deleted"
-)
-
-// AllValues returns all StaffWorkspaceReview values.
-func (StaffWorkspaceReview) AllValues() []StaffWorkspaceReview {
-	return []StaffWorkspaceReview{
-		StaffWorkspaceReviewWarned,
-		StaffWorkspaceReviewSystemFrozen,
-		StaffWorkspaceReviewDeleted,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s StaffWorkspaceReview) MarshalText() ([]byte, error) {
-	switch s {
-	case StaffWorkspaceReviewWarned:
-		return []byte(s), nil
-	case StaffWorkspaceReviewSystemFrozen:
-		return []byte(s), nil
-	case StaffWorkspaceReviewDeleted:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *StaffWorkspaceReview) UnmarshalText(data []byte) error {
-	switch StaffWorkspaceReview(data) {
-	case StaffWorkspaceReviewWarned:
-		*s = StaffWorkspaceReviewWarned
-		return nil
-	case StaffWorkspaceReviewSystemFrozen:
-		*s = StaffWorkspaceReviewSystemFrozen
-		return nil
-	case StaffWorkspaceReviewDeleted:
-		*s = StaffWorkspaceReviewDeleted
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type StaffWorkspacesExemptNotFound ProblemDetails
-
-func (*StaffWorkspacesExemptNotFound) staffWorkspacesExemptRes() {}
-
-type StaffWorkspacesExemptUnauthorized ProblemDetails
-
-func (*StaffWorkspacesExemptUnauthorized) staffWorkspacesExemptRes() {}
-
-type StaffWorkspacesGetNotFound ProblemDetails
-
-func (*StaffWorkspacesGetNotFound) staffWorkspacesGetRes() {}
-
-type StaffWorkspacesGetUnauthorized ProblemDetails
-
-func (*StaffWorkspacesGetUnauthorized) staffWorkspacesGetRes() {}
-
-// Paginated response.
-type StaffWorkspacesListOK struct {
-	// List of items.
-	Items []StaffWorkspaceResource `json:"items"`
-	// Page number (1-based).
-	Page int32 `json:"page"`
-	// Page size.
-	PageSize int32 `json:"pageSize"`
-	// Total number of elements.
-	TotalItems int32 `json:"totalItems"`
-	// Total number of pages.
-	TotalPages int32 `json:"totalPages"`
+// The Instance's Sign-up items, in the order of the sign-up form.
+// Ref: #/components/schemas/StaffSignupItemList
+type StaffSignupItemList struct {
+	Items []StaffSignupItemResource `json:"items"`
 }
 
 // GetItems returns the value of Items.
-func (s *StaffWorkspacesListOK) GetItems() []StaffWorkspaceResource {
+func (s *StaffSignupItemList) GetItems() []StaffSignupItemResource {
 	return s.Items
 }
 
-// GetPage returns the value of Page.
-func (s *StaffWorkspacesListOK) GetPage() int32 {
-	return s.Page
-}
-
-// GetPageSize returns the value of PageSize.
-func (s *StaffWorkspacesListOK) GetPageSize() int32 {
-	return s.PageSize
-}
-
-// GetTotalItems returns the value of TotalItems.
-func (s *StaffWorkspacesListOK) GetTotalItems() int32 {
-	return s.TotalItems
-}
-
-// GetTotalPages returns the value of TotalPages.
-func (s *StaffWorkspacesListOK) GetTotalPages() int32 {
-	return s.TotalPages
-}
-
 // SetItems sets the value of Items.
-func (s *StaffWorkspacesListOK) SetItems(val []StaffWorkspaceResource) {
+func (s *StaffSignupItemList) SetItems(val []StaffSignupItemResource) {
 	s.Items = val
 }
 
-// SetPage sets the value of Page.
-func (s *StaffWorkspacesListOK) SetPage(val int32) {
-	s.Page = val
+func (*StaffSignupItemList) staffSignupItemsListRes()    {}
+func (*StaffSignupItemList) staffSignupItemsReorderRes() {}
+
+// The new order of the sign-up form: the id of every Sign-up item, archived ones included, each once.
+// Ref: #/components/schemas/StaffSignupItemOrder
+type StaffSignupItemOrder struct {
+	Ids []EntityId `json:"ids"`
 }
 
-// SetPageSize sets the value of PageSize.
-func (s *StaffWorkspacesListOK) SetPageSize(val int32) {
-	s.PageSize = val
+// GetIds returns the value of Ids.
+func (s *StaffSignupItemOrder) GetIds() []EntityId {
+	return s.Ids
 }
 
-// SetTotalItems sets the value of TotalItems.
-func (s *StaffWorkspacesListOK) SetTotalItems(val int32) {
-	s.TotalItems = val
+// SetIds sets the value of Ids.
+func (s *StaffSignupItemOrder) SetIds(val []EntityId) {
+	s.Ids = val
 }
 
-// SetTotalPages sets the value of TotalPages.
-func (s *StaffWorkspacesListOK) SetTotalPages(val int32) {
-	s.TotalPages = val
+// A Sign-up item of the Instance (ADR 0062) with its Legal document's draft and current version.
+// Ref: #/components/schemas/StaffSignupItemResource
+type StaffSignupItemResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The item's key: its Legal document's public page is served under it.
+	Key SignupItemKey `json:"key"`
+	// What the sign-up form shows.
+	Title SignupItemTitle `json:"title"`
+	Kind  SignupItemKind  `json:"kind"`
+	// Where the item stands in the sign-up form, smallest first.
+	Position int32 `json:"position"`
+	// Whether the item stands for consent to the operator's mailings.
+	MailingsConsent bool `json:"mailingsConsent"`
+	// The draft of the next version, absent until one is written. A visitor never sees it.
+	Draft OptLegalDocumentMarkdown `json:"draft"`
+	// The version in effect, absent until one is published. Visitors see the item only once it has one.
+	CurrentVersion OptStaffLegalDocumentVersion `json:"currentVersion"`
+	// When the item was archived, absent while it is in use. An archived item is no longer asked and its
+	// public page is gone; its published versions stay.
+	ArchivedAt OptTimestamp `json:"archivedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
 }
 
-func (*StaffWorkspacesListOK) staffWorkspacesListRes() {}
+// GetID returns the value of ID.
+func (s *StaffSignupItemResource) GetID() EntityId {
+	return s.ID
+}
 
-type StaffWorkspacesSuspendNotFound ProblemDetails
+// GetKey returns the value of Key.
+func (s *StaffSignupItemResource) GetKey() SignupItemKey {
+	return s.Key
+}
 
-func (*StaffWorkspacesSuspendNotFound) staffWorkspacesSuspendRes() {}
+// GetTitle returns the value of Title.
+func (s *StaffSignupItemResource) GetTitle() SignupItemTitle {
+	return s.Title
+}
 
-type StaffWorkspacesSuspendUnauthorized ProblemDetails
+// GetKind returns the value of Kind.
+func (s *StaffSignupItemResource) GetKind() SignupItemKind {
+	return s.Kind
+}
 
-func (*StaffWorkspacesSuspendUnauthorized) staffWorkspacesSuspendRes() {}
+// GetPosition returns the value of Position.
+func (s *StaffSignupItemResource) GetPosition() int32 {
+	return s.Position
+}
 
-type StaffWorkspacesSuspendUnprocessableEntity ProblemDetails
+// GetMailingsConsent returns the value of MailingsConsent.
+func (s *StaffSignupItemResource) GetMailingsConsent() bool {
+	return s.MailingsConsent
+}
 
-func (*StaffWorkspacesSuspendUnprocessableEntity) staffWorkspacesSuspendRes() {}
+// GetDraft returns the value of Draft.
+func (s *StaffSignupItemResource) GetDraft() OptLegalDocumentMarkdown {
+	return s.Draft
+}
 
-type StaffWorkspacesUnexemptNotFound ProblemDetails
+// GetCurrentVersion returns the value of CurrentVersion.
+func (s *StaffSignupItemResource) GetCurrentVersion() OptStaffLegalDocumentVersion {
+	return s.CurrentVersion
+}
 
-func (*StaffWorkspacesUnexemptNotFound) staffWorkspacesUnexemptRes() {}
+// GetArchivedAt returns the value of ArchivedAt.
+func (s *StaffSignupItemResource) GetArchivedAt() OptTimestamp {
+	return s.ArchivedAt
+}
 
-type StaffWorkspacesUnexemptUnauthorized ProblemDetails
+// GetCreatedAt returns the value of CreatedAt.
+func (s *StaffSignupItemResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
 
-func (*StaffWorkspacesUnexemptUnauthorized) staffWorkspacesUnexemptRes() {}
+// SetID sets the value of ID.
+func (s *StaffSignupItemResource) SetID(val EntityId) {
+	s.ID = val
+}
 
-type StaffWorkspacesUnsuspendNotFound ProblemDetails
+// SetKey sets the value of Key.
+func (s *StaffSignupItemResource) SetKey(val SignupItemKey) {
+	s.Key = val
+}
 
-func (*StaffWorkspacesUnsuspendNotFound) staffWorkspacesUnsuspendRes() {}
+// SetTitle sets the value of Title.
+func (s *StaffSignupItemResource) SetTitle(val SignupItemTitle) {
+	s.Title = val
+}
 
-type StaffWorkspacesUnsuspendUnauthorized ProblemDetails
+// SetKind sets the value of Kind.
+func (s *StaffSignupItemResource) SetKind(val SignupItemKind) {
+	s.Kind = val
+}
 
-func (*StaffWorkspacesUnsuspendUnauthorized) staffWorkspacesUnsuspendRes() {}
+// SetPosition sets the value of Position.
+func (s *StaffSignupItemResource) SetPosition(val int32) {
+	s.Position = val
+}
+
+// SetMailingsConsent sets the value of MailingsConsent.
+func (s *StaffSignupItemResource) SetMailingsConsent(val bool) {
+	s.MailingsConsent = val
+}
+
+// SetDraft sets the value of Draft.
+func (s *StaffSignupItemResource) SetDraft(val OptLegalDocumentMarkdown) {
+	s.Draft = val
+}
+
+// SetCurrentVersion sets the value of CurrentVersion.
+func (s *StaffSignupItemResource) SetCurrentVersion(val OptStaffLegalDocumentVersion) {
+	s.CurrentVersion = val
+}
+
+// SetArchivedAt sets the value of ArchivedAt.
+func (s *StaffSignupItemResource) SetArchivedAt(val OptTimestamp) {
+	s.ArchivedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *StaffSignupItemResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+func (*StaffSignupItemResource) staffSignupItemsArchiveRes()   {}
+func (*StaffSignupItemResource) staffSignupItemsCreateRes()    {}
+func (*StaffSignupItemResource) staffSignupItemsGetRes()       {}
+func (*StaffSignupItemResource) staffSignupItemsPublishRes()   {}
+func (*StaffSignupItemResource) staffSignupItemsSaveDraftRes() {}
+func (*StaffSignupItemResource) staffSignupItemsUpdateRes()    {}
+
+// Change a Sign-up item.
+// Ref: #/components/schemas/StaffSignupItemUpdate
+type StaffSignupItemUpdate struct {
+	// A new title. It is not a new version of the Legal document: the form shows it at once.
+	Title OptSignupItemTitle `json:"title"`
+	// Mark or unmark the item as consent to the operator's mailings: only an optional consent, and only
+	// one item of the Instance.
+	MailingsConsent OptBool `json:"mailingsConsent"`
+}
+
+// GetTitle returns the value of Title.
+func (s *StaffSignupItemUpdate) GetTitle() OptSignupItemTitle {
+	return s.Title
+}
+
+// GetMailingsConsent returns the value of MailingsConsent.
+func (s *StaffSignupItemUpdate) GetMailingsConsent() OptBool {
+	return s.MailingsConsent
+}
+
+// SetTitle sets the value of Title.
+func (s *StaffSignupItemUpdate) SetTitle(val OptSignupItemTitle) {
+	s.Title = val
+}
+
+// SetMailingsConsent sets the value of MailingsConsent.
+func (s *StaffSignupItemUpdate) SetMailingsConsent(val OptBool) {
+	s.MailingsConsent = val
+}
+
+type StaffSignupItemsArchiveNotFound ProblemDetails
+
+func (*StaffSignupItemsArchiveNotFound) staffSignupItemsArchiveRes() {}
+
+type StaffSignupItemsArchiveUnauthorized ProblemDetails
+
+func (*StaffSignupItemsArchiveUnauthorized) staffSignupItemsArchiveRes() {}
+
+type StaffSignupItemsArchiveUnprocessableEntity ProblemDetails
+
+func (*StaffSignupItemsArchiveUnprocessableEntity) staffSignupItemsArchiveRes() {}
+
+type StaffSignupItemsCreateUnauthorized ProblemDetails
+
+func (*StaffSignupItemsCreateUnauthorized) staffSignupItemsCreateRes() {}
+
+type StaffSignupItemsCreateUnprocessableEntity ProblemDetails
+
+func (*StaffSignupItemsCreateUnprocessableEntity) staffSignupItemsCreateRes() {}
+
+type StaffSignupItemsGetNotFound ProblemDetails
+
+func (*StaffSignupItemsGetNotFound) staffSignupItemsGetRes() {}
+
+type StaffSignupItemsGetUnauthorized ProblemDetails
+
+func (*StaffSignupItemsGetUnauthorized) staffSignupItemsGetRes() {}
+
+type StaffSignupItemsListVersionsNotFound ProblemDetails
+
+func (*StaffSignupItemsListVersionsNotFound) staffSignupItemsListVersionsRes() {}
+
+type StaffSignupItemsListVersionsUnauthorized ProblemDetails
+
+func (*StaffSignupItemsListVersionsUnauthorized) staffSignupItemsListVersionsRes() {}
+
+type StaffSignupItemsPublishNotFound ProblemDetails
+
+func (*StaffSignupItemsPublishNotFound) staffSignupItemsPublishRes() {}
+
+type StaffSignupItemsPublishUnauthorized ProblemDetails
+
+func (*StaffSignupItemsPublishUnauthorized) staffSignupItemsPublishRes() {}
+
+type StaffSignupItemsPublishUnprocessableEntity ProblemDetails
+
+func (*StaffSignupItemsPublishUnprocessableEntity) staffSignupItemsPublishRes() {}
+
+type StaffSignupItemsReorderUnauthorized ProblemDetails
+
+func (*StaffSignupItemsReorderUnauthorized) staffSignupItemsReorderRes() {}
+
+type StaffSignupItemsReorderUnprocessableEntity ProblemDetails
+
+func (*StaffSignupItemsReorderUnprocessableEntity) staffSignupItemsReorderRes() {}
+
+type StaffSignupItemsSaveDraftNotFound ProblemDetails
+
+func (*StaffSignupItemsSaveDraftNotFound) staffSignupItemsSaveDraftRes() {}
+
+type StaffSignupItemsSaveDraftUnauthorized ProblemDetails
+
+func (*StaffSignupItemsSaveDraftUnauthorized) staffSignupItemsSaveDraftRes() {}
+
+type StaffSignupItemsUpdateNotFound ProblemDetails
+
+func (*StaffSignupItemsUpdateNotFound) staffSignupItemsUpdateRes() {}
+
+type StaffSignupItemsUpdateUnauthorized ProblemDetails
+
+func (*StaffSignupItemsUpdateUnauthorized) staffSignupItemsUpdateRes() {}
+
+type StaffSignupItemsUpdateUnprocessableEntity ProblemDetails
+
+func (*StaffSignupItemsUpdateUnprocessableEntity) staffSignupItemsUpdateRes() {}
 
 type Timestamp time.Time
-
-type WorkspaceId string

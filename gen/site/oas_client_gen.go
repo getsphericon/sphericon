@@ -130,7 +130,8 @@ type Invoker interface {
 	SiteAuthLogin(ctx context.Context, request *SiteLoginInput) (SiteAuthLoginRes, error)
 	// SiteAuthLogout invokes SiteAuth_logout operation.
 	//
-	// End the session on this browser: clears the session cookie.
+	// End the session on this browser: clears the session cookie. Answered while an acceptance is pending
+	// (ADR 0062), so a gated User can sign out.
 	//
 	// POST /auth/logout
 	SiteAuthLogout(ctx context.Context) (*SiteAuthLogoutNoContent, error)
@@ -168,8 +169,7 @@ type Invoker interface {
 	// is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
 	// Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
 	// its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
-	// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
-	// `signup_closed` before anything is read or created; accepting an Invitation still works.
+	// address answers 409. Sign-up is open on every Instance (ADR 0063).
 	//
 	// POST /auth/sign-up
 	SiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (SiteAuthSignUpRes, error)
@@ -178,10 +178,13 @@ type Invoker interface {
 	// Where the provider sends the browser back (the redirect URI derived from the app URL). Always
 	// answers 302: to `return_to` (or `/`) with the session cookie when the sign-in succeeds, and to
 	// `/login?error=<code>` (see SiteSigninError) when it does not. A known identity signs in; a new,
-	// trusted email creates a Verified User with its first Workspace and no mail. A User with a Second
-	// factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the challenge
-	// of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the Login
-	// throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
+	// trusted email creates a Verified User with its first Workspace and no mail; while the Instance has
+	// Sign-up items in effect it creates no User yet and the redirect is to
+	// `/signin-pending?token=<reference>` (plus `redirect` when the flow had a `return_to`), the screen
+	// that asks the items and completes the sign-up through `/auth/signin-pending` (ADR 0062). A User with
+	// a Second factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the
+	// challenge of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the
+	// Login throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
 	// reaches the handler and gets the same redirect as any other refusal.
 	//
 	// GET /auth/signin/{provider}/callback
@@ -194,6 +197,33 @@ type Invoker interface {
 	//
 	// POST /auth/signin-not-me
 	SiteAuthSigninNotMe(ctx context.Context, request *SiteSigninNotMeInput) (SiteAuthSigninNotMeRes, error)
+	// SiteAuthSigninPending invokes SiteAuth_signinPending operation.
+	//
+	// A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up items. The
+	// token is the signed reference of the callback's redirect, valid for ten minutes; an expired,
+	// completed, declined or forged one answers 400.
+	//
+	// GET /auth/signin-pending
+	SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (SiteAuthSigninPendingRes, error)
+	// SiteAuthSigninPendingDecline invokes SiteAuth_signinPendingDecline operation.
+	//
+	// Decline a pending sign-up: it is deleted and nothing is created. Answers 204 also for a token that
+	// names nothing any more.
+	//
+	// POST /auth/signin-pending/decline
+	SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) error
+	// SiteAuthSigninPendingSubmit invokes SiteAuth_signinPendingSubmit operation.
+	//
+	// Complete a pending sign-up with the answers to the Sign-up items: creates the User with its Verified
+	// email, its Linked identity, its first Workspace (and the Membership of the Invitation the flow began
+	// from) and the Consent records (source `provider_screen`) in one transaction, and starts the session.
+	// A required acceptance not ticked answers 422 under `signupItems.<key>` and keeps the pending
+	// sign-up; an item not in effect or a stale version answers 422 under `signupItems`. An expired,
+	// completed, declined or forged token answers 400, and so does one whose address or provider account
+	// was taken meanwhile.
+	//
+	// POST /auth/signin-pending
+	SiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (SiteAuthSigninPendingSubmitRes, error)
 	// SiteAuthSigninProviders invokes SiteAuth_signinProviders operation.
 	//
 	// The Sign-in providers this Instance offers, for the buttons of the login and sign-up pages. Public;
@@ -670,6 +700,21 @@ type Invoker interface {
 	//
 	// POST /workspaces/{workspaceId}/join-domains/{id}/verify
 	SiteJoinDomainsVerify(ctx context.Context, params SiteJoinDomainsVerifyParams) (SiteJoinDomainsVerifyRes, error)
+	// SiteLegalDocumentsGet invokes SiteLegalDocuments_get operation.
+	//
+	// The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
+	// unknown or archived item and for one with no published version. Answered while an acceptance is
+	// pending, for the screen that shows the new texts (ADR 0062).
+	//
+	// GET /legal-documents/{key}
+	SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (SiteLegalDocumentsGetRes, error)
+	// SiteLegalDocumentsSignupItems invokes SiteLegalDocuments_signupItems operation.
+	//
+	// The Sign-up items in effect: those not archived that have a published version, with that version's
+	// label. Public; empty when the Instance has none. Answered while an acceptance is pending (ADR 0062).
+	//
+	// GET /signup-items
+	SiteLegalDocumentsSignupItems(ctx context.Context) (*SiteSignupItemList, error)
 	// SiteMembershipsDelete invokes SiteMemberships_delete operation.
 	//
 	// Remove a member (owner/admin only; the last owner cannot be removed).
@@ -710,6 +755,24 @@ type Invoker interface {
 	//
 	// GET /oauth/authorization
 	SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (SiteOAuthDescribeRes, error)
+	// SiteOptionalConsentsList invokes SiteOptionalConsents_list operation.
+	//
+	// The optional consents in effect (not archived, with a published version) and the User's current
+	// answer to each. They belong to the User, so no Workspace is read. Empty when the Instance has none.
+	// A required acceptance and a notice are not listed: they are not the User's to change.
+	//
+	// GET /me/optional-consents
+	SiteOptionalConsentsList(ctx context.Context) (*SiteOptionalConsentList, error)
+	// SiteOptionalConsentsSet invokes SiteOptionalConsents_set operation.
+	//
+	// Give or withdraw an optional consent. Giving it records `accepted` on the current version,
+	// withdrawing a given one records `withdrawn`, both with the source account settings; a change that
+	// leaves the answer as it is records nothing. 404 for an item not in effect. 422 for a required
+	// acceptance or a notice, which cannot be changed here, and for a version that is not the current one
+	// (field `version`).
+	//
+	// PUT /me/optional-consents/{key}
+	SiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (SiteOptionalConsentsSetRes, error)
 	// SitePasskeyLoginBegin invokes SitePasskeyLogin_begin operation.
 	//
 	// Begin a Passkey login: the request options for the browser, with the challenge in a signed, httpOnly
@@ -927,7 +990,8 @@ type Invoker interface {
 	SiteSecondFactorDisable(ctx context.Context, request *SiteSecondFactorDisableInput) (SiteSecondFactorDisableRes, error)
 	// SiteSecondFactorGetStatus invokes SiteSecondFactor_getStatus operation.
 	//
-	// The authenticated User's Second factor status.
+	// The authenticated User's Second factor status. Answered while an acceptance is pending, for the
+	// account deletion form (ADR 0062).
 	//
 	// GET /me/second-factor
 	SiteSecondFactorGetStatus(ctx context.Context) (*SiteSecondFactorStatus, error)
@@ -1167,6 +1231,16 @@ type Invoker interface {
 	//
 	// GET /workspaces/{workspaceId}/transactional-emails
 	SiteTransactionalEmailsList(ctx context.Context, params SiteTransactionalEmailsListParams) (SiteTransactionalEmailsListRes, error)
+	// SiteUserAcceptPending invokes SiteUser_acceptPending operation.
+	//
+	// Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted with the
+	// source re-acceptance, and the next request is no longer refused. The body names each pending item at
+	// the version the screen showed; 422 when one is missing or its version is no longer the current one
+	// (a newer version was published meanwhile), and nothing is recorded. With nothing pending it records
+	// nothing.
+	//
+	// POST /me/acceptances
+	SiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (SiteUserAcceptPendingRes, error)
 	// SiteUserDeleteUser invokes SiteUser_deleteUser operation.
 	//
 	// Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership, Linked
@@ -1283,7 +1357,9 @@ type Invoker interface {
 	//
 	// Delete a Workspace (Owner only). The typed name must equal the Workspace's name, else 422. The
 	// Workspace is frozen at once and hidden: it answers 404 on its paths and leaves every Member's list;
-	// an Owner restores it within 30 days. Recorded as an Audit entry.
+	// an Owner restores it within 30 days. Recorded as an Audit entry. Answered while an acceptance is
+	// pending (ADR 0062), so a User who solely owns a Workspace can delete it and then their account; the
+	// Two-factor requirement still applies.
 	//
 	// POST /workspaces/{workspaceId}/delete
 	SiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error)
@@ -1319,7 +1395,8 @@ type Invoker interface {
 	// SiteWorkspacesListDeleted invokes SiteWorkspaces_listDeleted operation.
 	//
 	// List the Workspaces in their deletion window that the authenticated User owns, with the date their
-	// data will be erased.
+	// data will be erased. Answered while an acceptance is pending, for the account deletion form (ADR
+	// 0062).
 	//
 	// GET /workspaces/deleted
 	SiteWorkspacesListDeleted(ctx context.Context) ([]SiteDeletedWorkspaceResource, error)
@@ -3686,7 +3763,8 @@ func (c *Client) sendSiteAuthLogin(ctx context.Context, request *SiteLoginInput)
 
 // SiteAuthLogout invokes SiteAuth_logout operation.
 //
-// End the session on this browser: clears the session cookie.
+// End the session on this browser: clears the session cookie. Answered while an acceptance is pending
+// (ADR 0062), so a gated User can sign out.
 //
 // POST /auth/logout
 func (c *Client) SiteAuthLogout(ctx context.Context) (*SiteAuthLogoutNoContent, error) {
@@ -4048,8 +4126,7 @@ func (c *Client) sendSiteAuthSecondFactor(ctx context.Context, request *SiteLogi
 // is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
 // Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
 // its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
-// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
-// `signup_closed` before anything is read or created; accepting an Invitation still works.
+// address answers 409. Sign-up is open on every Instance (ADR 0063).
 //
 // POST /auth/sign-up
 func (c *Client) SiteAuthSignUp(ctx context.Context, request *SiteSignUpInput) (SiteAuthSignUpRes, error) {
@@ -4135,10 +4212,13 @@ func (c *Client) sendSiteAuthSignUp(ctx context.Context, request *SiteSignUpInpu
 // Where the provider sends the browser back (the redirect URI derived from the app URL). Always
 // answers 302: to `return_to` (or `/`) with the session cookie when the sign-in succeeds, and to
 // `/login?error=<code>` (see SiteSigninError) when it does not. A known identity signs in; a new,
-// trusted email creates a Verified User with its first Workspace and no mail. A User with a Second
-// factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the challenge
-// of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the Login
-// throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
+// trusted email creates a Verified User with its first Workspace and no mail; while the Instance has
+// Sign-up items in effect it creates no User yet and the redirect is to
+// `/signin-pending?token=<reference>` (plus `redirect` when the flow had a `return_to`), the screen
+// that asks the items and completes the sign-up through `/auth/signin-pending` (ADR 0062). A User with
+// a Second factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the
+// challenge of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the
+// Login throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
 // reaches the handler and gets the same redirect as any other refusal.
 //
 // GET /auth/signin/{provider}/callback
@@ -4404,6 +4484,279 @@ func (c *Client) sendSiteAuthSigninNotMe(ctx context.Context, request *SiteSigni
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteAuthSigninNotMeResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteAuthSigninPending invokes SiteAuth_signinPending operation.
+//
+// A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up items. The
+// token is the signed reference of the callback's redirect, valid for ten minutes; an expired,
+// completed, declined or forged one answers 400.
+//
+// GET /auth/signin-pending
+func (c *Client) SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (SiteAuthSigninPendingRes, error) {
+	res, err := c.sendSiteAuthSigninPending(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (res SiteAuthSigninPendingRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signinPending"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/auth/signin-pending"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthSigninPendingOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/signin-pending"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "token" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "token",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.Token))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteAuthSigninPendingResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteAuthSigninPendingDecline invokes SiteAuth_signinPendingDecline operation.
+//
+// Decline a pending sign-up: it is deleted and nothing is created. Answers 204 also for a token that
+// names nothing any more.
+//
+// POST /auth/signin-pending/decline
+func (c *Client) SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) error {
+	_, err := c.sendSiteAuthSigninPendingDecline(ctx, request)
+	return err
+}
+
+func (c *Client) sendSiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (res *SiteAuthSigninPendingDeclineNoContent, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signinPendingDecline"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/signin-pending/decline"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthSigninPendingDeclineOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/signin-pending/decline"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteAuthSigninPendingDeclineRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteAuthSigninPendingDeclineResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteAuthSigninPendingSubmit invokes SiteAuth_signinPendingSubmit operation.
+//
+// Complete a pending sign-up with the answers to the Sign-up items: creates the User with its Verified
+// email, its Linked identity, its first Workspace (and the Membership of the Invitation the flow began
+// from) and the Consent records (source `provider_screen`) in one transaction, and starts the session.
+// A required acceptance not ticked answers 422 under `signupItems.<key>` and keeps the pending
+// sign-up; an item not in effect or a stale version answers 422 under `signupItems`. An expired,
+// completed, declined or forged token answers 400, and so does one whose address or provider account
+// was taken meanwhile.
+//
+// POST /auth/signin-pending
+func (c *Client) SiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (SiteAuthSigninPendingSubmitRes, error) {
+	res, err := c.sendSiteAuthSigninPendingSubmit(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSiteAuthSigninPendingSubmit(ctx context.Context, request *SiteSigninPendingSubmitInput) (res SiteAuthSigninPendingSubmitRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteAuth_signinPendingSubmit"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/auth/signin-pending"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteAuthSigninPendingSubmitOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/auth/signin-pending"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteAuthSigninPendingSubmitRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteAuthSigninPendingSubmitResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -15136,6 +15489,190 @@ func (c *Client) sendSiteJoinDomainsVerify(ctx context.Context, params SiteJoinD
 	return result, nil
 }
 
+// SiteLegalDocumentsGet invokes SiteLegalDocuments_get operation.
+//
+// The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
+// unknown or archived item and for one with no published version. Answered while an acceptance is
+// pending, for the screen that shows the new texts (ADR 0062).
+//
+// GET /legal-documents/{key}
+func (c *Client) SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (SiteLegalDocumentsGetRes, error) {
+	res, err := c.sendSiteLegalDocumentsGet(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (res SiteLegalDocumentsGetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteLegalDocuments_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/legal-documents/{key}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteLegalDocumentsGetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/legal-documents/"
+	{
+		// Encode "key" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "key",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.Key); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteLegalDocumentsGetResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteLegalDocumentsSignupItems invokes SiteLegalDocuments_signupItems operation.
+//
+// The Sign-up items in effect: those not archived that have a published version, with that version's
+// label. Public; empty when the Instance has none. Answered while an acceptance is pending (ADR 0062).
+//
+// GET /signup-items
+func (c *Client) SiteLegalDocumentsSignupItems(ctx context.Context) (*SiteSignupItemList, error) {
+	res, err := c.sendSiteLegalDocumentsSignupItems(ctx)
+	return res, err
+}
+
+func (c *Client) sendSiteLegalDocumentsSignupItems(ctx context.Context) (res *SiteSignupItemList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteLegalDocuments_signupItems"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/signup-items"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteLegalDocumentsSignupItemsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/signup-items"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteLegalDocumentsSignupItemsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteMembershipsDelete invokes SiteMemberships_delete operation.
 //
 // Remove a member (owner/admin only; the last owner cannot be removed).
@@ -16018,6 +16555,262 @@ func (c *Client) sendSiteOAuthDescribe(ctx context.Context, params SiteOAuthDesc
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteOAuthDescribeResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteOptionalConsentsList invokes SiteOptionalConsents_list operation.
+//
+// The optional consents in effect (not archived, with a published version) and the User's current
+// answer to each. They belong to the User, so no Workspace is read. Empty when the Instance has none.
+// A required acceptance and a notice are not listed: they are not the User's to change.
+//
+// GET /me/optional-consents
+func (c *Client) SiteOptionalConsentsList(ctx context.Context) (*SiteOptionalConsentList, error) {
+	res, err := c.sendSiteOptionalConsentsList(ctx)
+	return res, err
+}
+
+func (c *Client) sendSiteOptionalConsentsList(ctx context.Context) (res *SiteOptionalConsentList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteOptionalConsents_list"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/me/optional-consents"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteOptionalConsentsListOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/optional-consents"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteOptionalConsentsListOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteOptionalConsentsListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteOptionalConsentsSet invokes SiteOptionalConsents_set operation.
+//
+// Give or withdraw an optional consent. Giving it records `accepted` on the current version,
+// withdrawing a given one records `withdrawn`, both with the source account settings; a change that
+// leaves the answer as it is records nothing. 404 for an item not in effect. 422 for a required
+// acceptance or a notice, which cannot be changed here, and for a version that is not the current one
+// (field `version`).
+//
+// PUT /me/optional-consents/{key}
+func (c *Client) SiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (SiteOptionalConsentsSetRes, error) {
+	res, err := c.sendSiteOptionalConsentsSet(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteOptionalConsentsSet(ctx context.Context, request *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (res SiteOptionalConsentsSetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteOptionalConsents_set"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/me/optional-consents/{key}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteOptionalConsentsSetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/me/optional-consents/"
+	{
+		// Encode "key" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "key",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.Key); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteOptionalConsentsSetRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteOptionalConsentsSetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteOptionalConsentsSetResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -19927,7 +20720,8 @@ func (c *Client) sendSiteSecondFactorDisable(ctx context.Context, request *SiteS
 
 // SiteSecondFactorGetStatus invokes SiteSecondFactor_getStatus operation.
 //
-// The authenticated User's Second factor status.
+// The authenticated User's Second factor status. Answered while an acceptance is pending, for the
+// account deletion form (ADR 0062).
 //
 // GET /me/second-factor
 func (c *Client) SiteSecondFactorGetStatus(ctx context.Context) (*SiteSecondFactorStatus, error) {
@@ -25672,6 +26466,126 @@ func (c *Client) sendSiteTransactionalEmailsList(ctx context.Context, params Sit
 	return result, nil
 }
 
+// SiteUserAcceptPending invokes SiteUser_acceptPending operation.
+//
+// Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted with the
+// source re-acceptance, and the next request is no longer refused. The body names each pending item at
+// the version the screen showed; 422 when one is missing or its version is no longer the current one
+// (a newer version was published meanwhile), and nothing is recorded. With nothing pending it records
+// nothing.
+//
+// POST /me/acceptances
+func (c *Client) SiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (SiteUserAcceptPendingRes, error) {
+	res, err := c.sendSiteUserAcceptPending(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSiteUserAcceptPending(ctx context.Context, request *SiteAcceptPendingInput) (res SiteUserAcceptPendingRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteUser_acceptPending"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/me/acceptances"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteUserAcceptPendingOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/me/acceptances"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteUserAcceptPendingRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteUserAcceptPendingOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteUserAcceptPendingResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteUserDeleteUser invokes SiteUser_deleteUser operation.
 //
 // Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership, Linked
@@ -27738,7 +28652,9 @@ func (c *Client) sendSiteWorkspacesCreate(ctx context.Context, request *SiteCrea
 //
 // Delete a Workspace (Owner only). The typed name must equal the Workspace's name, else 422. The
 // Workspace is frozen at once and hidden: it answers 404 on its paths and leaves every Member's list;
-// an Owner restores it within 30 days. Recorded as an Audit entry.
+// an Owner restores it within 30 days. Recorded as an Audit entry. Answered while an acceptance is
+// pending (ADR 0062), so a User who solely owns a Workspace can delete it and then their account; the
+// Two-factor requirement still applies.
 //
 // POST /workspaces/{workspaceId}/delete
 func (c *Client) SiteWorkspacesDelete(ctx context.Context, request *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (SiteWorkspacesDeleteRes, error) {
@@ -28400,7 +29316,8 @@ func (c *Client) sendSiteWorkspacesList(ctx context.Context) (res []SiteWorkspac
 // SiteWorkspacesListDeleted invokes SiteWorkspaces_listDeleted operation.
 //
 // List the Workspaces in their deletion window that the authenticated User owns, with the date their
-// data will be erased.
+// data will be erased. Answered while an acceptance is pending, for the account deletion form (ADR
+// 0062).
 //
 // GET /workspaces/deleted
 func (c *Client) SiteWorkspacesListDeleted(ctx context.Context) ([]SiteDeletedWorkspaceResource, error) {

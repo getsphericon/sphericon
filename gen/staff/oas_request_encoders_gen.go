@@ -38,8 +38,64 @@ func encodeStaffAuthSecondFactorRequest(
 	return nil
 }
 
-func encodeStaffWorkspacesSuspendRequest(
-	req *StaffSuspendInput,
+func encodeStaffSignupItemsCreateRequest(
+	req *StaffSignupItemInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeStaffSignupItemsPublishRequest(
+	req *StaffLegalDocumentPublishInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeStaffSignupItemsReorderRequest(
+	req *StaffSignupItemOrder,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeStaffSignupItemsSaveDraftRequest(
+	req *StaffLegalDocumentDraftInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeStaffSignupItemsUpdateRequest(
+	req *StaffSignupItemUpdate,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

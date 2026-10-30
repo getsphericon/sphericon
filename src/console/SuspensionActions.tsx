@@ -11,8 +11,8 @@ import {
   staffWorkspacesSuspendMutation,
   staffWorkspacesUnexemptMutation,
   staffWorkspacesUnsuspendMutation,
-} from '../generated/staff/@tanstack/react-query.gen.ts'
-import type { StaffExemptionChange, StaffSuspensionChange } from '../generated/staff/types.gen.ts'
+} from '../generated/staffee/@tanstack/react-query.gen.ts'
+import type { StaffExemptionChange, StaffSuspensionChange } from '../generated/staffee/types.gen.ts'
 import { useNotify } from '../hooks/useNotify.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 

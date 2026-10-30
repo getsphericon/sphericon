@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -27,8 +28,6 @@ import (
 // store is the adapter's side of the seam over accounts, the way /site supplies it.
 type store struct{ acc *accounts.Accounts }
 
-func (s store) Open(ctx context.Context) (bool, error) { return s.acc.SignupOpen(ctx) }
-
 func (s store) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
 	u, err := s.acc.UserByEmail(ctx, email)
 	if ent.IsNotFound(err) {
@@ -37,23 +36,20 @@ func (s store) Lookup(ctx context.Context, email string) (*ent.User, bool, error
 	return u, err == nil, err
 }
 
-func (s store) CreateUnverified(ctx context.Context, name, email, hash string, surveyDue bool) (*ent.User, error) {
-	u, err := s.acc.CreateUnverified(ctx, name, email, hash, surveyDue)
+func (s store) CreateUnverified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+	u, err := s.acc.CreateUnverified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
 	}
 	return u, err
 }
 
-func (s store) ReplaceUnverifiedPassword(ctx context.Context, id int64, hash string) (*ent.User, error) {
-	return s.acc.ReplaceUnverifiedPassword(ctx, id, hash)
+func (s store) ReplaceUnverifiedPassword(ctx context.Context, id int64, hash string, consents consentrecords.Consents) (*ent.User, error) {
+	return s.acc.ReplaceUnverifiedPassword(ctx, id, hash, consents)
 }
 
-func (s store) CreateVerified(ctx context.Context, name, email, hash string, surveyDue bool) (*ent.User, error) {
-	u, err := s.acc.SignUpVerified(ctx, name, email, hash, surveyDue)
-	if errors.Is(err, accounts.ErrSignupClosed) {
-		return nil, signup.ErrClosed
-	}
+func (s store) CreateVerified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+	u, err := s.acc.SignUpVerified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
 	}
@@ -115,9 +111,11 @@ func tokenFor(id int64, browserHash string) string {
 func linkOf(id int64, res signup.Result) string { return tokenFor(id, signup.BrowserHash(res.Browser)) }
 
 type rig struct {
-	db     *ent.Client
-	queue  *queue
-	module *signup.Module
+	env      *testhelper.TestEnv
+	db       *ent.Client
+	queue    *queue
+	module   *signup.Module
+	consents *consentrecords.Module
 }
 
 type option func(*accounts.Accounts, *signup.Config)
@@ -126,10 +124,12 @@ type option func(*accounts.Accounts, *signup.Config)
 func verificationOff(_ *accounts.Accounts, cfg *signup.Config) { cfg.RequireVerification = false }
 
 // newRig builds the module over the fixtures, with a mail budget of budget per address.
-func newRig(t *testing.T, budget int, signupRule accounts.SignupRule, opts ...option) rig {
+func newRig(t *testing.T, budget int, opts ...option) rig {
 	t.Helper()
 	env := testhelper.Setup(t)
-	return build(env.DB, env.Bus, budget, signupRule, opts...)
+	r := build(env.DB, env.Bus, budget, opts...)
+	r.env = env
+	return r
 }
 
 // newRacingRig builds the module over a store whose first lookup misses, on a database of the
@@ -138,22 +138,23 @@ func newRig(t *testing.T, budget int, signupRule accounts.SignupRule, opts ...op
 func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
-	return build(db.NewEntClient(sqlDB), events.New(sqlDB), 5, accounts.SignupAlways,
+	return build(db.NewEntClient(sqlDB), events.New(sqlDB), 5,
 		func(acc *accounts.Accounts, cfg *signup.Config) { cfg.Store = &lateStore{store: store{acc}} })
 }
 
-func build(client *ent.Client, bus *events.Bus, budget int, signupRule accounts.SignupRule, opts ...option) rig {
-	acc := accounts.New(client, bus, testhelper.Passwords(), accounts.WithSignupRule(signupRule))
+func build(client *ent.Client, bus *events.Bus, budget int, opts ...option) rig {
+	consents := testhelper.ConsentRecords(client, bus)
+	acc := accounts.New(client, bus, testhelper.Passwords(), consents)
 	attempts := accounts.NewAttempts(client, accounts.WithRule(accounts.KindSignUp, accounts.ResetRule(budget)))
 	q := &queue{}
 	cfg := signup.Config{
-		Store: store{acc}, Budget: attempts.For(accounts.KindSignUp), Mail: q, Mint: mint, Passwords: testhelper.Passwords(),
+		Store: store{acc}, Budget: attempts.For(accounts.KindSignUp), Mail: q, Mint: mint, Passwords: testhelper.Passwords(), Consents: consents,
 		RequireVerification: true, SurveyDue: func() bool { return false },
 	}
 	for _, o := range opts {
 		o(acc, &cfg)
 	}
-	return rig{db: client, queue: q, module: signup.New(cfg)}
+	return rig{db: client, queue: q, module: signup.New(cfg), consents: consents}
 }
 
 func (r rig) signUp(t *testing.T, name, email, password string) signup.Result {
@@ -184,7 +185,7 @@ const password = "form-password-1"
 // work: a budget slot, one Sign-up browser and exactly one mail job each. Only the job's
 // kind says which it was, and only its owner reads it.
 func TestEverySignUpDoesTheSameWorkWhateverTheAddress(t *testing.T) {
-	r := newRig(t, 5, accounts.SignupAlways)
+	r := newRig(t, 5)
 	john := r.user(t, fixtures.OwnerJohnEmail)
 
 	fresh := r.signUp(t, "Grace", "grace@example.com", password)
@@ -212,7 +213,7 @@ func TestEverySignUpDoesTheSameWorkWhateverTheAddress(t *testing.T) {
 }
 
 func TestASignUpOfANewAddressCreatesAnUnverifiedUserAndMailsItsLink(t *testing.T) {
-	r := newRig(t, 5, accounts.SignupAlways)
+	r := newRig(t, 5)
 
 	res := r.signUp(t, "  Grace  ", "  grace@example.com ", password)
 
@@ -227,7 +228,7 @@ func TestASignUpOfANewAddressCreatesAnUnverifiedUserAndMailsItsLink(t *testing.T
 // ADR 0030: a repeated Sign-up of an Unverified address replaces its password, which ends
 // the earlier links, and keeps the name it was first given.
 func TestARepeatedSignUpOfAnUnverifiedAddressReplacesItsPassword(t *testing.T) {
-	r := newRig(t, 5, accounts.SignupAlways)
+	r := newRig(t, 5)
 	before := r.user(t, fixtures.FreshUnverifiedUserEmail)
 
 	r.signUp(t, "Mallory", fixtures.FreshUnverifiedUserEmail, password)
@@ -255,7 +256,7 @@ func TestASignUpThatLosesARaceEndsAsARepeatedSignUpOfTheWinner(t *testing.T) {
 // ADR 0031: once the address's mail budget is spent a Sign-up still does all the work, and
 // its mail job is queued but delivers nothing.
 func TestASignUpPastTheMailBudgetQueuesAJobThatDeliversNothing(t *testing.T) {
-	r := newRig(t, 1, accounts.SignupAlways)
+	r := newRig(t, 1)
 
 	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
 	res := r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
@@ -264,23 +265,8 @@ func TestASignUpPastTheMailBudgetQueuesAJobThatDeliversNothing(t *testing.T) {
 	assert.Equal(t, []bool{true, false}, []bool{r.queue.jobs[0].Send, r.queue.jobs[1].Send})
 }
 
-// ADR 0042, 0060: a closed sign-up refuses before anything is read or created.
-func TestAClosedSignUpReadsAndCreatesNothing(t *testing.T) {
-	r := newRig(t, 5, accounts.SignupUntilFirstUser)
-
-	res := r.signUp(t, "Grace", "grace@example.com", password)
-
-	assert.Equal(t, signup.Closed, res.Outcome)
-	assert.Empty(t, res.Browser)
-	assert.Empty(t, r.queue.jobs)
-	assert.False(t, r.budgetTaken(t, "grace@example.com"))
-	exists, err := r.db.User.Query().Where(user.Email("grace@example.com")).Exist(t.Context())
-	require.NoError(t, err)
-	assert.False(t, exists)
-}
-
 func TestARefusedFormNamesEveryFieldAndCostsNothing(t *testing.T) {
-	r := newRig(t, 5, accounts.SignupAlways)
+	r := newRig(t, 5)
 
 	_, err := r.module.SignUp(t.Context(), signup.Input{Name: "  ", Email: "not-an-address", Password: "short"})
 
@@ -295,7 +281,7 @@ func TestARefusedFormNamesEveryFieldAndCostsNothing(t *testing.T) {
 // ADR 0030: with verification off the User is Verified at once and welcomed, and no Sign-up
 // browser is drawn: no link follows.
 func TestWithVerificationOffASignUpMakesAVerifiedUserAndWelcomesIt(t *testing.T) {
-	r := newRig(t, 5, accounts.SignupAlways, verificationOff)
+	r := newRig(t, 5, verificationOff)
 
 	res := r.signUp(t, "Grace", "grace@example.com", password)
 
@@ -308,7 +294,7 @@ func TestWithVerificationOffASignUpMakesAVerifiedUserAndWelcomesIt(t *testing.T)
 
 // ADR 0031's one exception: with no mail to tell the owner, a Taken address is the answer.
 func TestWithVerificationOffATakenAddressIsTheAnswer(t *testing.T) {
-	r := newRig(t, 5, accounts.SignupAlways, verificationOff)
+	r := newRig(t, 5, verificationOff)
 	john := r.user(t, fixtures.OwnerJohnEmail)
 
 	res := r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
@@ -319,7 +305,7 @@ func TestWithVerificationOffATakenAddressIsTheAnswer(t *testing.T) {
 }
 
 func TestTheSignUpBrowserIsTheOneWhoseHashTheLinkCarries(t *testing.T) {
-	r := newRig(t, 5, accounts.SignupAlways)
+	r := newRig(t, 5)
 	res := r.signUp(t, "Grace", "grace@example.com", password)
 	other := r.signUp(t, "Alan", "alan@example.com", password)
 

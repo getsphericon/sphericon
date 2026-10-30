@@ -193,18 +193,6 @@ func TestADeletedAddressSignsUpAgainWhereSignupIsOpen(t *testing.T) {
 	assert.NotEqual(t, int64(fixtures.MemberMaryID), again.ID, "a new User, not the old one")
 }
 
-func TestADeletedAddressCannotSignUpWhereSignupIsClosed(t *testing.T) {
-	env := closedInstance(t)
-	deleteUser(t, env.SiteActor(t, fixtures.MemberMaryEmail), &siteapi.SiteDeleteUserInput{
-		Email: fixtures.MemberMaryEmail, CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
-	})
-
-	res := signUpWithPassword(t, env, "Mary Again", fixtures.MemberMaryEmail, formPassword)
-
-	assert.IsType(t, &siteapi.SiteAuthSignUpForbidden{}, res)
-	assert.False(t, userExists(t, env, fixtures.MemberMaryEmail))
-}
-
 func TestAnInvitationSentByTheDeletedUserStaysValidWithoutASenderAndCanBeRevoked(t *testing.T) {
 	env := testhelper.Setup(t)
 	deleteUser(t, env.SiteActor(t, fixtures.AdminAliceEmail), &siteapi.SiteDeleteUserInput{
@@ -231,7 +219,7 @@ func TestAnInvitationSentByTheDeletedUserStaysValidWithoutASenderAndCanBeRevoked
 
 func TestAContactAndAStaffMemberWithTheUsersAddressAreUntouched(t *testing.T) {
 	env := testhelper.Setup(t)
-	acme := env.DB.Scoped(fixtures.AcmeID)
+	acme := env.FeedDB.Scoped(fixtures.AcmeID)
 	// John is no longer Acme's only Owner, so his deletion goes through.
 	require.NoError(t, acme.Membership().UpdateOneID(fixtures.AcmeMemberMembershipID).SetRole(membership.RoleOwner).Exec(t.Context()))
 	// A Contact that carries the User's address (a fixture Contact moves to it).

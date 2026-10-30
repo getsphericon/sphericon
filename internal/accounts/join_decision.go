@@ -19,9 +19,6 @@ type JoinFacts struct {
 	InDeletion bool
 	// HasMembership: the User already has a Membership in that Workspace, of any Role.
 	HasMembership bool
-	// SignupPermits is whether the sign-up gate lets this person in (ADR 0042): the User
-	// already exists, or sign-up is open. A domain match never opens a closed Instance.
-	SignupPermits bool
 }
 
 // JoinOutcome is what the proof of an address does about domain join.
@@ -43,7 +40,6 @@ const (
 	JoinReasonSwitchOff       JoinReason = "switch_off"
 	JoinReasonWorkspaceFrozen JoinReason = "workspace_frozen"
 	JoinReasonAlreadyMember   JoinReason = "already_member"
-	JoinReasonSignupClosed    JoinReason = "signup_closed"
 )
 
 // JoinDecision is an outcome with the Reason of a refusal.
@@ -55,8 +51,7 @@ type JoinDecision struct {
 // DecideJoin is the one domain-join decision. A User joins only at the moment an address is
 // proven (never because the switch was turned on later), only the Workspace whose verified
 // Join domain equals the address's domain, only while its switch is on and it is neither
-// suspended nor in its deletion window, only without a Membership already, and only where
-// the sign-up gate lets the person in.
+// suspended nor in its deletion window, and only without a Membership already.
 func DecideJoin(f JoinFacts) JoinDecision {
 	switch {
 	case !f.ProvenNow:
@@ -69,8 +64,6 @@ func DecideJoin(f JoinFacts) JoinDecision {
 		return JoinDecision{Reason: JoinReasonWorkspaceFrozen}
 	case f.HasMembership:
 		return JoinDecision{Reason: JoinReasonAlreadyMember}
-	case !f.SignupPermits:
-		return JoinDecision{Reason: JoinReasonSignupClosed}
 	default:
 		return JoinDecision{Outcome: JoinAsMember}
 	}

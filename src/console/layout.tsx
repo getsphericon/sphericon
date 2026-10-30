@@ -1,5 +1,11 @@
 import { Avatar, Group, Menu, Stack, Text, UnstyledButton } from '@mantine/core'
-import { IconChevronDown, IconHome, IconLogout } from '@tabler/icons-react'
+import {
+  IconBuildings,
+  IconChevronDown,
+  IconHome,
+  IconListCheck,
+  IconLogout,
+} from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useRouteContext } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -8,21 +14,41 @@ import { NavLinkLink } from '../components/RouterLink.tsx'
 import { staffAuthLogoutMutation } from '../generated/staff/@tanstack/react-query.gen.ts'
 import { useNotify } from '../hooks/useNotify.ts'
 import { DashboardShell } from '../layouts/DashboardShell.tsx'
+import { Route as consoleWorkspacesRoute } from '../routes/console/_authed/_enterprise/workspaces.index.tsx'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
 import { Route as consoleAuthedRoute } from '../routes/console/_authed/route.tsx'
+import { Route as consoleSignupItemsRoute } from '../routes/console/_authed/signup-items.index.tsx'
 import { Route as consoleLoginRoute } from '../routes/console/login.tsx'
 
+// The sections: the core ones on every Instance, the Enterprise ones only when the server serves
+// them (the `staff` license, ADR 0063). A console with them opens on the Workspaces, so it has no
+// home of its own to link to.
 function ConsoleNavbar() {
   const { t } = useTranslation()
+  const { enterprise } = useRouteContext({ from: consoleAuthedRoute.id })
 
   return (
     <Stack gap="xs">
+      {enterprise ? null : (
+        <NavLinkLink
+          to={consoleHomeRoute.to}
+          label={t(($) => $.console.nav.home)}
+          leftSection={<IconHome size={18} />}
+          activeOptions={{ exact: true }}
+        />
+      )}
       <NavLinkLink
-        to={consoleHomeRoute.to}
-        label={t(($) => $.console.nav.workspaces)}
-        leftSection={<IconHome size={18} />}
-        activeOptions={{ exact: true }}
+        to={consoleSignupItemsRoute.to}
+        label={t(($) => $.console.nav.signupItems)}
+        leftSection={<IconListCheck size={18} />}
       />
+      {enterprise && (
+        <NavLinkLink
+          to={consoleWorkspacesRoute.to}
+          label={t(($) => $.console.nav.workspaces)}
+          leftSection={<IconBuildings size={18} />}
+        />
+      )}
     </Stack>
   )
 }

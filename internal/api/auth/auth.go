@@ -18,6 +18,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/apitokens"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -80,19 +81,32 @@ func TokenScoped(ctx context.Context) *ent.Scoped {
 
 // ExternalSecurityHandler implements externalapi.SecurityHandler (Bearer token auth).
 type ExternalSecurityHandler struct {
-	ent *ent.Client
-	bus *events.Bus
-	now func() time.Time
+	ent      *ent.Client
+	bus      *events.Bus
+	consents *consentrecords.Module
+	now      func() time.Time
 }
 
-// NewExternalSecurityHandler builds the Bearer-token handler. The bus opens the
-// transactions of audited writes made under the token (ADR 0022); now is the clock a
-// Connection's Two-factor requirement is checked against (nil means time.Now).
-func NewExternalSecurityHandler(client *ent.Client, bus *events.Bus, now func() time.Time) *ExternalSecurityHandler {
+// ExternalSecurityDeps is what the Bearer-token handler is built from.
+type ExternalSecurityDeps struct {
+	// Ent looks the token up.
+	Ent *ent.Client
+	// Bus opens the transactions of audited writes made under the token (ADR 0022).
+	Bus *events.Bus
+	// ConsentRecords is the acceptance gate a Connection's User meets (ADR 0062).
+	ConsentRecords *consentrecords.Module
+	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
+	// time.Now).
+	Clock func() time.Time
+}
+
+// NewExternalSecurityHandler builds the Bearer-token handler.
+func NewExternalSecurityHandler(d ExternalSecurityDeps) *ExternalSecurityHandler {
+	now := d.Clock
 	if now == nil {
 		now = time.Now
 	}
-	return &ExternalSecurityHandler{ent: client, bus: bus, now: now}
+	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, consents: d.ConsentRecords, now: now}
 }
 
 var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
@@ -121,8 +135,11 @@ func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op exter
 // the rate limits that need it (ADR 0025): a client address that spent its failed-authentication
 // budget is refused before the token is looked at, a failure counts against it, and a success
 // charges the Workspace's shared /api and /mcp budget. Rejections surface as
-// *ratelimit.LimitedError. /mcp authenticates its requests with it; each tool call it dispatches
-// to /api then meets the operation's scopes in HandleBearerAuth.
+// *ratelimit.LimitedError. A Connection whose User has a required acceptance pending is refused
+// with 403 acceptance_pending (ADR 0062), and one the Workspace's Two-factor requirement withholds
+// with 403 second_factor_required (ADR 0020); the Workspace's API token meets neither. /mcp
+// authenticates its requests with it; each tool call it dispatches to /api then meets the
+// operation's scopes in HandleBearerAuth.
 func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error) {
 	authed, err := guardedAuth(ctx,
 		func() (context.Context, error) { return h.authenticate(ctx, t) },
@@ -245,8 +262,17 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 	m := token.Edges.Membership
 	if m != nil {
 		// A Connection acts as its User, through its client, under the Workspace's Two-factor
-		// requirement like the User's own session (ADR 0061, ADR 0020); a token carries no Second
-		// factor step.
+		// requirement and the acceptance gate like the User's own session (ADR 0061, ADR 0020,
+		// ADR 0062); a token carries no Second factor step. The Workspace's API token is no
+		// User's and meets neither. The gate comes first, as on /site, so a User both gated and
+		// withheld is refused alike on every surface.
+		gated, err := h.consents.Gated(ctx, m.UserID)
+		if err != nil {
+			return ctx, err
+		}
+		if gated {
+			return ctx, AcceptancePendingError{}
+		}
 		if secondfactor.Withheld(m, h.now(), false) {
 			return ctx, SecondFactorRequiredError{}
 		}
@@ -276,6 +302,18 @@ func (SecondFactorRequiredError) Unwrap() error { return secondfactor.ErrRequire
 // Problem is the 403 second_factor_required answer.
 func (SecondFactorRequiredError) Problem() (status int, code, detail string) {
 	return http.StatusForbidden, string(siteapi.ProblemCodeSecondFactorRequired), i18n.T("errors.second_factor_required", nil)
+}
+
+// AcceptancePendingError refuses, alike on every surface, a request on the own credential of a
+// User with a required acceptance pending (consentrecords.Module.Gated, ADR 0062). Returned as an
+// error, it is rendered by the server's error handler, which reads it through its Problem method.
+type AcceptancePendingError struct{}
+
+func (AcceptancePendingError) Error() string { return "auth: a required acceptance is pending" }
+
+// Problem is the 403 acceptance_pending answer.
+func (AcceptancePendingError) Problem() (status int, code, detail string) {
+	return http.StatusForbidden, string(siteapi.ProblemCodeAcceptancePending), i18n.T("errors.acceptance_pending", nil)
 }
 
 // CollectAuth holds the workspace resolved from the per-workspace collect key.

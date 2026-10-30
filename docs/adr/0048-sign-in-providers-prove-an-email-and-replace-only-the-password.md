@@ -5,8 +5,13 @@ status: accepted
 # Sign-in providers prove an email and replace only the password
 
 > **Amended by [[0062-sign-up-items-the-operator-sets-and-every-decision-is-recorded]]:** when the
-> decision would create a User and the Instance has Sign-up items, the callback keeps a pending sign-up
-> instead; the User, its Linked identity and first Workspace are created once the items are answered.
+> decision would create a User or take over an Unverified one and the Instance has Sign-up items, the
+> callback keeps a pending sign-up instead; the User is created or taken over, with its Linked identity
+> and first Workspace, once the items are answered.
+
+> **Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** sign-up is
+> always open, so a provider sign-up of a new address has no sign-up gate and `signup_closed` is gone;
+> an Invitation no longer opens anything.
 
 A person who wants to try sphericon should not have to invent a password and wait for a verify
 link. The open core lets a visitor sign up or log in with a **Sign-in provider** (Google first,

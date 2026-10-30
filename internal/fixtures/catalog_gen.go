@@ -525,6 +525,14 @@ const (
 	CyberdynePruMembershipID = 22
 	// CyberdynePublicID is from fixtures/workspaces.
 	CyberdynePublicID = "CyberW13"
+	// DataNoticeCurrentID is from fixtures/legal_document_versions.
+	DataNoticeCurrentID = 4
+	// DataNoticeCurrentLabel is from fixtures/legal_document_versions.
+	DataNoticeCurrentLabel = "2026-01"
+	// DataNoticeID is from fixtures/signup_items.
+	DataNoticeID = 3
+	// DataNoticeKey is from fixtures/signup_items.
+	DataNoticeKey = "data-notice"
 	// DeletedWorkspaceOwnerDanEmail is from fixtures/users.
 	DeletedWorkspaceOwnerDanEmail = "dan@bluth.test"
 	// DeletedWorkspaceOwnerDanID is from fixtures/users.
@@ -1251,6 +1259,8 @@ const (
 	MaryGoogleIdentityProvider = "google"
 	// MaryGoogleIdentitySubject is from fixtures/user_identities.
 	MaryGoogleIdentitySubject = "google-subject-of-mary"
+	// MaryTermsAcceptedID is from fixtures/consent_records.
+	MaryTermsAcceptedID = 1
 	// MassiveAnnEmail is from fixtures/contacts.
 	MassiveAnnEmail = "ann@massive.test"
 	// MassiveAnnID is from fixtures/contacts.
@@ -1287,6 +1297,14 @@ const (
 	MeterName = "Meter"
 	// MeterPublicID is from fixtures/workspaces.
 	MeterPublicID = "MeterW80"
+	// OperatorNewsCurrentID is from fixtures/legal_document_versions.
+	OperatorNewsCurrentID = 3
+	// OperatorNewsCurrentLabel is from fixtures/legal_document_versions.
+	OperatorNewsCurrentLabel = "2026-01"
+	// OperatorNewsID is from fixtures/signup_items.
+	OperatorNewsID = 2
+	// OperatorNewsKey is from fixtures/signup_items.
+	OperatorNewsKey = "operator-news"
 	// OrderAcmeID is from fixtures/orders.
 	OrderAcmeID = 1
 	// OrderGlobexID is from fixtures/orders.
@@ -1413,6 +1431,10 @@ const (
 	OwnerSallyName = "Sally"
 	// OwnerSallyPassword is from fixtures/users.
 	OwnerSallyPassword = "password"
+	// PartnerOffersID is from fixtures/signup_items.
+	PartnerOffersID = 4
+	// PartnerOffersKey is from fixtures/signup_items.
+	PartnerOffersKey = "partner-offers"
 	// PasskeyOnlyPegEmail is from fixtures/users.
 	PasskeyOnlyPegEmail = "peg@passkey.test"
 	// PasskeyOnlyPegID is from fixtures/users.
@@ -1463,6 +1485,26 @@ const (
 	PaxGoogleIdentityProvider = "google"
 	// PaxGoogleIdentitySubject is from fixtures/user_identities.
 	PaxGoogleIdentitySubject = "google-subject-of-pax"
+	// PendingSignupExpiredEmail is from fixtures/pending_signups.
+	PendingSignupExpiredEmail = "gone.visitor@gmail.com"
+	// PendingSignupExpiredID is from fixtures/pending_signups.
+	PendingSignupExpiredID = 1
+	// PendingSignupExpiredName is from fixtures/pending_signups.
+	PendingSignupExpiredName = "Gone Visitor"
+	// PendingSignupExpiredProvider is from fixtures/pending_signups.
+	PendingSignupExpiredProvider = "google"
+	// PendingSignupExpiredSubject is from fixtures/pending_signups.
+	PendingSignupExpiredSubject = "google-subject-of-a-gone-visitor"
+	// PendingSignupOpenEmail is from fixtures/pending_signups.
+	PendingSignupOpenEmail = "deciding.visitor@gmail.com"
+	// PendingSignupOpenID is from fixtures/pending_signups.
+	PendingSignupOpenID = 2
+	// PendingSignupOpenName is from fixtures/pending_signups.
+	PendingSignupOpenName = "Deciding Visitor"
+	// PendingSignupOpenProvider is from fixtures/pending_signups.
+	PendingSignupOpenProvider = "google"
+	// PendingSignupOpenSubject is from fixtures/pending_signups.
+	PendingSignupOpenSubject = "google-subject-of-a-deciding-visitor"
 	// PiaGoogleIdentityID is from fixtures/user_identities.
 	PiaGoogleIdentityID = 3
 	// PiaGoogleIdentityProvider is from fixtures/user_identities.
@@ -1769,6 +1811,18 @@ const (
 	ServiceCredentialSecondPrefix = "svcsecond002"
 	// ServiceCredentialSecondSecret is from fixtures/service_credentials.
 	ServiceCredentialSecondSecret = "service-second-secret-000000000000000000"
+	// ServiceTermsCurrentID is from fixtures/legal_document_versions.
+	ServiceTermsCurrentID = 2
+	// ServiceTermsCurrentLabel is from fixtures/legal_document_versions.
+	ServiceTermsCurrentLabel = "2026-02"
+	// ServiceTermsID is from fixtures/signup_items.
+	ServiceTermsID = 1
+	// ServiceTermsKey is from fixtures/signup_items.
+	ServiceTermsKey = "service-terms"
+	// ServiceTermsStaleID is from fixtures/legal_document_versions.
+	ServiceTermsStaleID = 1
+	// ServiceTermsStaleLabel is from fixtures/legal_document_versions.
+	ServiceTermsStaleLabel = "2026-01"
 	// SoleOwnerDoraEmail is from fixtures/users.
 	SoleOwnerDoraEmail = "dora@piedpiper.test"
 	// SoleOwnerDoraID is from fixtures/users.

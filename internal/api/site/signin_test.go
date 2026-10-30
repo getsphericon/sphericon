@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -278,14 +279,18 @@ func TestSigninACallbackForAProviderThatIsNotEnabledLandsOnLogin(t *testing.T) {
 	assert.Equal(t, signin.ReasonProviderUnavailable, refusalCode(t, resp, loginErrorPath))
 }
 
-func TestSigninClosedSignupRefusesANewPersonButNotAKnownOne(t *testing.T) {
+// ADR 0063: sign-up is always open, so a provider's first login creates a User on a
+// self-hosted Instance that already has its Owners.
+func TestSigninANewPersonGetsAnAccountOnASelfHostedInstance(t *testing.T) {
 	env, fake := signinEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 
-	refused := signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
-	allowed := signInWith(t, fake, env.NewRedirectBrowser(t), mary, "")
+	resp := signInWith(t, fake, env.NewRedirectBrowser(t), newcomer, "")
 
-	assert.Equal(t, signin.ReasonSignupClosed, refusalCode(t, refused, loginErrorPath))
-	assert.Equal(t, "/", allowed.Header.Get("Location"))
+	assert.Equal(t, "/", resp.Header.Get("Location"))
+	spaces, err := env.SiteActor(t, newcomer.Email).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	require.Len(t, spaces, 1)
+	assert.Equal(t, accounts.FirstWorkspaceName, spaces[0].Name)
 }
 
 // samIdentity is Sam, whose account has a Linked identity and an enrolled Second factor.

@@ -30,7 +30,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
-	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/authtoken"
@@ -39,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/domainverify"
@@ -67,7 +67,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
+	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -156,10 +158,18 @@ func initBaseline() {
 type TestEnv struct {
 	// Instance is the module the server shares: run its Release check with CheckRelease.
 	Instance *instance.Module
-	DB       *ent.Client // transaction-bound; rolled back when the test finishes
-	SQLDB    *sql.DB     // the same txdb connection the ent client and bus ride
-	Bus      *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
-	Server   http.Handler
+	// DB is the plain client the modules under test get, transaction-bound and rolled back when
+	// the test finishes. Like production's (db.NewEntClient) it refuses a change the Workspace
+	// feed, the User feed or the Tracking host log would record outside a bus transaction, so a
+	// module that forgets the transaction fails its tests.
+	DB *ent.Client
+	// FeedDB is a client on the same transaction that records those changes as a bus transaction
+	// does: for a test that moves a fixture row the feeds watch (a Workspace marked deleted, a
+	// User's address changed) as its setup, never for the operation under test.
+	FeedDB *ent.Client
+	SQLDB  *sql.DB     // the same txdb connection the ent client and bus ride
+	Bus    *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
+	Server http.Handler
 	// Internal is the handler of the internal listener (ADR 0026), built like the
 	// composition root builds it: the service endpoints and nothing else. Nil on an
 	// unlicensed instance, where no listener would be bound.
@@ -171,6 +181,9 @@ type TestEnv struct {
 	Cipher *secrets.Cipher
 	// Integrations is the module the server serves Integrations and their hooks with.
 	Integrations *integrations.Module
+	// ConsentRecords is the module the server records the Users' decisions on the Sign-up items
+	// with (ADR 0062): read a User's current answers with Current.
+	ConsentRecords *consentrecords.Module
 
 	// AppURL is SPHERICON_APP_URL of the env: the origin and relying party id of a Passkey
 	// ceremony (ADR 0051).
@@ -208,9 +221,13 @@ type TestEnv struct {
 	// env's clock (ADR 0020).
 	SecondFactor *secondfactor.Module
 
-	// Staff members is the Staff member module the server logs staff in with (ADR 0026); it
-	// refuses every call on an unlicensed env.
-	StaffMembers *staff.Module
+	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,
+	// ADR 0063), on every env.
+	StaffMembers *staffmembers.Module
+
+	// StaffEnterprise is the module of the Staff console's Enterprise sections and of the
+	// service endpoints; it refuses every call on an unlicensed env.
+	StaffEnterprise *staff.Module
 }
 
 // TrackingCNAMETarget is the edge host the test instance names for Tracking domain CNAMEs
@@ -223,11 +240,11 @@ type Option func(*setup)
 // setup is what the options edit: a private copy of the test config, the clock the
 // account attempt module reads, and whether the instance has no EE license.
 type setup struct {
-	cfg *config.Config
-	// signupRule replaces the sign-up rule of the Mode when set (WithSignupRule).
-	signupRule *accounts.SignupRule
+	cfg        *config.Config
 	now        func() time.Time
 	unlicensed bool
+	// noStaffSecret builds the Instance without a Staff member secret (WithoutStaffSecret).
+	noStaffSecret bool
 	// volumeFloor is the Staff console's rate floor; zero is the default.
 	volumeFloor int
 	// version is the running version the Instance module judges releases against; the
@@ -280,25 +297,16 @@ func WithSNSCertificates(f preset.CertFetcher) Option { return func(s *setup) { 
 // self-host. Setup's default is an instance licensed for every EE feature.
 func WithoutLicense() Option { return func(s *setup) { s.unlicensed = true } }
 
+// WithoutStaffSecret builds the instance without SPHERICON_STAFF_JWT_SECRET, so the Staff
+// sign-in is off. It needs WithoutLicense: the `staff` feature refuses to start without it.
+func WithoutStaffSecret() Option { return func(s *setup) { s.noStaffSecret = true } }
+
 // WithStaffVolumeFloor sets the fewest sends in the Staff console's window for a
 // rate to be defined, so a test crosses the floor with a handful of fixture Events.
 func WithStaffVolumeFloor(n int) Option { return func(s *setup) { s.volumeFloor = n } }
 
 // WithMode runs the test Instance in a Mode, with every setting the Mode decides.
 func WithMode(m config.Mode) Option { return func(s *setup) { s.cfg.ApplyMode(m) } }
-
-// WithSignupRule opens or closes Sign-up whatever the Mode says. The fixtures already hold
-// Users, so a selfhosted test Instance is closed; a test of what a new person gets on such an
-// Instance (the Sign-up survey) opens it with accounts.SignupAlways.
-func WithSignupRule(rule accounts.SignupRule) Option { return func(s *setup) { s.signupRule = &rule } }
-
-// signupRuleOf is the sign-up rule of the test Instance: WithSignupRule's, else its Mode's.
-func (s *setup) signupRuleOf(cfg *config.Config) accounts.SignupRule {
-	if s.signupRule != nil {
-		return *s.signupRule
-	}
-	return accounts.SignupRuleOf(cfg.Mode.SaaS())
-}
 
 // WithConfig edits a private copy of the test config before the server is built.
 func WithConfig(edit func(*config.Config)) Option { return func(s *setup) { edit(s.cfg) } }
@@ -317,6 +325,21 @@ func WithRateLimits(limits config.RateLimits) Option {
 // newStaffSecret is the secret Staff member sessions are signed with in a test env: random
 // and its own, never the site's.
 func newStaffSecret() string { return rand.Text() + rand.Text() }
+
+// staffMembers is the Staff member module of the test Instance, its sign-in off under
+// WithoutStaffSecret.
+func (s *setup) staffMembers(t *testing.T, client *ent.Client, cipher *secrets.Cipher, cfg *config.Config, attempts *accounts.Attempts) *staffmembers.Module {
+	t.Helper()
+	secret := newStaffSecret()
+	if s.noStaffSecret {
+		secret = ""
+	}
+	m, err := staffmembers.New(client, cipher, cfg.JWTSecrets(), staffmembers.Config{
+		Secret: secret, SessionTTL: cfg.StaffSessionTTL, SecureCookies: cfg.SecureCookies(), Clock: s.now, Attempts: attempts, Passwords: Passwords(),
+	})
+	require.NoError(t, err, "build staff members")
+	return m
+}
 
 // testLicense mints, once per process, an EE license key signed by a throwaway key
 // pair and verified through the same Parse the production composition root uses.
@@ -350,6 +373,17 @@ func testConfig() config.Config {
 	return cfg
 }
 
+// externalSurfaces is the handler of /api and the one of /mcp, built from the same Deps as the
+// app builds them, so both meet the same Bearer-token handler.
+func externalSurfaces(t *testing.T, client *ent.Client, deps apiexternal.Deps, mcpOrigin string) (external, mcp http.Handler) {
+	t.Helper()
+	external, err := server.NewExternalAPI(client, deps)
+	require.NoError(t, err, "build external API")
+	mcp, err = mcpserver.New(sphericon.ExternalOpenAPI, external, server.ExternalSecurity(client, deps), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(mcpOrigin)))
+	require.NoError(t, err, "build MCP handler")
+	return external, mcp
+}
+
 func Setup(t *testing.T, opts ...Option) *TestEnv {
 	t.Helper()
 	initBaseline()
@@ -365,7 +399,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// connection); it is rolled back when the test ends.
 	txDB := cleaner.DB(t)
 
-	client := db.NewEntClientOnTx(txDB)
+	client := db.NewEntClient(txDB)
+	feedClient := db.NewEntClientOnTx(txDB)
 	// Bus over the same txdb connection: WithinTx opens a nested (savepoint)
 	// transaction, so producer writes + outbox inserts roll back with the test.
 	bus := events.New(txDB)
@@ -412,14 +447,12 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	if st.volumeFloor > 0 {
 		limits.VolumeFloor = st.volumeFloor
 	}
-	edition, err := ee.New(client, bus, lic, cipher, cfg.JWTSecrets(), staff.Config{
-		Secret: newStaffSecret(), SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Clock: st.now,
-		Attempts: attempts, Abuse: limits, SupportEmail: cfg.SupportEmail, Passwords: Passwords(),
+	staffMembers := st.staffMembers(t, client, cipher, &cfg, attempts)
+	edition, err := ee.New(client, bus, lic, staffMembers.Sessions(), staff.Config{
+		HoldMaxExpiry: cfg.StaffHoldMaxExpiry, Clock: st.now, Abuse: limits, SupportEmail: cfg.SupportEmail,
 	})
 	require.NoError(t, err, "build edition")
-	// The Edition's ent hooks, on the client and on every transaction the bus opens.
-	client.Use(edition.Hooks()...)
-	bus.Use(edition.Hooks()...)
+	useEditionHooks(edition, bus, client, feedClient)
 	outboundOpts := []outbound.Option{outbound.WithTrackingDomains(), outbound.WithTestSendBudget(attempts)}
 	switch {
 	case st.noSystemSender:
@@ -467,16 +500,16 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	automationsModule := automations.New(cipher, bus, Renderer())
 	rulesModule := rules.New(cipher, bus)
 	broadcastsModule := broadcasts.New(bus, Renderer())
-	acc := accounts.New(client, bus, Passwords(), accounts.WithSignupRule(st.signupRuleOf(&cfg)))
-	external, err := server.NewExternalAPI(client, apiexternal.Deps{
+	signupItems := signupitems.New(client, bus, st.now)
+	consentRecords := consentrecords.New(client, bus, signupItems)
+	acc := accounts.New(client, bus, Passwords(), consentRecords)
+	externalDeps := apiexternal.Deps{
 		Clock: st.now, Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, CapturedMessages: capturedModule, SendingDomains: sendingDomainsModule,
-		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
-	})
-	require.NoError(t, err, "build external API")
-	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus, st.now), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
-	require.NoError(t, err, "build MCP handler")
+		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export, ConsentRecords: consentRecords,
+	}
+	external, mcpHandler := externalSurfaces(t, client, externalDeps, cfg.MCPOrigin())
 	oauthFetcher := st.oauthFetcher
 	if oauthFetcher == nil {
 		oauthFetcher = oauthserver.NewFetcher(cfg.OutboundAllow)
@@ -484,7 +517,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
 	passkeys, err := secondfactor.NewPasskeys(client, bus, cfg.AppURL, cfg.JWTSecret, st.now)
 	require.NoError(t, err, "build passkeys")
-	staffHandler, err := server.NewStaffAPI(edition.Staff(bus, systemMail))
+	staffHandler, err := server.NewStaffAPI(staffMembers, signupItems, edition.StaffSections(bus, systemMail))
 	require.NoError(t, err, "build staff API")
 	accountLink, _, err := accountlink.FromConfig(&cfg)
 	require.NoError(t, err, "build account link")
@@ -495,9 +528,11 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	relay := &FakeRelayRanges{}
 	detector := machine.New(client, relay)
 	handler, err := server.New(&cfg, txDB, migrated, client, apisite.Deps{
-		SignupSurvey: signupsurvey.New(bus, signupsurvey.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default())),
-		Deletion:     workspacedeletion.New(client, bus),
-		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
+		SignupSurvey:   signupsurvey.New(bus, signupsurvey.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default())),
+		SignupItems:    signupItems,
+		ConsentRecords: consentRecords,
+		Deletion:       workspacedeletion.New(client, bus),
+		AccountLink:    accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
 		Instance: inst,
 		Accounts: acc, Passwords: Passwords(), Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
@@ -516,8 +551,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 
 	return &TestEnv{
 		sender:   sender,
-		Instance: inst, AppURL: cfg.AppURL, DB: client, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, jwtSecret: baseCfg.JWTSecret, edition: edition, orders: orders.New(), Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
-		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Machine: detector, PrivateRelay: relay, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: edition.StaffMembers,
+		Instance: inst, AppURL: cfg.AppURL, DB: client, FeedDB: feedClient, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, ConsentRecords: consentRecords, jwtSecret: baseCfg.JWTSecret, edition: edition, orders: orders.New(), Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
+		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Machine: detector, PrivateRelay: relay, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: staffMembers, StaffEnterprise: edition.Staff,
 	}
 }
 
@@ -664,3 +699,12 @@ var migrated = db.WatchSchema(func(context.Context) (int, error) { return 0, nil
 var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
 	return preset.Load(nil, preset.WithSNSCertificates(preset.TestSNSCertificates))
 })
+
+// useEditionHooks installs the Edition's ent hooks on the clients and on every transaction the
+// bus opens, as the composition root does.
+func useEditionHooks(edition *ee.Edition, bus *events.Bus, clients ...*ent.Client) {
+	for _, c := range clients {
+		c.Use(edition.Hooks()...)
+	}
+	bus.Use(edition.Hooks()...)
+}

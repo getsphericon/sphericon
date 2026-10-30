@@ -18,6 +18,12 @@ snapshots:
         style: primary
         start: 78
         end: 86
+  "func refusedForm(err error) bool {\n\t_, ok := errors.AsType[*validation.FieldsError](err)\n\treturn ok\n}\n":
+    labels:
+      - source: validation.FieldsError
+        style: primary
+        start: 60
+        end: 82
   "func sentinel(err error) bool {\n\t_, ok := errors.AsType[*validation.RefusalError](err)\n\treturn ok\n}\n":
     labels:
       - source: validation.RefusalError

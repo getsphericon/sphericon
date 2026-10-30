@@ -12,6 +12,7 @@ export interface ApiErrorLike {
   debug?: ProblemDebug | null
   usedBy?: UsedBy[] | null
   workspaces?: SiteSoleOwnedWorkspace[] | null
+  errors?: Record<string, string[]> | null
 }
 
 function isApiErrorLike(error: unknown): error is ApiErrorLike {
@@ -37,6 +38,14 @@ export function isSecondFactorRequiredError(error: unknown) {
     isApiErrorLike(error) &&
     error.status === 403 &&
     error.code === ProblemCode.SECOND_FACTOR_REQUIRED
+  )
+}
+
+// A 403 problem with code acceptance_pending: a required Sign-up item has a version the User has
+// not accepted (ADR 0062), and every page but the accept-or-sign-out screen is refused.
+export function isAcceptancePendingError(error: unknown) {
+  return (
+    isApiErrorLike(error) && error.status === 403 && error.code === ProblemCode.ACCEPTANCE_PENDING
   )
 }
 
@@ -126,4 +135,13 @@ export function getSoleOwnedWorkspaces(error: unknown) {
     return undefined
   }
   return error.workspaces
+}
+
+// The first message a 422 problem lists under one field (its `errors` member), or undefined when
+// the error names no such field.
+export function getFieldError(error: unknown, field: string) {
+  if (!isApiErrorLike(error) || error.status !== 422) {
+    return undefined
+  }
+  return error.errors?.[field]?.[0]
 }

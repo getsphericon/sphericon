@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/pendingsignup"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -21,13 +23,14 @@ import (
 // InvitationQuery is the builder for querying Invitation entities.
 type InvitationQuery struct {
 	config
-	ctx           *QueryContext
-	order         []invitation.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.Invitation
-	withWorkspace *WorkspaceQuery
-	withInviter   *UserQuery
-	modifiers     []func(*sql.Selector)
+	ctx                *QueryContext
+	order              []invitation.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Invitation
+	withWorkspace      *WorkspaceQuery
+	withInviter        *UserQuery
+	withPendingSignups *PendingSignupQuery
+	modifiers          []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +104,28 @@ func (_q *InvitationQuery) QueryInviter() *UserQuery {
 			sqlgraph.From(invitation.Table, invitation.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, invitation.InviterTable, invitation.InviterColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPendingSignups chains the current query on the "pending_signups" edge.
+func (_q *InvitationQuery) QueryPendingSignups() *PendingSignupQuery {
+	query := (&PendingSignupClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(invitation.Table, invitation.FieldID, selector),
+			sqlgraph.To(pendingsignup.Table, pendingsignup.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, invitation.PendingSignupsTable, invitation.PendingSignupsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +320,14 @@ func (_q *InvitationQuery) Clone() *InvitationQuery {
 		return nil
 	}
 	return &InvitationQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]invitation.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.Invitation{}, _q.predicates...),
-		withWorkspace: _q.withWorkspace.Clone(),
-		withInviter:   _q.withInviter.Clone(),
+		config:             _q.config,
+		ctx:                _q.ctx.Clone(),
+		order:              append([]invitation.OrderOption{}, _q.order...),
+		inters:             append([]Interceptor{}, _q.inters...),
+		predicates:         append([]predicate.Invitation{}, _q.predicates...),
+		withWorkspace:      _q.withWorkspace.Clone(),
+		withInviter:        _q.withInviter.Clone(),
+		withPendingSignups: _q.withPendingSignups.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -328,6 +354,17 @@ func (_q *InvitationQuery) WithInviter(opts ...func(*UserQuery)) *InvitationQuer
 		opt(query)
 	}
 	_q.withInviter = query
+	return _q
+}
+
+// WithPendingSignups tells the query-builder to eager-load the nodes that are connected to
+// the "pending_signups" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *InvitationQuery) WithPendingSignups(opts ...func(*PendingSignupQuery)) *InvitationQuery {
+	query := (&PendingSignupClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withPendingSignups = query
 	return _q
 }
 
@@ -409,9 +446,10 @@ func (_q *InvitationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*I
 	var (
 		nodes       = []*Invitation{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withWorkspace != nil,
 			_q.withInviter != nil,
+			_q.withPendingSignups != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -444,6 +482,13 @@ func (_q *InvitationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*I
 	if query := _q.withInviter; query != nil {
 		if err := _q.loadInviter(ctx, query, nodes, nil,
 			func(n *Invitation, e *User) { n.Edges.Inviter = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withPendingSignups; query != nil {
+		if err := _q.loadPendingSignups(ctx, query, nodes,
+			func(n *Invitation) { n.Edges.PendingSignups = []*PendingSignup{} },
+			func(n *Invitation, e *PendingSignup) { n.Edges.PendingSignups = append(n.Edges.PendingSignups, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -508,6 +553,39 @@ func (_q *InvitationQuery) loadInviter(ctx context.Context, query *UserQuery, no
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (_q *InvitationQuery) loadPendingSignups(ctx context.Context, query *PendingSignupQuery, nodes []*Invitation, init func(*Invitation), assign func(*Invitation, *PendingSignup)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Invitation)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(pendingsignup.FieldInvitationID)
+	}
+	query.Where(predicate.PendingSignup(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(invitation.PendingSignupsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.InvitationID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "invitation_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "invitation_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

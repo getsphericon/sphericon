@@ -57,65 +57,68 @@ type Invoker interface {
 	//
 	// GET /me
 	StaffMeGet(ctx context.Context) (StaffMeGetRes, error)
-	// StaffSignupSurveyCounts invokes StaffSignupSurvey_counts operation.
+	// StaffSignupItemsArchive invokes StaffSignupItems_archive operation.
 	//
-	// The Sign-up survey answers, counted per question. Read only.
+	// Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its published
+	// versions stay. Archiving an archived item changes nothing, and an archived item is never restored.
+	// The item that stands for consent to the operator's mailings is refused (422) until it is unmarked.
 	//
-	// GET /signup-survey
-	StaffSignupSurveyCounts(ctx context.Context) (StaffSignupSurveyCountsRes, error)
-	// StaffSignupSurveyGet invokes StaffSignupSurvey_get operation.
+	// POST /signup-items/{id}/archive
+	StaffSignupItemsArchive(ctx context.Context, params StaffSignupItemsArchiveParams) (StaffSignupItemsArchiveRes, error)
+	// StaffSignupItemsCreate invokes StaffSignupItems_create operation.
 	//
-	// One User's answers. 404 when the User is unknown or has not answered the survey.
+	// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
+	// a second mailings consent are refused (422).
 	//
-	// GET /signup-survey/users/{userId}
-	StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (StaffSignupSurveyGetRes, error)
-	// StaffWorkspaceAuditList invokes StaffWorkspaceAudit_list operation.
+	// POST /signup-items
+	StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (StaffSignupItemsCreateRes, error)
+	// StaffSignupItemsGet invokes StaffSignupItems_get operation.
 	//
-	// One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing
-	// is then recorded.
+	// One Sign-up item.
 	//
-	// GET /workspaces/{workspaceId}/audit-entries
-	StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (StaffWorkspaceAuditListRes, error)
-	// StaffWorkspacesExempt invokes StaffWorkspaces_exempt operation.
+	// GET /signup-items/{id}
+	StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (StaffSignupItemsGetRes, error)
+	// StaffSignupItemsList invokes StaffSignupItems_list operation.
 	//
-	// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
-	// automatically, but stays listed with its rates and can still be suspended by hand. Audited.
-	// Idempotent.
+	// The Instance's Sign-up items, archived ones included, in the order of the sign-up form.
 	//
-	// POST /workspaces/{workspaceId}/exempt
-	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (StaffWorkspacesExemptRes, error)
-	// StaffWorkspacesGet invokes StaffWorkspaces_get operation.
+	// GET /signup-items
+	StaffSignupItemsList(ctx context.Context) (StaffSignupItemsListRes, error)
+	// StaffSignupItemsListVersions invokes StaffSignupItems_listVersions operation.
 	//
-	// One Workspace's metadata, suspension state, rates and send volume.
+	// Every published version of the item's Legal document with who published it and when, the latest
+	// first.
 	//
-	// GET /workspaces/{workspaceId}
-	StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (StaffWorkspacesGetRes, error)
-	// StaffWorkspacesList invokes StaffWorkspaces_list operation.
+	// GET /signup-items/{id}/versions
+	StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (StaffSignupItemsListVersionsRes, error)
+	// StaffSignupItemsPublish invokes StaffSignupItems_publish operation.
 	//
-	// List all Workspaces, newest first, optionally narrowed by an id or name search.
+	// Publish the draft as a new version under a label: it takes effect at once, and is never changed or
+	// removed afterwards. A label the item already has, and an item without a draft, are refused (422).
 	//
-	// GET /workspaces
-	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error)
-	// StaffWorkspacesSuspend invokes StaffWorkspaces_suspend operation.
+	// POST /signup-items/{id}/versions
+	StaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (StaffSignupItemsPublishRes, error)
+	// StaffSignupItemsReorder invokes StaffSignupItems_reorder operation.
 	//
-	// Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the signed-in Staff
-	// member. Idempotent: an already-suspended Workspace is left as it was.
+	// Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
+	// every item's id exactly once is refused (422).
 	//
-	// POST /workspaces/{workspaceId}/suspend
-	StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (StaffWorkspacesSuspendRes, error)
-	// StaffWorkspacesUnexempt invokes StaffWorkspaces_unexempt operation.
+	// PUT /signup-items/order
+	StaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (StaffSignupItemsReorderRes, error)
+	// StaffSignupItemsSaveDraft invokes StaffSignupItems_saveDraft operation.
 	//
-	// Police a Workspace by the abuse detector again. Audited. Idempotent.
+	// Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
+	// until it is published.
 	//
-	// POST /workspaces/{workspaceId}/unexempt
-	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (StaffWorkspacesUnexemptRes, error)
-	// StaffWorkspacesUnsuspend invokes StaffWorkspaces_unsuspend operation.
+	// PUT /signup-items/{id}/draft
+	StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (StaffSignupItemsSaveDraftRes, error)
+	// StaffSignupItemsUpdate invokes StaffSignupItems_update operation.
 	//
-	// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is
-	// left as it was.
+	// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent
+	// or is archived, and a second mailings consent are refused (422).
 	//
-	// POST /workspaces/{workspaceId}/unsuspend
-	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (StaffWorkspacesUnsuspendRes, error)
+	// PATCH /signup-items/{id}
+	StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (StaffSignupItemsUpdateRes, error)
 }
 
 // Client implements OAS client.
@@ -555,21 +558,23 @@ func (c *Client) sendStaffMeGet(ctx context.Context) (res StaffMeGetRes, err err
 	return result, nil
 }
 
-// StaffSignupSurveyCounts invokes StaffSignupSurvey_counts operation.
+// StaffSignupItemsArchive invokes StaffSignupItems_archive operation.
 //
-// The Sign-up survey answers, counted per question. Read only.
+// Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its published
+// versions stay. Archiving an archived item changes nothing, and an archived item is never restored.
+// The item that stands for consent to the operator's mailings is refused (422) until it is unmarked.
 //
-// GET /signup-survey
-func (c *Client) StaffSignupSurveyCounts(ctx context.Context) (StaffSignupSurveyCountsRes, error) {
-	res, err := c.sendStaffSignupSurveyCounts(ctx)
+// POST /signup-items/{id}/archive
+func (c *Client) StaffSignupItemsArchive(ctx context.Context, params StaffSignupItemsArchiveParams) (StaffSignupItemsArchiveRes, error) {
+	res, err := c.sendStaffSignupItemsArchive(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res StaffSignupSurveyCountsRes, err error) {
+func (c *Client) sendStaffSignupItemsArchive(ctx context.Context, params StaffSignupItemsArchiveParams) (res StaffSignupItemsArchiveRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffSignupSurvey_counts"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/signup-survey"),
+		otelogen.OperationID("StaffSignupItems_archive"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/signup-items/{id}/archive"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -585,7 +590,7 @@ func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res StaffSign
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupSurveyCountsOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsArchiveOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -602,12 +607,34 @@ func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res StaffSign
 
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/signup-survey"
+	var pathParts [3]string
+	pathParts[0] = "/signup-items/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/archive"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "GET", u)
+	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
@@ -617,7 +644,7 @@ func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res StaffSign
 		var satisfied bitset
 		{
 			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffSignupSurveyCountsOperation, r); {
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsArchiveOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -660,7 +687,7 @@ func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res StaffSign
 	}()
 
 	stage = "DecodeResponse"
-	result, err := decodeStaffSignupSurveyCountsResponse(resp)
+	result, err := decodeStaffSignupItemsArchiveResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -668,21 +695,22 @@ func (c *Client) sendStaffSignupSurveyCounts(ctx context.Context) (res StaffSign
 	return result, nil
 }
 
-// StaffSignupSurveyGet invokes StaffSignupSurvey_get operation.
+// StaffSignupItemsCreate invokes StaffSignupItems_create operation.
 //
-// One User's answers. 404 when the User is unknown or has not answered the survey.
+// Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional consent, and
+// a second mailings consent are refused (422).
 //
-// GET /signup-survey/users/{userId}
-func (c *Client) StaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (StaffSignupSurveyGetRes, error) {
-	res, err := c.sendStaffSignupSurveyGet(ctx, params)
+// POST /signup-items
+func (c *Client) StaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (StaffSignupItemsCreateRes, error) {
+	res, err := c.sendStaffSignupItemsCreate(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignupSurveyGetParams) (res StaffSignupSurveyGetRes, err error) {
+func (c *Client) sendStaffSignupItemsCreate(ctx context.Context, request *StaffSignupItemInput) (res StaffSignupItemsCreateRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffSignupSurvey_get"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/signup-survey/users/{userId}"),
+		otelogen.OperationID("StaffSignupItems_create"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/signup-items"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -698,7 +726,123 @@ func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignu
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupSurveyGetOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsCreateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/signup-items"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeStaffSignupItemsCreateRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsCreateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffSignupItemsCreateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// StaffSignupItemsGet invokes StaffSignupItems_get operation.
+//
+// One Sign-up item.
+//
+// GET /signup-items/{id}
+func (c *Client) StaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (StaffSignupItemsGetRes, error) {
+	res, err := c.sendStaffSignupItemsGet(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendStaffSignupItemsGet(ctx context.Context, params StaffSignupItemsGetParams) (res StaffSignupItemsGetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffSignupItems_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/signup-items/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsGetOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -716,16 +860,16 @@ func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignu
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [2]string
-	pathParts[0] = "/signup-survey/users/"
+	pathParts[0] = "/signup-items/"
 	{
-		// Encode "userId" parameter.
+		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "userId",
+			Param:   "id",
 			Style:   uri.PathStyleSimple,
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := int64(params.UserId); true {
+			if unwrapped := int64(params.ID); true {
 				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
@@ -751,7 +895,7 @@ func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignu
 		var satisfied bitset
 		{
 			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffSignupSurveyGetOperation, r); {
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsGetOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -794,7 +938,7 @@ func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignu
 	}()
 
 	stage = "DecodeResponse"
-	result, err := decodeStaffSignupSurveyGetResponse(resp)
+	result, err := decodeStaffSignupItemsGetResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -802,22 +946,21 @@ func (c *Client) sendStaffSignupSurveyGet(ctx context.Context, params StaffSignu
 	return result, nil
 }
 
-// StaffWorkspaceAuditList invokes StaffWorkspaceAudit_list operation.
+// StaffSignupItemsList invokes StaffSignupItems_list operation.
 //
-// One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing
-// is then recorded.
+// The Instance's Sign-up items, archived ones included, in the order of the sign-up form.
 //
-// GET /workspaces/{workspaceId}/audit-entries
-func (c *Client) StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (StaffWorkspaceAuditListRes, error) {
-	res, err := c.sendStaffWorkspaceAuditList(ctx, params)
+// GET /signup-items
+func (c *Client) StaffSignupItemsList(ctx context.Context) (StaffSignupItemsListRes, error) {
+	res, err := c.sendStaffSignupItemsList(ctx)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (res StaffWorkspaceAuditListRes, err error) {
+func (c *Client) sendStaffSignupItemsList(ctx context.Context) (res StaffSignupItemsListRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffWorkspaceAudit_list"),
+		otelogen.OperationID("StaffSignupItems_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/audit-entries"),
+		semconv.URLTemplateKey.String("/signup-items"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -833,451 +976,7 @@ func (c *Client) sendStaffWorkspaceAuditList(ctx context.Context, params StaffWo
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspaceAuditListOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/workspaces/"
-	{
-		// Encode "workspaceId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/audit-entries"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeQueryParams"
-	q := uri.NewQueryEncoder()
-	{
-		// Encode "cursor" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "cursor",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.Cursor.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
-		// Encode "limit" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "limit",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.Limit.Get(); ok {
-				return e.EncodeValue(conv.Int32ToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	u.RawQuery = q.Values().Encode()
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "GET", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffWorkspaceAuditListOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeStaffWorkspaceAuditListResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// StaffWorkspacesExempt invokes StaffWorkspaces_exempt operation.
-//
-// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
-// automatically, but stays listed with its rates and can still be suspended by hand. Audited.
-// Idempotent.
-//
-// POST /workspaces/{workspaceId}/exempt
-func (c *Client) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (StaffWorkspacesExemptRes, error) {
-	res, err := c.sendStaffWorkspacesExempt(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendStaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (res StaffWorkspacesExemptRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffWorkspaces_exempt"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/exempt"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspacesExemptOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/workspaces/"
-	{
-		// Encode "workspaceId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/exempt"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffWorkspacesExemptOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeStaffWorkspacesExemptResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// StaffWorkspacesGet invokes StaffWorkspaces_get operation.
-//
-// One Workspace's metadata, suspension state, rates and send volume.
-//
-// GET /workspaces/{workspaceId}
-func (c *Client) StaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (StaffWorkspacesGetRes, error) {
-	res, err := c.sendStaffWorkspacesGet(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendStaffWorkspacesGet(ctx context.Context, params StaffWorkspacesGetParams) (res StaffWorkspacesGetRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffWorkspaces_get"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspacesGetOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [2]string
-	pathParts[0] = "/workspaces/"
-	{
-		// Encode "workspaceId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "GET", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffWorkspacesGetOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeStaffWorkspacesGetResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// StaffWorkspacesList invokes StaffWorkspaces_list operation.
-//
-// List all Workspaces, newest first, optionally narrowed by an id or name search.
-//
-// GET /workspaces
-func (c *Client) StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error) {
-	res, err := c.sendStaffWorkspacesList(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (res StaffWorkspacesListRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffWorkspaces_list"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/workspaces"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspacesListOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsListOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -1295,80 +994,8 @@ func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorksp
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
-	pathParts[0] = "/workspaces"
+	pathParts[0] = "/signup-items"
 	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeQueryParams"
-	q := uri.NewQueryEncoder()
-	{
-		// Encode "review" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "review",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.Review.Get(); ok {
-				return e.EncodeValue(conv.StringToString(string(val)))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
-		// Encode "search" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "search",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.Search.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
-		// Encode "page" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "page",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.Page.Get(); ok {
-				return e.EncodeValue(conv.Int32ToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
-		// Encode "pageSize" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "pageSize",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.PageSize.Get(); ok {
-				return e.EncodeValue(conv.Int32ToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	u.RawQuery = q.Values().Encode()
 
 	stage = "EncodeRequest"
 	r, err := ht.NewRequest(ctx, "GET", u)
@@ -1381,7 +1008,7 @@ func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorksp
 		var satisfied bitset
 		{
 			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffWorkspacesListOperation, r); {
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsListOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -1424,7 +1051,7 @@ func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorksp
 	}()
 
 	stage = "DecodeResponse"
-	result, err := decodeStaffWorkspacesListResponse(resp)
+	result, err := decodeStaffSignupItemsListResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -1432,22 +1059,22 @@ func (c *Client) sendStaffWorkspacesList(ctx context.Context, params StaffWorksp
 	return result, nil
 }
 
-// StaffWorkspacesSuspend invokes StaffWorkspaces_suspend operation.
+// StaffSignupItemsListVersions invokes StaffSignupItems_listVersions operation.
 //
-// Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the signed-in Staff
-// member. Idempotent: an already-suspended Workspace is left as it was.
+// Every published version of the item's Legal document with who published it and when, the latest
+// first.
 //
-// POST /workspaces/{workspaceId}/suspend
-func (c *Client) StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (StaffWorkspacesSuspendRes, error) {
-	res, err := c.sendStaffWorkspacesSuspend(ctx, request, params)
+// GET /signup-items/{id}/versions
+func (c *Client) StaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (StaffSignupItemsListVersionsRes, error) {
+	res, err := c.sendStaffSignupItemsListVersions(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (res StaffWorkspacesSuspendRes, err error) {
+func (c *Client) sendStaffSignupItemsListVersions(ctx context.Context, params StaffSignupItemsListVersionsParams) (res StaffSignupItemsListVersionsRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffWorkspaces_suspend"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/suspend"),
+		otelogen.OperationID("StaffSignupItems_listVersions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/signup-items/{id}/versions"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -1463,7 +1090,7 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspacesSuspendOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsListVersionsOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -1481,17 +1108,17 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/workspaces/"
+	pathParts[0] = "/signup-items/"
 	{
-		// Encode "workspaceId" parameter.
+		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
+			Param:   "id",
 			Style:   uri.PathStyleSimple,
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1503,7 +1130,143 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 		}
 		pathParts[1] = encoded
 	}
-	pathParts[2] = "/suspend"
+	pathParts[2] = "/versions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsListVersionsOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffSignupItemsListVersionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// StaffSignupItemsPublish invokes StaffSignupItems_publish operation.
+//
+// Publish the draft as a new version under a label: it takes effect at once, and is never changed or
+// removed afterwards. A label the item already has, and an item without a draft, are refused (422).
+//
+// POST /signup-items/{id}/versions
+func (c *Client) StaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (StaffSignupItemsPublishRes, error) {
+	res, err := c.sendStaffSignupItemsPublish(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendStaffSignupItemsPublish(ctx context.Context, request *StaffLegalDocumentPublishInput, params StaffSignupItemsPublishParams) (res StaffSignupItemsPublishRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffSignupItems_publish"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/signup-items/{id}/versions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsPublishOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/signup-items/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/versions"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
@@ -1511,7 +1274,7 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeStaffWorkspacesSuspendRequest(request, r); err != nil {
+	if err := encodeStaffSignupItemsPublishRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -1520,7 +1283,7 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 		var satisfied bitset
 		{
 			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffWorkspacesSuspendOperation, r); {
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsPublishOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -1563,7 +1326,7 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 	}()
 
 	stage = "DecodeResponse"
-	result, err := decodeStaffWorkspacesSuspendResponse(resp)
+	result, err := decodeStaffSignupItemsPublishResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -1571,21 +1334,22 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 	return result, nil
 }
 
-// StaffWorkspacesUnexempt invokes StaffWorkspaces_unexempt operation.
+// StaffSignupItemsReorder invokes StaffSignupItems_reorder operation.
 //
-// Police a Workspace by the abuse detector again. Audited. Idempotent.
+// Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that is not
+// every item's id exactly once is refused (422).
 //
-// POST /workspaces/{workspaceId}/unexempt
-func (c *Client) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (StaffWorkspacesUnexemptRes, error) {
-	res, err := c.sendStaffWorkspacesUnexempt(ctx, params)
+// PUT /signup-items/order
+func (c *Client) StaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (StaffSignupItemsReorderRes, error) {
+	res, err := c.sendStaffSignupItemsReorder(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (res StaffWorkspacesUnexemptRes, err error) {
+func (c *Client) sendStaffSignupItemsReorder(ctx context.Context, request *StaffSignupItemOrder) (res StaffSignupItemsReorderRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffWorkspaces_unexempt"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/unexempt"),
+		otelogen.OperationID("StaffSignupItems_reorder"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/signup-items/order"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -1601,7 +1365,124 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspacesUnexemptOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsReorderOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/signup-items/order"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeStaffSignupItemsReorderRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsReorderOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffSignupItemsReorderResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// StaffSignupItemsSaveDraft invokes StaffSignupItems_saveDraft operation.
+//
+// Save the draft of the item's Legal document. It is edited freely and changes nothing a visitor sees
+// until it is published.
+//
+// PUT /signup-items/{id}/draft
+func (c *Client) StaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (StaffSignupItemsSaveDraftRes, error) {
+	res, err := c.sendStaffSignupItemsSaveDraft(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendStaffSignupItemsSaveDraft(ctx context.Context, request *StaffLegalDocumentDraftInput, params StaffSignupItemsSaveDraftParams) (res StaffSignupItemsSaveDraftRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffSignupItems_saveDraft"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/signup-items/{id}/draft"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsSaveDraftOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -1619,17 +1500,17 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/workspaces/"
+	pathParts[0] = "/signup-items/"
 	{
-		// Encode "workspaceId" parameter.
+		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
+			Param:   "id",
 			Style:   uri.PathStyleSimple,
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1641,13 +1522,16 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 		}
 		pathParts[1] = encoded
 	}
-	pathParts[2] = "/unexempt"
+	pathParts[2] = "/draft"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
+	r, err := ht.NewRequest(ctx, "PUT", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeStaffSignupItemsSaveDraftRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{
@@ -1655,7 +1539,7 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 		var satisfied bitset
 		{
 			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffWorkspacesUnexemptOperation, r); {
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsSaveDraftOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -1698,7 +1582,7 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 	}()
 
 	stage = "DecodeResponse"
-	result, err := decodeStaffWorkspacesUnexemptResponse(resp)
+	result, err := decodeStaffSignupItemsSaveDraftResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -1706,22 +1590,22 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 	return result, nil
 }
 
-// StaffWorkspacesUnsuspend invokes StaffWorkspaces_unsuspend operation.
+// StaffSignupItemsUpdate invokes StaffSignupItems_update operation.
 //
-// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is
-// left as it was.
+// Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional consent
+// or is archived, and a second mailings consent are refused (422).
 //
-// POST /workspaces/{workspaceId}/unsuspend
-func (c *Client) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (StaffWorkspacesUnsuspendRes, error) {
-	res, err := c.sendStaffWorkspacesUnsuspend(ctx, params)
+// PATCH /signup-items/{id}
+func (c *Client) StaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (StaffSignupItemsUpdateRes, error) {
+	res, err := c.sendStaffSignupItemsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (res StaffWorkspacesUnsuspendRes, err error) {
+func (c *Client) sendStaffSignupItemsUpdate(ctx context.Context, request *StaffSignupItemUpdate, params StaffSignupItemsUpdateParams) (res StaffSignupItemsUpdateRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("StaffWorkspaces_unsuspend"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/unsuspend"),
+		otelogen.OperationID("StaffSignupItems_update"),
+		semconv.HTTPRequestMethodKey.String("PATCH"),
+		semconv.URLTemplateKey.String("/signup-items/{id}"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -1737,7 +1621,7 @@ func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffW
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, StaffWorkspacesUnsuspendOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffSignupItemsUpdateOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -1754,18 +1638,18 @@ func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffW
 
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/workspaces/"
+	var pathParts [2]string
+	pathParts[0] = "/signup-items/"
 	{
-		// Encode "workspaceId" parameter.
+		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
+			Param:   "id",
 			Style:   uri.PathStyleSimple,
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
 			}
 			return nil
 		}(); err != nil {
@@ -1777,13 +1661,15 @@ func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffW
 		}
 		pathParts[1] = encoded
 	}
-	pathParts[2] = "/unsuspend"
 	uri.AddPathParts(u, pathParts[:]...)
 
 	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
+	r, err := ht.NewRequest(ctx, "PATCH", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeStaffSignupItemsUpdateRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{
@@ -1791,7 +1677,7 @@ func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffW
 		var satisfied bitset
 		{
 			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, StaffWorkspacesUnsuspendOperation, r); {
+			switch err := c.securityApiKeyAuth(ctx, StaffSignupItemsUpdateOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -1834,7 +1720,7 @@ func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffW
 	}()
 
 	stage = "DecodeResponse"
-	result, err := decodeStaffWorkspacesUnsuspendResponse(resp)
+	result, err := decodeStaffSignupItemsUpdateResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

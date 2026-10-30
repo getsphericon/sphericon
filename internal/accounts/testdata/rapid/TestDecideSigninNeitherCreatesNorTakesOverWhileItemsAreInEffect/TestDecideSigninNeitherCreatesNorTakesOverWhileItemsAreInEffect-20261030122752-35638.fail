@@ -1,0 +1,21 @@
+# 2026/10/30 12:27:52.567931 [TestDecideSigninNeitherCreatesNorTakesOverWhileItemsAreInEffect] [rapid] draw known: false
+# 2026/10/30 12:27:52.567932 [TestDecideSigninNeitherCreatesNorTakesOverWhileItemsAreInEffect] [rapid] draw trust: ""
+# 2026/10/30 12:27:52.567933 [TestDecideSigninNeitherCreatesNorTakesOverWhileItemsAreInEffect] [rapid] draw items: false
+# 2026/10/30 12:27:52.567933 [TestDecideSigninNeitherCreatesNorTakesOverWhileItemsAreInEffect] [rapid] draw holder: &accounts.EmailHolder{Verified:false, Proven:false}
+# 2026/10/30 12:27:52.567946 [TestDecideSigninNeitherCreatesNorTakesOverWhileItemsAreInEffect] 
+# 	Error Trace:	/Users/kirillmokevnin/projects/sphericon/.claude/worktrees/agent-ab4746b2672bb4593/internal/accounts/signin_decision_test.go:134
+# 	            				/Users/kirillmokevnin/go/pkg/mod/pgregory.net/rapid@v1.3.0/engine.go:458
+# 	            				/Users/kirillmokevnin/go/pkg/mod/pgregory.net/rapid@v1.3.0/engine.go:467
+# 	            				/Users/kirillmokevnin/go/pkg/mod/pgregory.net/rapid@v1.3.0/engine.go:292
+# 	            				/Users/kirillmokevnin/go/pkg/mod/pgregory.net/rapid@v1.3.0/engine.go:207
+# 	            				/Users/kirillmokevnin/projects/sphericon/.claude/worktrees/agent-ab4746b2672bb4593/internal/accounts/signin_decision_test.go:128
+# 	Error:      	[]accounts.SigninOutcome{4, 3} should not contain 3
+# 	Test:       	TestDecideSigninNeitherCreatesNorTakesOverWhileItemsAreInEffect
+# 
+v0.4.8#5998195177271372978
+0x0
+0x0
+0x0
+0x0
+0x0
+0x1

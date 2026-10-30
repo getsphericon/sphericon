@@ -46,6 +46,10 @@ itself stops being something to open or close.
 ## Consequences
 
 - The first run is unchanged: the first person signs up and works.
+- A Staff member needs `SPHERICON_STAFF_JWT_SECRET`, the secret of the Staff member's session,
+  set explicitly and distinct from `SPHERICON_JWT_SECRET`. Without it the Staff sign-in is off and
+  the whole `/staff` prefix answers 404, and `sphericon staff create` refuses, naming the variable
+  to set. Nobody needs it to try the product.
 - The SaaS deployment creates its Staff member and sets its Sign-up items before it is published.
 - The Staff member's store and sign-in leave `ee/staff` for the core; `docs/architecture.md` and its
   closed list of packages that hold the raw client follow.

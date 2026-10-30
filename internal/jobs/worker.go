@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -28,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
+	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/trackingdomain"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -120,8 +122,10 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(ranges))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, retention.Events))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, retention.CapturedMessages))
-	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(accounts.New(entClient, bus, credentials.NewHasher()), retention.UnverifiedUsers))
+	acc := accounts.New(entClient, bus, credentials.NewHasher(), consentrecords.New(entClient, bus, signupitems.New(entClient, bus, time.Now)))
+	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(acc, retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, time.Now))
+	river.AddWorker(workers, NewPrunePendingSignupsWorker(acc, time.Now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(workspacedeletion.New(entClient, bus), time.Now))
 
 	var extraPeriodic []*river.PeriodicJob
@@ -272,6 +276,14 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 					return PrunePasskeyChallengesArgs{}, nil
 				},
 				nil,
+			),
+			// Delete the expired pending sign-ups of the Sign-in providers hourly (ADR 0062).
+			river.NewPeriodicJob(
+				river.PeriodicInterval(pendingSignupsInterval),
+				func() (river.JobArgs, *river.InsertOpts) {
+					return PrunePendingSignupsArgs{}, nil
+				},
+				&river.PeriodicJobOpts{RunOnStart: true},
 			),
 		}, extra...),
 	}

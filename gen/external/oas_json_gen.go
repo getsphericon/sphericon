@@ -28267,12 +28267,12 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeSecondFactorRequired
 	case ProblemCodeEmailVerificationRequired:
 		*s = ProblemCodeEmailVerificationRequired
-	case ProblemCodeSignupClosed:
-		*s = ProblemCodeSignupClosed
 	case ProblemCodePermissionRequired:
 		*s = ProblemCodePermissionRequired
 	case ProblemCodeMigrationsPending:
 		*s = ProblemCodeMigrationsPending
+	case ProblemCodeAcceptancePending:
+		*s = ProblemCodeAcceptancePending
 	default:
 		*s = ProblemCode(v)
 	}

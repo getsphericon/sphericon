@@ -1,0 +1,40 @@
+# Sign-up items (ADR 0062), one of each kind and a second optional consent, all archived: the
+# Instance of the fixtures asks nothing at sign-up, and a test that needs the items in effect brings
+# them back with env.PutSignupItemsInEffect. ServiceTerms has two published versions, so its first is
+# a stale one; PartnerOffers has none, so it is never asked.
+- id: 1 # fixture: ServiceTerms
+  key: service-terms
+  title: Terms of service
+  kind: required_acceptance
+  position: 1
+  mailings_consent: false
+  discarded_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2 # fixture: OperatorNews
+  key: operator-news
+  title: News from us
+  kind: optional_consent
+  position: 2
+  mailings_consent: false
+  discarded_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 3 # fixture: DataNotice
+  key: data-notice
+  title: How we use your data
+  kind: notice
+  position: 3
+  mailings_consent: false
+  discarded_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 4 # fixture: PartnerOffers
+  key: partner-offers
+  title: Offers from our partners
+  kind: optional_consent
+  position: 4
+  mailings_consent: false
+  discarded_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

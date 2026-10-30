@@ -1,8 +1,9 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { redirect } from '@tanstack/react-router'
 
-import { requireUser } from './currentUser.ts'
+import { isGated, requireUser } from './currentUser.ts'
 import { siteWorkspacesListOptions } from './generated/site/@tanstack/react-query.gen.ts'
+import { Route as acceptanceRoute } from './routes/acceptance.tsx'
 import { Route as loginRoute } from './routes/login.tsx'
 import { Route as signupSurveyRoute } from './routes/signup-survey.tsx'
 import { hasErrorStatus } from './utils/apiErrors.ts'
@@ -32,10 +33,15 @@ async function workspacesFor(queryClient: QueryClient, returnTo?: string) {
 }
 
 // The signed-in user's workspaces for a guarded page. A 401 sends the visitor to the login,
-// remembering `returnTo` when the guard guards a page worth coming back to, and a User who owes
-// the Sign-up survey is sent to it before any page of the app, whatever page was asked for.
+// remembering `returnTo` when the guard guards a page worth coming back to. A User with a
+// required acceptance pending (ADR 0062) is sent to the accept-or-sign-out screen, which resumes
+// `returnTo` once they accept, and then a User who owes the Sign-up survey to it, before any page
+// of the app, whatever page was asked for.
 export async function requireWorkspaces(queryClient: QueryClient, returnTo?: string) {
   const me = await requireUser(queryClient, returnTo)
+  if (isGated(me)) {
+    throw redirect({ to: acceptanceRoute.to, search: { redirect: returnTo } })
+  }
   if (me.signupSurveyDue) {
     throw redirect({ to: signupSurveyRoute.to })
   }

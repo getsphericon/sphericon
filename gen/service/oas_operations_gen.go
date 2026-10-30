@@ -12,6 +12,7 @@ const (
 	ServiceIdentityGetOperation          OperationName = "ServiceIdentityGet"
 	ServiceTrackingHostFeedListOperation OperationName = "ServiceTrackingHostFeedList"
 	ServiceUsageListOperation            OperationName = "ServiceUsageList"
+	ServiceUserFeedListOperation         OperationName = "ServiceUserFeedList"
 	ServiceWorkspaceFeedListOperation    OperationName = "ServiceWorkspaceFeedList"
 	ServiceWorkspaceUsageGetOperation    OperationName = "ServiceWorkspaceUsageGet"
 )

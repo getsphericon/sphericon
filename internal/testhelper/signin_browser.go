@@ -6,12 +6,14 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-// RedirectBrowser is one browser talking to the server by plain requests without a body: it keeps cookies like a
+// RedirectBrowser is one browser talking to the server by plain requests (and the JSON posts of a
+// page it landed on): it keeps cookies like a
 // browser does and never follows a redirect on its own, so a test reads each Location and
 // carries it to the next hop (the provider, then back), as the person's browser does.
 type RedirectBrowser struct {
@@ -50,21 +52,36 @@ func (b *RedirectBrowser) Delete(t *testing.T, target string) Reply {
 	return b.send(t, http.MethodDelete, target)
 }
 
+// PostJSON sends a POST with a JSON body to the server, as this browser: the SPA's request from a
+// page the browser landed on.
+func (b *RedirectBrowser) PostJSON(t *testing.T, target, body string) Reply {
+	t.Helper()
+	return b.sendBody(t, http.MethodPost, target, strings.NewReader(body))
+}
+
 func (b *RedirectBrowser) send(t *testing.T, method, target string) Reply {
+	t.Helper()
+	return b.sendBody(t, method, target, nil)
+}
+
+func (b *RedirectBrowser) sendBody(t *testing.T, method, target string, body io.Reader) Reply {
 	t.Helper()
 	u, err := url.Parse(target)
 	require.NoError(t, err)
 	cookieURL := url.URL{Scheme: "https", Host: "app.test", Path: u.Path}
-	req := httptest.NewRequestWithContext(t.Context(), method, target, nil)
+	req := httptest.NewRequestWithContext(t.Context(), method, target, body)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	for _, c := range b.jar.Cookies(&cookieURL) {
 		req.AddCookie(c)
 	}
 	rec := httptest.NewRecorder()
 	b.env.Server.ServeHTTP(rec, req)
 	resp := rec.Result()
-	body, err := io.ReadAll(resp.Body)
+	answer, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	require.NoError(t, resp.Body.Close())
 	b.jar.SetCookies(&cookieURL, resp.Cookies())
-	return Reply{StatusCode: resp.StatusCode, Header: resp.Header, Body: string(body), cookies: resp.Cookies()}
+	return Reply{StatusCode: resp.StatusCode, Header: resp.Header, Body: string(answer), cookies: resp.Cookies()}
 }

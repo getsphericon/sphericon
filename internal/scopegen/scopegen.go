@@ -62,7 +62,8 @@ func (o Operation) Strings(ext string) (vals []string, declared bool, err error)
 	return vals, true, nil
 }
 
-// Flag is the boolean the operation declares under the extension ext, false when it declares none.
+// Flag is whether the operation carries the mark ext. A mark is true or absent: false says
+// nothing an absent mark does not, so it is refused like a value that is not a boolean.
 func (o Operation) Flag(ext string) (bool, error) {
 	raw, ok := o.Extensions[ext]
 	if !ok {
@@ -72,7 +73,10 @@ func (o Operation) Flag(ext string) (bool, error) {
 	if err := json.Unmarshal(raw, &v); err != nil {
 		return false, fmt.Errorf("%s: %s is not a boolean: %w", o, ext, err)
 	}
-	return v, nil
+	if !v {
+		return false, fmt.Errorf("%s declares %s false: leave the mark out instead", o, ext)
+	}
+	return true, nil
 }
 
 // Table is one generated Go file: a composite literal named by Var whose entries Rows derives from

@@ -156,7 +156,8 @@ func (UnimplementedHandler) SiteAuthLogin(ctx context.Context, req *SiteLoginInp
 
 // SiteAuthLogout implements SiteAuth_logout operation.
 //
-// End the session on this browser: clears the session cookie.
+// End the session on this browser: clears the session cookie. Answered while an acceptance is pending
+// (ADR 0062), so a gated User can sign out.
 //
 // POST /auth/logout
 func (UnimplementedHandler) SiteAuthLogout(ctx context.Context) (r *SiteAuthLogoutNoContent, _ error) {
@@ -206,8 +207,7 @@ func (UnimplementedHandler) SiteAuthSecondFactor(ctx context.Context, req *SiteL
 // is required (422 otherwise). On an Instance that does not require email verification (the selfhosted
 // Mode) there is no mail to carry that notice and no link: the request creates a Verified User with
 // its first Workspace at once (202, no session and no cookie: the User signs in next), and a taken
-// address answers 409. An Instance whose sign-up is closed (ADR 0042, 0060) answers 403 with code
-// `signup_closed` before anything is read or created; accepting an Invitation still works.
+// address answers 409. Sign-up is open on every Instance (ADR 0063).
 //
 // POST /auth/sign-up
 func (UnimplementedHandler) SiteAuthSignUp(ctx context.Context, req *SiteSignUpInput) (r SiteAuthSignUpRes, _ error) {
@@ -219,10 +219,13 @@ func (UnimplementedHandler) SiteAuthSignUp(ctx context.Context, req *SiteSignUpI
 // Where the provider sends the browser back (the redirect URI derived from the app URL). Always
 // answers 302: to `return_to` (or `/`) with the session cookie when the sign-in succeeds, and to
 // `/login?error=<code>` (see SiteSigninError) when it does not. A known identity signs in; a new,
-// trusted email creates a Verified User with its first Workspace and no mail. A User with a Second
-// factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the challenge
-// of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the Login
-// throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
+// trusted email creates a Verified User with its first Workspace and no mail; while the Instance has
+// Sign-up items in effect it creates no User yet and the redirect is to
+// `/signin-pending?token=<reference>` (plus `redirect` when the flow had a `return_to`), the screen
+// that asks the items and completes the sign-up through `/auth/signin-pending` (ADR 0062). A User with
+// a Second factor gets no session and no cookie: the redirect is to `/login?challenge=<token>`, the
+// challenge of `/auth/second-factor` (ADR 0020), which a TOTP or Recovery code finishes under the
+// Login throttle. Every parameter is optional so that a denied consent (`error` only) or a stray visit
 // reaches the handler and gets the same redirect as any other refusal.
 //
 // GET /auth/signin/{provider}/callback
@@ -238,6 +241,42 @@ func (UnimplementedHandler) SiteAuthSigninCallback(ctx context.Context, params S
 //
 // POST /auth/signin-not-me
 func (UnimplementedHandler) SiteAuthSigninNotMe(ctx context.Context, req *SiteSigninNotMeInput) (r SiteAuthSigninNotMeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteAuthSigninPending implements SiteAuth_signinPending operation.
+//
+// A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up items. The
+// token is the signed reference of the callback's redirect, valid for ten minutes; an expired,
+// completed, declined or forged one answers 400.
+//
+// GET /auth/signin-pending
+func (UnimplementedHandler) SiteAuthSigninPending(ctx context.Context, params SiteAuthSigninPendingParams) (r SiteAuthSigninPendingRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteAuthSigninPendingDecline implements SiteAuth_signinPendingDecline operation.
+//
+// Decline a pending sign-up: it is deleted and nothing is created. Answers 204 also for a token that
+// names nothing any more.
+//
+// POST /auth/signin-pending/decline
+func (UnimplementedHandler) SiteAuthSigninPendingDecline(ctx context.Context, req *SiteSigninPendingDeclineInput) error {
+	return ht.ErrNotImplemented
+}
+
+// SiteAuthSigninPendingSubmit implements SiteAuth_signinPendingSubmit operation.
+//
+// Complete a pending sign-up with the answers to the Sign-up items: creates the User with its Verified
+// email, its Linked identity, its first Workspace (and the Membership of the Invitation the flow began
+// from) and the Consent records (source `provider_screen`) in one transaction, and starts the session.
+// A required acceptance not ticked answers 422 under `signupItems.<key>` and keeps the pending
+// sign-up; an item not in effect or a stale version answers 422 under `signupItems`. An expired,
+// completed, declined or forged token answers 400, and so does one whose address or provider account
+// was taken meanwhile.
+//
+// POST /auth/signin-pending
+func (UnimplementedHandler) SiteAuthSigninPendingSubmit(ctx context.Context, req *SiteSigninPendingSubmitInput) (r SiteAuthSigninPendingSubmitRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -930,6 +969,27 @@ func (UnimplementedHandler) SiteJoinDomainsVerify(ctx context.Context, params Si
 	return r, ht.ErrNotImplemented
 }
 
+// SiteLegalDocumentsGet implements SiteLegalDocuments_get operation.
+//
+// The current version of a Sign-up item's Legal document, for its public page. Public. 404 for an
+// unknown or archived item and for one with no published version. Answered while an acceptance is
+// pending, for the screen that shows the new texts (ADR 0062).
+//
+// GET /legal-documents/{key}
+func (UnimplementedHandler) SiteLegalDocumentsGet(ctx context.Context, params SiteLegalDocumentsGetParams) (r SiteLegalDocumentsGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteLegalDocumentsSignupItems implements SiteLegalDocuments_signupItems operation.
+//
+// The Sign-up items in effect: those not archived that have a published version, with that version's
+// label. Public; empty when the Instance has none. Answered while an acceptance is pending (ADR 0062).
+//
+// GET /signup-items
+func (UnimplementedHandler) SiteLegalDocumentsSignupItems(ctx context.Context) (r *SiteSignupItemList, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteMembershipsDelete implements SiteMemberships_delete operation.
 //
 // Remove a member (owner/admin only; the last owner cannot be removed).
@@ -985,6 +1045,30 @@ func (UnimplementedHandler) SiteOAuthDecide(ctx context.Context, req *SiteOAuthD
 //
 // GET /oauth/authorization
 func (UnimplementedHandler) SiteOAuthDescribe(ctx context.Context, params SiteOAuthDescribeParams) (r SiteOAuthDescribeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteOptionalConsentsList implements SiteOptionalConsents_list operation.
+//
+// The optional consents in effect (not archived, with a published version) and the User's current
+// answer to each. They belong to the User, so no Workspace is read. Empty when the Instance has none.
+// A required acceptance and a notice are not listed: they are not the User's to change.
+//
+// GET /me/optional-consents
+func (UnimplementedHandler) SiteOptionalConsentsList(ctx context.Context) (r *SiteOptionalConsentList, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteOptionalConsentsSet implements SiteOptionalConsents_set operation.
+//
+// Give or withdraw an optional consent. Giving it records `accepted` on the current version,
+// withdrawing a given one records `withdrawn`, both with the source account settings; a change that
+// leaves the answer as it is records nothing. 404 for an item not in effect. 422 for a required
+// acceptance or a notice, which cannot be changed here, and for a version that is not the current one
+// (field `version`).
+//
+// PUT /me/optional-consents/{key}
+func (UnimplementedHandler) SiteOptionalConsentsSet(ctx context.Context, req *SiteOptionalConsentChange, params SiteOptionalConsentsSetParams) (r SiteOptionalConsentsSetRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1292,7 +1376,8 @@ func (UnimplementedHandler) SiteSecondFactorDisable(ctx context.Context, req *Si
 
 // SiteSecondFactorGetStatus implements SiteSecondFactor_getStatus operation.
 //
-// The authenticated User's Second factor status.
+// The authenticated User's Second factor status. Answered while an acceptance is pending, for the
+// account deletion form (ADR 0062).
 //
 // GET /me/second-factor
 func (UnimplementedHandler) SiteSecondFactorGetStatus(ctx context.Context) (r *SiteSecondFactorStatus, _ error) {
@@ -1643,6 +1728,19 @@ func (UnimplementedHandler) SiteTransactionalEmailsList(ctx context.Context, par
 	return r, ht.ErrNotImplemented
 }
 
+// SiteUserAcceptPending implements SiteUser_acceptPending operation.
+//
+// Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted with the
+// source re-acceptance, and the next request is no longer refused. The body names each pending item at
+// the version the screen showed; 422 when one is missing or its version is no longer the current one
+// (a newer version was published meanwhile), and nothing is recorded. With nothing pending it records
+// nothing.
+//
+// POST /me/acceptances
+func (UnimplementedHandler) SiteUserAcceptPending(ctx context.Context, req *SiteAcceptPendingInput) (r SiteUserAcceptPendingRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteUserDeleteUser implements SiteUser_deleteUser operation.
 //
 // Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership, Linked
@@ -1804,7 +1902,9 @@ func (UnimplementedHandler) SiteWorkspacesCreate(ctx context.Context, req *SiteC
 //
 // Delete a Workspace (Owner only). The typed name must equal the Workspace's name, else 422. The
 // Workspace is frozen at once and hidden: it answers 404 on its paths and leaves every Member's list;
-// an Owner restores it within 30 days. Recorded as an Audit entry.
+// an Owner restores it within 30 days. Recorded as an Audit entry. Answered while an acceptance is
+// pending (ADR 0062), so a User who solely owns a Workspace can delete it and then their account; the
+// Two-factor requirement still applies.
 //
 // POST /workspaces/{workspaceId}/delete
 func (UnimplementedHandler) SiteWorkspacesDelete(ctx context.Context, req *SiteDeleteWorkspaceInput, params SiteWorkspacesDeleteParams) (r SiteWorkspacesDeleteRes, _ error) {
@@ -1855,7 +1955,8 @@ func (UnimplementedHandler) SiteWorkspacesList(ctx context.Context) (r []SiteWor
 // SiteWorkspacesListDeleted implements SiteWorkspaces_listDeleted operation.
 //
 // List the Workspaces in their deletion window that the authenticated User owns, with the date their
-// data will be erased.
+// data will be erased. Answered while an acceptance is pending, for the account deletion form (ADR
+// 0062).
 //
 // GET /workspaces/deleted
 func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []SiteDeletedWorkspaceResource, _ error) {

@@ -22,7 +22,7 @@ func (e *FieldsError) Error() string {
 }
 
 // Detail is what a person is shown of the refusal: the one failure when there is one, and
-// otherwise the failed fields, named in the order the forms show them.
+// otherwise the failed fields, each once, named in the order the forms show them.
 func (e *FieldsError) Detail() string {
 	if len(e.Fields) == 1 {
 		for _, messages := range e.Fields {
@@ -31,33 +31,17 @@ func (e *FieldsError) Detail() string {
 			}
 		}
 	}
-	names := make([]string, 0, len(e.Fields))
+	failed := make(map[string]bool, len(e.Fields))
+	for name := range e.Fields {
+		failed[parentOf(name)] = true
+	}
+	var names []string
 	for _, field := range fieldOrder {
-		if _, failed := e.Fields[field]; failed {
+		if failed[field] {
 			names = append(names, i18n.T(fieldLabels[field], nil))
 		}
 	}
 	return i18n.T("errors.check_fields", map[string]any{"Fields": joinWords(names)})
-}
-
-// fieldOrder is the order fields appear in on the forms, by json name, which Detail follows.
-var fieldOrder = []string{"name", "email", "newEmail", "password", "newPassword"}
-
-// fieldLabels words a field for a person, by its json name.
-var fieldLabels = map[string]string{
-	"name":        "fields.name",
-	"email":       "fields.email",
-	"newEmail":    "fields.new_email",
-	"password":    "fields.password",
-	"newPassword": "fields.new_password",
-}
-
-// joinWords lists words the English way, "a, b and c" (English is the only locale).
-func joinWords(words []string) string {
-	if len(words) < 2 {
-		return strings.Join(words, "")
-	}
-	return strings.Join(words[:len(words)-1], ", ") + " and " + words[len(words)-1]
 }
 
 // Refused is the FieldsError of one field with one message.
@@ -85,10 +69,10 @@ func Form(form any) error {
 
 // requiredMessages words an empty required field, by its json name.
 var requiredMessages = map[string]string{
-	"name":     "errors.name_required",
-	"email":    "errors.email_required",
-	"password": "errors.password_required",
-	"newEmail": "errors.new_email_required",
+	FieldName:     "errors.name_required",
+	FieldEmail:    "errors.email_required",
+	FieldPassword: "errors.password_required",
+	FieldNewEmail: "errors.new_email_required",
 }
 
 // ruleMessages words a failed rule of this package, whatever the field.
@@ -106,4 +90,51 @@ func fieldMessage(f validator.FieldError) string {
 		return i18n.T(requiredMessages[f.Field()], nil)
 	}
 	return i18n.T(ruleMessages[f.Tag()], passwordLength)
+}
+
+// The json names of the form fields a refusal is reported against and a person is shown by
+// label.
+const (
+	FieldName        = "name"
+	FieldEmail       = "email"
+	FieldNewEmail    = "newEmail"
+	FieldPassword    = "password"
+	FieldNewPassword = "newPassword"
+	// FieldSignupItems carries the answers to the Sign-up items (ADR 0062); a refusal of one item
+	// is reported under Nested(FieldSignupItems, key).
+	FieldSignupItems = "signupItems"
+)
+
+// fieldOrder is the order fields appear in on the forms, which a detail naming them follows: the
+// Sign-up items' answers come last.
+var fieldOrder = []string{FieldName, FieldEmail, FieldNewEmail, FieldPassword, FieldNewPassword, FieldSignupItems}
+
+// fieldLabels words a field for a person, by its json name.
+var fieldLabels = map[string]string{
+	FieldName:        "fields.name",
+	FieldEmail:       "fields.email",
+	FieldNewEmail:    "fields.new_email",
+	FieldPassword:    "fields.password",
+	FieldNewPassword: "fields.new_password",
+	FieldSignupItems: "fields.signup_items",
+}
+
+// Nested is the name a refusal of the entry key of the request field parent is reported under
+// ("signupItems.terms"): the answer lists it as a field of its own, and a person is shown the
+// parent's label.
+func Nested(parent, key string) string { return parent + "." + key }
+
+// parentOf is the request field a refusal reported under name belongs to: name itself, or the
+// parent of a Nested name.
+func parentOf(name string) string {
+	parent, _, _ := strings.Cut(name, ".")
+	return parent
+}
+
+// joinWords lists words the English way, "a, b and c" (English is the only locale).
+func joinWords(words []string) string {
+	if len(words) < 2 {
+		return strings.Join(words, "")
+	}
+	return strings.Join(words[:len(words)-1], ", ") + " and " + words[len(words)-1]
 }

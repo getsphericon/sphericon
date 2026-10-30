@@ -36,6 +36,10 @@ const (
 	// KindIncomplete is a request that lacks an input this case alone needs, which the client
 	// asks for only once it is refused (a password for a link opened in another browser).
 	KindIncomplete
+	// KindUnknownReference is a reference the request carries that names nothing the module can
+	// read: a pending sign-up that is gone, a cursor the feed never handed out. A mailed link
+	// that does not stand is KindLinkInvalid.
+	KindUnknownReference
 )
 
 // RefusalError is a sentinel domain error that carries its kind and the text to show a user.
@@ -104,6 +108,12 @@ func LinkInvalid(text, key string) *RefusalError {
 // (KindIncomplete).
 func Incomplete(text, key string) *RefusalError {
 	return &RefusalError{kind: KindIncomplete, text: text, key: key}
+}
+
+// UnknownReference makes the sentinel for a reference the request carries that names nothing the
+// module can read (KindUnknownReference).
+func UnknownReference(text, key string) *RefusalError {
+	return &RefusalError{kind: KindUnknownReference, text: text, key: key}
 }
 
 func (r *RefusalError) Error() string { return r.text }

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -35,6 +36,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
+	"github.com/getsphericon/sphericon/ent/legaldocumentdraft"
+	"github.com/getsphericon/sphericon/ent/legaldocumentversion"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
@@ -46,6 +49,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
+	"github.com/getsphericon/sphericon/ent/pendingsignup"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/riverjob"
@@ -58,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -67,6 +72,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
+	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -141,6 +147,7 @@ func checkColumn(t, c string) error {
 			broadcastrecipient.Table:   broadcastrecipient.ValidColumn,
 			capturedmessage.Table:      capturedmessage.ValidColumn,
 			confirmation.Table:         confirmation.ValidColumn,
+			consentrecord.Table:        consentrecord.ValidColumn,
 			contact.Table:              contact.ValidColumn,
 			contacttag.Table:           contacttag.ValidColumn,
 			customfield.Table:          customfield.ValidColumn,
@@ -153,6 +160,8 @@ func checkColumn(t, c string) error {
 			integration.Table:          integration.ValidColumn,
 			invitation.Table:           invitation.ValidColumn,
 			joindomain.Table:           joindomain.ValidColumn,
+			legaldocumentdraft.Table:   legaldocumentdraft.ValidColumn,
+			legaldocumentversion.Table: legaldocumentversion.ValidColumn,
 			membership.Table:           membership.ValidColumn,
 			oauthclient.Table:          oauthclient.ValidColumn,
 			oauthcode.Table:            oauthcode.ValidColumn,
@@ -164,6 +173,7 @@ func checkColumn(t, c string) error {
 			outboxoffset.Table:         outboxoffset.ValidColumn,
 			passkey.Table:              passkey.ValidColumn,
 			passkeychallenge.Table:     passkeychallenge.ValidColumn,
+			pendingsignup.Table:        pendingsignup.ValidColumn,
 			privaterelayrange.Table:    privaterelayrange.ValidColumn,
 			recoverycode.Table:         recoverycode.ValidColumn,
 			riverjob.Table:             riverjob.ValidColumn,
@@ -176,6 +186,7 @@ func checkColumn(t, c string) error {
 			sendlimiter.Table:          sendlimiter.ValidColumn,
 			sendingdomain.Table:        sendingdomain.ValidColumn,
 			servicecredential.Table:    servicecredential.ValidColumn,
+			signupitem.Table:           signupitem.ValidColumn,
 			signupsurveyresponse.Table: signupsurveyresponse.ValidColumn,
 			staffmember.Table:          staffmember.ValidColumn,
 			suppression.Table:          suppression.ValidColumn,
@@ -185,6 +196,7 @@ func checkColumn(t, c string) error {
 			usage.Table:                usage.ValidColumn,
 			user.Table:                 user.ValidColumn,
 			useridentity.Table:         useridentity.ValidColumn,
+			usertombstone.Table:        usertombstone.ValidColumn,
 			visitor.Table:              visitor.ValidColumn,
 			webhookendpoint.Table:      webhookendpoint.ValidColumn,
 			workspace.Table:            workspace.ValidColumn,

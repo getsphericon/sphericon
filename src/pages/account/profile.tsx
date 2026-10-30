@@ -18,8 +18,6 @@ import { useTranslation } from 'react-i18next'
 
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
-  siteSecondFactorGetStatusOptions,
-  siteUserDeleteUserLinkMutation,
   siteUserEmailChangeMutation,
   siteUserGetMeOptions,
   siteUserGetMeQueryKey,
@@ -33,7 +31,8 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
-import { DeleteUserForm, SoleOwnedWindowAlert } from './DeleteUserForm.tsx'
+import { DeleteUserSection } from './DeleteUserForm.tsx'
+import { OptionalConsentsSection } from './OptionalConsentsSection.tsx'
 
 interface ProfileFormValues {
   name: string
@@ -195,61 +194,6 @@ function SessionsSection() {
   )
 }
 
-// DeleteUserSection erases the User at once (User deletion, ADR 0050): the typed email, the
-// password and, with a Second factor, a code. A Workspace waiting for erasure that the User
-// solely owns is named, since it can no longer be restored afterwards. A User with no password
-// asks for a one-time link to their Verified email instead of typing a password; the link
-// lands on the confirm page.
-function DeleteUserSection() {
-  const { t } = useTranslation()
-  const statusQuery = useQuery(siteSecondFactorGetStatusOptions())
-  const linkForm = useForm({ initialValues: { email: '' } })
-
-  const requestLink = useResourceMutation({
-    mutation: siteUserDeleteUserLinkMutation(),
-    errorTitle: t(($) => $.profile.deleteUserLinkErrorTitle),
-    successMessage: t(($) => $.profile.deleteUserLinkSent),
-  })
-
-  const status = statusQuery.data
-  if (!status) {
-    return null
-  }
-
-  return (
-    <Stack maw={420}>
-      <Divider label={t(($) => $.profile.deleteUserSectionTitle)} />
-      {status.passwordSet ? (
-        <DeleteUserForm />
-      ) : (
-        <form
-          onSubmit={linkForm.onSubmit((values) =>
-            requestLink.mutate({ body: { email: values.email.trim() } }),
-          )}
-        >
-          <Stack>
-            <Text size="sm" c="dimmed">
-              {t(($) => $.profile.deleteUserLinkDescription)}
-            </Text>
-            <SoleOwnedWindowAlert />
-            <TextInput
-              label={t(($) => $.profile.deleteUserEmailLabel)}
-              type="email"
-              required
-              {...linkForm.getInputProps('email')}
-            />
-            <Group justify="flex-end">
-              <Button type="submit" color="red" variant="light" loading={requestLink.isPending}>
-                {t(($) => $.profile.deleteUserLinkButton)}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      )}
-    </Stack>
-  )
-}
-
 export function ProfilePage() {
   const { t } = useTranslation()
   const meQuery = useQuery(siteUserGetMeOptions())
@@ -270,6 +214,7 @@ export function ProfilePage() {
         <Stack>
           <ProfileForm user={meQuery.data} />
           <EmailSection />
+          <OptionalConsentsSection />
           <SessionsSection />
           <DeleteUserSection />
         </Stack>

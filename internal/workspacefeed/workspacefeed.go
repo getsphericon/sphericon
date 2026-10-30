@@ -28,10 +28,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/postgres"
 )
 
-// lockKey is the advisory lock that makes positions commit in the order they are taken:
+// LockKey is the advisory lock that makes positions commit in the order they are taken:
 // it is held to the end of the transaction, so a later position never commits first
-// and a reader that passed a position cannot miss a Workspace committed below it.
-const lockKey = 7_204_001
+// and a reader that passed a position cannot miss a Workspace committed below it. The
+// Users feed (internal/userfeed) takes the same lock: one change moves both feeds, and
+// two locks taken in either order would deadlock.
+const LockKey = 7_204_001
 
 // ErrNeedsTransaction is what Guard returns for a change to the feed made on a client
 // that is not bound to a transaction.
@@ -214,7 +216,7 @@ func workspacesOf(ctx context.Context, q *entclient.MembershipQuery) ([]int64, e
 // touch gives each Workspace the next position, all of them the same one. The lock is
 // taken first and held to the end of the surrounding transaction.
 func touch(ctx context.Context, c *entclient.Client, workspaceIDs ...int64) error {
-	if err := postgres.LockTx(ctx, c, lockKey); err != nil {
+	if err := postgres.LockTx(ctx, c, LockKey); err != nil {
 		return fmt.Errorf("workspace feed lock: %w", err)
 	}
 	// The lock keeps the position unique: no other transaction can take the maximum
