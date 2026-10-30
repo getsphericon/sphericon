@@ -1490,6 +1490,7 @@ export default interface Resources {
         "revokeError": "Failed to revoke invitation",
         "roleLabel": "Role",
         "roleUpdateError": "Failed to update role",
+        "roleUpdated": "Role updated",
         "source": {
           "creator": "Workspace creator",
           "domain": "Joined by domain",

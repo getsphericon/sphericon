@@ -7,6 +7,7 @@ import {
   Code,
   CopyButton,
   Group,
+  Loader,
   Menu,
   Modal,
   Select,
@@ -91,6 +92,7 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
   const roleMutation = useResourceMutation({
     mutation: siteMembershipsUpdateMutation(),
     invalidate: [membersKey],
+    successMessage: t(($) => $.settings.members.roleUpdated),
     errorTitle: t(($) => $.settings.members.roleUpdateError),
   })
 
@@ -172,14 +174,22 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
               {
                 accessor: 'role',
                 title: t(($) => $.settings.members.roleLabel),
-                render: (record) =>
-                  canManage ? (
+                render: (record) => {
+                  if (!canManage) {
+                    return record.role
+                  }
+                  // While the change is saved the row shows the chosen Role, locked, with a loader.
+                  const changing =
+                    roleMutation.isPending && roleMutation.variables.path.id === record.id
+                  return (
                     <Select
                       size="xs"
                       w={130}
                       allowDeselect={false}
                       data={MEMBER_ROLES}
-                      value={record.role}
+                      value={changing ? roleMutation.variables.body.role : record.role}
+                      disabled={changing}
+                      rightSection={changing ? <Loader size={14} /> : undefined}
                       onChange={(value) => {
                         if (value && value !== record.role) {
                           roleMutation.mutate({
@@ -189,9 +199,8 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
                         }
                       }}
                     />
-                  ) : (
-                    record.role
-                  ),
+                  )
+                },
               },
               {
                 accessor: 'source',

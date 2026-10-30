@@ -180,6 +180,28 @@ test('changes a member role', async () => {
   await screen.getByRole('option', { name: 'admin' }).first().click()
 
   await expect.poll(() => bodies).toEqual([{ role: 'admin' }])
+  await expect.element(screen.getByText('Role updated')).toBeInTheDocument()
+})
+
+test('locks the role select with a loader while the change is saved', async () => {
+  const gate = Promise.withResolvers<undefined>()
+  worker.use(
+    ...members(),
+    invites([]),
+    handleSiteMembershipsUpdate(async () => {
+      await gate.promise
+      return HttpResponse.json({ ...member, role: 'admin' })
+    }),
+  )
+  const { screen } = await renderWithRouter(<MembersSection workspace={workspace} />)
+
+  await screen.getByRole('combobox').first().click()
+  await screen.getByRole('option', { name: 'admin' }).first().click()
+
+  await expect.element(screen.getByRole('combobox').first()).toBeDisabled()
+  await expect.element(screen.getByRole('combobox').first()).toHaveValue('admin')
+  gate.resolve(undefined)
+  await expect.element(screen.getByText('Role updated')).toBeInTheDocument()
 })
 
 test('shows an error alert when members fail to load', async () => {
