@@ -145,6 +145,7 @@ test('lists the deleted workspaces with their erase date and restores one', asyn
         postalAddress: '',
         timezone: 'UTC',
         accountLinkAvailable: false,
+        permissions: [],
         mcpUrl: 'https://sphericon.test',
         trackerUrl: 'https://t.sphericon.test',
         holds: [],

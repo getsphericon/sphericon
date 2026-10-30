@@ -41,14 +41,14 @@ model SiteAddJoinDomainInput {
 @route("/workspaces/{workspaceId}/join-domains")
 @tag("Site Join Domains")
 namespace SiteJoinDomains {
-  /** List the Workspace's Join domains (owner only), pending and verified. */
+  /** List the Workspace's Join domains (owner and admin only), pending and verified. */
   @get
   op list(@path workspaceId: WorkspaceId):
     | SiteJoinDomainResource[]
     | ForbiddenProblem
     | NotFoundProblem;
 
-  /** Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+  /** Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
    * `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid
    * hostname is 422, a domain the Workspace already has is 409. */
   @post
@@ -62,7 +62,7 @@ namespace SiteJoinDomains {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Check the TXT record now (owner only) and verify the domain when it is published. A
+  /** Check the TXT record now (owner and admin only) and verify the domain when it is published. A
    * domain another Workspace has verified is re-checked at that Workspace first: 409 while
    * its record is still published, otherwise the domain moves here. 422 when the record is
    * not found. */
@@ -75,7 +75,7 @@ namespace SiteJoinDomains {
     | ConflictProblem
     | UnprocessableEntityProblem;
 
-  /** Remove a Join domain (owner only): only the claim goes, no Membership is touched. */
+  /** Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched. */
   @delete
   @route("/{id}")
   op remove(@path workspaceId: WorkspaceId, @path id: EntityId):
@@ -100,14 +100,14 @@ model SiteSetDomainJoinInput {
 @route("/workspaces/{workspaceId}/domain-join")
 @tag("Site Join Domains")
 namespace SiteDomainJoin {
-  /** Read the domain join switch (owner only). */
+  /** Read the domain join switch (owner and admin only). */
   @get
   op get(@path workspaceId: WorkspaceId):
     | SiteDomainJoinResource
     | ForbiddenProblem
     | NotFoundProblem;
 
-  /** Switch domain join on or off (owner only). Switching it on adds nobody who is already
+  /** Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already
    * a User: only an address proven afterwards joins. Recorded as an Audit entry. */
   @put
   op set(@path workspaceId: WorkspaceId, @body body: SiteSetDomainJoinInput):

@@ -108,6 +108,23 @@ func TestAWorkspaceTheCallerCannotReachAnswers404AlikeOnEveryOperation(t *testin
 	assert.JSONEq(t, want, foreign.body)
 }
 
+// A Membership whose Role lacks the Permission an operation needs answers 403 with code
+// permission_required (ADR 0061), apart from the other 403s. Permissions are a /site matter: an
+// API token's counterpart is its scope.
+func TestARoleWithoutThePermissionAnswers403WithItsCode(t *testing.T) {
+	env := testhelper.Setup(t)
+	var got answer
+	member := env.SiteActorVia(t, fixtures.MemberMaryEmail, capture(&got))
+
+	_, err := member.SiteTokensCreate(t.Context(), &siteapi.SiteCreateTokenInput{Name: "script", Scopes: []siteapi.ApiTokenScope{siteapi.ApiTokenScopeContactsRead}},
+		siteapi.SiteTokensCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+
+	want := `{"code":"permission_required","status":403,"title":"Forbidden","detail":"your role in this workspace does not allow managing API tokens"}`
+	assert.Equal(t, http.StatusForbidden, got.status)
+	assert.JSONEq(t, want, got.body)
+}
+
 // kindSurfaces is one Acme owner on /site and an Acme token on /api, each client keeping the last
 // answer it received.
 type kindSurfaces struct {

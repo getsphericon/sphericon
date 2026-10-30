@@ -18,6 +18,10 @@ enum ProblemCode {
   /** The Instance closed public sign-up (ADR 0042): a new User comes only through an
    * Invitation or the Instance operator's `sphericon user create-owner` */
   signupClosed: "signup_closed",
+
+  /** The caller's Role in the Workspace lacks the Permission the operation needs
+   * (ADR 0061); another Role in the Workspace may perform it */
+  permissionRequired: "permission_required",
 }
 
 /** What a development server adds to a 500 so the page can show the fault; a production

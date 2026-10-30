@@ -15,8 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
 
-const errSendingDomainsForbidden = "only owners and admins can manage sending domains"
-
 // sendingDomainResource maps the row, then attaches the DNS records the user publishes, which
 // the sendingdomains module derives and the mapper cannot see.
 func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendingDomainResource {
@@ -58,9 +56,8 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Si
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageSendingDomains(role) {
-		v := siteapi.SiteSendingDomainsCreateForbidden(problem(http.StatusForbidden, errSendingDomainsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermSendingDomainsManage); err != nil {
+		return nil, err
 	}
 
 	d, err := h.sendingDomains.Create(ctx, s, sendingdomains.CreateInput{Domain: req.Domain, Selector: req.DkimSelector.Or("")})
@@ -101,9 +98,8 @@ func (h *Handlers) SiteSendingDomainsArchive(ctx context.Context, params siteapi
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageSendingDomains(role) {
-		v := siteapi.SiteSendingDomainsArchiveForbidden(problem(http.StatusForbidden, errSendingDomainsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermSendingDomainsManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)
@@ -129,9 +125,8 @@ func (h *Handlers) SiteSendingDomainsUnarchive(ctx context.Context, params sitea
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageSendingDomains(role) {
-		v := siteapi.SiteSendingDomainsUnarchiveForbidden(problem(http.StatusForbidden, errSendingDomainsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermSendingDomainsManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)
@@ -159,9 +154,8 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageSendingDomains(role) {
-		v := siteapi.SiteSendingDomainsVerifyForbidden(problem(http.StatusForbidden, errSendingDomainsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermSendingDomainsManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)

@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
@@ -16,9 +15,8 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksRegenerateSecretForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
+		return nil, err
 	}
 	e, err := h.webhooks.RegenerateSecret(ctx, scoped, int64(params.ID))
 	if err != nil {
@@ -35,9 +33,8 @@ func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.SiteTestWe
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksTestForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
+		return nil, err
 	}
 	res, err := h.webhooks.TestSend(ctx, scoped, int64(params.ID), req.EventType)
 	if err != nil {

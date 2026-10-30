@@ -113,9 +113,8 @@ func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteCo
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanErase(role) {
-		v := siteapi.SiteContactsDeleteForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermContactsErase); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)

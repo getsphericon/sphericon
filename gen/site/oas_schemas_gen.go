@@ -5630,6 +5630,164 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 
 type PasskeyName string
 
+// A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"), written
+// `resource:verb` like the API token scopes. A Role is a set of them; the table from Role to
+// Permissions lives in the server, and the client reads a Membership's Permissions from its Workspace
+// instead of computing them.
+// Ref: #/components/schemas/Permission
+type Permission string
+
+const (
+	PermissionMembersManage        Permission = "members:manage"
+	PermissionAuditRead            Permission = "audit:read"
+	PermissionAuditConfigure       Permission = "audit:configure"
+	PermissionTokensManage         Permission = "tokens:manage"
+	PermissionIntegrationsManage   Permission = "integrations:manage"
+	PermissionWebhooksManage       Permission = "webhooks:manage"
+	PermissionSendingDomainsManage Permission = "sending_domains:manage"
+	PermissionContactsErase        Permission = "contacts:erase"
+	PermissionContactsExport       Permission = "contacts:export"
+	PermissionSuppressionsManage   Permission = "suppressions:manage"
+	PermissionSecondFactorManage   Permission = "second_factor:manage"
+	PermissionWorkspaceUpdate      Permission = "workspace:update"
+	PermissionWorkspaceTimezone    Permission = "workspace:timezone"
+	PermissionRevenueConfigure     Permission = "revenue:configure"
+	PermissionBrandKitManage       Permission = "brand_kit:manage"
+	PermissionJoinDomainsManage    Permission = "join_domains:manage"
+	PermissionAccountLinkOpen      Permission = "account_link:open"
+	PermissionWorkspaceDelete      Permission = "workspace:delete"
+)
+
+// AllValues returns all Permission values.
+func (Permission) AllValues() []Permission {
+	return []Permission{
+		PermissionMembersManage,
+		PermissionAuditRead,
+		PermissionAuditConfigure,
+		PermissionTokensManage,
+		PermissionIntegrationsManage,
+		PermissionWebhooksManage,
+		PermissionSendingDomainsManage,
+		PermissionContactsErase,
+		PermissionContactsExport,
+		PermissionSuppressionsManage,
+		PermissionSecondFactorManage,
+		PermissionWorkspaceUpdate,
+		PermissionWorkspaceTimezone,
+		PermissionRevenueConfigure,
+		PermissionBrandKitManage,
+		PermissionJoinDomainsManage,
+		PermissionAccountLinkOpen,
+		PermissionWorkspaceDelete,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s Permission) MarshalText() ([]byte, error) {
+	switch s {
+	case PermissionMembersManage:
+		return []byte(s), nil
+	case PermissionAuditRead:
+		return []byte(s), nil
+	case PermissionAuditConfigure:
+		return []byte(s), nil
+	case PermissionTokensManage:
+		return []byte(s), nil
+	case PermissionIntegrationsManage:
+		return []byte(s), nil
+	case PermissionWebhooksManage:
+		return []byte(s), nil
+	case PermissionSendingDomainsManage:
+		return []byte(s), nil
+	case PermissionContactsErase:
+		return []byte(s), nil
+	case PermissionContactsExport:
+		return []byte(s), nil
+	case PermissionSuppressionsManage:
+		return []byte(s), nil
+	case PermissionSecondFactorManage:
+		return []byte(s), nil
+	case PermissionWorkspaceUpdate:
+		return []byte(s), nil
+	case PermissionWorkspaceTimezone:
+		return []byte(s), nil
+	case PermissionRevenueConfigure:
+		return []byte(s), nil
+	case PermissionBrandKitManage:
+		return []byte(s), nil
+	case PermissionJoinDomainsManage:
+		return []byte(s), nil
+	case PermissionAccountLinkOpen:
+		return []byte(s), nil
+	case PermissionWorkspaceDelete:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *Permission) UnmarshalText(data []byte) error {
+	switch Permission(data) {
+	case PermissionMembersManage:
+		*s = PermissionMembersManage
+		return nil
+	case PermissionAuditRead:
+		*s = PermissionAuditRead
+		return nil
+	case PermissionAuditConfigure:
+		*s = PermissionAuditConfigure
+		return nil
+	case PermissionTokensManage:
+		*s = PermissionTokensManage
+		return nil
+	case PermissionIntegrationsManage:
+		*s = PermissionIntegrationsManage
+		return nil
+	case PermissionWebhooksManage:
+		*s = PermissionWebhooksManage
+		return nil
+	case PermissionSendingDomainsManage:
+		*s = PermissionSendingDomainsManage
+		return nil
+	case PermissionContactsErase:
+		*s = PermissionContactsErase
+		return nil
+	case PermissionContactsExport:
+		*s = PermissionContactsExport
+		return nil
+	case PermissionSuppressionsManage:
+		*s = PermissionSuppressionsManage
+		return nil
+	case PermissionSecondFactorManage:
+		*s = PermissionSecondFactorManage
+		return nil
+	case PermissionWorkspaceUpdate:
+		*s = PermissionWorkspaceUpdate
+		return nil
+	case PermissionWorkspaceTimezone:
+		*s = PermissionWorkspaceTimezone
+		return nil
+	case PermissionRevenueConfigure:
+		*s = PermissionRevenueConfigure
+		return nil
+	case PermissionBrandKitManage:
+		*s = PermissionBrandKitManage
+		return nil
+	case PermissionJoinDomainsManage:
+		*s = PermissionJoinDomainsManage
+		return nil
+	case PermissionAccountLinkOpen:
+		*s = PermissionAccountLinkOpen
+		return nil
+	case PermissionWorkspaceDelete:
+		*s = PermissionWorkspaceDelete
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
 type ProblemCode string
@@ -5638,6 +5796,7 @@ const (
 	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
 	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
 	ProblemCodeSignupClosed              ProblemCode = "signup_closed"
+	ProblemCodePermissionRequired        ProblemCode = "permission_required"
 )
 
 // AllValues returns all ProblemCode values.
@@ -5646,6 +5805,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 		ProblemCodeSecondFactorRequired,
 		ProblemCodeEmailVerificationRequired,
 		ProblemCodeSignupClosed,
+		ProblemCodePermissionRequired,
 	}
 }
 
@@ -5657,6 +5817,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeEmailVerificationRequired:
 		return []byte(s), nil
 	case ProblemCodeSignupClosed:
+		return []byte(s), nil
+	case ProblemCodePermissionRequired:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -5674,6 +5836,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodeSignupClosed:
 		*s = ProblemCodeSignupClosed
+		return nil
+	case ProblemCodePermissionRequired:
+		*s = ProblemCodePermissionRequired
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -23033,12 +23198,15 @@ type SiteWorkspaceResource struct {
 	// Empty until the workspace sets one.
 	PostalAddress string `json:"postalAddress"`
 	// The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days in. UTC
-	// until an Owner sets it.
+	// until an Owner or Admin sets it.
 	Timezone TimeZoneName `json:"timezone"`
 	// The authenticated User's role in this Workspace (from their Membership). It rides the Workspace list
 	// so role-gated UI is known even while the Workspace's own endpoints are withheld under a Two-factor
 	// requirement.
 	Role SiteMembershipRole `json:"role"`
+	// The Permissions the authenticated User's Role holds in this Workspace (ADR 0061): the client asks
+	// these whether to offer an action, it never computes them from the Role.
+	Permissions []Permission `json:"permissions"`
 	// When outbound sending was suspended (ADR 0007); absent while the workspace can send. A suspension
 	// freezes every send surface but not login, reads or tracking.
 	SuspendedAt OptNilTimestamp `json:"suspendedAt"`
@@ -23099,6 +23267,11 @@ func (s *SiteWorkspaceResource) GetTimezone() TimeZoneName {
 // GetRole returns the value of Role.
 func (s *SiteWorkspaceResource) GetRole() SiteMembershipRole {
 	return s.Role
+}
+
+// GetPermissions returns the value of Permissions.
+func (s *SiteWorkspaceResource) GetPermissions() []Permission {
+	return s.Permissions
 }
 
 // GetSuspendedAt returns the value of SuspendedAt.
@@ -23179,6 +23352,11 @@ func (s *SiteWorkspaceResource) SetTimezone(val TimeZoneName) {
 // SetRole sets the value of Role.
 func (s *SiteWorkspaceResource) SetRole(val SiteMembershipRole) {
 	s.Role = val
+}
+
+// SetPermissions sets the value of Permissions.
+func (s *SiteWorkspaceResource) SetPermissions(val []Permission) {
+	s.Permissions = val
 }
 
 // SetSuspendedAt sets the value of SuspendedAt.

@@ -48,9 +48,8 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageMembers(callerRole) {
-		v := siteapi.SiteInvitationsCreateForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(callerRole, accounts.PermMembersManage); err != nil {
+		return nil, err
 	}
 
 	// An empty address is the accounts operation's refusal (ErrEmailEmpty); one that is sent
@@ -108,9 +107,8 @@ func (h *Handlers) SiteInvitationsDelete(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageMembers(callerRole) {
-		v := siteapi.SiteInvitationsDeleteForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(callerRole, accounts.PermMembersManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)

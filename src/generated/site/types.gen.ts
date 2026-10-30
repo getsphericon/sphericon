@@ -614,12 +614,48 @@ export type LintFinding = {
 export type PasskeyName = string;
 
 /**
+ * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
+ * written `resource:verb` like the API token scopes. A Role is a set of them; the table
+ * from Role to Permissions lives in the server, and the client reads a Membership's
+ * Permissions from its Workspace instead of computing them.
+ */
+export const Permission = {
+  MEMBERS_MANAGE: 'members:manage',
+  AUDIT_READ: 'audit:read',
+  AUDIT_CONFIGURE: 'audit:configure',
+  TOKENS_MANAGE: 'tokens:manage',
+  INTEGRATIONS_MANAGE: 'integrations:manage',
+  WEBHOOKS_MANAGE: 'webhooks:manage',
+  SENDING_DOMAINS_MANAGE: 'sending_domains:manage',
+  CONTACTS_ERASE: 'contacts:erase',
+  CONTACTS_EXPORT: 'contacts:export',
+  SUPPRESSIONS_MANAGE: 'suppressions:manage',
+  SECOND_FACTOR_MANAGE: 'second_factor:manage',
+  WORKSPACE_UPDATE: 'workspace:update',
+  WORKSPACE_TIMEZONE: 'workspace:timezone',
+  REVENUE_CONFIGURE: 'revenue:configure',
+  BRAND_KIT_MANAGE: 'brand_kit:manage',
+  JOIN_DOMAINS_MANAGE: 'join_domains:manage',
+  ACCOUNT_LINK_OPEN: 'account_link:open',
+  WORKSPACE_DELETE: 'workspace:delete'
+} as const;
+
+/**
+ * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
+ * written `resource:verb` like the API token scopes. A Role is a set of them; the table
+ * from Role to Permissions lives in the server, and the client reads a Membership's
+ * Permissions from its Workspace instead of computing them.
+ */
+export type Permission = typeof Permission[keyof typeof Permission];
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const ProblemCode = {
   SECOND_FACTOR_REQUIRED: 'second_factor_required',
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
-  SIGNUP_CLOSED: 'signup_closed'
+  SIGNUP_CLOSED: 'signup_closed',
+  PERMISSION_REQUIRED: 'permission_required'
 } as const;
 
 /**
@@ -5368,7 +5404,7 @@ export type SiteWorkspaceResource = {
   postalAddress: string;
   /**
    * The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days
-   * in. UTC until an Owner sets it.
+   * in. UTC until an Owner or Admin sets it.
    */
   timezone: TimeZoneName;
   /**
@@ -5377,6 +5413,12 @@ export type SiteWorkspaceResource = {
    * own endpoints are withheld under a Two-factor requirement.
    */
   role: SiteMembershipRole;
+  /**
+   * The Permissions the authenticated User's Role holds in this Workspace (ADR 0061):
+   * the client asks these whether to offer an action, it never computes them from the
+   * Role.
+   */
+  permissions: Array<Permission>;
   /**
    * When outbound sending was suspended (ADR 0007); absent while the workspace can
    * send. A suspension freezes every send surface but not login, reads or tracking.

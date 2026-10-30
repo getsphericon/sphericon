@@ -20,7 +20,7 @@ import (
 // and refusalProblem turns it into the problem, so no handler maps them itself. The core error
 // types know nothing of HTTP; this is where they meet a status. A module's sentinel refusal
 // (validation.RefusalError) carries its kind, and the kind decides the status: not found 404,
-// refused 422, conflict 409. The bodies are the problem models
+// refused 422, conflict 409, forbidden 403 with code permission_required. The bodies are the problem models
 // of typespec/common, which every contract shares, so the site's generated types encode them for
 // every surface.
 
@@ -66,7 +66,12 @@ func refusalProblem(err error) (refusal, bool) {
 	// outermost refusal in the chain, so a refusal made With a detail shows it.
 	if refused, ok := errors.AsType[*validation.RefusalError](err); ok {
 		status := kindStatus(refused.Kind())
-		return refusal{status: status, body: fieldBody(status, refused.Field(), validation.Message(err))}, true
+		p := fieldBody(status, refused.Field(), validation.Message(err))
+		if refused.Kind() == validation.KindForbidden {
+			// A Role without the Permission: the client tells it from the other 403s by its code.
+			p.Code = siteapi.NewOptProblemCode(siteapi.ProblemCodePermissionRequired)
+		}
+		return refusal{status: status, body: p}, true
 	}
 	// Content that cannot render is the author's to fix; the error carries the reason.
 	if errors.Is(err, emailrender.ErrInvalidContent) {
@@ -82,6 +87,8 @@ func kindStatus(kind validation.Kind) int {
 		return http.StatusNotFound
 	case validation.KindConflict:
 		return http.StatusConflict
+	case validation.KindForbidden:
+		return http.StatusForbidden
 	case validation.KindRefused:
 		return http.StatusUnprocessableEntity
 	}

@@ -12,18 +12,17 @@ import (
 )
 
 // privacyScope is the step the Privacy request operations (ADR 0021) share: the Workspace
-// scope, the owner-or-admin gate and a valid email address. A non-nil refusal is the
-// problem to answer with, its Status naming the response (403 or 400); the operations
-// have distinct generated response types, so each converts it itself. A Workspace the
-// caller cannot reach is the error accounts.ErrWorkspaceNotFound.
+// scope, the Permission contacts:erase and a valid email address. A non-nil refusal is the
+// 400 to answer an invalid address with; the operations have distinct generated response
+// types, so each converts it itself. A Workspace the caller cannot reach is the error
+// accounts.ErrWorkspaceNotFound, a Role without the Permission its refusal.
 func (h *Handlers) privacyScope(ctx context.Context, workspaceID siteapi.WorkspaceId, email string) (*ent.Scoped, *siteapi.ProblemDetails, error) {
 	scoped, role, err := h.scopedWithRoleFor(ctx, workspaceID)
 	if err != nil {
 		return nil, nil, err
 	}
-	if !accounts.CanErase(role) {
-		p := problem(http.StatusForbidden, "insufficient role")
-		return nil, &p, nil
+	if err := accounts.Require(role, accounts.PermContactsErase); err != nil {
+		return nil, nil, err
 	}
 	_, err = erasure.NormalizeEmail(email)
 	if errors.Is(err, erasure.ErrInvalidEmail) {

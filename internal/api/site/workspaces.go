@@ -55,7 +55,8 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	}
 	r.McpUrl = h.origins.MCP
 	r.TrackerUrl = h.origins.Tracker
-	r.AccountLinkAvailable = h.accountLink != nil && accounts.IsOwner(m.Role)
+	r.Permissions = lo.Map(accounts.Permissions(m.Role), func(p accounts.Permission, _ int) siteapi.Permission { return siteapi.Permission(p) })
+	r.AccountLinkAvailable = h.accountLink != nil && accounts.Allows(m.Role, accounts.PermAccountLinkOpen)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
 	// no grace to count down: this is the decision secondfactor.Withheld makes.
 	if end, ok := secondfactor.Deadline(m); ok && !currentSession(ctx).Method.Strong() {
@@ -114,9 +115,8 @@ func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, params siteapi
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.IsOwner(m.Role) {
-		v := siteapi.SiteWorkspacesAccountLinkForbidden(problem(http.StatusForbidden, "only the owner can open the account link"))
-		return &v, nil
+	if err := accounts.Require(m.Role, accounts.PermAccountLinkOpen); err != nil {
+		return nil, err
 	}
 	token, expires, err := h.accountLink.Token(accountlink.Subject{UserID: m.UserID, WorkspaceID: s.WorkspaceID(), Role: string(m.Role)}, h.now())
 	if err != nil {
@@ -145,9 +145,8 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageSecondFactor(m.Role) {
-		v := siteapi.SiteWorkspacesSetSecondFactorRequirementForbidden(problem(http.StatusForbidden, "only owners and admins can change the two-factor requirement"))
-		return &v, nil
+	if err := accounts.Require(m.Role, accounts.PermSecondFactorManage); err != nil {
+		return nil, err
 	}
 	w, switchedOn, err := h.accounts.SetSecondFactorRequirement(ctx, s, h.actor(ctx), req.Required, h.now())
 	if err != nil {
@@ -173,9 +172,8 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 		return nil, err
 	}
 
-	if !accounts.CanRenameWorkspace(m.Role) {
-		v := siteapi.SiteWorkspacesUpdateForbidden(problem(http.StatusForbidden, "only owners and admins can rename the workspace"))
-		return &v, nil
+	if err := accounts.Require(m.Role, accounts.PermWorkspaceUpdate); err != nil {
+		return nil, err
 	}
 
 	var postal *string
@@ -196,15 +194,14 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 	return &resource, nil
 }
 
-// SiteWorkspacesSetTimezone sets the Workspace time zone (Owner only, ADR 0057).
+// SiteWorkspacesSetTimezone sets the Workspace time zone (Permission workspace:timezone, ADR 0057).
 func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, params siteapi.SiteWorkspacesSetTimezoneParams) (siteapi.SiteWorkspacesSetTimezoneRes, error) {
 	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanSetTimezone(m.Role) {
-		v := siteapi.SiteWorkspacesSetTimezoneForbidden(problem(http.StatusForbidden, "only owners can set the workspace time zone"))
-		return &v, nil
+	if err := accounts.Require(m.Role, accounts.PermWorkspaceTimezone); err != nil {
+		return nil, err
 	}
 	w, err := h.accounts.SetTimezone(ctx, s, h.actor(ctx), string(req.Timezone))
 	if errors.Is(err, reportday.ErrUnknownZone) {
@@ -258,9 +255,8 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanDeleteWorkspace(m.Role) {
-		v := siteapi.SiteWorkspacesDeleteForbidden(problem(http.StatusForbidden, "only owners can delete the workspace"))
-		return &v, nil
+	if err := accounts.Require(m.Role, accounts.PermWorkspaceDelete); err != nil {
+		return nil, err
 	}
 	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name, h.now())
 	if errors.Is(err, workspacedeletion.ErrNameMismatch) {
@@ -356,9 +352,8 @@ func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req 
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanConfigureRevenue(m.Role) {
-		v := siteapi.SiteWorkspacesUpdateRevenueSettingsForbidden(problem(http.StatusForbidden, "only owners and admins can change the revenue settings"))
-		return &v, nil
+	if err := accounts.Require(m.Role, accounts.PermRevenueConfigure); err != nil {
+		return nil, err
 	}
 	var code *string
 	if c, ok := req.ReportingCurrency.Get(); ok {

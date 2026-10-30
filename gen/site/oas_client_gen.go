@@ -299,17 +299,17 @@ type Invoker interface {
 	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (SiteBrandKitGetRes, error)
 	// SiteBrandKitRecreateStarterTemplates invokes SiteBrandKit_recreateStarterTemplates operation.
 	//
-	// Create the starter Templates again from the saved Brand kit (owner only). It adds new Templates and
-	// never touches one that exists or a message already written. Answers 422 until the Brand kit has been
-	// saved.
+	// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+	// Templates and never touches one that exists or a message already written. Answers 422 until the
+	// Brand kit has been saved.
 	//
 	// POST /workspaces/{workspaceId}/brand-kit/starter-templates
 	SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (SiteBrandKitRecreateStarterTemplatesRes, error)
 	// SiteBrandKitSave invokes SiteBrandKit_save operation.
 	//
-	// Save the Brand kit (owner only). The first save also creates the starter Templates (a welcome, a
-	// receipt, a digest and a one-button message) in its brand; a later save creates none and changes no
-	// message already written. A change is recorded as an Audit entry.
+	// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+	// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+	// changes no message already written. A change is recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/brand-kit
 	SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error)
@@ -472,14 +472,14 @@ type Invoker interface {
 	SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (SiteCustomFieldsListRes, error)
 	// SiteDomainJoinGet invokes SiteDomainJoin_get operation.
 	//
-	// Read the domain join switch (owner only).
+	// Read the domain join switch (owner and admin only).
 	//
 	// GET /workspaces/{workspaceId}/domain-join
 	SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (SiteDomainJoinGetRes, error)
 	// SiteDomainJoinSet invokes SiteDomainJoin_set operation.
 	//
-	// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
-	// an address proven afterwards joins. Recorded as an Audit entry.
+	// Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already a
+	// User: only an address proven afterwards joins. Recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/domain-join
 	SiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (SiteDomainJoinSetRes, error)
@@ -622,7 +622,7 @@ type Invoker interface {
 	SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (SiteInvitationsListRes, error)
 	// SiteJoinDomainsAdd invokes SiteJoinDomains_add operation.
 	//
-	// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+	// Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
 	// `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
 	// domain the Workspace already has is 409.
 	//
@@ -630,20 +630,20 @@ type Invoker interface {
 	SiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (SiteJoinDomainsAddRes, error)
 	// SiteJoinDomainsList invokes SiteJoinDomains_list operation.
 	//
-	// List the Workspace's Join domains (owner only), pending and verified.
+	// List the Workspace's Join domains (owner and admin only), pending and verified.
 	//
 	// GET /workspaces/{workspaceId}/join-domains
 	SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (SiteJoinDomainsListRes, error)
 	// SiteJoinDomainsRemove invokes SiteJoinDomains_remove operation.
 	//
-	// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+	// Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 	//
 	// DELETE /workspaces/{workspaceId}/join-domains/{id}
 	SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (SiteJoinDomainsRemoveRes, error)
 	// SiteJoinDomainsVerify invokes SiteJoinDomains_verify operation.
 	//
-	// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
-	// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+	// Check the TXT record now (owner and admin only) and verify the domain when it is published. A domain
+	// another Workspace has verified is re-checked at that Workspace first: 409 while its record is still
 	// published, otherwise the domain moves here. 422 when the record is not found.
 	//
 	// POST /workspaces/{workspaceId}/join-domains/{id}/verify
@@ -1297,9 +1297,9 @@ type Invoker interface {
 	SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, request *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (SiteWorkspacesSetSecondFactorRequirementRes, error)
 	// SiteWorkspacesSetTimezone invokes SiteWorkspaces_setTimezone operation.
 	//
-	// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
-	// the zone database does not know. A change is recorded as an Audit entry and applies to all history
-	// at once.
+	// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
+	// a name the zone database does not know. A change is recorded as an Audit entry and applies to all
+	// history at once.
 	//
 	// PUT /workspaces/{workspaceId}/timezone
 	SiteWorkspacesSetTimezone(ctx context.Context, request *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (SiteWorkspacesSetTimezoneRes, error)
@@ -6556,9 +6556,9 @@ func (c *Client) sendSiteBrandKitGet(ctx context.Context, params SiteBrandKitGet
 
 // SiteBrandKitRecreateStarterTemplates invokes SiteBrandKit_recreateStarterTemplates operation.
 //
-// Create the starter Templates again from the saved Brand kit (owner only). It adds new Templates and
-// never touches one that exists or a message already written. Answers 422 until the Brand kit has been
-// saved.
+// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+// Templates and never touches one that exists or a message already written. Answers 422 until the
+// Brand kit has been saved.
 //
 // POST /workspaces/{workspaceId}/brand-kit/starter-templates
 func (c *Client) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (SiteBrandKitRecreateStarterTemplatesRes, error) {
@@ -6693,9 +6693,9 @@ func (c *Client) sendSiteBrandKitRecreateStarterTemplates(ctx context.Context, p
 
 // SiteBrandKitSave invokes SiteBrandKit_save operation.
 //
-// Save the Brand kit (owner only). The first save also creates the starter Templates (a welcome, a
-// receipt, a digest and a one-button message) in its brand; a later save creates none and changes no
-// message already written. A change is recorded as an Audit entry.
+// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+// changes no message already written. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/brand-kit
 func (c *Client) SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error) {
@@ -10632,7 +10632,7 @@ func (c *Client) sendSiteCustomFieldsList(ctx context.Context, params SiteCustom
 
 // SiteDomainJoinGet invokes SiteDomainJoin_get operation.
 //
-// Read the domain join switch (owner only).
+// Read the domain join switch (owner and admin only).
 //
 // GET /workspaces/{workspaceId}/domain-join
 func (c *Client) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (SiteDomainJoinGetRes, error) {
@@ -10767,8 +10767,8 @@ func (c *Client) sendSiteDomainJoinGet(ctx context.Context, params SiteDomainJoi
 
 // SiteDomainJoinSet invokes SiteDomainJoin_set operation.
 //
-// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
-// an address proven afterwards joins. Recorded as an Audit entry.
+// Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already a
+// User: only an address proven afterwards joins. Recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/domain-join
 func (c *Client) SiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (SiteDomainJoinSetRes, error) {
@@ -14050,7 +14050,7 @@ func (c *Client) sendSiteInvitationsList(ctx context.Context, params SiteInvitat
 
 // SiteJoinDomainsAdd invokes SiteJoinDomains_add operation.
 //
-// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+// Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
 // `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
 // domain the Workspace already has is 409.
 //
@@ -14190,7 +14190,7 @@ func (c *Client) sendSiteJoinDomainsAdd(ctx context.Context, request *SiteAddJoi
 
 // SiteJoinDomainsList invokes SiteJoinDomains_list operation.
 //
-// List the Workspace's Join domains (owner only), pending and verified.
+// List the Workspace's Join domains (owner and admin only), pending and verified.
 //
 // GET /workspaces/{workspaceId}/join-domains
 func (c *Client) SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (SiteJoinDomainsListRes, error) {
@@ -14325,7 +14325,7 @@ func (c *Client) sendSiteJoinDomainsList(ctx context.Context, params SiteJoinDom
 
 // SiteJoinDomainsRemove invokes SiteJoinDomains_remove operation.
 //
-// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+// Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 //
 // DELETE /workspaces/{workspaceId}/join-domains/{id}
 func (c *Client) SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (SiteJoinDomainsRemoveRes, error) {
@@ -14481,8 +14481,8 @@ func (c *Client) sendSiteJoinDomainsRemove(ctx context.Context, params SiteJoinD
 
 // SiteJoinDomainsVerify invokes SiteJoinDomains_verify operation.
 //
-// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
-// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+// Check the TXT record now (owner and admin only) and verify the domain when it is published. A domain
+// another Workspace has verified is re-checked at that Workspace first: 409 while its record is still
 // published, otherwise the domain moves here. 422 when the record is not found.
 //
 // POST /workspaces/{workspaceId}/join-domains/{id}/verify
@@ -27916,9 +27916,9 @@ func (c *Client) sendSiteWorkspacesSetSecondFactorRequirement(ctx context.Contex
 
 // SiteWorkspacesSetTimezone invokes SiteWorkspaces_setTimezone operation.
 //
-// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
-// the zone database does not know. A change is recorded as an Audit entry and applies to all history
-// at once.
+// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
+// a name the zone database does not know. A change is recorded as an Audit entry and applies to all
+// history at once.
 //
 // PUT /workspaces/{workspaceId}/timezone
 func (c *Client) SiteWorkspacesSetTimezone(ctx context.Context, request *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (SiteWorkspacesSetTimezoneRes, error) {

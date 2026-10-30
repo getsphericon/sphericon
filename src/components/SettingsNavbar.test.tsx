@@ -37,6 +37,7 @@ const workspace = (role: SiteMembershipRole) => ({
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions: [],
   mcpUrl: 'https://mcp.sphericon.test/',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],

@@ -40,9 +40,8 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageMembers(callerRole) {
-		v := siteapi.SiteMembershipsUpdateForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(callerRole, accounts.PermMembersManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)
@@ -76,9 +75,8 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageMembers(callerRole) {
-		v := siteapi.SiteMembershipsDeleteForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(callerRole, accounts.PermMembersManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)
@@ -114,9 +112,8 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageSecondFactor(callerRole) {
-		v := siteapi.SiteMembershipsResetSecondFactorForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(callerRole, accounts.PermSecondFactorManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)

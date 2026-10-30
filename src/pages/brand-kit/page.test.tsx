@@ -25,6 +25,7 @@ const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource =
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions: [],
   holds: [],
   mcpUrl: 'https://example.com/mcp',
   trackerUrl: 'https://t.sphericon.test',

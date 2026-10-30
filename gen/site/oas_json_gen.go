@@ -5956,6 +5956,78 @@ func (s *PasskeyName) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes Permission as json.
+func (s Permission) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes Permission from json.
+func (s *Permission) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode Permission to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch Permission(v) {
+	case PermissionMembersManage:
+		*s = PermissionMembersManage
+	case PermissionAuditRead:
+		*s = PermissionAuditRead
+	case PermissionAuditConfigure:
+		*s = PermissionAuditConfigure
+	case PermissionTokensManage:
+		*s = PermissionTokensManage
+	case PermissionIntegrationsManage:
+		*s = PermissionIntegrationsManage
+	case PermissionWebhooksManage:
+		*s = PermissionWebhooksManage
+	case PermissionSendingDomainsManage:
+		*s = PermissionSendingDomainsManage
+	case PermissionContactsErase:
+		*s = PermissionContactsErase
+	case PermissionContactsExport:
+		*s = PermissionContactsExport
+	case PermissionSuppressionsManage:
+		*s = PermissionSuppressionsManage
+	case PermissionSecondFactorManage:
+		*s = PermissionSecondFactorManage
+	case PermissionWorkspaceUpdate:
+		*s = PermissionWorkspaceUpdate
+	case PermissionWorkspaceTimezone:
+		*s = PermissionWorkspaceTimezone
+	case PermissionRevenueConfigure:
+		*s = PermissionRevenueConfigure
+	case PermissionBrandKitManage:
+		*s = PermissionBrandKitManage
+	case PermissionJoinDomainsManage:
+		*s = PermissionJoinDomainsManage
+	case PermissionAccountLinkOpen:
+		*s = PermissionAccountLinkOpen
+	case PermissionWorkspaceDelete:
+		*s = PermissionWorkspaceDelete
+	default:
+		*s = Permission(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s Permission) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *Permission) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes ProblemCode as json.
 func (s ProblemCode) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -5978,6 +6050,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeEmailVerificationRequired
 	case ProblemCodeSignupClosed:
 		*s = ProblemCodeSignupClosed
+	case ProblemCodePermissionRequired:
+		*s = ProblemCodePermissionRequired
 	default:
 		*s = ProblemCode(v)
 	}
@@ -54401,6 +54475,14 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		s.Role.Encode(e)
 	}
 	{
+		e.FieldStart("permissions")
+		e.ArrStart()
+		for _, elem := range s.Permissions {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
 		if s.SuspendedAt.Set {
 			e.FieldStart("suspendedAt")
 			s.SuspendedAt.Encode(e)
@@ -54456,23 +54538,24 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [16]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [17]string{
 	0:  "id",
 	1:  "name",
 	2:  "collectKey",
 	3:  "postalAddress",
 	4:  "timezone",
 	5:  "role",
-	6:  "suspendedAt",
-	7:  "suspensionReason",
-	8:  "supportEmail",
-	9:  "mcpUrl",
-	10: "trackerUrl",
-	11: "holds",
-	12: "secondFactorRequiredAt",
-	13: "secondFactorGraceEndsAt",
-	14: "accountLinkAvailable",
-	15: "createdAt",
+	6:  "permissions",
+	7:  "suspendedAt",
+	8:  "suspensionReason",
+	9:  "supportEmail",
+	10: "mcpUrl",
+	11: "trackerUrl",
+	12: "holds",
+	13: "secondFactorRequiredAt",
+	14: "secondFactorGraceEndsAt",
+	15: "accountLinkAvailable",
+	16: "createdAt",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -54480,7 +54563,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode SiteWorkspaceResource to nil")
 	}
-	var requiredBitSet [2]uint8
+	var requiredBitSet [3]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -54550,6 +54633,24 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"role\"")
 			}
+		case "permissions":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				s.Permissions = make([]Permission, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem Permission
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Permissions = append(s.Permissions, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"permissions\"")
+			}
 		case "suspendedAt":
 			if err := func() error {
 				s.SuspendedAt.Reset()
@@ -54581,7 +54682,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"supportEmail\"")
 			}
 		case "mcpUrl":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				v, err := d.Str()
 				s.McpUrl = string(v)
@@ -54593,7 +54694,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"mcpUrl\"")
 			}
 		case "trackerUrl":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.TrackerUrl = string(v)
@@ -54605,7 +54706,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"trackerUrl\"")
 			}
 		case "holds":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				s.Holds = make([]SiteWorkspaceHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -54643,7 +54744,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"secondFactorGraceEndsAt\"")
 			}
 		case "accountLinkAvailable":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				v, err := d.Bool()
 				s.AccountLinkAvailable = bool(v)
@@ -54655,7 +54756,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accountLinkAvailable\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -54673,9 +54774,10 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [2]uint8{
-		0b00111111,
-		0b11001110,
+	for i, mask := range [3]uint8{
+		0b01111111,
+		0b10011100,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

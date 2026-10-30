@@ -173,7 +173,8 @@ export type PreconditionRequiredProblem = {
 export const ProblemCode = {
   SECOND_FACTOR_REQUIRED: 'second_factor_required',
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
-  SIGNUP_CLOSED: 'signup_closed'
+  SIGNUP_CLOSED: 'signup_closed',
+  PERMISSION_REQUIRED: 'permission_required'
 } as const;
 
 /**

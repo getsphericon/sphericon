@@ -49,9 +49,8 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageTokens(role) {
-		v := siteapi.SiteOAuthDecideForbidden(problem(http.StatusForbidden, "only owners and admins can connect an application"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermTokensManage); err != nil {
+		return nil, err
 	}
 
 	target, err := h.oauth.Decide(ctx, oauthserver.Decision{

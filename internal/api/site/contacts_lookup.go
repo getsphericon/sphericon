@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/erasure"
@@ -18,14 +17,8 @@ func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteCo
 		return nil, err
 	}
 	if refusal != nil {
-		switch refusal.Status.Value {
-		case http.StatusForbidden:
-			v := siteapi.SiteContactsLookupForbidden(*refusal)
-			return &v, nil
-		default:
-			v := siteapi.SiteContactsLookupBadRequest(*refusal)
-			return &v, nil
-		}
+		v := siteapi.SiteContactsLookupBadRequest(*refusal)
+		return &v, nil
 	}
 
 	held, err := erasure.Lookup(ctx, scoped, params.Email)

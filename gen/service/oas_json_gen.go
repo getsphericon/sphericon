@@ -1086,6 +1086,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeEmailVerificationRequired
 	case ProblemCodeSignupClosed:
 		*s = ProblemCodeSignupClosed
+	case ProblemCodePermissionRequired:
+		*s = ProblemCodePermissionRequired
 	default:
 		*s = ProblemCode(v)
 	}

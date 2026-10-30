@@ -41,9 +41,8 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageTokens(role) {
-		v := siteapi.SiteTokensCreateForbidden(problem(http.StatusForbidden, "only owners and admins can manage API tokens"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermTokensManage); err != nil {
+		return nil, err
 	}
 
 	in := apitokens.Input{Name: req.Name, Scopes: lo.Map(req.Scopes, func(s siteapi.ApiTokenScope, _ int) string { return string(s) })}
@@ -68,9 +67,8 @@ func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdate
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageTokens(role) {
-		v := siteapi.SiteTokensUpdateForbidden(problem(http.StatusForbidden, "only owners and admins can manage API tokens"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermTokensManage); err != nil {
+		return nil, err
 	}
 
 	row, err := apitokens.Rename(ctx, scoped, int64(params.ID), req.Name)
@@ -91,9 +89,8 @@ func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteToke
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageTokens(role) {
-		v := siteapi.SiteTokensDeleteForbidden(problem(http.StatusForbidden, "only owners and admins can manage API tokens"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermTokensManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)

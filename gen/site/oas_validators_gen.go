@@ -524,6 +524,49 @@ func (s PasskeyName) Validate() error {
 	return nil
 }
 
+func (s Permission) Validate() error {
+	switch s {
+	case "members:manage":
+		return nil
+	case "audit:read":
+		return nil
+	case "audit:configure":
+		return nil
+	case "tokens:manage":
+		return nil
+	case "integrations:manage":
+		return nil
+	case "webhooks:manage":
+		return nil
+	case "sending_domains:manage":
+		return nil
+	case "contacts:erase":
+		return nil
+	case "contacts:export":
+		return nil
+	case "suppressions:manage":
+		return nil
+	case "second_factor:manage":
+		return nil
+	case "workspace:update":
+		return nil
+	case "workspace:timezone":
+		return nil
+	case "revenue:configure":
+		return nil
+	case "brand_kit:manage":
+		return nil
+	case "join_domains:manage":
+		return nil
+	case "account_link:open":
+		return nil
+	case "workspace:delete":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s ProblemCode) Validate() error {
 	switch s {
 	case "second_factor_required":
@@ -531,6 +574,8 @@ func (s ProblemCode) Validate() error {
 	case "email_verification_required":
 		return nil
 	case "signup_closed":
+		return nil
+	case "permission_required":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -9949,6 +9994,34 @@ func (s *SiteWorkspaceResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "role",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Permissions == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Permissions {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "permissions",
 			Error: err,
 		})
 	}

@@ -3,7 +3,6 @@ package site
 import (
 	"context"
 	"errors"
-	"net/http"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -13,8 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
-
-const errIntegrationsForbidden = "only owners and admins can manage integrations"
 
 // SiteIntegrationsList returns the workspace's sending-provider integrations
 // with secrets redacted.
@@ -51,9 +48,8 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageIntegrations(role) {
-		v := siteapi.SiteIntegrationsCreateForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
+		return nil, err
 	}
 
 	cfg, err := configInput(req.Config)
@@ -113,9 +109,8 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageIntegrations(role) {
-		v := siteapi.SiteIntegrationsUpdateForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)
@@ -159,9 +154,8 @@ func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params sit
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageIntegrations(role) {
-		v := siteapi.SiteIntegrationsRegenerateKeyForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
+		return nil, err
 	}
 	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
 	if err != nil {
@@ -195,9 +189,8 @@ func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.S
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageIntegrations(role) {
-		v := siteapi.SiteIntegrationsArchiveForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)
@@ -223,9 +216,8 @@ func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageIntegrations(role) {
-		v := siteapi.SiteIntegrationsUnarchiveForbidden(problem(http.StatusForbidden, errIntegrationsForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)

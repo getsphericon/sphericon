@@ -4964,7 +4964,7 @@
       },
       "put": {
         "operationId": "SiteBrandKit_save",
-        "description": "Save the Brand kit (owner only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
+        "description": "Save the Brand kit (owner and admin only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -5033,7 +5033,7 @@
     "/workspaces/{workspaceId}/brand-kit/starter-templates": {
       "post": {
         "operationId": "SiteBrandKit_recreateStarterTemplates",
-        "description": "Create the starter Templates again from the saved Brand kit (owner only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
+        "description": "Create the starter Templates again from the saved Brand kit (owner and admin only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -6908,7 +6908,7 @@
     "/workspaces/{workspaceId}/domain-join": {
       "get": {
         "operationId": "SiteDomainJoin_get",
-        "description": "Read the domain join switch (owner only).",
+        "description": "Read the domain join switch (owner and admin only).",
         "parameters": [
           {
             "name": "workspaceId",
@@ -6955,7 +6955,7 @@
       },
       "put": {
         "operationId": "SiteDomainJoin_set",
-        "description": "Switch domain join on or off (owner only). Switching it on adds nobody who is already\na User: only an address proven afterwards joins. Recorded as an Audit entry.",
+        "description": "Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already\na User: only an address proven afterwards joins. Recorded as an Audit entry.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7743,7 +7743,7 @@
     "/workspaces/{workspaceId}/join-domains": {
       "get": {
         "operationId": "SiteJoinDomains_list",
-        "description": "List the Workspace's Join domains (owner only), pending and verified.",
+        "description": "List the Workspace's Join domains (owner and admin only), pending and verified.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7793,7 +7793,7 @@
       },
       "post": {
         "operationId": "SiteJoinDomains_add",
-        "description": "Add a Join domain (owner only). It starts pending, with the TXT record to publish at\n`_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid\nhostname is 422, a domain the Workspace already has is 409.",
+        "description": "Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at\n`_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid\nhostname is 422, a domain the Workspace already has is 409.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7872,7 +7872,7 @@
     "/workspaces/{workspaceId}/join-domains/{id}": {
       "delete": {
         "operationId": "SiteJoinDomains_remove",
-        "description": "Remove a Join domain (owner only): only the claim goes, no Membership is touched.",
+        "description": "Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7922,7 +7922,7 @@
     "/workspaces/{workspaceId}/join-domains/{id}/verify": {
       "post": {
         "operationId": "SiteJoinDomains_verify",
-        "description": "Check the TXT record now (owner only) and verify the domain when it is published. A\ndomain another Workspace has verified is re-checked at that Workspace first: 409 while\nits record is still published, otherwise the domain moves here. 422 when the record is\nnot found.",
+        "description": "Check the TXT record now (owner and admin only) and verify the domain when it is published. A\ndomain another Workspace has verified is re-checked at that Workspace first: 409 while\nits record is still published, otherwise the domain moves here. 422 when the record is\nnot found.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -10720,7 +10720,7 @@
     "/workspaces/{workspaceId}/timezone": {
       "put": {
         "operationId": "SiteWorkspaces_setTimezone",
-        "description": "Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for\na name the zone database does not know. A change is recorded as an Audit entry and applies\nto all history at once.",
+        "description": "Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for\na name the zone database does not know. A change is recorded as an Audit entry and applies\nto all history at once.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -13022,9 +13022,38 @@
         "maxLength": 100,
         "description": "What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding\nspaces are trimmed before the name is stored, so a name of spaces only is refused too."
       },
+      "Permission": {
+        "type": "string",
+        "enum": [
+          "members:manage",
+          "audit:read",
+          "audit:configure",
+          "tokens:manage",
+          "integrations:manage",
+          "webhooks:manage",
+          "sending_domains:manage",
+          "contacts:erase",
+          "contacts:export",
+          "suppressions:manage",
+          "second_factor:manage",
+          "workspace:update",
+          "workspace:timezone",
+          "revenue:configure",
+          "brand_kit:manage",
+          "join_domains:manage",
+          "account_link:open",
+          "workspace:delete"
+        ],
+        "description": "A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY \"Permission\"),\nwritten `resource:verb` like the API token scopes. A Role is a set of them; the table\nfrom Role to Permissions lives in the server, and the client reads a Membership's\nPermissions from its Workspace instead of computing them."
+      },
       "ProblemCode": {
         "type": "string",
-        "enum": ["second_factor_required", "email_verification_required", "signup_closed"],
+        "enum": [
+          "second_factor_required",
+          "email_verification_required",
+          "signup_closed",
+          "permission_required"
+        ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
       "ProblemDebug": {
@@ -19302,6 +19331,7 @@
           "postalAddress",
           "timezone",
           "role",
+          "permissions",
           "mcpUrl",
           "trackerUrl",
           "holds",
@@ -19335,7 +19365,7 @@
                 "$ref": "#/components/schemas/TimeZoneName"
               }
             ],
-            "description": "The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days\nin. UTC until an Owner sets it."
+            "description": "The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days\nin. UTC until an Owner or Admin sets it."
           },
           "role": {
             "allOf": [
@@ -19344,6 +19374,13 @@
               }
             ],
             "description": "The authenticated User's role in this Workspace (from their Membership). It\nrides the Workspace list so role-gated UI is known even while the Workspace's\nown endpoints are withheld under a Two-factor requirement."
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "description": "The Permissions the authenticated User's Role holds in this Workspace (ADR 0061):\nthe client asks these whether to offer an action, it never computes them from the\nRole."
           },
           "suspendedAt": {
             "type": "string",

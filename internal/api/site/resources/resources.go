@@ -102,10 +102,11 @@ type Converter interface {
 	// goverter:map EmailVerifiedAt EmailVerified | emailVerified
 	// goverter:ignore SignupSurveyDue
 	UserToResource(source *ent.User) *siteapi.SiteUserResource
-	// The grace end and the role belong to the authenticated User's Membership,
+	// The grace end, the role and its Permissions belong to the authenticated User's Membership,
 	// which the mapper cannot see: the handler attaches them.
 	// goverter:ignore SecondFactorGraceEndsAt
 	// goverter:ignore Role
+	// goverter:ignore Permissions
 	// goverter:ignore AccountLinkAvailable
 	// The active holds are read through the Workspace's scope, which the mapper cannot
 	// see: the handler attaches them.

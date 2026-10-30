@@ -17,6 +17,9 @@ const (
 	KindNotFound
 	// KindConflict is a subject whose state does not allow the request now.
 	KindConflict
+	// KindForbidden is a caller whose Role in the Workspace lacks the Permission the request
+	// needs (ADR 0061).
+	KindForbidden
 )
 
 // RefusalError is a sentinel domain error that carries its kind and the text to show a user.
@@ -52,6 +55,12 @@ func NotFound(text, key string) *RefusalError {
 // (KindConflict).
 func Conflict(text, key string) *RefusalError {
 	return &RefusalError{kind: KindConflict, text: text, key: key}
+}
+
+// Forbidden makes the sentinel for a caller whose Role lacks the Permission the request needs
+// (KindForbidden).
+func Forbidden(text, key string) *RefusalError {
+	return &RefusalError{kind: KindForbidden, text: text, key: key}
 }
 
 func (r *RefusalError) Error() string { return r.text }

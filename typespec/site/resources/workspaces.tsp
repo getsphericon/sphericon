@@ -43,13 +43,18 @@ model SiteWorkspaceResource {
   postalAddress: string;
 
   /** The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days
-   * in. UTC until an Owner sets it. */
+   * in. UTC until an Owner or Admin sets it. */
   timezone: TimeZoneName;
 
   /** The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
    * own endpoints are withheld under a Two-factor requirement. */
   role: SiteMembershipRole;
+
+  /** The Permissions the authenticated User's Role holds in this Workspace (ADR 0061):
+   * the client asks these whether to offer an action, it never computes them from the
+   * Role. */
+  permissions: Permission[];
 
   /** When outbound sending was suspended (ADR 0007); absent while the workspace can
    * send. A suspension freezes every send surface but not login, reads or tracking. */
@@ -287,7 +292,7 @@ namespace SiteWorkspaces {
     @body body: SiteSecondFactorRequirementInput,
   ): SiteWorkspaceResource | ForbiddenProblem | NotFoundProblem;
 
-  /** Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for
+  /** Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
    * a name the zone database does not know. A change is recorded as an Audit entry and applies
    * to all history at once. */
   @put

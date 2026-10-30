@@ -21,9 +21,8 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageMembers(role) {
-		v := siteapi.SiteAuditListForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermAuditRead); err != nil {
+		return nil, err
 	}
 	if h.audit == nil || !h.audit.Licensed() {
 		v := siteapi.SiteAuditListPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
@@ -70,9 +69,8 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageMembers(role) {
-		v := siteapi.SiteAuditExportForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermAuditRead); err != nil {
+		return nil, err
 	}
 	if h.audit == nil || !h.audit.Licensed() {
 		v := siteapi.SiteAuditExportPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
@@ -118,9 +116,8 @@ func (h *Handlers) SiteAuditGetRetention(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageMembers(role) {
-		v := siteapi.SiteAuditGetRetentionForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermAuditConfigure); err != nil {
+		return nil, err
 	}
 	if h.audit == nil || !h.audit.RetentionLicensed() {
 		v := siteapi.SiteAuditGetRetentionPaymentRequired(problem(http.StatusPaymentRequired, "audit retention needs an Enterprise license"))
@@ -140,9 +137,8 @@ func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteA
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageMembers(role) {
-		v := siteapi.SiteAuditSetRetentionForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermAuditConfigure); err != nil {
+		return nil, err
 	}
 	if h.audit == nil || !h.audit.RetentionLicensed() {
 		v := siteapi.SiteAuditSetRetentionPaymentRequired(problem(http.StatusPaymentRequired, "audit retention needs an Enterprise license"))

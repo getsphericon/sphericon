@@ -6494,9 +6494,9 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 
 // handleSiteBrandKitRecreateStarterTemplatesRequest handles SiteBrandKit_recreateStarterTemplates operation.
 //
-// Create the starter Templates again from the saved Brand kit (owner only). It adds new Templates and
-// never touches one that exists or a message already written. Answers 422 until the Brand kit has been
-// saved.
+// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+// Templates and never touches one that exists or a message already written. Answers 422 until the
+// Brand kit has been saved.
 //
 // POST /workspaces/{workspaceId}/brand-kit/starter-templates
 func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -6683,9 +6683,9 @@ func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]strin
 
 // handleSiteBrandKitSaveRequest handles SiteBrandKit_save operation.
 //
-// Save the Brand kit (owner only). The first save also creates the starter Templates (a welcome, a
-// receipt, a digest and a one-button message) in its brand; a later save creates none and changes no
-// message already written. A change is recorded as an Audit entry.
+// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+// changes no message already written. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/brand-kit
 func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -11582,7 +11582,7 @@ func (s *Server) handleSiteCustomFieldsListRequest(args [1]string, argsEscaped b
 
 // handleSiteDomainJoinGetRequest handles SiteDomainJoin_get operation.
 //
-// Read the domain join switch (owner only).
+// Read the domain join switch (owner and admin only).
 //
 // GET /workspaces/{workspaceId}/domain-join
 func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -11769,8 +11769,8 @@ func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool
 
 // handleSiteDomainJoinSetRequest handles SiteDomainJoin_set operation.
 //
-// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
-// an address proven afterwards joins. Recorded as an Audit entry.
+// Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already a
+// User: only an address proven afterwards joins. Recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/domain-join
 func (s *Server) handleSiteDomainJoinSetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -15975,7 +15975,7 @@ func (s *Server) handleSiteInvitationsListRequest(args [1]string, argsEscaped bo
 
 // handleSiteJoinDomainsAddRequest handles SiteJoinDomains_add operation.
 //
-// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+// Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
 // `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
 // domain the Workspace already has is 409.
 //
@@ -16179,7 +16179,7 @@ func (s *Server) handleSiteJoinDomainsAddRequest(args [1]string, argsEscaped boo
 
 // handleSiteJoinDomainsListRequest handles SiteJoinDomains_list operation.
 //
-// List the Workspace's Join domains (owner only), pending and verified.
+// List the Workspace's Join domains (owner and admin only), pending and verified.
 //
 // GET /workspaces/{workspaceId}/join-domains
 func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -16366,7 +16366,7 @@ func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bo
 
 // handleSiteJoinDomainsRemoveRequest handles SiteJoinDomains_remove operation.
 //
-// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+// Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 //
 // DELETE /workspaces/{workspaceId}/join-domains/{id}
 func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -16557,8 +16557,8 @@ func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped 
 
 // handleSiteJoinDomainsVerifyRequest handles SiteJoinDomains_verify operation.
 //
-// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
-// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+// Check the TXT record now (owner and admin only) and verify the domain when it is published. A domain
+// another Workspace has verified is re-checked at that Workspace first: 409 while its record is still
 // published, otherwise the domain moves here. 422 when the record is not found.
 //
 // POST /workspaces/{workspaceId}/join-domains/{id}/verify
@@ -34311,9 +34311,9 @@ func (s *Server) handleSiteWorkspacesSetSecondFactorRequirementRequest(args [1]s
 
 // handleSiteWorkspacesSetTimezoneRequest handles SiteWorkspaces_setTimezone operation.
 //
-// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
-// the zone database does not know. A change is recorded as an Audit entry and applies to all history
-// at once.
+// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
+// a name the zone database does not know. A change is recorded as an Audit entry and applies to all
+// history at once.
 //
 // PUT /workspaces/{workspaceId}/timezone
 func (s *Server) handleSiteWorkspacesSetTimezoneRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

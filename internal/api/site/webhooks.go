@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -12,8 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
-
-const errWebhooksForbidden = "only owners and admins can manage webhooks"
 
 // webhookResource maps the endpoint with its decrypted signing secret, which the
 // UI displays for signature verification.
@@ -28,9 +25,8 @@ func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebh
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksListForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
+		return nil, err
 	}
 
 	page, err := h.webhooks.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize))
@@ -51,9 +47,8 @@ func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCrea
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksCreateForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
+		return nil, err
 	}
 
 	enabled, hasEnabled := req.Enabled.Get()
@@ -74,9 +69,8 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksGetForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)
@@ -93,9 +87,8 @@ func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpda
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksUpdateForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)
@@ -119,9 +112,8 @@ func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWe
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksDeleteForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
+		return nil, err
 	}
 
 	id := int64(params.ID)

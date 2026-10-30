@@ -136,12 +136,40 @@ export const zLintFinding = z.object({
 export const zPasskeyName = z.string().min(1).max(100);
 
 /**
+ * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
+ * written `resource:verb` like the API token scopes. A Role is a set of them; the table
+ * from Role to Permissions lives in the server, and the client reads a Membership's
+ * Permissions from its Workspace instead of computing them.
+ */
+export const zPermission = z.enum([
+  'members:manage',
+  'audit:read',
+  'audit:configure',
+  'tokens:manage',
+  'integrations:manage',
+  'webhooks:manage',
+  'sending_domains:manage',
+  'contacts:erase',
+  'contacts:export',
+  'suppressions:manage',
+  'second_factor:manage',
+  'workspace:update',
+  'workspace:timezone',
+  'revenue:configure',
+  'brand_kit:manage',
+  'join_domains:manage',
+  'account_link:open',
+  'workspace:delete'
+]);
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum([
   'second_factor_required',
   'email_verification_required',
-  'signup_closed'
+  'signup_closed',
+  'permission_required'
 ]);
 
 /**
@@ -2686,6 +2714,7 @@ export const zSiteWorkspaceResource = z.object({
   postalAddress: z.string(),
   timezone: zTimeZoneName,
   role: zSiteMembershipRole,
+  permissions: z.array(zPermission),
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
   suspensionReason: z.exactOptional(z.string().nullable()),
   supportEmail: z.exactOptional(z.string().nullable()),

@@ -1664,7 +1664,7 @@ export const siteBrandKitGetOptions = (options: Options<SiteBrandKitGetData>) =>
 });
 
 /**
- * Save the Brand kit (owner only). The first save also creates the starter
+ * Save the Brand kit (owner and admin only). The first save also creates the starter
  * Templates (a welcome, a receipt, a digest and a one-button message) in its brand; a later
  * save creates none and changes no message already written. A change is recorded as an Audit
  * entry.
@@ -1684,7 +1684,7 @@ export const siteBrandKitSaveMutation = (options?: Partial<Options<SiteBrandKitS
 };
 
 /**
- * Create the starter Templates again from the saved Brand kit (owner only). It adds
+ * Create the starter Templates again from the saved Brand kit (owner and admin only). It adds
  * new Templates and never touches one that exists or a message already written. Answers 422
  * until the Brand kit has been saved.
  */
@@ -2328,7 +2328,7 @@ export const siteWorkspacesDeleteMutation = (options?: Partial<Options<SiteWorks
 export const siteDomainJoinGetQueryKey = (options: Options<SiteDomainJoinGetData>) => createQueryKey('siteDomainJoinGet', options);
 
 /**
- * Read the domain join switch (owner only).
+ * Read the domain join switch (owner and admin only).
  */
 export const siteDomainJoinGetOptions = (options: Options<SiteDomainJoinGetData>) => queryOptions<SiteDomainJoinGetResponse, SiteDomainJoinGetError, SiteDomainJoinGetResponse, ReturnType<typeof siteDomainJoinGetQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -2344,7 +2344,7 @@ export const siteDomainJoinGetOptions = (options: Options<SiteDomainJoinGetData>
 });
 
 /**
- * Switch domain join on or off (owner only). Switching it on adds nobody who is already
+ * Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already
  * a User: only an address proven afterwards joins. Recorded as an Audit entry.
  */
 export const siteDomainJoinSetMutation = (options?: Partial<Options<SiteDomainJoinSetData>>): UseMutationOptions<SiteDomainJoinSetResponse, SiteDomainJoinSetError, Options<SiteDomainJoinSetData>> => {
@@ -2603,7 +2603,7 @@ export const siteInvitationsDeleteMutation = (options?: Partial<Options<SiteInvi
 export const siteJoinDomainsListQueryKey = (options: Options<SiteJoinDomainsListData>) => createQueryKey('siteJoinDomainsList', options);
 
 /**
- * List the Workspace's Join domains (owner only), pending and verified.
+ * List the Workspace's Join domains (owner and admin only), pending and verified.
  */
 export const siteJoinDomainsListOptions = (options: Options<SiteJoinDomainsListData>) => queryOptions<SiteJoinDomainsListResponse, SiteJoinDomainsListError, SiteJoinDomainsListResponse, ReturnType<typeof siteJoinDomainsListQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -2619,7 +2619,7 @@ export const siteJoinDomainsListOptions = (options: Options<SiteJoinDomainsListD
 });
 
 /**
- * Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+ * Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
  * `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid
  * hostname is 422, a domain the Workspace already has is 409.
  */
@@ -2638,7 +2638,7 @@ export const siteJoinDomainsAddMutation = (options?: Partial<Options<SiteJoinDom
 };
 
 /**
- * Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+ * Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
  */
 export const siteJoinDomainsRemoveMutation = (options?: Partial<Options<SiteJoinDomainsRemoveData>>): UseMutationOptions<SiteJoinDomainsRemoveResponse, SiteJoinDomainsRemoveError, Options<SiteJoinDomainsRemoveData>> => {
   const mutationOptions: UseMutationOptions<SiteJoinDomainsRemoveResponse, SiteJoinDomainsRemoveError, Options<SiteJoinDomainsRemoveData>> = {
@@ -2655,7 +2655,7 @@ export const siteJoinDomainsRemoveMutation = (options?: Partial<Options<SiteJoin
 };
 
 /**
- * Check the TXT record now (owner only) and verify the domain when it is published. A
+ * Check the TXT record now (owner and admin only) and verify the domain when it is published. A
  * domain another Workspace has verified is re-checked at that Workspace first: 409 while
  * its record is still published, otherwise the domain moves here. 422 when the record is
  * not found.
@@ -3720,7 +3720,7 @@ export const siteTemplatesUpdateMutation = (options?: Partial<Options<SiteTempla
 };
 
 /**
- * Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for
+ * Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
  * a name the zone database does not know. A change is recorded as an Audit entry and applies
  * to all history at once.
  */

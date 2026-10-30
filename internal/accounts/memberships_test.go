@@ -19,22 +19,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestRoleDecisionsAreNamedAndSeparate(t *testing.T) {
-	cases := []struct {
-		role                   membership.Role
-		members, tokens, erase bool
-	}{
-		{membership.RoleOwner, true, true, true},
-		{membership.RoleAdmin, true, true, true},
-		{membership.RoleMember, false, false, false},
-	}
-	for _, c := range cases {
-		assert.Equal(t, c.members, accounts.CanManageMembers(c.role), "manage members: %s", c.role)
-		assert.Equal(t, c.tokens, accounts.CanManageTokens(c.role), "manage tokens: %s", c.role)
-		assert.Equal(t, c.erase, accounts.CanErase(c.role), "erase: %s", c.role)
-	}
-}
-
 func TestChangeMembershipRoleInvariants(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())

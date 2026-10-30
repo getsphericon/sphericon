@@ -391,9 +391,9 @@ func (UnimplementedHandler) SiteBrandKitGet(ctx context.Context, params SiteBran
 
 // SiteBrandKitRecreateStarterTemplates implements SiteBrandKit_recreateStarterTemplates operation.
 //
-// Create the starter Templates again from the saved Brand kit (owner only). It adds new Templates and
-// never touches one that exists or a message already written. Answers 422 until the Brand kit has been
-// saved.
+// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+// Templates and never touches one that exists or a message already written. Answers 422 until the
+// Brand kit has been saved.
 //
 // POST /workspaces/{workspaceId}/brand-kit/starter-templates
 func (UnimplementedHandler) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (r SiteBrandKitRecreateStarterTemplatesRes, _ error) {
@@ -402,9 +402,9 @@ func (UnimplementedHandler) SiteBrandKitRecreateStarterTemplates(ctx context.Con
 
 // SiteBrandKitSave implements SiteBrandKit_save operation.
 //
-// Save the Brand kit (owner only). The first save also creates the starter Templates (a welcome, a
-// receipt, a digest and a one-button message) in its brand; a later save creates none and changes no
-// message already written. A change is recorded as an Audit entry.
+// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+// changes no message already written. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/brand-kit
 func (UnimplementedHandler) SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (r SiteBrandKitSaveRes, _ error) {
@@ -642,7 +642,7 @@ func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params Sit
 
 // SiteDomainJoinGet implements SiteDomainJoin_get operation.
 //
-// Read the domain join switch (owner only).
+// Read the domain join switch (owner and admin only).
 //
 // GET /workspaces/{workspaceId}/domain-join
 func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (r SiteDomainJoinGetRes, _ error) {
@@ -651,8 +651,8 @@ func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDo
 
 // SiteDomainJoinSet implements SiteDomainJoin_set operation.
 //
-// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
-// an address proven afterwards joins. Recorded as an Audit entry.
+// Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already a
+// User: only an address proven afterwards joins. Recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/domain-join
 func (UnimplementedHandler) SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (r SiteDomainJoinSetRes, _ error) {
@@ -861,7 +861,7 @@ func (UnimplementedHandler) SiteInvitationsList(ctx context.Context, params Site
 
 // SiteJoinDomainsAdd implements SiteJoinDomains_add operation.
 //
-// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+// Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
 // `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
 // domain the Workspace already has is 409.
 //
@@ -872,7 +872,7 @@ func (UnimplementedHandler) SiteJoinDomainsAdd(ctx context.Context, req *SiteAdd
 
 // SiteJoinDomainsList implements SiteJoinDomains_list operation.
 //
-// List the Workspace's Join domains (owner only), pending and verified.
+// List the Workspace's Join domains (owner and admin only), pending and verified.
 //
 // GET /workspaces/{workspaceId}/join-domains
 func (UnimplementedHandler) SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (r SiteJoinDomainsListRes, _ error) {
@@ -881,7 +881,7 @@ func (UnimplementedHandler) SiteJoinDomainsList(ctx context.Context, params Site
 
 // SiteJoinDomainsRemove implements SiteJoinDomains_remove operation.
 //
-// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+// Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 //
 // DELETE /workspaces/{workspaceId}/join-domains/{id}
 func (UnimplementedHandler) SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (r SiteJoinDomainsRemoveRes, _ error) {
@@ -890,8 +890,8 @@ func (UnimplementedHandler) SiteJoinDomainsRemove(ctx context.Context, params Si
 
 // SiteJoinDomainsVerify implements SiteJoinDomains_verify operation.
 //
-// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
-// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+// Check the TXT record now (owner and admin only) and verify the domain when it is published. A domain
+// another Workspace has verified is re-checked at that Workspace first: 409 while its record is still
 // published, otherwise the domain moves here. 422 when the record is not found.
 //
 // POST /workspaces/{workspaceId}/join-domains/{id}/verify
@@ -1824,9 +1824,9 @@ func (UnimplementedHandler) SiteWorkspacesSetSecondFactorRequirement(ctx context
 
 // SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 //
-// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
-// the zone database does not know. A change is recorded as an Audit entry and applies to all history
-// at once.
+// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
+// a name the zone database does not know. A change is recorded as an Audit entry and applies to all
+// history at once.
 //
 // PUT /workspaces/{workspaceId}/timezone
 func (UnimplementedHandler) SiteWorkspacesSetTimezone(ctx context.Context, req *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (r SiteWorkspacesSetTimezoneRes, _ error) {

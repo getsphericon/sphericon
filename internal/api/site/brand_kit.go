@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -11,8 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 )
-
-const errBrandKitForbidden = "only owners can change the Brand kit"
 
 // SiteBrandKitGet returns the Workspace's Brand kit; every member may read it.
 func (h *Handlers) SiteBrandKitGet(ctx context.Context, params siteapi.SiteBrandKitGetParams) (siteapi.SiteBrandKitGetRes, error) {
@@ -28,16 +25,15 @@ func (h *Handlers) SiteBrandKitGet(ctx context.Context, params siteapi.SiteBrand
 	return &res, nil
 }
 
-// SiteBrandKitSave saves the Brand kit: the first save also makes the starter Templates. Owners
-// only.
+// SiteBrandKitSave saves the Brand kit: the first save also makes the starter Templates.
+// Permission brand_kit:manage.
 func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBrandKitInput, params siteapi.SiteBrandKitSaveParams) (siteapi.SiteBrandKitSaveRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageBrandKit(role) {
-		v := siteapi.SiteBrandKitSaveForbidden(problem(http.StatusForbidden, errBrandKitForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermBrandKitManage); err != nil {
+		return nil, err
 	}
 
 	kit, err := h.brandKit.Save(ctx, s, brandkit.Input{
@@ -59,15 +55,14 @@ func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBr
 }
 
 // SiteBrandKitRecreateStarterTemplates makes the starter Templates again from the saved Brand
-// kit. Owners only.
+// kit. Permission brand_kit:manage.
 func (h *Handlers) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params siteapi.SiteBrandKitRecreateStarterTemplatesParams) (siteapi.SiteBrandKitRecreateStarterTemplatesRes, error) {
 	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageBrandKit(role) {
-		v := siteapi.SiteBrandKitRecreateStarterTemplatesForbidden(problem(http.StatusForbidden, errBrandKitForbidden))
-		return &v, nil
+	if err := accounts.Require(role, accounts.PermBrandKitManage); err != nil {
+		return nil, err
 	}
 
 	made, err := h.brandKit.RecreateStarterTemplates(ctx, s)

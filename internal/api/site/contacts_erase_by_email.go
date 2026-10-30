@@ -20,14 +20,8 @@ func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteCon
 		return nil, err
 	}
 	if refusal != nil {
-		switch refusal.Status.Value {
-		case http.StatusForbidden:
-			v := siteapi.SiteContactsEraseForbidden(*refusal)
-			return &v, nil
-		default:
-			v := siteapi.SiteContactsEraseBadRequest(*refusal)
-			return &v, nil
-		}
+		v := siteapi.SiteContactsEraseBadRequest(*refusal)
+		return &v, nil
 	}
 
 	err = h.erasure.Erase(ctx, scoped, erasure.ByEmail(params.Email),

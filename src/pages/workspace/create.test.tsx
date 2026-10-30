@@ -23,6 +23,7 @@ const existing: SiteWorkspaceResource = {
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions: [],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
