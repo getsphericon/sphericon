@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signup"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Token lifetimes for the self-service account flows.
@@ -73,13 +74,8 @@ type passwordForm struct {
 
 // SiteAuthResetPassword sets a new password from a reset token.
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) (siteapi.SiteAuthResetPasswordRes, error) {
-	fieldErrors, err := checkFields(passwordForm{Password: req.Password})
-	if err != nil {
+	if err := validation.Form(passwordForm{Password: req.Password}); err != nil {
 		return nil, err
-	}
-	if fieldErrors != nil {
-		v := siteapi.SiteAuthResetPasswordUnprocessableEntity(fieldsProblem(fieldErrors))
-		return &v, nil
 	}
 	uid, _, err := h.tokens.Parse(req.Token, authtoken.PurposePasswordReset, h.passwordHashBinding(ctx))
 	if err != nil {
@@ -142,13 +138,8 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 			return &v, nil
 		}
 		// A refused password changes nothing either: the link stays valid for a better one.
-		fieldErrors, ferr := checkFields(passwordForm{Password: password})
-		if ferr != nil {
-			return nil, ferr
-		}
-		if fieldErrors != nil {
-			v := siteapi.SiteAuthVerifyEmailUnprocessableEntity(fieldsProblem(fieldErrors))
-			return &v, nil
+		if err := validation.Form(passwordForm{Password: password}); err != nil {
+			return nil, err
 		}
 		replacement, herr := h.passwords.Hash(password)
 		if herr != nil {

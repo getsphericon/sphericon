@@ -11,14 +11,53 @@ import (
 )
 
 // FieldsError is a form a domain module refused: the failures by the json name of the field,
-// each worded for a person in the instance locale. A handler answers it with a 422 that carries
-// every field.
+// each worded for a person in the instance locale. A handler returns it as it is: the server's
+// error handler answers it with a 422 that carries every field (review rule 15).
 type FieldsError struct {
 	Fields map[string][]string
 }
 
 func (e *FieldsError) Error() string {
 	return "validation: refused fields " + strings.Join(slices.Sorted(maps.Keys(e.Fields)), ", ")
+}
+
+// Detail is what a person is shown of the refusal: the one failure when there is one, and
+// otherwise the failed fields, named in the order the forms show them.
+func (e *FieldsError) Detail() string {
+	if len(e.Fields) == 1 {
+		for _, messages := range e.Fields {
+			if len(messages) == 1 {
+				return messages[0]
+			}
+		}
+	}
+	names := make([]string, 0, len(e.Fields))
+	for _, field := range fieldOrder {
+		if _, failed := e.Fields[field]; failed {
+			names = append(names, i18n.T(fieldLabels[field], nil))
+		}
+	}
+	return i18n.T("errors.check_fields", map[string]any{"Fields": joinWords(names)})
+}
+
+// fieldOrder is the order fields appear in on the forms, by json name, which Detail follows.
+var fieldOrder = []string{"name", "email", "newEmail", "password", "newPassword"}
+
+// fieldLabels words a field for a person, by its json name.
+var fieldLabels = map[string]string{
+	"name":        "fields.name",
+	"email":       "fields.email",
+	"newEmail":    "fields.new_email",
+	"password":    "fields.password",
+	"newPassword": "fields.new_password",
+}
+
+// joinWords lists words the English way, "a, b and c" (English is the only locale).
+func joinWords(words []string) string {
+	if len(words) < 2 {
+		return strings.Join(words, "")
+	}
+	return strings.Join(words[:len(words)-1], ", ") + " and " + words[len(words)-1]
 }
 
 // Refused is the FieldsError of one field with one message.
