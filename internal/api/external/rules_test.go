@@ -106,6 +106,16 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.RulesCreateUnprocessableEntity{}, typo)
 
+	counted, err := author.RulesCreate(ctx, &externalapi.CreateRuleInput{
+		Name:          "Clicked twice this week",
+		TriggerEvents: []string{"email.clicked"},
+		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("keen")}},
+		Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t,
+			`{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"email.clicked","operator":"atLeast","times":2,"withinDays":7}]}`)),
+	})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.RuleResource{}, counted, "a Rule's Condition takes an event count")
+
 	byPublisher, err := publisher.RulesDeactivate(ctx, externalapi.RulesDeactivateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.RulesDeactivateForbidden{}, byPublisher)

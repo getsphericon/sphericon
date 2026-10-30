@@ -1623,6 +1623,10 @@ const (
 	RuleMultiTriggerID = 103
 	// RuleMultiTriggerName is from fixtures/rules.
 	RuleMultiTriggerName = "Either of two events"
+	// RuleSecondRevisitID is from fixtures/rules.
+	RuleSecondRevisitID = 111
+	// RuleSecondRevisitName is from fixtures/rules.
+	RuleSecondRevisitName = "Tag a second revisit"
 	// RuleTagClickedDraftVersionID is from fixtures/rule_versions.
 	RuleTagClickedDraftVersionID = 120
 	// RuleTagClickedID is from fixtures/rules.

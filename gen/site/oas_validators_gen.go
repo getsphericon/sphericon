@@ -2906,6 +2906,109 @@ func (s SiteConditionCombinator) Validate() error {
 	}
 }
 
+func (s *SiteConditionEventLeaf) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Operator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "operator",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Int{
+			MinSet:        true,
+			Min:           0,
+			MaxSet:        false,
+			Max:           0,
+			MinExclusive:  false,
+			MaxExclusive:  false,
+			MultipleOfSet: false,
+			MultipleOf:    0,
+			Pattern:       nil,
+		}).Validate(int64(s.Times)); err != nil {
+			return errors.Wrap(err, "int")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "times",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.WithinDays.Get(); ok {
+			if err := func() error {
+				if err := (validate.Int{
+					MinSet:        true,
+					Min:           1,
+					MaxSet:        false,
+					Max:           0,
+					MinExclusive:  false,
+					MaxExclusive:  false,
+					MultipleOfSet: false,
+					MultipleOf:    0,
+					Pattern:       nil,
+				}).Validate(int64(value)); err != nil {
+					return errors.Wrap(err, "int")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "withinDays",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteConditionEventLeafKind) Validate() error {
+	switch s {
+	case "event":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SiteConditionEventOperator) Validate() error {
+	switch s {
+	case "atLeast":
+		return nil
+	case "atMost":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SiteConditionGroup) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -3050,6 +3153,11 @@ func (s SiteConditionNodeSum) Validate() error {
 			return err
 		}
 		return nil
+	case SiteConditionEventLeafSiteConditionNodeSum:
+		if err := s.SiteConditionEventLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
 	case SiteConditionGroupSiteConditionNodeSum:
 		if err := s.SiteConditionGroup.Validate(); err != nil {
 			return err
@@ -3073,10 +3181,6 @@ func (s SiteConditionOperator) Validate() error {
 	case "null":
 		return nil
 	case "notNull":
-		return nil
-	case "performed":
-		return nil
-	case "notPerformed":
 		return nil
 	case "has":
 		return nil

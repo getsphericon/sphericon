@@ -89,6 +89,16 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
+# Counts its own Trigger event: fires on a Contact's second rule_revisit within a week (Liam did one
+# yesterday, Alice none).
+- id: 111 # fixture: RuleSecondRevisit
+  name: Tag a second revisit
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  live_version_id: 111
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
 # Keeps the wait-first Automation (it has no Enrollments) from being removed.
 - id: 109 # fixture: RuleEnrollWaitFirst
   name: Enroll in the wait-first automation

@@ -570,9 +570,28 @@ export const zSiteCapturedMessageSurface = z.enum([
 export const zSiteConditionCombinator = z.enum(['and', 'or']);
 
 /**
+ * How an event leaf bounds the count: at least `times`, or at most `times`
+ */
+export const zSiteConditionEventOperator = z.enum(['atLeast', 'atMost']);
+
+/**
+ * A test of how many times a contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export const zSiteConditionEventLeaf = z.object({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zSiteConditionEventOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
  * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; a custom field takes eq, neq, contains and notNull; an event takes performed and
- * notPerformed; the tag field takes has and doesNotHave.
+ * notNull; a custom field takes eq, neq, contains and notNull; the tag field takes has and
+ * doesNotHave.
  */
 export const zSiteConditionOperator = z.enum([
   'eq',
@@ -581,8 +600,6 @@ export const zSiteConditionOperator = z.enum([
   'beginsWith',
   'null',
   'notNull',
-  'performed',
-  'notPerformed',
   'has',
   'doesNotHave'
 ]);
@@ -2915,10 +2932,12 @@ export const zSiteConditionGroup = z.object({
 });
 
 /**
- * A leaf or a nested group inside a condition group, discriminated by `kind`.
+ * A leaf (a test of a field, or an event count) or a nested group inside a condition group,
+ * discriminated by `kind`.
  */
 export const zSiteConditionNode = z.discriminatedUnion('kind', [
   zSiteConditionLeaf.extend({ kind: z.literal('rule') }),
+  zSiteConditionEventLeaf.extend({ kind: z.literal('event') }),
   zSiteConditionGroup.extend({ kind: z.literal('group') })
 ]);
 

@@ -34,21 +34,63 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 	assert.Equal(t, int32(1), res.Count)
 }
 
-func TestSiteSegmentsPreviewEventCondition(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
-	ctx := context.Background()
-
-	// DunderEventPreview signed up a day ago; no other Dunder contact did.
-
-	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:signed_up","operator":"performed","value":"30"}]}`
-	out, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
+// previewOne previews, in Dunder, a Condition of one leaf.
+func previewOne(t *testing.T, c *siteapi.Client, leaf string) siteapi.SiteSegmentsPreviewRes {
+	t.Helper()
+	def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
+	out, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
 		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
-	res, ok := out.(*siteapi.SitePreviewSegmentResult)
+	return out
+}
+
+func TestSiteSegmentsPreviewEventCondition(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
+
+	// DunderEventPreview signed up a day ago; no other Dunder contact did.
+	once := previewOne(t, c, `{"kind":"event","action":"signed_up","operator":"atLeast","times":1,"withinDays":30}`)
+	twice := previewOne(t, c, `{"kind":"event","action":"signed_up","operator":"atLeast","times":2,"withinDays":30}`)
+
+	assert.Equal(t, &siteapi.SitePreviewSegmentResult{Count: 1}, once)
+	assert.Equal(t, &siteapi.SitePreviewSegmentResult{Count: 0}, twice, "one signup is not two")
+}
+
+// A count or a window outside the contract's range is refused at the edge (400); atLeast 0 is in
+// range but the Condition refuses it (422): "not performed" is atMost 0.
+func TestSiteSegmentsPreviewRefusesAnEventCountOutOfRange(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
+
+	negative := previewOne(t, c, `{"kind":"event","action":"signed_up","operator":"atMost","times":-1}`)
+	noWindow := previewOne(t, c, `{"kind":"event","action":"signed_up","operator":"atLeast","times":1,"withinDays":0}`)
+	atLeastNone := previewOne(t, c, `{"kind":"event","action":"signed_up","operator":"atLeast","times":0}`)
+
+	assert.IsType(t, &siteapi.SiteSegmentsPreviewBadRequest{}, negative)
+	assert.IsType(t, &siteapi.SiteSegmentsPreviewBadRequest{}, noWindow)
+	assert.IsType(t, &siteapi.SiteSegmentsPreviewUnprocessableEntity{}, atLeastNone)
+}
+
+// A Segment stores an event count as it was sent and reads it back.
+func TestSiteSegmentsStoreAnEventCount(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":2,"withinDays":7}]}`
+	sent := testhelper.SiteRuleGroup(t, def)
+
+	out, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "Pricing twice", Condition: sent},
+		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	created, ok := out.(*siteapi.SiteSegmentResource)
 	require.Truef(t, ok, "got %T", out)
-	assert.Equal(t, int32(1), res.Count)
+	got, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
+	require.NoError(t, err)
+	stored, ok := got.(*siteapi.SiteSegmentResource)
+	require.Truef(t, ok, "got %T", got)
+
+	assert.Equal(t, siteapi.NewOptSiteConditionGroup(sent), stored.Condition)
 }
 
 func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {

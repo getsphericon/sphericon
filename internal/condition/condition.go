@@ -1,12 +1,13 @@
 // Package condition is the Condition: the typed tree of tests on a Contact (the API
 // contract's tree, ADR 0029, ADR 0054), its validation and its compiler to a Contact
 // predicate. A Segment is a named Condition and a Rule holds one. A group {kind: "group", combinator: and|or, not,
-// rules[]} whose entries are nested groups or leaves {kind: "rule", field, operator,
-// value}, told apart by `kind`.
+// rules[]} whose entries are nested groups, leaves {kind: "rule", field, operator, value} and
+// event counts {kind: "event", action, operator, times, withinDays}, told apart by `kind`.
 //
 // A leaf is built from ent's generated predicates wherever one exists: the core
-// attributes (contact.EmailEQ …), Tags (contact.HasTagsWith) and Events
-// (contact.HasEventsWith). The one dynamic piece is a Custom field's key inside the
+// attributes (contact.EmailEQ …) and Tags (contact.HasTagsWith). An event count is a correlated
+// COUNT(*) of the Contact's Events, built with ent's SQL builder and the generated Event
+// predicates. The one dynamic piece is a Custom field's key inside the
 // custom_fields JSON column, which no generated predicate covers; it is addressed
 // with ent's JSON predicates (sqljson) after the key is checked. A leaf may only name a core attribute, a
 // Tag, an Event action, or a Custom field of the Workspace's catalogue (ADR 0006).
@@ -17,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -33,9 +33,6 @@ import (
 )
 
 const (
-	// eventFieldPrefix marks a leaf as a behavioral condition: field "event:<action>"
-	// with operator "performed"/"notPerformed" and value = a day window ("" = ever).
-	eventFieldPrefix = "event:"
 	// customFieldPrefix marks a leaf as a Custom field condition: "custom:<key>".
 	customFieldPrefix = "custom:"
 	// tagField marks a leaf as a Tag condition: field "tag" with operator "has" or
@@ -49,6 +46,7 @@ const (
 const (
 	kindGroup = "group"
 	kindRule  = "rule"
+	kindEvent = "event"
 )
 
 // Group is a group of the rule tree. Each rules[] entry is decoded lazily because it
@@ -66,6 +64,17 @@ type Leaf struct {
 	Field    string `json:"field"`
 	Operator string `json:"operator"`
 	Value    string `json:"value"`
+}
+
+// EventLeaf is a count of the Contact's Events of one action: at least or at most Times of
+// them, over all time or within the last WithinDays days. Times is a pointer so that a leaf
+// without it is refused instead of read as zero.
+type EventLeaf struct {
+	Kind       string `json:"kind"`
+	Action     string `json:"action"`
+	Operator   string `json:"operator"`
+	Times      *int   `json:"times"`
+	WithinDays *int   `json:"withinDays,omitempty"`
 }
 
 // textField is the generated predicates of one core text attribute.
@@ -191,6 +200,12 @@ func (c *compiler) entry(ctx context.Context, raw json.RawMessage) (predicate.Co
 			return nil, fmt.Errorf("malformed rule: %w", err)
 		}
 		return c.rule(ctx, r)
+	case kindEvent:
+		var l EventLeaf
+		if err := json.Unmarshal(raw, &l); err != nil {
+			return nil, fmt.Errorf("malformed event leaf: %w", err)
+		}
+		return c.event(l)
 	default:
 		return nil, fmt.Errorf("unknown rule kind %q", probe.Kind)
 	}
@@ -198,12 +213,6 @@ func (c *compiler) entry(ctx context.Context, raw json.RawMessage) (predicate.Co
 
 func (c *compiler) rule(ctx context.Context, r Leaf) (predicate.Contact, error) {
 	switch {
-	case strings.HasPrefix(r.Field, eventFieldPrefix):
-		action := strings.TrimPrefix(r.Field, eventFieldPrefix)
-		if action == "" {
-			return nil, fmt.Errorf("unknown field %q", r.Field)
-		}
-		return c.event(action, r.Operator, r.Value)
 	case r.Field == tagField:
 		return tagRule(r.Operator, r.Value)
 	case strings.HasPrefix(r.Field, customFieldPrefix):
@@ -241,17 +250,51 @@ func (c *compiler) triggerRule(key, op, value string) (predicate.Contact, error)
 	return predicate.Contact(func(s *sql.Selector) { s.Where(sql.False()) }), nil
 }
 
-// event is the subject performed (or never performed) `action`, optionally within the
-// last `value` days. Events attach to a Contact by the stable contact_id, so anonymous
-// events stitched onto it at Identify are visible here (ADR 0002).
-func (c *compiler) event(action, op, value string) (predicate.Contact, error) {
-	var negate bool
-	switch op {
-	case "performed":
-	case "notPerformed":
-		negate = true
-	default:
-		return nil, fmt.Errorf("unsupported operator %q for event field", op)
+// eventCount is one operator of an event leaf: the least times it takes, and the test of the
+// Contact's count, given the correlated subquery that selects it.
+type eventCount struct {
+	least int
+	holds func(count *sql.Selector, times int) *sql.Predicate
+}
+
+// eventOperator is how an event leaf bounds the count of the Contact's Events.
+type eventOperator string
+
+const (
+	atLeast eventOperator = "atLeast"
+	atMost  eventOperator = "atMost"
+)
+
+// eventCounts is each event operator with the bound it takes.
+var eventCounts = map[eventOperator]eventCount{
+	// Without a GROUP BY the count is one row even over no Events, so HAVING decides alone.
+	atLeast: {least: 1, holds: func(count *sql.Selector, times int) *sql.Predicate {
+		return sql.Exists(count.Having(sql.GTE(sql.Count("*"), times)))
+	}},
+	atMost: {least: 0, holds: func(count *sql.Selector, times int) *sql.Predicate {
+		return sql.NotExists(count.Having(sql.GT(sql.Count("*"), times)))
+	}},
+}
+
+// event is the subject performed `action` at least (or at most) Times times, over all time or
+// within the last WithinDays days. Events attach to a Contact by the stable contact_id, so
+// anonymous events stitched onto it at Identify are counted here (ADR 0002), and the count is
+// correlated on it, so an anonymous Event (a NULL contact_id) is in no Contact's count.
+func (c *compiler) event(l EventLeaf) (predicate.Contact, error) {
+	action := strings.TrimSpace(l.Action)
+	if action == "" {
+		return nil, errors.New("event action is required")
+	}
+	op, ok := eventCounts[eventOperator(l.Operator)]
+	if !ok {
+		return nil, fmt.Errorf("unsupported operator %q for event leaf", l.Operator)
+	}
+	if l.Times == nil {
+		return nil, errors.New("event leaf times is required")
+	}
+	times := *l.Times
+	if times < op.least {
+		return nil, fmt.Errorf("%s takes times of %d or more, got %d", l.Operator, op.least, times)
 	}
 
 	preds := []predicate.Event{event.Action(action)}
@@ -259,24 +302,29 @@ func (c *compiler) event(action, op, value string) (predicate.Contact, error) {
 		// A machine open or click is in the log and in no count (ADR 0053).
 		preds = append(preds, events.HumanOnly)
 	}
-	if v := strings.TrimSpace(value); v != "" {
-		days, err := strconv.Atoi(v)
-		if err != nil || days < 0 {
-			return nil, fmt.Errorf("event window must be a non-negative number of days, got %q", value)
+	if l.WithinDays != nil {
+		days := *l.WithinDays
+		if days < 1 {
+			return nil, fmt.Errorf("event leaf withinDays must be 1 or more, got %d", days)
 		}
-		if days > 0 {
-			// GTE excludes NULL occurred_at. Safe in practice: the events bus always
-			// stamps occurred_at (zero ⇒ publish time), so persisted events are never
-			// null. "ever" adds no time predicate and matches all.
-			preds = append(preds, event.OccurredAtGTE(c.now.AddDate(0, 0, -days)))
+		// A window reaching back past the first year counts all time: no Event is older, and a
+		// cutoff that far back would overflow a stored timestamp. A window longer than Event
+		// retention is capped by it (ADR 0019). GTE excludes a NULL occurred_at, which no
+		// persisted Event has: the events bus always stamps it.
+		if since := c.now.AddDate(0, 0, -days); since.Year() >= 1 {
+			preds = append(preds, event.OccurredAtGTE(since))
 		}
 	}
 
-	p := contact.HasEventsWith(preds...)
-	if negate {
-		p = contact.Not(p)
-	}
-	return p, nil
+	return predicate.Contact(func(s *sql.Selector) {
+		t := sql.Table(event.Table)
+		count := sql.Dialect(s.Dialect()).Select(sql.Count("*")).From(t)
+		count.Where(sql.ColumnsEQ(count.C(event.FieldContactID), s.C(contact.FieldID)))
+		for _, p := range preds {
+			p(count)
+		}
+		s.Where(op.holds(count, times))
+	}), nil
 }
 
 // tagRule is the subject has (or lacks) the Tag named value. Evaluated live —

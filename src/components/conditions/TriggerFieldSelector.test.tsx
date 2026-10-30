@@ -8,6 +8,7 @@ import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
 import { page } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
+import type { ConditionDraft } from './condition.ts'
 import { ConditionBuilder } from './ConditionBuilder.tsx'
 
 const withProperty = (field: string): SiteConditionGroup => ({
@@ -25,11 +26,11 @@ function serve() {
 
 test('typing a key beside the Event property choice rewrites the field as trigger:<key>', async () => {
   serve()
-  const onChange = vi.fn<(group: SiteConditionGroup) => void>()
+  const onChange = vi.fn<(draft: ConditionDraft) => void>()
   const { screen } = await renderWithRouter(
     <ConditionBuilder
       workspaceId="TestWs01"
-      value={withProperty('trigger:url')}
+      initialValue={withProperty('trigger:url')}
       onChange={onChange}
       triggerLeaves
     />,
@@ -48,7 +49,7 @@ test('a plain field has no key input', async () => {
   const { screen } = await renderWithRouter(
     <ConditionBuilder
       workspaceId="TestWs01"
-      value={withProperty('email')}
+      initialValue={withProperty('email')}
       onChange={vi.fn<() => void>()}
       triggerLeaves
     />,

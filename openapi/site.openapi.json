@@ -15778,6 +15778,46 @@
         "enum": ["and", "or"],
         "description": "How a condition group combines its entries"
       },
+      "SiteConditionEventLeaf": {
+        "type": "object",
+        "required": ["kind", "action", "operator", "times"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event action counted"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteConditionEventOperator"
+              }
+            ],
+            "description": "How the count is bounded"
+          },
+          "times": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "description": "The bound: atLeast takes 1 or more, atMost 0 or more"
+          },
+          "withinDays": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Count only the Events of the last this many days; absent counts all time"
+          }
+        },
+        "description": "A test of how many times a contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted."
+      },
+      "SiteConditionEventOperator": {
+        "type": "string",
+        "enum": ["atLeast", "atMost"],
+        "description": "How an event leaf bounds the count: at least `times`, or at most `times`"
+      },
       "SiteConditionGroup": {
         "type": "object",
         "required": ["kind", "combinator", "rules"],
@@ -15818,7 +15858,7 @@
           },
           "field": {
             "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, \"event:<action>\", or \"trigger:<key>\"\n(a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the\ntext operators, and is false when the Event lacks the key or holds a value that is not text)"
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"trigger:<key>\"\n(a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the\ntext operators, and is false when the Event lacks the key or holds a value that is not text)"
           },
           "operator": {
             "allOf": [
@@ -15830,7 +15870,7 @@
           },
           "value": {
             "type": "string",
-            "description": "The value to test against: a tag name, a day window for events (\"\" = ever), blank for\nnull and notNull"
+            "description": "The value to test against: a tag name, blank for null and notNull"
           }
         },
         "description": "One test of a condition: a field, an operator and a value"
@@ -15842,6 +15882,9 @@
             "$ref": "#/components/schemas/SiteConditionLeaf"
           },
           {
+            "$ref": "#/components/schemas/SiteConditionEventLeaf"
+          },
+          {
             "$ref": "#/components/schemas/SiteConditionGroup"
           }
         ],
@@ -15849,26 +15892,16 @@
           "propertyName": "kind",
           "mapping": {
             "rule": "#/components/schemas/SiteConditionLeaf",
+            "event": "#/components/schemas/SiteConditionEventLeaf",
             "group": "#/components/schemas/SiteConditionGroup"
           }
         },
-        "description": "A leaf or a nested group inside a condition group, discriminated by `kind`."
+        "description": "A leaf (a test of a field, or an event count) or a nested group inside a condition group,\ndiscriminated by `kind`."
       },
       "SiteConditionOperator": {
         "type": "string",
-        "enum": [
-          "eq",
-          "neq",
-          "contains",
-          "beginsWith",
-          "null",
-          "notNull",
-          "performed",
-          "notPerformed",
-          "has",
-          "doesNotHave"
-        ],
-        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; a custom field takes eq, neq, contains and notNull; an event takes performed and\nnotPerformed; the tag field takes has and doesNotHave."
+        "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
+        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; a custom field takes eq, neq, contains and notNull; the tag field takes has and\ndoesNotHave."
       },
       "SiteConfirmEmailChangeInput": {
         "type": "object",

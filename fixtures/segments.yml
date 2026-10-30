@@ -75,7 +75,7 @@
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
   name: 'Almost customers'
-  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"},{"kind":"rule","field":"event:viewed_pricing","operator":"performed","value":"14"},{"kind":"rule","field":"event:email.opened","operator":"notPerformed","value":"30"}]}'
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"},{"kind":"event","action":"viewed_pricing","operator":"atLeast","times":1,"withinDays":14},{"kind":"event","action":"email.opened","operator":"atMost","times":0,"withinDays":30}]}'
   workspace_id: 20
   created_at: '{{hoursAgo 1080}}'
   updated_at: '{{hoursAgo 360}}'
@@ -105,7 +105,7 @@
   updated_at: '{{hoursAgo 192}}'
 - id: 20006
   name: 'At risk of churning'
-  condition: '{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"tag","operator":"has","value":"churn-risk"},{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"neq","value":"free"},{"kind":"rule","field":"event:lesson_completed","operator":"notPerformed","value":"30"}]}]}'
+  condition: '{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"tag","operator":"has","value":"churn-risk"},{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"neq","value":"free"},{"kind":"event","action":"lesson_completed","operator":"atMost","times":0,"withinDays":30}]}]}'
   workspace_id: 20
   created_at: '{{hoursAgo 288}}'
   updated_at: '{{hoursAgo 96}}'

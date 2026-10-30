@@ -4,6 +4,11 @@ status: accepted
 
 # A Segment's Condition compiles to generated ent predicates; an Event links to its Contact by a nullable FK
 
+> **Amended by #749:** an Event test is its own `event` leaf (`action`, `operator` atLeast or
+> atMost, `times`, optional `withinDays`) that counts the Contact's Events, not a `rule` leaf on
+> `event:<action>` compiled to `contact.HasEventsWith`. It compiles to a subquery that counts the
+> Events linked by `contact_id`, built with ent's builder and the generated Event predicates.
+
 A Segment's Condition is compiled into ent's generated predicates (`contact.EmailEQ`,
 `contact.HasTagsWith`, `contact.HasEventsWith`), not into SQL assembled from table and column
 names. The compiler takes the Workspace's scoped client, so a Condition can only name what that

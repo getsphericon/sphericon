@@ -2,13 +2,16 @@ package rules_test
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -177,6 +180,57 @@ func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 	assert.Equal(t, 0, fire("p-missing", map[string]any{"other": "pricing"}))
 	assert.Equal(t, 0, fire("p-type", map[string]any{"url": 7}))
 	assert.Equal(t, 0, fire("p-none", nil))
+}
+
+// evaluateAtOnce is the evaluation queue run in place: it hands the Event to the module as the
+// evaluation job does.
+type evaluateAtOnce struct {
+	m *rules.Module
+	s *ent.Scoped
+}
+
+func (e evaluateAtOnce) OnRuleEvent(ctx context.Context, ev events.RuleEvent) error {
+	_, err := e.m.Evaluate(ctx, e.s, rules.Event{
+		ContactID: ev.ContactID, Action: ev.Action, SourceID: ev.SourceID, RecordedAt: ev.RecordedAt, Properties: ev.Properties,
+	})
+	return err
+}
+
+// recorded is the bus message of a Contact's Event recorded now.
+func recorded(t *testing.T, id string, contactID int64, action string) *message.Message {
+	t.Helper()
+	ev := &events.CollectedEvent{WorkspaceID: fixtures.AcmeID, ContactID: contactID, SubjectID: id, Action: action}
+	data, err := json.Marshal(ev)
+	require.NoError(t, err)
+	now := time.Now()
+	body, err := json.Marshal(events.Envelope{
+		ID: id, Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: fixtures.AcmeID, OccurredAt: now, RecordedAt: now, Data: data,
+	})
+	require.NoError(t, err)
+	return message.NewMessage(id, body)
+}
+
+// A Rule's Condition counts the Contact's Events, the one that fired it included: RuleSecondRevisit
+// fires on a second rule_revisit within a week. Liam did one yesterday, Alice none.
+func TestEvaluateCountsTheEventThatFiredTheRule(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	consume := events.RulesConsumer(env.DB, evaluateAtOnce{m: rules.New(env.Cipher, env.Bus), s: env.DB.Scoped(fixtures.AcmeID)})
+	firedFor := func(contactID int64) bool {
+		ok, err := env.DB.RuleFiring.Query().
+			Where(rulefiring.RuleID(fixtures.RuleSecondRevisitID), rulefiring.ContactID(contactID)).
+			Exist(ctx)
+		require.NoError(t, err)
+		return ok
+	}
+
+	require.NoError(t, consume(recorded(t, "revisit-liam", fixtures.ContactLiamID, "rule_revisit")))
+	require.NoError(t, consume(recorded(t, "revisit-alice", fixtures.ContactAliceID, "rule_revisit")))
+	liam := firedFor(fixtures.ContactLiamID)
+	alice := firedFor(fixtures.ContactAliceID)
+
+	assert.True(t, liam, "his second revisit")
+	assert.False(t, alice, "her first revisit")
 }
 
 // An Event whose properties exceed the bound a Rule is shown has none for evaluation and for the

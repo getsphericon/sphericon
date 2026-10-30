@@ -99,10 +99,7 @@ func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
 	}{
 		"unknown column":                {rule("password", "eq", "x"), "unknown field"},
 		"unsupported plain operator":    {rule("email", "regex", "x"), "unsupported operator"},
-		"event without action":          {rule("event:", "performed", ""), "unknown field"},
-		"unsupported event operator":    {rule("event:signup", "eq", ""), "for event field"},
-		"bad event window":              {rule("event:signup", "performed", "abc"), "event window"},
-		"negative event window":         {rule("event:signup", "performed", "-3"), "event window"},
+		"an event as a field":           {rule("event:signup", "eq", "x"), "unknown field"},
 		"unsupported tag operator":      {rule("tag", "eq", "vip"), "for tag field"},
 		"blank tag name":                {rule("tag", "has", "   "), "tag name is required"},
 		"unsupported json operator":     {rule("custom:plan", "beginsWith", "p"), "for json field"},
@@ -110,6 +107,34 @@ func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
 		"plain operator on json column": {rule("custom:plan", "null", ""), "for json field"},
 	} {
 		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule))
+		require.Error(t, err, name)
+		assert.Contains(t, err.Error(), tc.msg, name)
+		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
+	}
+}
+
+func TestCompileRefusesAnEventLeafOutOfRange(t *testing.T) {
+	env := testhelper.Setup(t)
+	withoutTimes := eventLeaf("signup", "atLeast", 1, 0)
+	withoutTimes.Times = nil
+	zeroWindow := eventLeaf("signup", "atLeast", 1, 0)
+	zero := 0
+	zeroWindow.WithinDays = &zero
+
+	for name, tc := range map[string]struct {
+		leaf condition.EventLeaf
+		msg  string
+	}{
+		"no action":                {eventLeaf("", "atLeast", 1, 0), "event action is required"},
+		"a blank action":           {eventLeaf("  ", "atLeast", 1, 0), "event action is required"},
+		"a text operator":          {eventLeaf("signup", "eq", 1, 0), "unsupported operator"},
+		"no times":                 {withoutTimes, "times is required"},
+		"at least none":            {eventLeaf("signup", "atLeast", 0, 0), "atLeast takes times of 1 or more"},
+		"at most a negative count": {eventLeaf("signup", "atMost", -1, 0), "atMost takes times of 0 or more"},
+		"a zero window":            {zeroWindow, "withinDays must be 1 or more"},
+		"a negative window":        {eventLeaf("signup", "atLeast", 1, -1), "withinDays must be 1 or more"},
+	} {
+		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)

@@ -3092,6 +3092,150 @@ func (s *ConditionCombinator) UnmarshalText(data []byte) error {
 	}
 }
 
+// A test of how many times a contact performed an Event action, over all time or within the last
+// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
+// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
+// Event retention is capped by it: expired Events are no longer counted.
+// Ref: #/components/schemas/ConditionEventLeaf
+type ConditionEventLeaf struct {
+	Kind ConditionEventLeafKind `json:"kind"`
+	// The Event action counted.
+	Action string `json:"action"`
+	// How the count is bounded.
+	Operator ConditionEventOperator `json:"operator"`
+	// The bound: atLeast takes 1 or more, atMost 0 or more.
+	Times int32 `json:"times"`
+	// Count only the Events of the last this many days; absent counts all time.
+	WithinDays OptInt32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionEventLeaf) GetKind() ConditionEventLeafKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *ConditionEventLeaf) GetAction() string {
+	return s.Action
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionEventLeaf) GetOperator() ConditionEventOperator {
+	return s.Operator
+}
+
+// GetTimes returns the value of Times.
+func (s *ConditionEventLeaf) GetTimes() int32 {
+	return s.Times
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *ConditionEventLeaf) GetWithinDays() OptInt32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionEventLeaf) SetKind(val ConditionEventLeafKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *ConditionEventLeaf) SetAction(val string) {
+	s.Action = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionEventLeaf) SetOperator(val ConditionEventOperator) {
+	s.Operator = val
+}
+
+// SetTimes sets the value of Times.
+func (s *ConditionEventLeaf) SetTimes(val int32) {
+	s.Times = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *ConditionEventLeaf) SetWithinDays(val OptInt32) {
+	s.WithinDays = val
+}
+
+type ConditionEventLeafKind string
+
+const (
+	ConditionEventLeafKindEvent ConditionEventLeafKind = "event"
+)
+
+// AllValues returns all ConditionEventLeafKind values.
+func (ConditionEventLeafKind) AllValues() []ConditionEventLeafKind {
+	return []ConditionEventLeafKind{
+		ConditionEventLeafKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionEventLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionEventLeafKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionEventLeafKind) UnmarshalText(data []byte) error {
+	switch ConditionEventLeafKind(data) {
+	case ConditionEventLeafKindEvent:
+		*s = ConditionEventLeafKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How an event leaf bounds the count: at least `times`, or at most `times`.
+// Ref: #/components/schemas/ConditionEventOperator
+type ConditionEventOperator string
+
+const (
+	ConditionEventOperatorAtLeast ConditionEventOperator = "atLeast"
+	ConditionEventOperatorAtMost  ConditionEventOperator = "atMost"
+)
+
+// AllValues returns all ConditionEventOperator values.
+func (ConditionEventOperator) AllValues() []ConditionEventOperator {
+	return []ConditionEventOperator{
+		ConditionEventOperatorAtLeast,
+		ConditionEventOperatorAtMost,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionEventOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionEventOperatorAtLeast:
+		return []byte(s), nil
+	case ConditionEventOperatorAtMost:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionEventOperator) UnmarshalText(data []byte) error {
+	switch ConditionEventOperator(data) {
+	case ConditionEventOperatorAtLeast:
+		*s = ConditionEventOperatorAtLeast
+		return nil
+	case ConditionEventOperatorAtMost:
+		*s = ConditionEventOperatorAtMost
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
 // empty negated group matches none).
 // Ref: #/components/schemas/ConditionGroup
@@ -3184,14 +3328,13 @@ func (s *ConditionGroupKind) UnmarshalText(data []byte) error {
 type ConditionLeaf struct {
 	Kind ConditionLeafKind `json:"kind"`
 	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone),
-	// "tag", "custom:" for a custom field of the workspace, "event:", or "trigger:" (a property of the
-	// Event that fired a rule: valid only in a rule, refused in a segment, takes the text operators, and
-	// is false when the Event lacks the key or holds a value that is not text).
+	// "tag", "custom:" for a custom field of the workspace, or "trigger:" (a property of the Event that
+	// fired a rule: valid only in a rule, refused in a segment, takes the text operators, and is false
+	// when the Event lacks the key or holds a value that is not text).
 	Field string `json:"field"`
 	// How the field is tested.
 	Operator ConditionOperator `json:"operator"`
-	// The value to test against: a tag name, a day window for events ("" = ever), blank for null and
-	// notNull.
+	// The value to test against: a tag name, blank for null and notNull.
 	Value OptString `json:"value"`
 }
 
@@ -3269,7 +3412,8 @@ func (s *ConditionLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// A leaf or a nested group inside a condition group, discriminated by `kind`.
+// A leaf (a test of a field, or an event count) or a nested group inside a condition group,
+// discriminated by `kind`.
 // Ref: #/components/schemas/ConditionNode
 type ConditionNode struct {
 	OneOf ConditionNodeSum
@@ -3288,9 +3432,10 @@ func (s *ConditionNode) SetOneOf(val ConditionNodeSum) {
 // ConditionNodeSum represents sum type.
 type ConditionNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type           ConditionNodeSumType
-	ConditionLeaf  ConditionLeaf
-	ConditionGroup ConditionGroup
+	Type               ConditionNodeSumType
+	ConditionLeaf      ConditionLeaf
+	ConditionEventLeaf ConditionEventLeaf
+	ConditionGroup     ConditionGroup
 }
 
 // ConditionNodeSumType is oneOf type of ConditionNodeSum.
@@ -3298,12 +3443,18 @@ type ConditionNodeSumType string
 
 // Possible values for ConditionNodeSumType.
 const (
-	ConditionLeafConditionNodeSum  ConditionNodeSumType = "rule"
-	ConditionGroupConditionNodeSum ConditionNodeSumType = "group"
+	ConditionLeafConditionNodeSum      ConditionNodeSumType = "rule"
+	ConditionEventLeafConditionNodeSum ConditionNodeSumType = "event"
+	ConditionGroupConditionNodeSum     ConditionNodeSumType = "group"
 )
 
 // IsConditionLeaf reports whether ConditionNodeSum is ConditionLeaf.
 func (s ConditionNodeSum) IsConditionLeaf() bool { return s.Type == ConditionLeafConditionNodeSum }
+
+// IsConditionEventLeaf reports whether ConditionNodeSum is ConditionEventLeaf.
+func (s ConditionNodeSum) IsConditionEventLeaf() bool {
+	return s.Type == ConditionEventLeafConditionNodeSum
+}
 
 // IsConditionGroup reports whether ConditionNodeSum is ConditionGroup.
 func (s ConditionNodeSum) IsConditionGroup() bool { return s.Type == ConditionGroupConditionNodeSum }
@@ -3329,6 +3480,27 @@ func NewConditionLeafConditionNodeSum(v ConditionLeaf) ConditionNodeSum {
 	return s
 }
 
+// SetConditionEventLeaf sets ConditionNodeSum to ConditionEventLeaf.
+func (s *ConditionNodeSum) SetConditionEventLeaf(v ConditionEventLeaf) {
+	s.Type = ConditionEventLeafConditionNodeSum
+	s.ConditionEventLeaf = v
+}
+
+// GetConditionEventLeaf returns ConditionEventLeaf and true boolean if ConditionNodeSum is ConditionEventLeaf.
+func (s ConditionNodeSum) GetConditionEventLeaf() (v ConditionEventLeaf, ok bool) {
+	if !s.IsConditionEventLeaf() {
+		return v, false
+	}
+	return s.ConditionEventLeaf, true
+}
+
+// NewConditionEventLeafConditionNodeSum returns new ConditionNodeSum from ConditionEventLeaf.
+func NewConditionEventLeafConditionNodeSum(v ConditionEventLeaf) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionEventLeaf(v)
+	return s
+}
+
 // SetConditionGroup sets ConditionNodeSum to ConditionGroup.
 func (s *ConditionNodeSum) SetConditionGroup(v ConditionGroup) {
 	s.Type = ConditionGroupConditionNodeSum
@@ -3351,22 +3523,19 @@ func NewConditionGroupConditionNodeSum(v ConditionGroup) ConditionNodeSum {
 }
 
 // What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
-// a custom field takes eq, neq, contains and notNull; an event takes performed and notPerformed; the
-// tag field takes has and doesNotHave.
+// a custom field takes eq, neq, contains and notNull; the tag field takes has and doesNotHave.
 // Ref: #/components/schemas/ConditionOperator
 type ConditionOperator string
 
 const (
-	ConditionOperatorEq           ConditionOperator = "eq"
-	ConditionOperatorNeq          ConditionOperator = "neq"
-	ConditionOperatorContains     ConditionOperator = "contains"
-	ConditionOperatorBeginsWith   ConditionOperator = "beginsWith"
-	ConditionOperatorNull         ConditionOperator = "null"
-	ConditionOperatorNotNull      ConditionOperator = "notNull"
-	ConditionOperatorPerformed    ConditionOperator = "performed"
-	ConditionOperatorNotPerformed ConditionOperator = "notPerformed"
-	ConditionOperatorHas          ConditionOperator = "has"
-	ConditionOperatorDoesNotHave  ConditionOperator = "doesNotHave"
+	ConditionOperatorEq          ConditionOperator = "eq"
+	ConditionOperatorNeq         ConditionOperator = "neq"
+	ConditionOperatorContains    ConditionOperator = "contains"
+	ConditionOperatorBeginsWith  ConditionOperator = "beginsWith"
+	ConditionOperatorNull        ConditionOperator = "null"
+	ConditionOperatorNotNull     ConditionOperator = "notNull"
+	ConditionOperatorHas         ConditionOperator = "has"
+	ConditionOperatorDoesNotHave ConditionOperator = "doesNotHave"
 )
 
 // AllValues returns all ConditionOperator values.
@@ -3378,8 +3547,6 @@ func (ConditionOperator) AllValues() []ConditionOperator {
 		ConditionOperatorBeginsWith,
 		ConditionOperatorNull,
 		ConditionOperatorNotNull,
-		ConditionOperatorPerformed,
-		ConditionOperatorNotPerformed,
 		ConditionOperatorHas,
 		ConditionOperatorDoesNotHave,
 	}
@@ -3399,10 +3566,6 @@ func (s ConditionOperator) MarshalText() ([]byte, error) {
 	case ConditionOperatorNull:
 		return []byte(s), nil
 	case ConditionOperatorNotNull:
-		return []byte(s), nil
-	case ConditionOperatorPerformed:
-		return []byte(s), nil
-	case ConditionOperatorNotPerformed:
 		return []byte(s), nil
 	case ConditionOperatorHas:
 		return []byte(s), nil
@@ -3433,12 +3596,6 @@ func (s *ConditionOperator) UnmarshalText(data []byte) error {
 		return nil
 	case ConditionOperatorNotNull:
 		*s = ConditionOperatorNotNull
-		return nil
-	case ConditionOperatorPerformed:
-		*s = ConditionOperatorPerformed
-		return nil
-	case ConditionOperatorNotPerformed:
-		*s = ConditionOperatorNotPerformed
 		return nil
 	case ConditionOperatorHas:
 		*s = ConditionOperatorHas

@@ -3,6 +3,7 @@ package condition_test
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"testing"
 
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -82,26 +83,55 @@ func TestCompileEvaluatesAgainstContacts(t *testing.T) {
 	assert.Equal(t, []string{bob}, match(condition.Group{Kind: "group", Combinator: "and", Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
 }
 
+// eventLeaf is an event count leaf; withinDays 0 leaves the window out (all time).
+func eventLeaf(action, op string, times, withinDays int) condition.EventLeaf {
+	l := condition.EventLeaf{Kind: "event", Action: action, Operator: op, Times: &times}
+	if withinDays != 0 {
+		l.WithinDays = &withinDays
+	}
+	return l
+}
+
+// Massive's Events: Ann did page_view 2, 3 and 20 days ago and purchase 40 days ago; one
+// page_view is anonymous; Bob opened an email once by hand and twice by software, Cara twice by hand.
 func TestEventConditions(t *testing.T) {
 	env := testhelper.Setup(t)
 	const ann, bob, cara = fixtures.MassiveAnnEmail, fixtures.MassiveBobEmail, fixtures.MassiveCaraEmail
-	match := func(g condition.Group) []string { return emailsIn(t, env, fixtures.MassiveID, g) }
-	event := func(action, op, value string) condition.Group {
-		return condition.Group{Kind: "group", Combinator: "and", Rules: marshal(rule("event:"+action, op, value))}
+
+	for name, tc := range map[string]struct {
+		leaf condition.EventLeaf
+		want []string
+	}{
+		"performed ever":                            {eventLeaf("page_view", "atLeast", 1, 0), []string{ann}},
+		"performed within 7 days":                   {eventLeaf("page_view", "atLeast", 1, 7), []string{ann}},
+		"performed long ago, not within the window": {eventLeaf("purchase", "atLeast", 1, 7), nil},
+		"performed once ever":                       {eventLeaf("purchase", "atLeast", 1, 0), []string{ann}},
+		"at least as many as there are":             {eventLeaf("page_view", "atLeast", 3, 0), []string{ann}},
+		"at least more than there are":              {eventLeaf("page_view", "atLeast", 4, 0), nil},
+		"at least two within a week":                {eventLeaf("page_view", "atLeast", 2, 7), []string{ann}},
+		"the third is older than the week":          {eventLeaf("page_view", "atLeast", 3, 7), nil},
+		// An anonymous page_view (no Contact yet) must not hide Bob and Cara: a NOT IN over a NULL
+		// contact_id would match nobody.
+		"not performed":                  {eventLeaf("page_view", "atMost", 0, 0), []string{bob, cara}},
+		"at most fewer than Ann has":     {eventLeaf("page_view", "atMost", 2, 0), []string{bob, cara}},
+		"at most as many as in a week":   {eventLeaf("page_view", "atMost", 2, 7), []string{ann, bob, cara}},
+		"a window past any Event":        {eventLeaf("page_view", "atLeast", 3, math.MaxInt32), []string{ann}},
+		"software opens are not counted": {eventLeaf("email.opened", "atLeast", 2, 0), []string{cara}},
+		"at most one human open":         {eventLeaf("email.opened", "atMost", 1, 0), []string{ann, bob}},
+	} {
+		got := emailsIn(t, env, fixtures.MassiveID, opsGroup(tc.leaf))
+		assert.ElementsMatch(t, tc.want, got, name)
 	}
+}
 
-	// Ann did page_view 2 days ago and purchase 40 days ago.
-	assert.Equal(t, []string{ann}, match(event("page_view", "performed", "")), "performed ever")
-	assert.Equal(t, []string{ann}, match(event("page_view", "performed", "7")), "performed within 7 days")
-	assert.Empty(t, match(event("purchase", "performed", "7")), "Ann's purchase is 40 days old")
-	assert.Equal(t, []string{ann}, match(event("purchase", "performed", "")))
-	// An anonymous page_view (no Contact yet) must not hide Bob from notPerformed:
-	// NOT IN over a NULL contact_id would match nobody.
-	assert.Equal(t, []string{bob, cara}, match(event("page_view", "notPerformed", "")))
+// An event leaf composes with the other leaves and groups of the tree.
+func TestEventConditionsCompose(t *testing.T) {
+	env := testhelper.Setup(t)
 
-	// validation: bad operator + non-numeric window are rejected.
-	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"weird","value":""}]}`))
-	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"event:x","operator":"performed","value":"soon"}]}`))
+	exactlyOne := opsGroup(eventLeaf("email.opened", "atLeast", 1, 0), eventLeaf("email.opened", "atMost", 1, 0))
+	got := emailsIn(t, env, fixtures.MassiveID, exactlyOne)
+
+	assert.Equal(t, []string{fixtures.MassiveBobEmail}, got, "exactly once is a group of atLeast and atMost")
 }
 
 // Fixtures: tag "vip" is on contacts 1 and 3, "newsletter" on contact 1, "unused" on
