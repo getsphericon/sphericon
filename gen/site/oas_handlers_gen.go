@@ -6494,9 +6494,9 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 
 // handleSiteBrandKitRecreateStarterTemplatesRequest handles SiteBrandKit_recreateStarterTemplates operation.
 //
-// Create the starter Templates again from the saved Brand kit (owner only). It adds new Templates and
-// never touches one that exists or a message already written. Answers 422 until the Brand kit has been
-// saved.
+// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+// Templates and never touches one that exists or a message already written. Answers 422 until the
+// Brand kit has been saved.
 //
 // POST /workspaces/{workspaceId}/brand-kit/starter-templates
 func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -6683,9 +6683,9 @@ func (s *Server) handleSiteBrandKitRecreateStarterTemplatesRequest(args [1]strin
 
 // handleSiteBrandKitSaveRequest handles SiteBrandKit_save operation.
 //
-// Save the Brand kit (owner only). The first save also creates the starter Templates (a welcome, a
-// receipt, a digest and a one-button message) in its brand; a later save creates none and changes no
-// message already written. A change is recorded as an Audit entry.
+// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+// changes no message already written. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/brand-kit
 func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -9820,6 +9820,384 @@ func (s *Server) handleSiteCapturedMessagesListRequest(args [1]string, argsEscap
 	}
 }
 
+// handleSiteConnectionsDeleteRequest handles SiteConnections_delete operation.
+//
+// Revoke a Connection: the caller's own, or anyone's with members:manage.
+//
+// DELETE /workspaces/{workspaceId}/connections/{id}
+func (s *Server) handleSiteConnectionsDeleteRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteConnections_delete"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/connections/{id}"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteConnectionsDeleteOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteConnectionsDeleteOperation,
+			ID:   "SiteConnections_delete",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteConnectionsDeleteOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeSiteConnectionsDeleteParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response SiteConnectionsDeleteRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteConnectionsDeleteOperation,
+			OperationSummary: "",
+			OperationID:      "SiteConnections_delete",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "workspaceId",
+					In:   "path",
+				}: params.WorkspaceId,
+				{
+					Name: "id",
+					In:   "path",
+				}: params.ID,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = SiteConnectionsDeleteParams
+			Response = SiteConnectionsDeleteRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackSiteConnectionsDeleteParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteConnectionsDelete(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteConnectionsDelete(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteConnectionsDeleteResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
+// handleSiteConnectionsListRequest handles SiteConnections_list operation.
+//
+// List the Connections the caller may see: their own, or every member's with members:manage.
+//
+// GET /workspaces/{workspaceId}/connections
+func (s *Server) handleSiteConnectionsListRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteConnections_list"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/connections"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteConnectionsListOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteConnectionsListOperation,
+			ID:   "SiteConnections_list",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteConnectionsListOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeSiteConnectionsListParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response SiteConnectionsListRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteConnectionsListOperation,
+			OperationSummary: "",
+			OperationID:      "SiteConnections_list",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "workspaceId",
+					In:   "path",
+				}: params.WorkspaceId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = SiteConnectionsListParams
+			Response = SiteConnectionsListRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackSiteConnectionsListParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteConnectionsList(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteConnectionsList(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteConnectionsListResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleSiteContactsCreateRequest handles SiteContacts_create operation.
 //
 // Create a resource from the site UI.
@@ -10411,7 +10789,7 @@ func (s *Server) handleSiteContactsEraseRequest(args [1]string, argsEscaped bool
 // handleSiteContactsExportRequest handles SiteContacts_export operation.
 //
 // Export everything held about one contact as a streamed JSON download. Identify the contact by
-// exactly one of `id` or `email`. Available to any Workspace member (contact read access).
+// exactly one of `id` or `email`. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/contacts/export
 func (s *Server) handleSiteContactsExportRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -11582,7 +11960,7 @@ func (s *Server) handleSiteCustomFieldsListRequest(args [1]string, argsEscaped b
 
 // handleSiteDomainJoinGetRequest handles SiteDomainJoin_get operation.
 //
-// Read the domain join switch (owner only).
+// Read the domain join switch (owner and admin only).
 //
 // GET /workspaces/{workspaceId}/domain-join
 func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -11769,8 +12147,8 @@ func (s *Server) handleSiteDomainJoinGetRequest(args [1]string, argsEscaped bool
 
 // handleSiteDomainJoinSetRequest handles SiteDomainJoin_set operation.
 //
-// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
-// an address proven afterwards joins. Recorded as an Audit entry.
+// Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already a
+// User: only an address proven afterwards joins. Recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/domain-join
 func (s *Server) handleSiteDomainJoinSetRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -15975,7 +16353,7 @@ func (s *Server) handleSiteInvitationsListRequest(args [1]string, argsEscaped bo
 
 // handleSiteJoinDomainsAddRequest handles SiteJoinDomains_add operation.
 //
-// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+// Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
 // `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
 // domain the Workspace already has is 409.
 //
@@ -16179,7 +16557,7 @@ func (s *Server) handleSiteJoinDomainsAddRequest(args [1]string, argsEscaped boo
 
 // handleSiteJoinDomainsListRequest handles SiteJoinDomains_list operation.
 //
-// List the Workspace's Join domains (owner only), pending and verified.
+// List the Workspace's Join domains (owner and admin only), pending and verified.
 //
 // GET /workspaces/{workspaceId}/join-domains
 func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -16366,7 +16744,7 @@ func (s *Server) handleSiteJoinDomainsListRequest(args [1]string, argsEscaped bo
 
 // handleSiteJoinDomainsRemoveRequest handles SiteJoinDomains_remove operation.
 //
-// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+// Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 //
 // DELETE /workspaces/{workspaceId}/join-domains/{id}
 func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -16557,8 +16935,8 @@ func (s *Server) handleSiteJoinDomainsRemoveRequest(args [2]string, argsEscaped 
 
 // handleSiteJoinDomainsVerifyRequest handles SiteJoinDomains_verify operation.
 //
-// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
-// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+// Check the TXT record now (owner and admin only) and verify the domain when it is published. A domain
+// another Workspace has verified is re-checked at that Workspace first: 409 while its record is still
 // published, otherwise the domain moves here. 422 when the record is not found.
 //
 // POST /workspaces/{workspaceId}/join-domains/{id}/verify
@@ -17527,8 +17905,9 @@ func (s *Server) handleSiteMembershipsUpdateRequest(args [2]string, argsEscaped 
 
 // handleSiteOAuthDecideRequest handles SiteOAuth_decide operation.
 //
-// Approve or deny an OAuth authorization request as the signed-in user. Approving mints an API token,
-// so it needs the same role as creating one (owner or admin).
+// Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection
+// tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role
+// lacks is refused (403 permission_required).
 //
 // POST /oauth/authorization
 func (s *Server) handleSiteOAuthDecideRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26575,7 +26954,7 @@ func (s *Server) handleSiteSignupSurveySubmitRequest(args [0]string, argsEscaped
 
 // handleSiteSuppressionsCreateRequest handles SiteSuppressions_create operation.
 //
-// Manually suppress an address (reason = manual; idempotent per address).
+// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/suppressions
 func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26778,7 +27157,7 @@ func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped
 // handleSiteSuppressionsDeleteRequest handles SiteSuppressions_delete operation.
 //
 // Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
-// one that is already lifted is a 404.
+// one that is already lifted is a 404. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
 func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26969,7 +27348,7 @@ func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped
 
 // handleSiteSuppressionsListRequest handles SiteSuppressions_list operation.
 //
-// List suppressed addresses.
+// List suppressed addresses (every member).
 //
 // GET /workspaces/{workspaceId}/suppressions
 func (s *Server) handleSiteSuppressionsListRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -33569,6 +33948,195 @@ func (s *Server) handleSiteWorkspacesLeaveRequest(args [1]string, argsEscaped bo
 	}
 }
 
+// handleSiteWorkspacesLiftSecondFactorRequirementRequest handles SiteWorkspaces_liftSecondFactorRequirement operation.
+//
+// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
+// withheld by the requirement may still perform in the Workspace, so an Owner or Admin without a
+// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
+//
+// DELETE /workspaces/{workspaceId}/second-factor-requirement
+func (s *Server) handleSiteWorkspacesLiftSecondFactorRequirementRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_liftSecondFactorRequirement"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteWorkspacesLiftSecondFactorRequirementOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteWorkspacesLiftSecondFactorRequirementOperation,
+			ID:   "SiteWorkspaces_liftSecondFactorRequirement",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteWorkspacesLiftSecondFactorRequirementOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeSiteWorkspacesLiftSecondFactorRequirementParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response SiteWorkspacesLiftSecondFactorRequirementRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteWorkspacesLiftSecondFactorRequirementOperation,
+			OperationSummary: "",
+			OperationID:      "SiteWorkspaces_liftSecondFactorRequirement",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "workspaceId",
+					In:   "path",
+				}: params.WorkspaceId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = SiteWorkspacesLiftSecondFactorRequirementParams
+			Response = SiteWorkspacesLiftSecondFactorRequirementRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackSiteWorkspacesLiftSecondFactorRequirementParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteWorkspacesLiftSecondFactorRequirement(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteWorkspacesLiftSecondFactorRequirement(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteWorkspacesLiftSecondFactorRequirementResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleSiteWorkspacesListRequest handles SiteWorkspaces_list operation.
 //
 // List workspaces owned by the authenticated user.
@@ -33914,6 +34482,195 @@ func (s *Server) handleSiteWorkspacesListDeletedRequest(args [0]string, argsEsca
 	}
 }
 
+// handleSiteWorkspacesRequireSecondFactorRequest handles SiteWorkspaces_requireSecondFactor operation.
+//
+// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then
+// have a Second factor. Switching it on while it is already on keeps the original start, so no one's
+// grace restarts. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/second-factor-requirement
+func (s *Server) handleSiteWorkspacesRequireSecondFactorRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_requireSecondFactor"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteWorkspacesRequireSecondFactorOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteWorkspacesRequireSecondFactorOperation,
+			ID:   "SiteWorkspaces_requireSecondFactor",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteWorkspacesRequireSecondFactorOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeSiteWorkspacesRequireSecondFactorParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response SiteWorkspacesRequireSecondFactorRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteWorkspacesRequireSecondFactorOperation,
+			OperationSummary: "",
+			OperationID:      "SiteWorkspaces_requireSecondFactor",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "workspaceId",
+					In:   "path",
+				}: params.WorkspaceId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = SiteWorkspacesRequireSecondFactorParams
+			Response = SiteWorkspacesRequireSecondFactorRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackSiteWorkspacesRequireSecondFactorParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteWorkspacesRequireSecondFactor(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteWorkspacesRequireSecondFactor(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteWorkspacesRequireSecondFactorResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleSiteWorkspacesRestoreRequest handles SiteWorkspaces_restore operation.
 //
 // Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -33922,14 +34679,14 @@ func (s *Server) handleSiteWorkspacesListDeletedRequest(args [0]string, argsEsca
 // window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
 // 404. Recorded as an Audit entry.
 //
-// POST /workspaces/{workspaceId}/restore
+// POST /workspaces/deleted/{id}/restore
 func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_restore"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/restore"),
+		semconv.HTTPRouteKey.String("/workspaces/deleted/{id}/restore"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
@@ -34062,9 +34819,9 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "workspaceId",
+					Name: "id",
 					In:   "path",
-				}: params.WorkspaceId,
+				}: params.ID,
 			},
 			Raw: r,
 		}
@@ -34105,215 +34862,11 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 	}
 }
 
-// handleSiteWorkspacesSetSecondFactorRequirementRequest handles SiteWorkspaces_setSecondFactorRequirement operation.
-//
-// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is
-// already on keeps the original start, so no one's grace restarts. A change is recorded as an Audit
-// entry.
-//
-// PUT /workspaces/{workspaceId}/second-factor-requirement
-func (s *Server) handleSiteWorkspacesSetSecondFactorRequirementRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteWorkspaces_setSecondFactorRequirement"),
-		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
-	}
-	// Add attributes from config.
-	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
-
-	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteWorkspacesSetSecondFactorRequirementOperation,
-		trace.WithAttributes(otelAttrs...),
-		serverSpanKind,
-	)
-	defer span.End()
-
-	// Add Labeler to context.
-	labeler := &Labeler{attrs: otelAttrs}
-	ctx = contextWithLabeler(ctx, labeler)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		elapsedDuration := time.Since(startTime)
-
-		attrSet := labeler.AttributeSet()
-		attrs := attrSet.ToSlice()
-		code := statusWriter.status
-		if code != 0 {
-			codeAttr := semconv.HTTPResponseStatusCode(code)
-			attrs = append(attrs, codeAttr)
-			span.SetAttributes(attrs...)
-		}
-		attrOpt := metric.WithAttributes(attrs...)
-
-		// Increment request counter.
-		s.requests.Add(ctx, 1, attrOpt)
-
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
-	}()
-
-	var (
-		recordError = func(stage string, err error) {
-			span.RecordError(err)
-
-			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
-			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
-			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
-			// max redirects exceeded), in which case status MUST be set to Error.
-			code := statusWriter.status
-			if code < 100 || code >= 500 {
-				span.SetStatus(codes.Error, stage)
-			}
-
-			attrSet := labeler.AttributeSet()
-			attrs := attrSet.ToSlice()
-			if code != 0 {
-				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
-			}
-
-			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-		}
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: SiteWorkspacesSetSecondFactorRequirementOperation,
-			ID:   "SiteWorkspaces_setSecondFactorRequirement",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteWorkspacesSetSecondFactorRequirementOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "ApiKeyAuth",
-					Err:              err,
-				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeSiteWorkspacesSetSecondFactorRequirementParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-	request, rawBody, close, err := s.decodeSiteWorkspacesSetSecondFactorRequirementRequest(r)
-	if err != nil {
-		err = &ogenerrors.DecodeRequestError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeRequest", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-	defer func() {
-		if err := close(); err != nil {
-			recordError("CloseRequest", err)
-		}
-	}()
-
-	var response SiteWorkspacesSetSecondFactorRequirementRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    SiteWorkspacesSetSecondFactorRequirementOperation,
-			OperationSummary: "",
-			OperationID:      "SiteWorkspaces_setSecondFactorRequirement",
-			Body:             request,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "workspaceId",
-					In:   "path",
-				}: params.WorkspaceId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = *SiteSecondFactorRequirementInput
-			Params   = SiteWorkspacesSetSecondFactorRequirementParams
-			Response = SiteWorkspacesSetSecondFactorRequirementRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackSiteWorkspacesSetSecondFactorRequirementParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteWorkspacesSetSecondFactorRequirement(ctx, request, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.SiteWorkspacesSetSecondFactorRequirement(ctx, request, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeSiteWorkspacesSetSecondFactorRequirementResponse(response, w, span); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
 // handleSiteWorkspacesSetTimezoneRequest handles SiteWorkspaces_setTimezone operation.
 //
-// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
-// the zone database does not know. A change is recorded as an Audit entry and applies to all history
-// at once.
+// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
+// a name the zone database does not know. A change is recorded as an Audit entry and applies to all
+// history at once.
 //
 // PUT /workspaces/{workspaceId}/timezone
 func (s *Server) handleSiteWorkspacesSetTimezoneRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

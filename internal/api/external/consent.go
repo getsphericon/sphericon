@@ -18,10 +18,6 @@ import (
 // contact via link) does them.
 
 func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.CreateSuppressionInput) (externalapi.SuppressionsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsWrite) {
-		res := externalapi.SuppressionsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	s := auth.TokenScoped(ctx)
 
 	created, err := suppression.AddManual(ctx, s, string(req.Destination))
@@ -37,10 +33,6 @@ func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.Crea
 }
 
 func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.CreateUnsubscribeInput) (externalapi.UnsubscribesCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeContactsWrite) {
-		res := externalapi.UnsubscribesCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	s := auth.TokenScoped(ctx)
 
 	source := req.SendingSource.Or(eligibility.SourceBroadcasts)

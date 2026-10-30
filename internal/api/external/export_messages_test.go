@@ -84,7 +84,7 @@ func TestExportMessagesNeedsTheExportReadScope(t *testing.T) {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.InitechID, scopes...))
 		res, err := c.ExportMessages(context.Background(), externalapi.ExportMessagesParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportMessagesUnauthorized{}, res, "scopes %v are refused", scopes)
+		assert.IsType(t, &externalapi.ExportMessagesForbidden{}, res, "scopes %v are refused", scopes)
 	}
 }
 

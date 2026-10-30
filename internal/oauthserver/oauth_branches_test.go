@@ -191,9 +191,11 @@ func TestServiceDescribeValidatesClientRedirectAndScope(t *testing.T) {
 func TestServiceDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := newService(env.DB)
+	owner, err := env.DB.Membership.Get(t.Context(), fixtures.AcmeOwnerMembershipID)
+	require.NoError(t, err)
 	good := oauthserver.Decision{
 		ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI, State: "st",
-		CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier), Scope: "contacts:read", WorkspaceID: fixtures.AcmeID, Approve: true,
+		CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier), Scope: "contacts:read", Membership: owner, Approve: true,
 	}
 	codes := func() int {
 		n, err := env.DB.OAuthCode.Query().Count(t.Context())
@@ -218,7 +220,7 @@ func TestServiceDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 
 	d := good
 	d.ClientID = "no-such-client"
-	_, err := s.Decide(t.Context(), d)
+	_, err = s.Decide(t.Context(), d)
 	require.ErrorIs(t, err, oauthserver.ErrUnknownClient)
 
 	// A denial needs no PKCE or scope, only a registered client and redirect.
@@ -242,6 +244,7 @@ func TestServiceDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"contacts:read"}, stored.Scopes)
 	assert.EqualValues(t, fixtures.AcmeID, stored.WorkspaceID)
+	assert.EqualValues(t, fixtures.AcmeOwnerMembershipID, stored.MembershipID, "the code names the approving Membership")
 	assert.WithinDuration(t, time.Now().Add(5*time.Minute), stored.ExpiresAt, 10*time.Second)
 	assert.NotContains(t, target, stored.CodeHash, "only the hash is stored")
 

@@ -14,10 +14,7 @@ import (
 )
 
 func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTemplatesListParams) (siteapi.SiteTemplatesListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	page, err := h.templates.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
@@ -35,11 +32,8 @@ func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTem
 	}, nil
 }
 
-func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.SiteCreateEmailTemplateInput, params siteapi.SiteTemplatesCreateParams) (siteapi.SiteTemplatesCreateRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.SiteCreateEmailTemplateInput, _ siteapi.SiteTemplatesCreateParams) (siteapi.SiteTemplatesCreateRes, error) {
+	scoped := workspaceScope(ctx)
 
 	tpl, err := h.templates.Create(ctx, scoped, templates.CreateInput{
 		Name:    req.Name,
@@ -58,10 +52,7 @@ func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.SiteCre
 }
 
 func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemplatesGetParams) (siteapi.SiteTemplatesGetRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	tpl, err := h.templates.Get(ctx, scoped, id)
@@ -73,10 +64,7 @@ func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemp
 }
 
 func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpdateEmailTemplateInput, params siteapi.SiteTemplatesUpdateParams) (siteapi.SiteTemplatesUpdateRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
@@ -97,13 +85,10 @@ func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpd
 }
 
 func (h *Handlers) SiteTemplatesDelete(ctx context.Context, params siteapi.SiteTemplatesDeleteParams) (siteapi.SiteTemplatesDeleteRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.templates.Delete(ctx, scoped, id)
+	err := h.templates.Delete(ctx, scoped, id)
 	if err != nil {
 		return nil, err
 	}

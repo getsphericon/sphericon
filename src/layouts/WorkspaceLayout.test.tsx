@@ -7,7 +7,7 @@ import {
   handleSiteInstanceGetState,
   handleSiteTagsList,
   handleSiteWorkspacesList,
-  handleSiteWorkspacesSetSecondFactorRequirement,
+  handleSiteWorkspacesLiftSecondFactorRequirement,
 } from '../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
 import { Route as securityRoute } from '../routes/account/security.tsx'
@@ -37,6 +37,7 @@ const workspace = (over: Partial<SiteWorkspaceResource>): SiteWorkspaceResource 
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions: [],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
@@ -270,23 +271,24 @@ test('a 403 second_factor_required from the workspace shows the blocked screen',
   await expect.element(screen.getByText('Two-factor authentication required')).toBeInTheDocument()
 })
 
-// Story 35: an Owner or Admin withheld by the requirement can still lift it.
-test('a withheld owner can turn the requirement off from the blocked screen', async () => {
-  const bodies: string[] = []
+// Story 35: a member holding second_factor:manage, withheld by the requirement, can still lift it.
+test('a withheld second_factor:manage holder can turn the requirement off from the blocked screen', async () => {
+  const lifted: string[] = []
   let current = workspace({
     role: 'owner',
+    permissions: ['second_factor:manage'],
     secondFactorRequiredAt: '2026-03-01T00:00:00Z',
     secondFactorGraceEndsAt: new Date(Date.now() - DAY).toISOString(),
   })
   worker.use(
     handleSiteWorkspacesList(() => HttpResponse.json([current])),
-    handleSiteWorkspacesSetSecondFactorRequirement(async ({ request }) => {
-      bodies.push(await request.text())
-      current = workspace({ role: 'owner' })
+    handleSiteWorkspacesLiftSecondFactorRequirement(({ params }) => {
+      lifted.push(params.workspaceId)
+      current = workspace({ role: 'owner', permissions: ['second_factor:manage'] })
       return HttpResponse.json(current)
     }),
     handleSiteTagsList(() =>
-      bodies.length > 0
+      lifted.length > 0
         ? HttpResponse.json(page([]))
         : problem(403, { title: 'Forbidden', code: 'second_factor_required' }),
     ),
@@ -302,7 +304,7 @@ test('a withheld owner can turn the requirement off from the blocked screen', as
   await expect.element(screen.getByText('Two-factor authentication required')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Turn off the requirement' }).click()
 
-  await expect.poll(() => bodies).toEqual(['{"required":false}'])
+  await expect.poll(() => lifted).toEqual([current.id])
   await expect
     .element(screen.getByText('Two-factor authentication required'))
     .not.toBeInTheDocument()

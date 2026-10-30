@@ -8,19 +8,14 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
-
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/apitokens"
 )
 
-// SiteTokensList returns the workspace's API tokens; a revoked one stays listed, marked by
-// its revoked_at, so an owner sees a connector that was revoked (by hand or by reuse detection).
-func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokensListParams) (siteapi.SiteTokensListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+// SiteTokensList returns the workspace's API tokens (Connections are listed apart, ADR 0061); a
+// revoked one stays listed, marked by its revoked_at.
+func (h *Handlers) SiteTokensList(ctx context.Context, _ siteapi.SiteTokensListParams) (siteapi.SiteTokensListRes, error) {
+	scoped := workspaceScope(ctx)
 
 	tokens, err := apitokens.List(ctx, scoped)
 	if err != nil {
@@ -36,15 +31,8 @@ func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokens
 
 // SiteTokensCreate mints a workspace API token. The full secret is returned once;
 // only its SHA-256 hash and public prefix are stored.
-func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreateTokenInput, params siteapi.SiteTokensCreateParams) (siteapi.SiteTokensCreateRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageTokens(role) {
-		v := siteapi.SiteTokensCreateForbidden(problem(http.StatusForbidden, "only owners and admins can manage API tokens"))
-		return &v, nil
-	}
+func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreateTokenInput, _ siteapi.SiteTokensCreateParams) (siteapi.SiteTokensCreateRes, error) {
+	scoped := workspaceScope(ctx)
 
 	in := apitokens.Input{Name: req.Name, Scopes: lo.Map(req.Scopes, func(s siteapi.ApiTokenScope, _ int) string { return string(s) })}
 	if v, ok := req.ExpiresAt.Get(); ok {
@@ -64,14 +52,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 
 // SiteTokensUpdate renames an active workspace API token.
 func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdateTokenInput, params siteapi.SiteTokensUpdateParams) (siteapi.SiteTokensUpdateRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageTokens(role) {
-		v := siteapi.SiteTokensUpdateForbidden(problem(http.StatusForbidden, "only owners and admins can manage API tokens"))
-		return &v, nil
-	}
+	scoped := workspaceScope(ctx)
 
 	row, err := apitokens.Rename(ctx, scoped, int64(params.ID), req.Name)
 	switch {
@@ -87,19 +68,12 @@ func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdate
 
 // SiteTokensDelete revokes (soft-deletes) a workspace API token.
 func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteTokensDeleteParams) (siteapi.SiteTokensDeleteRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageTokens(role) {
-		v := siteapi.SiteTokensDeleteForbidden(problem(http.StatusForbidden, "only owners and admins can manage API tokens"))
-		return &v, nil
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
 	// An unknown, foreign or already-revoked id is a 404.
-	err = apitokens.Revoke(ctx, scoped, id)
+	err := apitokens.Revoke(ctx, scoped, id)
 	if errors.Is(err, apitokens.ErrNotFound) {
 		v := siteapi.SiteTokensDeleteNotFound(problem(http.StatusNotFound, "token not found"))
 		return &v, nil

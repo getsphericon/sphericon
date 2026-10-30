@@ -1,5 +1,6 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -70,3 +71,9 @@ interface SiteTemplates
       SiteCreateEmailTemplateInput,
       SiteUpdateEmailTemplateInput
     > {}
+
+@@extension(SiteTemplates.create, "x-required-permissions", #[]);
+@@extension(SiteTemplates.delete, "x-required-permissions", #[]);
+@@extension(SiteTemplates.get, "x-required-permissions", #[]);
+@@extension(SiteTemplates.list, "x-required-permissions", #[]);
+@@extension(SiteTemplates.update, "x-required-permissions", #[]);

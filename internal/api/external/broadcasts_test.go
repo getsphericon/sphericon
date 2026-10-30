@@ -185,29 +185,29 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	// ...but cannot write, set the Segment or test-send.
 	created, err := readOnly.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: "x"})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsCreateUnauthorized{}, created)
+	assert.IsType(t, &externalapi.BroadcastsCreateForbidden{}, created)
 	upd, err := readOnly.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{}, externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUpdateUnauthorized{}, upd)
+	assert.IsType(t, &externalapi.BroadcastsUpdateForbidden{}, upd)
 	del, err := readOnly.BroadcastsDelete(ctx, externalapi.BroadcastsDeleteParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsDeleteUnauthorized{}, del)
+	assert.IsType(t, &externalapi.BroadcastsDeleteForbidden{}, del)
 	aud, err := readOnly.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{SegmentId: externalapi.NilEntityId{Null: true}},
 		externalapi.BroadcastsSetSegmentParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsSetSegmentUnauthorized{}, aud)
+	assert.IsType(t, &externalapi.BroadcastsSetSegmentForbidden{}, aud)
 	ts, err := readOnly.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: "qa@test.dev"}, externalapi.BroadcastsTestSendParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsTestSendUnauthorized{}, ts)
+	assert.IsType(t, &externalapi.BroadcastsTestSendForbidden{}, ts)
 	assert.Empty(t, env.CustomerMail.Messages())
 
 	// A token without any broadcast scope reads nothing.
 	list, err := noScope.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsListUnauthorized{}, list)
+	assert.IsType(t, &externalapi.BroadcastsListForbidden{}, list)
 	rep, err = noScope.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sentBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsReportUnauthorized{}, rep)
+	assert.IsType(t, &externalapi.BroadcastsReportForbidden{}, rep)
 }
 
 func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
@@ -220,10 +220,10 @@ func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
 	author := env.ExternalScoped(t, authorScopes...)
 	res, err := author.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsScheduleUnauthorized{}, res)
+	assert.IsType(t, &externalapi.BroadcastsScheduleForbidden{}, res)
 	un, err := author.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: schedBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsUnscheduleUnauthorized{}, un)
+	assert.IsType(t, &externalapi.BroadcastsUnscheduleForbidden{}, un)
 	assert.Equal(t, broadcast.StatusDraft, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
 	assert.Equal(t, broadcast.StatusScheduled, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastScheduledID).Status)
 
@@ -231,7 +231,7 @@ func TestExternalBroadcastScheduleNeedsTheSendScope(t *testing.T) {
 	emailer := env.ExternalScoped(t, "emails:send")
 	res, err = emailer.BroadcastsSchedule(ctx, body, externalapi.BroadcastsScheduleParams{ID: draftBroadcast})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.BroadcastsScheduleUnauthorized{}, res)
+	assert.IsType(t, &externalapi.BroadcastsScheduleForbidden{}, res)
 
 	// broadcasts:send alone schedules and unschedules.
 	sender := env.ExternalScoped(t, "broadcasts:send")

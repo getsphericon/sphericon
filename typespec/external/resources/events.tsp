@@ -94,9 +94,11 @@ model EventActionResource {
 namespace Events {
   /** Record events in batch */
   @post
+  @extension("x-required-scopes", #[ApiTokenScope.eventsWrite])
   op create(@body body: RecordEventsInput):
     | NoContentResponse
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | BadRequestProblem
     | UnprocessableEntityProblem;
@@ -108,10 +110,12 @@ namespace Events {
 namespace EventActions {
   /** List unique event actions */
   @get
+  @extension("x-required-scopes", #[ApiTokenScope.eventsRead])
   op list(...PageQuery):
     | Page<EventActionResource>
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | UnprocessableEntityProblem;
 }
@@ -121,9 +125,11 @@ namespace EventActions {
 namespace EventsBatch {
   /** Record up to 1000 events; a failing item does not affect the others */
   @post
+  @extension("x-required-scopes", #[ApiTokenScope.eventsWrite])
   op submit(@body body: RecordEventsBatchInput):
     | RecordEventsBatchResult
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | BadRequestProblem
     | UnprocessableEntityProblem;

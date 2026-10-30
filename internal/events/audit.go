@@ -41,6 +41,13 @@ const StaffLabel = "Sphericon staff"
 // entry stays readable after the actor is gone.
 type Actor = ent.Actor
 
+// ConnectionActor is the actor of what a Connection does (ADR 0061): its User, by id, named through
+// the OAuth client the User approved ("Mary via Claude"), so the Audit log tells it apart from
+// what the User did in their own session.
+func ConnectionActor(userID int64, userName, client string) Actor {
+	return Actor{Kind: ActorUser, ID: strconv.FormatInt(userID, 10), Name: userName + " via " + client}
+}
+
 // Actions recorded through the explicit seam (ADR 0022): raw-client packages and
 // actions that are not a row write. A test drives every one of them and compares with
 // ExplicitAuditActions, so adding an explicit path means listing it here.

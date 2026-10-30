@@ -801,6 +801,22 @@ func (c *ApiTokenClient) QueryWorkspace(_m *ApiToken) *WorkspaceQuery {
 	return query
 }
 
+// QueryMembership queries the membership edge of a ApiToken.
+func (c *ApiTokenClient) QueryMembership(_m *ApiToken) *MembershipQuery {
+	query := (&MembershipClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apitoken.Table, apitoken.FieldID, id),
+			sqlgraph.To(membership.Table, membership.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, apitoken.MembershipTable, apitoken.MembershipColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ApiTokenClient) Hooks() []Hook {
 	return c.hooks.ApiToken
@@ -4595,6 +4611,38 @@ func (c *MembershipClient) QueryUser(_m *Membership) *UserQuery {
 	return query
 }
 
+// QueryConnections queries the connections edge of a Membership.
+func (c *MembershipClient) QueryConnections(_m *Membership) *ApiTokenQuery {
+	query := (&ApiTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(membership.Table, membership.FieldID, id),
+			sqlgraph.To(apitoken.Table, apitoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, membership.ConnectionsTable, membership.ConnectionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOauthCodes queries the oauth_codes edge of a Membership.
+func (c *MembershipClient) QueryOauthCodes(_m *Membership) *OAuthCodeQuery {
+	query := (&OAuthCodeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(membership.Table, membership.FieldID, id),
+			sqlgraph.To(oauthcode.Table, oauthcode.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, membership.OauthCodesTable, membership.OauthCodesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *MembershipClient) Hooks() []Hook {
 	return c.hooks.Membership
@@ -4918,6 +4966,22 @@ func (c *OAuthCodeClient) QueryWorkspace(_m *OAuthCode) *WorkspaceQuery {
 			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, id),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, oauthcode.WorkspaceTable, oauthcode.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMembership queries the membership edge of a OAuthCode.
+func (c *OAuthCodeClient) QueryMembership(_m *OAuthCode) *MembershipQuery {
+	query := (&MembershipClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, id),
+			sqlgraph.To(membership.Table, membership.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oauthcode.MembershipTable, oauthcode.MembershipColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

@@ -46,7 +46,7 @@ export function DeletedWorkspacesMenuSection() {
           leftSection={<IconRestore size={16} />}
           aria-label={t(($) => $.userMenu.restore, { name: workspace.name })}
           disabled={restoreMutation.isPending}
-          onClick={() => restoreMutation.mutate({ path: { workspaceId: workspace.id } })}
+          onClick={() => restoreMutation.mutate({ path: { id: workspace.id } })}
         >
           <Group gap="xs" wrap="nowrap">
             <Text size="sm">{workspace.name}</Text>

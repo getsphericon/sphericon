@@ -25,6 +25,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
@@ -34,9 +35,10 @@ const apiPrefix = "/api"
 const instructions = "Sphericon marketing automation. Tools mirror the Sphericon external API and act on " +
 	"the workspace of the Bearer API token used to connect; results and errors are the API's." + untrustedInstructions
 
-// Authenticator validates a Bearer API token (the external API's security handler).
+// Authenticator validates a Bearer API token whatever it is used for (the external API's security
+// handler). A tool call meets its operation's scopes when it is dispatched to /api.
 type Authenticator interface {
-	HandleBearerAuth(ctx context.Context, op externalapi.OperationName, t externalapi.BearerAuth) (context.Context, error)
+	Authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error)
 }
 
 var _ Authenticator = (*apiauth.ExternalSecurityHandler)(nil)
@@ -102,7 +104,7 @@ func sendLock(sendTools map[string]bool, auth Authenticator) mcp.Middleware {
 			case "tools/call":
 				if params, ok := req.GetParams().(*mcp.CallToolParamsRaw); ok && sendTools[params.Name] &&
 					!canSend(ctx, auth, req.GetExtra()) {
-					return toolError("refused: " + params.Name + " is a send-class tool and needs the " + string(externalapi.ApiTokenScopeMcpSend) + " scope on the API token"), nil
+					return toolError("refused: " + params.Name + " is a send-class tool and needs the " + string(apitokens.ScopeMcpSend) + " scope on the API token"), nil
 				}
 			}
 			return next(ctx, method, req)
@@ -119,8 +121,8 @@ func canSend(ctx context.Context, auth Authenticator, extra *mcp.RequestExtra) b
 	if !ok {
 		return false
 	}
-	ctx, err := auth.HandleBearerAuth(ctx, "", externalapi.BearerAuth{Token: token})
-	return err == nil && apiauth.HasScope(apiauth.GetTokenAuth(ctx), externalapi.ApiTokenScopeMcpSend)
+	ctx, err := auth.Authenticate(ctx, externalapi.BearerAuth{Token: token})
+	return err == nil && apiauth.HasScope(apiauth.GetTokenAuth(ctx), apitokens.ScopeMcpSend)
 }
 
 // Option configures [New].
@@ -153,7 +155,7 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 			writeProblem(w, http.StatusUnauthorized, "missing bearer token")
 			return
 		}
-		if _, err := auth.HandleBearerAuth(r.Context(), "", externalapi.BearerAuth{Token: token}); err != nil {
+		if _, err := auth.Authenticate(r.Context(), externalapi.BearerAuth{Token: token}); err != nil {
 			var limited *ratelimit.LimitedError
 			switch {
 			case errors.As(err, &limited):
@@ -162,6 +164,13 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 			case errors.Is(err, apiauth.ErrUnauthorized):
 				challenge(w, `error="invalid_token"`)
 				writeProblem(w, http.StatusUnauthorized, "invalid bearer token")
+				return
+			}
+			// A valid credential refused for a reason of its own: a Connection whose User the
+			// Workspace's Two-factor requirement withholds (403 second_factor_required).
+			if refused, ok := errors.AsType[problemError](err); ok {
+				status, code, detail := refused.Problem()
+				writeCodedProblem(w, status, code, detail)
 				return
 			}
 			writeProblem(w, http.StatusInternalServerError, "internal server error")
@@ -190,13 +199,29 @@ func boundToRequest(ctx context.Context) (context.Context, context.CancelFunc) {
 	}
 }
 
+// problemError is a refusal that carries the problem it is answered with (the status, the
+// machine-readable code and the localized detail), as the server's error handler reads it.
+type problemError interface {
+	error
+	Problem() (status int, code, detail string)
+}
+
 func writeProblem(w http.ResponseWriter, code int, detail string) {
+	writeCodedProblem(w, code, "", detail)
+}
+
+// writeCodedProblem renders an RFC 7807 problem; problemCode, when set, is its machine-readable
+// code.
+func writeCodedProblem(w http.ResponseWriter, code int, problemCode, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(code)
 	problem := map[string]any{
 		"status": code,
 		"title":  http.StatusText(code),
 		"detail": detail,
+	}
+	if problemCode != "" {
+		problem["code"] = problemCode
 	}
 	if err := json.NewEncoder(w).Encode(problem); err != nil {
 		slog.Warn("write problem response", "error", err)

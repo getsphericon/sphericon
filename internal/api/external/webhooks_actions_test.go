@@ -27,7 +27,7 @@ func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T
 
 	denied, err := env.ExternalScoped(t, "webhooks:read", "webhooks:write").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.WebhooksRegenerateSecretUnauthorized), denied)
+	assert.IsType(t, new(externalapi.WebhooksRegenerateSecretForbidden), denied)
 
 	res, err := env.ExternalScoped(t, "webhooks:regenerate").WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
 
 	denied, err := env.ExternalScoped(t, "webhooks:write").WebhooksTest(ctx, input, params)
 	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.WebhooksTestUnauthorized), denied)
+	assert.IsType(t, new(externalapi.WebhooksTestForbidden), denied)
 
 	c := env.ExternalScoped(t, "webhooks:test")
 	res, err := c.WebhooksTest(ctx, input, params)

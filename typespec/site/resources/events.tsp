@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -45,6 +46,7 @@ namespace SiteEvents {
   @listsResource(SiteEventResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(
     ...ResourceCollectionParameters<SiteEventResource>,
     ...PageQuery,
@@ -66,6 +68,7 @@ namespace SiteEvents {
   @collectionAction(SiteEventResource, "actions")
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op actions(...ResourceCollectionParameters<SiteEventResource>):
     | SiteEventActionsResult
     | NotFoundProblem;

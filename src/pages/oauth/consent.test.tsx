@@ -7,7 +7,7 @@ import {
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import { SetupScope } from '../../generated/site/types.gen.ts'
-import type { SendScope } from '../../generated/site/types.gen.ts'
+import type { GrantableScope, Permission, SendScope } from '../../generated/site/types.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -28,6 +28,7 @@ const workspace = {
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions: [],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
@@ -37,7 +38,13 @@ const workspace = {
 
 const describeHandler = (
   sendScopes: SendScope[],
-  extra: { clientHost?: string; localRedirect?: boolean; setupScopes?: SetupScope[] } = {},
+  extra: {
+    clientHost?: string
+    localRedirect?: boolean
+    setupScopes?: SetupScope[]
+    scopes?: GrantableScope[]
+    requiredPermissions?: Record<string, Permission>
+  } = {},
 ) =>
   handleSiteOAuthDescribe({
     body: {
@@ -45,9 +52,10 @@ const describeHandler = (
       redirectUri: request.redirectUri,
       localRedirect: extra.localRedirect ?? false,
       ...(extra.clientHost ? { clientHost: extra.clientHost } : {}),
-      scopes: ['contacts:read'],
+      scopes: extra.scopes ?? ['contacts:read'],
       sendScopes,
       setupScopes: extra.setupScopes ?? [],
+      requiredPermissions: extra.requiredPermissions ?? {},
     },
   })
 
@@ -154,12 +162,12 @@ test('an invalid request shows an error instead of the form', async () => {
   await expect.element(screen.getByText(/authorization request is invalid/)).toBeInTheDocument()
 })
 
-test('a plain member who is forbidden sees why, not a generic error', async () => {
+test('a refused grant explains the role, not a generic error', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
     describeHandler([]),
     handleSiteOAuthDecide(() =>
-      problem(403, { detail: 'only owners and admins can connect an application' }),
+      problem(403, { detail: 'the role lacks the permission', code: 'permission_required' }),
     ),
   )
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
@@ -167,8 +175,52 @@ test('a plain member who is forbidden sees why, not a generic error', async () =
   await screen.getByRole('button', { name: 'Allow access' }).click()
 
   await expect
-    .element(screen.getByText(/Only workspace owners and admins can connect an application/))
+    .element(screen.getByText(/Your role in this workspace does not allow granting some/))
     .toBeInTheDocument()
+})
+
+test('offers and sends only the scopes the role in the chosen workspace may grant', async () => {
+  const decisions: unknown[] = []
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    describeHandler([], {
+      scopes: ['contacts:read', 'webhooks:read'],
+      setupScopes: ['sending_domains:write'],
+      requiredPermissions: {
+        'webhooks:read': 'webhooks:manage',
+        'sending_domains:write': 'sending_domains:manage',
+      },
+    }),
+    handleSiteOAuthDecide(async ({ request: req }) => {
+      decisions.push(await req.json())
+      return HttpResponse.json({ redirectUrl: '#done' })
+    }),
+  )
+  const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
+
+  await expect.element(screen.getByText('contacts:read', { exact: true })).toBeInTheDocument()
+  expect(screen.getByText('webhooks:read', { exact: true }).elements()).toHaveLength(0)
+  expect(screen.getByLabelText(/Also allow changing sending setup/).elements()).toHaveLength(0)
+  await screen.getByRole('button', { name: 'Allow access' }).click()
+
+  await expect.poll(() => decisions).toHaveLength(1)
+  expect(decisions[0]).toMatchObject({ scope: 'contacts:read' })
+})
+
+test('a workspace where the role may grant none of the scopes cannot be approved', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace] }),
+    describeHandler([], {
+      scopes: ['webhooks:read'],
+      requiredPermissions: { 'webhooks:read': 'webhooks:manage' },
+    }),
+  )
+  const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
+
+  await expect
+    .element(screen.getByText(/does not allow granting any of the permissions/))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Allow access' })).toBeDisabled()
 })
 
 test('offers the setup opt-in only when the app asked for setup scopes, off by default', async () => {

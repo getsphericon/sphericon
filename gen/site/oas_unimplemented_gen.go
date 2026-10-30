@@ -391,9 +391,9 @@ func (UnimplementedHandler) SiteBrandKitGet(ctx context.Context, params SiteBran
 
 // SiteBrandKitRecreateStarterTemplates implements SiteBrandKit_recreateStarterTemplates operation.
 //
-// Create the starter Templates again from the saved Brand kit (owner only). It adds new Templates and
-// never touches one that exists or a message already written. Answers 422 until the Brand kit has been
-// saved.
+// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+// Templates and never touches one that exists or a message already written. Answers 422 until the
+// Brand kit has been saved.
 //
 // POST /workspaces/{workspaceId}/brand-kit/starter-templates
 func (UnimplementedHandler) SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (r SiteBrandKitRecreateStarterTemplatesRes, _ error) {
@@ -402,9 +402,9 @@ func (UnimplementedHandler) SiteBrandKitRecreateStarterTemplates(ctx context.Con
 
 // SiteBrandKitSave implements SiteBrandKit_save operation.
 //
-// Save the Brand kit (owner only). The first save also creates the starter Templates (a welcome, a
-// receipt, a digest and a one-button message) in its brand; a later save creates none and changes no
-// message already written. A change is recorded as an Audit entry.
+// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+// changes no message already written. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/brand-kit
 func (UnimplementedHandler) SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (r SiteBrandKitSaveRes, _ error) {
@@ -552,6 +552,24 @@ func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params
 	return r, ht.ErrNotImplemented
 }
 
+// SiteConnectionsDelete implements SiteConnections_delete operation.
+//
+// Revoke a Connection: the caller's own, or anyone's with members:manage.
+//
+// DELETE /workspaces/{workspaceId}/connections/{id}
+func (UnimplementedHandler) SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (r SiteConnectionsDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteConnectionsList implements SiteConnections_list operation.
+//
+// List the Connections the caller may see: their own, or every member's with members:manage.
+//
+// GET /workspaces/{workspaceId}/connections
+func (UnimplementedHandler) SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (r SiteConnectionsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteContactsCreate implements SiteContacts_create operation.
 //
 // Create a resource from the site UI.
@@ -586,7 +604,7 @@ func (UnimplementedHandler) SiteContactsErase(ctx context.Context, params SiteCo
 // SiteContactsExport implements SiteContacts_export operation.
 //
 // Export everything held about one contact as a streamed JSON download. Identify the contact by
-// exactly one of `id` or `email`. Available to any Workspace member (contact read access).
+// exactly one of `id` or `email`. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/contacts/export
 func (UnimplementedHandler) SiteContactsExport(ctx context.Context, params SiteContactsExportParams) (r SiteContactsExportRes, _ error) {
@@ -642,7 +660,7 @@ func (UnimplementedHandler) SiteCustomFieldsList(ctx context.Context, params Sit
 
 // SiteDomainJoinGet implements SiteDomainJoin_get operation.
 //
-// Read the domain join switch (owner only).
+// Read the domain join switch (owner and admin only).
 //
 // GET /workspaces/{workspaceId}/domain-join
 func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (r SiteDomainJoinGetRes, _ error) {
@@ -651,8 +669,8 @@ func (UnimplementedHandler) SiteDomainJoinGet(ctx context.Context, params SiteDo
 
 // SiteDomainJoinSet implements SiteDomainJoin_set operation.
 //
-// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
-// an address proven afterwards joins. Recorded as an Audit entry.
+// Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already a
+// User: only an address proven afterwards joins. Recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/domain-join
 func (UnimplementedHandler) SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (r SiteDomainJoinSetRes, _ error) {
@@ -861,7 +879,7 @@ func (UnimplementedHandler) SiteInvitationsList(ctx context.Context, params Site
 
 // SiteJoinDomainsAdd implements SiteJoinDomains_add operation.
 //
-// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+// Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
 // `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
 // domain the Workspace already has is 409.
 //
@@ -872,7 +890,7 @@ func (UnimplementedHandler) SiteJoinDomainsAdd(ctx context.Context, req *SiteAdd
 
 // SiteJoinDomainsList implements SiteJoinDomains_list operation.
 //
-// List the Workspace's Join domains (owner only), pending and verified.
+// List the Workspace's Join domains (owner and admin only), pending and verified.
 //
 // GET /workspaces/{workspaceId}/join-domains
 func (UnimplementedHandler) SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (r SiteJoinDomainsListRes, _ error) {
@@ -881,7 +899,7 @@ func (UnimplementedHandler) SiteJoinDomainsList(ctx context.Context, params Site
 
 // SiteJoinDomainsRemove implements SiteJoinDomains_remove operation.
 //
-// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+// Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 //
 // DELETE /workspaces/{workspaceId}/join-domains/{id}
 func (UnimplementedHandler) SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (r SiteJoinDomainsRemoveRes, _ error) {
@@ -890,8 +908,8 @@ func (UnimplementedHandler) SiteJoinDomainsRemove(ctx context.Context, params Si
 
 // SiteJoinDomainsVerify implements SiteJoinDomains_verify operation.
 //
-// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
-// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+// Check the TXT record now (owner and admin only) and verify the domain when it is published. A domain
+// another Workspace has verified is re-checked at that Workspace first: 409 while its record is still
 // published, otherwise the domain moves here. 422 when the record is not found.
 //
 // POST /workspaces/{workspaceId}/join-domains/{id}/verify
@@ -939,8 +957,9 @@ func (UnimplementedHandler) SiteMembershipsUpdate(ctx context.Context, req *Site
 
 // SiteOAuthDecide implements SiteOAuth_decide operation.
 //
-// Approve or deny an OAuth authorization request as the signed-in user. Approving mints an API token,
-// so it needs the same role as creating one (owner or admin).
+// Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection
+// tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role
+// lacks is refused (403 permission_required).
 //
 // POST /oauth/authorization
 func (UnimplementedHandler) SiteOAuthDecide(ctx context.Context, req *SiteOAuthDecisionInput) (r SiteOAuthDecideRes, _ error) {
@@ -1429,7 +1448,7 @@ func (UnimplementedHandler) SiteSignupSurveySubmit(ctx context.Context, req *Sit
 
 // SiteSuppressionsCreate implements SiteSuppressions_create operation.
 //
-// Manually suppress an address (reason = manual; idempotent per address).
+// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/suppressions
 func (UnimplementedHandler) SiteSuppressionsCreate(ctx context.Context, req *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (r SiteSuppressionsCreateRes, _ error) {
@@ -1439,7 +1458,7 @@ func (UnimplementedHandler) SiteSuppressionsCreate(ctx context.Context, req *Sit
 // SiteSuppressionsDelete implements SiteSuppressions_delete operation.
 //
 // Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
-// one that is already lifted is a 404.
+// one that is already lifted is a 404. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
 func (UnimplementedHandler) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (r SiteSuppressionsDeleteRes, _ error) {
@@ -1448,7 +1467,7 @@ func (UnimplementedHandler) SiteSuppressionsDelete(ctx context.Context, params S
 
 // SiteSuppressionsList implements SiteSuppressions_list operation.
 //
-// List suppressed addresses.
+// List suppressed addresses (every member).
 //
 // GET /workspaces/{workspaceId}/suppressions
 func (UnimplementedHandler) SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (r SiteSuppressionsListRes, _ error) {
@@ -1779,6 +1798,17 @@ func (UnimplementedHandler) SiteWorkspacesLeave(ctx context.Context, params Site
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesLiftSecondFactorRequirement implements SiteWorkspaces_liftSecondFactorRequirement operation.
+//
+// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
+// withheld by the requirement may still perform in the Workspace, so an Owner or Admin without a
+// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
+//
+// DELETE /workspaces/{workspaceId}/second-factor-requirement
+func (UnimplementedHandler) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (r SiteWorkspacesLiftSecondFactorRequirementRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesList implements SiteWorkspaces_list operation.
 //
 // List workspaces owned by the authenticated user.
@@ -1798,6 +1828,17 @@ func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesRequireSecondFactor implements SiteWorkspaces_requireSecondFactor operation.
+//
+// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then
+// have a Second factor. Switching it on while it is already on keeps the original start, so no one's
+// grace restarts. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/second-factor-requirement
+func (UnimplementedHandler) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (r SiteWorkspacesRequireSecondFactorRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesRestore implements SiteWorkspaces_restore operation.
 //
 // Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -1806,27 +1847,16 @@ func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []
 // window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
 // 404. Recorded as an Audit entry.
 //
-// POST /workspaces/{workspaceId}/restore
+// POST /workspaces/deleted/{id}/restore
 func (UnimplementedHandler) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (r SiteWorkspacesRestoreRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteWorkspacesSetSecondFactorRequirement implements SiteWorkspaces_setSecondFactorRequirement operation.
-//
-// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is
-// already on keeps the original start, so no one's grace restarts. A change is recorded as an Audit
-// entry.
-//
-// PUT /workspaces/{workspaceId}/second-factor-requirement
-func (UnimplementedHandler) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, req *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (r SiteWorkspacesSetSecondFactorRequirementRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
 // SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 //
-// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
-// the zone database does not know. A change is recorded as an Audit entry and applies to all history
-// at once.
+// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
+// a name the zone database does not know. A change is recorded as an Audit entry and applies to all
+// history at once.
 //
 // PUT /workspaces/{workspaceId}/timezone
 func (UnimplementedHandler) SiteWorkspacesSetTimezone(ctx context.Context, req *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (r SiteWorkspacesSetTimezoneRes, _ error) {

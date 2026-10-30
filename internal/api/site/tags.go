@@ -13,10 +13,7 @@ import (
 )
 
 func (h *Handlers) SiteTagsList(ctx context.Context, params siteapi.SiteTagsListParams) (siteapi.SiteTagsListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	all, err := h.tags.List(ctx, scoped)
 	if err != nil {
@@ -33,10 +30,7 @@ func (h *Handlers) SiteTagsList(ctx context.Context, params siteapi.SiteTagsList
 }
 
 func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.SiteTagsListForContactParams) (siteapi.SiteTagsListForContactRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 	id := int64(params.ContactId)
 
 	mine, err := h.tags.ForContact(ctx, scoped, id)
@@ -54,10 +48,7 @@ func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.Si
 }
 
 func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.SiteApplyTagInput, params siteapi.SiteTagsApplyParams) (siteapi.SiteTagsApplyRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 	id := int64(params.ContactId)
 
 	t, err := h.tags.Apply(ctx, scoped, id, req.Name)
@@ -69,13 +60,10 @@ func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.SiteApplyTagI
 }
 
 func (h *Handlers) SiteTagsRemove(ctx context.Context, params siteapi.SiteTagsRemoveParams) (siteapi.SiteTagsRemoveRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 	id := int64(params.ContactId)
 
-	err = h.tags.Remove(ctx, scoped, id, params.Name)
+	err := h.tags.Remove(ctx, scoped, id, params.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -85,12 +73,9 @@ func (h *Handlers) SiteTagsRemove(ctx context.Context, params siteapi.SiteTagsRe
 // SiteTagsDelete deletes a Tag from the catalogue unless a Segment rule or an Automation step
 // names it (ADR 0049).
 func (h *Handlers) SiteTagsDelete(ctx context.Context, params siteapi.SiteTagsDeleteParams) (siteapi.SiteTagsDeleteRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
-	err = h.tags.Delete(ctx, scoped, int64(params.ID))
+	err := h.tags.Delete(ctx, scoped, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}

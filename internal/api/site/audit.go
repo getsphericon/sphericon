@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
-
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -17,14 +15,7 @@ import (
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;
 // an instance without an Enterprise license answers 402 (ADR 0014, ADR 0022).
 func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditListParams) (siteapi.SiteAuditListRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageMembers(role) {
-		v := siteapi.SiteAuditListForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
-	}
+	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.Licensed() {
 		v := siteapi.SiteAuditListPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
 		return &v, nil
@@ -66,14 +57,7 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 // the list: owner and admin only, 402 without an Enterprise license. It takes the
 // same filter as SiteAuditList, so an export matches what the page shows.
 func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAuditExportParams) (siteapi.SiteAuditExportRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageMembers(role) {
-		v := siteapi.SiteAuditExportForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
-	}
+	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.Licensed() {
 		v := siteapi.SiteAuditExportPaymentRequired(problem(http.StatusPaymentRequired, "the audit log needs an Enterprise license"))
 		return &v, nil
@@ -113,15 +97,8 @@ func (h *Handlers) SiteAuditExport(ctx context.Context, params siteapi.SiteAudit
 
 // SiteAuditGetRetention reads the Audit log retention window. Owner and admin only;
 // 402 without the Enterprise retention license.
-func (h *Handlers) SiteAuditGetRetention(ctx context.Context, params siteapi.SiteAuditGetRetentionParams) (siteapi.SiteAuditGetRetentionRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageMembers(role) {
-		v := siteapi.SiteAuditGetRetentionForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
-	}
+func (h *Handlers) SiteAuditGetRetention(ctx context.Context, _ siteapi.SiteAuditGetRetentionParams) (siteapi.SiteAuditGetRetentionRes, error) {
+	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.RetentionLicensed() {
 		v := siteapi.SiteAuditGetRetentionPaymentRequired(problem(http.StatusPaymentRequired, "audit retention needs an Enterprise license"))
 		return &v, nil
@@ -135,15 +112,8 @@ func (h *Handlers) SiteAuditGetRetention(ctx context.Context, params siteapi.Sit
 
 // SiteAuditSetRetention sets or clears the Audit log retention window and records the
 // change as a `workspace.update` Audit entry. Owner and admin only.
-func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteAuditRetention, params siteapi.SiteAuditSetRetentionParams) (siteapi.SiteAuditSetRetentionRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageMembers(role) {
-		v := siteapi.SiteAuditSetRetentionForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
-	}
+func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteAuditRetention, _ siteapi.SiteAuditSetRetentionParams) (siteapi.SiteAuditSetRetentionRes, error) {
+	s := workspaceScope(ctx)
 	if h.audit == nil || !h.audit.RetentionLicensed() {
 		v := siteapi.SiteAuditSetRetentionPaymentRequired(problem(http.StatusPaymentRequired, "audit retention needs an Enterprise license"))
 		return &v, nil

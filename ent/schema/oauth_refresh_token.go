@@ -10,8 +10,8 @@ import (
 )
 
 // OAuthRefreshToken is a single-use refresh token of an MCP connector's grant. The refresh_token
-// grant claims it, rotates the grant's ApiToken secret and writes the next one; a used row stays
-// so that presenting it again is recognised as reuse and revokes the grant.
+// grant claims it, rotates the secret of the grant's Connection and writes the next one; a used
+// row stays so that presenting it again is recognised as reuse and revokes the grant.
 type OAuthRefreshToken struct {
 	ent.Schema
 }
@@ -42,7 +42,7 @@ func (OAuthRefreshToken) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.Int64("client_id"),
-		// The grant: the one ApiToken that stays the connector's row in Settings → API keys.
+		// The grant: the Connection (an ApiToken with a Membership) whose secret the refresh rotates.
 		field.Int64("api_token_id"),
 	}
 }

@@ -2,18 +2,14 @@ package site
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/samber/lo"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
-
-const errWebhooksForbidden = "only owners and admins can manage webhooks"
 
 // webhookResource maps the endpoint with its decrypted signing secret, which the
 // UI displays for signature verification.
@@ -24,14 +20,7 @@ func webhookResource(e webhooks.Endpoint) siteapi.SiteWebhookEndpointResource {
 }
 
 func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebhooksListParams) (siteapi.SiteWebhooksListRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksListForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
-	}
+	scoped := workspaceScope(ctx)
 
 	page, err := h.webhooks.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
@@ -46,15 +35,8 @@ func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebh
 	}, nil
 }
 
-func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCreateWebhookEndpointInput, params siteapi.SiteWebhooksCreateParams) (siteapi.SiteWebhooksCreateRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksCreateForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
-	}
+func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCreateWebhookEndpointInput, _ siteapi.SiteWebhooksCreateParams) (siteapi.SiteWebhooksCreateRes, error) {
+	scoped := workspaceScope(ctx)
 
 	enabled, hasEnabled := req.Enabled.Get()
 	e, err := h.webhooks.Create(ctx, scoped, webhooks.CreateInput{
@@ -70,14 +52,7 @@ func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCrea
 }
 
 func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebhooksGetParams) (siteapi.SiteWebhooksGetRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksGetForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	e, err := h.webhooks.Get(ctx, scoped, id)
@@ -89,14 +64,7 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 }
 
 func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpdateWebhookEndpointInput, params siteapi.SiteWebhooksUpdateParams) (siteapi.SiteWebhooksUpdateRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksUpdateForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
@@ -115,17 +83,10 @@ func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpda
 }
 
 func (h *Handlers) SiteWebhooksDelete(ctx context.Context, params siteapi.SiteWebhooksDeleteParams) (siteapi.SiteWebhooksDeleteRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageWebhooks(role) {
-		v := siteapi.SiteWebhooksDeleteForbidden(problem(http.StatusForbidden, errWebhooksForbidden))
-		return &v, nil
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.webhooks.Delete(ctx, scoped, id)
+	err := h.webhooks.Delete(ctx, scoped, id)
 	if err != nil {
 		return nil, err
 	}

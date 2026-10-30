@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -185,6 +186,7 @@ interface SiteAutomations
    */
   @action("archive")
   @autoRoute
+  @extension("x-required-permissions", #[])
   archive(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -194,6 +196,7 @@ interface SiteAutomations
   /** Restore an archived automation to the list */
   @action("unarchive")
   @autoRoute
+  @extension("x-required-permissions", #[])
   unarchive(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -202,6 +205,7 @@ interface SiteAutomations
   /** Activate an automation (starts enrolling contacts) */
   @action("activate")
   @autoRoute
+  @extension("x-required-permissions", #[])
   activate(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -211,6 +215,7 @@ interface SiteAutomations
   /** Deactivate an automation (stops new enrollments) */
   @action("deactivate")
   @autoRoute
+  @extension("x-required-permissions", #[])
   deactivate(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -219,6 +224,7 @@ interface SiteAutomations
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(SiteAutomationResource, "dry-run-http-step")
   @autoRoute
+  @extension("x-required-permissions", #[])
   dryRunHttpStep(
     ...ResourceCollectionParameters<SiteAutomationResource>,
     @body body: SiteDryRunHttpStepInput,
@@ -264,8 +270,15 @@ namespace SiteAutomationReports {
    * the `email.opened` and `email.clicked` Events, so they cover the Event retention window.
    */
   @get
+  @extension("x-required-permissions", #[])
   op get(@path workspaceId: WorkspaceId, @path automationId: EntityId):
     | SiteAutomationReport
     | BadRequestProblem
     | NotFoundProblem;
 }
+
+@@extension(SiteAutomations.create, "x-required-permissions", #[]);
+@@extension(SiteAutomations.delete, "x-required-permissions", #[]);
+@@extension(SiteAutomations.get, "x-required-permissions", #[]);
+@@extension(SiteAutomations.list, "x-required-permissions", #[]);
+@@extension(SiteAutomations.update, "x-required-permissions", #[]);

@@ -10,32 +10,20 @@ import (
 	"github.com/getsphericon/sphericon/internal/exportstream"
 )
 
-// externalapi.ApiTokenScopeExportRead gates every Export stream (ADR 0045). It is deliberately absent from the
-// OAuth grantable scopes, and the operations are hidden from MCP (ADR 0016).
-// exportDenied is the gate every Export stream shares: the `export` license first, so an
-// unlicensed instance answers 404 whatever the token is (the feature is absent, like
-// /staff), then the export:read scope (401, like the other scopes). It returns the status
-// of the refusal and its detail, or 0 when the request may proceed.
-func (h *Handlers) exportDenied(ctx context.Context) (status int, detail string) {
-	if h.export == nil || !h.export.Licensed() {
-		return http.StatusNotFound, "not found"
-	}
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeExportRead) {
-		return http.StatusUnauthorized, "insufficient scope"
-	}
-	return 0, ""
+// exportLicensed is the gate every Export stream shares after the export:read scope the contract
+// declares for it (ADR 0045; the scope is absent from the OAuth grantable scopes and the
+// operations are hidden from MCP, ADR 0016): without the `export` license the feature is absent,
+// like /staff, and a stream answers 404.
+func (h *Handlers) exportLicensed() bool {
+	return h.export != nil && h.export.Licensed()
 }
 
 // ExportEvents serves the Events stream (ADR 0045): NDJSON rows, the next cursor in the
 // X-Next-Cursor header. A stream added later is this handler with its own typed responses
 // and its own exportstream page function.
 func (h *Handlers) ExportEvents(ctx context.Context, params externalapi.ExportEventsParams) (externalapi.ExportEventsRes, error) {
-	switch code, detail := h.exportDenied(ctx); code {
-	case http.StatusNotFound:
-		res := externalapi.ExportEventsNotFound(problem(code, detail))
-		return &res, nil
-	case http.StatusUnauthorized:
-		res := externalapi.ExportEventsUnauthorized(problem(code, detail))
+	if !h.exportLicensed() {
+		res := externalapi.ExportEventsNotFound(problem(http.StatusNotFound, "not found"))
 		return &res, nil
 	}
 

@@ -278,17 +278,17 @@ type Handler interface {
 	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (SiteBrandKitGetRes, error)
 	// SiteBrandKitRecreateStarterTemplates implements SiteBrandKit_recreateStarterTemplates operation.
 	//
-	// Create the starter Templates again from the saved Brand kit (owner only). It adds new Templates and
-	// never touches one that exists or a message already written. Answers 422 until the Brand kit has been
-	// saved.
+	// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
+	// Templates and never touches one that exists or a message already written. Answers 422 until the
+	// Brand kit has been saved.
 	//
 	// POST /workspaces/{workspaceId}/brand-kit/starter-templates
 	SiteBrandKitRecreateStarterTemplates(ctx context.Context, params SiteBrandKitRecreateStarterTemplatesParams) (SiteBrandKitRecreateStarterTemplatesRes, error)
 	// SiteBrandKitSave implements SiteBrandKit_save operation.
 	//
-	// Save the Brand kit (owner only). The first save also creates the starter Templates (a welcome, a
-	// receipt, a digest and a one-button message) in its brand; a later save creates none and changes no
-	// message already written. A change is recorded as an Audit entry.
+	// Save the Brand kit (owner and admin only). The first save also creates the starter Templates (a
+	// welcome, a receipt, a digest and a one-button message) in its brand; a later save creates none and
+	// changes no message already written. A change is recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/brand-kit
 	SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (SiteBrandKitSaveRes, error)
@@ -388,6 +388,18 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/captured-messages
 	SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (SiteCapturedMessagesListRes, error)
+	// SiteConnectionsDelete implements SiteConnections_delete operation.
+	//
+	// Revoke a Connection: the caller's own, or anyone's with members:manage.
+	//
+	// DELETE /workspaces/{workspaceId}/connections/{id}
+	SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (SiteConnectionsDeleteRes, error)
+	// SiteConnectionsList implements SiteConnections_list operation.
+	//
+	// List the Connections the caller may see: their own, or every member's with members:manage.
+	//
+	// GET /workspaces/{workspaceId}/connections
+	SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (SiteConnectionsListRes, error)
 	// SiteContactsCreate implements SiteContacts_create operation.
 	//
 	// Create a resource from the site UI.
@@ -413,7 +425,7 @@ type Handler interface {
 	// SiteContactsExport implements SiteContacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download. Identify the contact by
-	// exactly one of `id` or `email`. Available to any Workspace member (contact read access).
+	// exactly one of `id` or `email`. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/contacts/export
 	SiteContactsExport(ctx context.Context, params SiteContactsExportParams) (SiteContactsExportRes, error)
@@ -451,14 +463,14 @@ type Handler interface {
 	SiteCustomFieldsList(ctx context.Context, params SiteCustomFieldsListParams) (SiteCustomFieldsListRes, error)
 	// SiteDomainJoinGet implements SiteDomainJoin_get operation.
 	//
-	// Read the domain join switch (owner only).
+	// Read the domain join switch (owner and admin only).
 	//
 	// GET /workspaces/{workspaceId}/domain-join
 	SiteDomainJoinGet(ctx context.Context, params SiteDomainJoinGetParams) (SiteDomainJoinGetRes, error)
 	// SiteDomainJoinSet implements SiteDomainJoin_set operation.
 	//
-	// Switch domain join on or off (owner only). Switching it on adds nobody who is already a User: only
-	// an address proven afterwards joins. Recorded as an Audit entry.
+	// Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already a
+	// User: only an address proven afterwards joins. Recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/domain-join
 	SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (SiteDomainJoinSetRes, error)
@@ -601,7 +613,7 @@ type Handler interface {
 	SiteInvitationsList(ctx context.Context, params SiteInvitationsListParams) (SiteInvitationsListRes, error)
 	// SiteJoinDomainsAdd implements SiteJoinDomains_add operation.
 	//
-	// Add a Join domain (owner only). It starts pending, with the TXT record to publish at
+	// Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
 	// `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid hostname is 422, a
 	// domain the Workspace already has is 409.
 	//
@@ -609,20 +621,20 @@ type Handler interface {
 	SiteJoinDomainsAdd(ctx context.Context, req *SiteAddJoinDomainInput, params SiteJoinDomainsAddParams) (SiteJoinDomainsAddRes, error)
 	// SiteJoinDomainsList implements SiteJoinDomains_list operation.
 	//
-	// List the Workspace's Join domains (owner only), pending and verified.
+	// List the Workspace's Join domains (owner and admin only), pending and verified.
 	//
 	// GET /workspaces/{workspaceId}/join-domains
 	SiteJoinDomainsList(ctx context.Context, params SiteJoinDomainsListParams) (SiteJoinDomainsListRes, error)
 	// SiteJoinDomainsRemove implements SiteJoinDomains_remove operation.
 	//
-	// Remove a Join domain (owner only): only the claim goes, no Membership is touched.
+	// Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
 	//
 	// DELETE /workspaces/{workspaceId}/join-domains/{id}
 	SiteJoinDomainsRemove(ctx context.Context, params SiteJoinDomainsRemoveParams) (SiteJoinDomainsRemoveRes, error)
 	// SiteJoinDomainsVerify implements SiteJoinDomains_verify operation.
 	//
-	// Check the TXT record now (owner only) and verify the domain when it is published. A domain another
-	// Workspace has verified is re-checked at that Workspace first: 409 while its record is still
+	// Check the TXT record now (owner and admin only) and verify the domain when it is published. A domain
+	// another Workspace has verified is re-checked at that Workspace first: 409 while its record is still
 	// published, otherwise the domain moves here. 422 when the record is not found.
 	//
 	// POST /workspaces/{workspaceId}/join-domains/{id}/verify
@@ -655,8 +667,9 @@ type Handler interface {
 	SiteMembershipsUpdate(ctx context.Context, req *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (SiteMembershipsUpdateRes, error)
 	// SiteOAuthDecide implements SiteOAuth_decide operation.
 	//
-	// Approve or deny an OAuth authorization request as the signed-in user. Approving mints an API token,
-	// so it needs the same role as creating one (owner or admin).
+	// Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection
+	// tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role
+	// lacks is refused (403 permission_required).
 	//
 	// POST /oauth/authorization
 	SiteOAuthDecide(ctx context.Context, req *SiteOAuthDecisionInput) (SiteOAuthDecideRes, error)
@@ -1001,20 +1014,20 @@ type Handler interface {
 	SiteSignupSurveySubmit(ctx context.Context, req *SiteSignupSurveyInput) (SiteSignupSurveySubmitRes, error)
 	// SiteSuppressionsCreate implements SiteSuppressions_create operation.
 	//
-	// Manually suppress an address (reason = manual; idempotent per address).
+	// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/suppressions
 	SiteSuppressionsCreate(ctx context.Context, req *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (SiteSuppressionsCreateRes, error)
 	// SiteSuppressionsDelete implements SiteSuppressions_delete operation.
 	//
 	// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
-	// one that is already lifted is a 404.
+	// one that is already lifted is a 404. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/suppressions/{id}
 	SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error)
 	// SiteSuppressionsList implements SiteSuppressions_list operation.
 	//
-	// List suppressed addresses.
+	// List suppressed addresses (every member).
 	//
 	// GET /workspaces/{workspaceId}/suppressions
 	SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (SiteSuppressionsListRes, error)
@@ -1243,6 +1256,14 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/leave
 	SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (SiteWorkspacesLeaveRes, error)
+	// SiteWorkspacesLiftSecondFactorRequirement implements SiteWorkspaces_liftSecondFactorRequirement operation.
+	//
+	// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
+	// withheld by the requirement may still perform in the Workspace, so an Owner or Admin without a
+	// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
+	//
+	// DELETE /workspaces/{workspaceId}/second-factor-requirement
+	SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (SiteWorkspacesLiftSecondFactorRequirementRes, error)
 	// SiteWorkspacesList implements SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.
@@ -1256,6 +1277,14 @@ type Handler interface {
 	//
 	// GET /workspaces/deleted
 	SiteWorkspacesListDeleted(ctx context.Context) ([]SiteDeletedWorkspaceResource, error)
+	// SiteWorkspacesRequireSecondFactor implements SiteWorkspaces_requireSecondFactor operation.
+	//
+	// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then
+	// have a Second factor. Switching it on while it is already on keeps the original start, so no one's
+	// grace restarts. A change is recorded as an Audit entry.
+	//
+	// PUT /workspaces/{workspaceId}/second-factor-requirement
+	SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (SiteWorkspacesRequireSecondFactorRes, error)
 	// SiteWorkspacesRestore implements SiteWorkspaces_restore operation.
 	//
 	// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -1264,21 +1293,13 @@ type Handler interface {
 	// window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
 	// 404. Recorded as an Audit entry.
 	//
-	// POST /workspaces/{workspaceId}/restore
+	// POST /workspaces/deleted/{id}/restore
 	SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error)
-	// SiteWorkspacesSetSecondFactorRequirement implements SiteWorkspaces_setSecondFactorRequirement operation.
-	//
-	// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is
-	// already on keeps the original start, so no one's grace restarts. A change is recorded as an Audit
-	// entry.
-	//
-	// PUT /workspaces/{workspaceId}/second-factor-requirement
-	SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, req *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (SiteWorkspacesSetSecondFactorRequirementRes, error)
 	// SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 	//
-	// Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for a name
-	// the zone database does not know. A change is recorded as an Audit entry and applies to all history
-	// at once.
+	// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
+	// a name the zone database does not know. A change is recorded as an Audit entry and applies to all
+	// history at once.
 	//
 	// PUT /workspaces/{workspaceId}/timezone
 	SiteWorkspacesSetTimezone(ctx context.Context, req *SiteWorkspaceTimezoneInput, params SiteWorkspacesSetTimezoneParams) (SiteWorkspacesSetTimezoneRes, error)

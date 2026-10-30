@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/samber/lo"
@@ -55,7 +56,9 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	}
 	r.McpUrl = h.origins.MCP
 	r.TrackerUrl = h.origins.Tracker
-	r.AccountLinkAvailable = h.accountLink != nil && accounts.IsOwner(m.Role)
+	held := accounts.Permissions(m.Role)
+	r.Permissions = lo.Map(held, func(p accounts.Permission, _ int) siteapi.Permission { return siteapi.Permission(p) })
+	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, accounts.PermAccountLinkOpen)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
 	// no grace to count down: this is the decision secondfactor.Withheld makes.
 	if end, ok := secondfactor.Deadline(m); ok && !currentSession(ctx).Method.Strong() {
@@ -102,22 +105,15 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 	return &r, nil
 }
 
-// SiteWorkspacesAccountLink mints the Owner's Account link token. Without the
-// installation's configuration it answers 404 before anything else; any role but
-// Owner is refused.
-func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, params siteapi.SiteWorkspacesAccountLinkParams) (siteapi.SiteWorkspacesAccountLinkRes, error) {
+// SiteWorkspacesAccountLink mints the Owner's Account link token (Permission
+// account_link:open, which Access checks first). Without the installation's
+// configuration it answers 404.
+func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, _ siteapi.SiteWorkspacesAccountLinkParams) (siteapi.SiteWorkspacesAccountLinkRes, error) {
 	if h.accountLink == nil {
 		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "account link is not configured"))
 		return &v, nil
 	}
-	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.IsOwner(m.Role) {
-		v := siteapi.SiteWorkspacesAccountLinkForbidden(problem(http.StatusForbidden, "only the owner can open the account link"))
-		return &v, nil
-	}
+	s, m := workspaceScope(ctx), callerMembership(ctx)
 	token, expires, err := h.accountLink.Token(accountlink.Subject{UserID: m.UserID, WorkspaceID: s.WorkspaceID(), Role: string(m.Role)}, h.now())
 	if err != nil {
 		return nil, err
@@ -132,26 +128,36 @@ func withWorkspace(m *ent.Membership, w *ent.Workspace) *ent.Membership {
 	return &c
 }
 
-// SiteWorkspacesSetSecondFactorRequirement switches the Workspace's Two-factor
-// requirement on or off; owner and admin only. Turning it off is the one operation
-// a User withheld by the requirement may still perform in the Workspace, so an
-// Owner or Admin without a Second factor is never locked out of lifting it.
-func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, req *siteapi.SiteSecondFactorRequirementInput, params siteapi.SiteWorkspacesSetSecondFactorRequirementParams) (siteapi.SiteWorkspacesSetSecondFactorRequirementRes, error) {
-	load := h.membershipFor
-	if !req.Required {
-		load = h.membershipEvenIfWithheld
-	}
-	s, m, err := load(ctx, params.WorkspaceId)
+// SiteWorkspacesRequireSecondFactor switches the Workspace's Two-factor requirement on (Permission
+// second_factor:manage).
+func (h *Handlers) SiteWorkspacesRequireSecondFactor(ctx context.Context, _ siteapi.SiteWorkspacesRequireSecondFactorParams) (siteapi.SiteWorkspacesRequireSecondFactorRes, error) {
+	r, err := h.switchSecondFactorRequirement(ctx, true)
 	if err != nil {
 		return nil, err
 	}
-	if !accounts.CanManageSecondFactor(m.Role) {
-		v := siteapi.SiteWorkspacesSetSecondFactorRequirementForbidden(problem(http.StatusForbidden, "only owners and admins can change the two-factor requirement"))
-		return &v, nil
-	}
-	w, switchedOn, err := h.accounts.SetSecondFactorRequirement(ctx, s, h.actor(ctx), req.Required, h.now())
+	return &r, nil
+}
+
+// SiteWorkspacesLiftSecondFactorRequirement switches the Workspace's Two-factor requirement off
+// (Permission second_factor:manage). It is the one operation a User withheld by the requirement
+// may still perform in the Workspace, as the contract declares, so an Owner or Admin without a
+// Second factor is never locked out of lifting it.
+func (h *Handlers) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, _ siteapi.SiteWorkspacesLiftSecondFactorRequirementParams) (siteapi.SiteWorkspacesLiftSecondFactorRequirementRes, error) {
+	r, err := h.switchSecondFactorRequirement(ctx, false)
 	if err != nil {
 		return nil, err
+	}
+	return &r, nil
+}
+
+// switchSecondFactorRequirement switches the requirement of the Workspace the operation addresses
+// on or off and answers its Workspace as the caller now sees it. Switching it on emails the Users
+// without a Second factor.
+func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required bool) (siteapi.SiteWorkspaceResource, error) {
+	s, m := workspaceScope(ctx), callerMembership(ctx)
+	w, switchedOn, err := h.accounts.SetSecondFactorRequirement(ctx, s, h.actor(ctx), required, h.now())
+	if err != nil {
+		return siteapi.SiteWorkspaceResource{}, err
 	}
 	// The requirement is committed; the email is best-effort, like the invite.
 	if switchedOn {
@@ -159,24 +165,12 @@ func (h *Handlers) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context,
 			slog.WarnContext(ctx, "second factor required email not enqueued", "error", merr, "workspace_id", s.WorkspaceID())
 		}
 	}
-	r, err := h.workspaceResource(ctx, s, withWorkspace(m, w))
-	if err != nil {
-		return nil, err
-	}
-	return &r, nil
+	return h.workspaceResource(ctx, s, withWorkspace(m, w))
 }
 
 // SiteWorkspacesUpdate renames a workspace (Owner and Admin only). The id never changes.
-func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, params siteapi.SiteWorkspacesUpdateParams) (siteapi.SiteWorkspacesUpdateRes, error) {
-	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	if !accounts.CanRenameWorkspace(m.Role) {
-		v := siteapi.SiteWorkspacesUpdateForbidden(problem(http.StatusForbidden, "only owners and admins can rename the workspace"))
-		return &v, nil
-	}
+func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUpdateWorkspaceInput, _ siteapi.SiteWorkspacesUpdateParams) (siteapi.SiteWorkspacesUpdateRes, error) {
+	s, m := workspaceScope(ctx), callerMembership(ctx)
 
 	var postal *string
 	// postalAddress is optional in the contract: absent = leave unchanged, present
@@ -196,16 +190,9 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 	return &resource, nil
 }
 
-// SiteWorkspacesSetTimezone sets the Workspace time zone (Owner only, ADR 0057).
-func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, params siteapi.SiteWorkspacesSetTimezoneParams) (siteapi.SiteWorkspacesSetTimezoneRes, error) {
-	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanSetTimezone(m.Role) {
-		v := siteapi.SiteWorkspacesSetTimezoneForbidden(problem(http.StatusForbidden, "only owners can set the workspace time zone"))
-		return &v, nil
-	}
+// SiteWorkspacesSetTimezone sets the Workspace time zone (Permission workspace:timezone, ADR 0057).
+func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, _ siteapi.SiteWorkspacesSetTimezoneParams) (siteapi.SiteWorkspacesSetTimezoneRes, error) {
+	s, m := workspaceScope(ctx), callerMembership(ctx)
 	w, err := h.accounts.SetTimezone(ctx, s, h.actor(ctx), string(req.Timezone))
 	if errors.Is(err, reportday.ErrUnknownZone) {
 		v := siteapi.SiteWorkspacesSetTimezoneUnprocessableEntity(problemWithErrors(
@@ -233,7 +220,8 @@ func deletedWorkspaceResource(w *ent.Workspace, onlyOwner bool) siteapi.SiteDele
 	return res
 }
 
-// SiteWorkspacesListDeleted lists the caller's Owner Workspaces in their deletion window.
+// SiteWorkspacesListDeleted lists the Workspaces in their deletion window where the caller's Role
+// holds workspace:delete.
 func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.SiteDeletedWorkspaceResource, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
@@ -253,15 +241,8 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 }
 
 // SiteWorkspacesDelete deletes a Workspace (Owner only) after the typed name matches.
-func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, params siteapi.SiteWorkspacesDeleteParams) (siteapi.SiteWorkspacesDeleteRes, error) {
-	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanDeleteWorkspace(m.Role) {
-		v := siteapi.SiteWorkspacesDeleteForbidden(problem(http.StatusForbidden, "only owners can delete the workspace"))
-		return &v, nil
-	}
+func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, _ siteapi.SiteWorkspacesDeleteParams) (siteapi.SiteWorkspacesDeleteRes, error) {
+	s := workspaceScope(ctx)
 	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name, h.now())
 	if errors.Is(err, workspacedeletion.ErrNameMismatch) {
 		v := siteapi.SiteWorkspacesDeleteUnprocessableEntity(problemWithErrors(
@@ -284,11 +265,8 @@ func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDe
 
 // SiteWorkspacesLeave removes the caller's own Membership (Leaving, ADR 0050). Any Role may
 // leave; the only Owner is refused.
-func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, params siteapi.SiteWorkspacesLeaveParams) (siteapi.SiteWorkspacesLeaveRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, _ siteapi.SiteWorkspacesLeaveParams) (siteapi.SiteWorkspacesLeaveRes, error) {
+	s := workspaceScope(ctx)
 	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
@@ -308,13 +286,15 @@ func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, params siteapi.SiteW
 	return &siteapi.SiteWorkspacesLeaveNoContent{}, nil
 }
 
-// SiteWorkspacesRestore restores a Workspace in its deletion window (Owner only).
+// SiteWorkspacesRestore restores a Workspace in its deletion window. Its path names no workspaceId
+// (a deleted Workspace has no live Membership for Access to load): the module restores it only for
+// one of its Owners, the holders of workspace:delete, and answers 404 to anyone else.
 func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.SiteWorkspacesRestoreParams) (siteapi.SiteWorkspacesRestoreRes, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {
 		return nil, accounts.ErrWorkspaceNotFound
 	}
-	_, err := h.deletion.Restore(ctx, a.UserID, string(params.WorkspaceId), h.actor(ctx), h.now())
+	_, err := h.deletion.Restore(ctx, a.UserID, string(params.ID), h.actor(ctx), h.now())
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		v := siteapi.SiteWorkspacesRestoreConflict(problem(http.StatusConflict, i18n.T("errors.workspace_not_restorable", nil)))
 		return &v, nil
@@ -323,7 +303,7 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 		return nil, err
 	}
 	// The Workspace is live again, so the caller's Owner Membership resolves like any other.
-	s, m, err := h.membershipEvenIfWithheld(ctx, params.WorkspaceId)
+	s, m, err := h.accounts.Scope(ctx, a.UserID, string(params.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -336,11 +316,8 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 
 // SiteWorkspacesGetRevenueSettings reads the Reporting currency and the Attribution window
 // (every member, ADR 0064).
-func (h *Handlers) SiteWorkspacesGetRevenueSettings(ctx context.Context, params siteapi.SiteWorkspacesGetRevenueSettingsParams) (siteapi.SiteWorkspacesGetRevenueSettingsRes, error) {
-	s, _, err := h.membershipFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteWorkspacesGetRevenueSettings(ctx context.Context, _ siteapi.SiteWorkspacesGetRevenueSettingsParams) (siteapi.SiteWorkspacesGetRevenueSettingsRes, error) {
+	s := workspaceScope(ctx)
 	w, err := h.accounts.Workspace(ctx, s)
 	if err != nil {
 		return nil, err
@@ -351,15 +328,8 @@ func (h *Handlers) SiteWorkspacesGetRevenueSettings(ctx context.Context, params 
 
 // SiteWorkspacesUpdateRevenueSettings changes the Reporting currency and the Attribution window
 // (Owner and Admin, Permission revenue:configure, ADR 0064).
-func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req *siteapi.SiteUpdateRevenueSettingsInput, params siteapi.SiteWorkspacesUpdateRevenueSettingsParams) (siteapi.SiteWorkspacesUpdateRevenueSettingsRes, error) {
-	s, m, err := h.membershipFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanConfigureRevenue(m.Role) {
-		v := siteapi.SiteWorkspacesUpdateRevenueSettingsForbidden(problem(http.StatusForbidden, "only owners and admins can change the revenue settings"))
-		return &v, nil
-	}
+func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req *siteapi.SiteUpdateRevenueSettingsInput, _ siteapi.SiteWorkspacesUpdateRevenueSettingsParams) (siteapi.SiteWorkspacesUpdateRevenueSettingsRes, error) {
+	s := workspaceScope(ctx)
 	var code *string
 	if c, ok := req.ReportingCurrency.Get(); ok {
 		str := string(c)

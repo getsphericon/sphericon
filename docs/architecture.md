@@ -17,6 +17,12 @@ coding standards in `CODING_STANDARDS.md`.
   and auth scheme:
   - `/site/*` — frontend SPA API. Auth: **JWT cookie** (issued by the `login` operation through `auth.Sessions`, ADR 0020). Handlers in `internal/api/site`.
   - `/api/*` — external/public API. Auth: **Bearer api-token** (workspace-scoped). Handlers in `internal/api/external`.
+    Every operation names the scopes a token needs in `auth.ExternalOperationScopes`, generated from the
+    `@extension("x-required-scopes", #[ApiTokenScope.…])` on each TypeSpec operation and checked by
+    `ExternalSecurityHandler.HandleBearerAuth` before the handler runs (ADR 0061): a missing declaration fails
+    generation, no entry = refused to all, a valid token without a scope = 403, and 401 only for a missing,
+    invalid, revoked or expired token. No handler checks a scope; /mcp inherits the check, as each tool call is
+    dispatched to /api with the caller's token.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
   - `/staff/*` — platform staff (the **Staff member**, ADR 0026), Enterprise (license feature `staff`; unlicensed = 404).
     Auth: its own **JWT cookie** (`STAFF_JWT`, `SPHERICON_STAFF_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/staff`.
@@ -82,10 +88,18 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and never call
   `client.Scoped(<int64>)`. Tests use `env.DB.Scoped(fixtures.AcmeID)`.
 - **`*ent.Scoped` is built only in a closed list of places:**
-  1. site: `accounts.Accounts.Scope`, behind `Handlers.scopedFor` / `scopedWithRoleFor`
-     (`internal/api/site/handlers.go`), from the user's Membership on `/w/{id}`;
+  1. site: `accounts.Accounts.Scope`, behind the ogen middleware `Handlers.Access`
+     (`internal/api/site/access.go`, ADR 0061), from the user's Membership of the Workspace an
+     operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership with
+     `callerMembership(ctx)`). The middleware also applies the Two-factor requirement and the
+     Permissions the operation declares in TypeSpec (`x-required-permissions`, generated into
+     `operationAccess`). Two operations name their Workspace elsewhere and call
+     `accounts.Accounts.Scope` themselves: `SiteOAuthDecide` (in its body, through `Handlers.member`)
+     and `SiteWorkspacesCreate` / `SiteWorkspacesRestore` (a Workspace that was not live before);
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
-     in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`;
+     in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`. A Connection (an API token
+     with a `membership_id`, ADR 0061) is looked up with its Membership: the scope acts as its User,
+     the Two-factor requirement applies, and the Role bounds its scopes on every request;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
   4. jobs and event subscribers, right after the row that names the Workspace is loaded
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the

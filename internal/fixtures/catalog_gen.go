@@ -849,6 +849,14 @@ const (
 	EventTieSecondEmail = "tie@example.com"
 	// EventTieSecondID is from fixtures/events.
 	EventTieSecondID = 991
+	// ExpiredTokenID is from fixtures/api_tokens.
+	ExpiredTokenID = 102
+	// ExpiredTokenName is from fixtures/api_tokens.
+	ExpiredTokenName = "Temporary key (expired)"
+	// ExpiredTokenPrefix is from fixtures/api_tokens.
+	ExpiredTokenPrefix = "expiredtok01"
+	// ExpiredTokenSecret is from fixtures/api_tokens.
+	ExpiredTokenSecret = "expired-token-secret-0000000000000000000"
 	// FreshLoginAttemptEmail is from fixtures/auth_attempts.
 	FreshLoginAttemptEmail = "fresh@attempts.test"
 	// FreshLoginAttemptID is from fixtures/auth_attempts.
@@ -1499,6 +1507,14 @@ const (
 	PruGoogleIdentityProvider = "google"
 	// PruGoogleIdentitySubject is from fixtures/user_identities.
 	PruGoogleIdentitySubject = "google-subject-of-pru"
+	// RevokedTokenID is from fixtures/api_tokens.
+	RevokedTokenID = 101
+	// RevokedTokenName is from fixtures/api_tokens.
+	RevokedTokenName = "Old key (revoked)"
+	// RevokedTokenPrefix is from fixtures/api_tokens.
+	RevokedTokenPrefix = "revokedtok01"
+	// RevokedTokenSecret is from fixtures/api_tokens.
+	RevokedTokenSecret = "revoked-token-secret-0000000000000000000"
 	// RuleActivatedLaterID is from fixtures/rules.
 	RuleActivatedLaterID = 105
 	// RuleActivatedLaterName is from fixtures/rules.

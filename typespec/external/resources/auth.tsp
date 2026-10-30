@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -33,6 +34,7 @@ model CreateApiTokenResponse {
 namespace Auth {
   @post
   @route("/tokens")
+  @extension("x-required-scopes", #[ApiTokenScope.tokensWrite])
   op tokensCreate(@body body: CreateApiTokenInput):
     | {
         @statusCode statusCode: 201;
@@ -46,6 +48,7 @@ namespace Auth {
 
   @get
   @route("/tokens")
+  @extension("x-required-scopes", #[ApiTokenScope.tokensRead])
   op tokensList():
     | ApiTokenListResponse
     | UnauthorizedProblem
@@ -54,6 +57,7 @@ namespace Auth {
 
   @delete
   @route("/tokens/{id}")
+  @extension("x-required-scopes", #[ApiTokenScope.tokensWrite])
   op tokensDelete(@path id: EntityId):
     | NoContentResponse
     | UnauthorizedProblem
@@ -64,6 +68,7 @@ namespace Auth {
 
   @get
   @route("/me")
+  @extension("x-required-scopes", #[])
   op meGet():
     | ApiTokenInfo
     | UnauthorizedProblem
@@ -73,6 +78,7 @@ namespace Auth {
   @post
   @route("/tokens/bootstrap")
   @useAuth([])
+  @extension("x-required-scopes", #[])
   op tokensBootstrap(
     @header("X-Bootstrap-Token") bootstrapToken: string,
     @body body: CreateApiTokenInput,

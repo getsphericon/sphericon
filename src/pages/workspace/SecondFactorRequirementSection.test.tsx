@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteWorkspacesList,
-  handleSiteWorkspacesSetSecondFactorRequirement,
+  handleSiteWorkspacesRequireSecondFactor,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -21,6 +21,7 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions: [],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
@@ -31,27 +32,29 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
 
 const listRoute = handleSiteWorkspacesList({ body: [workspace()] })
 
-test('an owner switches the requirement on', async () => {
-  const bodies: string[] = []
+test('a member holding second_factor:manage switches the requirement on', async () => {
+  const required: string[] = []
   worker.use(
     listRoute,
-    handleSiteWorkspacesSetSecondFactorRequirement(async ({ request }) => {
-      bodies.push(await request.text())
+    handleSiteWorkspacesRequireSecondFactor(({ params }) => {
+      required.push(params.workspaceId)
       return HttpResponse.json(workspace({ secondFactorRequiredAt: '2026-03-01T00:00:00Z' }))
     }),
   )
   const { screen } = await renderWithRouter(
-    <SecondFactorRequirementSection workspace={workspace({ role: 'owner' })} />,
+    <SecondFactorRequirementSection
+      workspace={workspace({ permissions: ['second_factor:manage'] })}
+    />,
   )
 
   const toggle = screen.getByRole('switch', { name: 'Require two-factor authentication' })
   await expect.element(toggle).toBeEnabled()
   await toggle.click()
 
-  await expect.poll(() => bodies).toEqual(['{"required":true}'])
+  await expect.poll(() => required).toEqual([workspace().id])
 })
 
-test('a member sees the requirement and its grace but cannot change it', async () => {
+test('without second_factor:manage the requirement and its grace show but do not change', async () => {
   worker.use(listRoute)
   const required = workspace({ secondFactorRequiredAt: '2026-03-01T00:00:00Z' })
   const { screen } = await renderWithRouter(<SecondFactorRequirementSection workspace={required} />)

@@ -882,9 +882,30 @@ func (x *ApiTokenScopedCreate) SetNillableLastUsedAt(v *time.Time) *ApiTokenScop
 	return x
 }
 
+// SetMembershipID sets the "membership_id" field.
+func (x *ApiTokenScopedCreate) SetMembershipID(v int64) *ApiTokenScopedCreate {
+	x.b.SetMembershipID(v)
+	return x
+}
+
+// SetNillableMembershipID sets the "membership_id" field if the given value is not nil.
+func (x *ApiTokenScopedCreate) SetNillableMembershipID(v *int64) *ApiTokenScopedCreate {
+	x.b.SetNillableMembershipID(v)
+	return x
+}
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (x *ApiTokenScopedCreate) SetMembership(v *Membership) *ApiTokenScopedCreate {
+	x.b.SetMembership(v)
+	return x
+}
+
 func (x *ApiTokenScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyMembership(ctx, m.MembershipIDs()); err != nil {
+		return fmt.Errorf("membership: %w", err)
+	}
 	return nil
 }
 
@@ -1358,6 +1379,9 @@ func (x *ApiTokenScopedUpdateOne) ClearLastUsedAt() *ApiTokenScopedUpdateOne {
 func (x *ApiTokenScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyMembership(ctx, m.MembershipIDs()); err != nil {
+		return fmt.Errorf("membership: %w", err)
+	}
 	return nil
 }
 
@@ -1526,6 +1550,9 @@ func (x *ApiTokenScopedUpdate) ClearLastUsedAt() *ApiTokenScopedUpdate {
 func (x *ApiTokenScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyMembership(ctx, m.MembershipIDs()); err != nil {
+		return fmt.Errorf("membership: %w", err)
+	}
 	return nil
 }
 
@@ -18814,9 +18841,36 @@ func (x *MembershipScopedCreate) SetUser(v *User) *MembershipScopedCreate {
 	return x
 }
 
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (x *MembershipScopedCreate) AddConnectionIDs(ids ...int64) *MembershipScopedCreate {
+	x.b.AddConnectionIDs(ids...)
+	return x
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (x *MembershipScopedCreate) AddConnections(v ...*ApiToken) *MembershipScopedCreate {
+	x.b.AddConnections(v...)
+	return x
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (x *MembershipScopedCreate) AddOauthCodeIDs(ids ...int64) *MembershipScopedCreate {
+	x.b.AddOauthCodeIDs(ids...)
+	return x
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (x *MembershipScopedCreate) AddOauthCodes(v ...*OAuthCode) *MembershipScopedCreate {
+	x.b.AddOauthCodes(v...)
+	return x
+}
+
 func (x *MembershipScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyApiToken(ctx, m.ConnectionsIDs()); err != nil {
+		return fmt.Errorf("connections: %w", err)
+	}
 	return nil
 }
 
@@ -19178,9 +19232,72 @@ func (x *MembershipScopedUpdateOne) ClearUser() *MembershipScopedUpdateOne {
 	return x
 }
 
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (x *MembershipScopedUpdateOne) AddConnectionIDs(ids ...int64) *MembershipScopedUpdateOne {
+	x.b.AddConnectionIDs(ids...)
+	return x
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (x *MembershipScopedUpdateOne) AddConnections(v ...*ApiToken) *MembershipScopedUpdateOne {
+	x.b.AddConnections(v...)
+	return x
+}
+
+// ClearConnections clears the "connections" edges to the ApiToken entity.
+func (x *MembershipScopedUpdateOne) ClearConnections() *MembershipScopedUpdateOne {
+	x.b.ClearConnections()
+	return x
+}
+
+// RemoveConnectionIDs removes the "connections" edge to ApiToken entities by IDs.
+func (x *MembershipScopedUpdateOne) RemoveConnectionIDs(ids ...int64) *MembershipScopedUpdateOne {
+	x.b.RemoveConnectionIDs(ids...)
+	return x
+}
+
+// RemoveConnections removes "connections" edges to ApiToken entities.
+func (x *MembershipScopedUpdateOne) RemoveConnections(v ...*ApiToken) *MembershipScopedUpdateOne {
+	x.b.RemoveConnections(v...)
+	return x
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (x *MembershipScopedUpdateOne) AddOauthCodeIDs(ids ...int64) *MembershipScopedUpdateOne {
+	x.b.AddOauthCodeIDs(ids...)
+	return x
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (x *MembershipScopedUpdateOne) AddOauthCodes(v ...*OAuthCode) *MembershipScopedUpdateOne {
+	x.b.AddOauthCodes(v...)
+	return x
+}
+
+// ClearOauthCodes clears the "oauth_codes" edges to the OAuthCode entity.
+func (x *MembershipScopedUpdateOne) ClearOauthCodes() *MembershipScopedUpdateOne {
+	x.b.ClearOauthCodes()
+	return x
+}
+
+// RemoveOauthCodeIDs removes the "oauth_codes" edge to OAuthCode entities by IDs.
+func (x *MembershipScopedUpdateOne) RemoveOauthCodeIDs(ids ...int64) *MembershipScopedUpdateOne {
+	x.b.RemoveOauthCodeIDs(ids...)
+	return x
+}
+
+// RemoveOauthCodes removes "oauth_codes" edges to OAuthCode entities.
+func (x *MembershipScopedUpdateOne) RemoveOauthCodes(v ...*OAuthCode) *MembershipScopedUpdateOne {
+	x.b.RemoveOauthCodes(v...)
+	return x
+}
+
 func (x *MembershipScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyApiToken(ctx, m.ConnectionsIDs()); err != nil {
+		return fmt.Errorf("connections: %w", err)
+	}
 	return nil
 }
 
@@ -19312,9 +19429,72 @@ func (x *MembershipScopedUpdate) ClearUser() *MembershipScopedUpdate {
 	return x
 }
 
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (x *MembershipScopedUpdate) AddConnectionIDs(ids ...int64) *MembershipScopedUpdate {
+	x.b.AddConnectionIDs(ids...)
+	return x
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (x *MembershipScopedUpdate) AddConnections(v ...*ApiToken) *MembershipScopedUpdate {
+	x.b.AddConnections(v...)
+	return x
+}
+
+// ClearConnections clears the "connections" edges to the ApiToken entity.
+func (x *MembershipScopedUpdate) ClearConnections() *MembershipScopedUpdate {
+	x.b.ClearConnections()
+	return x
+}
+
+// RemoveConnectionIDs removes the "connections" edge to ApiToken entities by IDs.
+func (x *MembershipScopedUpdate) RemoveConnectionIDs(ids ...int64) *MembershipScopedUpdate {
+	x.b.RemoveConnectionIDs(ids...)
+	return x
+}
+
+// RemoveConnections removes "connections" edges to ApiToken entities.
+func (x *MembershipScopedUpdate) RemoveConnections(v ...*ApiToken) *MembershipScopedUpdate {
+	x.b.RemoveConnections(v...)
+	return x
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (x *MembershipScopedUpdate) AddOauthCodeIDs(ids ...int64) *MembershipScopedUpdate {
+	x.b.AddOauthCodeIDs(ids...)
+	return x
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (x *MembershipScopedUpdate) AddOauthCodes(v ...*OAuthCode) *MembershipScopedUpdate {
+	x.b.AddOauthCodes(v...)
+	return x
+}
+
+// ClearOauthCodes clears the "oauth_codes" edges to the OAuthCode entity.
+func (x *MembershipScopedUpdate) ClearOauthCodes() *MembershipScopedUpdate {
+	x.b.ClearOauthCodes()
+	return x
+}
+
+// RemoveOauthCodeIDs removes the "oauth_codes" edge to OAuthCode entities by IDs.
+func (x *MembershipScopedUpdate) RemoveOauthCodeIDs(ids ...int64) *MembershipScopedUpdate {
+	x.b.RemoveOauthCodeIDs(ids...)
+	return x
+}
+
+// RemoveOauthCodes removes "oauth_codes" edges to OAuthCode entities.
+func (x *MembershipScopedUpdate) RemoveOauthCodes(v ...*OAuthCode) *MembershipScopedUpdate {
+	x.b.RemoveOauthCodes(v...)
+	return x
+}
+
 func (x *MembershipScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
+	if err := x.s.verifyApiToken(ctx, m.ConnectionsIDs()); err != nil {
+		return fmt.Errorf("connections: %w", err)
+	}
 	return nil
 }
 

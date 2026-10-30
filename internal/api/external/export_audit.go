@@ -14,16 +14,8 @@ import (
 // It needs the `audit` license feature as well as `export`; without it the operation is
 // absent (404), like the Audit log read is without its license.
 func (h *Handlers) ExportAudit(ctx context.Context, params externalapi.ExportAuditParams) (externalapi.ExportAuditRes, error) {
-	code, detail := h.exportDenied(ctx)
-	if code == 0 && !h.audit.Licensed() {
-		code, detail = http.StatusNotFound, "not found"
-	}
-	switch code {
-	case http.StatusNotFound:
-		res := externalapi.ExportAuditNotFound(problem(code, detail))
-		return &res, nil
-	case http.StatusUnauthorized:
-		res := externalapi.ExportAuditUnauthorized(problem(code, detail))
+	if !h.exportLicensed() || !h.audit.Licensed() {
+		res := externalapi.ExportAuditNotFound(problem(http.StatusNotFound, "not found"))
 		return &res, nil
 	}
 

@@ -3,8 +3,9 @@
 // registration (RFC 7591), the PKCE authorization-code flow and the token
 // endpoint. The consent screen is a SPA route; the signed-in user's decision
 // arrives through the site API and is handled by [Service.Decide]. The token
-// endpoint issues ordinary scoped API tokens, so /mcp and /api authenticate
-// them exactly like a hand-made token.
+// endpoint issues a Connection (ADR 0061): an API token tied to the approving
+// User's Membership, which /mcp and /api authenticate like a hand-made token and
+// then bound by that User's current Role.
 package oauthserver
 
 import (
@@ -22,6 +23,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/webhook"
 )
 
@@ -69,17 +71,20 @@ type Request struct {
 	Scopes      []string
 	SendScopes  []string
 	SetupScopes []string
+	// RequiredPermissions names, for each requested scope that needs one, the Permission a User
+	// must hold to grant it (accounts.GrantPermissions, ADR 0061).
+	RequiredPermissions map[string]accounts.Permission
 }
 
-// Decision is the signed-in user's answer to an authorization request. The
-// caller has already verified the user belongs to WorkspaceID.
+// Decision is the signed-in user's answer to an authorization request. Membership is the
+// User's Membership of the Workspace the Connection will belong to, as the caller resolved it.
 type Decision struct {
 	ClientID      string
 	RedirectURI   string
 	State         string
 	CodeChallenge string
 	Scope         string
-	WorkspaceID   int64
+	Membership    *ent.Membership
 	Approve       bool
 	AllowSend     bool
 	AllowSetup    bool
@@ -99,6 +104,7 @@ func (s *Service) Describe(ctx context.Context, clientID, redirectURI, scope str
 	return &Request{
 		ClientName: client.Name, ClientHost: ClientHost(clientID), LocalRedirect: isLoopback(redirectURI),
 		RedirectURI: redirectURI, Scopes: granted, SendScopes: send, SetupScopes: setup,
+		RequiredPermissions: requiredPermissions(slices.Concat(granted, send, setup)),
 	}, nil
 }
 
@@ -125,12 +131,20 @@ func (s *Service) Decide(ctx context.Context, d Decision) (string, error) {
 	if d.AllowSetup {
 		granted = append(granted, setup...)
 	}
+	// Any member may approve, but only the scopes their Role may grant (ADR 0061): the consent
+	// screen offers no other, and the first one beyond the Role refuses the whole decision.
+	for _, p := range requiredPermissions(granted) {
+		if err := accounts.Require(d.Membership.Role, p); err != nil {
+			return "", err
+		}
+	}
 
 	code := rand.Text()
 	_, err = s.ent.OAuthCode.Create().
 		SetCodeHash(hashSecret(code)).
 		SetClientID(client.ID).
-		SetWorkspaceID(d.WorkspaceID).
+		SetWorkspaceID(d.Membership.WorkspaceID).
+		SetMembershipID(d.Membership.ID).
 		SetRedirectURI(d.RedirectURI).
 		SetCodeChallenge(d.CodeChallenge).
 		SetScopes(granted).

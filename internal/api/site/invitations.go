@@ -17,11 +17,8 @@ import (
 )
 
 // SiteInvitationsList returns the workspace's pending (unaccepted) invitations.
-func (h *Handlers) SiteInvitationsList(ctx context.Context, params siteapi.SiteInvitationsListParams) (siteapi.SiteInvitationsListRes, error) {
-	s, _, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteInvitationsList(ctx context.Context, _ siteapi.SiteInvitationsListParams) (siteapi.SiteInvitationsListRes, error) {
+	s := workspaceScope(ctx)
 
 	invites, err := accounts.PendingInvitations(ctx, s)
 	if err != nil {
@@ -43,15 +40,8 @@ type inviteForm struct {
 // SiteInvitationsCreate invites an email address to the workspace. Owner/admin
 // only. The one-time accept link is returned (copy-link path) and an invite email
 // is sent best-effort — a missing/failed mailer must not fail the invite.
-func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteCreateInvitationInput, params siteapi.SiteInvitationsCreateParams) (siteapi.SiteInvitationsCreateRes, error) {
-	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageMembers(callerRole) {
-		v := siteapi.SiteInvitationsCreateForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
-	}
+func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteCreateInvitationInput, _ siteapi.SiteInvitationsCreateParams) (siteapi.SiteInvitationsCreateRes, error) {
+	s := workspaceScope(ctx)
 
 	// An empty address is the accounts operation's refusal (ErrEmailEmpty); one that is sent
 	// must be an address the invitee can receive mail at.
@@ -104,14 +94,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 
 // SiteInvitationsDelete revokes a pending invitation. Owner/admin only.
 func (h *Handlers) SiteInvitationsDelete(ctx context.Context, params siteapi.SiteInvitationsDeleteParams) (siteapi.SiteInvitationsDeleteRes, error) {
-	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if !accounts.CanManageMembers(callerRole) {
-		v := siteapi.SiteInvitationsDeleteForbidden(problem(http.StatusForbidden, "insufficient role"))
-		return &v, nil
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 

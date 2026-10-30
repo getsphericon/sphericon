@@ -7320,6 +7320,231 @@ func decodeSiteCapturedMessagesListParams(args [1]string, argsEscaped bool, r *h
 	return params, nil
 }
 
+// SiteConnectionsDeleteParams is parameters of SiteConnections_delete operation.
+type SiteConnectionsDeleteParams struct {
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
+	// Unique identifier.
+	ID EntityId
+}
+
+func unpackSiteConnectionsDeleteParams(packed middleware.Parameters) (params SiteConnectionsDeleteParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(EntityId)
+	}
+	return params
+}
+
+func decodeSiteConnectionsDeleteParams(args [2]string, argsEscaped bool, r *http.Request) (params SiteConnectionsDeleteParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: id.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal int64
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToStringInt64(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = EntityId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteConnectionsListParams is parameters of SiteConnections_list operation.
+type SiteConnectionsListParams struct {
+	// The Workspace id: its short opaque public address and the route key for nested workspace resources
+	// (ADR 0043).
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteConnectionsListParams(packed middleware.Parameters) (params SiteConnectionsListParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteConnectionsListParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteConnectionsListParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteContactsCreateParams is parameters of SiteContacts_create operation.
 type SiteContactsCreateParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
@@ -21694,12 +21919,12 @@ func decodeSiteWorkspacesLeaveParams(args [1]string, argsEscaped bool, r *http.R
 	return params, nil
 }
 
-// SiteWorkspacesRestoreParams is parameters of SiteWorkspaces_restore operation.
-type SiteWorkspacesRestoreParams struct {
+// SiteWorkspacesLiftSecondFactorRequirementParams is parameters of SiteWorkspaces_liftSecondFactorRequirement operation.
+type SiteWorkspacesLiftSecondFactorRequirementParams struct {
 	WorkspaceId WorkspaceId
 }
 
-func unpackSiteWorkspacesRestoreParams(packed middleware.Parameters) (params SiteWorkspacesRestoreParams) {
+func unpackSiteWorkspacesLiftSecondFactorRequirementParams(packed middleware.Parameters) (params SiteWorkspacesLiftSecondFactorRequirementParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "workspaceId",
@@ -21710,7 +21935,7 @@ func unpackSiteWorkspacesRestoreParams(packed middleware.Parameters) (params Sit
 	return params
 }
 
-func decodeSiteWorkspacesRestoreParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesRestoreParams, _ error) {
+func decodeSiteWorkspacesLiftSecondFactorRequirementParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesLiftSecondFactorRequirementParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
@@ -21774,12 +21999,12 @@ func decodeSiteWorkspacesRestoreParams(args [1]string, argsEscaped bool, r *http
 	return params, nil
 }
 
-// SiteWorkspacesSetSecondFactorRequirementParams is parameters of SiteWorkspaces_setSecondFactorRequirement operation.
-type SiteWorkspacesSetSecondFactorRequirementParams struct {
+// SiteWorkspacesRequireSecondFactorParams is parameters of SiteWorkspaces_requireSecondFactor operation.
+type SiteWorkspacesRequireSecondFactorParams struct {
 	WorkspaceId WorkspaceId
 }
 
-func unpackSiteWorkspacesSetSecondFactorRequirementParams(packed middleware.Parameters) (params SiteWorkspacesSetSecondFactorRequirementParams) {
+func unpackSiteWorkspacesRequireSecondFactorParams(packed middleware.Parameters) (params SiteWorkspacesRequireSecondFactorParams) {
 	{
 		key := middleware.ParameterKey{
 			Name: "workspaceId",
@@ -21790,7 +22015,7 @@ func unpackSiteWorkspacesSetSecondFactorRequirementParams(packed middleware.Para
 	return params
 }
 
-func decodeSiteWorkspacesSetSecondFactorRequirementParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesSetSecondFactorRequirementParams, _ error) {
+func decodeSiteWorkspacesRequireSecondFactorParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesRequireSecondFactorParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]
@@ -21847,6 +22072,86 @@ func decodeSiteWorkspacesSetSecondFactorRequirementParams(args [1]string, argsEs
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteWorkspacesRestoreParams is parameters of SiteWorkspaces_restore operation.
+type SiteWorkspacesRestoreParams struct {
+	ID WorkspaceId
+}
+
+func unpackSiteWorkspacesRestoreParams(packed middleware.Parameters) (params SiteWorkspacesRestoreParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteWorkspacesRestoreParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesRestoreParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotIDVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ID = WorkspaceId(paramsDotIDVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.ID.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
 			In:   "path",
 			Err:  err,
 		}

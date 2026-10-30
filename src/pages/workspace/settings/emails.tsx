@@ -1,8 +1,8 @@
 import { Stack } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import { canManage } from '../../../hooks/useCurrentRole.ts'
 import { Route as emailsRoute } from '../../../routes/workspaces/$workspaceId/settings/emails.tsx'
+import { can } from '../../../utils/permissions.ts'
 import { IntegrationsSection } from '../IntegrationsSection.tsx'
 import { SendingDomainsSection } from '../SendingDomainsSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
@@ -15,8 +15,11 @@ export function EmailsPage() {
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.emails)}>
       {(workspace) => (
         <Stack gap="xl">
-          <IntegrationsSection workspaceId={workspace.id} />
-          <SendingDomainsSection workspaceId={workspace.id} canEdit={canManage(workspace.role)} />
+          <IntegrationsSection workspace={workspace} />
+          <SendingDomainsSection
+            workspaceId={workspace.id}
+            canEdit={can(workspace, 'sending_domains:manage')}
+          />
         </Stack>
       )}
     </SettingsFrame>

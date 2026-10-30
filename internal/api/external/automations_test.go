@@ -52,7 +52,7 @@ func TestExternalAutomationsRead(t *testing.T) {
 	denied := env.ExternalScoped(t, "contacts:read")
 	res, err := denied.AutomationsList(ctx, externalapi.AutomationsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsListUnauthorized{}, res)
+	assert.IsType(t, &externalapi.AutomationsListForbidden{}, res)
 }
 
 // Created automations are always draft, even for a token that may activate; steps
@@ -110,7 +110,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	readOnly := env.ExternalScoped(t, "automations:read")
 	res, err := readOnly.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "y"})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsCreateUnauthorized{}, res)
+	assert.IsType(t, &externalapi.AutomationsCreateForbidden{}, res)
 }
 
 // Activate and deactivate need automations:activate, which authoring scopes never
@@ -122,10 +122,10 @@ func TestExternalAutomationsActivateAndDeactivate(t *testing.T) {
 	authoring := env.ExternalScoped(t, "automations:read", "automations:write")
 	refused, err := authoring.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: entityIDString(fixtures.AutomationWinBackID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsActivateUnauthorized{}, refused)
+	assert.IsType(t, &externalapi.AutomationsActivateForbidden{}, refused)
 	refusedOff, err := authoring.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AutomationsDeactivateUnauthorized{}, refusedOff)
+	assert.IsType(t, &externalapi.AutomationsDeactivateForbidden{}, refusedOff)
 	assert.Equal(t, automation.StatusDraft, env.DB.Automation.GetX(ctx, fixtures.AutomationWinBackID).Status)
 
 	c := env.ExternalScoped(t, "automations:activate")

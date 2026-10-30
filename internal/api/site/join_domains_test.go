@@ -75,25 +75,21 @@ func TestJoinDomainsListShowsVerifiedAndPendingWithTheRecordToPublish(t *testing
 	assert.False(t, foreign, "another Workspace's claim is never listed")
 }
 
-func TestJoinDomainsAreOwnerOnly(t *testing.T) {
+func TestAMemberCannotManageJoinDomains(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	id := siteapi.EntityId(fixtures.JoinDomainPendingID)
+	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	for _, email := range []string{fixtures.AdminAliceEmail, fixtures.MemberMaryEmail} {
-		c := env.SiteActor(t, email)
-		list, err := c.SiteJoinDomainsList(ctx, siteapi.SiteJoinDomainsListParams{WorkspaceId: ws})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteJoinDomainsListForbidden{}, list, email)
-		add := addJoinDomain(t, c, ws, "forbidden.test")
-		assert.IsType(t, &siteapi.SiteJoinDomainsAddForbidden{}, add, email)
-		verify := verifyJoinDomain(t, c, ws, id)
-		assert.IsType(t, &siteapi.SiteJoinDomainsVerifyForbidden{}, verify, email)
-		remove, err := c.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: id})
-		require.NoError(t, err)
-		assert.IsType(t, &siteapi.SiteJoinDomainsRemoveForbidden{}, remove, email)
-	}
+	list, err := c.SiteJoinDomainsList(ctx, siteapi.SiteJoinDomainsListParams{WorkspaceId: ws})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteJoinDomainsListForbidden{}, list)
+	assert.IsType(t, &siteapi.SiteJoinDomainsAddForbidden{}, addJoinDomain(t, c, ws, "forbidden.test"))
+	assert.IsType(t, &siteapi.SiteJoinDomainsVerifyForbidden{}, verifyJoinDomain(t, c, ws, id))
+	remove, err := c.SiteJoinDomainsRemove(ctx, siteapi.SiteJoinDomainsRemoveParams{WorkspaceId: ws, ID: id})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteJoinDomainsRemoveForbidden{}, remove)
 
 	stillThere := env.DB.Scoped(fixtures.AcmeID).JoinDomain().Query().Where(joindomain.ID(int64(fixtures.JoinDomainPendingID))).ExistX(ctx)
 	assert.True(t, stillThere)

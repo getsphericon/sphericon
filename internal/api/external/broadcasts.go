@@ -22,10 +22,6 @@ import (
 // handlers check the scope, call it and map its errors.
 
 func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.BroadcastsListParams) (externalapi.BroadcastsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsRead) {
-		res := externalapi.BroadcastsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	ws := auth.TokenScoped(ctx)
 	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
@@ -41,10 +37,6 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 }
 
 func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.CreateBroadcastInput) (externalapi.BroadcastsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsWrite) {
-		res := externalapi.BroadcastsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	ws := auth.TokenScoped(ctx)
 
 	b, err := h.broadcasts.Create(ctx, ws, broadcasts.Fields{
@@ -60,10 +52,6 @@ func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.Create
 }
 
 func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.BroadcastsGetParams) (externalapi.BroadcastsGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsRead) {
-		res := externalapi.BroadcastsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -74,10 +62,6 @@ func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.Broadca
 }
 
 func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.UpdateBroadcastInput, params externalapi.BroadcastsUpdateParams) (externalapi.BroadcastsUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsWrite) {
-		res := externalapi.BroadcastsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	id := int64(params.ID)
 	b, err := h.broadcasts.Update(ctx, auth.TokenScoped(ctx), id,
 		broadcasts.Fields{
@@ -93,10 +77,6 @@ func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.Update
 }
 
 func (h *Handlers) BroadcastsDelete(ctx context.Context, params externalapi.BroadcastsDeleteParams) (externalapi.BroadcastsDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsWrite) {
-		res := externalapi.BroadcastsDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	id := int64(params.ID)
 	err := h.broadcasts.DeleteDraft(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -107,10 +87,6 @@ func (h *Handlers) BroadcastsDelete(ctx context.Context, params externalapi.Broa
 
 // BroadcastsArchive archives a sent or failed broadcast (ADR 0049).
 func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.BroadcastsArchiveParams) (externalapi.BroadcastsArchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsWrite) {
-		res := externalapi.BroadcastsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.broadcasts.Archive(ctx, ws, id)
@@ -127,10 +103,6 @@ func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.Bro
 
 // BroadcastsUnarchive restores an archived broadcast.
 func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.BroadcastsUnarchiveParams) (externalapi.BroadcastsUnarchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsWrite) {
-		res := externalapi.BroadcastsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.broadcasts.Unarchive(ctx, ws, id)
@@ -146,10 +118,6 @@ func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.B
 }
 
 func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.SetBroadcastSegmentInput, params externalapi.BroadcastsSetSegmentParams) (externalapi.BroadcastsSetSegmentRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsWrite) {
-		res := externalapi.BroadcastsSetSegmentUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	id := int64(params.ID)
 	var segmentID *int64
 	if !req.SegmentId.Null {
@@ -168,10 +136,6 @@ func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.Se
 // second lock"): they need broadcasts:send, which authoring scopes never imply. Over
 // MCP they additionally need mcp:send (the x-mcp send flag).
 func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.ScheduleBroadcastInput, params externalapi.BroadcastsScheduleParams) (externalapi.BroadcastsScheduleRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsSend) {
-		res := externalapi.BroadcastsScheduleUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	id := int64(params.ID)
 	b, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, time.Time(req.ScheduledAt))
 	if err != nil {
@@ -182,10 +146,6 @@ func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.Sche
 }
 
 func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.BroadcastsUnscheduleParams) (externalapi.BroadcastsUnscheduleRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsSend) {
-		res := externalapi.BroadcastsUnscheduleUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	id := int64(params.ID)
 	b, err := h.broadcasts.Unschedule(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
@@ -198,10 +158,6 @@ func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.
 // BroadcastsTestSend renders the broadcast with sample merge data and sends it to
 // one address: no recipient rows, no tracking, never the audience.
 func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.TestSendBroadcastInput, params externalapi.BroadcastsTestSendParams) (externalapi.BroadcastsTestSendRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsWrite) {
-		res := externalapi.BroadcastsTestSendUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	id := int64(params.ID)
 	ws := auth.TokenScoped(ctx)
 	b, err := h.broadcasts.Get(ctx, ws, id)
@@ -217,10 +173,6 @@ func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.Test
 }
 
 func (h *Handlers) BroadcastsReport(ctx context.Context, params externalapi.BroadcastsReportParams) (externalapi.BroadcastsReportRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeBroadcastsRead) {
-		res := externalapi.BroadcastsReportUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	id := int64(params.ID)
 	r, err := h.broadcasts.Report(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {

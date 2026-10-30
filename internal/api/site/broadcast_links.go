@@ -10,10 +10,7 @@ import (
 )
 
 func (h *Handlers) SiteBroadcastLinksList(ctx context.Context, params siteapi.SiteBroadcastLinksListParams) (siteapi.SiteBroadcastLinksListRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 	links, err := h.broadcasts.LinkClicksOf(ctx, ws, int64(params.BroadcastId))
 	if errors.Is(err, broadcasts.ErrNotFound) {
 		v := siteapi.SiteBroadcastLinksListNotFound(problem(http.StatusNotFound, "broadcast not found"))

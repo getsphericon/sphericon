@@ -4,13 +4,14 @@ import {
   handleSiteWebhooksList,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
+import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as webhooksRoute } from '../../../routes/workspaces/$workspaceId/settings/webhooks.tsx'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { WebhooksPage } from './webhooks.tsx'
 
-const workspace = {
+const workspace: SiteWorkspaceResource = {
   id: 'TestWs01',
   name: 'Acme',
 
@@ -18,10 +19,11 @@ const workspace = {
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions: ['webhooks:manage'],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
-  role: 'owner' as const,
+  role: 'owner',
   createdAt: '2026-01-01T00:00:00Z',
 }
 
@@ -43,8 +45,10 @@ test('shows the webhooks of the workspace', async () => {
     .toBeInTheDocument()
 })
 
-test('does not offer a member the webhooks, whose secrets only owners and admins read', async () => {
-  worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }))
+test('does not offer the webhooks, whose secrets are read with webhooks:manage, to anyone without it', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member', permissions: [] }] }),
+  )
 
   const { screen } = await renderWithRouter(
     <WebhooksPage />,

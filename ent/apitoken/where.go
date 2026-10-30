@@ -100,6 +100,11 @@ func LastUsedAt(v time.Time) predicate.ApiToken {
 	return predicate.ApiToken(sql.FieldEQ(FieldLastUsedAt, v))
 }
 
+// MembershipID applies equality check predicate on the "membership_id" field. It's identical to MembershipIDEQ.
+func MembershipID(v int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldEQ(FieldMembershipID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ApiToken {
 	return predicate.ApiToken(sql.FieldEQ(FieldCreatedAt, v))
@@ -545,6 +550,36 @@ func LastUsedAtNotNil() predicate.ApiToken {
 	return predicate.ApiToken(sql.FieldNotNull(FieldLastUsedAt))
 }
 
+// MembershipIDEQ applies the EQ predicate on the "membership_id" field.
+func MembershipIDEQ(v int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldEQ(FieldMembershipID, v))
+}
+
+// MembershipIDNEQ applies the NEQ predicate on the "membership_id" field.
+func MembershipIDNEQ(v int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldNEQ(FieldMembershipID, v))
+}
+
+// MembershipIDIn applies the In predicate on the "membership_id" field.
+func MembershipIDIn(vs ...int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldIn(FieldMembershipID, vs...))
+}
+
+// MembershipIDNotIn applies the NotIn predicate on the "membership_id" field.
+func MembershipIDNotIn(vs ...int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldNotIn(FieldMembershipID, vs...))
+}
+
+// MembershipIDIsNil applies the IsNil predicate on the "membership_id" field.
+func MembershipIDIsNil() predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldIsNull(FieldMembershipID))
+}
+
+// MembershipIDNotNil applies the NotNil predicate on the "membership_id" field.
+func MembershipIDNotNil() predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldNotNull(FieldMembershipID))
+}
+
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
@@ -560,6 +595,29 @@ func HasWorkspace() predicate.ApiToken {
 func HasWorkspaceWith(preds ...predicate.Workspace) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		step := newWorkspaceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasMembership applies the HasEdge predicate on the "membership" edge.
+func HasMembership() predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, MembershipTable, MembershipColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasMembershipWith applies the HasEdge predicate on the "membership" edge with a given conditions (other predicates).
+func HasMembershipWith(preds ...predicate.Membership) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		step := newMembershipStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

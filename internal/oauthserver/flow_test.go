@@ -28,7 +28,13 @@ import (
 // consent plays the signed-in owner of workspace acme answering the consent screen.
 func consent(t *testing.T, env *testhelper.TestEnv, in siteapi.SiteOAuthDecisionInput) *url.URL {
 	t.Helper()
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteOAuthDecide(t.Context(), &in)
+	return consentAs(t, env, fixtures.OwnerJohnEmail, in)
+}
+
+// consentAs plays the signed-in User email answering the consent screen.
+func consentAs(t *testing.T, env *testhelper.TestEnv, email string, in siteapi.SiteOAuthDecisionInput) *url.URL {
+	t.Helper()
+	res, err := env.SiteActor(t, email).SiteOAuthDecide(t.Context(), &in)
 	require.NoError(t, err)
 	ok, isOK := res.(*siteapi.SiteOAuthDecisionResult)
 	require.Truef(t, isOK, "got %T", res)
@@ -82,6 +88,8 @@ func TestConsentScreenDescribesTheRequest(t *testing.T) {
 	assert.Equal(t, []siteapi.GrantableScope{"contacts:read"}, got.Scopes)
 	assert.Equal(t, []siteapi.SendScope{"emails:send", "mcp:send"}, got.SendScopes, "send-class scopes await an explicit opt-in, and bring the MCP send lock's key")
 	assert.Equal(t, []siteapi.SetupScope{"sending_domains:write"}, got.SetupScopes, "setup scopes await an opt-in of their own and bring no mcp:send")
+	assert.Equal(t, siteapi.SiteOAuthAuthorizationRequestRequiredPermissions{"sending_domains:write": siteapi.PermissionSendingDomainsManage}, got.RequiredPermissions,
+		"the screen learns which requested scope needs a Permission to grant")
 }
 
 func TestConsentScreenRejectsMismatchedRedirect(t *testing.T) {
@@ -134,22 +142,7 @@ func TestConsentAnAdminMayApprove(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteOAuthDecisionResult{}, res)
 }
 
-func TestConsentAMemberIsRefusedAndNoCodeIsIssued(t *testing.T) {
-	env := testhelper.Setup(t)
-	in := approval("contacts:write", false)
-	before, err := env.DB.OAuthCode.Query().Count(t.Context())
-	require.NoError(t, err)
-
-	res, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteOAuthDecide(t.Context(), &in)
-
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideForbidden{}, res)
-	after, err := env.DB.OAuthCode.Query().Count(t.Context())
-	require.NoError(t, err)
-	assert.Equal(t, before, after, "a refused consent issues no code")
-}
-
-func TestTokenEndpointIssuesAnOrdinaryScopedAPIToken(t *testing.T) {
+func TestTokenEndpointIssuesAConnectionOfTheApprovingUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	back := consent(t, env, approval("contacts:read segments:read", false))
 	require.Equal(t, "xyz", back.Query().Get("state"))
@@ -163,11 +156,13 @@ func TestTokenEndpointIssuesAnOrdinaryScopedAPIToken(t *testing.T) {
 	assert.Equal(t, "Bearer", tok["token_type"])
 	assert.Equal(t, "contacts:read segments:read", tok["scope"])
 
-	// It is a normal workspace API token: stored scoped, and /mcp accepts it.
-	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector (MCP)")).Only(t.Context())
+	// It is a Connection: a scoped token of the workspace tied to the owner's Membership, and /mcp
+	// accepts it.
+	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector")).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, []string{"contacts:read", "segments:read"}, row.Scopes)
 	assert.Equal(t, int64(fixtures.AcmeID), row.WorkspaceID)
+	assert.Equal(t, new(int64(fixtures.AcmeOwnerMembershipID)), row.MembershipID)
 	assert.Nil(t, row.RevokedAt)
 
 	session := env.MCPClient(t, tok["access_token"].(string))
@@ -343,7 +338,7 @@ func (r roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // A standard MCP client (the official go-sdk) discovers the server from the 401
 // challenge, registers itself, runs the PKCE flow through the consent screen and
-// ends up connected to /mcp with an ordinary API token.
+// ends up connected to /mcp with a Connection.
 func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 	env := testhelper.Setup(t)
 	httpClient := &http.Client{Transport: roundTripper{env}}
@@ -420,7 +415,7 @@ func TestStandardMCPClientConnectsThroughOAuth(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, tools.Tools)
 
-	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Test Agent (MCP)")).Only(t.Context())
+	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Test Agent")).Only(t.Context())
 	require.NoError(t, err)
 	assert.NotContains(t, row.Scopes, "emails:send", "send-class scopes are opt-in")
 	assert.NotContains(t, row.Scopes, "mcp:send", "so is the MCP send lock's key")

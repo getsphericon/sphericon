@@ -45,9 +45,13 @@ type MembershipEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// User holds the value of the user edge.
 	User *User `json:"user,omitempty"`
+	// Connections holds the value of the connections edge.
+	Connections []*ApiToken `json:"connections,omitempty"`
+	// OauthCodes holds the value of the oauth_codes edge.
+	OauthCodes []*OAuthCode `json:"oauth_codes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [4]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -70,6 +74,24 @@ func (e MembershipEdges) UserOrErr() (*User, error) {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "user"}
+}
+
+// ConnectionsOrErr returns the Connections value or an error if the edge
+// was not loaded in eager-loading.
+func (e MembershipEdges) ConnectionsOrErr() ([]*ApiToken, error) {
+	if e.loadedTypes[2] {
+		return e.Connections, nil
+	}
+	return nil, &NotLoadedError{edge: "connections"}
+}
+
+// OauthCodesOrErr returns the OauthCodes value or an error if the edge
+// was not loaded in eager-loading.
+func (e MembershipEdges) OauthCodesOrErr() ([]*OAuthCode, error) {
+	if e.loadedTypes[3] {
+		return e.OauthCodes, nil
+	}
+	return nil, &NotLoadedError{edge: "oauth_codes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -169,6 +191,16 @@ func (_m *Membership) QueryWorkspace() *WorkspaceQuery {
 // QueryUser queries the "user" edge of the Membership entity.
 func (_m *Membership) QueryUser() *UserQuery {
 	return NewMembershipClient(_m.config).QueryUser(_m)
+}
+
+// QueryConnections queries the "connections" edge of the Membership entity.
+func (_m *Membership) QueryConnections() *ApiTokenQuery {
+	return NewMembershipClient(_m.config).QueryConnections(_m)
+}
+
+// QueryOauthCodes queries the "oauth_codes" edge of the Membership entity.
+func (_m *Membership) QueryOauthCodes() *OAuthCodeQuery {
+	return NewMembershipClient(_m.config).QueryOauthCodes(_m)
 }
 
 // Update returns a builder for updating this Membership.

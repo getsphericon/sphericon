@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -131,6 +132,7 @@ interface SiteSegments
   /** Preview how many active contacts match a rule definition */
   @collectionAction(SiteSegmentResource, "preview")
   @autoRoute
+  @extension("x-required-permissions", #[])
   preview(
     ...ResourceCollectionParameters<SiteSegmentResource>,
     @body body: SitePreviewSegmentInput,
@@ -149,6 +151,7 @@ namespace SiteSegmentContacts {
    * condition that no longer fits the contact schema is a 422.
    */
   @get
+  @extension("x-required-permissions", #[])
   op list(
     @path workspaceId: WorkspaceId,
     @path segmentId: EntityId,
@@ -159,3 +162,10 @@ namespace SiteSegmentContacts {
     | NotFoundProblem
     | UnprocessableEntityProblem;
 }
+
+@@extension(SiteSegments.archive, "x-required-permissions", #[]);
+@@extension(SiteSegments.create, "x-required-permissions", #[]);
+@@extension(SiteSegments.get, "x-required-permissions", #[]);
+@@extension(SiteSegments.list, "x-required-permissions", #[]);
+@@extension(SiteSegments.unarchive, "x-required-permissions", #[]);
+@@extension(SiteSegments.update, "x-required-permissions", #[]);

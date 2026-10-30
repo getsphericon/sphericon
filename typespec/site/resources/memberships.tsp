@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -59,6 +60,7 @@ namespace SiteMemberships {
   @listsResource(SiteMembershipResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(...ResourceCollectionParameters<SiteMembershipResource>):
     | {
         @statusCode statusCode: 200;
@@ -70,6 +72,7 @@ namespace SiteMemberships {
   @updatesResource(SiteMembershipResource)
   @put
   @autoRoute
+  @extension("x-required-permissions", #[Permission.membersManage])
   op update(
     ...ResourceParameters<SiteMembershipResource>,
     @body body: SiteUpdateMembershipInput,
@@ -83,6 +86,7 @@ namespace SiteMemberships {
   @deletesResource(SiteMembershipResource)
   @delete
   @autoRoute
+  @extension("x-required-permissions", #[Permission.membersManage])
   op delete(...ResourceParameters<SiteMembershipResource>):
     | NoContentResponse
     | NotFoundProblem
@@ -95,6 +99,7 @@ namespace SiteMemberships {
    * caller (who disables their own with a password and a code). */
   @action("reset-second-factor")
   @autoRoute
+  @extension("x-required-permissions", #[Permission.secondFactorManage])
   op resetSecondFactor(...ResourceParameters<SiteMembershipResource>):
     | NoContentResponse
     | NotFoundProblem

@@ -2,11 +2,7 @@ id: no-common-refusal-in-handlers
 valid:
   - |
     func (h *Handlers) SiteTagsDelete(ctx context.Context, params siteapi.SiteTagsDeleteParams) (siteapi.SiteTagsDeleteRes, error) {
-    	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-    	if err != nil {
-    		return nil, err
-    	}
-    	if err := h.tags.Delete(ctx, scoped, int64(params.ID)); err != nil {
+    	if err := h.tags.Delete(ctx, workspaceScope(ctx), int64(params.ID)); err != nil {
     		return nil, err
     	}
     	return &siteapi.SiteTagsDeleteNoContent{}, nil

@@ -59,7 +59,7 @@ func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	denied := env.ExternalScoped(t, "contacts:read")
 	list, err := denied.RulesList(ctx, externalapi.RulesListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesListUnauthorized{}, list)
+	assert.IsType(t, &externalapi.RulesListForbidden{}, list)
 }
 
 // Created Rules are always drafts, even for a token that may activate; activating takes the
@@ -82,7 +82,7 @@ func TestExternalRulesCreateAndActivate(t *testing.T) {
 
 	byAuthor, err := author.RulesActivate(ctx, externalapi.RulesActivateParams{ID: res.ID})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesActivateUnauthorized{}, byAuthor)
+	assert.IsType(t, &externalapi.RulesActivateForbidden{}, byAuthor)
 
 	activated, err := activator.RulesActivate(ctx, externalapi.RulesActivateParams{ID: res.ID})
 	require.NoError(t, err)

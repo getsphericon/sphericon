@@ -13,10 +13,7 @@ import (
 // SiteContactsExport streams the subject-access Data export of one contact (ADR
 // 0021). Any Workspace member may export: it needs contact read access only.
 func (h *Handlers) SiteContactsExport(ctx context.Context, params siteapi.SiteContactsExportParams) (siteapi.SiteContactsExportRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	var contactID *int64
 	if v, ok := params.ID.Get(); ok {

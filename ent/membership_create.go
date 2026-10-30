@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -112,6 +114,36 @@ func (_c *MembershipCreate) SetWorkspace(v *Workspace) *MembershipCreate {
 // SetUser sets the "user" edge to the User entity.
 func (_c *MembershipCreate) SetUser(v *User) *MembershipCreate {
 	return _c.SetUserID(v.ID)
+}
+
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (_c *MembershipCreate) AddConnectionIDs(ids ...int64) *MembershipCreate {
+	_c.mutation.AddConnectionIDs(ids...)
+	return _c
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (_c *MembershipCreate) AddConnections(v ...*ApiToken) *MembershipCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddConnectionIDs(ids...)
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (_c *MembershipCreate) AddOauthCodeIDs(ids ...int64) *MembershipCreate {
+	_c.mutation.AddOauthCodeIDs(ids...)
+	return _c
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (_c *MembershipCreate) AddOauthCodes(v ...*OAuthCode) *MembershipCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOauthCodeIDs(ids...)
 }
 
 // Mutation returns the MembershipMutation object of the builder.
@@ -277,6 +309,38 @@ func (_c *MembershipCreate) createSpec() (*Membership, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.UserID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ConnectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ConnectionsTable,
+			Columns: []string{membership.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OauthCodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.OauthCodesTable,
+			Columns: []string{membership.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

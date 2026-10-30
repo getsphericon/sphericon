@@ -127,6 +127,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.LastUsedAt != nil {
 					b.SetLastUsedAt(*src.LastUsedAt)
 				}
+				if src.MembershipID != nil {
+					b.SetMembershipID(remap("Membership", *src.MembershipID))
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -1317,7 +1320,14 @@ func ScopedEntities() []ScopedEntity {
 				}
 				return created.WorkspaceID, nil
 			},
-			Refs: []ScopedRef{},
+			Refs: []ScopedRef{
+				{
+					Name: "connections", Target: "ApiToken",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Membership().UpdateOneID(id).AddConnectionIDs(target).Exec(ctx)
+					},
+				},
+			},
 		},
 		{
 			Name:    "Order",

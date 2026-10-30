@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -92,6 +93,7 @@ namespace SiteCapturedMessages {
   @listsResource(SiteCapturedMessageResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(
     ...ResourceCollectionParameters<SiteCapturedMessageResource>,
     ...PageQuery,
@@ -105,6 +107,7 @@ namespace SiteCapturedMessages {
   @readsResource(SiteCapturedMessageResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op get(...ResourceParameters<SiteCapturedMessageResource>):
     | SiteCapturedMessageResource
     | BadRequestProblem
@@ -114,6 +117,7 @@ namespace SiteCapturedMessages {
   @deletesResource(SiteCapturedMessageResource)
   @delete
   @autoRoute
+  @extension("x-required-permissions", #[])
   op delete(...ResourceParameters<SiteCapturedMessageResource>):
     | NoContentResponse
     | BadRequestProblem
@@ -123,6 +127,7 @@ namespace SiteCapturedMessages {
   @collectionAction(SiteCapturedMessageResource, "all")
   @delete
   @autoRoute
+  @extension("x-required-permissions", #[])
   op deleteAll(...ResourceCollectionParameters<SiteCapturedMessageResource>):
     | NoContentResponse
     | NotFoundProblem;

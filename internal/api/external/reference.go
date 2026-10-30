@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -14,10 +13,6 @@ import (
 
 // CustomFieldsList returns the whole (small, unpaginated) Custom field catalogue.
 func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFieldsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeCustomFieldsRead) {
-		res := problem(http.StatusUnauthorized, "insufficient scope")
-		return &res, nil
-	}
 	items, err := contacts.CustomFields(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
@@ -38,10 +33,6 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFiel
 // SendingDomainRatesList returns the (numerator, denominator, rate) triples of ADR 0011
 // for every Sending domain, over the trailing window.
 func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalapi.SendingDomainRatesListParams) (externalapi.SendingDomainRatesListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSendingDomainsRead) {
-		res := externalapi.SendingDomainRatesListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	days := params.WindowDays.Value
 
 	rates, err := h.reputation.Rates(ctx, auth.TokenScoped(ctx), reputation.Trailing(time.Duration(days)*24*time.Hour))

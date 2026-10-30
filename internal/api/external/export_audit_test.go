@@ -83,7 +83,7 @@ func TestExportAuditNeedsTheExportReadScope(t *testing.T) {
 		c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, scopes...))
 		res, err := c.ExportAudit(context.Background(), externalapi.ExportAuditParams{})
 		require.NoError(t, err)
-		assert.IsType(t, &externalapi.ExportAuditUnauthorized{}, res, "scopes %v are refused", scopes)
+		assert.IsType(t, &externalapi.ExportAuditForbidden{}, res, "scopes %v are refused", scopes)
 	}
 }
 

@@ -5630,6 +5630,164 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 
 type PasskeyName string
 
+// A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"), written
+// `resource:verb` like the API token scopes. A Role is a set of them; the table from Role to
+// Permissions lives in the server, and the client reads a Membership's Permissions from its Workspace
+// instead of computing them.
+// Ref: #/components/schemas/Permission
+type Permission string
+
+const (
+	PermissionMembersManage        Permission = "members:manage"
+	PermissionAuditRead            Permission = "audit:read"
+	PermissionAuditConfigure       Permission = "audit:configure"
+	PermissionTokensManage         Permission = "tokens:manage"
+	PermissionIntegrationsManage   Permission = "integrations:manage"
+	PermissionWebhooksManage       Permission = "webhooks:manage"
+	PermissionSendingDomainsManage Permission = "sending_domains:manage"
+	PermissionContactsErase        Permission = "contacts:erase"
+	PermissionContactsExport       Permission = "contacts:export"
+	PermissionSuppressionsManage   Permission = "suppressions:manage"
+	PermissionSecondFactorManage   Permission = "second_factor:manage"
+	PermissionWorkspaceUpdate      Permission = "workspace:update"
+	PermissionWorkspaceTimezone    Permission = "workspace:timezone"
+	PermissionRevenueConfigure     Permission = "revenue:configure"
+	PermissionBrandKitManage       Permission = "brand_kit:manage"
+	PermissionJoinDomainsManage    Permission = "join_domains:manage"
+	PermissionAccountLinkOpen      Permission = "account_link:open"
+	PermissionWorkspaceDelete      Permission = "workspace:delete"
+)
+
+// AllValues returns all Permission values.
+func (Permission) AllValues() []Permission {
+	return []Permission{
+		PermissionMembersManage,
+		PermissionAuditRead,
+		PermissionAuditConfigure,
+		PermissionTokensManage,
+		PermissionIntegrationsManage,
+		PermissionWebhooksManage,
+		PermissionSendingDomainsManage,
+		PermissionContactsErase,
+		PermissionContactsExport,
+		PermissionSuppressionsManage,
+		PermissionSecondFactorManage,
+		PermissionWorkspaceUpdate,
+		PermissionWorkspaceTimezone,
+		PermissionRevenueConfigure,
+		PermissionBrandKitManage,
+		PermissionJoinDomainsManage,
+		PermissionAccountLinkOpen,
+		PermissionWorkspaceDelete,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s Permission) MarshalText() ([]byte, error) {
+	switch s {
+	case PermissionMembersManage:
+		return []byte(s), nil
+	case PermissionAuditRead:
+		return []byte(s), nil
+	case PermissionAuditConfigure:
+		return []byte(s), nil
+	case PermissionTokensManage:
+		return []byte(s), nil
+	case PermissionIntegrationsManage:
+		return []byte(s), nil
+	case PermissionWebhooksManage:
+		return []byte(s), nil
+	case PermissionSendingDomainsManage:
+		return []byte(s), nil
+	case PermissionContactsErase:
+		return []byte(s), nil
+	case PermissionContactsExport:
+		return []byte(s), nil
+	case PermissionSuppressionsManage:
+		return []byte(s), nil
+	case PermissionSecondFactorManage:
+		return []byte(s), nil
+	case PermissionWorkspaceUpdate:
+		return []byte(s), nil
+	case PermissionWorkspaceTimezone:
+		return []byte(s), nil
+	case PermissionRevenueConfigure:
+		return []byte(s), nil
+	case PermissionBrandKitManage:
+		return []byte(s), nil
+	case PermissionJoinDomainsManage:
+		return []byte(s), nil
+	case PermissionAccountLinkOpen:
+		return []byte(s), nil
+	case PermissionWorkspaceDelete:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *Permission) UnmarshalText(data []byte) error {
+	switch Permission(data) {
+	case PermissionMembersManage:
+		*s = PermissionMembersManage
+		return nil
+	case PermissionAuditRead:
+		*s = PermissionAuditRead
+		return nil
+	case PermissionAuditConfigure:
+		*s = PermissionAuditConfigure
+		return nil
+	case PermissionTokensManage:
+		*s = PermissionTokensManage
+		return nil
+	case PermissionIntegrationsManage:
+		*s = PermissionIntegrationsManage
+		return nil
+	case PermissionWebhooksManage:
+		*s = PermissionWebhooksManage
+		return nil
+	case PermissionSendingDomainsManage:
+		*s = PermissionSendingDomainsManage
+		return nil
+	case PermissionContactsErase:
+		*s = PermissionContactsErase
+		return nil
+	case PermissionContactsExport:
+		*s = PermissionContactsExport
+		return nil
+	case PermissionSuppressionsManage:
+		*s = PermissionSuppressionsManage
+		return nil
+	case PermissionSecondFactorManage:
+		*s = PermissionSecondFactorManage
+		return nil
+	case PermissionWorkspaceUpdate:
+		*s = PermissionWorkspaceUpdate
+		return nil
+	case PermissionWorkspaceTimezone:
+		*s = PermissionWorkspaceTimezone
+		return nil
+	case PermissionRevenueConfigure:
+		*s = PermissionRevenueConfigure
+		return nil
+	case PermissionBrandKitManage:
+		*s = PermissionBrandKitManage
+		return nil
+	case PermissionJoinDomainsManage:
+		*s = PermissionJoinDomainsManage
+		return nil
+	case PermissionAccountLinkOpen:
+		*s = PermissionAccountLinkOpen
+		return nil
+	case PermissionWorkspaceDelete:
+		*s = PermissionWorkspaceDelete
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
 type ProblemCode string
@@ -5638,6 +5796,7 @@ const (
 	ProblemCodeSecondFactorRequired      ProblemCode = "second_factor_required"
 	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
 	ProblemCodeSignupClosed              ProblemCode = "signup_closed"
+	ProblemCodePermissionRequired        ProblemCode = "permission_required"
 )
 
 // AllValues returns all ProblemCode values.
@@ -5646,6 +5805,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 		ProblemCodeSecondFactorRequired,
 		ProblemCodeEmailVerificationRequired,
 		ProblemCodeSignupClosed,
+		ProblemCodePermissionRequired,
 	}
 }
 
@@ -5657,6 +5817,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeEmailVerificationRequired:
 		return []byte(s), nil
 	case ProblemCodeSignupClosed:
+		return []byte(s), nil
+	case ProblemCodePermissionRequired:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -5674,6 +5836,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodeSignupClosed:
 		*s = ProblemCodeSignupClosed
+		return nil
+	case ProblemCodePermissionRequired:
+		*s = ProblemCodePermissionRequired
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -5896,6 +6061,8 @@ func (*ProblemDetails) siteAuthSigninNotMeRes()                {}
 func (*ProblemDetails) siteAuthSigninStartRes()                {}
 func (*ProblemDetails) siteBrandKitGetRes()                    {}
 func (*ProblemDetails) siteCapturedMessagesDeleteAllRes()      {}
+func (*ProblemDetails) siteConnectionsDeleteRes()              {}
+func (*ProblemDetails) siteConnectionsListRes()                {}
 func (*ProblemDetails) siteEventsActionsRes()                  {}
 func (*ProblemDetails) siteEventsListRes()                     {}
 func (*ProblemDetails) siteIdentitiesLinkRes()                 {}
@@ -10567,6 +10734,106 @@ func (s *SiteConfirmEmailChangeInput) SetToken(val string) {
 	s.Token = val
 }
 
+// A Connection: the access a User gave an application (an MCP client) to the Workspace by consenting
+// to it (ADR 0061). It belongs to that User's Membership, can do no more than the User's Role allows
+// and ends with the Membership. Connections are not API tokens and are not listed with them.
+// Ref: #/components/schemas/SiteConnectionResource
+type SiteConnectionResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The application's name, as it registered itself (untrusted: show as text).
+	Name string `json:"name"`
+	// Granted scopes.
+	Scopes []ApiTokenScope `json:"scopes"`
+	// The User the Connection belongs to.
+	UserId EntityId `json:"userId"`
+	// That User's display name.
+	UserName string `json:"userName"`
+	// That User's email.
+	UserEmail EmailAddress `json:"userEmail"`
+	// When the User approved the application.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteConnectionResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteConnectionResource) GetName() string {
+	return s.Name
+}
+
+// GetScopes returns the value of Scopes.
+func (s *SiteConnectionResource) GetScopes() []ApiTokenScope {
+	return s.Scopes
+}
+
+// GetUserId returns the value of UserId.
+func (s *SiteConnectionResource) GetUserId() EntityId {
+	return s.UserId
+}
+
+// GetUserName returns the value of UserName.
+func (s *SiteConnectionResource) GetUserName() string {
+	return s.UserName
+}
+
+// GetUserEmail returns the value of UserEmail.
+func (s *SiteConnectionResource) GetUserEmail() EmailAddress {
+	return s.UserEmail
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteConnectionResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteConnectionResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteConnectionResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetScopes sets the value of Scopes.
+func (s *SiteConnectionResource) SetScopes(val []ApiTokenScope) {
+	s.Scopes = val
+}
+
+// SetUserId sets the value of UserId.
+func (s *SiteConnectionResource) SetUserId(val EntityId) {
+	s.UserId = val
+}
+
+// SetUserName sets the value of UserName.
+func (s *SiteConnectionResource) SetUserName(val string) {
+	s.UserName = val
+}
+
+// SetUserEmail sets the value of UserEmail.
+func (s *SiteConnectionResource) SetUserEmail(val EmailAddress) {
+	s.UserEmail = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteConnectionResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SiteConnectionsDeleteNoContent is response for SiteConnectionsDelete operation.
+type SiteConnectionsDeleteNoContent struct{}
+
+func (*SiteConnectionsDeleteNoContent) siteConnectionsDeleteRes() {}
+
+type SiteConnectionsListOKApplicationJSON []SiteConnectionResource
+
+func (*SiteConnectionsListOKApplicationJSON) siteConnectionsListRes() {}
+
 // What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing
 // held is all zeros and `contactHeld: false`.
 // Ref: #/components/schemas/SiteContactHoldings
@@ -10849,6 +11116,10 @@ func (*SiteContactsEraseNotFound) siteContactsEraseRes() {}
 type SiteContactsExportBadRequest ProblemDetails
 
 func (*SiteContactsExportBadRequest) siteContactsExportRes() {}
+
+type SiteContactsExportForbidden ProblemDetails
+
+func (*SiteContactsExportForbidden) siteContactsExportRes() {}
 
 type SiteContactsExportNotFound ProblemDetails
 
@@ -15247,6 +15518,10 @@ type SiteOAuthAuthorizationRequest struct {
 	// Requested setup scopes (Sending domains, Integrations): granted only when the user opts in
 	// explicitly, apart from the send class.
 	SetupScopes []SetupScope `json:"setupScopes"`
+	// The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the
+	// scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what
+	// the User may grant, and the server refuses the rest.
+	RequiredPermissions SiteOAuthAuthorizationRequestRequiredPermissions `json:"requiredPermissions"`
 }
 
 // GetClientName returns the value of ClientName.
@@ -15284,6 +15559,11 @@ func (s *SiteOAuthAuthorizationRequest) GetSetupScopes() []SetupScope {
 	return s.SetupScopes
 }
 
+// GetRequiredPermissions returns the value of RequiredPermissions.
+func (s *SiteOAuthAuthorizationRequest) GetRequiredPermissions() SiteOAuthAuthorizationRequestRequiredPermissions {
+	return s.RequiredPermissions
+}
+
 // SetClientName sets the value of ClientName.
 func (s *SiteOAuthAuthorizationRequest) SetClientName(val string) {
 	s.ClientName = val
@@ -15319,7 +15599,26 @@ func (s *SiteOAuthAuthorizationRequest) SetSetupScopes(val []SetupScope) {
 	s.SetupScopes = val
 }
 
+// SetRequiredPermissions sets the value of RequiredPermissions.
+func (s *SiteOAuthAuthorizationRequest) SetRequiredPermissions(val SiteOAuthAuthorizationRequestRequiredPermissions) {
+	s.RequiredPermissions = val
+}
+
 func (*SiteOAuthAuthorizationRequest) siteOAuthDescribeRes() {}
+
+// The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the
+// scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what
+// the User may grant, and the server refuses the rest.
+type SiteOAuthAuthorizationRequestRequiredPermissions map[string]Permission
+
+func (s *SiteOAuthAuthorizationRequestRequiredPermissions) init() SiteOAuthAuthorizationRequestRequiredPermissions {
+	m := *s
+	if m == nil {
+		m = map[string]Permission{}
+		*s = m
+	}
+	return m
+}
 
 type SiteOAuthDecideBadRequest ProblemDetails
 
@@ -15344,7 +15643,7 @@ type SiteOAuthDecisionInput struct {
 	CodeChallenge string `json:"codeChallenge"`
 	// Space-delimited scopes from the authorization request.
 	Scope OptString `json:"scope"`
-	// Id of the Workspace the token will belong to.
+	// Id of the Workspace the Connection will belong to (the signed-in User must be a member).
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	// True to approve, false to deny.
 	Approve bool `json:"approve"`
@@ -18205,23 +18504,6 @@ type SiteSecondFactorRegenerateRecoveryCodesForbidden ProblemDetails
 func (*SiteSecondFactorRegenerateRecoveryCodesForbidden) siteSecondFactorRegenerateRecoveryCodesRes() {
 }
 
-// Switch the Two-factor requirement on or off.
-// Ref: #/components/schemas/SiteSecondFactorRequirementInput
-type SiteSecondFactorRequirementInput struct {
-	// Whether every User with a Membership must have a Second factor.
-	Required bool `json:"required"`
-}
-
-// GetRequired returns the value of Required.
-func (s *SiteSecondFactorRequirementInput) GetRequired() bool {
-	return s.Required
-}
-
-// SetRequired sets the value of Required.
-func (s *SiteSecondFactorRequirementInput) SetRequired(val bool) {
-	s.Required = val
-}
-
 type SiteSecondFactorStartEnrollmentConflict ProblemDetails
 
 func (*SiteSecondFactorStartEnrollmentConflict) siteSecondFactorStartEnrollmentRes() {}
@@ -20400,6 +20682,10 @@ func (s *SiteSuppressionResource) SetUpdatedAt(val Timestamp) {
 
 func (*SiteSuppressionResource) siteSuppressionsCreateRes() {}
 
+type SiteSuppressionsCreateForbidden ProblemDetails
+
+func (*SiteSuppressionsCreateForbidden) siteSuppressionsCreateRes() {}
+
 type SiteSuppressionsCreateNotFound ProblemDetails
 
 func (*SiteSuppressionsCreateNotFound) siteSuppressionsCreateRes() {}
@@ -20411,6 +20697,10 @@ func (*SiteSuppressionsCreateUnprocessableEntity) siteSuppressionsCreateRes() {}
 type SiteSuppressionsDeleteBadRequest ProblemDetails
 
 func (*SiteSuppressionsDeleteBadRequest) siteSuppressionsDeleteRes() {}
+
+type SiteSuppressionsDeleteForbidden ProblemDetails
+
+func (*SiteSuppressionsDeleteForbidden) siteSuppressionsDeleteRes() {}
 
 // SiteSuppressionsDeleteNoContent is response for SiteSuppressionsDelete operation.
 type SiteSuppressionsDeleteNoContent struct{}
@@ -23033,12 +23323,15 @@ type SiteWorkspaceResource struct {
 	// Empty until the workspace sets one.
 	PostalAddress string `json:"postalAddress"`
 	// The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days in. UTC
-	// until an Owner sets it.
+	// until an Owner or Admin sets it.
 	Timezone TimeZoneName `json:"timezone"`
 	// The authenticated User's role in this Workspace (from their Membership). It rides the Workspace list
 	// so role-gated UI is known even while the Workspace's own endpoints are withheld under a Two-factor
 	// requirement.
 	Role SiteMembershipRole `json:"role"`
+	// The Permissions the authenticated User's Role holds in this Workspace (ADR 0061): the client asks
+	// these whether to offer an action, it never computes them from the Role.
+	Permissions []Permission `json:"permissions"`
 	// When outbound sending was suspended (ADR 0007); absent while the workspace can send. A suspension
 	// freezes every send surface but not login, reads or tracking.
 	SuspendedAt OptNilTimestamp `json:"suspendedAt"`
@@ -23099,6 +23392,11 @@ func (s *SiteWorkspaceResource) GetTimezone() TimeZoneName {
 // GetRole returns the value of Role.
 func (s *SiteWorkspaceResource) GetRole() SiteMembershipRole {
 	return s.Role
+}
+
+// GetPermissions returns the value of Permissions.
+func (s *SiteWorkspaceResource) GetPermissions() []Permission {
+	return s.Permissions
 }
 
 // GetSuspendedAt returns the value of SuspendedAt.
@@ -23181,6 +23479,11 @@ func (s *SiteWorkspaceResource) SetRole(val SiteMembershipRole) {
 	s.Role = val
 }
 
+// SetPermissions sets the value of Permissions.
+func (s *SiteWorkspaceResource) SetPermissions(val []Permission) {
+	s.Permissions = val
+}
+
 // SetSuspendedAt sets the value of SuspendedAt.
 func (s *SiteWorkspaceResource) SetSuspendedAt(val OptNilTimestamp) {
 	s.SuspendedAt = val
@@ -23231,11 +23534,12 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                     {}
-func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                    {}
-func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
-func (*SiteWorkspaceResource) siteWorkspacesSetTimezoneRes()                {}
-func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
+func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                      {}
+func (*SiteWorkspaceResource) siteWorkspacesLiftSecondFactorRequirementRes() {}
+func (*SiteWorkspaceResource) siteWorkspacesRequireSecondFactorRes()         {}
+func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                     {}
+func (*SiteWorkspaceResource) siteWorkspacesSetTimezoneRes()                 {}
+func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                      {}
 
 // Set the Workspace time zone.
 // Ref: #/components/schemas/SiteWorkspaceTimezoneInput
@@ -23295,6 +23599,24 @@ type SiteWorkspacesLeaveUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesLeaveUnprocessableEntity) siteWorkspacesLeaveRes() {}
 
+type SiteWorkspacesLiftSecondFactorRequirementForbidden ProblemDetails
+
+func (*SiteWorkspacesLiftSecondFactorRequirementForbidden) siteWorkspacesLiftSecondFactorRequirementRes() {
+}
+
+type SiteWorkspacesLiftSecondFactorRequirementNotFound ProblemDetails
+
+func (*SiteWorkspacesLiftSecondFactorRequirementNotFound) siteWorkspacesLiftSecondFactorRequirementRes() {
+}
+
+type SiteWorkspacesRequireSecondFactorForbidden ProblemDetails
+
+func (*SiteWorkspacesRequireSecondFactorForbidden) siteWorkspacesRequireSecondFactorRes() {}
+
+type SiteWorkspacesRequireSecondFactorNotFound ProblemDetails
+
+func (*SiteWorkspacesRequireSecondFactorNotFound) siteWorkspacesRequireSecondFactorRes() {}
+
 type SiteWorkspacesRestoreConflict ProblemDetails
 
 func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}
@@ -23302,16 +23624,6 @@ func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}
 type SiteWorkspacesRestoreNotFound ProblemDetails
 
 func (*SiteWorkspacesRestoreNotFound) siteWorkspacesRestoreRes() {}
-
-type SiteWorkspacesSetSecondFactorRequirementForbidden ProblemDetails
-
-func (*SiteWorkspacesSetSecondFactorRequirementForbidden) siteWorkspacesSetSecondFactorRequirementRes() {
-}
-
-type SiteWorkspacesSetSecondFactorRequirementNotFound ProblemDetails
-
-func (*SiteWorkspacesSetSecondFactorRequirementNotFound) siteWorkspacesSetSecondFactorRequirementRes() {
-}
 
 type SiteWorkspacesSetTimezoneForbidden ProblemDetails
 

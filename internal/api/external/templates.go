@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -15,11 +14,6 @@ import (
 )
 
 func (h *Handlers) TemplatesList(ctx context.Context, params externalapi.TemplatesListParams) (externalapi.TemplatesListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesRead) {
-		res := externalapi.TemplatesListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	page, err := h.templates.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
@@ -36,11 +30,6 @@ func (h *Handlers) TemplatesList(ctx context.Context, params externalapi.Templat
 }
 
 func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateTemplateInput) (externalapi.TemplatesCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesWrite) {
-		res := externalapi.TemplatesCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	scoped := auth.TokenScoped(ctx)
 	tpl, err := h.templates.Create(ctx, scoped, templates.CreateInput{
 		Name:    req.Name,
@@ -56,11 +45,6 @@ func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateT
 }
 
 func (h *Handlers) TemplatesGet(ctx context.Context, params externalapi.TemplatesGetParams) (externalapi.TemplatesGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesRead) {
-		res := externalapi.TemplatesGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
@@ -73,11 +57,6 @@ func (h *Handlers) TemplatesGet(ctx context.Context, params externalapi.Template
 }
 
 func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateTemplateInput, params externalapi.TemplatesUpdateParams) (externalapi.TemplatesUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesWrite) {
-		res := externalapi.TemplatesUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
@@ -95,11 +74,6 @@ func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateT
 }
 
 func (h *Handlers) TemplatesDelete(ctx context.Context, params externalapi.TemplatesDeleteParams) (externalapi.TemplatesDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesWrite) {
-		res := externalapi.TemplatesDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)

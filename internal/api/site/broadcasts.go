@@ -48,10 +48,7 @@ func broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (si
 }
 
 func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBroadcastsListParams) (siteapi.SiteBroadcastsListRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	page, err := h.broadcasts.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
@@ -77,11 +74,8 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 	}, nil
 }
 
-func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCreateBroadcastInput, params siteapi.SiteBroadcastsCreateParams) (siteapi.SiteBroadcastsCreateRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCreateBroadcastInput, _ siteapi.SiteBroadcastsCreateParams) (siteapi.SiteBroadcastsCreateRes, error) {
+	ws := workspaceScope(ctx)
 
 	segmentID := convert.Int64Ptr(req.SegmentId)
 	integrationID := convert.Int64Ptr(req.IntegrationId)
@@ -110,10 +104,7 @@ func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCr
 }
 
 func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBroadcastsGetParams) (siteapi.SiteBroadcastsGetRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, ws, id)
@@ -128,10 +119,7 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 }
 
 func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUpdateBroadcastInput, params siteapi.SiteBroadcastsUpdateParams) (siteapi.SiteBroadcastsUpdateRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
@@ -168,13 +156,10 @@ func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUp
 }
 
 func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.SiteBroadcastsDeleteParams) (siteapi.SiteBroadcastsDeleteRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.broadcasts.DeleteDraft(ctx, ws, id)
+	err := h.broadcasts.DeleteDraft(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -184,13 +169,10 @@ func (h *Handlers) SiteBroadcastsDelete(ctx context.Context, params siteapi.Site
 // SiteBroadcastsArchive archives a sent or failed broadcast (ADR 0049): it leaves the list but
 // keeps its report, tracking and figures.
 func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.SiteBroadcastsArchiveParams) (siteapi.SiteBroadcastsArchiveRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.broadcasts.Archive(ctx, ws, id)
+	err := h.broadcasts.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -207,13 +189,10 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 
 // SiteBroadcastsUnarchive restores an archived broadcast to the list.
 func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.SiteBroadcastsUnarchiveParams) (siteapi.SiteBroadcastsUnarchiveRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.broadcasts.Unarchive(ctx, ws, id)
+	err := h.broadcasts.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -231,10 +210,7 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 // SiteBroadcastsSend sends a draft or scheduled broadcast immediately. The state
 // machine lives in the broadcasts module; this is the HTTP adapter.
 func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBroadcastsSendParams) (siteapi.SiteBroadcastsSendRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
@@ -251,10 +227,7 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 
 // SiteBroadcastsSchedule schedules a draft broadcast to send at a future time.
 func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.SiteScheduleBroadcastInput, params siteapi.SiteBroadcastsScheduleParams) (siteapi.SiteBroadcastsScheduleRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
@@ -273,10 +246,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Site
 // it to a single address — no recipient rows, no tracking (a token would point
 // at a nonexistent recipient). Used to preview the rendered email.
 func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.SiteTestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (siteapi.SiteBroadcastsTestSendRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	b, err := h.broadcasts.Get(ctx, ws, id)

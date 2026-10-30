@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -61,6 +62,7 @@ namespace SiteTokens {
   @listsResource(SiteApiTokenResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(...ResourceCollectionParameters<SiteApiTokenResource>):
     | {
         @statusCode statusCode: 200;
@@ -72,6 +74,7 @@ namespace SiteTokens {
   @createsResource(SiteApiTokenResource)
   @post
   @autoRoute
+  @extension("x-required-permissions", #[Permission.tokensManage])
   op create(
     ...ResourceCollectionParameters<SiteApiTokenResource>,
     @body body: SiteCreateTokenInput,
@@ -88,6 +91,7 @@ namespace SiteTokens {
   @updatesResource(SiteApiTokenResource)
   @put
   @autoRoute
+  @extension("x-required-permissions", #[Permission.tokensManage])
   op update(
     ...ResourceParameters<SiteApiTokenResource>,
     @body body: SiteUpdateTokenInput,
@@ -101,6 +105,7 @@ namespace SiteTokens {
   @deletesResource(SiteApiTokenResource)
   @delete
   @autoRoute
+  @extension("x-required-permissions", #[Permission.tokensManage])
   op delete(...ResourceParameters<SiteApiTokenResource>):
     | NoContentResponse
     | ForbiddenProblem

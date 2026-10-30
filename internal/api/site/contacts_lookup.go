@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/erasure"
@@ -13,22 +12,16 @@ import (
 // Workspace holds for an email address, as counts. It sits beside Erasure, so owner
 // or admin only; an address nothing holds answers with zeros.
 func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteContactsLookupParams) (siteapi.SiteContactsLookupRes, error) {
-	scoped, refusal, err := h.privacyScope(ctx, params.WorkspaceId, params.Email)
+	refusal, err := privacyAddress(params.Email)
 	if err != nil {
 		return nil, err
 	}
 	if refusal != nil {
-		switch refusal.Status.Value {
-		case http.StatusForbidden:
-			v := siteapi.SiteContactsLookupForbidden(*refusal)
-			return &v, nil
-		default:
-			v := siteapi.SiteContactsLookupBadRequest(*refusal)
-			return &v, nil
-		}
+		v := siteapi.SiteContactsLookupBadRequest(*refusal)
+		return &v, nil
 	}
 
-	held, err := erasure.Lookup(ctx, scoped, params.Email)
+	held, err := erasure.Lookup(ctx, workspaceScope(ctx), params.Email)
 	if err != nil {
 		return nil, err
 	}

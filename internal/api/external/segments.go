@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -17,11 +16,6 @@ import (
 )
 
 func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.SegmentsListParams) (externalapi.SegmentsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSegmentsRead) {
-		res := externalapi.SegmentsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	page, err := h.segments.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
@@ -38,11 +32,6 @@ func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.Segments
 }
 
 func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSegmentInput) (externalapi.SegmentsCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSegmentsWrite) {
-		res := externalapi.SegmentsCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	ws := auth.TokenScoped(ctx)
 	def, err := condition.Encode(&req.Condition)
 	if err != nil {
@@ -60,11 +49,6 @@ func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSe
 }
 
 func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsGetParams) (externalapi.SegmentsGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSegmentsRead) {
-		res := externalapi.SegmentsGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	s, err := h.segments.Get(ctx, ws, id)
@@ -76,11 +60,6 @@ func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsG
 }
 
 func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSegmentInput, params externalapi.SegmentsUpdateParams) (externalapi.SegmentsUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSegmentsWrite) {
-		res := externalapi.SegmentsUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	cond, err := condition.EncodeOptional(req.Condition)
@@ -98,11 +77,6 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 
 // SegmentsArchive archives a segment (ADR 0049); a draft or scheduled Broadcast refuses it with 409.
 func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.SegmentsArchiveParams) (externalapi.SegmentsArchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSegmentsWrite) {
-		res := externalapi.SegmentsArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.segments.Archive(ctx, ws, id)
@@ -119,11 +93,6 @@ func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.Segme
 
 // SegmentsUnarchive restores an archived segment to the list.
 func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.SegmentsUnarchiveParams) (externalapi.SegmentsUnarchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSegmentsWrite) {
-		res := externalapi.SegmentsUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.segments.Unarchive(ctx, ws, id)
@@ -139,11 +108,6 @@ func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.Seg
 }
 
 func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.PreviewSegmentInput) (externalapi.SegmentsPreviewRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeSegmentsRead) {
-		res := externalapi.SegmentsPreviewUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	ws := auth.TokenScoped(ctx)
 	def := ""
 	if group, ok := req.Condition.Get(); ok {

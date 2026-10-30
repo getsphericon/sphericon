@@ -7,8 +7,11 @@ import {
   handleSiteBrandKitSave,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteBrandKitResource, SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
-import { zSiteInvitableRole } from '../../generated/site/zod.gen.ts'
+import type {
+  Permission,
+  SiteBrandKitResource,
+  SiteWorkspaceResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
 import { hex } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -17,7 +20,7 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { BrandKitPage } from './page.tsx'
 
-const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource => ({
+const workspace = (permissions: Permission[]): SiteWorkspaceResource => ({
   id: 'AcmeWs01',
   name: 'Acme',
 
@@ -25,15 +28,16 @@ const workspace = (role: SiteWorkspaceResource['role']): SiteWorkspaceResource =
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions,
   holds: [],
   mcpUrl: 'https://example.com/mcp',
   trackerUrl: 'https://t.sphericon.test',
-  role,
+  role: 'member',
   createdAt: '2026-01-01T00:00:00Z',
 })
 
-const renderPage = async (role: SiteWorkspaceResource['role']) => {
-  worker.use(handleSiteWorkspacesList({ body: [workspace(role)] }))
+const renderPage = async (permissions: Permission[]) => {
+  worker.use(handleSiteWorkspacesList({ body: [workspace(permissions)] }))
   return renderWithRouter(<BrandKitPage />, routeMount(brandKitRoute, { workspaceId: 'AcmeWs01' }))
 }
 
@@ -60,7 +64,7 @@ const UNSAVED: SiteBrandKitResource = {
   updatedAt: null,
 }
 
-test('an owner saves the Brand kit and the first save announces the starter templates', async () => {
+test('brand_kit:manage saves the Brand kit and the first save announces the starter templates', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteBrandKitGet({ body: UNSAVED }),
@@ -69,7 +73,7 @@ test('an owner saves the Brand kit and the first save announces the starter temp
       return HttpResponse.json(KIT)
     }),
   )
-  const { screen } = await renderPage('owner')
+  const { screen } = await renderPage(['brand_kit:manage'])
 
   await expect.element(screen.getByText(/also creates four starter templates/)).toBeInTheDocument()
   await expect
@@ -104,7 +108,7 @@ test('a saved kit is recreated into starter templates only after a confirmation'
       return HttpResponse.json([], { status: 201 })
     }),
   )
-  const { screen } = await renderPage('owner')
+  const { screen } = await renderPage(['brand_kit:manage'])
 
   await screen.getByRole('button', { name: 'Recreate the starter templates' }).click()
   await expect.element(screen.getByText(/Templates and messages that already exist/)).toBeVisible()
@@ -116,20 +120,17 @@ test('a saved kit is recreated into starter templates only after a confirmation'
   await expect.poll(() => recreated).toBe(1)
 })
 
-test.each(zSiteInvitableRole.options)(
-  '%s sees the Brand kit but cannot change it',
-  async (role) => {
-    worker.use(handleSiteBrandKitGet({ body: KIT }))
-    const { screen } = await renderPage(role)
+test('without brand_kit:manage the Brand kit shows but does not change', async () => {
+  worker.use(handleSiteBrandKitGet({ body: KIT }))
+  const { screen } = await renderPage([])
 
-    await expect.element(screen.getByLabelText('Footer')).toHaveValue('Acme Inc')
-    await expect.element(screen.getByLabelText('Footer')).toBeDisabled()
-    await expect
-      .element(screen.getByText('Only owners can change the Brand kit.'))
-      .toBeInTheDocument()
-    await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
-  },
-)
+  await expect.element(screen.getByLabelText('Footer')).toHaveValue('Acme Inc')
+  await expect.element(screen.getByLabelText('Footer')).toBeDisabled()
+  await expect
+    .element(screen.getByText('Only owners and admins can change the Brand kit.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+})
 
 test('a refused value shows the reason the server gave', async () => {
   worker.use(
@@ -138,7 +139,7 @@ test('a refused value shows the reason the server gave', async () => {
       problem(422, { detail: 'accentColor must be a color like #1a2b3c' }),
     ),
   )
-  const { screen } = await renderPage('owner')
+  const { screen } = await renderPage(['brand_kit:manage'])
 
   await expect.element(screen.getByLabelText('Footer')).toHaveValue('Acme Inc')
   await screen.getByRole('button', { name: 'Save' }).click()

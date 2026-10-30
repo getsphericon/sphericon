@@ -13,14 +13,9 @@ import {
   handleSiteContactsExport,
   handleSiteContactsGet,
   handleSiteEventsList,
-  handleSiteMembershipsList,
-  handleSiteUserGetMe,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type {
-  SiteContactResource,
-  SiteMembershipResource,
-  SiteMembershipRole,
-} from '../../generated/site/types.gen.ts'
+import type { Permission, SiteContactResource } from '../../generated/site/types.gen.ts'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { problem } from '../../test/problem.ts'
@@ -52,9 +47,9 @@ const ADA: SiteContactResource = {
   updatedAt: NOW,
 }
 
-// The page reads the current member's role on every render; tests that care override it.
+// The page reads the signed-in User's Permissions on every render; tests that care override them.
 beforeEach(() => {
-  worker.use(...currentRoleRoutes('member'))
+  worker.use(holding([]))
 })
 
 const NO_EVENTS = handleSiteEventsList(() => HttpResponse.json({ items: [], totalItems: 0 }))
@@ -209,31 +204,30 @@ test('moving to another contact resets the events page to the first', async () =
   await expect.poll(() => eventRequests.at(-1)).toEqual({ contactId: '10', page: '1' })
 })
 
-function currentRoleRoutes(role: SiteMembershipRole) {
-  const me = {
-    id: '5',
-    name: 'Me',
-    email: 'me@example.com',
-    emailVerified: true,
-    signupSurveyDue: false,
-    createdAt: NOW,
-  }
-  const membership = (userId: string, memberRole: SiteMembershipRole): SiteMembershipResource => ({
-    id: `m${userId}`,
-    userId,
-    email: `u${userId}@example.com`,
-    name: `User ${userId}`,
-    role: memberRole,
-    createdAt: NOW,
+// The Workspace as the signed-in User sees it, holding the given Permissions.
+function holding(permissions: Permission[]) {
+  return handleSiteWorkspacesList({
+    body: [
+      {
+        id: 'TestWs01',
+        name: 'Acme',
+        collectKey: 'omck_test_key',
+        postalAddress: '',
+        timezone: 'UTC',
+        accountLinkAvailable: false,
+        permissions,
+        mcpUrl: 'https://sphericon.test',
+        trackerUrl: 'https://t.sphericon.test',
+        holds: [],
+        role: 'member',
+        createdAt: NOW,
+      },
+    ],
   })
-  return [
-    handleSiteUserGetMe({ body: me }),
-    handleSiteMembershipsList({ body: [membership('1', 'owner'), membership('5', role)] }),
-  ]
 }
 
-test('a member can export a contact but is not offered Erase', async () => {
-  worker.use(handleSiteContactsGet({ body: ADA }), NO_EVENTS, ...currentRoleRoutes('member'))
+test('without contacts:erase a contact can be exported but Erase is not offered', async () => {
+  worker.use(handleSiteContactsGet({ body: ADA }), NO_EVENTS, holding([]))
 
   const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
 
@@ -241,12 +235,12 @@ test('a member can export a contact but is not offered Erase', async () => {
   await expect.element(screen.getByRole('button', { name: 'Erase' })).not.toBeInTheDocument()
 })
 
-test('an admin erases a contact only after confirming the irreversible action', async () => {
+test('contacts:erase erases a contact only after confirming the irreversible action', async () => {
   const erased: string[] = []
   worker.use(
     handleSiteContactsGet({ body: ADA }),
     NO_EVENTS,
-    ...currentRoleRoutes('admin'),
+    holding(['contacts:erase']),
     handleSiteContactsDelete(({ params }) => {
       erased.push(params.id)
       return new HttpResponse(null, { status: 204 })

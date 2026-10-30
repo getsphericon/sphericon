@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
 
@@ -181,6 +182,9 @@ interface Rules
       RuleResource,
       CreateRuleInput,
       UpdateRuleInput,
+      ApiTokenScope.automationsRead,
+      ApiTokenScope.automationsWrite,
+      ApiTokenScope.automationsWrite,
       never,
       InUseProblem,
       ArchivedFilter
@@ -188,30 +192,36 @@ interface Rules
   /** Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its Firings. It can be restored, as a draft. */
   @action("archive")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
   archive(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
   /** Restore an archived Rule to the list, as a draft */
   @action("unarchive")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
   unarchive(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
   /** Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the automations:activate scope. */
   @action("activate")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsActivate])
   activate(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -219,20 +229,24 @@ interface Rules
   /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. Needs the automations:read scope. */
   @action("dry-run")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsRead])
   dryRun(...ResourceParameters<RuleResource>, @body body: DryRunRuleInput):
     | RuleDryRunResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
   /** Deactivate a Rule: it stops firing. Needs the automations:activate scope. */
   @action("deactivate")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsActivate])
   deactivate(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 }
@@ -269,10 +283,12 @@ model RuleFiringResource {
 namespace RuleFirings {
   /** List a Rule's Firings, newest first. Needs the automations:read scope. */
   @get
+  @extension("x-required-scopes", #[ApiTokenScope.automationsRead])
   op list(@path ruleId: EntityId, ...PageQuery):
     | Page<RuleFiringResource>
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 }

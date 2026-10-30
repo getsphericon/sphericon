@@ -163,7 +163,7 @@ func TestExternalEmailsSendScope(t *testing.T) {
 		Destination: "x@example.com",
 	}, externalapi.EmailsSendParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EmailsSendUnauthorized{}, res)
+	assert.IsType(t, &externalapi.EmailsSendForbidden{}, res)
 }
 
 // A successful send writes a durable record (the trace), resolves the destination

@@ -136,12 +136,40 @@ export const zLintFinding = z.object({
 export const zPasskeyName = z.string().min(1).max(100);
 
 /**
+ * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
+ * written `resource:verb` like the API token scopes. A Role is a set of them; the table
+ * from Role to Permissions lives in the server, and the client reads a Membership's
+ * Permissions from its Workspace instead of computing them.
+ */
+export const zPermission = z.enum([
+  'members:manage',
+  'audit:read',
+  'audit:configure',
+  'tokens:manage',
+  'integrations:manage',
+  'webhooks:manage',
+  'sending_domains:manage',
+  'contacts:erase',
+  'contacts:export',
+  'suppressions:manage',
+  'second_factor:manage',
+  'workspace:update',
+  'workspace:timezone',
+  'revenue:configure',
+  'brand_kit:manage',
+  'join_domains:manage',
+  'account_link:open',
+  'workspace:delete'
+]);
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum([
   'second_factor_required',
   'email_verification_required',
-  'signup_closed'
+  'signup_closed',
+  'permission_required'
 ]);
 
 /**
@@ -946,7 +974,8 @@ export const zSiteOAuthAuthorizationRequest = z.object({
   localRedirect: z.boolean(),
   scopes: z.array(zGrantableScope),
   sendScopes: z.array(zSendScope),
-  setupScopes: z.array(zSetupScope)
+  setupScopes: z.array(zSetupScope),
+  requiredPermissions: z.record(z.string(), zPermission)
 });
 
 /**
@@ -1322,13 +1351,6 @@ export const zSiteSecondFactorEnrollment = z.object({
   secret: z.string(),
   otpauthUri: z.string(),
   qrCode: z.string()
-});
-
-/**
- * Switch the Two-factor requirement on or off
- */
-export const zSiteSecondFactorRequirementInput = z.object({
-  required: z.boolean()
 });
 
 /**
@@ -2194,6 +2216,22 @@ export const zSiteCapturedMessageSummary = z.object({
 });
 
 /**
+ * A Connection: the access a User gave an application (an MCP client) to the Workspace by
+ * consenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the
+ * User's Role allows and ends with the Membership. Connections are not API tokens and are not
+ * listed with them.
+ */
+export const zSiteConnectionResource = z.object({
+  id: zEntityId,
+  name: z.string(),
+  scopes: z.array(zApiTokenScope),
+  userId: zEntityId,
+  userName: z.string(),
+  userEmail: zEmailAddress,
+  createdAt: zTimestamp
+});
+
+/**
  * Contact resource used by the site UI
  */
 export const zSiteContactResource = z.object({
@@ -2686,6 +2724,7 @@ export const zSiteWorkspaceResource = z.object({
   postalAddress: z.string(),
   timezone: zTimeZoneName,
   role: zSiteMembershipRole,
+  permissions: z.array(zPermission),
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
   suspensionReason: z.exactOptional(z.string().nullable()),
   supportEmail: z.exactOptional(z.string().nullable()),
@@ -2925,6 +2964,23 @@ export const zSiteCapturedMessageResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteCapturedMessageResourceParentKey = zWorkspaceId;
+
+/**
+ * Unique identifier
+ */
+export const zSiteConnectionResourceKeyId = zEntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteConnectionResourceKeyWorkspaceId = zWorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteConnectionResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -3443,6 +3499,15 @@ export const zSiteWorkspacesCreateResponse = zSiteWorkspaceResource;
  * The request has succeeded.
  */
 export const zSiteWorkspacesListDeletedResponse = z.array(zSiteDeletedWorkspaceResource);
+
+export const zSiteWorkspacesRestorePath = z.object({
+  id: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
 
 export const zSiteWorkspacesUpdateBody = zSiteUpdateWorkspaceInput;
 
@@ -3983,6 +4048,25 @@ export const zSiteCapturedMessagesGetPath = z.object({
  */
 export const zSiteCapturedMessagesGetResponse = zSiteCapturedMessageResource;
 
+export const zSiteConnectionsListPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteConnectionsListResponse = z.array(zSiteConnectionResource);
+
+export const zSiteConnectionsDeletePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteConnectionsDeleteResponse = z.void();
+
 export const zSiteContactsListPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -4406,15 +4490,6 @@ export const zSiteMembershipsResetSecondFactorPath = z.object({
  */
 export const zSiteMembershipsResetSecondFactorResponse = z.void();
 
-export const zSiteWorkspacesRestorePath = z.object({
-  workspaceId: zWorkspaceId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
-
 export const zSiteWorkspacesGetRevenueSettingsPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -4478,16 +4553,23 @@ export const zSiteRuleFiringsListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteWorkspacesSetSecondFactorRequirementBody = zSiteSecondFactorRequirementInput;
-
-export const zSiteWorkspacesSetSecondFactorRequirementPath = z.object({
+export const zSiteWorkspacesLiftSecondFactorRequirementPath = z.object({
   workspaceId: zWorkspaceId
 });
 
 /**
  * The request has succeeded.
  */
-export const zSiteWorkspacesSetSecondFactorRequirementResponse = zSiteWorkspaceResource;
+export const zSiteWorkspacesLiftSecondFactorRequirementResponse = zSiteWorkspaceResource;
+
+export const zSiteWorkspacesRequireSecondFactorPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesRequireSecondFactorResponse = zSiteWorkspaceResource;
 
 export const zSiteSegmentContactsListPath = z.object({
   workspaceId: zWorkspaceId,

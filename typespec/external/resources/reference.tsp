@@ -134,9 +134,11 @@ model SendingDomainRatesResource {
 namespace CustomFields {
   /** List the workspace's custom field definitions */
   @get
+  @extension("x-required-scopes", #[ApiTokenScope.customFieldsRead])
   op list():
     | Page<CustomFieldResource>
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem;
 }
 
@@ -145,6 +147,7 @@ namespace CustomFields {
 namespace SendingDomainRates {
   /** Complaint and bounce rates per sending domain over a trailing window */
   @get
+  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsRead])
   op list(
     /** Trailing window in days (1 to 90) */
     @query
@@ -155,5 +158,6 @@ namespace SendingDomainRates {
     | Page<SendingDomainRatesResource>
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem;
 }

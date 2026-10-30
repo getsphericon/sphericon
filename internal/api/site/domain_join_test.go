@@ -244,11 +244,7 @@ func TestTheWorkspacesTwoFactorRequirementAppliesToAJoinerWithTheUsualGrace(t *t
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	enableAcmeJoin(t, env)
-	required, err := owner.SiteWorkspacesSetSecondFactorRequirement(context.Background(),
-		&siteapi.SiteSecondFactorRequirementInput{Required: true},
-		siteapi.SiteWorkspacesSetSecondFactorRequirementParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteWorkspaceResource{}, required)
+	require.IsType(t, &siteapi.SiteWorkspaceResource{}, requireSecondFactor(t, owner, fixtures.AcmePublicID))
 
 	joiner := signUp(t, env, "newbie@acme.com")
 
@@ -299,26 +295,24 @@ func TestSwitchingDomainJoinIsAuditedAsAWorkspaceUpdate(t *testing.T) {
 	assert.JSONEq(t, `{"domain_join_enabled": {"from": false, "to": true}}`, string(diff))
 }
 
-// requireDomainJoinForbidden asserts that the user may neither read nor switch domain join.
-func requireDomainJoinForbidden(t *testing.T, env *testhelper.TestEnv, email string) {
-	t.Helper()
-	c := env.SiteActor(t, email)
-	read, err := c.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteDomainJoinGetForbidden{}, read)
-	assert.IsType(t, &siteapi.SiteDomainJoinSetForbidden{}, setDomainJoin(t, c, true))
-}
-
-func TestAnAdminCannotReadOrSwitchDomainJoin(t *testing.T) {
+func TestAnAdminReadsAndSwitchesDomainJoin(t *testing.T) {
 	env := testhelper.Setup(t)
+	admin := env.SiteActor(t, fixtures.AdminAliceEmail)
 
-	requireDomainJoinForbidden(t, env, fixtures.AdminAliceEmail)
+	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: true}, setDomainJoin(t, admin, true))
+	read, err := admin.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	assert.Equal(t, &siteapi.SiteDomainJoinResource{Enabled: true}, read)
 }
 
 func TestAMemberCannotReadOrSwitchDomainJoin(t *testing.T) {
 	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	requireDomainJoinForbidden(t, env, fixtures.MemberMaryEmail)
+	read, err := c.SiteDomainJoinGet(context.Background(), siteapi.SiteDomainJoinGetParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	assert.IsType(t, &siteapi.SiteDomainJoinGetForbidden{}, read)
+	assert.IsType(t, &siteapi.SiteDomainJoinSetForbidden{}, setDomainJoin(t, c, true))
 }
 
 func TestAnOwnerReadsDomainJoin(t *testing.T) {

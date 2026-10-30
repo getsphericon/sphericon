@@ -15,10 +15,7 @@ import (
 )
 
 func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteEnrollmentsListParams) (siteapi.SiteEnrollmentsListRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 	status := ""
 	if v, ok := params.Status.Get(); ok {
 		status = string(v)
@@ -43,10 +40,7 @@ func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteE
 }
 
 func (h *Handlers) SiteEnrollmentsGet(ctx context.Context, params siteapi.SiteEnrollmentsGetParams) (siteapi.SiteEnrollmentsGetRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 	r, err := h.automations.Enrollment(ctx, ws, int64(params.AutomationId), int64(params.EnrollmentId))
 	if errors.Is(err, automations.ErrNotFound) {
 		v := siteapi.SiteEnrollmentsGetNotFound(problem(http.StatusNotFound, "enrollment not found"))

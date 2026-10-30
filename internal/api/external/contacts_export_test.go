@@ -189,7 +189,7 @@ func TestExternalContactsExportNeedsTheReadScope(t *testing.T) {
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportUnauthorized{}, res)
+	assert.IsType(t, &externalapi.ContactsExportForbidden{}, res)
 }
 
 func TestExternalContactsExportIsWorkspaceScoped(t *testing.T) {

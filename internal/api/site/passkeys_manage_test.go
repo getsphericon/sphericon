@@ -169,7 +169,7 @@ func TestRemovingTheLastPasskeyWeakensTheActingSessionUnderTheRequirement(t *tes
 	c := &requirementClock{t: time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)}
 	env := testhelper.Setup(t, testhelper.WithClock(c.now))
 	require.IsType(t, &siteapi.SiteWorkspaceResource{},
-		setRequirement(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID, true))
+		requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID))
 	c.t = c.t.Add(8 * 24 * time.Hour)
 	tags := "/site/workspaces/" + fixtures.GlobexPublicID + "/tags"
 	session := env.SiteToken(t, fixtures.PasskeyPatEmail, func(claims *gptoken.Claims) {

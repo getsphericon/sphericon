@@ -12,10 +12,7 @@ import (
 )
 
 func (h *Handlers) SiteAutomationReportsGet(ctx context.Context, params siteapi.SiteAutomationReportsGetParams) (siteapi.SiteAutomationReportsGetRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 	report, err := h.automations.ReportOf(ctx, ws, int64(params.AutomationId))
 	if errors.Is(err, automations.ErrNotFound) {
 		v := siteapi.SiteAutomationReportsGetNotFound(problem(http.StatusNotFound, "automation not found"))

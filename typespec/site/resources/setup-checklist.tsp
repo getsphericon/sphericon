@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -42,5 +43,6 @@ model SiteSetupProgress {
 namespace SiteSetupChecklist {
   /** The Workspace's Setup checklist */
   @get
+  @extension("x-required-permissions", #[])
   op get(@path workspaceId: WorkspaceId): SiteSetupProgress | NotFoundProblem;
 }

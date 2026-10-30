@@ -469,13 +469,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	broadcastsModule := broadcasts.New(bus, Renderer())
 	acc := accounts.New(client, bus, Passwords(), accounts.WithSignupRule(st.signupRuleOf(&cfg)))
 	external, err := server.NewExternalAPI(client, apiexternal.Deps{
-		Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
+		Clock: st.now, Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, CapturedMessages: capturedModule, SendingDomains: sendingDomainsModule,
 		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	})
 	require.NoError(t, err, "build external API")
-	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
+	mcpHandler, err := mcpserver.New(sphericon.ExternalOpenAPI, external, apiauth.NewExternalSecurityHandler(client, bus, st.now), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
 	require.NoError(t, err, "build MCP handler")
 	oauthFetcher := st.oauthFetcher
 	if oauthFetcher == nil {

@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -129,6 +131,36 @@ func (_u *MembershipUpdate) SetUser(v *User) *MembershipUpdate {
 	return _u.SetUserID(v.ID)
 }
 
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (_u *MembershipUpdate) AddConnectionIDs(ids ...int64) *MembershipUpdate {
+	_u.mutation.AddConnectionIDs(ids...)
+	return _u
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (_u *MembershipUpdate) AddConnections(v ...*ApiToken) *MembershipUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConnectionIDs(ids...)
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (_u *MembershipUpdate) AddOauthCodeIDs(ids ...int64) *MembershipUpdate {
+	_u.mutation.AddOauthCodeIDs(ids...)
+	return _u
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (_u *MembershipUpdate) AddOauthCodes(v ...*OAuthCode) *MembershipUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOauthCodeIDs(ids...)
+}
+
 // Mutation returns the MembershipMutation object of the builder.
 func (_u *MembershipUpdate) Mutation() *MembershipMutation {
 	return _u.mutation
@@ -144,6 +176,48 @@ func (_u *MembershipUpdate) ClearWorkspace() *MembershipUpdate {
 func (_u *MembershipUpdate) ClearUser() *MembershipUpdate {
 	_u.mutation.ClearUser()
 	return _u
+}
+
+// ClearConnections clears all "connections" edges to the ApiToken entity.
+func (_u *MembershipUpdate) ClearConnections() *MembershipUpdate {
+	_u.mutation.ClearConnections()
+	return _u
+}
+
+// RemoveConnectionIDs removes the "connections" edge to ApiToken entities by IDs.
+func (_u *MembershipUpdate) RemoveConnectionIDs(ids ...int64) *MembershipUpdate {
+	_u.mutation.RemoveConnectionIDs(ids...)
+	return _u
+}
+
+// RemoveConnections removes "connections" edges to ApiToken entities.
+func (_u *MembershipUpdate) RemoveConnections(v ...*ApiToken) *MembershipUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConnectionIDs(ids...)
+}
+
+// ClearOauthCodes clears all "oauth_codes" edges to the OAuthCode entity.
+func (_u *MembershipUpdate) ClearOauthCodes() *MembershipUpdate {
+	_u.mutation.ClearOauthCodes()
+	return _u
+}
+
+// RemoveOauthCodeIDs removes the "oauth_codes" edge to OAuthCode entities by IDs.
+func (_u *MembershipUpdate) RemoveOauthCodeIDs(ids ...int64) *MembershipUpdate {
+	_u.mutation.RemoveOauthCodeIDs(ids...)
+	return _u
+}
+
+// RemoveOauthCodes removes "oauth_codes" edges to OAuthCode entities.
+func (_u *MembershipUpdate) RemoveOauthCodes(v ...*OAuthCode) *MembershipUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOauthCodeIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -297,6 +371,96 @@ func (_u *MembershipUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ConnectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ConnectionsTable,
+			Columns: []string{membership.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConnectionsIDs(); len(nodes) > 0 && !_u.mutation.ConnectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ConnectionsTable,
+			Columns: []string{membership.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConnectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ConnectionsTable,
+			Columns: []string{membership.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OauthCodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.OauthCodesTable,
+			Columns: []string{membership.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOauthCodesIDs(); len(nodes) > 0 && !_u.mutation.OauthCodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.OauthCodesTable,
+			Columns: []string{membership.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OauthCodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.OauthCodesTable,
+			Columns: []string{membership.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -417,6 +581,36 @@ func (_u *MembershipUpdateOne) SetUser(v *User) *MembershipUpdateOne {
 	return _u.SetUserID(v.ID)
 }
 
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (_u *MembershipUpdateOne) AddConnectionIDs(ids ...int64) *MembershipUpdateOne {
+	_u.mutation.AddConnectionIDs(ids...)
+	return _u
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (_u *MembershipUpdateOne) AddConnections(v ...*ApiToken) *MembershipUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConnectionIDs(ids...)
+}
+
+// AddOauthCodeIDs adds the "oauth_codes" edge to the OAuthCode entity by IDs.
+func (_u *MembershipUpdateOne) AddOauthCodeIDs(ids ...int64) *MembershipUpdateOne {
+	_u.mutation.AddOauthCodeIDs(ids...)
+	return _u
+}
+
+// AddOauthCodes adds the "oauth_codes" edges to the OAuthCode entity.
+func (_u *MembershipUpdateOne) AddOauthCodes(v ...*OAuthCode) *MembershipUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOauthCodeIDs(ids...)
+}
+
 // Mutation returns the MembershipMutation object of the builder.
 func (_u *MembershipUpdateOne) Mutation() *MembershipMutation {
 	return _u.mutation
@@ -432,6 +626,48 @@ func (_u *MembershipUpdateOne) ClearWorkspace() *MembershipUpdateOne {
 func (_u *MembershipUpdateOne) ClearUser() *MembershipUpdateOne {
 	_u.mutation.ClearUser()
 	return _u
+}
+
+// ClearConnections clears all "connections" edges to the ApiToken entity.
+func (_u *MembershipUpdateOne) ClearConnections() *MembershipUpdateOne {
+	_u.mutation.ClearConnections()
+	return _u
+}
+
+// RemoveConnectionIDs removes the "connections" edge to ApiToken entities by IDs.
+func (_u *MembershipUpdateOne) RemoveConnectionIDs(ids ...int64) *MembershipUpdateOne {
+	_u.mutation.RemoveConnectionIDs(ids...)
+	return _u
+}
+
+// RemoveConnections removes "connections" edges to ApiToken entities.
+func (_u *MembershipUpdateOne) RemoveConnections(v ...*ApiToken) *MembershipUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConnectionIDs(ids...)
+}
+
+// ClearOauthCodes clears all "oauth_codes" edges to the OAuthCode entity.
+func (_u *MembershipUpdateOne) ClearOauthCodes() *MembershipUpdateOne {
+	_u.mutation.ClearOauthCodes()
+	return _u
+}
+
+// RemoveOauthCodeIDs removes the "oauth_codes" edge to OAuthCode entities by IDs.
+func (_u *MembershipUpdateOne) RemoveOauthCodeIDs(ids ...int64) *MembershipUpdateOne {
+	_u.mutation.RemoveOauthCodeIDs(ids...)
+	return _u
+}
+
+// RemoveOauthCodes removes "oauth_codes" edges to OAuthCode entities.
+func (_u *MembershipUpdateOne) RemoveOauthCodes(v ...*OAuthCode) *MembershipUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOauthCodeIDs(ids...)
 }
 
 // Where appends a list predicates to the MembershipUpdate builder.
@@ -608,6 +844,96 @@ func (_u *MembershipUpdateOne) sqlSave(ctx context.Context) (_node *Membership, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConnectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ConnectionsTable,
+			Columns: []string{membership.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConnectionsIDs(); len(nodes) > 0 && !_u.mutation.ConnectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ConnectionsTable,
+			Columns: []string{membership.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConnectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.ConnectionsTable,
+			Columns: []string{membership.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OauthCodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.OauthCodesTable,
+			Columns: []string{membership.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOauthCodesIDs(); len(nodes) > 0 && !_u.mutation.OauthCodesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.OauthCodesTable,
+			Columns: []string{membership.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OauthCodesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   membership.OauthCodesTable,
+			Columns: []string{membership.OauthCodesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthcode.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

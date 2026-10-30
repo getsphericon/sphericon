@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -22,11 +21,6 @@ import (
 // send-class automations:activate (ADR 0016).
 
 func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListParams) (externalapi.RulesListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsRead) {
-		res := externalapi.RulesListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	page, err := h.rules.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
 		return nil, err
@@ -42,11 +36,6 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 
 // RulesCreate always stores a draft: activating is the send-class operation.
 func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleInput) (externalapi.RulesCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
-		res := externalapi.RulesCreateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	in := rules.CreateInput{
 		Name:          req.Name,
 		TriggerEvents: req.TriggerEvents,
@@ -66,10 +55,6 @@ func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleI
 }
 
 func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetParams) (externalapi.RulesGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsRead) {
-		res := externalapi.RulesGetUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	r, err := h.rules.Get(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -79,11 +64,6 @@ func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetPara
 }
 
 func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleInput, params externalapi.RulesUpdateParams) (externalapi.RulesUpdateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
-		res := externalapi.RulesUpdateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
-
 	in := rules.UpdateInput{Name: convert.StringPtr(req.Name)}
 	if req.TriggerEvents != nil {
 		in.TriggerEvents = &req.TriggerEvents
@@ -107,10 +87,6 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 
 // RulesDelete purges a Rule that has no Firings; one with Firings is archived instead (409).
 func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDeleteParams) (externalapi.RulesDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
-		res := externalapi.RulesDeleteUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	err := h.rules.Delete(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -120,10 +96,6 @@ func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDele
 
 // RulesArchive archives a Rule (ADR 0049): it acts on nothing and keeps its Firings.
 func (h *Handlers) RulesArchive(ctx context.Context, params externalapi.RulesArchiveParams) (externalapi.RulesArchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
-		res := externalapi.RulesArchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.rules.Archive(ctx, ws, id)
@@ -140,10 +112,6 @@ func (h *Handlers) RulesArchive(ctx context.Context, params externalapi.RulesArc
 
 // RulesUnarchive restores an archived Rule, as a draft.
 func (h *Handlers) RulesUnarchive(ctx context.Context, params externalapi.RulesUnarchiveParams) (externalapi.RulesUnarchiveRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsWrite) {
-		res := externalapi.RulesUnarchiveUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
 	err := h.rules.Unarchive(ctx, ws, id)
@@ -161,10 +129,6 @@ func (h *Handlers) RulesUnarchive(ctx context.Context, params externalapi.RulesU
 // RulesActivate and RulesDeactivate need automations:activate, which authoring scopes never
 // imply (ADR 0016). Over MCP, activate additionally needs mcp:send (the x-mcp send flag).
 func (h *Handlers) RulesActivate(ctx context.Context, params externalapi.RulesActivateParams) (externalapi.RulesActivateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsActivate) {
-		res := externalapi.RulesActivateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	r, err := h.rules.Activate(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -174,10 +138,6 @@ func (h *Handlers) RulesActivate(ctx context.Context, params externalapi.RulesAc
 }
 
 func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.RulesDeactivateParams) (externalapi.RulesDeactivateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsActivate) {
-		res := externalapi.RulesDeactivateUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	r, err := h.rules.Deactivate(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -189,10 +149,6 @@ func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.Rules
 // RulesDryRun reports what a stored Event would do to the Rule. It writes and runs nothing, so
 // reading scope is enough.
 func (h *Handlers) RulesDryRun(ctx context.Context, req *externalapi.DryRunRuleInput, params externalapi.RulesDryRunParams) (externalapi.RulesDryRunRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsRead) {
-		res := externalapi.RulesDryRunUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	dry, err := h.rules.DryRun(ctx, auth.TokenScoped(ctx), int64(params.ID), int64(req.EventId))
 	if err != nil {
 		return nil, err
@@ -203,10 +159,6 @@ func (h *Handlers) RulesDryRun(ctx context.Context, req *externalapi.DryRunRuleI
 
 // RuleFiringsList lists a Rule's Firings, newest first.
 func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleFiringsListParams) (externalapi.RuleFiringsListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeAutomationsRead) {
-		res := externalapi.RuleFiringsListUnauthorized(problem(http.StatusUnauthorized, "insufficient scope"))
-		return &res, nil
-	}
 	page, err := h.rules.Firings(ctx, auth.TokenScoped(ctx), int64(params.RuleId), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err

@@ -13,10 +13,7 @@ import (
 )
 
 func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.SiteSuppressionsListParams) (siteapi.SiteSuppressionsListRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	page, err := suppression.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize), params.Lifted.Or(false))
 	if err != nil {
@@ -36,11 +33,8 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 	}, nil
 }
 
-func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.SiteCreateSuppressionInput, params siteapi.SiteSuppressionsCreateParams) (siteapi.SiteSuppressionsCreateRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.SiteCreateSuppressionInput, _ siteapi.SiteSuppressionsCreateParams) (siteapi.SiteSuppressionsCreateRes, error) {
+	s := workspaceScope(ctx)
 
 	created, err := suppression.AddManual(ctx, s, req.Destination)
 	if errors.Is(err, suppression.ErrDestinationEmpty) {
@@ -57,13 +51,10 @@ func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.Site
 }
 
 func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.SiteSuppressionsDeleteParams) (siteapi.SiteSuppressionsDeleteRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = suppression.Remove(ctx, s, id)
+	err := suppression.Remove(ctx, s, id)
 	if errors.Is(err, suppression.ErrNotFound) {
 		v := siteapi.SiteSuppressionsDeleteNotFound(problem(http.StatusNotFound, "suppression not found"))
 		return &v, nil

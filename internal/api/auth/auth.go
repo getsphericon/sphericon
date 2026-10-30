@@ -5,7 +5,9 @@ package auth
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -15,9 +17,12 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
+	"github.com/getsphericon/sphericon/internal/secondfactor"
 	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/samber/lo"
@@ -32,6 +37,10 @@ type TokenAuth struct {
 	WorkspaceID int64
 	Name        string
 	Scopes      []string
+	// Membership is, for a Connection (ADR 0061), the approving User's Membership as this request
+	// loaded it, with its User and Workspace: its current Role bounds what the scopes allow. It is
+	// nil for the Workspace's API token.
+	Membership *ent.Membership
 	// Scoped is the client confined to WorkspaceID. This file is the external
 	// API's construction point of it (ADR 0017); read it with TokenScoped.
 	Scoped *ent.Scoped
@@ -50,7 +59,8 @@ func GetTokenAuth(ctx context.Context) *TokenAuth {
 	return v
 }
 
-func HasScope(auth *TokenAuth, scope externalapi.ApiTokenScope) bool {
+// HasScope reports whether the authenticated token carries scope; no token carries none.
+func HasScope(auth *TokenAuth, scope apitokens.Scope) bool {
 	if auth == nil {
 		return false
 	}
@@ -58,8 +68,8 @@ func HasScope(auth *TokenAuth, scope externalapi.ApiTokenScope) bool {
 }
 
 // TokenScoped returns the Workspace-scoped client of the authenticated api token.
-// It is nil on an unauthenticated context, so call it only after the handler's
-// HasScope check (which fails for a nil TokenAuth). Handlers pass it to the
+// It is nil on an unauthenticated context; the security handler runs before every
+// operation that needs a token, so handlers can rely on it. Handlers pass it to the
 // domain modules; they never build a *ent.Scoped from an id themselves.
 func TokenScoped(ctx context.Context) *ent.Scoped {
 	if a := GetTokenAuth(ctx); a != nil {
@@ -72,24 +82,50 @@ func TokenScoped(ctx context.Context) *ent.Scoped {
 type ExternalSecurityHandler struct {
 	ent *ent.Client
 	bus *events.Bus
+	now func() time.Time
 }
 
 // NewExternalSecurityHandler builds the Bearer-token handler. The bus opens the
-// transactions of audited writes made under the token (ADR 0022).
-func NewExternalSecurityHandler(client *ent.Client, bus *events.Bus) *ExternalSecurityHandler {
-	return &ExternalSecurityHandler{ent: client, bus: bus}
+// transactions of audited writes made under the token (ADR 0022); now is the clock a
+// Connection's Two-factor requirement is checked against (nil means time.Now).
+func NewExternalSecurityHandler(client *ent.Client, bus *events.Bus, now func() time.Time) *ExternalSecurityHandler {
+	if now == nil {
+		now = time.Now
+	}
+	return &ExternalSecurityHandler{ent: client, bus: bus, now: now}
 }
 
 var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
 
-// HandleBearerAuth authenticates the Bearer token and applies the rate limits that
-// need it (ADR 0025): a client address that spent its failed-authentication budget
-// is refused before the token is looked at, a failure counts against it, and a
-// success charges the Workspace's shared /api and /mcp budget. Rejections surface
-// as *ratelimit.LimitedError.
+// HandleBearerAuth authenticates the Bearer token (Authenticate) and then lets it call op only
+// when it carries every scope the contract declares for op (ExternalOperationScopes, ADR 0061)
+// and, for a Connection, when its User's current Role holds the Permission granting each of
+// those scopes needs (accounts.GrantPermissions) and each Permission op itself declares
+// (ExternalOperationPermissions). An operation absent from the scope table is refused to every
+// token. A token that is missing, invalid, revoked or expired is ErrUnauthorized (401);
+// a valid token without a scope of op is refused with 403, and a Connection whose User's Role
+// lacks the Permission with 403 permission_required; neither counts against the address's
+// failed-authentication budget.
 func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op externalapi.OperationName, t externalapi.BearerAuth) (context.Context, error) {
+	authed, err := h.Authenticate(ctx, t)
+	if err != nil {
+		return ctx, err
+	}
+	if err := permitted(op, GetTokenAuth(authed)); err != nil {
+		return ctx, err
+	}
+	return authed, nil
+}
+
+// Authenticate resolves the Bearer token to its TokenAuth whatever it is used for, and applies
+// the rate limits that need it (ADR 0025): a client address that spent its failed-authentication
+// budget is refused before the token is looked at, a failure counts against it, and a success
+// charges the Workspace's shared /api and /mcp budget. Rejections surface as
+// *ratelimit.LimitedError. /mcp authenticates its requests with it; each tool call it dispatches
+// to /api then meets the operation's scopes in HandleBearerAuth.
+func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error) {
 	authed, err := guardedAuth(ctx,
-		func() (context.Context, error) { return h.authenticate(ctx, op, t) },
+		func() (context.Context, error) { return h.authenticate(ctx, t) },
 		func(limits *ratelimit.Exchange, authed context.Context) error {
 			return limits.ChargeWorkspace(GetTokenAuth(authed).WorkspaceID)
 		})
@@ -97,6 +133,58 @@ func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op exter
 		return ctx, err
 	}
 	return authed, nil
+}
+
+// permitted reports, as a refusal, whether the token may call op: the contract must declare op,
+// the token must carry each of its scopes, and a Connection's User must hold, in their current
+// Role, the Permission granting each scope needs and each Permission op declares, so a
+// Connection does no more than its User may on /site: a demotion takes effect on the next request.
+func permitted(op externalapi.OperationName, auth *TokenAuth) error {
+	required, declared := ExternalOperationScopes[op]
+	if !declared {
+		return scopeRequiredError{op: op}
+	}
+	missing := lo.Reject(required, func(s apitokens.Scope, _ int) bool { return HasScope(auth, s) })
+	if len(missing) > 0 {
+		return scopeRequiredError{op: op, missing: missing}
+	}
+	if auth.Membership == nil {
+		return nil
+	}
+	needed := lo.FilterMap(required, func(s apitokens.Scope, _ int) (accounts.Permission, bool) {
+		p, ok := accounts.GrantPermissions[string(s)]
+		return p, ok
+	})
+	for _, p := range append(needed, ExternalOperationPermissions[op]...) {
+		if err := accounts.Require(auth.Membership.Role, p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// scopeRequiredError refuses a valid API token an operation it lacks a scope of, or one the
+// contract does not open to tokens at all. The server's error handler answers it through its
+// Problem method.
+type scopeRequiredError struct {
+	op      externalapi.OperationName
+	missing []apitokens.Scope
+}
+
+func (e scopeRequiredError) Error() string {
+	if len(e.missing) == 0 {
+		return "the operation " + e.op + " is not open to API tokens"
+	}
+	names := lo.Map(e.missing, func(s apitokens.Scope, _ int) string { return string(s) })
+	if len(names) == 1 {
+		return "the API token lacks the scope " + names[0]
+	}
+	return "the API token lacks the scopes " + strings.Join(names, ", ")
+}
+
+// Problem is the 403 a valid token without the scope is answered with.
+func (e scopeRequiredError) Problem() (status int, code, detail string) {
+	return http.StatusForbidden, "", e.Error()
 }
 
 // guardedAuth is the sequence both token surfaces share (ADR 0025): a client address
@@ -125,7 +213,7 @@ func guardedAuth[T any](ctx context.Context, authenticate func() (T, error), cha
 	return authed, nil
 }
 
-func (h *ExternalSecurityHandler) authenticate(ctx context.Context, _ externalapi.OperationName, t externalapi.BearerAuth) (context.Context, error) {
+func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error) {
 	parsed := credentials.ParseToken(t.Token)
 	if parsed == nil {
 		return ctx, ErrUnauthorized
@@ -133,6 +221,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, _ externalap
 
 	token, err := h.ent.ApiToken.Query().
 		Where(apitoken.Prefix(parsed.Prefix), apitoken.HasWorkspaceWith(accounts.Live())).
+		WithMembership(func(q *ent.MembershipQuery) { q.WithUser().WithWorkspace() }).
 		First(ctx)
 	if ent.IsNotFound(err) {
 		return ctx, ErrUnauthorized
@@ -152,18 +241,41 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, _ externalap
 		return ctx, ErrUnauthorized
 	}
 
+	actor := events.Actor{Kind: events.ActorAPIToken, ID: strconv.FormatInt(token.ID, 10), Name: token.Name}
+	m := token.Edges.Membership
+	if m != nil {
+		// A Connection acts as its User, through its client, under the Workspace's Two-factor
+		// requirement like the User's own session (ADR 0061, ADR 0020); a token carries no Second
+		// factor step.
+		if secondfactor.Withheld(m, h.now(), false) {
+			return ctx, SecondFactorRequiredError{}
+		}
+		actor = events.ConnectionActor(m.UserID, m.Edges.User.Name, token.Name)
+	}
+
 	auth := &TokenAuth{
 		TokenID:     token.ID,
 		WorkspaceID: token.WorkspaceID,
 		Name:        token.Name,
 		Scopes:      token.Scopes,
-		Scoped: h.bus.Act(h.ent.Scoped(token.WorkspaceID), events.Actor{
-			Kind: events.ActorAPIToken,
-			ID:   strconv.FormatInt(token.ID, 10),
-			Name: token.Name,
-		}),
+		Membership:  m,
+		Scoped:      h.bus.Act(h.ent.Scoped(token.WorkspaceID), actor),
 	}
 	return WithTokenAuth(ctx, auth), nil
+}
+
+// SecondFactorRequiredError is secondfactor.ErrRequired as the problem every surface answers it
+// with: a site session or a Connection of a User the Workspace's Two-factor requirement withholds
+// (ADR 0020). Returned as an error, it is rendered by the server's error handler, which reads it
+// through its Problem method.
+type SecondFactorRequiredError struct{}
+
+func (SecondFactorRequiredError) Error() string { return secondfactor.ErrRequired.Error() }
+func (SecondFactorRequiredError) Unwrap() error { return secondfactor.ErrRequired }
+
+// Problem is the 403 second_factor_required answer.
+func (SecondFactorRequiredError) Problem() (status int, code, detail string) {
+	return http.StatusForbidden, string(siteapi.ProblemCodeSecondFactorRequired), i18n.T("errors.second_factor_required", nil)
 }
 
 // CollectAuth holds the workspace resolved from the per-workspace collect key.

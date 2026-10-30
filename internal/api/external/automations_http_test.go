@@ -44,7 +44,7 @@ func TestExternalHTTPStepDryRunNeedsAutomationsWriteAndContactsRead(t *testing.T
 
 	denied, err := env.ExternalScoped(t, "automations:write").AutomationsDryRunHttpStep(ctx, in)
 	require.NoError(t, err)
-	assert.IsType(t, new(externalapi.AutomationsDryRunHttpStepUnauthorized), denied)
+	assert.IsType(t, new(externalapi.AutomationsDryRunHttpStepForbidden), denied)
 
 	ok, err := env.ExternalScoped(t, "automations:write", "contacts:read").AutomationsDryRunHttpStep(ctx, in)
 	require.NoError(t, err)

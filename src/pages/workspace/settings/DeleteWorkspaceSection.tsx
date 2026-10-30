@@ -12,6 +12,7 @@ import {
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as indexRoute } from '../../../routes/index.tsx'
+import { can } from '../../../utils/permissions.ts'
 
 // DeleteWorkspaceSection is the delete part of the danger zone (ADR 0043): an Owner
 // deletes the Workspace by typing its name. Deletion is soft, so the copy says how long
@@ -31,8 +32,7 @@ export function DeleteWorkspaceSection({ workspace }: { workspace: SiteWorkspace
     onDone: async () => navigate({ to: indexRoute.to }),
   })
 
-  // Only an Owner deletes a Workspace.
-  if (workspace.role !== 'owner') {
+  if (!can(workspace, 'workspace:delete')) {
     return null
   }
 

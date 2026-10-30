@@ -9,6 +9,7 @@ import {
   handleSiteWorkspacesSetTimezone,
   handleSiteWorkspacesUpdate,
 } from '../../../generated/site/msw.gen.ts'
+import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
@@ -22,7 +23,7 @@ const revenueSettings = handleSiteWorkspacesGetRevenueSettings({
   body: { reportingCurrency: null, attributionWindowDays: 5 },
 })
 
-const workspace = {
+const workspace: SiteWorkspaceResource = {
   id: 'TestWs01',
   name: 'Acme',
 
@@ -30,10 +31,11 @@ const workspace = {
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
+  permissions: ['workspace:update', 'workspace:timezone', 'workspace:delete'],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
-  role: 'owner' as const,
+  role: 'owner',
   createdAt: '2026-01-01T00:00:00Z',
 }
 
@@ -60,10 +62,10 @@ test('renames the workspace', async () => {
   expect(puts[0]).toContain('"name":"Acme Inc"')
 })
 
-test('a plain member sees the name read-only', async () => {
+test('without workspace:update the name is read-only', async () => {
   worker.use(
     revenueSettings,
-    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }),
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member', permissions: [] }] }),
   )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
@@ -71,7 +73,7 @@ test('a plain member sees the name read-only', async () => {
   await expect.element(screen.getByLabelText(/^Workspace name/)).toBeDisabled()
 })
 
-test('an owner sets the time zone', async () => {
+test('workspace:timezone sets the time zone', async () => {
   const bodies: string[] = []
   worker.use(
     revenueSettings,
@@ -94,10 +96,12 @@ test('an owner sets the time zone', async () => {
   expect(bodies[0]).toContain('"timezone":"Europe/Berlin"')
 })
 
-test('an admin sees the time zone read-only', async () => {
+test('without workspace:timezone the time zone is read-only', async () => {
   worker.use(
     revenueSettings,
-    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }),
+    handleSiteWorkspacesList({
+      body: [{ ...workspace, role: 'member', permissions: ['workspace:update'] }],
+    }),
   )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
@@ -115,7 +119,7 @@ test('shows an error alert when the workspaces fail to load', async () => {
   await expect.element(screen.getByRole('alert', { name: /Failed to load/ })).toBeInTheDocument()
 })
 
-test('an owner deletes the workspace only after typing its name', async () => {
+test('workspace:delete deletes the workspace only after typing its name', async () => {
   const posts: string[] = []
   worker.use(
     revenueSettings,
@@ -146,10 +150,12 @@ test('an owner deletes the workspace only after typing its name', async () => {
   await expect.poll(() => navigate.mock.calls).toContainEqual([{ to: '/' }])
 })
 
-test('an admin can leave but not delete the workspace', async () => {
+test('without workspace:delete the workspace can be left but not deleted', async () => {
   worker.use(
     revenueSettings,
-    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }),
+    handleSiteWorkspacesList({
+      body: [{ ...workspace, role: 'admin', permissions: ['workspace:update'] }],
+    }),
   )
 
   const { screen } = await renderWithRouter(<GeneralPage />, GENERAL_ROUTE)
@@ -164,7 +170,7 @@ test('leaves the workspace after confirmation', async () => {
   let left = false
   worker.use(
     revenueSettings,
-    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }),
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member', permissions: [] }] }),
     handleSiteWorkspacesLeave(() => {
       left = true
       return new HttpResponse(null, { status: 204 })

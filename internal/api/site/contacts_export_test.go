@@ -29,22 +29,26 @@ func readSiteExport(t *testing.T, res siteapi.SiteContactsExportRes) siteapi.Con
 	return doc
 }
 
-// Export needs only Workspace access: a plain member (no owner/admin role) can run
-// a subject-access request.
-func TestSiteContactsExportIsOpenToAnyMember(t *testing.T) {
+// Exporting Contacts is the Permission contacts:export (ADR 0061): an admin runs a subject-access
+// request, a plain member is refused.
+func TestSiteContactsExportIsForOwnersAndAdmins(t *testing.T) {
 	env := testhelper.Setup(t)
-	member := env.SiteActor(t, fixtures.MemberMaryEmail)
-
-	res, err := member.SiteContactsExport(context.Background(), siteapi.SiteContactsExportParams{
+	params := siteapi.SiteContactsExportParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		ID:          siteapi.NewOptEntityId(siteapi.EntityId(800)),
-	})
+	}
+
+	res, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteContactsExport(context.Background(), params)
 	require.NoError(t, err)
 	doc := readSiteExport(t, res)
-
 	assert.Len(t, doc.Events, 3)
 	assert.Len(t, doc.OutboundMessages, 3)
 	assert.Len(t, doc.BroadcastRecipients, 1)
+
+	refused, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteContactsExport(context.Background(), params)
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteContactsExportForbidden{}, refused)
+	assert.Equal(t, siteapi.ProblemCodePermissionRequired, refused.(*siteapi.SiteContactsExportForbidden).Code.Value)
 }
 
 func TestSiteContactsExportByEmail(t *testing.T) {

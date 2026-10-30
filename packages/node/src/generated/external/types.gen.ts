@@ -2534,6 +2534,41 @@ export type MaxPerDay = number;
 export type MaxPerSecond = number;
 
 /**
+ * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
+ * written `resource:verb` like the API token scopes. A Role is a set of them; the table
+ * from Role to Permissions lives in the server, and the client reads a Membership's
+ * Permissions from its Workspace instead of computing them.
+ */
+export const Permission = {
+  MEMBERS_MANAGE: 'members:manage',
+  AUDIT_READ: 'audit:read',
+  AUDIT_CONFIGURE: 'audit:configure',
+  TOKENS_MANAGE: 'tokens:manage',
+  INTEGRATIONS_MANAGE: 'integrations:manage',
+  WEBHOOKS_MANAGE: 'webhooks:manage',
+  SENDING_DOMAINS_MANAGE: 'sending_domains:manage',
+  CONTACTS_ERASE: 'contacts:erase',
+  CONTACTS_EXPORT: 'contacts:export',
+  SUPPRESSIONS_MANAGE: 'suppressions:manage',
+  SECOND_FACTOR_MANAGE: 'second_factor:manage',
+  WORKSPACE_UPDATE: 'workspace:update',
+  WORKSPACE_TIMEZONE: 'workspace:timezone',
+  REVENUE_CONFIGURE: 'revenue:configure',
+  BRAND_KIT_MANAGE: 'brand_kit:manage',
+  JOIN_DOMAINS_MANAGE: 'join_domains:manage',
+  ACCOUNT_LINK_OPEN: 'account_link:open',
+  WORKSPACE_DELETE: 'workspace:delete'
+} as const;
+
+/**
+ * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
+ * written `resource:verb` like the API token scopes. A Role is a set of them; the table
+ * from Role to Permissions lives in the server, and the client reads a Membership's
+ * Permissions from its Workspace instead of computing them.
+ */
+export type Permission = typeof Permission[keyof typeof Permission];
+
+/**
  * RFC 7807 precondition required response: the request needs something it did not carry
  * (a verification link opened outside its Sign-up browser needs a password, ADR 0030)
  */
@@ -2587,7 +2622,8 @@ export type PreviewSegmentResult = {
 export const ProblemCode = {
   SECOND_FACTOR_REQUIRED: 'second_factor_required',
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
-  SIGNUP_CLOSED: 'signup_closed'
+  SIGNUP_CLOSED: 'signup_closed',
+  PERMISSION_REQUIRED: 'permission_required'
 } as const;
 
 /**
@@ -4169,6 +4205,10 @@ export type AuditEntriesListErrors = {
    */
   402: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
@@ -4409,6 +4449,10 @@ export type AutomationsListErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -4467,6 +4511,10 @@ export type AutomationsCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -4503,6 +4551,10 @@ export type AutomationsDryRunHttpStepErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -4559,6 +4611,10 @@ export type EnrollmentsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -4621,6 +4677,10 @@ export type EnrollmentsGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -4662,6 +4722,10 @@ export type AutomationsDeleteErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -4715,6 +4779,10 @@ export type AutomationsGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -4756,6 +4824,10 @@ export type AutomationsUpdateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -4803,6 +4875,10 @@ export type AutomationsActivateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -4848,6 +4924,10 @@ export type AutomationsArchiveErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -4897,6 +4977,10 @@ export type AutomationsDeactivateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -4939,6 +5023,10 @@ export type AutomationsUnarchiveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -4971,6 +5059,10 @@ export type BrandKitGetErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -5017,6 +5109,10 @@ export type BroadcastsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -5076,6 +5172,10 @@ export type BroadcastsCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -5117,6 +5217,10 @@ export type BroadcastsDeleteErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5164,6 +5268,10 @@ export type BroadcastsGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -5205,6 +5313,10 @@ export type BroadcastsUpdateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5252,6 +5364,10 @@ export type BroadcastsArchiveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -5298,6 +5414,10 @@ export type BroadcastsReportErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -5339,6 +5459,10 @@ export type BroadcastsScheduleErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5386,6 +5510,10 @@ export type BroadcastsSetSegmentErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -5431,6 +5559,10 @@ export type BroadcastsTestSendErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5478,6 +5610,10 @@ export type BroadcastsUnarchiveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -5519,6 +5655,10 @@ export type BroadcastsUnscheduleErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5569,6 +5709,10 @@ export type CapturedMessagesListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -5624,6 +5768,10 @@ export type CapturedMessagesDeleteAllErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
@@ -5661,6 +5809,10 @@ export type CapturedMessagesDeleteErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5703,6 +5855,10 @@ export type CapturedMessagesGetErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5749,6 +5905,10 @@ export type ContactsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -5808,6 +5968,10 @@ export type ContactsCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 conflict response
    */
   409: ProblemDetails;
@@ -5848,6 +6012,10 @@ export type ContactsBatchUpsertErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -5895,6 +6063,10 @@ export type ContactsEraseByErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -5940,6 +6112,10 @@ export type ContactsExportErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -5988,6 +6164,10 @@ export type TagsListForContactErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -6053,6 +6233,10 @@ export type TagsApplyErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -6097,6 +6281,10 @@ export type TagsRemoveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -6138,6 +6326,10 @@ export type ContactsDeleteErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -6185,6 +6377,10 @@ export type ContactsGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -6227,6 +6423,10 @@ export type ContactsUpdateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -6267,6 +6467,10 @@ export type CustomFieldsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -6328,6 +6532,10 @@ export type EmailsSendErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -6373,6 +6581,10 @@ export type EmailLintLintErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -6406,6 +6618,10 @@ export type EmailSchemaGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
@@ -6438,6 +6654,10 @@ export type EventsCreateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -6484,6 +6704,10 @@ export type EventActionsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -6543,6 +6767,10 @@ export type EventsBatchSubmitErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -6588,6 +6816,10 @@ export type ExportAuditErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -6638,6 +6870,10 @@ export type ExportContactsErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -6686,6 +6922,10 @@ export type ExportErasuresErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -6736,6 +6976,10 @@ export type ExportEventsErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -6784,6 +7028,10 @@ export type ExportMessagesErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -6837,6 +7085,10 @@ export type IntegrationsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -6896,6 +7148,10 @@ export type IntegrationsCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 conflict response
    */
   409: ProblemDetails;
@@ -6942,6 +7198,10 @@ export type IntegrationsGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -6983,6 +7243,10 @@ export type IntegrationsUpdateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7034,6 +7298,10 @@ export type IntegrationsArchiveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7082,6 +7350,10 @@ export type IntegrationsRegenerateKeyErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7124,6 +7396,10 @@ export type IntegrationsUnarchiveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7160,6 +7436,10 @@ export type PresetsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -7228,6 +7508,10 @@ export type RulesListErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -7286,6 +7570,10 @@ export type RulesCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -7327,6 +7615,10 @@ export type RulesDeleteErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7380,6 +7672,10 @@ export type RulesGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7421,6 +7717,10 @@ export type RulesUpdateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7468,6 +7768,10 @@ export type RulesActivateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7514,6 +7818,10 @@ export type RulesArchiveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7555,6 +7863,10 @@ export type RulesDeactivateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7598,6 +7910,10 @@ export type RulesDryRunErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7639,6 +7955,10 @@ export type RulesUnarchiveErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7687,6 +8007,10 @@ export type RuleFiringsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7759,6 +8083,10 @@ export type SegmentsListErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -7817,6 +8145,10 @@ export type SegmentsCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -7853,6 +8185,10 @@ export type SegmentsPreviewErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -7896,6 +8232,10 @@ export type SegmentsGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7937,6 +8277,10 @@ export type SegmentsUpdateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7983,6 +8327,10 @@ export type SegmentsArchiveErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -8031,6 +8379,10 @@ export type SegmentsUnarchiveErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -8081,6 +8433,10 @@ export type SendingDomainsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -8140,6 +8496,10 @@ export type SendingDomainsCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 conflict response
    */
   409: ProblemDetails;
@@ -8185,6 +8545,10 @@ export type SendingDomainRatesListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -8245,6 +8609,10 @@ export type SendingDomainsGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8286,6 +8654,10 @@ export type SendingDomainsUpdateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -8337,6 +8709,10 @@ export type SendingDomainsArchiveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8385,6 +8761,10 @@ export type SendingDomainsUnarchiveErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8431,6 +8811,10 @@ export type SendingDomainsVerifyErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8467,6 +8851,10 @@ export type SuppressionsCreateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -8513,6 +8901,10 @@ export type TagsListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -8574,6 +8966,10 @@ export type TagsDeleteErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8625,6 +9021,10 @@ export type TemplatesListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -8684,6 +9084,10 @@ export type TemplatesCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -8725,6 +9129,10 @@ export type TemplatesDeleteErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -8772,6 +9180,10 @@ export type TemplatesGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8814,6 +9226,10 @@ export type TemplatesUpdateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8854,6 +9270,10 @@ export type UnsubscribesCreateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -8900,6 +9320,10 @@ export type WebhooksListErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -8959,6 +9383,10 @@ export type WebhooksCreateErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 validation response
    */
   422: ProblemDetails;
@@ -9000,6 +9428,10 @@ export type WebhooksDeleteErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -9047,6 +9479,10 @@ export type WebhooksGetErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -9088,6 +9524,10 @@ export type WebhooksUpdateErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -9135,6 +9575,10 @@ export type WebhooksRegenerateSecretErrors = {
    */
   401: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -9176,6 +9620,10 @@ export type WebhooksTestErrors = {
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */

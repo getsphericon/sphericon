@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -108,6 +109,12 @@ func (_c *OAuthCodeCreate) SetWorkspaceID(v int64) *OAuthCodeCreate {
 	return _c
 }
 
+// SetMembershipID sets the "membership_id" field.
+func (_c *OAuthCodeCreate) SetMembershipID(v int64) *OAuthCodeCreate {
+	_c.mutation.SetMembershipID(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OAuthCodeCreate) SetID(v int64) *OAuthCodeCreate {
 	_c.mutation.SetID(v)
@@ -122,6 +129,11 @@ func (_c *OAuthCodeCreate) SetClient(v *OAuthClient) *OAuthCodeCreate {
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_c *OAuthCodeCreate) SetWorkspace(v *Workspace) *OAuthCodeCreate {
 	return _c.SetWorkspaceID(v.ID)
+}
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (_c *OAuthCodeCreate) SetMembership(v *Membership) *OAuthCodeCreate {
+	return _c.SetMembershipID(v.ID)
 }
 
 // Mutation returns the OAuthCodeMutation object of the builder.
@@ -217,11 +229,17 @@ func (_c *OAuthCodeCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "OAuthCode.workspace_id"`)}
 	}
+	if _, ok := _c.mutation.MembershipID(); !ok {
+		return &ValidationError{Name: "membership_id", err: errors.New(`ent: missing required field "OAuthCode.membership_id"`)}
+	}
 	if len(_c.mutation.ClientIDs()) == 0 {
 		return &ValidationError{Name: "client", err: errors.New(`ent: missing required edge "OAuthCode.client"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "OAuthCode.workspace"`)}
+	}
+	if len(_c.mutation.MembershipIDs()) == 0 {
+		return &ValidationError{Name: "membership", err: errors.New(`ent: missing required edge "OAuthCode.membership"`)}
 	}
 	return nil
 }
@@ -320,6 +338,23 @@ func (_c *OAuthCodeCreate) createSpec() (*OAuthCode, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.MembershipIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   oauthcode.MembershipTable,
+			Columns: []string{oauthcode.MembershipColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(membership.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.MembershipID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -449,6 +484,18 @@ func (u *OAuthCodeUpsert) SetWorkspaceID(v int64) *OAuthCodeUpsert {
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
 func (u *OAuthCodeUpsert) UpdateWorkspaceID() *OAuthCodeUpsert {
 	u.SetExcluded(oauthcode.FieldWorkspaceID)
+	return u
+}
+
+// SetMembershipID sets the "membership_id" field.
+func (u *OAuthCodeUpsert) SetMembershipID(v int64) *OAuthCodeUpsert {
+	u.Set(oauthcode.FieldMembershipID, v)
+	return u
+}
+
+// UpdateMembershipID sets the "membership_id" field to the value that was provided on create.
+func (u *OAuthCodeUpsert) UpdateMembershipID() *OAuthCodeUpsert {
+	u.SetExcluded(oauthcode.FieldMembershipID)
 	return u
 }
 
@@ -600,6 +647,20 @@ func (u *OAuthCodeUpsertOne) SetWorkspaceID(v int64) *OAuthCodeUpsertOne {
 func (u *OAuthCodeUpsertOne) UpdateWorkspaceID() *OAuthCodeUpsertOne {
 	return u.Update(func(s *OAuthCodeUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetMembershipID sets the "membership_id" field.
+func (u *OAuthCodeUpsertOne) SetMembershipID(v int64) *OAuthCodeUpsertOne {
+	return u.Update(func(s *OAuthCodeUpsert) {
+		s.SetMembershipID(v)
+	})
+}
+
+// UpdateMembershipID sets the "membership_id" field to the value that was provided on create.
+func (u *OAuthCodeUpsertOne) UpdateMembershipID() *OAuthCodeUpsertOne {
+	return u.Update(func(s *OAuthCodeUpsert) {
+		s.UpdateMembershipID()
 	})
 }
 
@@ -917,6 +978,20 @@ func (u *OAuthCodeUpsertBulk) SetWorkspaceID(v int64) *OAuthCodeUpsertBulk {
 func (u *OAuthCodeUpsertBulk) UpdateWorkspaceID() *OAuthCodeUpsertBulk {
 	return u.Update(func(s *OAuthCodeUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetMembershipID sets the "membership_id" field.
+func (u *OAuthCodeUpsertBulk) SetMembershipID(v int64) *OAuthCodeUpsertBulk {
+	return u.Update(func(s *OAuthCodeUpsert) {
+		s.SetMembershipID(v)
+	})
+}
+
+// UpdateMembershipID sets the "membership_id" field to the value that was provided on create.
+func (u *OAuthCodeUpsertBulk) UpdateMembershipID() *OAuthCodeUpsertBulk {
+	return u.Update(func(s *OAuthCodeUpsert) {
+		s.UpdateMembershipID()
 	})
 }
 

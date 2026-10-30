@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -64,10 +65,12 @@ model SiteSuppressionListQuery {
 // Nested via @parentResource + @autoRoute.
 @tag("Site Suppressions")
 namespace SiteSuppressions {
-  /** Manually suppress an address (reason = manual; idempotent per address) */
+  /** Manually suppress an address (reason = manual; idempotent per address). Owners and admins
+   * only. */
   @createsResource(SiteSuppressionResource)
   @post
   @autoRoute
+  @extension("x-required-permissions", #[Permission.suppressionsManage])
   op create(
     ...ResourceCollectionParameters<SiteSuppressionResource>,
     @body body: SiteCreateSuppressionInput,
@@ -76,13 +79,15 @@ namespace SiteSuppressions {
         @statusCode statusCode: 201;
         @body body: SiteSuppressionResource;
       }
+    | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** List suppressed addresses */
+  /** List suppressed addresses (every member) */
   @listsResource(SiteSuppressionResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(
     ...ResourceCollectionParameters<SiteSuppressionResource>,
     ...PageQuery,
@@ -94,12 +99,14 @@ namespace SiteSuppressions {
     | UnprocessableEntityProblem;
 
   /** Lift a suppression: the row stays with its lift time and the address can receive mail again.
-   * Lifting one that is already lifted is a 404. */
+   * Lifting one that is already lifted is a 404. Owners and admins only. */
   @deletesResource(SiteSuppressionResource)
   @delete
   @autoRoute
+  @extension("x-required-permissions", #[Permission.suppressionsManage])
   op delete(...ResourceParameters<SiteSuppressionResource>):
     | NoContentResponse
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem;
 }

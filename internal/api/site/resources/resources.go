@@ -95,6 +95,12 @@ type Converter interface {
 	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) siteapi.SiteSegmentResource
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource
+	// A Connection is an API token read with its Membership and that Membership's User loaded
+	// (apitokens.Connections); the User is who it belongs to.
+	// goverter:map Edges.Membership.UserID UserId
+	// goverter:map Edges.Membership.Edges.User.Name UserName
+	// goverter:map Edges.Membership.Edges.User.Email UserEmail
+	ConnectionToResource(source *ent.ApiToken) siteapi.SiteConnectionResource
 
 	// Verification is derived: a non-nil email_verified_at means verified.
 	// The Sign-up survey is due only while the Instance still asks it, which the mapper cannot
@@ -102,10 +108,11 @@ type Converter interface {
 	// goverter:map EmailVerifiedAt EmailVerified | emailVerified
 	// goverter:ignore SignupSurveyDue
 	UserToResource(source *ent.User) *siteapi.SiteUserResource
-	// The grace end and the role belong to the authenticated User's Membership,
+	// The grace end, the role and its Permissions belong to the authenticated User's Membership,
 	// which the mapper cannot see: the handler attaches them.
 	// goverter:ignore SecondFactorGraceEndsAt
 	// goverter:ignore Role
+	// goverter:ignore Permissions
 	// goverter:ignore AccountLinkAvailable
 	// The active holds are read through the Workspace's scope, which the mapper cannot
 	// see: the handler attaches them.

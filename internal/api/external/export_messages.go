@@ -13,12 +13,8 @@ import (
 // ExportMessages serves the Outbound messages stream (ADR 0045): the same NDJSON page, cursor
 // header and gates as the Events stream, over delivery metadata only.
 func (h *Handlers) ExportMessages(ctx context.Context, params externalapi.ExportMessagesParams) (externalapi.ExportMessagesRes, error) {
-	switch code, detail := h.exportDenied(ctx); code {
-	case http.StatusNotFound:
-		res := externalapi.ExportMessagesNotFound(problem(code, detail))
-		return &res, nil
-	case http.StatusUnauthorized:
-		res := externalapi.ExportMessagesUnauthorized(problem(code, detail))
+	if !h.exportLicensed() {
+		res := externalapi.ExportMessagesNotFound(problem(http.StatusNotFound, "not found"))
 		return &res, nil
 	}
 

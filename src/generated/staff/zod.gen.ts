@@ -20,7 +20,8 @@ export const zEntityId = z.string().regex(/^[0-9]+$/);
 export const zProblemCode = z.enum([
   'second_factor_required',
   'email_verification_required',
-  'signup_closed'
+  'signup_closed',
+  'permission_required'
 ]);
 
 /**

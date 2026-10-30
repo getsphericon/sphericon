@@ -2,10 +2,8 @@ package external
 
 import (
 	"context"
-	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/go-faster/jx"
@@ -15,11 +13,7 @@ import (
 // EmailSchemaGet describes the editor's document to an agent (ADR 0040): the structure the editor
 // derives, with the attribute rules the server checks. It holds no Workspace data and needs only the
 // right to read Templates.
-func (h *Handlers) EmailSchemaGet(ctx context.Context) (externalapi.EmailSchemaGetRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTemplatesRead) {
-		res := problem(http.StatusUnauthorized, "insufficient scope")
-		return &res, nil
-	}
+func (h *Handlers) EmailSchemaGet(_ context.Context) (externalapi.EmailSchemaGetRes, error) {
 	schema := emaildoc.AgentSchema()
 	return &externalapi.EmailSchemaResult{
 		EditorVersion: schema.EditorVersion,

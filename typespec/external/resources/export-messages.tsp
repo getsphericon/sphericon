@@ -91,9 +91,11 @@ namespace Export {
    */
   @get
   @route("/messages")
+  @extension("x-required-scopes", #[ApiTokenScope.exportRead])
   op messages(...ExportPageQuery):
     | ExportPage
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | NotFoundProblem;
 }

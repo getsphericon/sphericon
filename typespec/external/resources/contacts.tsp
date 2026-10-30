@@ -111,7 +111,10 @@ interface Contacts
   extends ExternalCrudUnique<
       ContactResource,
       CreateContactInput,
-      UpdateContactInput
+      UpdateContactInput,
+      ApiTokenScope.contactsRead,
+      ApiTokenScope.contactsWrite,
+      ApiTokenScope.contactsErase
     > {
   /**
    * Export everything held about one contact as a streamed JSON download: the
@@ -120,8 +123,15 @@ interface Contacts
    * message bodies are not included. Identify the contact by exactly one of
    * `id` or `email`.
    */
+  // A Connection's User needs what /site asks for the same action (ADR 0061): exporting
+  // a Contact (contacts:export) and, as `email` finds one by address, contacts:erase.
   @collectionAction(ContactResource, "export")
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.contactsRead])
+  @extension(
+    "x-required-permissions",
+    #[Permission.contactsExport, Permission.contactsErase]
+  )
   export(
     ...ResourceCollectionParameters<ContactResource>,
 
@@ -135,6 +145,7 @@ interface Contacts
     | ContactExportTypedDownload
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
@@ -147,6 +158,7 @@ interface Contacts
   @collectionAction(ContactResource, "erase")
   @delete
   @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.contactsErase])
   eraseBy(
     ...ResourceCollectionParameters<ContactResource>,
 
@@ -159,6 +171,7 @@ interface Contacts
     | NoContentResponse
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 }
@@ -228,9 +241,11 @@ model UpsertContactsResult {
 namespace ContactsBatch {
   /** Upsert up to 1000 contacts by alias keys; a failing item does not affect the others */
   @post
+  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
   op upsert(@body body: UpsertContactsInput):
     | UpsertContactsResult
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | BadRequestProblem
     | UnprocessableEntityProblem;

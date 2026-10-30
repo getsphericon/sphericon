@@ -36,17 +36,18 @@ import {
   siteMembershipsUpdateMutation,
   siteUserGetMeOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteInvitableRole } from '../../generated/site/types.gen.ts'
+import type { SiteInvitableRole, SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { zSiteInvitableRole, zSiteMembershipRole } from '../../generated/site/zod.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
-import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { formatDate } from '../../utils/datetime.ts'
+import { can } from '../../utils/permissions.ts'
 
 const MEMBER_ROLES = zSiteMembershipRole.options
 const INVITABLE_ROLES = zSiteInvitableRole.options
 
-export function MembersSection({ workspaceId }: { workspaceId: string }) {
+export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+  const workspaceId = workspace.id
   const { t } = useTranslation()
   const confirmRemove = useConfirmation()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
@@ -55,9 +56,8 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
     close()
     setInviteUrl(null)
   }
-  const role = useCurrentRole(workspaceId)
   const me = useQuery(siteUserGetMeOptions())
-  const canManageMembers = canManage(role)
+  const canResetSecondFactor = can(workspace, 'second_factor:manage')
 
   const membersKey = siteMembershipsListQueryKey({ path: { workspaceId } })
   const invitesKey = siteInvitationsListQueryKey({ path: { workspaceId } })
@@ -196,7 +196,7 @@ export function MembersSection({ workspaceId }: { workspaceId: string }) {
                 render: (record) => (
                   <Group justify="flex-end">
                     <RowActionsMenu>
-                      {canManageMembers && record.userId !== me.data?.id ? (
+                      {canResetSecondFactor && record.userId !== me.data?.id ? (
                         <Menu.Item color="orange" onClick={() => onResetSecondFactor(record.id)}>
                           {t(($) => $.settings.members.resetSecondFactor)}
                         </Menu.Item>

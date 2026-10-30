@@ -21,7 +21,7 @@ func TestExternalIntegrationsListReportsSendLimitAndUsage(t *testing.T) {
 
 	denied, err := env.ExternalScoped(t, "contacts:read").IntegrationsList(ctx, externalapi.IntegrationsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.IntegrationsListUnauthorized{}, denied, "integrations:read is required")
+	assert.IsType(t, &externalapi.IntegrationsListForbidden{}, denied, "integrations:read is required")
 
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(14).SetMaxPerDay(50000).ExecX(ctx)
 

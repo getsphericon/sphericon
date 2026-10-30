@@ -6,12 +6,10 @@ import (
 	"context"
 	"io"
 	"log/slog"
-	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/accountlink"
@@ -30,7 +28,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -269,17 +266,6 @@ func NewHandlers(d Deps) *Handlers {
 
 var _ siteapi.Handler = (*Handlers)(nil)
 
-// scopedFor is the site's construction point of the scoped client (ADR 0017): it
-// resolves the Workspace addressed by the /w/{id} path segment through the
-// authenticated user's Membership (accounts.Scope) and returns its scoped client.
-// Handlers pass the result to the domain modules and never build a *ent.Scoped from
-// an int64. Returns an ent NotFound error (mapped to 404) when the Workspace id does not
-// exist or the user is not a member.
-func (h *Handlers) scopedFor(ctx context.Context, publicID siteapi.WorkspaceId) (*ent.Scoped, error) {
-	s, _, err := h.scopedWithRoleFor(ctx, publicID)
-	return s, err
-}
-
 // actor is the signed-in User as the actor of an Audit entry (ADR 0022), with the
 // display name snapshotted. A name that cannot be loaded is left empty: the entry is
 // still worth recording.
@@ -293,56 +279,6 @@ func (h *Handlers) actor(ctx context.Context) events.Actor {
 		actor.Name = u.Name
 	}
 	return actor
-}
-
-// scopedWithRoleFor is scopedFor plus the caller's role, for owner/admin-gated
-// actions.
-func (h *Handlers) scopedWithRoleFor(ctx context.Context, publicID siteapi.WorkspaceId) (*ent.Scoped, membership.Role, error) {
-	s, m, err := h.membershipFor(ctx, publicID)
-	if err != nil {
-		return nil, "", err
-	}
-	return s, m.Role, nil
-}
-
-// membershipFor is scopedFor plus the caller's Membership (its User and Workspace
-// loaded). It is where the Two-factor requirement is enforced (ADR 0020): once a
-// User's grace in a requiring Workspace has ended without a Second factor, every
-// request to that Workspace fails with secondFactorRequiredError (403
-// second_factor_required); other Workspaces and the /me endpoints are unaffected.
-func (h *Handlers) membershipFor(ctx context.Context, publicID siteapi.WorkspaceId) (*ent.Scoped, *ent.Membership, error) {
-	s, m, err := h.membershipEvenIfWithheld(ctx, publicID)
-	if err != nil {
-		return nil, nil, err
-	}
-	if secondfactor.Withheld(m, h.now(), currentSession(ctx).Method.Strong()) {
-		return nil, nil, secondFactorRequiredError{}
-	}
-	return s, m, nil
-}
-
-// membershipEvenIfWithheld is membershipFor without the Two-factor requirement
-// check. Only turning the requirement off uses it: an Owner or Admin withheld by
-// the requirement must still be able to lift it (ADR 0020).
-func (h *Handlers) membershipEvenIfWithheld(ctx context.Context, publicID siteapi.WorkspaceId) (*ent.Scoped, *ent.Membership, error) {
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		return nil, nil, accounts.ErrWorkspaceNotFound
-	}
-	return h.accounts.Scope(ctx, a.UserID, string(publicID))
-}
-
-// secondFactorRequiredError is secondfactor.ErrRequired as the problem the site
-// answers it with. Returned as an error, it is rendered by the server's error
-// handler, which reads it through its Problem method.
-type secondFactorRequiredError struct{}
-
-func (secondFactorRequiredError) Error() string { return secondfactor.ErrRequired.Error() }
-func (secondFactorRequiredError) Unwrap() error { return secondfactor.ErrRequired }
-
-// Problem is the 403 second_factor_required answer.
-func (secondFactorRequiredError) Problem() (status int, code, detail string) {
-	return http.StatusForbidden, string(siteapi.ProblemCodeSecondFactorRequired), i18n.T("errors.second_factor_required", nil)
 }
 
 // mailNotQueued logs a notice mail that could not be queued. The response never depends on it (a

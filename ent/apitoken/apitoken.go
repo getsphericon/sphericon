@@ -34,8 +34,12 @@ const (
 	FieldRevokedAt = "revoked_at"
 	// FieldLastUsedAt holds the string denoting the last_used_at field in the database.
 	FieldLastUsedAt = "last_used_at"
+	// FieldMembershipID holds the string denoting the membership_id field in the database.
+	FieldMembershipID = "membership_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
+	// EdgeMembership holds the string denoting the membership edge name in mutations.
+	EdgeMembership = "membership"
 	// Table holds the table name of the apitoken in the database.
 	Table = "api_tokens"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -45,6 +49,13 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
+	// MembershipTable is the table that holds the membership relation/edge.
+	MembershipTable = "api_tokens"
+	// MembershipInverseTable is the table name for the Membership entity.
+	// It exists in this package in order to avoid circular dependency with the "membership" package.
+	MembershipInverseTable = "memberships"
+	// MembershipColumn is the table column denoting the membership relation/edge.
+	MembershipColumn = "membership_id"
 )
 
 // Columns holds all SQL columns for apitoken fields.
@@ -60,6 +71,7 @@ var Columns = []string{
 	FieldExpiresAt,
 	FieldRevokedAt,
 	FieldLastUsedAt,
+	FieldMembershipID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -142,10 +154,22 @@ func ByLastUsedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastUsedAt, opts...).ToFunc()
 }
 
+// ByMembershipID orders the results by the membership_id field.
+func ByMembershipID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMembershipID, opts...).ToFunc()
+}
+
 // ByWorkspaceField orders the results by workspace field.
 func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newWorkspaceStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByMembershipField orders the results by membership field.
+func ByMembershipField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newMembershipStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newWorkspaceStep() *sqlgraph.Step {
@@ -153,5 +177,12 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WorkspaceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+	)
+}
+func newMembershipStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(MembershipInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, MembershipTable, MembershipColumn),
 	)
 }

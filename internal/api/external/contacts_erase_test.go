@@ -62,7 +62,7 @@ func TestExternalContactsEraseNeedsTheEraseScope(t *testing.T) {
 
 	denied, err := initechClient(t, env, "contacts:read", "contacts:write").ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsDeleteUnauthorized{}, denied, "contacts:write does not erase")
+	assert.IsType(t, &externalapi.ContactsDeleteForbidden{}, denied, "contacts:write does not erase")
 	still, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactErasableID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.True(t, still)

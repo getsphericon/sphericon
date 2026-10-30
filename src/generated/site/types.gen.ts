@@ -614,12 +614,48 @@ export type LintFinding = {
 export type PasskeyName = string;
 
 /**
+ * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
+ * written `resource:verb` like the API token scopes. A Role is a set of them; the table
+ * from Role to Permissions lives in the server, and the client reads a Membership's
+ * Permissions from its Workspace instead of computing them.
+ */
+export const Permission = {
+  MEMBERS_MANAGE: 'members:manage',
+  AUDIT_READ: 'audit:read',
+  AUDIT_CONFIGURE: 'audit:configure',
+  TOKENS_MANAGE: 'tokens:manage',
+  INTEGRATIONS_MANAGE: 'integrations:manage',
+  WEBHOOKS_MANAGE: 'webhooks:manage',
+  SENDING_DOMAINS_MANAGE: 'sending_domains:manage',
+  CONTACTS_ERASE: 'contacts:erase',
+  CONTACTS_EXPORT: 'contacts:export',
+  SUPPRESSIONS_MANAGE: 'suppressions:manage',
+  SECOND_FACTOR_MANAGE: 'second_factor:manage',
+  WORKSPACE_UPDATE: 'workspace:update',
+  WORKSPACE_TIMEZONE: 'workspace:timezone',
+  REVENUE_CONFIGURE: 'revenue:configure',
+  BRAND_KIT_MANAGE: 'brand_kit:manage',
+  JOIN_DOMAINS_MANAGE: 'join_domains:manage',
+  ACCOUNT_LINK_OPEN: 'account_link:open',
+  WORKSPACE_DELETE: 'workspace:delete'
+} as const;
+
+/**
+ * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
+ * written `resource:verb` like the API token scopes. A Role is a set of them; the table
+ * from Role to Permissions lives in the server, and the client reads a Membership's
+ * Permissions from its Workspace instead of computing them.
+ */
+export type Permission = typeof Permission[keyof typeof Permission];
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const ProblemCode = {
   SECOND_FACTOR_REQUIRED: 'second_factor_required',
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
-  SIGNUP_CLOSED: 'signup_closed'
+  SIGNUP_CLOSED: 'signup_closed',
+  PERMISSION_REQUIRED: 'permission_required'
 } as const;
 
 /**
@@ -2062,6 +2098,43 @@ export type SiteConfirmEmailChangeInput = {
 };
 
 /**
+ * A Connection: the access a User gave an application (an MCP client) to the Workspace by
+ * consenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the
+ * User's Role allows and ends with the Membership. Connections are not API tokens and are not
+ * listed with them.
+ */
+export type SiteConnectionResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The application's name, as it registered itself (untrusted: show as text)
+   */
+  name: string;
+  /**
+   * Granted scopes
+   */
+  scopes: Array<ApiTokenScope>;
+  /**
+   * The User the Connection belongs to
+   */
+  userId: EntityId;
+  /**
+   * That User's display name
+   */
+  userName: string;
+  /**
+   * That User's email
+   */
+  userEmail: EmailAddress;
+  /**
+   * When the User approved the application
+   */
+  createdAt: Timestamp;
+};
+
+/**
  * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
  */
 export type SiteContactHoldings = {
@@ -3397,6 +3470,12 @@ export type SiteOAuthAuthorizationRequest = {
    * Requested setup scopes (Sending domains, Integrations): granted only when the user opts in explicitly, apart from the send class
    */
   setupScopes: Array<SetupScope>;
+  /**
+   * The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what the User may grant, and the server refuses the rest.
+   */
+  requiredPermissions: {
+    [key: string]: Permission;
+  };
 };
 
 /**
@@ -3418,7 +3497,7 @@ export type SiteOAuthDecisionInput = {
    */
   scope?: string;
   /**
-   * Id of the Workspace the token will belong to
+   * Id of the Workspace the Connection will belong to (the signed-in User must be a member)
    */
   workspaceId: WorkspaceId;
   /**
@@ -4139,16 +4218,6 @@ export type SiteSecondFactorEnrollment = {
    * The QR code of the otpauth URI, as a PNG data URI
    */
   qrCode: string;
-};
-
-/**
- * Switch the Two-factor requirement on or off
- */
-export type SiteSecondFactorRequirementInput = {
-  /**
-   * Whether every User with a Membership must have a Second factor
-   */
-  required: boolean;
 };
 
 /**
@@ -5368,7 +5437,7 @@ export type SiteWorkspaceResource = {
   postalAddress: string;
   /**
    * The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days
-   * in. UTC until an Owner sets it.
+   * in. UTC until an Owner or Admin sets it.
    */
   timezone: TimeZoneName;
   /**
@@ -5377,6 +5446,12 @@ export type SiteWorkspaceResource = {
    * own endpoints are withheld under a Two-factor requirement.
    */
   role: SiteMembershipRole;
+  /**
+   * The Permissions the authenticated User's Role holds in this Workspace (ADR 0061):
+   * the client asks these whether to offer an action, it never computes them from the
+   * Role.
+   */
+  permissions: Array<Permission>;
   /**
    * When outbound sending was suspended (ADR 0007); absent while the workspace can
    * send. A suspension freezes every send surface but not login, reads or tracking.
@@ -5651,6 +5726,23 @@ export type SiteCapturedMessageResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteCapturedMessageResourceParentKey = WorkspaceId;
+
+/**
+ * Unique identifier
+ */
+export type SiteConnectionResourceKeyId = EntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteConnectionResourceKeyWorkspaceId = WorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteConnectionResourceParentKey = WorkspaceId;
 
 /**
  * Unique identifier
@@ -7246,6 +7338,37 @@ export type SiteWorkspacesListDeletedResponses = {
 };
 
 export type SiteWorkspacesListDeletedResponse = SiteWorkspacesListDeletedResponses[keyof SiteWorkspacesListDeletedResponses];
+
+export type SiteWorkspacesRestoreData = {
+  body?: never;
+  path: {
+    id: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/deleted/{id}/restore';
+};
+
+export type SiteWorkspacesRestoreErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+};
+
+export type SiteWorkspacesRestoreError = SiteWorkspacesRestoreErrors[keyof SiteWorkspacesRestoreErrors];
+
+export type SiteWorkspacesRestoreResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesRestoreResponse = SiteWorkspacesRestoreResponses[keyof SiteWorkspacesRestoreResponses];
 
 export type SiteWorkspacesUpdateData = {
   body: SiteUpdateWorkspaceInput;
@@ -9093,6 +9216,72 @@ export type SiteCapturedMessagesGetResponses = {
 
 export type SiteCapturedMessagesGetResponse = SiteCapturedMessagesGetResponses[keyof SiteCapturedMessagesGetResponses];
 
+export type SiteConnectionsListData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/connections';
+};
+
+export type SiteConnectionsListErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteConnectionsListError = SiteConnectionsListErrors[keyof SiteConnectionsListErrors];
+
+export type SiteConnectionsListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SiteConnectionResource>;
+};
+
+export type SiteConnectionsListResponse = SiteConnectionsListResponses[keyof SiteConnectionsListResponses];
+
+export type SiteConnectionsDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/connections/{id}';
+};
+
+export type SiteConnectionsDeleteErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteConnectionsDeleteError = SiteConnectionsDeleteErrors[keyof SiteConnectionsDeleteErrors];
+
+export type SiteConnectionsDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteConnectionsDeleteResponse = SiteConnectionsDeleteResponses[keyof SiteConnectionsDeleteResponses];
+
 export type SiteContactsListData = {
   body?: never;
   path: {
@@ -9276,6 +9465,10 @@ export type SiteContactsExportErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -10616,37 +10809,6 @@ export type SiteMembershipsResetSecondFactorResponses = {
 
 export type SiteMembershipsResetSecondFactorResponse = SiteMembershipsResetSecondFactorResponses[keyof SiteMembershipsResetSecondFactorResponses];
 
-export type SiteWorkspacesRestoreData = {
-  body?: never;
-  path: {
-    workspaceId: WorkspaceId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/restore';
-};
-
-export type SiteWorkspacesRestoreErrors = {
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-};
-
-export type SiteWorkspacesRestoreError = SiteWorkspacesRestoreErrors[keyof SiteWorkspacesRestoreErrors];
-
-export type SiteWorkspacesRestoreResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteWorkspaceResource;
-};
-
-export type SiteWorkspacesRestoreResponse = SiteWorkspacesRestoreResponses[keyof SiteWorkspacesRestoreResponses];
-
 export type SiteWorkspacesGetRevenueSettingsData = {
   body?: never;
   path: {
@@ -11205,8 +11367,8 @@ export type SiteRuleFiringsListResponses = {
 
 export type SiteRuleFiringsListResponse = SiteRuleFiringsListResponses[keyof SiteRuleFiringsListResponses];
 
-export type SiteWorkspacesSetSecondFactorRequirementData = {
-  body: SiteSecondFactorRequirementInput;
+export type SiteWorkspacesLiftSecondFactorRequirementData = {
+  body?: never;
   path: {
     workspaceId: WorkspaceId;
   };
@@ -11214,7 +11376,7 @@ export type SiteWorkspacesSetSecondFactorRequirementData = {
   url: '/workspaces/{workspaceId}/second-factor-requirement';
 };
 
-export type SiteWorkspacesSetSecondFactorRequirementErrors = {
+export type SiteWorkspacesLiftSecondFactorRequirementErrors = {
   /**
    * RFC 7807 forbidden response
    */
@@ -11225,16 +11387,47 @@ export type SiteWorkspacesSetSecondFactorRequirementErrors = {
   404: ProblemDetails;
 };
 
-export type SiteWorkspacesSetSecondFactorRequirementError = SiteWorkspacesSetSecondFactorRequirementErrors[keyof SiteWorkspacesSetSecondFactorRequirementErrors];
+export type SiteWorkspacesLiftSecondFactorRequirementError = SiteWorkspacesLiftSecondFactorRequirementErrors[keyof SiteWorkspacesLiftSecondFactorRequirementErrors];
 
-export type SiteWorkspacesSetSecondFactorRequirementResponses = {
+export type SiteWorkspacesLiftSecondFactorRequirementResponses = {
   /**
    * The request has succeeded.
    */
   200: SiteWorkspaceResource;
 };
 
-export type SiteWorkspacesSetSecondFactorRequirementResponse = SiteWorkspacesSetSecondFactorRequirementResponses[keyof SiteWorkspacesSetSecondFactorRequirementResponses];
+export type SiteWorkspacesLiftSecondFactorRequirementResponse = SiteWorkspacesLiftSecondFactorRequirementResponses[keyof SiteWorkspacesLiftSecondFactorRequirementResponses];
+
+export type SiteWorkspacesRequireSecondFactorData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/second-factor-requirement';
+};
+
+export type SiteWorkspacesRequireSecondFactorErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteWorkspacesRequireSecondFactorError = SiteWorkspacesRequireSecondFactorErrors[keyof SiteWorkspacesRequireSecondFactorErrors];
+
+export type SiteWorkspacesRequireSecondFactorResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesRequireSecondFactorResponse = SiteWorkspacesRequireSecondFactorResponses[keyof SiteWorkspacesRequireSecondFactorResponses];
 
 export type SiteSegmentsListData = {
   body?: never;
@@ -12024,6 +12217,10 @@ export type SiteSuppressionsCreateData = {
 
 export type SiteSuppressionsCreateErrors = {
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -12066,6 +12263,10 @@ export type SiteSuppressionsDeleteErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */

@@ -208,6 +208,14 @@ func (s *AuditEntriesListBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AuditEntriesListForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AuditEntriesListPaymentRequired) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -534,6 +542,14 @@ func (s *AutomationsActivateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsActivateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsActivateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -566,6 +582,14 @@ func (s *AutomationsArchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsArchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -583,6 +607,14 @@ func (s *AutomationsArchiveUnauthorized) Validate() error {
 }
 
 func (s *AutomationsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsCreateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -614,6 +646,14 @@ func (s *AutomationsDeactivateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsDeactivateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsDeactivateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -631,6 +671,14 @@ func (s *AutomationsDeactivateUnauthorized) Validate() error {
 }
 
 func (s *AutomationsDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -670,6 +718,14 @@ func (s *AutomationsDryRunHttpStepBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsDryRunHttpStepForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsDryRunHttpStepNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -702,6 +758,14 @@ func (s *AutomationsGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -719,6 +783,14 @@ func (s *AutomationsGetUnauthorized) Validate() error {
 }
 
 func (s *AutomationsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -790,6 +862,14 @@ func (s *AutomationsUnarchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsUnarchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -814,6 +894,14 @@ func (s *AutomationsUpdateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *AutomationsUpdateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *AutomationsUpdateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -831,6 +919,22 @@ func (s *AutomationsUpdateUnauthorized) Validate() error {
 }
 
 func (s *AutomationsUpdateUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BrandKitGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BrandKitGetUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -949,6 +1053,14 @@ func (s *BroadcastsArchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *BroadcastsArchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *BroadcastsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -981,6 +1093,14 @@ func (s *BroadcastsCreateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *BroadcastsCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *BroadcastsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -998,6 +1118,14 @@ func (s *BroadcastsCreateUnprocessableEntity) Validate() error {
 }
 
 func (s *BroadcastsDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BroadcastsDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1037,6 +1165,14 @@ func (s *BroadcastsGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *BroadcastsGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *BroadcastsGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1054,6 +1190,14 @@ func (s *BroadcastsGetUnauthorized) Validate() error {
 }
 
 func (s *BroadcastsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BroadcastsListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1125,6 +1269,14 @@ func (s *BroadcastsReportBadRequest) Validate() error {
 	return nil
 }
 
+func (s *BroadcastsReportForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *BroadcastsReportNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1142,6 +1294,14 @@ func (s *BroadcastsReportUnauthorized) Validate() error {
 }
 
 func (s *BroadcastsScheduleBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BroadcastsScheduleForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1181,6 +1341,14 @@ func (s *BroadcastsSetSegmentBadRequest) Validate() error {
 	return nil
 }
 
+func (s *BroadcastsSetSegmentForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *BroadcastsSetSegmentNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1206,6 +1374,14 @@ func (s *BroadcastsSetSegmentUnprocessableEntity) Validate() error {
 }
 
 func (s *BroadcastsTestSendBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BroadcastsTestSendForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1245,6 +1421,14 @@ func (s *BroadcastsUnarchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *BroadcastsUnarchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *BroadcastsUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1262,6 +1446,14 @@ func (s *BroadcastsUnarchiveUnauthorized) Validate() error {
 }
 
 func (s *BroadcastsUnscheduleBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BroadcastsUnscheduleForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1294,6 +1486,14 @@ func (s *BroadcastsUnscheduleUnprocessableEntity) Validate() error {
 }
 
 func (s *BroadcastsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *BroadcastsUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1408,7 +1608,31 @@ func (s CapturedMessageSurface) Validate() error {
 	}
 }
 
+func (s *CapturedMessagesDeleteAllForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *CapturedMessagesDeleteAllUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *CapturedMessagesDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *CapturedMessagesDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1440,6 +1664,14 @@ func (s *CapturedMessagesGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *CapturedMessagesGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *CapturedMessagesGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1457,6 +1689,14 @@ func (s *CapturedMessagesGetUnauthorized) Validate() error {
 }
 
 func (s *CapturedMessagesListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *CapturedMessagesListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1963,6 +2203,14 @@ func (s *ContactsBatchUpsertBadRequest) Validate() error {
 	return nil
 }
 
+func (s *ContactsBatchUpsertForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ContactsBatchUpsertUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1995,6 +2243,14 @@ func (s *ContactsCreateConflict) Validate() error {
 	return nil
 }
 
+func (s *ContactsCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ContactsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2012,6 +2268,14 @@ func (s *ContactsCreateUnprocessableEntity) Validate() error {
 }
 
 func (s *ContactsDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ContactsDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2051,6 +2315,14 @@ func (s *ContactsEraseByBadRequest) Validate() error {
 	return nil
 }
 
+func (s *ContactsEraseByForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ContactsEraseByNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2068,6 +2340,14 @@ func (s *ContactsEraseByUnauthorized) Validate() error {
 }
 
 func (s *ContactsExportBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ContactsExportForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2099,6 +2379,14 @@ func (s *ContactsGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *ContactsGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ContactsGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2116,6 +2404,14 @@ func (s *ContactsGetUnauthorized) Validate() error {
 }
 
 func (s *ContactsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ContactsListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2188,6 +2484,14 @@ func (s *ContactsUpdateBadRequest) Validate() error {
 }
 
 func (s *ContactsUpdateConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ContactsUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2619,6 +2923,14 @@ func (s CustomFieldType) Validate() error {
 	}
 }
 
+func (s *CustomFieldsListForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *CustomFieldsListOK) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -2655,6 +2967,14 @@ func (s *CustomFieldsListOK) Validate() error {
 	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *CustomFieldsListUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -2749,6 +3069,14 @@ func (s *EmailLintLintBadRequest) Validate() error {
 	return nil
 }
 
+func (s *EmailLintLintForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *EmailLintLintUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2758,6 +3086,22 @@ func (s *EmailLintLintUnauthorized) Validate() error {
 }
 
 func (s *EmailLintLintUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *EmailSchemaGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *EmailSchemaGetUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2797,6 +3141,14 @@ func (s *EmailsSendBadRequest) Validate() error {
 }
 
 func (s *EmailsSendConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *EmailsSendForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -2932,6 +3284,14 @@ func (s *EnrollmentsGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *EnrollmentsGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *EnrollmentsGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -2949,6 +3309,14 @@ func (s *EnrollmentsGetUnauthorized) Validate() error {
 }
 
 func (s *EnrollmentsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *EnrollmentsListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3013,6 +3381,14 @@ func (s *EnrollmentsListUnauthorized) Validate() error {
 }
 
 func (s *EventActionsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *EventActionsListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3161,6 +3537,14 @@ func (s *EventsBatchSubmitBadRequest) Validate() error {
 	return nil
 }
 
+func (s *EventsBatchSubmitForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *EventsBatchSubmitUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3178,6 +3562,14 @@ func (s *EventsBatchSubmitUnprocessableEntity) Validate() error {
 }
 
 func (s *EventsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *EventsCreateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3209,6 +3601,14 @@ func (s *ExportAuditBadRequest) Validate() error {
 	return nil
 }
 
+func (s *ExportAuditForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ExportAuditNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3226,6 +3626,14 @@ func (s *ExportAuditUnauthorized) Validate() error {
 }
 
 func (s *ExportContactsBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ExportContactsForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3257,6 +3665,14 @@ func (s *ExportErasuresBadRequest) Validate() error {
 	return nil
 }
 
+func (s *ExportErasuresForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ExportErasuresNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3281,6 +3697,14 @@ func (s *ExportEventsBadRequest) Validate() error {
 	return nil
 }
 
+func (s *ExportEventsForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ExportEventsNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3298,6 +3722,14 @@ func (s *ExportEventsUnauthorized) Validate() error {
 }
 
 func (s *ExportMessagesBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ExportMessagesForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3672,6 +4104,14 @@ func (s *IntegrationsArchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *IntegrationsArchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *IntegrationsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3704,6 +4144,14 @@ func (s *IntegrationsCreateConflict) Validate() error {
 	return nil
 }
 
+func (s *IntegrationsCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *IntegrationsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3728,6 +4176,14 @@ func (s *IntegrationsGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *IntegrationsGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *IntegrationsGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3745,6 +4201,14 @@ func (s *IntegrationsGetUnauthorized) Validate() error {
 }
 
 func (s *IntegrationsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *IntegrationsListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3816,6 +4280,14 @@ func (s *IntegrationsRegenerateKeyBadRequest) Validate() error {
 	return nil
 }
 
+func (s *IntegrationsRegenerateKeyForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *IntegrationsRegenerateKeyNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3848,6 +4320,14 @@ func (s *IntegrationsUnarchiveConflict) Validate() error {
 	return nil
 }
 
+func (s *IntegrationsUnarchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *IntegrationsUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -3873,6 +4353,14 @@ func (s *IntegrationsUpdateBadRequest) Validate() error {
 }
 
 func (s *IntegrationsUpdateConflict) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *IntegrationsUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4050,6 +4538,14 @@ func (s MaxPerSecond) Validate() error {
 	return nil
 }
 
+func (s *PresetsListForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *PresetsListOK) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4069,6 +4565,14 @@ func (s *PresetsListOK) Validate() error {
 	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *PresetsListUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -4110,6 +4614,8 @@ func (s ProblemCode) Validate() error {
 	case "email_verification_required":
 		return nil
 	case "signup_closed":
+		return nil
+	case "permission_required":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -4555,6 +5061,14 @@ func (s *RuleFiringsListBadRequest) Validate() error {
 	return nil
 }
 
+func (s *RuleFiringsListForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *RuleFiringsListNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4710,6 +5224,14 @@ func (s *RulesActivateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *RulesActivateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *RulesActivateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4742,6 +5264,14 @@ func (s *RulesArchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *RulesArchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *RulesArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4759,6 +5289,14 @@ func (s *RulesArchiveUnauthorized) Validate() error {
 }
 
 func (s *RulesCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *RulesCreateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4790,6 +5328,14 @@ func (s *RulesDeactivateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *RulesDeactivateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *RulesDeactivateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4807,6 +5353,14 @@ func (s *RulesDeactivateUnauthorized) Validate() error {
 }
 
 func (s *RulesDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *RulesDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4846,6 +5400,14 @@ func (s *RulesDryRunBadRequest) Validate() error {
 	return nil
 }
 
+func (s *RulesDryRunForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *RulesDryRunNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4870,6 +5432,14 @@ func (s *RulesGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *RulesGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *RulesGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4887,6 +5457,14 @@ func (s *RulesGetUnauthorized) Validate() error {
 }
 
 func (s *RulesListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *RulesListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -4958,6 +5536,14 @@ func (s *RulesUnarchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *RulesUnarchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *RulesUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -4975,6 +5561,14 @@ func (s *RulesUnarchiveUnauthorized) Validate() error {
 }
 
 func (s *RulesUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *RulesUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5044,6 +5638,14 @@ func (s *SegmentsArchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SegmentsArchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SegmentsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5061,6 +5663,14 @@ func (s *SegmentsArchiveUnauthorized) Validate() error {
 }
 
 func (s *SegmentsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SegmentsCreateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5092,6 +5702,14 @@ func (s *SegmentsGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SegmentsGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SegmentsGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5109,6 +5727,14 @@ func (s *SegmentsGetUnauthorized) Validate() error {
 }
 
 func (s *SegmentsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SegmentsListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5180,6 +5806,14 @@ func (s *SegmentsPreviewBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SegmentsPreviewForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SegmentsPreviewUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5204,6 +5838,14 @@ func (s *SegmentsUnarchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SegmentsUnarchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SegmentsUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5221,6 +5863,14 @@ func (s *SegmentsUnarchiveUnauthorized) Validate() error {
 }
 
 func (s *SegmentsUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SegmentsUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5420,6 +6070,14 @@ func (s *SendingDomainRatesListBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SendingDomainRatesListForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SendingDomainRatesListOK) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -5573,6 +6231,14 @@ func (s *SendingDomainsArchiveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SendingDomainsArchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SendingDomainsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5605,6 +6271,14 @@ func (s *SendingDomainsCreateConflict) Validate() error {
 	return nil
 }
 
+func (s *SendingDomainsCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SendingDomainsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5629,6 +6303,14 @@ func (s *SendingDomainsGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SendingDomainsGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SendingDomainsGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5646,6 +6328,14 @@ func (s *SendingDomainsGetUnauthorized) Validate() error {
 }
 
 func (s *SendingDomainsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SendingDomainsListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5725,6 +6415,14 @@ func (s *SendingDomainsUnarchiveConflict) Validate() error {
 	return nil
 }
 
+func (s *SendingDomainsUnarchiveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SendingDomainsUnarchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5757,6 +6455,14 @@ func (s *SendingDomainsUpdateConflict) Validate() error {
 	return nil
 }
 
+func (s *SendingDomainsUpdateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SendingDomainsUpdateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -5782,6 +6488,14 @@ func (s *SendingDomainsUpdateUnprocessableEntity) Validate() error {
 }
 
 func (s *SendingDomainsVerifyBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SendingDomainsVerifyForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -6021,6 +6735,14 @@ func (s *SuppressionsCreateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SuppressionsCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SuppressionsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -6038,6 +6760,14 @@ func (s *SuppressionsCreateUnprocessableEntity) Validate() error {
 }
 
 func (s *TagsApplyBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TagsApplyForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -6077,6 +6807,14 @@ func (s *TagsDeleteBadRequest) Validate() error {
 	return nil
 }
 
+func (s *TagsDeleteForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *TagsDeleteNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -6102,6 +6840,14 @@ func (s *TagsListBadRequest) Validate() error {
 }
 
 func (s *TagsListForContactBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TagsListForContactForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -6156,6 +6902,14 @@ func (s *TagsListForContactUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *TagsListForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *TagsListOK) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -6203,6 +6957,14 @@ func (s *TagsRemoveBadRequest) Validate() error {
 	return nil
 }
 
+func (s *TagsRemoveForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *TagsRemoveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -6227,6 +6989,14 @@ func (s *TemplatesCreateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *TemplatesCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *TemplatesCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -6244,6 +7014,14 @@ func (s *TemplatesCreateUnprocessableEntity) Validate() error {
 }
 
 func (s *TemplatesDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TemplatesDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -6283,6 +7061,14 @@ func (s *TemplatesGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *TemplatesGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *TemplatesGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -6300,6 +7086,14 @@ func (s *TemplatesGetUnauthorized) Validate() error {
 }
 
 func (s *TemplatesListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TemplatesListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -6347,6 +7141,14 @@ func (s *TemplatesListUnprocessableEntity) Validate() error {
 }
 
 func (s *TemplatesUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TemplatesUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -6496,6 +7298,14 @@ func (s TransactionalSendStatus) Validate() error {
 }
 
 func (s *UnsubscribesCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UnsubscribesCreateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -7096,6 +7906,14 @@ func (s *WebhooksCreateBadRequest) Validate() error {
 	return nil
 }
 
+func (s *WebhooksCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *WebhooksCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -7113,6 +7931,14 @@ func (s *WebhooksCreateUnprocessableEntity) Validate() error {
 }
 
 func (s *WebhooksDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *WebhooksDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -7152,6 +7978,14 @@ func (s *WebhooksGetBadRequest) Validate() error {
 	return nil
 }
 
+func (s *WebhooksGetForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *WebhooksGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -7169,6 +8003,14 @@ func (s *WebhooksGetUnauthorized) Validate() error {
 }
 
 func (s *WebhooksListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *WebhooksListForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -7240,6 +8082,14 @@ func (s *WebhooksRegenerateSecretBadRequest) Validate() error {
 	return nil
 }
 
+func (s *WebhooksRegenerateSecretForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *WebhooksRegenerateSecretNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -7257,6 +8107,14 @@ func (s *WebhooksRegenerateSecretUnauthorized) Validate() error {
 }
 
 func (s *WebhooksTestBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *WebhooksTestForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -7289,6 +8147,14 @@ func (s *WebhooksTestUnprocessableEntity) Validate() error {
 }
 
 func (s *WebhooksUpdateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *WebhooksUpdateForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

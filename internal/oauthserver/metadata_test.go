@@ -97,7 +97,7 @@ func TestMetadataDocumentClientCompletesTheAuthorizationCodeFlow(t *testing.T) {
 	assert.Equal(t, "Claude", stored.Name)
 	assert.Equal(t, []string{metadataRedirectURI}, stored.RedirectUris)
 	assert.NotNil(t, stored.MetadataExpiresAt)
-	minted, err := env.DB.Scoped(fixtures.AcmeID).ApiToken().Query().Where(apitoken.Name("Claude (MCP)")).Count(t.Context())
+	minted, err := env.DB.Scoped(fixtures.AcmeID).ApiToken().Query().Where(apitoken.Name("Claude"), apitoken.MembershipIDNotNil()).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, minted)
 }

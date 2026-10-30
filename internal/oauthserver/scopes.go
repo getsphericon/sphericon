@@ -7,6 +7,7 @@ import (
 	"github.com/samber/lo"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
 )
 
 // The scope vocabulary is declared once, in the contract (typespec/common/scopes.tsp):
@@ -57,4 +58,16 @@ func requestedScopes(scope string) (granted, send, setup []string) {
 		send = append(send, mcpSend)
 	}
 	return granted, send, setup
+}
+
+// requiredPermissions is the Permission granting each of scopes needs, for those that need one
+// (accounts.GrantPermissions, declared on each grantable scope in TypeSpec).
+func requiredPermissions(scopes []string) map[string]accounts.Permission {
+	needed := map[string]accounts.Permission{}
+	for _, scope := range scopes {
+		if p, ok := accounts.GrantPermissions[scope]; ok {
+			needed[scope] = p
+		}
+	}
+	return needed
 }

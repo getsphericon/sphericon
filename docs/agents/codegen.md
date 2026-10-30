@@ -17,6 +17,12 @@ ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, 
 ent + gen/{site,external,staff,service}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 openapi/service (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
+openapi/external (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ internal/api/auth/external_scopes_gen.go (`ExternalOperationScopes`)
+openapi/external (`x-required-permissions`, optional per operation: what a Connection's User must hold) ──cmd/scopegen──▶ internal/api/auth/external_permissions_gen.go (`ExternalOperationPermissions`)
+openapi/site (`x-required-permissions`, `x-allowed-while-withheld` per operation) ──cmd/scopegen──▶ internal/api/site/access_gen.go (`operationAccess`)
+openapi/site (`x-grant-permissions` on each grantable scope enum) ──cmd/scopegen──▶ internal/accounts/grant_permissions_gen.go (`GrantPermissions`)
+openapi/site (`Permission` enum) ──cmd/scopegen──▶ internal/accounts/permissions_gen.go (`Permission` and its `Perm…` constants)
+openapi/external (`ApiTokenScope` enum) ──cmd/scopegen──▶ internal/apitokens/scopes_gen.go (`Scope`, its constants and the `Scopes` vocabulary); the files are `scopegen.Tables`
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
@@ -36,4 +42,4 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
 frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
 diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
+only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_{scopes,permissions}_gen.go`, `internal/accounts/{permissions,grant_permissions}_gen.go`, `internal/apitokens/scopes_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.

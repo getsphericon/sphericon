@@ -33,5 +33,5 @@ func TestExternalRulesDryRunNeedsOnlyTheReadScopeAndWritesNothing(t *testing.T) 
 
 	denied, err := env.ExternalScoped(t, "contacts:read").RulesDryRun(ctx, body, params)
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.RulesDryRunUnauthorized{}, denied)
+	assert.IsType(t, &externalapi.RulesDryRunForbidden{}, denied)
 }

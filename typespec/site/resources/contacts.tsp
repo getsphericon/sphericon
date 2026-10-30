@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -150,11 +151,11 @@ interface SiteContacts
     > {
   /**
    * Export everything held about one contact as a streamed JSON download.
-   * Identify the contact by exactly one of `id` or `email`. Available to any
-   * Workspace member (contact read access).
+   * Identify the contact by exactly one of `id` or `email`. Owners and admins only.
    */
   @collectionAction(SiteContactResource, "export")
   @autoRoute
+  @extension("x-required-permissions", #[Permission.contactsExport])
   export(
     ...ResourceCollectionParameters<SiteContactResource>,
 
@@ -167,6 +168,7 @@ interface SiteContacts
     | SiteContactExportDownload
     | SiteContactExportTypedDownload
     | BadRequestProblem
+    | ForbiddenProblem
     | NotFoundProblem;
 
   /**
@@ -177,6 +179,7 @@ interface SiteContacts
   @get
   @collectionAction(SiteContactResource, "lookup")
   @autoRoute
+  @extension("x-required-permissions", #[Permission.contactsErase])
   lookup(
     ...ResourceCollectionParameters<SiteContactResource>,
 
@@ -198,6 +201,7 @@ interface SiteContacts
   @delete
   @collectionAction(SiteContactResource, "erase")
   @autoRoute
+  @extension("x-required-permissions", #[Permission.contactsErase])
   erase(
     ...ResourceCollectionParameters<SiteContactResource>,
 
@@ -210,3 +214,13 @@ interface SiteContacts
   SiteContacts.delete,
   "Erase a contact (GDPR Art. 17): its personal data is removed, delivery records are anonymized and its opt-outs survive. Owner or admin only."
 );
+
+@@extension(SiteContacts.create, "x-required-permissions", #[]);
+@@extension(
+  SiteContacts.delete,
+  "x-required-permissions",
+  #[Permission.contactsErase]
+);
+@@extension(SiteContacts.get, "x-required-permissions", #[]);
+@@extension(SiteContacts.list, "x-required-permissions", #[]);
+@@extension(SiteContacts.update, "x-required-permissions", #[]);

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -21,13 +22,14 @@ import (
 // OAuthCodeQuery is the builder for querying OAuthCode entities.
 type OAuthCodeQuery struct {
 	config
-	ctx           *QueryContext
-	order         []oauthcode.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.OAuthCode
-	withClient    *OAuthClientQuery
-	withWorkspace *WorkspaceQuery
-	modifiers     []func(*sql.Selector)
+	ctx            *QueryContext
+	order          []oauthcode.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.OAuthCode
+	withClient     *OAuthClientQuery
+	withWorkspace  *WorkspaceQuery
+	withMembership *MembershipQuery
+	modifiers      []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *OAuthCodeQuery) QueryWorkspace() *WorkspaceQuery {
 			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, selector),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, oauthcode.WorkspaceTable, oauthcode.WorkspaceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryMembership chains the current query on the "membership" edge.
+func (_q *OAuthCodeQuery) QueryMembership() *MembershipQuery {
+	query := (&MembershipClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthcode.Table, oauthcode.FieldID, selector),
+			sqlgraph.To(membership.Table, membership.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oauthcode.MembershipTable, oauthcode.MembershipColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (_q *OAuthCodeQuery) Clone() *OAuthCodeQuery {
 		return nil
 	}
 	return &OAuthCodeQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]oauthcode.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.OAuthCode{}, _q.predicates...),
-		withClient:    _q.withClient.Clone(),
-		withWorkspace: _q.withWorkspace.Clone(),
+		config:         _q.config,
+		ctx:            _q.ctx.Clone(),
+		order:          append([]oauthcode.OrderOption{}, _q.order...),
+		inters:         append([]Interceptor{}, _q.inters...),
+		predicates:     append([]predicate.OAuthCode{}, _q.predicates...),
+		withClient:     _q.withClient.Clone(),
+		withWorkspace:  _q.withWorkspace.Clone(),
+		withMembership: _q.withMembership.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -328,6 +353,17 @@ func (_q *OAuthCodeQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *OAuthCod
 		opt(query)
 	}
 	_q.withWorkspace = query
+	return _q
+}
+
+// WithMembership tells the query-builder to eager-load the nodes that are connected to
+// the "membership" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OAuthCodeQuery) WithMembership(opts ...func(*MembershipQuery)) *OAuthCodeQuery {
+	query := (&MembershipClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withMembership = query
 	return _q
 }
 
@@ -409,9 +445,10 @@ func (_q *OAuthCodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OA
 	var (
 		nodes       = []*OAuthCode{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withClient != nil,
 			_q.withWorkspace != nil,
+			_q.withMembership != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -444,6 +481,12 @@ func (_q *OAuthCodeQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*OA
 	if query := _q.withWorkspace; query != nil {
 		if err := _q.loadWorkspace(ctx, query, nodes, nil,
 			func(n *OAuthCode, e *Workspace) { n.Edges.Workspace = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withMembership; query != nil {
+		if err := _q.loadMembership(ctx, query, nodes, nil,
+			func(n *OAuthCode, e *Membership) { n.Edges.Membership = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -508,6 +551,35 @@ func (_q *OAuthCodeQuery) loadWorkspace(ctx context.Context, query *WorkspaceQue
 	}
 	return nil
 }
+func (_q *OAuthCodeQuery) loadMembership(ctx context.Context, query *MembershipQuery, nodes []*OAuthCode, init func(*OAuthCode), assign func(*OAuthCode, *Membership)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*OAuthCode)
+	for i := range nodes {
+		fk := nodes[i].MembershipID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(membership.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "membership_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *OAuthCodeQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -542,6 +614,9 @@ func (_q *OAuthCodeQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withWorkspace != nil {
 			_spec.Node.AddColumnOnce(oauthcode.FieldWorkspaceID)
+		}
+		if _q.withMembership != nil {
+			_spec.Node.AddColumnOnce(oauthcode.FieldMembershipID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

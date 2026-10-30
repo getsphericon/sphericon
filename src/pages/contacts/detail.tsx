@@ -25,15 +25,16 @@ import {
   siteContactsGetOptions,
   siteContactsListQueryKey,
   siteEventsListOptions,
+  siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useContactExport } from '../../hooks/useContactExport.ts'
-import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
 import { formatDateTime } from '../../utils/datetime.ts'
+import { can } from '../../utils/permissions.ts'
 
 const EVENTS_PAGE_SIZE = 10
 
@@ -64,10 +65,13 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
   const { t } = useTranslation()
   const navigate = useNavigate()
   const confirm = useConfirmation()
-  const role = useCurrentRole(workspaceId)
-  // Erasure is irreversible, so it is offered to owners and admins only (the API
-  // refuses everyone else with 403).
-  const canErase = canManage(role)
+  const workspaces = useQuery(siteWorkspacesListOptions())
+  // Erasure is irreversible, so it is offered only with contacts:erase (the API refuses
+  // everyone else with 403).
+  const canErase = can(
+    workspaces.data?.find((w) => w.id === workspaceId),
+    'contacts:erase',
+  )
 
   const eraseMutation = useResourceMutation({
     mutation: siteContactsDeleteMutation(),

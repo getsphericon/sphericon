@@ -126,7 +126,7 @@ func TestExternalAuthTokensCreate(t *testing.T) {
 	assert.IsType(t, &externalapi.ContactsListOK{}, list)
 	write, err := minted.ContactsCreate(ctx, &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("x@example.com")})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsCreateUnauthorized{}, write)
+	assert.IsType(t, &externalapi.ContactsCreateForbidden{}, write)
 
 	denied, err := env.ExternalScoped(t, "tokens:read").AuthTokensCreate(ctx, &externalapi.CreateApiTokenInput{Name: "n"})
 	require.NoError(t, err)

@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -71,6 +72,7 @@ model EnrollmentResource {
 namespace Enrollments {
   /** List an Automation's Enrollments, newest first. Needs the enrollments:read scope. */
   @get
+  @extension("x-required-scopes", #[ApiTokenScope.enrollmentsRead])
   op list(
     @path automationId: EntityId,
     ...PageQuery,
@@ -81,16 +83,19 @@ namespace Enrollments {
     | Page<EnrollmentResource>
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 
   /** Get one Enrollment of an Automation. Needs the enrollments:read scope. */
   @get
   @route("/{enrollmentId}")
+  @extension("x-required-scopes", #[ApiTokenScope.enrollmentsRead])
   op get(@path automationId: EntityId, @path enrollmentId: EntityId):
     | EnrollmentResource
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | TooManyRequestsProblem
     | NotFoundProblem;
 }

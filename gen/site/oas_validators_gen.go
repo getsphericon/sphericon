@@ -524,6 +524,49 @@ func (s PasskeyName) Validate() error {
 	return nil
 }
 
+func (s Permission) Validate() error {
+	switch s {
+	case "members:manage":
+		return nil
+	case "audit:read":
+		return nil
+	case "audit:configure":
+		return nil
+	case "tokens:manage":
+		return nil
+	case "integrations:manage":
+		return nil
+	case "webhooks:manage":
+		return nil
+	case "sending_domains:manage":
+		return nil
+	case "contacts:erase":
+		return nil
+	case "contacts:export":
+		return nil
+	case "suppressions:manage":
+		return nil
+	case "second_factor:manage":
+		return nil
+	case "workspace:update":
+		return nil
+	case "workspace:timezone":
+		return nil
+	case "revenue:configure":
+		return nil
+	case "brand_kit:manage":
+		return nil
+	case "join_domains:manage":
+		return nil
+	case "account_link:open":
+		return nil
+	case "workspace:delete":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s ProblemCode) Validate() error {
 	switch s {
 	case "second_factor_required":
@@ -531,6 +574,8 @@ func (s ProblemCode) Validate() error {
 	case "email_verification_required":
 		return nil
 	case "signup_closed":
+		return nil
+	case "permission_required":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -2762,6 +2807,82 @@ func (s SiteConditionOperator) Validate() error {
 	}
 }
 
+func (s *SiteConnectionResource) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Scopes == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Scopes {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "scopes",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.UserEmail.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "userEmail",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteConnectionsListOKApplicationJSON) Validate() error {
+	alias := ([]SiteConnectionResource)(s)
+	if alias == nil {
+		return errors.New("nil is invalid value")
+	}
+	var failures []validate.FieldError
+	for i, elem := range alias {
+		if err := func() error {
+			if err := elem.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			failures = append(failures, validate.FieldError{
+				Name:  fmt.Sprintf("[%d]", i),
+				Error: err,
+			})
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SiteContactResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -2876,6 +2997,14 @@ func (s *SiteContactsEraseNotFound) Validate() error {
 }
 
 func (s *SiteContactsExportBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteContactsExportForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -5335,6 +5464,39 @@ func (s *SiteOAuthAuthorizationRequest) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if err := s.RequiredPermissions.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "requiredPermissions",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SiteOAuthAuthorizationRequestRequiredPermissions) Validate() error {
+	var failures []validate.FieldError
+	for key, elem := range s {
+		if err := func() error {
+			if err := elem.Validate(); err != nil {
+				return err
+			}
+			return nil
+		}(); err != nil {
+			failures = append(failures, validate.FieldError{
+				Name:  key,
+				Error: err,
+			})
+		}
+	}
+
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -8344,6 +8506,14 @@ func (s *SiteSuppressionResource) Validate() error {
 	return nil
 }
 
+func (s *SiteSuppressionsCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteSuppressionsCreateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -8361,6 +8531,14 @@ func (s *SiteSuppressionsCreateUnprocessableEntity) Validate() error {
 }
 
 func (s *SiteSuppressionsDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSuppressionsDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -9953,6 +10131,34 @@ func (s *SiteWorkspaceResource) Validate() error {
 		})
 	}
 	if err := func() error {
+		if s.Permissions == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Permissions {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "permissions",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if s.Holds == nil {
 			return errors.New("nil is invalid value")
 		}
@@ -10041,6 +10247,38 @@ func (s *SiteWorkspacesLeaveUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteWorkspacesLiftSecondFactorRequirementForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesLiftSecondFactorRequirementNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesRequireSecondFactorForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesRequireSecondFactorNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWorkspacesRestoreConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -10050,22 +10288,6 @@ func (s *SiteWorkspacesRestoreConflict) Validate() error {
 }
 
 func (s *SiteWorkspacesRestoreNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteWorkspacesSetSecondFactorRequirementForbidden) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteWorkspacesSetSecondFactorRequirementNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

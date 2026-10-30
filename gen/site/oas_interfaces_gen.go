@@ -201,6 +201,14 @@ type SiteCapturedMessagesListRes interface {
 	siteCapturedMessagesListRes()
 }
 
+type SiteConnectionsDeleteRes interface {
+	siteConnectionsDeleteRes()
+}
+
+type SiteConnectionsListRes interface {
+	siteConnectionsListRes()
+}
+
 type SiteContactsCreateRes interface {
 	siteContactsCreateRes()
 }
@@ -673,12 +681,16 @@ type SiteWorkspacesLeaveRes interface {
 	siteWorkspacesLeaveRes()
 }
 
-type SiteWorkspacesRestoreRes interface {
-	siteWorkspacesRestoreRes()
+type SiteWorkspacesLiftSecondFactorRequirementRes interface {
+	siteWorkspacesLiftSecondFactorRequirementRes()
 }
 
-type SiteWorkspacesSetSecondFactorRequirementRes interface {
-	siteWorkspacesSetSecondFactorRequirementRes()
+type SiteWorkspacesRequireSecondFactorRes interface {
+	siteWorkspacesRequireSecondFactorRes()
+}
+
+type SiteWorkspacesRestoreRes interface {
+	siteWorkspacesRestoreRes()
 }
 
 type SiteWorkspacesSetTimezoneRes interface {

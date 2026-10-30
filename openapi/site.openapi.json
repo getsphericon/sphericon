@@ -49,6 +49,9 @@
       "name": "Site Tokens"
     },
     {
+      "name": "Site Connections"
+    },
+    {
       "name": "Site Integrations"
     },
     {
@@ -3097,7 +3100,7 @@
       },
       "post": {
         "operationId": "SiteOAuth_decide",
-        "description": "Approve or deny an OAuth authorization request as the signed-in user. Approving mints an API token, so it needs the same role as creating one (owner or admin).",
+        "description": "Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role lacks is refused (403 permission_required).",
         "parameters": [],
         "responses": {
           "200": {
@@ -3304,6 +3307,55 @@
         "tags": ["Site Workspaces"]
       }
     },
+    "/workspaces/deleted/{id}/restore": {
+      "post": {
+        "operationId": "SiteWorkspaces_restore",
+        "description": "Restore a Workspace in its deletion window (Owner only). It removes only the\npending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted\nWorkspace is not exposed to anyone but its Owners, so a caller who is not an Owner\ngets 404 as for an unknown one. A Workspace past its window, or already being\nerased, answers 409; an erased one has no Owner left to ask, so it answers 404.\nRecorded as an Audit entry.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"]
+      }
+    },
     "/workspaces/{workspaceId}": {
       "put": {
         "operationId": "SiteWorkspaces_update",
@@ -3370,7 +3422,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["workspace:update"]
       }
     },
     "/workspaces/{workspaceId}/account-link": {
@@ -3419,7 +3472,8 @@
             }
           }
         },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": ["account_link:open"]
       }
     },
     "/workspaces/{workspaceId}/analytics/clicks-by-link": {
@@ -3468,7 +3522,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/events": {
@@ -3517,7 +3572,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/new-people": {
@@ -3566,7 +3622,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/opens-by-hour": {
@@ -3615,7 +3672,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/overview": {
@@ -3664,7 +3722,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/revenue": {
@@ -3718,7 +3777,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/subscribed-people": {
@@ -3767,7 +3827,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/audit-entries": {
@@ -3887,7 +3948,8 @@
             }
           }
         },
-        "tags": ["Site Audit"]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:read"]
       }
     },
     "/workspaces/{workspaceId}/audit-entries/export": {
@@ -3981,7 +4043,8 @@
             }
           }
         },
-        "tags": ["Site Audit"]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:read"]
       }
     },
     "/workspaces/{workspaceId}/audit-entries/retention": {
@@ -4040,7 +4103,8 @@
             }
           }
         },
-        "tags": ["Site Audit"]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:configure"]
       },
       "put": {
         "operationId": "SiteAudit_setRetention",
@@ -4117,7 +4181,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["audit:configure"]
       }
     },
     "/workspaces/{workspaceId}/automations": {
@@ -4211,7 +4276,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteAutomations_create",
@@ -4263,7 +4329,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/dry-run-http-step": {
@@ -4327,7 +4394,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{automationId}/enrollments": {
@@ -4431,7 +4499,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}": {
@@ -4496,7 +4565,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{automationId}/report": {
@@ -4553,7 +4623,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}": {
@@ -4600,7 +4671,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteAutomations_update",
@@ -4665,7 +4737,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteAutomations_delete",
@@ -4713,7 +4786,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/activate": {
@@ -4770,7 +4844,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/archive": {
@@ -4827,7 +4902,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/deactivate": {
@@ -4874,7 +4950,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/unarchive": {
@@ -4921,7 +4998,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/brand-kit": {
@@ -4960,11 +5038,12 @@
             }
           }
         },
-        "tags": ["Site Brand Kit"]
+        "tags": ["Site Brand Kit"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteBrandKit_save",
-        "description": "Save the Brand kit (owner only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
+        "description": "Save the Brand kit (owner and admin only). The first save also creates the starter\nTemplates (a welcome, a receipt, a digest and a one-button message) in its brand; a later\nsave creates none and changes no message already written. A change is recorded as an Audit\nentry.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -5027,13 +5106,14 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["brand_kit:manage"]
       }
     },
     "/workspaces/{workspaceId}/brand-kit/starter-templates": {
       "post": {
         "operationId": "SiteBrandKit_recreateStarterTemplates",
-        "description": "Create the starter Templates again from the saved Brand kit (owner only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
+        "description": "Create the starter Templates again from the saved Brand kit (owner and admin only). It adds\nnew Templates and never touches one that exists or a message already written. Answers 422\nuntil the Brand kit has been saved.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -5089,7 +5169,8 @@
             }
           }
         },
-        "tags": ["Site Brand Kit"]
+        "tags": ["Site Brand Kit"],
+        "x-required-permissions": ["brand_kit:manage"]
       }
     },
     "/workspaces/{workspaceId}/broadcasts": {
@@ -5183,7 +5264,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteBroadcasts_create",
@@ -5235,7 +5317,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{broadcastId}/links": {
@@ -5292,7 +5375,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}": {
@@ -5339,7 +5423,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteBroadcasts_update",
@@ -5404,7 +5489,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteBroadcasts_delete",
@@ -5452,7 +5538,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/archive": {
@@ -5509,7 +5596,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/schedule": {
@@ -5576,7 +5664,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/send": {
@@ -5633,7 +5722,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/test-send": {
@@ -5744,7 +5834,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/unarchive": {
@@ -5791,7 +5882,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/captured-messages": {
@@ -5882,7 +5974,8 @@
             }
           }
         },
-        "tags": ["Site Captured Messages"]
+        "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/captured-messages/all": {
@@ -5909,7 +6002,8 @@
             }
           }
         },
-        "tags": ["Site Captured Messages"]
+        "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/captured-messages/{id}": {
@@ -5956,7 +6050,8 @@
             }
           }
         },
-        "tags": ["Site Captured Messages"]
+        "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteCapturedMessages_delete",
@@ -5994,7 +6089,77 @@
             }
           }
         },
-        "tags": ["Site Captured Messages"]
+        "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/connections": {
+      "get": {
+        "operationId": "SiteConnections_list",
+        "description": "List the Connections the caller may see: their own, or every member's with members:manage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteConnectionResourceParentKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteConnectionResource"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Connections"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/connections/{id}": {
+      "delete": {
+        "operationId": "SiteConnections_delete",
+        "description": "Revoke a Connection: the caller's own, or anyone's with members:manage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteConnectionResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteConnectionResourceKey.id"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Connections"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/contacts": {
@@ -6088,7 +6253,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteContacts_create",
@@ -6150,7 +6316,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/contacts/erase": {
@@ -6208,13 +6375,14 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/contacts/export": {
       "post": {
         "operationId": "SiteContacts_export",
-        "description": "Export everything held about one contact as a streamed JSON download.\nIdentify the contact by exactly one of `id` or `email`. Available to any\nWorkspace member (contact read access).",
+        "description": "Export everything held about one contact as a streamed JSON download.\nIdentify the contact by exactly one of `id` or `email`. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteContactResourceParentKey"
@@ -6275,6 +6443,16 @@
               }
             }
           },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -6286,7 +6464,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:export"]
       }
     },
     "/workspaces/{workspaceId}/contacts/lookup": {
@@ -6351,7 +6530,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/contacts/{contactId}/tags": {
@@ -6455,7 +6635,8 @@
             }
           }
         },
-        "tags": ["Site Tags"]
+        "tags": ["Site Tags"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteTags_apply",
@@ -6530,7 +6711,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/contacts/{contactId}/tags/{name}": {
@@ -6588,7 +6770,8 @@
             }
           }
         },
-        "tags": ["Site Tags"]
+        "tags": ["Site Tags"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/contacts/{id}": {
@@ -6635,7 +6818,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteContacts_update",
@@ -6710,7 +6894,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteContacts_delete",
@@ -6758,7 +6943,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/custom-fields": {
@@ -6833,7 +7019,8 @@
             }
           }
         },
-        "tags": ["Site Custom Fields"]
+        "tags": ["Site Custom Fields"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/delete": {
@@ -6902,13 +7089,14 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["workspace:delete"]
       }
     },
     "/workspaces/{workspaceId}/domain-join": {
       "get": {
         "operationId": "SiteDomainJoin_get",
-        "description": "Read the domain join switch (owner only).",
+        "description": "Read the domain join switch (owner and admin only).",
         "parameters": [
           {
             "name": "workspaceId",
@@ -6951,11 +7139,12 @@
             }
           }
         },
-        "tags": ["Site Join Domains"]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       },
       "put": {
         "operationId": "SiteDomainJoin_set",
-        "description": "Switch domain join on or off (owner only). Switching it on adds nobody who is already\na User: only an address proven afterwards joins. Recorded as an Audit entry.",
+        "description": "Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already\na User: only an address proven afterwards joins. Recorded as an Audit entry.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7008,7 +7197,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/events": {
@@ -7119,7 +7309,8 @@
             }
           }
         },
-        "tags": ["Site Events"]
+        "tags": ["Site Events"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/events/actions": {
@@ -7153,7 +7344,8 @@
             }
           }
         },
-        "tags": ["Site Events"]
+        "tags": ["Site Events"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/integrations": {
@@ -7193,7 +7385,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteIntegrations_create",
@@ -7265,7 +7458,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}": {
@@ -7312,7 +7506,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteIntegrations_update",
@@ -7397,7 +7592,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/archive": {
@@ -7464,7 +7660,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/regenerate-key": {
@@ -7521,7 +7718,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/unarchive": {
@@ -7588,7 +7786,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/invitations": {
@@ -7625,7 +7824,8 @@
             }
           }
         },
-        "tags": ["Site Invitations"]
+        "tags": ["Site Invitations"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteInvitations_create",
@@ -7697,7 +7897,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/invitations/{id}": {
@@ -7737,13 +7938,14 @@
             }
           }
         },
-        "tags": ["Site Invitations"]
+        "tags": ["Site Invitations"],
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains": {
       "get": {
         "operationId": "SiteJoinDomains_list",
-        "description": "List the Workspace's Join domains (owner only), pending and verified.",
+        "description": "List the Workspace's Join domains (owner and admin only), pending and verified.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7789,11 +7991,12 @@
             }
           }
         },
-        "tags": ["Site Join Domains"]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       },
       "post": {
         "operationId": "SiteJoinDomains_add",
-        "description": "Add a Join domain (owner only). It starts pending, with the TXT record to publish at\n`_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid\nhostname is 422, a domain the Workspace already has is 409.",
+        "description": "Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at\n`_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid\nhostname is 422, a domain the Workspace already has is 409.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7866,13 +8069,14 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains/{id}": {
       "delete": {
         "operationId": "SiteJoinDomains_remove",
-        "description": "Remove a Join domain (owner only): only the claim goes, no Membership is touched.",
+        "description": "Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7916,13 +8120,14 @@
             }
           }
         },
-        "tags": ["Site Join Domains"]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains/{id}/verify": {
       "post": {
         "operationId": "SiteJoinDomains_verify",
-        "description": "Check the TXT record now (owner only) and verify the domain when it is published. A\ndomain another Workspace has verified is re-checked at that Workspace first: 409 while\nits record is still published, otherwise the domain moves here. 422 when the record is\nnot found.",
+        "description": "Check the TXT record now (owner and admin only) and verify the domain when it is published. A\ndomain another Workspace has verified is re-checked at that Workspace first: 409 while\nits record is still published, otherwise the domain moves here. 422 when the record is\nnot found.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7993,7 +8198,8 @@
             }
           }
         },
-        "tags": ["Site Join Domains"]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/leave": {
@@ -8035,7 +8241,8 @@
             }
           }
         },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/memberships": {
@@ -8072,7 +8279,8 @@
             }
           }
         },
-        "tags": ["Site Memberships"]
+        "tags": ["Site Memberships"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/memberships/{id}": {
@@ -8139,7 +8347,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["members:manage"]
       },
       "delete": {
         "operationId": "SiteMemberships_delete",
@@ -8187,7 +8396,8 @@
             }
           }
         },
-        "tags": ["Site Memberships"]
+        "tags": ["Site Memberships"],
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/memberships/{id}/reset-second-factor": {
@@ -8237,56 +8447,8 @@
             }
           }
         },
-        "tags": ["Site Memberships"]
-      }
-    },
-    "/workspaces/{workspaceId}/restore": {
-      "post": {
-        "operationId": "SiteWorkspaces_restore",
-        "description": "Restore a Workspace in its deletion window (Owner only). It removes only the\npending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted\nWorkspace is not exposed to anyone but its Owners, so a caller who is not an Owner\ngets 404 as for an unknown one. A Workspace past its window, or already being\nerased, answers 409; an erased one has no Owner left to ask, so it answers 404.\nRecorded as an Audit entry.",
-        "parameters": [
-          {
-            "name": "workspaceId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/WorkspaceId"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SiteWorkspaceResource"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Memberships"],
+        "x-required-permissions": ["second_factor:manage"]
       }
     },
     "/workspaces/{workspaceId}/revenue-settings": {
@@ -8325,7 +8487,8 @@
             }
           }
         },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteWorkspaces_updateRevenueSettings",
@@ -8392,7 +8555,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["revenue:configure"]
       }
     },
     "/workspaces/{workspaceId}/rules": {
@@ -8486,7 +8650,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteRules_create",
@@ -8538,7 +8703,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}": {
@@ -8585,7 +8751,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteRules_update",
@@ -8650,7 +8817,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteRules_delete",
@@ -8698,7 +8866,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/activate": {
@@ -8755,7 +8924,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/archive": {
@@ -8802,7 +8972,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/deactivate": {
@@ -8849,7 +9020,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/dry-run": {
@@ -8906,7 +9078,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/unarchive": {
@@ -8953,7 +9126,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{ruleId}/firings": {
@@ -9047,13 +9221,14 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/second-factor-requirement": {
       "put": {
-        "operationId": "SiteWorkspaces_setSecondFactorRequirement",
-        "description": "Switch the Two-factor requirement on or off (owner and admin only). Switching\nit on while it is already on keeps the original start, so no one's grace\nrestarts. A change is recorded as an Audit entry.",
+        "operationId": "SiteWorkspaces_requireSecondFactor",
+        "description": "Switch the Two-factor requirement on (owner and admin only): every User with a\nMembership must then have a Second factor. Switching it on while it is already on keeps\nthe original start, so no one's grace restarts. A change is recorded as an Audit entry.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -9097,16 +9272,56 @@
           }
         },
         "tags": ["Site Workspaces"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SiteSecondFactorRequirementInput"
+        "x-required-permissions": ["second_factor:manage"]
+      },
+      "delete": {
+        "operationId": "SiteWorkspaces_liftSecondFactorRequirement",
+        "description": "Switch the Two-factor requirement off (owner and admin only). It is the one operation a\nUser withheld by the requirement may still perform in the Workspace, so an Owner or Admin\nwithout a Second factor is never locked out of lifting it (ADR 0020). A change is recorded\nas an Audit entry.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
               }
             }
           }
-        }
+        },
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": ["second_factor:manage"],
+        "x-allowed-while-withheld": true
       }
     },
     "/workspaces/{workspaceId}/segments": {
@@ -9200,7 +9415,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteSegments_create",
@@ -9252,7 +9468,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/preview": {
@@ -9316,7 +9533,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/{id}": {
@@ -9363,7 +9581,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteSegments_update",
@@ -9428,7 +9647,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/{id}/archive": {
@@ -9485,7 +9705,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/{id}/unarchive": {
@@ -9532,7 +9753,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/{segmentId}/contacts": {
@@ -9636,7 +9858,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/sending-domains": {
@@ -9730,7 +9953,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteSendingDomains_create",
@@ -9802,7 +10026,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}": {
@@ -9849,7 +10074,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}/archive": {
@@ -9916,7 +10142,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}/unarchive": {
@@ -9983,7 +10210,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}/verify": {
@@ -10040,7 +10268,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/setup-checklist": {
@@ -10079,13 +10308,14 @@
             }
           }
         },
-        "tags": ["Site Setup Checklist"]
+        "tags": ["Site Setup Checklist"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/suppressions": {
       "post": {
         "operationId": "SiteSuppressions_create",
-        "description": "Manually suppress an address (reason = manual; idempotent per address)",
+        "description": "Manually suppress an address (reason = manual; idempotent per address). Owners and admins\nonly.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSuppressionResourceParentKey"
@@ -10098,6 +10328,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteSuppressionResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -10133,11 +10373,12 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["suppressions:manage"]
       },
       "get": {
         "operationId": "SiteSuppressions_list",
-        "description": "List suppressed addresses",
+        "description": "List suppressed addresses (every member)",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSuppressionResourceParentKey"
@@ -10225,13 +10466,14 @@
             }
           }
         },
-        "tags": ["Site Suppressions"]
+        "tags": ["Site Suppressions"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/suppressions/{id}": {
       "delete": {
         "operationId": "SiteSuppressions_delete",
-        "description": "Lift a suppression: the row stays with its lift time and the address can receive mail again.\nLifting one that is already lifted is a 404.",
+        "description": "Lift a suppression: the row stays with its lift time and the address can receive mail again.\nLifting one that is already lifted is a 404. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSuppressionResourceKey.workspaceId"
@@ -10254,6 +10496,16 @@
               }
             }
           },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -10265,7 +10517,8 @@
             }
           }
         },
-        "tags": ["Site Suppressions"]
+        "tags": ["Site Suppressions"],
+        "x-required-permissions": ["suppressions:manage"]
       }
     },
     "/workspaces/{workspaceId}/tags": {
@@ -10361,7 +10614,8 @@
             }
           }
         },
-        "tags": ["Site Tags"]
+        "tags": ["Site Tags"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/tags/{id}": {
@@ -10421,7 +10675,8 @@
             }
           }
         },
-        "tags": ["Site Tags"]
+        "tags": ["Site Tags"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/templates": {
@@ -10512,7 +10767,8 @@
             }
           }
         },
-        "tags": ["Site Templates"]
+        "tags": ["Site Templates"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteTemplates_create",
@@ -10564,7 +10820,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/templates/{id}": {
@@ -10611,7 +10868,8 @@
             }
           }
         },
-        "tags": ["Site Templates"]
+        "tags": ["Site Templates"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteTemplates_update",
@@ -10676,7 +10934,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteTemplates_delete",
@@ -10714,13 +10973,14 @@
             }
           }
         },
-        "tags": ["Site Templates"]
+        "tags": ["Site Templates"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/timezone": {
       "put": {
         "operationId": "SiteWorkspaces_setTimezone",
-        "description": "Set the Workspace time zone (Owner only), the zone of every Report day (ADR 0057). 422 for\na name the zone database does not know. A change is recorded as an Audit entry and applies\nto all history at once.",
+        "description": "Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for\na name the zone database does not know. A change is recorded as an Audit entry and applies\nto all history at once.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -10783,7 +11043,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["workspace:timezone"]
       }
     },
     "/workspaces/{workspaceId}/tokens": {
@@ -10820,7 +11081,8 @@
             }
           }
         },
-        "tags": ["Site Tokens"]
+        "tags": ["Site Tokens"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteTokens_create",
@@ -10882,7 +11144,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["tokens:manage"]
       }
     },
     "/workspaces/{workspaceId}/tokens/{id}": {
@@ -10949,7 +11212,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["tokens:manage"]
       },
       "delete": {
         "operationId": "SiteTokens_delete",
@@ -10997,7 +11261,8 @@
             }
           }
         },
-        "tags": ["Site Tokens"]
+        "tags": ["Site Tokens"],
+        "x-required-permissions": ["tokens:manage"]
       }
     },
     "/workspaces/{workspaceId}/transactional-emails": {
@@ -11088,7 +11353,8 @@
             }
           }
         },
-        "tags": ["Site Transactional Emails"]
+        "tags": ["Site Transactional Emails"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/webhooks": {
@@ -11189,7 +11455,8 @@
             }
           }
         },
-        "tags": ["Site Webhooks"]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       },
       "post": {
         "operationId": "SiteWebhooks_create",
@@ -11251,7 +11518,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}": {
@@ -11308,7 +11576,8 @@
             }
           }
         },
-        "tags": ["Site Webhooks"]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       },
       "put": {
         "operationId": "SiteWebhooks_update",
@@ -11383,7 +11652,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["webhooks:manage"]
       },
       "delete": {
         "operationId": "SiteWebhooks_delete",
@@ -11431,7 +11701,8 @@
             }
           }
         },
-        "tags": ["Site Webhooks"]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}/regenerate-secret": {
@@ -11488,7 +11759,8 @@
             }
           }
         },
-        "tags": ["Site Webhooks"]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}/test": {
@@ -11565,7 +11837,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["webhooks:manage"]
       }
     }
   },
@@ -11823,6 +12096,33 @@
         }
       },
       "SiteCapturedMessageResourceParentKey": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
+      "SiteConnectionResourceKey.id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Unique identifier",
+        "schema": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
+      "SiteConnectionResourceKey.workspaceId": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
+      "SiteConnectionResourceParentKey": {
         "name": "workspaceId",
         "in": "path",
         "required": true,
@@ -12896,7 +13196,73 @@
           "sending_domains:read",
           "integrations:read"
         ],
-        "description": "Scopes an OAuth client may be granted without any extra opt-in: the external\nAPI's read/write vocabulary. Token management scopes are deliberately absent,\nso a connector can never mint further credentials."
+        "description": "Scopes an OAuth client may be granted without any extra opt-in: the external\nAPI's read/write vocabulary. Token management scopes are deliberately absent,\nso a connector can never mint further credentials.",
+        "x-grant-permissions": [
+          {
+            "scope": "contacts:read"
+          },
+          {
+            "scope": "contacts:write"
+          },
+          {
+            "scope": "events:read"
+          },
+          {
+            "scope": "events:write"
+          },
+          {
+            "scope": "segments:read"
+          },
+          {
+            "scope": "segments:write"
+          },
+          {
+            "scope": "broadcasts:read"
+          },
+          {
+            "scope": "broadcasts:write"
+          },
+          {
+            "scope": "automations:read"
+          },
+          {
+            "scope": "automations:write"
+          },
+          {
+            "scope": "enrollments:read"
+          },
+          {
+            "scope": "templates:read"
+          },
+          {
+            "scope": "templates:write"
+          },
+          {
+            "scope": "webhooks:read",
+            "permission": "webhooks:manage"
+          },
+          {
+            "scope": "webhooks:write",
+            "permission": "webhooks:manage"
+          },
+          {
+            "scope": "webhooks:regenerate",
+            "permission": "webhooks:manage"
+          },
+          {
+            "scope": "webhooks:test",
+            "permission": "webhooks:manage"
+          },
+          {
+            "scope": "custom_fields:read"
+          },
+          {
+            "scope": "sending_domains:read"
+          },
+          {
+            "scope": "integrations:read"
+          }
+        ]
       },
       "InUseProblemDetails": {
         "type": "object",
@@ -13022,9 +13388,38 @@
         "maxLength": 100,
         "description": "What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding\nspaces are trimmed before the name is stored, so a name of spaces only is refused too."
       },
+      "Permission": {
+        "type": "string",
+        "enum": [
+          "members:manage",
+          "audit:read",
+          "audit:configure",
+          "tokens:manage",
+          "integrations:manage",
+          "webhooks:manage",
+          "sending_domains:manage",
+          "contacts:erase",
+          "contacts:export",
+          "suppressions:manage",
+          "second_factor:manage",
+          "workspace:update",
+          "workspace:timezone",
+          "revenue:configure",
+          "brand_kit:manage",
+          "join_domains:manage",
+          "account_link:open",
+          "workspace:delete"
+        ],
+        "description": "A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY \"Permission\"),\nwritten `resource:verb` like the API token scopes. A Role is a set of them; the table\nfrom Role to Permissions lives in the server, and the client reads a Membership's\nPermissions from its Workspace instead of computing them."
+      },
       "ProblemCode": {
         "type": "string",
-        "enum": ["second_factor_required", "email_verification_required", "signup_closed"],
+        "enum": [
+          "second_factor_required",
+          "email_verification_required",
+          "signup_closed",
+          "permission_required"
+        ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
       "ProblemDebug": {
@@ -13133,12 +13528,36 @@
       "SendScope": {
         "type": "string",
         "enum": ["emails:send", "broadcasts:send", "automations:activate", "mcp:send"],
-        "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along."
+        "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along.",
+        "x-grant-permissions": [
+          {
+            "scope": "emails:send"
+          },
+          {
+            "scope": "broadcasts:send"
+          },
+          {
+            "scope": "automations:activate"
+          },
+          {
+            "scope": "mcp:send"
+          }
+        ]
       },
       "SetupScope": {
         "type": "string",
         "enum": ["sending_domains:write", "integrations:write"],
-        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send."
+        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Integrations and the provider credentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
+        "x-grant-permissions": [
+          {
+            "scope": "sending_domains:write",
+            "permission": "sending_domains:manage"
+          },
+          {
+            "scope": "integrations:write",
+            "permission": "integrations:manage"
+          }
+        ]
       },
       "SiteAbuseMetric": {
         "type": "string",
@@ -14902,6 +15321,60 @@
           }
         },
         "description": "Confirm a requested email change using the token sent to the new address"
+      },
+      "SiteConnectionResource": {
+        "type": "object",
+        "required": ["id", "name", "scopes", "userId", "userName", "userEmail", "createdAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "The application's name, as it registered itself (untrusted: show as text)"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiTokenScope"
+            },
+            "description": "Granted scopes"
+          },
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The User the Connection belongs to"
+          },
+          "userName": {
+            "type": "string",
+            "description": "That User's display name"
+          },
+          "userEmail": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "That User's email"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the User approved the application"
+          }
+        },
+        "description": "A Connection: the access a User gave an application (an MCP client) to the Workspace by\nconsenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the\nUser's Role allows and ends with the Membership. Connections are not API tokens and are not\nlisted with them."
       },
       "SiteContactHoldings": {
         "type": "object",
@@ -16707,7 +17180,8 @@
           "localRedirect",
           "scopes",
           "sendScopes",
-          "setupScopes"
+          "setupScopes",
+          "requiredPermissions"
         ],
         "properties": {
           "clientName": {
@@ -16746,6 +17220,13 @@
               "$ref": "#/components/schemas/SetupScope"
             },
             "description": "Requested setup scopes (Sending domains, Integrations): granted only when the user opts in explicitly, apart from the send class"
+          },
+          "requiredPermissions": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "description": "The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what the User may grant, and the server refuses the rest."
           }
         },
         "description": "What an MCP client (dynamically registered) is asking permission for, as\nvalidated by the authorization server. Rendered on the consent screen."
@@ -16778,7 +17259,7 @@
                 "$ref": "#/components/schemas/WorkspaceId"
               }
             ],
-            "description": "Id of the Workspace the token will belong to"
+            "description": "Id of the Workspace the Connection will belong to (the signed-in User must be a member)"
           },
           "approve": {
             "type": "boolean",
@@ -17718,17 +18199,6 @@
           }
         },
         "description": "A pending enrollment: the TOTP secret to add to an authenticator app"
-      },
-      "SiteSecondFactorRequirementInput": {
-        "type": "object",
-        "required": ["required"],
-        "properties": {
-          "required": {
-            "type": "boolean",
-            "description": "Whether every User with a Membership must have a Second factor"
-          }
-        },
-        "description": "Switch the Two-factor requirement on or off"
       },
       "SiteSecondFactorStartInput": {
         "type": "object",
@@ -19302,6 +19772,7 @@
           "postalAddress",
           "timezone",
           "role",
+          "permissions",
           "mcpUrl",
           "trackerUrl",
           "holds",
@@ -19335,7 +19806,7 @@
                 "$ref": "#/components/schemas/TimeZoneName"
               }
             ],
-            "description": "The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days\nin. UTC until an Owner sets it."
+            "description": "The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days\nin. UTC until an Owner or Admin sets it."
           },
           "role": {
             "allOf": [
@@ -19344,6 +19815,13 @@
               }
             ],
             "description": "The authenticated User's role in this Workspace (from their Membership). It\nrides the Workspace list so role-gated UI is known even while the Workspace's\nown endpoints are withheld under a Two-factor requirement."
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "description": "The Permissions the authenticated User's Role holds in this Workspace (ADR 0061):\nthe client asks these whether to offer an action, it never computes them from the\nRole."
           },
           "suspendedAt": {
             "type": "string",

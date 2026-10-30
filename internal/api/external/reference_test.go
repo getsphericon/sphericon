@@ -17,7 +17,7 @@ func TestExternalCustomFieldsList(t *testing.T) {
 
 	denied, err := env.ExternalScoped(t, "contacts:read").CustomFieldsList(ctx)
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ProblemDetails{}, denied, "custom_fields:read is required")
+	assert.IsType(t, &externalapi.CustomFieldsListForbidden{}, denied, "custom_fields:read is required")
 
 	c := env.ExternalScoped(t, "custom_fields:read")
 	res, err := c.CustomFieldsList(ctx)
@@ -67,7 +67,7 @@ func TestExternalSendingDomainsList(t *testing.T) {
 	denied, err := env.ExternalScoped(t, "contacts:read").
 		SendingDomainsList(ctx, externalapi.SendingDomainsListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsListUnauthorized{}, denied)
+	assert.IsType(t, &externalapi.SendingDomainsListForbidden{}, denied)
 
 	c := env.ExternalScoped(t, "sending_domains:read")
 	res, err := c.SendingDomainsList(ctx, externalapi.SendingDomainsListParams{})
@@ -102,7 +102,7 @@ func TestExternalSendingDomainRates(t *testing.T) {
 	denied, err := env.ExternalScoped(t, "contacts:read").
 		SendingDomainRatesList(ctx, externalapi.SendingDomainRatesListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainRatesListUnauthorized{}, denied)
+	assert.IsType(t, &externalapi.SendingDomainRatesListForbidden{}, denied)
 
 	c := env.ExternalScoped(t, "sending_domains:read")
 

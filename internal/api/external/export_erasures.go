@@ -13,12 +13,8 @@ import (
 // ExportErasures serves the Erasures stream (ADR 0045): NDJSON rows, the next cursor in the
 // X-Next-Cursor header, behind the same gate as every Export stream.
 func (h *Handlers) ExportErasures(ctx context.Context, params externalapi.ExportErasuresParams) (externalapi.ExportErasuresRes, error) {
-	switch code, detail := h.exportDenied(ctx); code {
-	case http.StatusNotFound:
-		res := externalapi.ExportErasuresNotFound(problem(code, detail))
-		return &res, nil
-	case http.StatusUnauthorized:
-		res := externalapi.ExportErasuresUnauthorized(problem(code, detail))
+	if !h.exportLicensed() {
+		res := externalapi.ExportErasuresNotFound(problem(http.StatusNotFound, "not found"))
 		return &res, nil
 	}
 

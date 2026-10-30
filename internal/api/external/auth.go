@@ -36,11 +36,6 @@ func (h *Handlers) AuthMeGet(ctx context.Context) (externalapi.AuthMeGetRes, err
 }
 
 func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensListRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTokensRead) {
-		res := externalapi.AuthTokensListForbidden(problem(http.StatusForbidden, "insufficient scope"))
-		return &res, nil
-	}
-
 	tokens, err := apitokens.List(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
@@ -54,11 +49,6 @@ func (h *Handlers) AuthTokensList(ctx context.Context) (externalapi.AuthTokensLi
 }
 
 func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.CreateApiTokenInput) (externalapi.AuthTokensCreateRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTokensWrite) {
-		res := externalapi.AuthTokensCreateForbidden(problem(http.StatusForbidden, "insufficient scope"))
-		return &res, nil
-	}
-
 	// A token can only mint scopes it holds itself (tokens:write is not a way to
 	// gain send or any other power).
 	minted, err := apitokens.MintWithin(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).Scopes, mintInput(req))
@@ -91,11 +81,6 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 }
 
 func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.AuthTokensDeleteParams) (externalapi.AuthTokensDeleteRes, error) {
-	if !auth.HasScope(auth.GetTokenAuth(ctx), externalapi.ApiTokenScopeTokensWrite) {
-		res := externalapi.AuthTokensDeleteForbidden(problem(http.StatusForbidden, "insufficient scope"))
-		return &res, nil
-	}
-
 	id := int64(params.ID)
 
 	err := apitokens.Revoke(ctx, auth.TokenScoped(ctx), id)

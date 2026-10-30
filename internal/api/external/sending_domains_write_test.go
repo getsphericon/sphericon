@@ -31,28 +31,28 @@ func TestExternalSendingDomainsWritesNeedTheWriteScope(t *testing.T) {
 
 	create, err := reader.SendingDomainsCreate(ctx, &externalapi.CreateSendingDomainInput{Domain: "x.example.com"})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsCreateUnauthorized{}, create)
+	assert.IsType(t, &externalapi.SendingDomainsCreateForbidden{}, create)
 
 	upd, err := reader.SendingDomainsUpdate(ctx, &externalapi.UpdateSendingDomainInput{DkimSelector: externalapi.NewOptString("s2")}, externalapi.SendingDomainsUpdateParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsUpdateUnauthorized{}, upd)
+	assert.IsType(t, &externalapi.SendingDomainsUpdateForbidden{}, upd)
 
 	ver, err := reader.SendingDomainsVerify(ctx, externalapi.SendingDomainsVerifyParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsVerifyUnauthorized{}, ver)
+	assert.IsType(t, &externalapi.SendingDomainsVerifyForbidden{}, ver)
 
 	archive, err := reader.SendingDomainsArchive(ctx, externalapi.SendingDomainsArchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsArchiveUnauthorized{}, archive)
+	assert.IsType(t, &externalapi.SendingDomainsArchiveForbidden{}, archive)
 
 	unarchive, err := reader.SendingDomainsUnarchive(ctx, externalapi.SendingDomainsUnarchiveParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsUnarchiveUnauthorized{}, unarchive)
+	assert.IsType(t, &externalapi.SendingDomainsUnarchiveForbidden{}, unarchive)
 
 	writer := env.ExternalScoped(t, "sending_domains:write")
 	get, err := writer.SendingDomainsGet(ctx, externalapi.SendingDomainsGetParams{ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SendingDomainsGetUnauthorized{}, get, "write does not imply read")
+	assert.IsType(t, &externalapi.SendingDomainsGetForbidden{}, get, "write does not imply read")
 }
 
 func TestExternalSendingDomainShowsTheTrackingRecord(t *testing.T) {

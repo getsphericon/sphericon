@@ -78,7 +78,7 @@ func TestExternalContactsBatchUpsertLimitAndScope(t *testing.T) {
 		Contacts: []externalapi.UpsertContactInput{{SubjectId: externalapi.NewOptNilString("x")}},
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsBatchUpsertUnauthorized{}, res)
+	assert.IsType(t, &externalapi.ContactsBatchUpsertForbidden{}, res)
 }
 
 func TestExternalEventsBatchSubmitMixedItems(t *testing.T) {
@@ -125,7 +125,7 @@ func TestExternalEventsBatchSubmitScope(t *testing.T) {
 		Events: []externalapi.EventInput{{SubjectId: "u", Action: "a"}},
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.EventsBatchSubmitUnauthorized{}, res)
+	assert.IsType(t, &externalapi.EventsBatchSubmitForbidden{}, res)
 }
 
 // A backfilled batch is accepted per item and published as history; a client event id rides along as

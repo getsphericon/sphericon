@@ -109,7 +109,7 @@ func TestExternalContactsEraseByNeedsExactlyOneKnownIdentifier(t *testing.T) {
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsEraseByUnauthorized{}, denied)
+	assert.IsType(t, &externalapi.ContactsEraseByForbidden{}, denied)
 
 	cross, err := env.ExternalScoped(t, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),

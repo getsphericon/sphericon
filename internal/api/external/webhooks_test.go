@@ -113,7 +113,7 @@ func TestExternalWebhooksScopes(t *testing.T) {
 	other := env.ExternalScoped(t, "templates:read", "templates:write")
 	l, err := other.WebhooksList(ctx, externalapi.WebhooksListParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksListUnauthorized{}, l)
+	assert.IsType(t, &externalapi.WebhooksListForbidden{}, l)
 
 	ro := env.ExternalScoped(t, "webhooks:read")
 	g, err := ro.WebhooksGet(ctx, externalapi.WebhooksGetParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
@@ -121,13 +121,13 @@ func TestExternalWebhooksScopes(t *testing.T) {
 	assert.IsType(t, &externalapi.WebhookResource{}, g)
 	cr, err := ro.WebhooksCreate(ctx, &externalapi.CreateWebhookInput{URL: "https://example.com/x"})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksCreateUnauthorized{}, cr)
+	assert.IsType(t, &externalapi.WebhooksCreateForbidden{}, cr)
 	up, err := ro.WebhooksUpdate(ctx, &externalapi.UpdateWebhookInput{}, externalapi.WebhooksUpdateParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksUpdateUnauthorized{}, up)
+	assert.IsType(t, &externalapi.WebhooksUpdateForbidden{}, up)
 	de, err := ro.WebhooksDelete(ctx, externalapi.WebhooksDeleteParams{ID: entityIDString(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.WebhooksDeleteUnauthorized{}, de)
+	assert.IsType(t, &externalapi.WebhooksDeleteForbidden{}, de)
 }
 
 func TestExternalWebhooksAreWorkspaceScoped(t *testing.T) {

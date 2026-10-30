@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -282,6 +283,7 @@ interface SiteBroadcasts
    */
   @action("archive")
   @autoRoute
+  @extension("x-required-permissions", #[])
   archive(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
     | BadRequestProblem
@@ -291,6 +293,7 @@ interface SiteBroadcasts
   /** Restore an archived broadcast to the list */
   @action("unarchive")
   @autoRoute
+  @extension("x-required-permissions", #[])
   unarchive(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
     | BadRequestProblem
@@ -299,6 +302,7 @@ interface SiteBroadcasts
   /** Send a broadcast immediately */
   @action("send")
   @autoRoute
+  @extension("x-required-permissions", #[])
   send(...ResourceParameters<SiteBroadcastResource>):
     | SiteBroadcastResource
     | BadRequestProblem
@@ -308,6 +312,7 @@ interface SiteBroadcasts
   /** Schedule a broadcast to send at a future time */
   @action("schedule")
   @autoRoute
+  @extension("x-required-permissions", #[])
   schedule(
     ...ResourceParameters<SiteBroadcastResource>,
     @body body: SiteScheduleBroadcastInput,
@@ -324,6 +329,7 @@ interface SiteBroadcasts
    */
   @action("test-send")
   @autoRoute
+  @extension("x-required-permissions", #[])
   testSend(
     ...ResourceParameters<SiteBroadcastResource>,
     @body body: SiteTestSendBroadcastInput,
@@ -350,8 +356,15 @@ namespace SiteBroadcastLinks {
    * click figure in the broadcast's stats does not.
    */
   @get
+  @extension("x-required-permissions", #[])
   op list(@path workspaceId: WorkspaceId, @path broadcastId: EntityId):
     | SiteBroadcastLinkClicksList
     | BadRequestProblem
     | NotFoundProblem;
 }
+
+@@extension(SiteBroadcasts.create, "x-required-permissions", #[]);
+@@extension(SiteBroadcasts.delete, "x-required-permissions", #[]);
+@@extension(SiteBroadcasts.get, "x-required-permissions", #[]);
+@@extension(SiteBroadcasts.list, "x-required-permissions", #[]);
+@@extension(SiteBroadcasts.update, "x-required-permissions", #[]);

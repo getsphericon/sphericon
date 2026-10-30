@@ -79,9 +79,11 @@ namespace Export {
    */
   @get
   @route("/events")
+  @extension("x-required-scopes", #[ApiTokenScope.exportRead])
   op events(...ExportPageQuery):
     | ExportPage
     | BadRequestProblem
     | UnauthorizedProblem
+    | ForbiddenProblem
     | NotFoundProblem;
 }

@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -118,6 +119,7 @@ model SiteAuditRetention {
 namespace SiteAudit {
   /** List the workspace's Audit log, newest first (Enterprise; owner and admin only) */
   @get
+  @extension("x-required-permissions", #[Permission.auditRead])
   op list(
     @path workspaceId: WorkspaceId,
     ...SiteAuditFilter,
@@ -140,6 +142,7 @@ namespace SiteAudit {
   /** Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise; owner and admin only) */
   @get
   @route("/export")
+  @extension("x-required-permissions", #[Permission.auditRead])
   op export(@path workspaceId: WorkspaceId, ...SiteAuditFilter):
     | {
         @header contentType: "text/csv";
@@ -153,6 +156,7 @@ namespace SiteAudit {
   /** Read the Audit log retention window (Enterprise; owner and admin only) */
   @get
   @route("/retention")
+  @extension("x-required-permissions", #[Permission.auditConfigure])
   op getRetention(@path workspaceId: WorkspaceId):
     | SiteAuditRetention
     | PaymentRequiredProblem
@@ -162,6 +166,7 @@ namespace SiteAudit {
   /** Set or clear the Audit log retention window; recorded as an Audit entry (Enterprise; owner and admin only) */
   @put
   @route("/retention")
+  @extension("x-required-permissions", #[Permission.auditConfigure])
   op setRetention(
     @path workspaceId: WorkspaceId,
     @body body: SiteAuditRetention,
