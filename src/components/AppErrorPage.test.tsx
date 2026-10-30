@@ -14,7 +14,10 @@ test('shows what the server says is wrong', async () => {
   await expect
     .element(screen.getByRole('heading', { name: 'Something went wrong' }))
     .toBeInTheDocument()
-  await expect.element(screen.getByText(/mise run db:migrate/)).toBeInTheDocument()
+  await expect.element(screen.getByText('503 Service Unavailable')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Copy mise run db:migrate' }))
+    .toBeInTheDocument()
 })
 
 test('falls back to a plain sentence for an error with no problem body', async () => {

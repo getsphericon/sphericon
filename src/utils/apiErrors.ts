@@ -87,6 +87,15 @@ export function getApiErrorMessage(error: unknown, fallback: string) {
   return error.detail ?? error.form ?? error.error ?? error.title ?? fallback
 }
 
+// The status line of a problem body ("502 Bad Gateway"), or undefined for an error that is not
+// one, such as a page that threw while rendering.
+export function getProblemStatusLine(error: unknown) {
+  if (!isApiErrorLike(error) || typeof error.status !== 'number') {
+    return undefined
+  }
+  return error.title ? `${error.status} ${error.title}` : String(error.status)
+}
+
 // What a development server adds to a 500 (the `debug` member of the problem): the error, the
 // stack of a panic and the request. A production Instance never sends it.
 export function getProblemDebug(error: unknown) {

@@ -210,6 +210,9 @@ export default interface Resources {
       "name": "Sphericon"
     },
     "appError": {
+      "copied": "Copied",
+      "copyCommand": "Copy {{command}}",
+      "copyHint": "Click to copy",
       "debugRequest": "{{method}} {{path}}",
       "debugRequestId": "request id {{id}}",
       "fallback": "The page could not be loaded.",
