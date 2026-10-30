@@ -49,6 +49,5 @@ test('loads the profile and submits a name change', async () => {
   await nameInput.fill('Renamed')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => puts.length).toBeGreaterThan(0)
-  expect(puts[0]).toContain('"name":"Renamed"')
+  await expect.poll(() => puts).toEqual(['{"name":"Renamed"}'])
 })

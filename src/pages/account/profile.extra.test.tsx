@@ -76,17 +76,32 @@ test('changing the password sends the current and new password', async () => {
   serveProfile(calls)
   const { screen } = await renderWithRouter(<ProfilePage />)
 
-  await expect.element(screen.getByLabelText(/^Name/)).toHaveValue('John')
-  await screen.getByLabelText('Current password', { exact: true }).first().fill('old-pass')
+  await screen.getByRole('button', { name: 'Change password' }).click()
+  await screen.getByLabelText(/^Current password/).fill('old-pass')
   await screen.getByLabelText(/^New password/).fill('new-pass-123')
-  await screen.getByRole('button', { name: 'Save' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Change password' }).click()
 
-  await expect.element(screen.getByText('Profile updated')).toBeInTheDocument()
+  await expect.element(screen.getByText('Password changed')).toBeInTheDocument()
   expect(calls.find((c) => c.op === 'update')?.body).toEqual({
-    name: 'John',
     currentPassword: 'old-pass',
     newPassword: 'new-pass-123',
   })
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
+})
+
+test('a refused password change is reported and the modal stays open', async () => {
+  serveProfile([], {
+    update: () => problem(400, { detail: 'wrong password' }),
+  })
+  const { screen } = await renderWithRouter(<ProfilePage />)
+
+  await screen.getByRole('button', { name: 'Change password' }).click()
+  await screen.getByLabelText(/^Current password/).fill('wrong-pass')
+  await screen.getByLabelText(/^New password/).fill('new-pass-123')
+  await screen.getByRole('dialog').getByRole('button', { name: 'Change password' }).click()
+
+  await expect.element(screen.getByText('Could not change the password')).toBeInTheDocument()
+  await expect.element(screen.getByRole('dialog')).toBeInTheDocument()
 })
 
 test('reports a failed profile update', async () => {
@@ -101,16 +116,14 @@ test('reports a failed profile update', async () => {
   await expect.element(screen.getByText('Failed to update profile')).toBeInTheDocument()
 })
 
-test('requests an email change and clears the form', async () => {
+test('requests an email change and closes the modal', async () => {
   const calls: Call[] = []
   serveProfile(calls)
   const { screen } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Change email' }).click()
   await screen.getByLabelText(/^New email/).fill(' next@getsphericon.com ')
-  await screen
-    .getByLabelText(/^Current password/)
-    .last()
-    .fill('pw-123456')
+  await screen.getByLabelText(/^Current password/).fill('pw-123456')
   await screen.getByRole('button', { name: 'Send confirmation link' }).click()
 
   await expect
@@ -120,7 +133,7 @@ test('requests an email change and clears the form', async () => {
     newEmail: 'next@getsphericon.com',
     currentPassword: 'pw-123456',
   })
-  await expect.element(screen.getByLabelText(/^New email/)).toHaveValue('')
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
 })
 
 test('reports a failed email change', async () => {
@@ -129,14 +142,13 @@ test('reports a failed email change', async () => {
   })
   const { screen } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Change email' }).click()
   await screen.getByLabelText(/^New email/).fill('next@getsphericon.com')
-  await screen
-    .getByLabelText(/^Current password/)
-    .last()
-    .fill('pw-123456')
+  await screen.getByLabelText(/^Current password/).fill('pw-123456')
   await screen.getByRole('button', { name: 'Send confirmation link' }).click()
 
   await expect.element(screen.getByText('Could not change email')).toBeInTheDocument()
+  await expect.element(screen.getByRole('dialog')).toBeInTheDocument()
 })
 
 test('shows an error when the profile fails to load', async () => {

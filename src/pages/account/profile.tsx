@@ -24,53 +24,33 @@ import {
   siteUserSignOutEverywhereMutation,
   siteUserUpdateMeMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type {
-  SiteEmailChangeInput,
-  SiteUpdateMeInput,
-  SiteUserResource,
-} from '../../generated/site/types.gen.ts'
+import type { SiteEmailChangeInput, SiteUserResource } from '../../generated/site/types.gen.ts'
+import { useActionModal } from '../../hooks/useActionModal.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { DeleteUserSection } from './DeleteUserForm.tsx'
 import { OptionalConsentsSection } from './OptionalConsentsSection.tsx'
-
-interface ProfileFormValues {
-  name: string
-  currentPassword: string
-  newPassword: string
-}
 
 // ProfileForm is split out so the Mantine form seeds its initial values from the
 // loaded user without an effect — the parent only renders it once data is ready.
 function ProfileForm({ user }: { user: SiteUserResource }) {
   const { t } = useTranslation()
 
-  const form = useForm<ProfileFormValues>({
-    initialValues: { name: user.name, currentPassword: '', newPassword: '' },
-  })
+  const form = useForm({ initialValues: { name: user.name } })
 
   const updateMutation = useResourceMutation({
     mutation: siteUserUpdateMeMutation(),
     invalidate: [siteUserGetMeQueryKey()],
     successMessage: t(($) => $.profile.updated),
     errorTitle: t(($) => $.profile.errorTitle),
-    onDone: () => {
-      form.setFieldValue('currentPassword', '')
-      form.setFieldValue('newPassword', '')
-    },
   })
 
-  const handleSubmit = (values: ProfileFormValues) => {
-    const body: SiteUpdateMeInput = { name: values.name.trim() }
-    if (values.newPassword) {
-      body.currentPassword = values.currentPassword
-      body.newPassword = values.newPassword
-    }
-    updateMutation.mutate({ body })
-  }
-
   return (
-    <form onSubmit={form.onSubmit(handleSubmit)}>
+    <form
+      onSubmit={form.onSubmit((values) =>
+        updateMutation.mutate({ body: { name: values.name.trim() } }),
+      )}
+    >
       <Stack maw={420}>
         <TextInput label={t(($) => $.profile.nameLabel)} required {...form.getInputProps('name')} />
         <TextInput
@@ -86,17 +66,6 @@ function ProfileForm({ user }: { user: SiteUserResource }) {
             </Badge>
           }
         />
-
-        <Divider label={t(($) => $.profile.passwordSectionTitle)} />
-        <PasswordInput
-          label={t(($) => $.profile.currentPasswordLabel)}
-          {...form.getInputProps('currentPassword')}
-        />
-        <PasswordInput
-          label={t(($) => $.profile.newPasswordLabel)}
-          {...form.getInputProps('newPassword')}
-        />
-
         <Group justify="flex-end">
           <Button type="submit" loading={updateMutation.isPending}>
             {t(($) => $.actions.save)}
@@ -107,8 +76,47 @@ function ProfileForm({ user }: { user: SiteUserResource }) {
   )
 }
 
-// EmailSection requests an email change; the new address must confirm via link.
-function EmailSection() {
+// PasswordForm changes the password: the current one proves it is the User.
+function PasswordForm({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation()
+  const form = useForm({ initialValues: { currentPassword: '', newPassword: '' } })
+
+  const updateMutation = useResourceMutation({
+    mutation: siteUserUpdateMeMutation(),
+    successMessage: t(($) => $.profile.passwordChanged),
+    errorTitle: t(($) => $.profile.passwordErrorTitle),
+    onDone: onClose,
+  })
+
+  return (
+    <form onSubmit={form.onSubmit((values) => updateMutation.mutate({ body: values }))}>
+      <Stack>
+        <PasswordInput
+          label={t(($) => $.profile.currentPasswordLabel)}
+          required
+          data-autofocus
+          {...form.getInputProps('currentPassword')}
+        />
+        <PasswordInput
+          label={t(($) => $.profile.newPasswordLabel)}
+          required
+          {...form.getInputProps('newPassword')}
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            {t(($) => $.actions.cancel)}
+          </Button>
+          <Button type="submit" loading={updateMutation.isPending}>
+            {t(($) => $.profile.passwordSectionTitle)}
+          </Button>
+        </Group>
+      </Stack>
+    </form>
+  )
+}
+
+// EmailForm requests an email change; the new address must confirm via link.
+function EmailForm({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const form = useForm({ initialValues: { newEmail: '', currentPassword: '' } })
 
@@ -116,7 +124,7 @@ function EmailSection() {
     mutation: siteUserEmailChangeMutation(),
     successMessage: t(($) => $.profile.changeEmailSuccess),
     errorTitle: t(($) => $.profile.changeEmailErrorTitle),
-    onDone: () => form.reset(),
+    onDone: onClose,
   })
 
   const handleSubmit = (values: SiteEmailChangeInput) => {
@@ -127,12 +135,12 @@ function EmailSection() {
 
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
-      <Stack maw={420}>
-        <Divider label={t(($) => $.profile.emailSectionTitle)} />
+      <Stack>
         <TextInput
           label={t(($) => $.profile.newEmailLabel)}
           type="email"
           required
+          data-autofocus
           {...form.getInputProps('newEmail')}
         />
         <PasswordInput
@@ -141,12 +149,43 @@ function EmailSection() {
           {...form.getInputProps('currentPassword')}
         />
         <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            {t(($) => $.actions.cancel)}
+          </Button>
           <Button type="submit" loading={changeMutation.isPending}>
             {t(($) => $.profile.changeEmailButton)}
           </Button>
         </Group>
       </Stack>
     </form>
+  )
+}
+
+// SignInSection opens the change of the email and of the password, each in a modal.
+function SignInSection() {
+  const { t } = useTranslation()
+  const email = useActionModal(
+    t(($) => $.profile.emailSectionTitle),
+    (close) => <EmailForm onClose={close} />,
+  )
+  const password = useActionModal(
+    t(($) => $.profile.passwordSectionTitle),
+    (close) => <PasswordForm onClose={close} />,
+  )
+  return (
+    <Stack maw={420}>
+      <Divider label={t(($) => $.profile.signInSectionTitle)} />
+      <Group justify="flex-end">
+        <Button variant="default" onClick={email.open}>
+          {t(($) => $.profile.emailSectionTitle)}
+        </Button>
+        <Button variant="default" onClick={password.open}>
+          {t(($) => $.profile.passwordSectionTitle)}
+        </Button>
+      </Group>
+      {email.modal}
+      {password.modal}
+    </Stack>
   )
 }
 
@@ -213,7 +252,7 @@ export function ProfilePage() {
       {meQuery.data ? (
         <Stack>
           <ProfileForm user={meQuery.data} />
-          <EmailSection />
+          <SignInSection />
           <OptionalConsentsSection />
           <SessionsSection />
           <DeleteUserSection />
