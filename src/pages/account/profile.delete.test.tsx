@@ -93,7 +93,7 @@ test('deleting the user sends the typed email and password, then lands on the lo
 test('a user with a second factor also sends a code', async () => {
   const bodies: unknown[] = []
   serve(bodies, { enabled: true })(noContent)
-  const { screen } = await renderWithRouter(<ProfilePage />)
+  const { screen, navigate } = await renderWithRouter(<ProfilePage />)
 
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
   await screen.getByLabelText(/^Password to confirm/).fill('secret-pass')
@@ -104,6 +104,9 @@ test('a user with a second factor also sends a code', async () => {
   await expect
     .poll(() => bodies)
     .toEqual([{ email: 'info@getsphericon.com', currentPassword: 'secret-pass', code: '123456' }])
+  // The deletion's success refetches the page's reads and leaves for the login screen; the test
+  // ends only after, so no read reaches the worker once its handlers are reset.
+  await expect.poll(() => navigate).toHaveBeenCalledWith({ to: loginRoute.to })
 })
 
 test('a workspace waiting for erasure is named with the no-restore warning', async () => {
