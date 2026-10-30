@@ -4,7 +4,6 @@ import {
   Button,
   Code,
   CopyButton,
-  Divider,
   Group,
   Image,
   PasswordInput,
@@ -37,6 +36,7 @@ import type {
   SiteSecondFactorEnrollment,
   SiteSecondFactorStatus,
 } from '../../generated/site/types.gen.ts'
+import { useActionModal } from '../../hooks/useActionModal.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as securityRoute } from '../../routes/account/security.tsx'
 
@@ -142,13 +142,16 @@ function Enrollment({
   )
 }
 
-// Disabled is the state without a Second factor: start enrolling, proving the
-// password (both enrollment steps require it, so a hijacked session cannot enroll).
-function Disabled({
+// SetUp enrolls the Second factor inside its modal: the proof first (the password, or nothing
+// for a User with no password), then the pending secret to scan and confirm. Both enrollment
+// steps require the proof, so a hijacked session cannot enroll.
+function SetUp({
   passwordless,
+  onCancel,
   onCodes,
 }: {
   passwordless: boolean
+  onCancel: () => void
   onCodes: (codes: string[]) => void
 }) {
   const { t } = useTranslation()
@@ -175,13 +178,17 @@ function Disabled({
       )}
     >
       <Stack>
-        <Text size="sm" c="dimmed">
-          {t(($) => $.security.offDescription)}
-        </Text>
-        <PasswordField passwordless={passwordless} {...form.getInputProps('currentPassword')} />
+        <PasswordField
+          passwordless={passwordless}
+          data-autofocus
+          {...form.getInputProps('currentPassword')}
+        />
         <Group justify="flex-end">
+          <Button variant="default" onClick={onCancel}>
+            {t(($) => $.actions.cancel)}
+          </Button>
           <Button type="submit" loading={start.isPending}>
-            {t(($) => $.security.setUpButton)}
+            {t(($) => $.actions.continue)}
           </Button>
         </Group>
       </Stack>
@@ -189,8 +196,133 @@ function Disabled({
   )
 }
 
-// Enabled is the state with a Second factor: regenerate the Recovery codes or
-// disable it.
+// Disabled is the state without a Second factor: the setup opens in a modal.
+function Disabled({
+  passwordless,
+  onCodes,
+}: {
+  passwordless: boolean
+  onCodes: (codes: string[]) => void
+}) {
+  const { t } = useTranslation()
+  const setUp = useActionModal(
+    t(($) => $.security.setUpButton),
+    (close) => (
+      <SetUp
+        passwordless={passwordless}
+        onCancel={close}
+        onCodes={(codes) => {
+          close()
+          onCodes(codes)
+        }}
+      />
+    ),
+  )
+  return (
+    <Stack>
+      <Text size="sm" c="dimmed">
+        {t(($) => $.security.offDescription)}
+      </Text>
+      <Group justify="flex-end">
+        <Button onClick={setUp.open}>{t(($) => $.security.setUpButton)}</Button>
+      </Group>
+      {setUp.modal}
+    </Stack>
+  )
+}
+
+// Regenerate replaces the Recovery codes once the proof is given; the fresh set goes to the page.
+function Regenerate({
+  passwordless,
+  onCancel,
+  onCodes,
+}: {
+  passwordless: boolean
+  onCancel: () => void
+  onCodes: (codes: string[]) => void
+}) {
+  const { t } = useTranslation()
+  const form = useForm({ initialValues: { currentPassword: '' } })
+  const regenerate = useResourceMutation({
+    mutation: siteSecondFactorRegenerateRecoveryCodesMutation(),
+    invalidate: [siteSecondFactorGetStatusQueryKey()],
+    errorTitle: t(($) => $.security.regenerateErrorTitle),
+    onDone: (data) => onCodes(data.codes),
+  })
+
+  return (
+    <form
+      onSubmit={form.onSubmit((v) =>
+        regenerate.mutate({ body: proofOf(passwordless, v.currentPassword) }),
+      )}
+    >
+      <Stack>
+        <Text size="sm">{t(($) => $.security.regenerateDescription)}</Text>
+        <PasswordField
+          passwordless={passwordless}
+          data-autofocus
+          {...form.getInputProps('currentPassword')}
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onCancel}>
+            {t(($) => $.actions.cancel)}
+          </Button>
+          <Button type="submit" loading={regenerate.isPending}>
+            {t(($) => $.security.regenerateButton)}
+          </Button>
+        </Group>
+      </Stack>
+    </form>
+  )
+}
+
+// Disable turns the Second factor off with the proof and a code.
+function Disable({ passwordless, onClose }: { passwordless: boolean; onClose: () => void }) {
+  const { t } = useTranslation()
+  const form = useForm({ initialValues: { currentPassword: '', code: '' } })
+  const disable = useResourceMutation({
+    mutation: siteSecondFactorDisableMutation(),
+    invalidate: [siteSecondFactorGetStatusQueryKey(), siteWorkspacesListQueryKey()],
+    successMessage: t(($) => $.security.disabledMessage),
+    errorTitle: t(($) => $.security.disableErrorTitle),
+    onDone: onClose,
+  })
+
+  return (
+    <form
+      onSubmit={form.onSubmit((v) =>
+        disable.mutate({
+          body: { ...proofOf(passwordless, v.currentPassword), code: v.code.trim() },
+        }),
+      )}
+    >
+      <Stack>
+        <PasswordField
+          passwordless={passwordless}
+          data-autofocus
+          {...form.getInputProps('currentPassword')}
+        />
+        <TextInput
+          label={t(($) => $.security.disableCodeLabel)}
+          autoComplete="one-time-code"
+          required
+          {...form.getInputProps('code')}
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>
+            {t(($) => $.actions.cancel)}
+          </Button>
+          <Button type="submit" color="red" loading={disable.isPending}>
+            {t(($) => $.security.disableButton)}
+          </Button>
+        </Group>
+      </Stack>
+    </form>
+  )
+}
+
+// Enabled is the state with a Second factor: regenerate the Recovery codes or disable it, each
+// in a modal.
 function Enabled({
   status,
   passwordless,
@@ -201,79 +333,39 @@ function Enabled({
   onCodes: (codes: string[]) => void
 }) {
   const { t } = useTranslation()
-  const regenerateForm = useForm({ initialValues: { currentPassword: '' } })
-  const disableForm = useForm({ initialValues: { currentPassword: '', code: '' } })
-
-  const regenerate = useResourceMutation({
-    mutation: siteSecondFactorRegenerateRecoveryCodesMutation(),
-    invalidate: [siteSecondFactorGetStatusQueryKey()],
-    errorTitle: t(($) => $.security.regenerateErrorTitle),
-    onDone: (data) => {
-      regenerateForm.reset()
-      onCodes(data.codes)
-    },
-  })
-  const disable = useResourceMutation({
-    mutation: siteSecondFactorDisableMutation(),
-    invalidate: [siteSecondFactorGetStatusQueryKey(), siteWorkspacesListQueryKey()],
-    successMessage: t(($) => $.security.disabledMessage),
-    errorTitle: t(($) => $.security.disableErrorTitle),
-  })
+  const regenerate = useActionModal(
+    t(($) => $.security.regenerateTitle),
+    (close) => (
+      <Regenerate
+        passwordless={passwordless}
+        onCancel={close}
+        onCodes={(codes) => {
+          close()
+          onCodes(codes)
+        }}
+      />
+    ),
+  )
+  const disable = useActionModal(
+    t(($) => $.security.disableTitle),
+    (close) => <Disable passwordless={passwordless} onClose={close} />,
+  )
 
   return (
     <Stack>
       <Text size="sm">
         {t(($) => $.security.codesRemaining, { count: status.recoveryCodesRemaining })}
       </Text>
-
-      <form
-        onSubmit={regenerateForm.onSubmit((v) =>
-          regenerate.mutate({ body: proofOf(passwordless, v.currentPassword) }),
-        )}
-      >
-        <Stack>
-          <Divider label={t(($) => $.security.regenerateTitle)} />
-          <Text size="sm" c="dimmed">
-            {t(($) => $.security.regenerateDescription)}
-          </Text>
-          <PasswordField
-            passwordless={passwordless}
-            {...regenerateForm.getInputProps('currentPassword')}
-          />
-          <Group justify="flex-end">
-            <Button type="submit" variant="light" loading={regenerate.isPending}>
-              {t(($) => $.security.regenerateButton)}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
-
-      <form
-        onSubmit={disableForm.onSubmit((v) =>
-          disable.mutate({
-            body: { ...proofOf(passwordless, v.currentPassword), code: v.code.trim() },
-          }),
-        )}
-      >
-        <Stack>
-          <Divider label={t(($) => $.security.disableTitle)} />
-          <PasswordField
-            passwordless={passwordless}
-            {...disableForm.getInputProps('currentPassword')}
-          />
-          <TextInput
-            label={t(($) => $.security.disableCodeLabel)}
-            autoComplete="one-time-code"
-            required
-            {...disableForm.getInputProps('code')}
-          />
-          <Group justify="flex-end">
-            <Button type="submit" color="red" variant="light" loading={disable.isPending}>
-              {t(($) => $.security.disableButton)}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
+      <Group justify="flex-end">
+        <Button variant="light" onClick={regenerate.open}>
+          {t(($) => $.security.regenerateButton)}
+        </Button>
+        <Button color="red" variant="light" onClick={disable.open}>
+          {t(($) => $.security.disableButton)}
+        </Button>
+      </Group>
+      {regenerate.modal}
+      {disable.modal}
     </Stack>
   )
 }

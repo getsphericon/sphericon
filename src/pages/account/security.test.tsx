@@ -100,8 +100,9 @@ test('enrolls an authenticator app and shows the recovery codes once', async () 
   const { screen } = await renderPage()
 
   await expect.element(screen.getByText('Off', { exact: true })).toBeInTheDocument()
-  await screen.getByLabelText(/^Current password/).fill('pw-123456')
   await screen.getByRole('button', { name: 'Set up authenticator app' }).click()
+  await screen.getByLabelText(/^Current password/).fill('pw-123456')
+  await screen.getByRole('button', { name: 'Continue' }).click()
 
   await expect
     .element(screen.getByRole('img', { name: 'QR code for the authenticator app' }))
@@ -112,6 +113,7 @@ test('enrolls an authenticator app and shows the recovery codes once', async () 
   await screen.getByRole('button', { name: 'Turn on' }).click()
 
   await expect.element(screen.getByText('Save your recovery codes')).toBeInTheDocument()
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
   for (const code of codes) {
     await expect.element(screen.getByText(code)).toBeInTheDocument()
   }
@@ -132,8 +134,9 @@ test('reports a wrong confirmation code and keeps the setup open', async () => {
   })
   const { screen } = await renderPage()
 
-  await screen.getByLabelText(/^Current password/).fill('pw-123456')
   await screen.getByRole('button', { name: 'Set up authenticator app' }).click()
+  await screen.getByLabelText(/^Current password/).fill('pw-123456')
+  await screen.getByRole('button', { name: 'Continue' }).click()
   await screen.getByLabelText(/^Code from the app/).fill('000000')
   await screen.getByRole('button', { name: 'Turn on' }).click()
 
@@ -150,13 +153,12 @@ test('regenerates the recovery codes with the password', async () => {
   const { screen } = await renderPage()
 
   await expect.element(screen.getByText('3 recovery codes left')).toBeInTheDocument()
-  await screen
-    .getByLabelText(/^Current password/)
-    .first()
-    .fill('pw-123456')
   await screen.getByRole('button', { name: 'Generate new codes' }).click()
+  await screen.getByLabelText(/^Current password/).fill('pw-123456')
+  await screen.getByRole('dialog').getByRole('button', { name: 'Generate new codes' }).click()
 
   await expect.element(screen.getByText(codes[1])).toBeInTheDocument()
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
   expect(calls).toEqual([{ op: 'regenerate', body: { currentPassword: 'pw-123456' } }])
 })
 
@@ -165,12 +167,13 @@ test('disables the second factor with the password and a code', async () => {
   serveSecurity(calls, on)
   const { screen } = await renderPage()
 
-  await screen
-    .getByLabelText(/^Current password/)
-    .last()
-    .fill('pw-123456')
-  await screen.getByLabelText(/^Code from the app or a recovery code/).fill('654321')
   await screen.getByRole('button', { name: 'Turn off two-factor authentication' }).click()
+  await screen.getByLabelText(/^Current password/).fill('pw-123456')
+  await screen.getByLabelText(/^Code from the app or a recovery code/).fill('654321')
+  await screen
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Turn off two-factor authentication' })
+    .click()
 
   await expect.element(screen.getByText('Two-factor authentication is off')).toBeInTheDocument()
   expect(calls).toEqual([{ op: 'disable', body: { currentPassword: 'pw-123456', code: '654321' } }])
@@ -189,8 +192,10 @@ test('a User with no password enrolls with a fresh provider login and no passwor
   await expect
     .element(screen.getByRole('button', { name: 'Set up authenticator app' }))
     .toBeInTheDocument()
-  expect(screen.getByLabelText(/^Current password/).elements()).toHaveLength(0)
   await screen.getByRole('button', { name: 'Set up authenticator app' }).click()
+  await expect.element(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument()
+  expect(screen.getByLabelText(/^Current password/).elements()).toHaveLength(0)
+  await screen.getByRole('button', { name: 'Continue' }).click()
   await screen.getByLabelText(/^Code from the app/).fill('123456')
   await screen.getByRole('button', { name: 'Turn on' }).click()
 

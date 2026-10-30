@@ -93,6 +93,7 @@ test('adding a Passkey passes the options to the authenticator and finishes with
     .poll(() => finished)
     .toEqual([{ name: 'My laptop', credential: ATTESTATION, currentPassword: 'secret-password' }])
   expect(registration.start).toHaveBeenCalledWith({ optionsJSON: OPTIONS })
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
 })
 
 test('a User with no password adds one after a fresh provider login, with no password field', async () => {
@@ -211,6 +212,7 @@ test('renaming a Passkey sends the new name', async () => {
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => renamed).toEqual([{ id: '1', body: { name: 'My desk' } }])
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
 })
 
 test('removing a Passkey asks for the password', async () => {
@@ -226,7 +228,7 @@ test('removing a Passkey asks for the password', async () => {
 
   await screen.getByRole('button', { name: 'Remove' }).click()
   await screen.getByLabelText(/^Current password/).fill('secret-password')
-  await screen.getByRole('button', { name: 'Remove' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Remove' }).click()
 
   await expect
     .poll(() => removed)
@@ -249,7 +251,7 @@ test('a refused removal is reported', async () => {
 
   await screen.getByRole('button', { name: 'Remove' }).click()
   await screen.getByLabelText(/^Current password/).fill('secret-password')
-  await screen.getByRole('button', { name: 'Remove' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Remove' }).click()
 
   await expect.element(screen.getByText('Could not remove the passkey')).toBeVisible()
 })
