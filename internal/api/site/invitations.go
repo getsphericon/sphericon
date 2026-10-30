@@ -141,7 +141,9 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 
 	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)
 	if errors.Is(err, accounts.ErrCredentialsRequired) {
-		// No Verified User for the address: the invitee sets up the account.
+		// No Verified User for the address: the invitee sets up the account. Kept by hand: a
+		// refused form of two fields would read "check the name and password", not this detail.
+		// ast-grep-ignore: no-hand-written-problem-in-site
 		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity, "name and password are required",
 			map[string][]string{

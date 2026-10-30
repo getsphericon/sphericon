@@ -34,3 +34,7 @@ invalid:
     func deletionRefused(detail string) siteapi.SiteDeleteUserProblemDetails {
     	return siteapi.SiteDeleteUserProblemDetails{Detail: siteapi.NewOptString(detail)}
     }
+  - |
+    func tokenNotFound() siteapi.SiteTokensDeleteRes {
+    	return &siteapi.SiteTokensDeleteNotFound{Detail: siteapi.NewOptString("token not found")}
+    }

@@ -7,8 +7,8 @@ note: >-
   decides it returns a sentinel whose kind carries its status and code (not found 404, refused 422,
   conflict 409, forbidden 403 permission_required, unauthorized 401, denied 403, unverified 403
   email_verification_required, an invalid link 400, incomplete 428), and the server's error
-  handler writes the problem. A handler that calls problem/problemWithErrors or builds a
-  siteapi.*ProblemDetails literal writes a second mapping of the decision, next to the handler
+  handler writes the problem. A handler that calls problem/problemWithErrors, builds a
+  siteapi.*ProblemDetails literal or names an operation's error response writes a second mapping of the decision, next to the handler
   rather than the module, which drifts from the other surfaces. The files under `ignores` still
   answer by hand and shrink as they are converted; a new file is covered at once.
 rule:
@@ -22,6 +22,12 @@ rule:
       has:
         field: type
         regex: ^siteapi\.\w*ProblemDetails$
+    # An operation's error response, however its body was built: converted to (a selector) or
+    # built as a literal (a qualified type).
+    - kind: selector_expression
+      regex: &response ^siteapi\.Site\w+(BadRequest|Unauthorized|PaymentRequired|Forbidden|NotFound|Conflict|Gone|PreconditionRequired|UnprocessableEntity)$
+    - kind: qualified_type
+      regex: *response
 files:
   - internal/api/site/**/*.go
 ignores:
@@ -31,15 +37,12 @@ ignores:
   - internal/api/site/problem.go
   # Still answered by hand, to convert. No refusal kind fits these yet: the 402 of a missing
   # Enterprise license (audit), the 410 of an expired confirmation link (consent), the 403
-  # signup_closed and the 409 on the email field of a Sign-up (auth), the dev-only 404 of the
-  # migrations page (schema), the test send's own report (broadcasts), and the Invitation's two
-  # required fields with their own detail (invitations).
+  # signup_closed and the 409 on the email field of a Sign-up (auth). A single kept answer in a
+  # file that is otherwise covered carries an `ast-grep-ignore` comment saying why instead
+  # (broadcasts, invitations, schema).
   - internal/api/site/audit.go
   - internal/api/site/auth.go
-  - internal/api/site/broadcasts.go
   - internal/api/site/consent.go
-  - internal/api/site/invitations.go
-  - internal/api/site/schema.go
   # A module error each, mapped by hand, several shared with internal/api/external.
   - internal/api/site/automation_report.go
   - internal/api/site/broadcast_links.go
@@ -47,6 +50,7 @@ ignores:
   - internal/api/site/contacts.go
   - internal/api/site/contacts_erase_by_email.go
   - internal/api/site/contacts_export.go
+  - internal/api/site/contacts_lookup.go
   - internal/api/site/enrollments.go
   - internal/api/site/join_domains.go
   - internal/api/site/memberships.go

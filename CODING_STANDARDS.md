@@ -100,10 +100,12 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   a 404. A sentinel one context answers differently from another is two sentinels of the module,
   one per context, never a mapping in the handler.
 - **Rule 15, `no-hand-written-problem-in-site` (ast-grep).** A handler in `internal/api/site` calls
-  neither `problem` nor `problemWithErrors` and builds no `siteapi.*ProblemDetails` literal: the
-  module that decides a refusal returns its sentinel. The files that still answer by hand are the
-  rule's `ignores`, a list that only shrinks; `internal/api/site/problem.go` holds the two helpers
-  they call.
+  neither `problem` nor `problemWithErrors`, builds no `siteapi.*ProblemDetails` literal and names
+  no operation's error response (`siteapi.Site…NotFound` and its kin): the module that decides a
+  refusal returns its sentinel. The files that still answer by hand are the rule's `ignores`, a
+  list that only shrinks; `internal/api/site/problem.go` holds the two helpers they call. A single
+  answer kept by hand in a covered file carries `// ast-grep-ignore: no-hand-written-problem-in-site`
+  under a comment that says why.
 - **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares
   a Role: in Go, `==`/`!=` or a `case` with `RoleOwner`/`RoleAdmin`/`RoleMember` of any package
   (`membership`, `entmembership`, `invitation`), and `RoleEQ`/`RoleNEQ`/`RoleIn`/`RoleNotIn` of a

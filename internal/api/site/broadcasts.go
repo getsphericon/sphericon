@@ -265,6 +265,8 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Site
 	case report.Wait > 0:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, report.Limit, report.Wait, h.now())
 	case report.Detail != "":
+		// Kept by hand: the test send's report, not a refusal of a module, says what stopped it.
+		// ast-grep-ignore: no-hand-written-problem-in-site
 		v := siteapi.SiteBroadcastsTestSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, report.Detail))
 		return &v, nil
 	}
