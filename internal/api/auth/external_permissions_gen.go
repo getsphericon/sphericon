@@ -12,6 +12,5 @@ import (
 // 0061). An API token of the Workspace has no User and skips them; an operation with no entry
 // needs none beyond its scopes.
 var ExternalOperationPermissions = map[externalapi.OperationName][]accounts.Permission{
-	externalapi.ContactsExportOperation:     {accounts.PermContactsExport, accounts.PermContactsErase},
-	externalapi.SuppressionsCreateOperation: {accounts.PermSuppressionsManage},
+	externalapi.ContactsExportOperation: {accounts.PermContactsErase},
 }

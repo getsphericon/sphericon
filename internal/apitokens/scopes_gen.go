@@ -10,6 +10,8 @@ type Scope string
 const (
 	ScopeContactsRead          Scope = "contacts:read"
 	ScopeContactsWrite         Scope = "contacts:write"
+	ScopeContactsExport        Scope = "contacts:export"
+	ScopeSuppressionsWrite     Scope = "suppressions:write"
 	ScopeEventsRead            Scope = "events:read"
 	ScopeEventsWrite           Scope = "events:write"
 	ScopeSegmentsRead          Scope = "segments:read"
@@ -47,6 +49,8 @@ const (
 var Scopes = []Scope{
 	ScopeContactsRead,
 	ScopeContactsWrite,
+	ScopeContactsExport,
+	ScopeSuppressionsWrite,
 	ScopeEventsRead,
 	ScopeEventsWrite,
 	ScopeSegmentsRead,

@@ -9,6 +9,8 @@ import * as z from 'zod';
 export const zApiTokenScope = z.enum([
   'contacts:read',
   'contacts:write',
+  'contacts:export',
+  'suppressions:write',
   'events:read',
   'events:write',
   'segments:read',
@@ -86,6 +88,8 @@ export const zEntityId = z.string().regex(/^[0-9]+$/);
 export const zGrantableScope = z.enum([
   'contacts:read',
   'contacts:write',
+  'contacts:export',
+  'suppressions:write',
   'events:read',
   'events:write',
   'segments:read',

@@ -15,6 +15,10 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "contacts:write":
 		return nil
+	case "contacts:export":
+		return nil
+	case "suppressions:write":
+		return nil
 	case "events:read":
 		return nil
 	case "events:write":
@@ -322,6 +326,10 @@ func (s GrantableScope) Validate() error {
 	case "contacts:read":
 		return nil
 	case "contacts:write":
+		return nil
+	case "contacts:export":
+		return nil
+	case "suppressions:write":
 		return nil
 	case "events:read":
 		return nil

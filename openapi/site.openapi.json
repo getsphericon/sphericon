@@ -12591,6 +12591,8 @@
         "enum": [
           "contacts:read",
           "contacts:write",
+          "contacts:export",
+          "suppressions:write",
           "events:read",
           "events:write",
           "segments:read",
@@ -13293,6 +13295,8 @@
         "enum": [
           "contacts:read",
           "contacts:write",
+          "contacts:export",
+          "suppressions:write",
           "events:read",
           "events:write",
           "segments:read",
@@ -13319,6 +13323,14 @@
           },
           {
             "scope": "contacts:write"
+          },
+          {
+            "scope": "contacts:export",
+            "permission": "contacts:export"
+          },
+          {
+            "scope": "suppressions:write",
+            "permission": "suppressions:manage"
           },
           {
             "scope": "events:read"

@@ -59,7 +59,7 @@ func camel(column string) string {
 
 func TestExternalContactsExportByIDReturnsTheFullBundle(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, "contacts:export")
 
 	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
@@ -119,7 +119,7 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 // No tenant id and no rendered message content reach the document.
 func TestExternalContactsExportLeaksNoInternals(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, "contacts:export")
 
 	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
@@ -134,7 +134,7 @@ func TestExternalContactsExportLeaksNoInternals(t *testing.T) {
 
 func TestExternalContactsExportByEmailMatchesByID(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, "contacts:export")
 
 	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		Email: externalapi.NewOptEmailAddress("Export.Subject@Example.com"),
@@ -148,7 +148,7 @@ func TestExternalContactsExportByEmailMatchesByID(t *testing.T) {
 
 func TestExternalContactsExportEmptyMembersAreArrays(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, "contacts:export")
 
 	res, err := c.ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactBobID)),
@@ -170,7 +170,7 @@ func TestExternalContactsExportStreamsLargeContacts(t *testing.T) {
 	require.NoError(t, err)
 	require.Greater(t, stored, 1000)
 
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, "contacts:export")
 	res, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportHeavyID)),
 	})
@@ -182,19 +182,23 @@ func TestExternalContactsExportStreamsLargeContacts(t *testing.T) {
 	assert.Len(t, doc.Events, stored)
 }
 
-func TestExternalContactsExportNeedsTheReadScope(t *testing.T) {
+// Exporting a Contact is a scope of its own, as on /site it is a Permission of its own (ADR
+// 0061): reading and writing Contacts does not export one.
+func TestExternalContactsExportNeedsTheExportScope(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res, err := env.ExternalScoped(t, "contacts:write", "events:read").ContactsExport(context.Background(), externalapi.ContactsExportParams{
+	res, err := env.ExternalScoped(t, "contacts:read", "contacts:write").ContactsExport(context.Background(), externalapi.ContactsExportParams{
 		ID: externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportForbidden{}, res)
+	refused, isRefused := res.(*externalapi.ContactsExportForbidden)
+	require.Truef(t, isRefused, "got %T", res)
+	assert.Equal(t, "the API token lacks the scope contacts:export", refused.Detail.Value)
 }
 
 func TestExternalContactsExportIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, "contacts:export")
 	ctx := context.Background()
 
 	byID, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
@@ -212,7 +216,7 @@ func TestExternalContactsExportIsWorkspaceScoped(t *testing.T) {
 
 func TestExternalContactsExportNeedsExactlyOneIdentifier(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:read")
+	c := env.ExternalScoped(t, "contacts:export")
 	ctx := context.Background()
 
 	none, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{})

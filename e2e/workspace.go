@@ -26,7 +26,7 @@ import (
 var tokenScopes = scopeStrings(
 	externalapi.ApiTokenScopeIntegrationsRead, externalapi.ApiTokenScopeIntegrationsWrite,
 	externalapi.ApiTokenScopeSendingDomainsRead, externalapi.ApiTokenScopeSendingDomainsWrite,
-	externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeContactsWrite,
+	externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeContactsWrite, externalapi.ApiTokenScopeContactsExport,
 	externalapi.ApiTokenScopeBroadcastsRead, externalapi.ApiTokenScopeBroadcastsWrite, externalapi.ApiTokenScopeBroadcastsSend,
 	externalapi.ApiTokenScopeAutomationsRead, externalapi.ApiTokenScopeAutomationsWrite, externalapi.ApiTokenScopeAutomationsPublish,
 	externalapi.ApiTokenScopeEventsWrite,

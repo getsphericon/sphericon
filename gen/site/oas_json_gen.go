@@ -33,6 +33,10 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeContactsRead
 	case ApiTokenScopeContactsWrite:
 		*s = ApiTokenScopeContactsWrite
+	case ApiTokenScopeContactsExport:
+		*s = ApiTokenScopeContactsExport
+	case ApiTokenScopeSuppressionsWrite:
+		*s = ApiTokenScopeSuppressionsWrite
 	case ApiTokenScopeEventsRead:
 		*s = ApiTokenScopeEventsRead
 	case ApiTokenScopeEventsWrite:
@@ -2584,6 +2588,10 @@ func (s *GrantableScope) Decode(d *jx.Decoder) error {
 		*s = GrantableScopeContactsRead
 	case GrantableScopeContactsWrite:
 		*s = GrantableScopeContactsWrite
+	case GrantableScopeContactsExport:
+		*s = GrantableScopeContactsExport
+	case GrantableScopeSuppressionsWrite:
+		*s = GrantableScopeSuppressionsWrite
 	case GrantableScopeEventsRead:
 		*s = GrantableScopeEventsRead
 	case GrantableScopeEventsWrite:

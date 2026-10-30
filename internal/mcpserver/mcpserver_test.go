@@ -407,7 +407,7 @@ func TestMCPCallsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 // record an Unsubscribe, and exposes nothing that resubscribes or lifts one.
 func TestMCPConsentOnlyNarrows(t *testing.T) {
 	env := testhelper.Setup(t)
-	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:write"))
+	s := env.MCPClient(t, env.ScopedBearer(t, "contacts:write", "suppressions:write"))
 
 	list, err := s.ListTools(context.Background(), nil)
 	require.NoError(t, err)

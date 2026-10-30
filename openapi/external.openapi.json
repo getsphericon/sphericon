@@ -4962,8 +4962,8 @@
           }
         },
         "tags": ["Contacts"],
-        "x-required-permissions": ["contacts:export", "contacts:erase"],
-        "x-required-scopes": ["contacts:read"]
+        "x-required-permissions": ["contacts:erase"],
+        "x-required-scopes": ["contacts:export"]
       }
     },
     "/contacts/{contactId}/tags": {
@@ -11382,8 +11382,7 @@
             }
           }
         },
-        "x-required-permissions": ["suppressions:manage"],
-        "x-required-scopes": ["contacts:write"]
+        "x-required-scopes": ["suppressions:write"]
       }
     },
     "/tags": {
@@ -13562,6 +13561,8 @@
         "enum": [
           "contacts:read",
           "contacts:write",
+          "contacts:export",
+          "suppressions:write",
           "events:read",
           "events:write",
           "segments:read",
@@ -16781,6 +16782,8 @@
         "enum": [
           "contacts:read",
           "contacts:write",
+          "contacts:export",
+          "suppressions:write",
           "events:read",
           "events:write",
           "segments:read",
@@ -16807,6 +16810,14 @@
           },
           {
             "scope": "contacts:write"
+          },
+          {
+            "scope": "contacts:export",
+            "permission": "contacts:export"
+          },
+          {
+            "scope": "suppressions:write",
+            "permission": "suppressions:manage"
           },
           {
             "scope": "events:read"

@@ -26,6 +26,8 @@ export type ApiTokenListResponse = {
 export const ApiTokenScope = {
   CONTACTS_READ: 'contacts:read',
   CONTACTS_WRITE: 'contacts:write',
+  CONTACTS_EXPORT: 'contacts:export',
+  SUPPRESSIONS_WRITE: 'suppressions:write',
   EVENTS_READ: 'events:read',
   EVENTS_WRITE: 'events:write',
   SEGMENTS_READ: 'segments:read',
@@ -2245,6 +2247,8 @@ export type GoneProblem = {
 export const GrantableScope = {
   CONTACTS_READ: 'contacts:read',
   CONTACTS_WRITE: 'contacts:write',
+  CONTACTS_EXPORT: 'contacts:export',
+  SUPPRESSIONS_WRITE: 'suppressions:write',
   EVENTS_READ: 'events:read',
   EVENTS_WRITE: 'events:write',
   SEGMENTS_READ: 'segments:read',

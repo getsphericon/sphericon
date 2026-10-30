@@ -128,6 +128,8 @@ type ApiTokenScope string
 const (
 	ApiTokenScopeContactsRead          ApiTokenScope = "contacts:read"
 	ApiTokenScopeContactsWrite         ApiTokenScope = "contacts:write"
+	ApiTokenScopeContactsExport        ApiTokenScope = "contacts:export"
+	ApiTokenScopeSuppressionsWrite     ApiTokenScope = "suppressions:write"
 	ApiTokenScopeEventsRead            ApiTokenScope = "events:read"
 	ApiTokenScopeEventsWrite           ApiTokenScope = "events:write"
 	ApiTokenScopeSegmentsRead          ApiTokenScope = "segments:read"
@@ -166,6 +168,8 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 	return []ApiTokenScope{
 		ApiTokenScopeContactsRead,
 		ApiTokenScopeContactsWrite,
+		ApiTokenScopeContactsExport,
+		ApiTokenScopeSuppressionsWrite,
 		ApiTokenScopeEventsRead,
 		ApiTokenScopeEventsWrite,
 		ApiTokenScopeSegmentsRead,
@@ -206,6 +210,10 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeContactsRead:
 		return []byte(s), nil
 	case ApiTokenScopeContactsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeContactsExport:
+		return []byte(s), nil
+	case ApiTokenScopeSuppressionsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeEventsRead:
 		return []byte(s), nil
@@ -282,6 +290,12 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeContactsWrite:
 		*s = ApiTokenScopeContactsWrite
+		return nil
+	case ApiTokenScopeContactsExport:
+		*s = ApiTokenScopeContactsExport
+		return nil
+	case ApiTokenScopeSuppressionsWrite:
+		*s = ApiTokenScopeSuppressionsWrite
 		return nil
 	case ApiTokenScopeEventsRead:
 		*s = ApiTokenScopeEventsRead
