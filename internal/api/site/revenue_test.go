@@ -225,7 +225,7 @@ func TestABackfilledHistoryBuildsOrdersOnTheDaysTheyHappened(t *testing.T) {
 	assert.EqualValues(t, 3000, ninety.Total)
 	day, found := lo.Find(ninety.Series, func(p siteapi.SiteRevenuePoint) bool { return p.Amount != 0 })
 	require.True(t, found)
-	assert.Equal(t, time.Time(old).Format("2006-01-02"), day.Date, "UTC Workspace: the Report day is the UTC date")
+	assert.Equal(t, time.Time(old).UTC().Format("2006-01-02"), day.Date, "UTC Workspace: the Report day is the UTC date")
 }
 
 func TestAResentBackfillLoadChangesNothing(t *testing.T) {
