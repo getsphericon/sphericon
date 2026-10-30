@@ -8,9 +8,8 @@
 //   - declared-by-use Custom fields (ADR 0006);
 //   - the transaction, and the contact.created event published inside it so the
 //     event is committed iff the row is (Automations enroll off it);
-//   - domain errors (ErrNotFound, *ConflictError, ErrIdentityRequired) that each
-//     surface maps to its own transport — scope checks and RFC 7807 stay in the
-//     adapters.
+//   - domain errors (ErrNotFound, ErrEmailTaken and its kin, ErrIdentityRequired),
+//     sentinel refusals the server's error handler answers alike on every surface.
 //
 // There is no repository layer over ent: the module uses the Workspace-scoped ent
 // client (ADR 0017) it is handed, and writes no Workspace predicate.
@@ -31,11 +30,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// Alias key fields, as reported by ConflictError.Field.
+// Alias key fields, as the conflict of each names it.
 const (
 	FieldEmail     = "email"
 	FieldPhone     = "phone"
@@ -43,26 +42,26 @@ const (
 )
 
 // ErrNotFound means the Contact does not exist in the Workspace.
-var ErrNotFound = errors.New("contacts: contact not found")
+var ErrNotFound = validation.NotFound("contacts: contact not found", "errors.contact_not_found")
 
 // ErrIdentityRequired means an upsert was given none of the alias keys, so there is
 // nothing to resolve or anchor a Contact by.
-var ErrIdentityRequired = errors.New("contacts: subject_id, email or phone is required")
+var ErrIdentityRequired = validation.Refuse("contacts: subject_id, email or phone is required", "errors.contact_identity_required")
 
-// ConflictError means an alias key is already held by another Contact of the
-// Workspace.
-type ConflictError struct {
-	// Field is the alias key in conflict (FieldEmail, FieldPhone, FieldSubjectID).
-	Field string
-}
+// An alias key already held by another Contact of the Workspace, one per key: the answer names
+// the key's field.
+var (
+	ErrEmailTaken     = validation.ConflictField(FieldEmail, "contacts: email already exists", "errors.email_exists")
+	ErrPhoneTaken     = validation.ConflictField(FieldPhone, "contacts: phone already exists", "errors.phone_exists")
+	ErrSubjectIDTaken = validation.ConflictField(FieldSubjectID, "contacts: subject_id already exists", "errors.subject_id_exists")
+)
 
-func (e *ConflictError) Error() string { return "contacts: " + e.Field + " already exists" }
-
-// Message words the conflict for a human, in the instance locale. The single place
-// the wording lives, so every surface reports the same conflict identically.
-func (e *ConflictError) Message() string {
-	return i18n.T("errors."+e.Field+"_exists", nil)
-}
+// taken is the conflict of each alias key, in the order a unique violation is matched by its
+// constraint's name.
+var taken = []struct {
+	field string
+	err   error
+}{{FieldSubjectID, ErrSubjectIDTaken}, {FieldPhone, ErrPhoneTaken}, {FieldEmail, ErrEmailTaken}}
 
 // Attributes are the writable attributes of a Contact. A nil pointer (or nil
 // CustomFields) means "not given": Create leaves it unset, Update leaves it as is.
@@ -101,7 +100,7 @@ func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 
 // Create makes a Contact from the given door (its Contact source, kept for good) and
 // publishes contact.created in one transaction. An alias key already taken in the
-// Workspace yields a *ConflictError.
+// Workspace yields its conflict (ErrEmailTaken and its kin).
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, attrs Attributes) (*ent.Contact, error) {
 	attrs = attrs.normalized()
 	var c *ent.Contact
@@ -406,9 +405,9 @@ func domainError(err error) error {
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-		for _, f := range []string{FieldSubjectID, FieldPhone, FieldEmail} {
-			if strings.Contains(pgErr.ConstraintName, f) {
-				return &ConflictError{Field: f}
+		for _, k := range taken {
+			if strings.Contains(pgErr.ConstraintName, k.field) {
+				return k.err
 			}
 		}
 	}

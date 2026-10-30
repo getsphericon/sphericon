@@ -29,10 +29,13 @@ func (m *Module) Enrollments(ctx context.Context, s *ent.Scoped, automationID in
 		})
 }
 
-// Enrollment returns one Enrollment of an Automation. ErrNotFound when the Workspace has no
-// such Automation, or the Automation no such Enrollment.
+// Enrollment returns one Enrollment of an Automation. ErrEnrollmentNotFound when the Workspace
+// has no such Automation, or the Automation no such Enrollment.
 func (m *Module) Enrollment(ctx context.Context, s *ent.Scoped, automationID, id int64) (*ent.AutomationRun, error) {
 	r, err := s.AutomationRun().Query().
 		Where(automationrun.ID(id), automationrun.AutomationID(automationID)).Only(ctx)
-	return r, notFound(err)
+	if ent.IsNotFound(err) {
+		return nil, ErrEnrollmentNotFound
+	}
+	return r, err
 }

@@ -15,6 +15,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/external"
+	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -187,9 +188,8 @@ func TestExternalAuthTokensBootstrap(t *testing.T) {
 	h := external.NewHandlers(external.Deps{Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords), BootstrapToken: "bootstrap-secret"})
 	in := &externalapi.CreateApiTokenInput{Name: "first", Scopes: []externalapi.ApiTokenScope{externalapi.ApiTokenScopeTokensWrite}}
 
-	wrong, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "nope"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensBootstrapUnauthorized{}, wrong)
+	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "nope"})
+	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
 
 	res, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "bootstrap-secret"})
 	require.NoError(t, err)
@@ -208,9 +208,8 @@ func TestExternalAuthTokensBootstrapDisabledWithoutConfiguredSecret(t *testing.T
 
 	// Unconfigured: an empty header must not match the empty secret.
 	h := external.NewHandlers(external.Deps{Accounts: accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)})
-	blank, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: ""})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.AuthTokensBootstrapUnauthorized{}, blank)
+	_, err := h.AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: ""})
+	require.ErrorIs(t, err, apitokens.ErrBootstrapTokenInvalid)
 	// Through the real server too.
 	res, err := env.ExternalAnonymous(t).AuthTokensBootstrap(ctx, in, externalapi.AuthTokensBootstrapParams{XBootstrapToken: "guess"})
 	require.NoError(t, err)

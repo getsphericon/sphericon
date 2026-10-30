@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 	"time"
 
 	"github.com/samber/lo"
@@ -55,11 +53,7 @@ func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdate
 	scoped := workspaceScope(ctx)
 
 	row, err := apitokens.Rename(ctx, scoped, int64(params.ID), req.Name)
-	switch {
-	case errors.Is(err, apitokens.ErrNotFound):
-		v := siteapi.SiteTokensUpdateNotFound(problem(http.StatusNotFound, "token not found"))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.TokenToResource(row)
@@ -74,10 +68,6 @@ func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteToke
 
 	// An unknown, foreign or already-revoked id is a 404.
 	err := apitokens.Revoke(ctx, scoped, id)
-	if errors.Is(err, apitokens.ErrNotFound) {
-		v := siteapi.SiteTokensDeleteNotFound(problem(http.StatusNotFound, "token not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

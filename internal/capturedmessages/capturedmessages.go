@@ -8,7 +8,6 @@ package capturedmessages
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Module holds the one setting a capture needs: how many Captured messages a Workspace keeps. The
@@ -140,7 +140,7 @@ func Purge(ctx context.Context, client *ent.Client, retention time.Duration, bat
 }
 
 // ErrNotFound reports a Captured message that does not exist in the Workspace.
-var ErrNotFound = errors.New("captured message not found")
+var ErrNotFound = validation.NotFound("capturedmessages: captured message not found", "errors.captured_message_not_found")
 
 // Get returns one Captured message of the Workspace, or ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.CapturedMessage, error) {

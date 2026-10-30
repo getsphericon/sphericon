@@ -2,7 +2,6 @@ package external
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/samber/lo"
@@ -165,9 +164,9 @@ func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.Test
 		return nil, err
 	}
 
-	if detail := h.outbound.SendBroadcastTest(ctx, auth.TokenScoped(ctx), b, string(req.Email), nil).Detail; detail != "" {
-		res := externalapi.BroadcastsTestSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, detail))
-		return &res, nil
+	// No Asker: /api never sends from the System sender, so its cap never defers the Test send.
+	if _, err := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), nil); err != nil {
+		return nil, err
 	}
 	return &externalapi.BroadcastsTestSendNoContent{}, nil
 }

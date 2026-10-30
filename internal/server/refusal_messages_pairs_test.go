@@ -34,14 +34,7 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		string(externalapi.ApiTokenScopeContactsWrite),
 	}
 
-	cases := []struct {
-		name string
-		want string
-		// head is how much of the message is compared: all of it when zero.
-		head int
-		site func(c *siteapi.Client) (any, error)
-		ext  func(c *externalapi.Client) (any, error)
-	}{
+	cases := []pairCase{
 		{
 			name: "rule not found", want: "rule not found",
 			site: func(c *siteapi.Client) (any, error) {
@@ -158,6 +151,23 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			},
 		},
 	}
+	runPairs(t, scopes, cases)
+}
+
+// pairCase is one refusal asked of the site and the external handler of the same operation.
+type pairCase struct {
+	name string
+	want string
+	// head is how much of the message is compared: all of it when zero.
+	head int
+	site func(c *siteapi.Client) (any, error)
+	ext  func(c *externalapi.Client) (any, error)
+}
+
+// runPairs asks each case of an Acme owner on /site and of an Acme token holding scopes on /api,
+// and compares both messages with the one the case wants.
+func runPairs(t *testing.T, scopes []string, cases []pairCase) {
+	t.Helper()
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
@@ -170,4 +180,143 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			assert.Equal(t, tc.want, headOf(extText, tc.head), "external")
 		})
 	}
+}
+
+// The refusals of the Contact, Privacy request, Captured message, token, Enrollment and Sending
+// domain modules read the same on both surfaces too: each module returns its sentinel and the
+// error handler renders it.
+func TestContactAndSendingRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
+	const missing = 99999
+	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
+	scopes := []string{
+		string(externalapi.ApiTokenScopeContactsRead), string(externalapi.ApiTokenScopeContactsWrite),
+		string(externalapi.ApiTokenScopeContactsErase), string(externalapi.ApiTokenScopeContactsExport),
+		string(externalapi.ApiTokenScopeCapturedMessagesRead), string(externalapi.ApiTokenScopeTokensWrite),
+		string(externalapi.ApiTokenScopeSendingDomainsRead), string(externalapi.ApiTokenScopeSendingDomainsWrite),
+		string(externalapi.ApiTokenScopeEnrollmentsRead), string(externalapi.ApiTokenScopeAutomationsRead),
+		string(externalapi.ApiTokenScopeAuditRead),
+	}
+
+	cases := []pairCase{
+		{
+			name: "contact not found", want: "contact not found",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteContactsGet(t.Context(), siteapi.SiteContactsGetParams{WorkspaceId: ws, ID: missing})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.ContactsGet(t.Context(), externalapi.ContactsGetParams{ID: missing})
+			},
+		},
+		{
+			name: "contact alias key taken", want: "email already exists",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteContactsCreate(t.Context(), &siteapi.SiteCreateContactInput{Email: siteapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)},
+					siteapi.SiteContactsCreateParams{WorkspaceId: ws})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)})
+			},
+		},
+		{
+			name: "erased contact not found", want: "contact not found",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteContactsDelete(t.Context(), siteapi.SiteContactsDeleteParams{WorkspaceId: ws, ID: missing})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.ContactsDelete(t.Context(), externalapi.ContactsDeleteParams{ID: missing})
+			},
+		},
+		{
+			name: "nothing to erase for an address", want: "nothing found for this email address or visitor id",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteContactsErase(t.Context(), siteapi.SiteContactsEraseParams{WorkspaceId: ws, Email: "nobody.at.all@example.com"})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.ContactsEraseBy(t.Context(), externalapi.ContactsEraseByParams{Email: externalapi.NewOptEmailAddress("nobody.at.all@example.com")})
+			},
+		},
+		{
+			name: "export names no contact", want: "pass exactly one of id or email",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteContactsExport(t.Context(), siteapi.SiteContactsExportParams{WorkspaceId: ws})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.ContactsExport(t.Context(), externalapi.ContactsExportParams{})
+			},
+		},
+		{
+			name: "export contact not found", want: "contact not found",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteContactsExport(t.Context(), siteapi.SiteContactsExportParams{WorkspaceId: ws, ID: siteapi.NewOptEntityId(missing)})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.ContactsExport(t.Context(), externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(missing)})
+			},
+		},
+		{
+			name: "captured message not found", want: "captured message not found",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteCapturedMessagesGet(t.Context(), siteapi.SiteCapturedMessagesGetParams{WorkspaceId: ws, ID: missing})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.CapturedMessagesGet(t.Context(), externalapi.CapturedMessagesGetParams{ID: missing})
+			},
+		},
+		{
+			name: "token not found", want: "token not found",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteTokensDelete(t.Context(), siteapi.SiteTokensDeleteParams{WorkspaceId: ws, ID: missing})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.AuthTokensDelete(t.Context(), externalapi.AuthTokensDeleteParams{ID: missing})
+			},
+		},
+		{
+			name: "enrollments of no automation", want: "automation not found",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteEnrollmentsList(t.Context(), siteapi.SiteEnrollmentsListParams{WorkspaceId: ws, AutomationId: missing})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.EnrollmentsList(t.Context(), externalapi.EnrollmentsListParams{AutomationId: missing})
+			},
+		},
+		{
+			name: "enrollment not found", want: "enrollment not found",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteEnrollmentsGet(t.Context(), siteapi.SiteEnrollmentsGetParams{WorkspaceId: ws, AutomationId: fixtures.AutomationWinBackID, EnrollmentId: missing})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.EnrollmentsGet(t.Context(), externalapi.EnrollmentsGetParams{AutomationId: fixtures.AutomationWinBackID, EnrollmentId: missing})
+			},
+		},
+		{
+			name: "sending domain not found", want: "sending domain not found",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteSendingDomainsGet(t.Context(), siteapi.SiteSendingDomainsGetParams{WorkspaceId: ws, ID: missing})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.SendingDomainsGet(t.Context(), externalapi.SendingDomainsGetParams{ID: missing})
+			},
+		},
+		{
+			name: "sending domain already added", want: "this domain is already added",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteSendingDomainsCreate(t.Context(), &siteapi.SiteCreateSendingDomainInput{Domain: fixtures.SendingDomainCodebasicsDomain},
+					siteapi.SiteSendingDomainsCreateParams{WorkspaceId: ws})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.SendingDomainsCreate(t.Context(), &externalapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainCodebasicsDomain})
+			},
+		},
+		{
+			name: "audit cursor never handed out", want: "the cursor is not one the audit log returned",
+			site: func(c *siteapi.Client) (any, error) {
+				return c.SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: ws, Cursor: siteapi.NewOptString("nope")})
+			},
+			ext: func(c *externalapi.Client) (any, error) {
+				return c.AuditEntriesList(t.Context(), externalapi.AuditEntriesListParams{Cursor: externalapi.NewOptString("nope")})
+			},
+		},
+	}
+	runPairs(t, scopes, cases)
 }

@@ -2286,7 +2286,7 @@ export const siteContactsExport = <ThrowOnError extends boolean = false>(options
 
 /**
  * Look up what the Workspace holds for one email address (a Privacy request):
- * counts only. The address is trimmed and lowercased; an invalid one is rejected.
+ * counts only. The address is trimmed and lowercased; an invalid one is refused (422).
  * An address nothing holds answers with zeros, not 404. Owner or admin only.
  */
 export const siteContactsLookup = <ThrowOnError extends boolean = false>(options: Options<SiteContactsLookupData, ThrowOnError>): RequestResult<SiteContactsLookupResponses, SiteContactsLookupErrors, ThrowOnError> => (options.client ?? client).get<SiteContactsLookupResponses, SiteContactsLookupErrors, ThrowOnError>({

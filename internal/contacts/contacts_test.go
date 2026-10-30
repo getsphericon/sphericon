@@ -44,10 +44,9 @@ func TestCreateConflictOnAliasKey(t *testing.T) {
 
 	// Case and whitespace do not make a different email.
 	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Email: new(" ALICE@example.com ")})
-	var conflict *contacts.ConflictError
-	require.ErrorAs(t, err, &conflict, "got %v", err)
-	assert.Equal(t, contacts.FieldEmail, conflict.Field)
-	assert.Equal(t, "email already exists", conflict.Message())
+	require.ErrorIs(t, err, contacts.ErrEmailTaken)
+	assert.Equal(t, contacts.FieldEmail, contacts.ErrEmailTaken.Field())
+	assert.Equal(t, "email already exists", contacts.ErrEmailTaken.Message())
 }
 
 func TestCreateConflictOnPhone(t *testing.T) {
@@ -57,9 +56,17 @@ func TestCreateConflictOnPhone(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15550001")})
-	var conflict *contacts.ConflictError
-	require.ErrorAs(t, err, &conflict, "got %v", err)
-	assert.Equal(t, contacts.FieldPhone, conflict.Field)
+	require.ErrorIs(t, err, contacts.ErrPhoneTaken)
+}
+
+func TestCreateConflictOnSubjectID(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := contacts.New(env.Bus)
+	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{SubjectID: new("user-new-1")})
+	require.NoError(t, err)
+
+	_, err = m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{SubjectID: new("user-new-1")})
+	require.ErrorIs(t, err, contacts.ErrSubjectIDTaken)
 }
 
 func TestUpdateChangesOnlyGivenAttributes(t *testing.T) {
@@ -90,9 +97,7 @@ func TestUpdateConflict(t *testing.T) {
 	m := contacts.New(env.Bus)
 
 	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.Attributes{Email: new("bob@example.com")})
-	var conflict *contacts.ConflictError
-	require.ErrorAs(t, err, &conflict, "got %v", err)
-	assert.Equal(t, contacts.FieldEmail, conflict.Field)
+	require.ErrorIs(t, err, contacts.ErrEmailTaken)
 }
 
 func TestUpsertResolvesExistingContactByAliasKey(t *testing.T) {

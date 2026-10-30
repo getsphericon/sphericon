@@ -2,8 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -14,16 +12,11 @@ import (
 // header and gates as the Events stream, over delivery metadata only.
 func (h *Handlers) ExportMessages(ctx context.Context, params externalapi.ExportMessagesParams) (externalapi.ExportMessagesRes, error) {
 	if !h.exportLicensed() {
-		res := externalapi.ExportMessagesNotFound(problem(http.StatusNotFound, "not found"))
-		return &res, nil
+		return nil, exportstream.ErrNotOffered
 	}
 
 	limit := int(params.Limit.Value)
 	page, err := exportstream.Messages(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
-	if errors.Is(err, exportstream.ErrBadCursor) {
-		res := externalapi.ExportMessagesBadRequest(problem(http.StatusBadRequest, "invalid cursor"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

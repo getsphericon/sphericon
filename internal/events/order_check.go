@@ -21,7 +21,7 @@ type OrderCheck struct {
 // NewOrderCheck is the check for the Workspace behind s.
 func NewOrderCheck(s *ent.Scoped) *OrderCheck { return &OrderCheck{s: s} }
 
-// Check refuses an order Event with a *RejectionError that says why.
+// Check refuses an order Event with ErrRejected made With why.
 func (c *OrderCheck) Check(ctx context.Context, action string, props map[string]any) error {
 	if !orders.IsOrderAction(action) {
 		return nil
@@ -34,7 +34,7 @@ func (c *OrderCheck) Check(ctx context.Context, action string, props map[string]
 		c.reporting, c.loaded = w.ReportingCurrency, true
 	}
 	if _, err := orders.Parse(action, props, c.reporting); err != nil {
-		return &RejectionError{Reason: err.Error()}
+		return Reject(err.Error())
 	}
 	return nil
 }

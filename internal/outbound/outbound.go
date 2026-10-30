@@ -44,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/suppression"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Outcome is what an Outbound send did. Sent, Skipped and Failed are final for the
@@ -825,19 +826,22 @@ type TestRequest struct {
 // TestSubjectPrefix marks a preview send so it is never mistaken for the real mailing.
 const TestSubjectPrefix = "[Test] "
 
-// TestReport is what a Broadcast's Test send did, worded for a human: the Result, plus
-// Detail, "" when the message was sent and otherwise why it was not.
-type TestReport struct {
-	Result
+// The refusals of a send a caller asked for and is told about at once (a Test send, a
+// Transactional request), each carrying the reason worded by Detail.
+var (
+	// ErrHeld: the source cannot send right now (a Hold); it clears once the hold is lifted.
+	ErrHeld = validation.Refuse("outbound: sending is held", "errors.sending_held")
+	// ErrTestRefused: the System sender will not make this Test send (ADR 0041).
+	ErrTestRefused = validation.Refuse("outbound: the test send is refused", "errors.test_send_refused")
+)
 
-	Detail string
-}
-
-// SendBroadcastTest sends the Broadcast to one address with sample merge data for
-// an author to preview it. The report's Detail is "" when the message was sent,
-// otherwise the human-readable reason it was not (a send error, a Hold, a refusal or
-// content that did not render), so every surface words a refused preview the same way.
-func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to string, asker *Asker) TestReport {
+// SendBroadcastTest sends the Broadcast to one address with sample merge data for an author to
+// preview it. A Held or Refused Test send is ErrHeld or ErrTestRefused made With the reason worded
+// by Detail, content that does not render is emailrender.ErrInvalidContent with its reason, and a
+// failed send is returned as the error it is, so every surface answers a refused preview the same
+// way. The System sender's cap is no error: the Result is a Deferral whose Wait and Limit say when
+// capacity returns.
+func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, to string, asker *Asker) (Result, error) {
 	res, err := m.SendTest(ctx, s, TestRequest{
 		To:        to,
 		Subject:   TestSubjectPrefix + b.Subject,
@@ -849,18 +853,20 @@ func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Br
 		IntegrationID: b.IntegrationID,
 		Asker:         asker,
 	})
-	report := TestReport{Result: res}
-	switch {
-	case err != nil:
-		report.Detail = "send failed: " + err.Error()
-	case res.Outcome == Held, res.Outcome == Refused:
-		report.Detail = Detail(res.Reason)
-	case res.Outcome == Deferral:
-		report.Detail = "too many test sends from the system sender, try again later"
-	case res.Outcome == Failed: // the content did not render
-		report.Detail = res.Reason
+	if err != nil {
+		return Result{}, err
 	}
-	return report
+	switch res.Outcome {
+	case Held:
+		return Result{}, ErrHeld.With(Detail(res.Reason))
+	case Refused:
+		return Result{}, ErrTestRefused.With(Detail(res.Reason))
+	case Failed: // the content did not render
+		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
+	case Sent, Skipped, Deferral:
+		// Sent, or the System sender's cap, which Wait and Limit describe.
+	}
+	return res, nil
 }
 
 // integrationSender is the sender of the Integration id names, else of the Workspace's default:

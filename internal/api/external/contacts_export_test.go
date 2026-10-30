@@ -221,12 +221,12 @@ func TestExternalContactsExportNeedsExactlyOneIdentifier(t *testing.T) {
 
 	none, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportBadRequest{}, none)
+	assert.IsType(t, &externalapi.ContactsExportUnprocessableEntity{}, none)
 
 	both, err := c.ContactsExport(ctx, externalapi.ContactsExportParams{
 		ID:    externalapi.NewOptEntityId(entityIDString(fixtures.ContactExportSubjectID)),
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactExportSubjectEmail),
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportBadRequest{}, both)
+	assert.IsType(t, &externalapi.ContactsExportUnprocessableEntity{}, both)
 }

@@ -2,15 +2,10 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.
@@ -38,18 +33,7 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 	id := int64(params.ID)
 
 	updated, err := h.accounts.ChangeMembershipRole(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id, membership.Role(req.Role))
-	switch {
-	case ent.IsNotFound(err):
-		v := siteapi.SiteMembershipsUpdateNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	case errors.Is(err, accounts.ErrLastOwner):
-		v := siteapi.SiteMembershipsUpdateUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			"cannot demote the last owner",
-			map[string][]string{"role": {i18n.T("errors.keep_one_owner", nil)}},
-		))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	resource := mapper.MembershipToResource(updated)
@@ -64,18 +48,7 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 	id := int64(params.ID)
 
 	err := h.accounts.RemoveMembership(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id)
-	switch {
-	case ent.IsNotFound(err):
-		v := siteapi.SiteMembershipsDeleteNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	case errors.Is(err, accounts.ErrLastOwner):
-		v := siteapi.SiteMembershipsDeleteUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			"cannot remove the last owner",
-			map[string][]string{"member": {i18n.T("errors.keep_one_owner", nil)}},
-		))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteMembershipsDeleteNoContent{}, nil
@@ -90,21 +63,13 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	target, err := accounts.SecondFactorResetTarget(ctx, s, callerMembership(ctx).Role, id)
-	switch {
-	case ent.IsNotFound(err):
-		v := siteapi.SiteMembershipsResetSecondFactorNotFound(problem(http.StatusNotFound, "member not found"))
-		return &v, nil
-	case err != nil:
+	callerID, err := sessionUserID(ctx)
+	if err != nil {
 		return nil, err
 	}
-	if a := auth.GetSiteAuth(ctx); a != nil && a.UserID == target.UserID {
-		v := siteapi.SiteMembershipsResetSecondFactorUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			"cannot reset your own second factor",
-			map[string][]string{"member": {i18n.T("errors.second_factor_reset_self", nil)}},
-		))
-		return &v, nil
+	target, err := accounts.SecondFactorResetTarget(ctx, s, callerID, callerMembership(ctx).Role, id)
+	if err != nil {
+		return nil, err
 	}
 
 	err = h.secondFactor.Reset(ctx, target.UserID, h.actor(ctx), s.WorkspaceID())

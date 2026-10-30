@@ -2,9 +2,7 @@ package site
 
 import (
 	"context"
-	"errors"
 	"log/slog"
-	"net/http"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent/invitation"
@@ -142,18 +140,6 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	err = h.accounts.AcceptInvitation(ctx, inv, accounts.InvitationAcceptance{
 		Name: strings.TrimSpace(name), Password: password, SignupItems: signupAnswers(req.SignupItems), SessionEmail: sessionEmail,
 	})
-	if errors.Is(err, accounts.ErrCredentialsRequired) {
-		// No Verified User for the address: the invitee sets up the account. Kept by hand: a
-		// refused form of two fields would read "check the name and password", not this detail.
-		// ast-grep-ignore: no-hand-written-problem-in-site
-		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity, "name and password are required",
-			map[string][]string{
-				fieldName:     {"name is required"},
-				fieldPassword: {"password is required"},
-			}))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

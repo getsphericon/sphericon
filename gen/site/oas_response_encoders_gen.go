@@ -3142,18 +3142,6 @@ func encodeSiteContactsEraseResponse(response SiteContactsEraseRes, w http.Respo
 
 		return nil
 
-	case *SiteContactsEraseBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
 	case *SiteContactsEraseForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -3169,6 +3157,18 @@ func encodeSiteContactsEraseResponse(response SiteContactsEraseRes, w http.Respo
 	case *SiteContactsEraseNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteContactsEraseUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -3245,18 +3245,6 @@ func encodeSiteContactsExportResponse(response SiteContactsExportRes, w http.Res
 
 		return nil
 
-	case *SiteContactsExportBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
 	case *SiteContactsExportForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -3272,6 +3260,18 @@ func encodeSiteContactsExportResponse(response SiteContactsExportRes, w http.Res
 	case *SiteContactsExportNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteContactsExportUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -3398,18 +3398,6 @@ func encodeSiteContactsLookupResponse(response SiteContactsLookupRes, w http.Res
 
 		return nil
 
-	case *SiteContactsLookupBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
 	case *SiteContactsLookupForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -3425,6 +3413,18 @@ func encodeSiteContactsLookupResponse(response SiteContactsLookupRes, w http.Res
 	case *SiteContactsLookupNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteContactsLookupUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -5034,18 +5034,6 @@ func encodeSiteOAuthDecideResponse(response SiteOAuthDecideRes, w http.ResponseW
 
 		return nil
 
-	case *SiteOAuthDecideBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
 	case *SiteOAuthDecideForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -5061,6 +5049,18 @@ func encodeSiteOAuthDecideResponse(response SiteOAuthDecideRes, w http.ResponseW
 	case *SiteOAuthDecideNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteOAuthDecideUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -5089,9 +5089,9 @@ func encodeSiteOAuthDescribeResponse(response SiteOAuthDescribeRes, w http.Respo
 
 		return nil
 
-	case *SiteOAuthDescribeBadRequest:
+	case *SiteOAuthDescribeNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
+		w.WriteHeader(404)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -5101,9 +5101,9 @@ func encodeSiteOAuthDescribeResponse(response SiteOAuthDescribeRes, w http.Respo
 
 		return nil
 
-	case *SiteOAuthDescribeNotFound:
+	case *SiteOAuthDescribeUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

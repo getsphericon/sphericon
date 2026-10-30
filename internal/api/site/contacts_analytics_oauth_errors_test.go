@@ -116,16 +116,16 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 	const clientID, redirect = "fixture-client", "https://connector.example/callback"
 	const verifier = "0123456789012345678901234567890123456789012"
 
-	// Describe: unknown client 404, unregistered redirect 400, no usable scope 400.
+	// Describe: unknown client 404, unregistered redirect 422, no usable scope 422.
 	d1, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: "nope", RedirectUri: redirect})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteOAuthDescribeNotFound{}, d1)
 	d2, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: clientID, RedirectUri: "https://evil.example/cb"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDescribeBadRequest{}, d2)
+	assert.IsType(t, &siteapi.SiteOAuthDescribeUnprocessableEntity{}, d2)
 	d3, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: clientID, RedirectUri: redirect, Scope: siteapi.NewOptString("bogus")})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDescribeBadRequest{}, d3)
+	assert.IsType(t, &siteapi.SiteOAuthDescribeUnprocessableEntity{}, d3)
 	// Without a scope every grantable scope is offered; the send scopes list stays empty, not null.
 	d4, err := owner.SiteOAuthDescribe(ctx, siteapi.SiteOAuthDescribeParams{ClientId: clientID, RedirectUri: redirect})
 	require.NoError(t, err)
@@ -159,17 +159,17 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 	badRedirect.RedirectUri = "https://evil.example/cb"
 	e3, err := owner.SiteOAuthDecide(ctx, badRedirect)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideBadRequest{}, e3)
+	assert.IsType(t, &siteapi.SiteOAuthDecideUnprocessableEntity{}, e3)
 	badPKCE := in()
 	badPKCE.CodeChallenge = "short"
 	e4, err := owner.SiteOAuthDecide(ctx, badPKCE)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideBadRequest{}, e4)
+	assert.IsType(t, &siteapi.SiteOAuthDecideUnprocessableEntity{}, e4)
 	badScope := in()
 	badScope.Scope = siteapi.NewOptString("bogus")
 	e5, err := owner.SiteOAuthDecide(ctx, badScope)
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDecideBadRequest{}, e5)
+	assert.IsType(t, &siteapi.SiteOAuthDecideUnprocessableEntity{}, e5)
 	codes, err := env.DB.OAuthCode.Query().Where(oauthcode.WorkspaceID(fixtures.AcmeID)).Count(ctx)
 	require.NoError(t, err)
 	assert.Zero(t, codes, "rejected decisions mint no code")

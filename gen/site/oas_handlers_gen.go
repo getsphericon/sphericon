@@ -12011,8 +12011,8 @@ func (s *Server) handleSiteContactsListRequest(args [1]string, argsEscaped bool,
 // handleSiteContactsLookupRequest handles SiteContacts_lookup operation.
 //
 // Look up what the Workspace holds for one email address (a Privacy request): counts only. The address
-// is trimmed and lowercased; an invalid one is rejected. An address nothing holds answers with zeros,
-// not 404. Owner or admin only.
+// is trimmed and lowercased; an invalid one is refused (422). An address nothing holds answers with
+// zeros, not 404. Owner or admin only.
 //
 // GET /workspaces/{workspaceId}/contacts/lookup
 func (s *Server) handleSiteContactsLookupRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

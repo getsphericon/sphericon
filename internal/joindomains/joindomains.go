@@ -44,7 +44,17 @@ var (
 	// ErrHeldElsewhere means another Workspace has the domain verified and still publishes
 	// its record.
 	ErrHeldElsewhere = validation.Conflict("joindomains: another workspace has verified this domain", "errors.join_domain_held")
+	// ErrNotFound means no Join domain of that id is in the Workspace.
+	ErrNotFound = validation.NotFound("joindomains: join domain not found", "errors.join_domain_not_found")
 )
+
+// notFound is ErrNotFound for ent's not-found error of the domain's row, err otherwise.
+func notFound(err error) error {
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
+	return err
+}
 
 // Record is the DNS TXT record an Owner publishes to prove a domain.
 type Record struct {
@@ -109,9 +119,9 @@ func (m *Module) Add(ctx context.Context, s *ent.Scoped, raw string) (*ent.JoinD
 }
 
 // Remove deletes the claim, and only the claim: Memberships are never touched. An unknown
-// id is ent's not-found error.
+// id is ErrNotFound.
 func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
-	return s.JoinDomain().DeleteOneID(id).Exec(ctx)
+	return notFound(s.JoinDomain().DeleteOneID(id).Exec(ctx))
 }
 
 // Verify checks the TXT record live and verifies the domain when it is published. A domain
@@ -119,11 +129,11 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 // ErrHeldElsewhere, gone moves the domain to this Workspace in one transaction, the
 // holder's row becoming pending. An unpublished record is ErrRecordNotFound; a resolver
 // failure is returned as is and changes nothing. A domain already verified here is returned
-// as it is.
+// as it is. An unknown id is ErrNotFound.
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.JoinDomain, error) {
 	row, err := s.JoinDomain().Get(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, notFound(err)
 	}
 	if Verified(row) {
 		return row, nil

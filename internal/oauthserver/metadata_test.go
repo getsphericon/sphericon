@@ -177,13 +177,13 @@ func TestConsentScreenRefusesAMetadataClientWithAWrongDocument(t *testing.T) {
 
 	described, err := actor.SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{ClientId: m.ClientID, RedirectUri: metadataRedirectURI})
 	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteOAuthDescribeBadRequest), described)
+	assert.IsType(t, new(siteapi.SiteOAuthDescribeUnprocessableEntity), described)
 
 	decision := approval("contacts:read", false)
 	decision.ClientId, decision.RedirectUri = m.ClientID, metadataRedirectURI
 	decided, err := actor.SiteOAuthDecide(t.Context(), &decision)
 	require.NoError(t, err)
-	assert.IsType(t, new(siteapi.SiteOAuthDecideBadRequest), decided)
+	assert.IsType(t, new(siteapi.SiteOAuthDecideUnprocessableEntity), decided)
 	codes, err := env.DB.OAuthCode.Query().Count(t.Context())
 	require.NoError(t, err)
 	assert.Zero(t, codes, "no authorization code is minted for a refused client")

@@ -2,8 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -33,11 +31,7 @@ func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.Crea
 
 	source := req.SendingSource.Or(eligibility.SourceBroadcasts)
 	u, err := consent.Unsubscribe(ctx, h.bus, s, string(req.Destination), source)
-	switch {
-	case errors.Is(err, consent.ErrDestinationEmpty), errors.Is(err, consent.ErrInvalidSource), errors.Is(err, consent.ErrUnknownAutomation):
-		res := externalapi.UnsubscribesCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, err.Error()))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.UnsubscribeToResource(u)

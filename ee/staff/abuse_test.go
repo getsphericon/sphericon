@@ -152,5 +152,5 @@ func TestAWorkspaceFrozenByTheDetectorRefusesSendsOnTheAPI(t *testing.T) {
 
 	held, ok := res.(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok, "a send is refused with a 4xx")
-	assert.Equal(t, outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 }

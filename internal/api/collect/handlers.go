@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
 	"time"
 
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
@@ -85,13 +84,6 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 	})
 
 	if err := visitors.Collect(ctx, h.bus, auth.CollectScoped(ctx), evts); err != nil {
-		if rejection, ok := events.AsRejection(err); ok {
-			return &collectapi.CollectEventsCreateUnprocessableEntity{
-				Status: collectapi.NewOptInt32(http.StatusUnprocessableEntity),
-				Title:  collectapi.NewOptString(http.StatusText(http.StatusUnprocessableEntity)),
-				Detail: collectapi.NewOptString(rejection.Error()),
-			}, nil
-		}
 		return nil, err
 	}
 	return &collectapi.CollectEventsCreateNoContent{}, nil

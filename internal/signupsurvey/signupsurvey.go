@@ -11,8 +11,6 @@ package signupsurvey
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log/slog"
 	"strings"
 
@@ -20,27 +18,24 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // ErrNotDue is the refusal of a submit by a User who does not owe the survey: it was answered
 // already, or the User was never asked (the Instance has it off, or the User joined by an
 // Invitation).
-var ErrNotDue = errors.New("signupsurvey: the user does not owe the survey")
+var ErrNotDue = validation.Conflict("signupsurvey: the user does not owe the survey", "errors.signup_survey_not_due")
 
-// OtherTextError is the refusal of an `other` text sent with a choice that is not `other`, or of
-// an `other` choice whose text is blank.
-type OtherTextError struct {
-	// Field is the contract field that carried the text (`roleOther`).
-	Field string
-	// Blank is true when the `other` choice came with a blank text.
-	Blank bool
-}
-
-func (e *OtherTextError) Error() string {
-	if e.Blank {
-		return fmt.Sprintf("signupsurvey: %s must not be blank with the other choice", e.Field)
+// otherText is the refusal of an `other` text sent with a choice that is not `other` (blank
+// false), or of an `other` choice whose text is blank, on field, the contract field that carried
+// the text (`roleOther`).
+func otherText(field string, blank bool) *validation.Error {
+	key := "errors.signup_survey_other_text"
+	if blank {
+		key = "errors.signup_survey_other_blank"
 	}
-	return fmt.Sprintf("signupsurvey: %s is allowed only with the other choice", e.Field)
+	return &validation.Error{Field: field, Message: i18n.T(key, nil)}
 }
 
 // Enabled is whether the Instance asks the survey: its Mode asks for it (saas) and the `staff`
@@ -83,7 +78,7 @@ func (m *Module) Enabled() bool { return m != nil && m.enabled }
 // Submit stores the User's answers and clears the "survey due" marker in one transaction, so a
 // response row exists exactly when the marker is gone. ErrNotDue when the Instance no longer asks
 // the survey or the User does not owe it (the clear is a conditional write: of two racing submits one wins), and an
-// *OtherTextError for an `other` text without its `other` choice; nothing is stored then.
+// *validation.Error on the field of an `other` text without its `other` choice; nothing is stored then.
 func (m *Module) Submit(ctx context.Context, userID int64, a Answers) error {
 	if !m.Enabled() {
 		return ErrNotDue
@@ -132,9 +127,9 @@ func (a Answers) check() error {
 	} {
 		switch {
 		case q.text != nil && !q.other:
-			return &OtherTextError{Field: q.field}
+			return otherText(q.field, false)
 		case q.text != nil && strings.TrimSpace(*q.text) == "":
-			return &OtherTextError{Field: q.field, Blank: true}
+			return otherText(q.field, true)
 		}
 	}
 	return nil

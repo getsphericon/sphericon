@@ -141,7 +141,7 @@ interface Contacts
   ):
     | ContactExportDownload
     | ContactExportTypedDownload
-    | BadRequestProblem
+    | UnprocessableEntityProblem
     | UnauthorizedProblem
     | ForbiddenProblem
     | TooManyRequestsProblem
@@ -167,7 +167,7 @@ interface Contacts
     @query visitorId?: string,
   ):
     | NoContentResponse
-    | BadRequestProblem
+    | UnprocessableEntityProblem
     | UnauthorizedProblem
     | ForbiddenProblem
     | TooManyRequestsProblem

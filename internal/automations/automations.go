@@ -70,6 +70,8 @@ type Step struct {
 var (
 	// ErrNotFound: no such Automation in this Workspace.
 	ErrNotFound = validation.NotFound("automations: automation not found", "errors.automation_not_found")
+	// ErrEnrollmentNotFound: no such Enrollment of the Automation in this Workspace.
+	ErrEnrollmentNotFound = validation.NotFound("automations: enrollment not found", "errors.enrollment_not_found")
 	// ErrInvalidStep: a step has an unknown type, a negative wait, or a tag step
 	// without a tag name, or an email step whose content cannot render.
 	ErrInvalidStep = validation.Refuse("automations: invalid step", "errors.automation_step_invalid")

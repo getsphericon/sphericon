@@ -2,11 +2,8 @@ package site
 
 import (
 	"context"
-	"errors"
 
 	"github.com/samber/lo"
-
-	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -42,10 +39,6 @@ func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCrea
 	scoped := workspaceScope(ctx)
 
 	c, err := h.contacts.Create(ctx, scoped, contact.SourceManual, createContactAttributes(req))
-	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
-		v := siteapi.SiteContactsCreateConflict(conflictProblem(conflict))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -60,10 +53,6 @@ func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteConta
 	scoped := workspaceScope(ctx)
 
 	res, err := h.contactResource(ctx, scoped, int64(params.ID), nil)
-	if errors.Is(err, contacts.ErrNotFound) {
-		v := siteapi.SiteContactsGetNotFound(problem(http.StatusNotFound, "contact not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -75,14 +64,6 @@ func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpda
 
 	id := int64(params.ID)
 	c, err := h.contacts.Update(ctx, scoped, id, updateContactAttributes(req))
-	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
-		v := siteapi.SiteContactsUpdateConflict(conflictProblem(conflict))
-		return &v, nil
-	}
-	if errors.Is(err, contacts.ErrNotFound) {
-		v := siteapi.SiteContactsUpdateNotFound(problem(http.StatusNotFound, "contact not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -100,19 +81,10 @@ func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteCo
 	id := int64(params.ID)
 	err := h.erasure.Erase(ctx, scoped, erasure.ByContactID(id),
 		erasure.Requester{Kind: erasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
-	if errors.Is(err, erasure.ErrNotFound) {
-		v := siteapi.SiteContactsDeleteNotFound(problem(http.StatusNotFound, "contact not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteContactsDeleteNoContent{}, nil
-}
-
-// conflictProblem renders a contacts.ConflictError, with the field-level error.
-func conflictProblem(c *contacts.ConflictError) siteapi.ProblemDetails {
-	return problemWithErrors(http.StatusConflict, c.Message(), map[string][]string{c.Field: {c.Message()}})
 }
 
 // contactResource reads the contact with its tags. A non-nil setTags first makes it the

@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -17,14 +15,7 @@ import (
 // screen (the client is untrusted: only its registered redirect URIs are honored).
 func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAuthDescribeParams) (siteapi.SiteOAuthDescribeRes, error) {
 	req, err := h.oauth.Describe(ctx, params.ClientId, params.RedirectUri, params.Scope.Or(""))
-	switch {
-	case errors.Is(err, oauthserver.ErrUnknownClient):
-		v := siteapi.SiteOAuthDescribeNotFound(problem(http.StatusNotFound, err.Error()))
-		return &v, nil
-	case errors.Is(err, oauthserver.ErrInvalidRequest):
-		v := siteapi.SiteOAuthDescribeBadRequest(problem(http.StatusBadRequest, err.Error()))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	out := &siteapi.SiteOAuthAuthorizationRequest{
@@ -79,14 +70,7 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 		AllowSend:     req.AllowSend.Or(false),
 		AllowSetup:    req.AllowSetup.Or(false),
 	})
-	switch {
-	case errors.Is(err, oauthserver.ErrUnknownClient):
-		v := siteapi.SiteOAuthDecideNotFound(problem(http.StatusNotFound, err.Error()))
-		return &v, nil
-	case errors.Is(err, oauthserver.ErrInvalidRequest):
-		v := siteapi.SiteOAuthDecideBadRequest(problem(http.StatusBadRequest, err.Error()))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteOAuthDecisionResult{RedirectUrl: target}, nil

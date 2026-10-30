@@ -61,14 +61,13 @@ func TestChangeMembershipRoleInvariants(t *testing.T) {
 		_, err := acc.ChangeMembershipRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechAdminMembershipID, membership.RoleMember)
 		require.NoError(t, err)
 		_, err = acc.ChangeMembershipRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechOwnerMembershipID, membership.RoleAdmin)
-		require.ErrorIs(t, err, accounts.ErrLastOwner)
+		require.ErrorIs(t, err, accounts.ErrDemoteLastOwner)
 		assert.Equal(t, membership.RoleOwner, roleOf(fixtures.InitechOwnerMembershipID))
 	})
 
 	t.Run("a Membership of another Workspace is not found", func(t *testing.T) {
 		_, err := acc.ChangeMembershipRole(ctx, s, actor, membership.RoleOwner, fixtures.GlobexOwnerMembershipID, membership.RoleMember)
-		require.Error(t, err)
-		assert.True(t, ent.IsNotFound(err))
+		require.ErrorIs(t, err, accounts.ErrMemberNotFound)
 	})
 }
 
@@ -95,7 +94,7 @@ func TestChangeMembershipRoleAuditsInTheSameTransaction(t *testing.T) {
 
 	// Olga is now the last owner: the refused change rolls back and records nothing.
 	_, err = acc.ChangeMembershipRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechOwnerMembershipID, membership.RoleAdmin)
-	require.ErrorIs(t, err, accounts.ErrLastOwner)
+	require.ErrorIs(t, err, accounts.ErrDemoteLastOwner)
 	assert.Equal(t, before+1, updates(), "a refused change leaves no entry")
 }
 
@@ -126,14 +125,13 @@ func TestRemoveMembershipInvariants(t *testing.T) {
 	t.Run("an owner removes a co-owner, then the last owner cannot be removed", func(t *testing.T) {
 		require.NoError(t, acc.RemoveMembership(ctx, s, actor, membership.RoleOwner, fixtures.InitechCoOwnerMembershipID))
 		err := acc.RemoveMembership(ctx, s, actor, membership.RoleOwner, fixtures.InitechOwnerMembershipID)
-		require.ErrorIs(t, err, accounts.ErrLastOwner)
+		require.ErrorIs(t, err, accounts.ErrRemoveLastOwner)
 		assert.True(t, exists(fixtures.InitechOwnerMembershipID))
 	})
 
 	t.Run("a Membership of another Workspace is not found", func(t *testing.T) {
 		err := acc.RemoveMembership(ctx, s, actor, membership.RoleOwner, fixtures.GlobexOwnerMembershipID)
-		require.Error(t, err)
-		assert.True(t, ent.IsNotFound(err))
+		require.ErrorIs(t, err, accounts.ErrMemberNotFound)
 		assert.True(t, exists(fixtures.GlobexOwnerMembershipID))
 	})
 }
@@ -168,7 +166,7 @@ func TestLeaveRefusesTheOnlyOwner(t *testing.T) {
 
 	require.NoError(t, acc.Leave(ctx, s, fixtures.InitechCoOwnerOwenID))
 	err := acc.Leave(ctx, s, fixtures.InitechOwnerOlgaID)
-	require.ErrorIs(t, err, accounts.ErrLastOwner)
+	require.ErrorIs(t, err, accounts.ErrOnlyOwnerLeaves)
 
 	ok, err := env.DB.Membership.Query().Where(membership.ID(fixtures.InitechOwnerMembershipID)).Exist(ctx)
 	require.NoError(t, err)
@@ -218,7 +216,7 @@ func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
 
 	refused := lo.Filter(errs, func(err error, _ int) bool { return err != nil })
 	require.Len(t, refused, 1)
-	require.ErrorIs(t, refused[0], accounts.ErrLastOwner)
+	require.ErrorIs(t, refused[0], accounts.ErrOnlyOwnerLeaves)
 	owners, err := s.Membership().Query().Where(membership.RoleEQ(membership.RoleOwner)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, owners)
@@ -242,7 +240,7 @@ func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
 
 	refused := lo.Filter(errs, func(err error, _ int) bool { return err != nil })
 	require.Len(t, refused, 1)
-	require.ErrorIs(t, refused[0], accounts.ErrLastOwner)
+	require.ErrorIs(t, refused[0], accounts.ErrSoleOwner)
 	var sole *accounts.DeletionRefusedError
 	require.ErrorAs(t, refused[0], &sole)
 	assert.Equal(t, fixtures.InitechName, sole.Workspaces[0].Name)

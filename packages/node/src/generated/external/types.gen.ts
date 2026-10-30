@@ -6189,10 +6189,6 @@ export type ContactsEraseByData = {
 
 export type ContactsEraseByErrors = {
   /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -6204,6 +6200,10 @@ export type ContactsEraseByErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -6239,10 +6239,6 @@ export type ContactsExportData = {
 
 export type ContactsExportErrors = {
   /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -6254,6 +6250,10 @@ export type ContactsExportErrors = {
    * RFC 7807 not found response
    */
   404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */

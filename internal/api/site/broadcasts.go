@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/samber/lo"
@@ -260,15 +259,13 @@ func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.Site
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	report := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), &outbound.Asker{UserID: a.UserID, Email: a.Email})
-	switch {
-	case report.Wait > 0:
-		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, report.Limit, report.Wait, h.now())
-	case report.Detail != "":
-		// Kept by hand: the test send's report, not a refusal of a module, says what stopped it.
-		// ast-grep-ignore: no-hand-written-problem-in-site
-		v := siteapi.SiteBroadcastsTestSendUnprocessableEntity(problem(http.StatusUnprocessableEntity, report.Detail))
-		return &v, nil
+	res, err := h.outbound.SendBroadcastTest(ctx, ws, b, string(req.Email), &outbound.Asker{UserID: a.UserID, Email: a.Email})
+	if err != nil {
+		return nil, err
 	}
-	return &siteapi.SiteTestSendBroadcastResult{From: siteapi.EmailAddress(report.From), Captured: report.Captured}, nil
+	if res.Wait > 0 {
+		// The System sender's cap: the client waits as for any rate limit.
+		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyTestSend, res.Limit, res.Wait, h.now())
+	}
+	return &siteapi.SiteTestSendBroadcastResult{From: siteapi.EmailAddress(res.From), Captured: res.Captured}, nil
 }

@@ -35,8 +35,7 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 	cursor, err := auditapi.Page(params.Cursor.Or(""))
 	limit := int(params.Limit.Value)
 	if err != nil {
-		v := siteapi.SiteAuditListBadRequest(problem(http.StatusBadRequest, "invalid cursor"))
-		return &v, nil
+		return nil, err
 	}
 
 	rows, next, err := h.audit.Entries(ctx, s, filter, cursor, limit)

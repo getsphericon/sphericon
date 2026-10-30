@@ -94,21 +94,24 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
   `validation.LinkInvalid` 400 (a mailed link that does not stand), `validation.Incomplete` 428,
   `validation.UnknownReference` 400 (a reference that names nothing, such as a pending sign-up that
-  is gone or a cursor never handed out), the message as `detail` and, for
-  `validation.RefuseField`, under its field), a `*validation.Error` with 422 and its field, a
+  is gone or a cursor never handed out), the message as `detail` and, for a sentinel that names a
+  field (`validation.RefuseField`, `validation.ConflictField`), under its field), a `*validation.Error` with 422 and its field, a
   `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
   `detail`, an `*inuse.Error` with 409 and `usedBy`, an `*accounts.DeletionRefusedError` with 422
   and the Workspaces the User solely owns, content `emailrender` cannot render with 422, and
   `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is not a member of) with
   a 404. A sentinel one context answers differently from another is two sentinels of the module,
   one per context, never a mapping in the handler.
-- **Rule 15, `no-hand-written-problem-in-site` (ast-grep).** A handler in `internal/api/site` calls
-  neither `problem` nor `problemWithErrors`, builds no `siteapi.*ProblemDetails` literal and names
-  no operation's error response (`siteapi.Site…NotFound` and its kin): the module that decides a
-  refusal returns its sentinel. The files that still answer by hand are the rule's `ignores`, a
-  list that only shrinks; `internal/api/site/problem.go` holds the two helpers they call. A single
-  answer kept by hand in a covered file carries `// ast-grep-ignore: no-hand-written-problem-in-site`
-  under a comment that says why.
+- **Rule 15, `no-hand-written-problem-in-site` and `no-hand-written-problem-in-external` (ast-grep).**
+  A handler in `internal/api/site` or `internal/api/external` calls neither `problem` nor
+  `problemWithErrors`, builds no `siteapi.*ProblemDetails` or `externalapi.*ProblemDetails` literal
+  and names no operation's error response (`siteapi.Site…NotFound`, `externalapi.…NotFound` and their
+  kin): the module that decides a refusal returns its sentinel. The rules' `ignores` are the files
+  that keep an answer no refusal kind gives (the 402 of a missing Enterprise license, the 410 of an
+  expired confirmation link), with each surface's `problem.go`, which holds the helpers they call.
+  A single answer kept by hand in a covered file carries
+  `// ast-grep-ignore: no-hand-written-problem-in-site` under a comment that says why. A batch that
+  reports each item inside a 200 words a failed item with `validation.Shown`.
 - **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares
   a Role: in Go, `==`/`!=` or a `case` with `RoleOwner`/`RoleAdmin`/`RoleMember` of any package
   (`membership`, `entmembership`, `invitation`), and `RoleEQ`/`RoleNEQ`/`RoleIn`/`RoleNotIn` of a

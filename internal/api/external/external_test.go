@@ -93,16 +93,6 @@ func TestExternalContactsCreatePublishesContactCreated(t *testing.T) {
 	assert.Equal(t, 1, n, "contact.created published once")
 }
 
-// Isolated: the unique violation aborts this test's transaction.
-func TestExternalContactsConflict(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
-	c := env.ExternalScoped(t, "contacts:write")
-
-	res, err := c.ContactsCreate(context.Background(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsCreateConflict{}, res)
-}
-
 func TestExternalAuthAndScopes(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
 	ctx := context.Background()

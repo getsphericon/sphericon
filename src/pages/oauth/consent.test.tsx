@@ -155,7 +155,7 @@ test('denying sends approve=false', async () => {
 test('an invalid request shows an error instead of the form', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
-    handleSiteOAuthDescribe(() => problem(400, { detail: 'bad' })),
+    handleSiteOAuthDescribe(() => problem(422, { detail: 'bad' })),
   )
   const { screen } = await renderWithRouter(<OAuthConsent request={request} />)
 

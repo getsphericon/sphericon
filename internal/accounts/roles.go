@@ -3,7 +3,6 @@ package accounts
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -15,11 +14,25 @@ import (
 )
 
 // The Owner invariant of a Role (GLOSSARY "Role"): a Workspace always keeps at least one owner,
-// refused with ErrLastOwner (422). Granting the owner Role and changing or removing an owner's
-// Membership need the Permission owners:manage (ADR 0061), refused as Require refuses it (403).
+// refused with ErrDemoteLastOwner or ErrRemoveLastOwner (422). Granting the owner Role and
+// changing or removing an owner's Membership need the Permission owners:manage (ADR 0061),
+// refused as Require refuses it (403).
+var (
+	// ErrDemoteLastOwner refuses giving the last owner another Role, on the role field.
+	ErrDemoteLastOwner = validation.RefuseField("role", "accounts: cannot demote the last owner", "errors.keep_one_owner")
+	// ErrRemoveLastOwner refuses removing the last owner's Membership, on the member it names.
+	ErrRemoveLastOwner = validation.RefuseField("member", "accounts: cannot remove the last owner", "errors.keep_one_owner")
+	// ErrMemberNotFound means no Membership of that id is in the Workspace.
+	ErrMemberNotFound = validation.NotFound("accounts: member not found", "errors.member_not_found")
+)
 
-// ErrLastOwner is returned when the change would leave the Workspace without an owner.
-var ErrLastOwner = errors.New("accounts: a workspace keeps at least one owner")
+// memberTarget is the Membership targetID's refusal when it is not in the Workspace.
+func memberTarget(err error) error {
+	if ent.IsNotFound(err) {
+		return ErrMemberNotFound
+	}
+	return err
+}
 
 // ChangeMembershipRole sets the Role of the Membership targetID in the Workspace s on
 // behalf of a caller holding callerRole, and records `membership.update` with the role
@@ -27,13 +40,13 @@ var ErrLastOwner = errors.New("accounts: a workspace keeps at least one owner")
 // leaves no entry, a committed one cannot lose it. The Owner invariants are checked in
 // that transaction while the Workspace's owner rows are locked, so two concurrent
 // changes cannot leave the Workspace ownerless. The returned Membership carries its User.
-// A target outside the Workspace is an ent NotFound error.
+// A target outside the Workspace is ErrMemberNotFound.
 func (a *Accounts) ChangeMembershipRole(ctx context.Context, s *ent.Scoped, actor events.Actor, callerRole membership.Role, targetID int64, desired membership.Role) (*ent.Membership, error) {
 	var updated *ent.Membership
 	err := a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		target, owners, err := lockedTarget(ctx, ts, membership.ID(targetID))
 		if err != nil {
-			return err
+			return memberTarget(err)
 		}
 		if err := checkOwnerChange(callerRole, target, owners, desired); err != nil {
 			return err
@@ -60,19 +73,19 @@ func (a *Accounts) ChangeMembershipRole(ctx context.Context, s *ent.Scoped, acto
 // RemoveMembership removes the Membership targetID from the Workspace s on behalf of a
 // caller holding callerRole, under the same owner rules and locking as
 // ChangeMembershipRole, and records `membership.delete` with actor as an Audit entry in the
-// same transaction. A target outside the Workspace is an ent NotFound error.
+// same transaction. A target outside the Workspace is ErrMemberNotFound.
 func (a *Accounts) RemoveMembership(ctx context.Context, s *ent.Scoped, actor events.Actor, callerRole membership.Role, targetID int64) error {
 	return a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		target, owners, err := lockedTarget(ctx, ts, membership.ID(targetID))
 		if err != nil {
-			return err
+			return memberTarget(err)
 		}
 		return removeLocked(ctx, ts, pub, actor, callerRole, target, owners)
 	})
 }
 
 // ErrOnlyOwnerLeaves refuses the only Owner leaving the Workspace (Leaving, ADR 0050): they make
-// another member an Owner or delete the Workspace first. It wraps ErrLastOwner.
+// another member an Owner or delete the Workspace first.
 var ErrOnlyOwnerLeaves = validation.RefuseField("workspace", "accounts: the only owner cannot leave", "errors.leave_only_owner")
 
 // Leave removes User userID's own Membership in the Workspace s (Leaving, ADR 0050) in a
@@ -82,8 +95,8 @@ func (a *Accounts) Leave(ctx context.Context, s *ent.Scoped, userID int64) error
 	err := a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return LeaveIn(ctx, ts, pub, userID)
 	})
-	if errors.Is(err, ErrLastOwner) {
-		return fmt.Errorf("%w: %w", ErrOnlyOwnerLeaves, err)
+	if errors.Is(err, ErrRemoveLastOwner) {
+		return ErrOnlyOwnerLeaves
 	}
 	return err
 }
@@ -92,7 +105,7 @@ func (a *Accounts) Leave(ctx context.Context, s *ent.Scoped, userID int64) error
 // ts is bound to (ts comes from Bus.WithinScopedTx, or from tx.Scoped in a caller's own
 // transaction, with pub that transaction's publisher). The User is the actor of the
 // `membership.delete` Audit entry, named by the User row. It locks the Workspace's Owner
-// rows first, like every Owner change, and refuses the only Owner with ErrLastOwner.
+// rows first, like every Owner change, and refuses the only Owner with ErrRemoveLastOwner.
 // A User with no Membership in the Workspace is an ent NotFound error. User deletion
 // (ADR 0050) calls it once per Workspace in its own transaction.
 func LeaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
@@ -180,7 +193,10 @@ func checkOwnerChange(callerRole membership.Role, target *ent.Membership, owners
 		}
 	}
 	if roles.IsOwner(target.Role) && !roles.IsOwner(desired) && owners <= 1 {
-		return ErrLastOwner
+		if desired == "" {
+			return ErrRemoveLastOwner
+		}
+		return ErrDemoteLastOwner
 	}
 	return nil
 }

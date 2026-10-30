@@ -35,7 +35,7 @@ func TestExternalEmailsSendFailedRenderSpendsTheIdempotencyKey(t *testing.T) {
 
 	first, ok := send().(*externalapi.EmailsSendUnprocessableEntity)
 	require.True(t, ok)
-	assert.Contains(t, first.Detail.Value, "render template")
+	assert.Contains(t, first.Detail.Value, "message content cannot be rendered")
 
 	rec, err := env.DB.OutboundMessage.Query().
 		Where(outboundmessage.WorkspaceID(fixtures.AcmeID), outboundmessage.Destination("render@example.com")).Only(ctx)
@@ -63,7 +63,7 @@ func TestExternalEmailsSendIsHeldWhileTheWorkspaceIsSuspended(t *testing.T) {
 	require.NoError(t, err)
 	held, ok := res.(*externalapi.EmailsSendUnprocessableEntity)
 	require.Truef(t, ok, "got %T", res)
-	assert.Equal(t, outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), held.Detail.Value)
 	assert.Empty(t, env.CustomerMail.Messages())
 	n, err := env.DB.OutboundMessage.Query().Where(outboundmessage.Destination("held@example.com")).Count(ctx)
 	require.NoError(t, err)

@@ -3,8 +3,8 @@
 // rule, and triggering a live verification. /site and /api are thin adapters over it.
 //
 // Handlers hand in a *ent.Scoped and domain-typed input (not their DTOs) and get back
-// the row or a domain error: validation.Error (a 422), ErrAlreadyExists (a 409), or
-// ent's not-found for an unknown id. The DKIM private key never leaves the module:
+// the row or a domain refusal: validation.Error (a 422), ErrAlreadyExists or ErrAddedAgain (a
+// 409), or ErrNotFound for an unknown id. The DKIM private key never leaves the module:
 // callers see the public record only, through Records.
 //
 // Verification stays a live DKIM check done by a job; Verify only enqueues it. Nothing
@@ -41,8 +41,24 @@ import (
 // DefaultSelector is the DKIM selector used when the caller supplies none.
 const DefaultSelector = "sphericon"
 
-// ErrAlreadyExists means the Workspace already has this domain.
-var ErrAlreadyExists = errors.New("this domain is already added")
+// The refusals of the module, one per meaning.
+var (
+	// ErrAlreadyExists means the Workspace already has this domain (Create).
+	ErrAlreadyExists = validation.Conflict("sendingdomains: this domain is already added", "errors.sending_domain_exists")
+	// ErrAddedAgain means the Workspace added the domain again while this one was archived
+	// (Unarchive).
+	ErrAddedAgain = validation.Conflict("sendingdomains: this domain was added again", "errors.sending_domain_added_again")
+	// ErrNotFound means no Sending domain of that id is in the Workspace.
+	ErrNotFound = validation.NotFound("sendingdomains: sending domain not found", "errors.sending_domain_not_found")
+)
+
+// notFound is ErrNotFound for ent's not-found error of the domain's row, err otherwise.
+func notFound(err error) error {
+	if ent.IsNotFound(err) {
+		return ErrNotFound
+	}
+	return err
+}
 
 // selectorPattern is a DNS label sequence: letters, digits and hyphens, dot-separated.
 var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$`)
@@ -170,7 +186,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		cur, err := ts.SendingDomain().Get(ctx, id)
 		if err != nil {
-			return err
+			return notFound(err)
 		}
 		row = cur
 		if in.Selector == nil || selector == cur.DkimSelector {
@@ -202,12 +218,12 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // of the default Integration's configured one; an active Automation that sends email uses the
 // domain of that configured From, as its steps carry no From of their own. A sent or failed
 // Broadcast is history and does not block. Archiving an archived domain changes nothing; an
-// unknown id is ent's not-found error.
+// unknown id is ErrNotFound.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.SendingDomain().Get(ctx, id)
 		if err != nil {
-			return err
+			return notFound(err)
 		}
 		if row.DiscardedAt != nil {
 			return nil
@@ -225,15 +241,15 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 
 // Unarchive brings an archived Sending domain back and starts a new DNS check. The Tracking
 // domain starts over from pending, so the host serves again only once the check proves it:
-// the certificate and the serving state are not restored. It returns ErrAlreadyExists when the
+// the certificate and the serving state are not restored. It returns ErrAddedAgain when the
 // Workspace added the same domain again meanwhile. Restoring a domain that is not archived
-// changes nothing; an unknown id is ent's not-found error.
+// changes nothing; an unknown id is ErrNotFound.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
 	restored := false
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.SendingDomain().Get(ctx, id)
 		if err != nil {
-			return err
+			return notFound(err)
 		}
 		if row.DiscardedAt == nil {
 			return nil
@@ -243,7 +259,7 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
 			return err
 		}
 		if taken {
-			return ErrAlreadyExists
+			return ErrAddedAgain
 		}
 		if row.TrackingState != sendingdomain.TrackingStatePending {
 			err := TrackingMachine(ts, row, time.Now()).FireCtx(ctx, sendingdomain.TrackingStatePending)
@@ -255,7 +271,7 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
 		return ts.SendingDomain().Undiscard(ctx, id)
 	})
 	if db.IsUniqueViolation(err) {
-		return ErrAlreadyExists
+		return ErrAddedAgain
 	}
 	if err != nil || !restored {
 		return err
@@ -319,10 +335,10 @@ func (m *Module) configuredFromDomain(ctx context.Context, s *ent.Scoped) (strin
 
 // Verify runs the live DNS check of the domain now and returns the domain as the check left
 // it: `verified` and `lastCheckedAt` are the outcome. It confirms the domain is in the
-// Workspace first.
+// Workspace first (ErrNotFound).
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	if _, err := s.SendingDomain().Get(ctx, id); err != nil {
-		return nil, err
+		return nil, notFound(err)
 	}
 	if err := m.verify.VerifySendingDomain(ctx, id); err != nil {
 		return nil, err
@@ -388,9 +404,10 @@ func validSelector(raw string) (string, error) {
 }
 
 // Get returns the Sending domain with the id, archived or not; an unknown id, or one of another
-// Workspace, is ent's not-found error.
+// Workspace, is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
-	return s.SendingDomain().Get(ctx, id)
+	row, err := s.SendingDomain().Get(ctx, id)
+	return row, notFound(err)
 }
 
 // List returns one page of the Workspace's Sending domains, ascending by id: the kept ones, or

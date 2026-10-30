@@ -100,7 +100,7 @@ func TestConsentScreenRejectsMismatchedRedirect(t *testing.T) {
 		RedirectUri: "https://evil.example/cb",
 	})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteOAuthDescribeBadRequest{}, res)
+	assert.IsType(t, &siteapi.SiteOAuthDescribeUnprocessableEntity{}, res)
 }
 
 func TestConsentRequiresASession(t *testing.T) {

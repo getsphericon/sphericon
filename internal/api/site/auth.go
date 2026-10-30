@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -11,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/db"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signup"
 )
 
@@ -26,17 +23,11 @@ func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpIn
 	if err != nil {
 		return nil, err
 	}
-	switch res.Outcome {
-	case signup.Taken:
-		return emailTaken(), nil
-	case signup.Accepted:
-		accepted := &siteapi.SiteAuthSignUpAccepted{}
-		if res.Browser != "" {
-			accepted.SetCookie = siteapi.NewOptString(h.sessions.SignUpBrowser(res.Browser, accounts.VerificationLinkTTL).String())
-		}
-		return accepted, nil
+	accepted := &siteapi.SiteAuthSignUpAccepted{}
+	if res.Browser != "" {
+		accepted.SetCookie = siteapi.NewOptString(h.sessions.SignUpBrowser(res.Browser, accounts.VerificationLinkTTL).String())
 	}
-	return nil, fmt.Errorf("signup: unhandled outcome %d", res.Outcome)
+	return accepted, nil
 }
 
 // signUpStore is the site's side of the signup module's seam: Users through accounts.
@@ -97,17 +88,6 @@ func signupAnswers(answers []siteapi.SiteSignupItemAnswer) []consentrecords.Answ
 		out[i] = consentrecords.Answer{Key: string(a.Key), Version: string(a.Version), Accepted: a.Accepted.Or(false)}
 	}
 	return out
-}
-
-// emailTaken is the 409 answer to a Sign-up with an address already in use, on an Instance
-// that does not require email verification.
-func emailTaken() siteapi.SiteAuthSignUpRes {
-	v := siteapi.SiteAuthSignUpConflict(problemWithErrors(
-		http.StatusConflict,
-		i18n.T("errors.email_exists", nil),
-		map[string][]string{fieldEmail: {i18n.T("errors.email_exists", nil)}},
-	))
-	return &v
 }
 
 // SiteAuthResendVerification sends the verification link again to an Unverified User

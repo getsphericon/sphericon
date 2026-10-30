@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -40,11 +39,7 @@ func (h *Handlers) SiteJoinDomainsVerify(ctx context.Context, params siteapi.Sit
 	s := workspaceScope(ctx)
 
 	d, err := h.joinDomains.Verify(ctx, s, int64(params.ID))
-	switch {
-	case ent.IsNotFound(err):
-		v := siteapi.SiteJoinDomainsVerifyNotFound(problem(http.StatusNotFound, "join domain not found"))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.JoinDomainToResource(d)
@@ -56,10 +51,6 @@ func (h *Handlers) SiteJoinDomainsRemove(ctx context.Context, params siteapi.Sit
 	s := workspaceScope(ctx)
 
 	err := h.joinDomains.Remove(ctx, s, int64(params.ID))
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteJoinDomainsRemoveNotFound(problem(http.StatusNotFound, "join domain not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

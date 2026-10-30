@@ -2,10 +2,7 @@ package external
 
 import (
 	"context"
-	"crypto/subtle"
-	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/samber/lo"
@@ -16,17 +13,8 @@ import (
 )
 
 func (h *Handlers) AuthMeGet(ctx context.Context) (externalapi.AuthMeGetRes, error) {
-	a := auth.GetTokenAuth(ctx)
-	if a == nil {
-		res := externalapi.AuthMeGetUnauthorized(problem(http.StatusUnauthorized, "missing token"))
-		return &res, nil
-	}
-
-	token, err := apitokens.Get(ctx, auth.TokenScoped(ctx), a.TokenID)
-	if errors.Is(err, apitokens.ErrNotFound) {
-		res := externalapi.AuthMeGetNotFound(problem(http.StatusNotFound, "token not found"))
-		return &res, nil
-	}
+	// The security handler admitted the token, so the request carries it.
+	token, err := apitokens.Get(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).TokenID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,20 +40,15 @@ func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.Create
 	// A token can only mint scopes it holds itself (tokens:write is not a way to
 	// gain send or any other power).
 	minted, err := apitokens.MintWithin(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).Scopes, mintInput(req))
-	switch {
-	case errors.Is(err, apitokens.ErrScopeEscalation):
-		res := externalapi.AuthTokensCreateForbidden(problem(http.StatusForbidden, "cannot grant a scope this token does not have"))
-		return &res, nil
-	case err != nil:
+	if err != nil {
 		return nil, fmt.Errorf("create token: %w", err)
 	}
 	return mintedResponse(minted), nil
 }
 
 func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.CreateApiTokenInput, params externalapi.AuthTokensBootstrapParams) (externalapi.AuthTokensBootstrapRes, error) {
-	if h.bootstrapToken == "" || subtle.ConstantTimeCompare([]byte(params.XBootstrapToken), []byte(h.bootstrapToken)) != 1 {
-		res := externalapi.AuthTokensBootstrapUnauthorized(problem(http.StatusUnauthorized, "invalid bootstrap token"))
-		return &res, nil
+	if err := apitokens.CheckBootstrap(h.bootstrapToken, params.XBootstrapToken); err != nil {
+		return nil, err
 	}
 
 	// Bootstrap has no caller token: the first token goes to the oldest workspace.
@@ -84,10 +67,6 @@ func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.Auth
 	id := int64(params.ID)
 
 	err := apitokens.Revoke(ctx, auth.TokenScoped(ctx), id)
-	if errors.Is(err, apitokens.ErrNotFound) {
-		res := externalapi.AuthTokensDeleteNotFound(problem(http.StatusNotFound, "token not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

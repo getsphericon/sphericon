@@ -41,18 +41,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// Outcome is what a Sign-up decided.
-type Outcome int
-
-const (
-	// Taken: the address belongs to a User, on an Instance that does not require email
-	// verification. Nothing was created.
-	Taken Outcome = iota + 1
-	// Accepted: the Sign-up went through. With verification required, Result.Browser is the
-	// Sign-up browser's value, whatever the address; without, the User is Verified with its
-	// first Workspace and the welcome mail is queued.
-	Accepted
-)
+// ErrEmailTaken refuses a Sign-up of an address that belongs to a User, on an Instance that does
+// not require email verification (ADR 0031's one exception): nothing was created.
+var ErrEmailTaken = validation.ConflictField(validation.FieldEmail, "signup: the address belongs to a user", "errors.email_exists")
 
 // ErrTaken is what a Store's create returns when the unique email refuses the address.
 var ErrTaken = errors.New("signup: address taken")
@@ -77,11 +68,12 @@ type NewUser struct {
 	Consents  consentrecords.Consents
 }
 
-// Result is the one answer of a Sign-up.
+// Result is the answer of a Sign-up that went through. With verification required, Browser is
+// the Sign-up browser's value, whatever the address; without, the User is Verified with its first
+// Workspace and the welcome mail is queued.
 type Result struct {
-	Outcome Outcome
-	// Browser is the random value of the Sign-up browser's cookie, for an Accepted Sign-up that
-	// a verification link follows; empty otherwise. Its hash is what the link carries.
+	// Browser is the random value of the Sign-up browser's cookie, for a Sign-up that a
+	// verification link follows; empty otherwise. Its hash is what the link carries.
 	Browser string
 }
 
@@ -205,7 +197,7 @@ func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
 	} else if err := m.cfg.Mail.EnqueueEmailVerification(ctx, u.Email, token, granted); err != nil {
 		mailNotQueued(ctx, "EmailVerification", err)
 	}
-	return Result{Outcome: Accepted, Browser: browser}, nil
+	return Result{Browser: browser}, nil
 }
 
 // user is the User a Sign-up with verification required ends on: a new Unverified User, or the
@@ -247,14 +239,14 @@ func (m *Module) signUpVerified(ctx context.Context, n NewUser, password string)
 	u, err := m.cfg.Store.CreateVerified(ctx, n)
 	switch {
 	case errors.Is(err, ErrTaken):
-		return Result{Outcome: Taken}, nil
+		return Result{}, ErrEmailTaken
 	case err != nil:
 		return Result{}, err
 	}
 	if err := m.cfg.Mail.EnqueueWelcome(ctx, u.Email, u.Name); err != nil {
 		mailNotQueued(ctx, "Welcome", err)
 	}
-	return Result{Outcome: Accepted}, nil
+	return Result{}, nil
 }
 
 // merged is the one refusal of a form whose fields and Sign-up items' answers both may fail.

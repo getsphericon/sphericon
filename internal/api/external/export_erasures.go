@@ -2,8 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -14,16 +12,11 @@ import (
 // X-Next-Cursor header, behind the same gate as every Export stream.
 func (h *Handlers) ExportErasures(ctx context.Context, params externalapi.ExportErasuresParams) (externalapi.ExportErasuresRes, error) {
 	if !h.exportLicensed() {
-		res := externalapi.ExportErasuresNotFound(problem(http.StatusNotFound, "not found"))
-		return &res, nil
+		return nil, exportstream.ErrNotOffered
 	}
 
 	limit := int(params.Limit.Value)
 	page, err := exportstream.Erasures(ctx, auth.TokenScoped(ctx), params.Cursor.Or(""), limit)
-	if errors.Is(err, exportstream.ErrBadCursor) {
-		res := externalapi.ExportErasuresBadRequest(problem(http.StatusBadRequest, "invalid cursor"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}

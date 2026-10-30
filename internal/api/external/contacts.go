@@ -2,8 +2,6 @@ package external
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -14,9 +12,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 func (h *Handlers) ContactsList(ctx context.Context, params externalapi.ContactsListParams) (externalapi.ContactsListRes, error) {
@@ -38,10 +36,6 @@ func (h *Handlers) ContactsList(ctx context.Context, params externalapi.Contacts
 
 func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateContactInput) (externalapi.ContactsCreateRes, error) {
 	c, err := h.contacts.Create(ctx, auth.TokenScoped(ctx), contact.SourceAPI, createContactAttributes(req))
-	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
-		res := externalapi.ContactsCreateConflict(conflictProblem(conflict))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -54,10 +48,6 @@ func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsG
 	id := int64(params.ID)
 
 	c, err := h.contacts.Get(ctx, auth.TokenScoped(ctx), id)
-	if errors.Is(err, contacts.ErrNotFound) {
-		res := externalapi.ContactsGetNotFound(problem(http.StatusNotFound, "contact not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +60,6 @@ func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateCo
 	id := int64(params.ID)
 
 	c, err := h.contacts.Update(ctx, auth.TokenScoped(ctx), id, updateContactAttributes(req))
-	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
-		res := externalapi.ContactsUpdateConflict(conflictProblem(conflict))
-		return &res, nil
-	}
-	if errors.Is(err, contacts.ErrNotFound) {
-		res := externalapi.ContactsUpdateNotFound(problem(http.StatusNotFound, "contact not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +80,6 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 
 	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), erasure.ByContactID(id),
 		tokenRequester(ctx))
-	if errors.Is(err, erasure.ErrNotFound) {
-		res := externalapi.ContactsDeleteNotFound(problem(http.StatusNotFound, "contact not found"))
-		return &res, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -109,26 +87,14 @@ func (h *Handlers) ContactsDelete(ctx context.Context, params externalapi.Contac
 }
 
 // ContactsEraseBy is Erasure by an email address or a visitor id (ADR 0021), under the
-// same scope and rules as deleting by id. Exactly one identifier is required.
+// same scope and rules as deleting by id. Exactly one identifier is required: the erasure
+// module refuses anything else.
 func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.ContactsEraseByParams) (externalapi.ContactsEraseByRes, error) {
-	email, hasEmail := params.Email.Get()
-	visitorID, hasVisitor := params.VisitorId.Get()
-	if hasEmail == hasVisitor || (hasVisitor && visitorID == "") {
-		res := externalapi.ContactsEraseByBadRequest(problem(http.StatusBadRequest, "pass exactly one of email or visitorId"))
-		return &res, nil
-	}
-	id := erasure.ByVisitorID(visitorID)
-	if hasEmail {
-		id = erasure.ByEmail(string(email))
-	}
-
-	err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), id,
-		tokenRequester(ctx))
-	if errors.Is(err, erasure.ErrNotFound) {
-		res := externalapi.ContactsEraseByNotFound(problem(http.StatusNotFound, "nothing found for the identifier"))
-		return &res, nil
-	}
+	id, err := erasure.ByEmailOrVisitorID(convert.StringPtr(params.Email), convert.StringPtr(params.VisitorId))
 	if err != nil {
+		return nil, err
+	}
+	if err := h.erasure.Erase(ctx, auth.TokenScoped(ctx), id, tokenRequester(ctx)); err != nil {
 		return nil, err
 	}
 	return &externalapi.ContactsEraseByNoContent{}, nil
@@ -172,26 +138,13 @@ func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.Ups
 	return &externalapi.UpsertContactsResult{Results: results}, nil
 }
 
-// itemError words a batch item's failure for the caller: domain errors as their own
+// itemError words a batch item's failure for the caller: a refusal of a module as its own
 // message, anything else (storage) as a generic one so internals do not leak.
 func itemError(err error) string {
-	var conflict *contacts.ConflictError
-	var rejection *events.RejectionError
-	switch {
-	case errors.As(err, &conflict):
-		return conflict.Message()
-	case errors.Is(err, contacts.ErrIdentityRequired), errors.As(err, &rejection):
-		return err.Error()
-	default:
-		return "internal error"
+	if shown, ok := validation.Shown(err); ok {
+		return shown
 	}
-}
-
-// conflictProblem renders a contacts.ConflictError, with the field-level error.
-func conflictProblem(c *contacts.ConflictError) externalapi.ProblemDetails {
-	p := problem(http.StatusConflict, c.Message())
-	p.Errors = externalapi.NewOptProblemDetailsErrors(externalapi.ProblemDetailsErrors{c.Field: {c.Message()}})
-	return p
+	return "internal error"
 }
 
 func createContactAttributes(req *externalapi.CreateContactInput) contacts.Attributes {

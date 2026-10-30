@@ -2,8 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/samber/lo"
 
@@ -51,11 +49,7 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Si
 	s := workspaceScope(ctx)
 
 	d, err := h.sendingDomains.Create(ctx, s, sendingdomains.CreateInput{Domain: req.Domain, Selector: req.DkimSelector.Or("")})
-	switch {
-	case errors.Is(err, sendingdomains.ErrAlreadyExists):
-		v := siteapi.SiteSendingDomainsCreateConflict(problem(http.StatusConflict, "this domain is already added"))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := h.sendingDomainResource(d)
@@ -67,10 +61,6 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 	d, err := h.sendingDomains.Get(ctx, s, id)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSendingDomainsGetNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -85,10 +75,6 @@ func (h *Handlers) SiteSendingDomainsArchive(ctx context.Context, params siteapi
 
 	id := int64(params.ID)
 	err := h.sendingDomains.Archive(ctx, s, id)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSendingDomainsArchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -106,14 +92,7 @@ func (h *Handlers) SiteSendingDomainsUnarchive(ctx context.Context, params sitea
 
 	id := int64(params.ID)
 	err := h.sendingDomains.Unarchive(ctx, s, id)
-	switch {
-	case errors.Is(err, sendingdomains.ErrAlreadyExists):
-		v := siteapi.SiteSendingDomainsUnarchiveConflict(problem(http.StatusConflict, "this domain was added again; archive that one first"))
-		return &v, nil
-	case ent.IsNotFound(err):
-		v := siteapi.SiteSendingDomainsUnarchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	d, err := h.sendingDomains.Get(ctx, s, id)
@@ -129,10 +108,6 @@ func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.
 
 	id := int64(params.ID)
 	d, err := h.sendingDomains.Verify(ctx, s, id)
-	if ent.IsNotFound(err) {
-		v := siteapi.SiteSendingDomainsVerifyNotFound(problem(http.StatusNotFound, "sending domain not found"))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

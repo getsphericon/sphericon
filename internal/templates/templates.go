@@ -27,6 +27,8 @@ var (
 	// ErrBodyAndDoc: a write carries both a body and a document. A client writes one of them: the
 	// document (the server builds the body from it) or the body (which clears the document).
 	ErrBodyAndDoc = validation.Refuse("templates: write a body or a doc, not both", "errors.body_and_doc")
+	// ErrLintBodyOrDoc: a lint sends both a body and a document, or neither. It reads exactly one.
+	ErrLintBodyOrDoc = validation.Refuse("templates: lint a body or a doc", "errors.lint_body_or_doc")
 )
 
 // Module holds no Workspace state: every call receives the Workspace-scoped client (ADR 0017).
@@ -42,6 +44,23 @@ func New(renderer *emaildoc.Renderer) *Module { return &Module{renderer: rendere
 // that renders before it opens a transaction (CreateInput.Prepared) or renders without saving.
 func (m *Module) Prepare(ctx context.Context, subject *string, doc []byte) (emailrender.Authored, error) {
 	return emailrender.FromDocument(ctx, m.renderer, subject, doc)
+}
+
+// LintBody is the HTML body a lint without a save reads: body as it is, or doc rendered as a save
+// renders it (Prepare), which may set subject. Exactly one of body and doc is sent, nil when absent
+// (ErrLintBodyOrDoc); a document that cannot render is emailrender.ErrInvalidContent.
+func (m *Module) LintBody(ctx context.Context, subject, body *string, doc []byte) (string, error) {
+	if (body == nil) == (doc == nil) {
+		return "", ErrLintBodyOrDoc
+	}
+	if body != nil {
+		return *body, nil
+	}
+	authored, err := m.Prepare(ctx, subject, doc)
+	if err != nil {
+		return "", err
+	}
+	return authored.Body, nil
 }
 
 // CreateInput is a new Template; nil Subject and Body keep their defaults.

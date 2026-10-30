@@ -14,7 +14,6 @@ package erasure
 
 import (
 	"context"
-	"errors"
 	"strconv"
 	"strings"
 
@@ -25,10 +24,20 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// ErrNotFound means the identifier resolves to nothing in the Workspace.
-var ErrNotFound = errors.New("erasure: not found")
+// The refusals of an Erasure, one per meaning.
+var (
+	// ErrContactNotFound means the Contact id names no Contact in the Workspace.
+	ErrContactNotFound = validation.NotFound("erasure: contact not found", "errors.contact_not_found")
+	// ErrNothingFound means an address or a visitor id resolves to nothing in the Workspace:
+	// neither a Contact nor anything that refers to it.
+	ErrNothingFound = validation.NotFound("erasure: nothing found for the identifier", "errors.erasure_nothing_found")
+	// ErrIdentifier means a request named neither or both of an address and a visitor id, or an
+	// empty visitor id.
+	ErrIdentifier = validation.Refuse("erasure: exactly one of email or visitorId is required", "errors.erasure_identifier")
+)
 
 // Identifier names the data subject to erase. Build one with ByContactID, ByEmail or
 // ByVisitorID.
@@ -50,6 +59,18 @@ func ByEmail(email string) Identifier {
 // ByVisitorID identifies the Contact the visitor is bound to, or, for an anonymous
 // Visitor with no Contact, the Visitor and its Events.
 func ByVisitorID(visitorID string) Identifier { return Identifier{visitorID: visitorID} }
+
+// ByEmailOrVisitorID is the identifier of a request that names exactly one of an address and a
+// visitor id (nil when absent); anything else is ErrIdentifier.
+func ByEmailOrVisitorID(email, visitorID *string) (Identifier, error) {
+	switch {
+	case email != nil && visitorID == nil:
+		return ByEmail(*email), nil
+	case email == nil && visitorID != nil && *visitorID != "":
+		return ByVisitorID(*visitorID), nil
+	}
+	return Identifier{}, ErrIdentifier
+}
 
 // kind names the identifier for the contact.erased Event.
 func (i Identifier) kind() string {
@@ -112,8 +133,9 @@ func New(bus *events.Bus) *Module {
 }
 
 // Erase erases the identified data subject in one transaction: either all of it
-// happens or none. ErrNotFound means the identifier resolves to nothing in the
-// Workspace (including a row of another Workspace).
+// happens or none. ErrContactNotFound (a Contact id) or ErrNothingFound (an address or a
+// visitor id) means the identifier resolves to nothing in the Workspace (including a row of
+// another Workspace).
 func (m *Module) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Requester) error {
 	return m.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
 		target, err := resolve(ctx, ts, id)
@@ -190,7 +212,7 @@ func resolve(ctx context.Context, s *ent.Scoped, id Identifier) (*Target, error)
 
 // findContact returns the Contact the identifier names, or nil when it names none
 // (an address or Visitor without a Contact). A contact id that resolves to nothing is
-// ErrNotFound.
+// ErrContactNotFound.
 func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contact, error) {
 	var (
 		c   *ent.Contact
@@ -208,7 +230,7 @@ func findContact(ctx context.Context, s *ent.Scoped, id Identifier) (*ent.Contac
 	default:
 		c, err = s.Contact().Get(ctx, id.contactID)
 		if ent.IsNotFound(err) {
-			return nil, ErrNotFound
+			return nil, ErrContactNotFound
 		}
 	}
 	if ent.IsNotFound(err) {
@@ -243,7 +265,7 @@ func resolveContactless(ctx context.Context, s *ent.Scoped, id Identifier) (*Tar
 		return nil, err
 	}
 	if !known {
-		return nil, ErrNotFound
+		return nil, ErrNothingFound
 	}
 	t.IdentifierKind = id.kind()
 	return t, nil

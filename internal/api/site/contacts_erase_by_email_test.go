@@ -67,7 +67,7 @@ func TestSiteContactsEraseByEmailRejectsAnInvalidAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	assert.IsType(t, &siteapi.SiteContactsEraseBadRequest{}, eraseByEmail(t, c, fixtures.AcmePublicID, "not an address"))
+	assert.IsType(t, &siteapi.SiteContactsEraseUnprocessableEntity{}, eraseByEmail(t, c, fixtures.AcmePublicID, "not an address"))
 }
 
 // A plain member is refused and nothing is touched.

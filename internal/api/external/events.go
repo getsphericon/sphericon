@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
 	"time"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -13,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/eventlog"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -26,10 +24,6 @@ func (h *Handlers) EventsCreate(ctx context.Context, req *externalapi.RecordEven
 	// The module resolves identity and publishes the batch atomically; rows land
 	// asynchronously (accept-then-process).
 	if err := h.eventlog.Ingest(ctx, auth.TokenScoped(ctx), inputs); err != nil {
-		if rejection, ok := events.AsRejection(err); ok {
-			res := externalapi.EventsCreateUnprocessableEntity(problem(http.StatusUnprocessableEntity, rejection.Error()))
-			return &res, nil
-		}
 		return nil, err
 	}
 	return &externalapi.EventsCreateNoContent{}, nil

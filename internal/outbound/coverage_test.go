@@ -14,12 +14,14 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/eligibility"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 const staleClaimKey = "transactional:fixture-stale-claim"
@@ -648,7 +650,7 @@ func TestSendTestOutcomes(t *testing.T) {
 	})
 }
 
-func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
+func TestSendBroadcastTestRefusesEveryOutcomeButSent(t *testing.T) {
 	ctx := context.Background()
 	from, fromName := "hello@codebasics.dev", "CodeBasics"
 	broadcast := func(subject, body string) *ent.Broadcast {
@@ -657,8 +659,8 @@ func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
 
 	t.Run("sent", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("Launch {{ first_name }}", htmlBody), "me@example.com", nil).Detail
-		assert.Empty(t, got)
+		_, err := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("Launch {{ first_name }}", htmlBody), "me@example.com", nil)
+		require.NoError(t, err)
 
 		msgs := env.CustomerMail.Messages()
 		require.Len(t, msgs, 1)
@@ -671,23 +673,23 @@ func TestSendBroadcastTestWordsEveryOutcome(t *testing.T) {
 	t.Run("held", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil).Detail
-		assert.Equal(t, outbound.Detail(holds.ReasonSuspended), got)
+		_, err := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil)
+		require.ErrorIs(t, err, outbound.ErrHeld)
+		assert.Equal(t, "the message was not sent: "+outbound.Detail(holds.ReasonSuspended), validation.Message(err))
 	})
 
 	t.Run("send error", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		env.CustomerMail.SetErr(errors.New("smtp unavailable"))
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil).Detail
-		assert.Contains(t, got, "send failed:")
-		assert.Contains(t, got, "smtp unavailable")
+		_, err := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), "me@example.com", nil)
+		require.ErrorContains(t, err, "smtp unavailable")
+		assert.NotErrorIs(t, err, outbound.ErrHeld, "a failed send is a fault, not a refusal")
 	})
 
 	t.Run("content does not render", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		got := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("{% if %}broken", htmlBody), "me@example.com", nil).Detail
-		assert.NotEmpty(t, got)
-		assert.NotContains(t, got, "send failed")
+		_, err := newModule(env).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("{% if %}broken", htmlBody), "me@example.com", nil)
+		require.ErrorIs(t, err, emailrender.ErrInvalidContent)
 		assert.Empty(t, env.CustomerMail.Messages())
 	})
 }

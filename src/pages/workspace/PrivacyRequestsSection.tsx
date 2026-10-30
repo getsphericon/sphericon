@@ -186,7 +186,7 @@ export function PrivacyRequestsSection({ workspaceId }: { workspaceId: string })
       <Stack mt="md">
         {lookup.isError ? (
           <Alert color="red">
-            {hasErrorStatus(lookup.error, [400])
+            {hasErrorStatus(lookup.error, [422])
               ? t(($) => $.settings.privacy.invalidEmail)
               : t(($) => $.settings.privacy.lookupError)}
           </Alert>

@@ -32,16 +32,16 @@ func (p perIntegration) EmailSender(_ context.Context, _ *ent.Scoped, integ *ent
 
 // broadcastTestVia is a Test send of a Broadcast of Acme, which has a verified Sending domain and
 // the SMTP default, to its owner.
-func broadcastTestVia(env *testhelper.TestEnv, via perIntegration, integrationID *int64) outbound.TestReport {
+func broadcastTestVia(env *testhelper.TestEnv, via perIntegration, integrationID *int64) (outbound.Result, error) {
 	return broadcastTestTo(env, fixtures.AcmeID, "hello@codebasics.dev", fixtures.OwnerJaneEmail, via, integrationID)
 }
 
 // globexBroadcastTestVia is the same for Globex, which has no verified Sending domain and no default.
-func globexBroadcastTestVia(env *testhelper.TestEnv, to string, via perIntegration, integrationID *int64) outbound.TestReport {
+func globexBroadcastTestVia(env *testhelper.TestEnv, to string, via perIntegration, integrationID *int64) (outbound.Result, error) {
 	return broadcastTestTo(env, fixtures.GlobexID, "hello@globex.test", to, via, integrationID)
 }
 
-func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string, via perIntegration, integrationID *int64) outbound.TestReport {
+func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string, via perIntegration, integrationID *int64) (outbound.Result, error) {
 	m := outbound.New(env.Bus, env.Holds, via, tracking.New("test-secret", "http://local"),
 		outbound.WithSystemSender(env.SystemMail))
 	b := &ent.Broadcast{WorkspaceID: workspaceID, Subject: "Launch", Body: htmlBody, FromEmail: &from, IntegrationID: integrationID}
@@ -59,9 +59,9 @@ func TestBroadcastTestSendGoesThroughTheBroadcastsOwnIntegration(t *testing.T) {
 	own, byDefault := &testhelper.CapturingSender{}, &testhelper.CapturingSender{}
 	via := perIntegration{fixtures.IntegrationAcmePostmarkID: own, fixtures.IntegrationAcmeDefaultID: byDefault}
 
-	report := broadcastTestVia(env, via, idOf(fixtures.IntegrationAcmePostmarkID))
+	report, err := broadcastTestVia(env, via, idOf(fixtures.IntegrationAcmePostmarkID))
 
-	require.Empty(t, report.Detail)
+	require.NoError(t, err)
 	assert.Equal(t, outbound.Sent, report.Outcome)
 	assert.Len(t, own.Messages(), 1, "the Test send is the mail the Broadcast will send")
 	assert.Empty(t, byDefault.Messages())
@@ -72,9 +72,9 @@ func TestBroadcastTestSendWithoutAnIntegrationGoesThroughTheDefault(t *testing.T
 	own, byDefault := &testhelper.CapturingSender{}, &testhelper.CapturingSender{}
 	via := perIntegration{fixtures.IntegrationAcmePostmarkID: own, fixtures.IntegrationAcmeDefaultID: byDefault}
 
-	report := broadcastTestVia(env, via, nil)
+	_, err := broadcastTestVia(env, via, nil)
 
-	require.Empty(t, report.Detail)
+	require.NoError(t, err)
 	assert.Len(t, byDefault.Messages(), 1)
 	assert.Empty(t, own.Messages())
 }
@@ -84,9 +84,9 @@ func TestBroadcastTestSendThroughATestInboxOfTheBroadcastIsCapturedWhateverTheDe
 	kept := &keepingSender{}
 	via := perIntegration{fixtures.IntegrationAcmePostmarkID: kept, fixtures.IntegrationAcmeDefaultID: env.CustomerMail}
 
-	report := broadcastTestVia(env, via, idOf(fixtures.IntegrationAcmePostmarkID))
+	report, err := broadcastTestVia(env, via, idOf(fixtures.IntegrationAcmePostmarkID))
 
-	require.Empty(t, report.Detail)
+	require.NoError(t, err)
 	assert.True(t, report.Captured)
 	assert.Len(t, kept.sent, 1)
 	assert.Empty(t, env.CustomerMail.Messages())
@@ -97,9 +97,9 @@ func TestBroadcastTestSendThroughARealIntegrationOfTheBroadcastIsNotCapturedWhat
 	kept := &keepingSender{}
 	via := perIntegration{fixtures.IntegrationAcmePostmarkID: env.CustomerMail, fixtures.IntegrationAcmeDefaultID: kept}
 
-	report := broadcastTestVia(env, via, idOf(fixtures.IntegrationAcmePostmarkID))
+	report, err := broadcastTestVia(env, via, idOf(fixtures.IntegrationAcmePostmarkID))
 
-	require.Empty(t, report.Detail)
+	require.NoError(t, err)
 	assert.False(t, report.Captured)
 	assert.Len(t, env.CustomerMail.Messages(), 1)
 	assert.Empty(t, kept.sent, "the default Test inbox does not take the Test send of another Integration")
@@ -116,10 +116,10 @@ func TestBroadcastTestSendOfAnIntegrationThatCannotSendIsHeldNotSentThroughTheDe
 			env := testhelper.Setup(t)
 			via := perIntegration{fixtures.IntegrationAcmeDefaultID: env.CustomerMail}
 
-			report := broadcastTestVia(env, via, id)
+			_, err := broadcastTestVia(env, via, id)
 
-			assert.Equal(t, outbound.Held, report.Outcome)
-			assert.Equal(t, outbound.HoldNoIntegration, report.Reason)
+			require.ErrorIs(t, err, outbound.ErrHeld)
+			require.ErrorContains(t, err, outbound.Detail(outbound.HoldNoIntegration))
 			assert.Empty(t, env.CustomerMail.Messages())
 			assert.Empty(t, env.SystemMail.Messages())
 		})
@@ -131,15 +131,15 @@ func TestBroadcastTestSendWithoutAVerifiedDomainKeepsTheSystemSenderForARealInte
 	via := perIntegration{fixtures.IntegrationGlobexID: env.CustomerMail}
 	own := idOf(fixtures.IntegrationGlobexID)
 
-	report := globexBroadcastTestVia(env, fixtures.OwnerJaneEmail, via, own)
-	require.Empty(t, report.Detail)
+	report, err := globexBroadcastTestVia(env, fixtures.OwnerJaneEmail, via, own)
+	require.NoError(t, err)
 	assert.False(t, report.Captured)
 	assert.Len(t, env.SystemMail.Messages(), 1)
 	assert.Empty(t, env.CustomerMail.Messages())
 
-	other := globexBroadcastTestVia(env, "stranger@example.com", via, own)
-	assert.Equal(t, outbound.Refused, other.Outcome, "only the asker's own address")
-	assert.Equal(t, outbound.RefuseOtherRecipient, other.Reason)
+	_, err = globexBroadcastTestVia(env, "stranger@example.com", via, own)
+	require.ErrorIs(t, err, outbound.ErrTestRefused, "only the asker's own address")
+	require.ErrorContains(t, err, outbound.Detail(outbound.RefuseOtherRecipient))
 }
 
 func TestBroadcastTestSendWithoutAVerifiedDomainIsCapturedByATestInboxOfTheBroadcast(t *testing.T) {
@@ -147,9 +147,9 @@ func TestBroadcastTestSendWithoutAVerifiedDomainIsCapturedByATestInboxOfTheBroad
 	kept := &keepingSender{}
 	via := perIntegration{fixtures.IntegrationGlobexInboxID: kept}
 
-	report := globexBroadcastTestVia(env, "someone-else@example.com", via, idOf(fixtures.IntegrationGlobexInboxID))
+	report, err := globexBroadcastTestVia(env, "someone-else@example.com", via, idOf(fixtures.IntegrationGlobexInboxID))
 
-	require.Empty(t, report.Detail)
+	require.NoError(t, err)
 	assert.True(t, report.Captured)
 	assert.Len(t, kept.sent, 1, "to the address named, not only the asker's")
 	assert.Empty(t, env.SystemMail.Messages())
@@ -158,9 +158,9 @@ func TestBroadcastTestSendWithoutAVerifiedDomainIsCapturedByATestInboxOfTheBroad
 func TestBroadcastTestSendWithoutAVerifiedDomainDoesNotFallBackToTheSystemSenderForAnIntegrationThatCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	report := globexBroadcastTestVia(env, fixtures.OwnerJaneEmail, perIntegration{}, idOf(missingIntegrationID))
+	_, err := globexBroadcastTestVia(env, fixtures.OwnerJaneEmail, perIntegration{}, idOf(missingIntegrationID))
 
-	assert.Equal(t, outbound.Held, report.Outcome)
-	assert.Equal(t, outbound.HoldNoIntegration, report.Reason)
+	require.ErrorIs(t, err, outbound.ErrHeld)
+	require.ErrorContains(t, err, outbound.Detail(outbound.HoldNoIntegration))
 	assert.Empty(t, env.SystemMail.Messages())
 }
