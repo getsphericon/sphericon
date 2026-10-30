@@ -4,7 +4,7 @@ import { beforeEach, expect, test } from 'vitest'
 
 import { siteTagsListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
 import {
-  handleSiteInstanceGetState,
+  handleSiteInstanceGetRelease,
   handleSiteTagsList,
   handleSiteWorkspacesList,
   handleSiteWorkspacesLiftSecondFactorRequirement,
@@ -24,9 +24,9 @@ import { WorkspaceLayout } from './WorkspaceLayout.tsx'
 
 const MOUNT = routeMount(workspaceRoute, { workspaceId: 'AcmeWs01' })
 
-// Most users may not manage the Instance: its state is refused to them.
+// Most users own no Workspace: the release banner is refused to them.
 beforeEach(() => {
-  worker.use(handleSiteInstanceGetState(() => problem(403)))
+  worker.use(handleSiteInstanceGetRelease(() => problem(403)))
 })
 
 const workspace = (over: Partial<SiteWorkspaceResource>): SiteWorkspaceResource => ({

@@ -6,6 +6,25 @@
 > owner's choice in the app, or off with `DO_NOT_TRACK=1`. The "this is the SaaS flag" rejected below
 > is accepted in 0060. The text below is the decision as first taken.
 
+> **Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** the
+> Instance's settings belong to the Staff member, not to the Owners of the oldest Workspace, a rule
+> that depended on who happened to create a Workspace first.
+>
+> - The Telemetry report switch with its environment lock, the one-time notice and its
+>   acknowledgement, the preview of the report, the link to its schema and the expiry of the
+>   License key are a core section of the Staff console (`/staff/instance`), open to any signed-in
+>   Staff member.
+> - No `/site` operation exposes them, and the app has no Instance page of its own.
+> - The notice gate stays: the first report is sent only after a Staff member acknowledged the
+>   notice in the console, so an Instance without a Staff member sends no report.
+> - The release banner reaches every Workspace Owner: the Release check runs only in `selfhosted`
+>   and its result is public, so one read-only `/site` operation returns only the newer release, to
+>   a User who holds `release:read` (an owner) in any live Workspace. The console shows it too, so an
+>   Instance without a Staff member still learns of a security release.
+> - The expiry of the License key ([[0035-an-expired-license-key-falls-back-to-the-core]]) is shown
+>   only in the console: in `saas` the Instance holds a key too, and its expiry is no business of
+>   the Workspaces.
+
 A self-hosted Instance sends the project one **Telemetry report** a day, on by default, so the
 project can see which versions, deploy shapes and features are in use. The report is anonymous and
 exactly documented: its schema is a TypeSpec contract (`typespec/telemetry`, compiled to an OpenAPI

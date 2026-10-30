@@ -56,7 +56,7 @@ var grants = []grant{
 	row(PermAccountLinkOpen, "errors.permission.account_link_open", ownerOnly),
 	row(PermWorkspaceDelete, "errors.permission.workspace_delete", ownerOnly),
 	row(PermOwnersManage, "errors.permission.owners_manage", ownerOnly),
-	row(PermInstanceManage, "errors.permission.instance_manage", ownerOnly),
+	row(PermReleaseRead, "errors.permission.release_read", ownerOnly),
 }
 
 // Allows reports whether role holds the Permission p. A Permission outside the table is held
@@ -76,6 +76,17 @@ func Require(role membership.Role, p Permission) error {
 	}
 	if slices.Contains(g.roles, role) {
 		return nil
+	}
+	return g.refusal
+}
+
+// Refusal is p's refusal (403 permission_required on every surface), for an operation that found
+// no Membership holding p, such as one that asks HoldersOf across Workspaces. A Permission outside
+// the table is refused like Require refuses it.
+func Refusal(p Permission) error {
+	g, ok := grantOf(p)
+	if !ok {
+		return errPermissionUnknown
 	}
 	return g.refusal
 }

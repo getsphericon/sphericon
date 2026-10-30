@@ -212,7 +212,7 @@ func TestSenderStaysSilent(t *testing.T) {
 	}
 }
 
-func TestSenderSendsWhenTheEnvironmentTurnsItOnWithoutTheOwnersChoice(t *testing.T) {
+func TestSenderSendsWhenTheEnvironmentTurnsItOnWithoutTheStaffMembersChoice(t *testing.T) {
 	yes := true
 	r := newRig(t, "1.4.2", func(c *config.Config) { c.Telemetry = &yes })
 	r.firstSend(t)

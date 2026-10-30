@@ -517,14 +517,14 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	secondFactor := secondfactor.New(client, bus, cipher, st.now)
 	passkeys, err := secondfactor.NewPasskeys(client, bus, cfg.AppURL, cfg.JWTSecret, st.now)
 	require.NoError(t, err, "build passkeys")
-	staffHandler, err := server.NewStaffAPI(staffMembers, signupItems, edition.StaffSections(bus, systemMail))
-	require.NoError(t, err, "build staff API")
-	accountLink, _, err := accountlink.FromConfig(&cfg)
-	require.NoError(t, err, "build account link")
 	source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
 	require.NoError(t, err, "build release source")
 	lapsedAt, _ := edition.LicenseLapsedAt()
 	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
+	staffHandler, err := server.NewStaffAPI(staffMembers, signupItems, inst, edition.StaffSections(bus, systemMail))
+	require.NoError(t, err, "build staff API")
+	accountLink, _, err := accountlink.FromConfig(&cfg)
+	require.NoError(t, err, "build account link")
 	relay := &FakeRelayRanges{}
 	detector := machine.New(client, relay)
 	handler, err := server.New(&cfg, txDB, migrated, client, apisite.Deps{

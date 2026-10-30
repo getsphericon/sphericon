@@ -71,8 +71,9 @@ var permissionMatrix = []guarded{
 	// owners:manage is asked by the operation for an owner's Membership (John, Acme's owner, stays
 	// one); a member is refused earlier, by the members:manage the operation declares.
 	{siteapi.PermissionOwnersManage, http.MethodPut, acmePath("/memberships/" + strconv.Itoa(fixtures.AcmeOwnerMembershipID)), `{"role":"owner"}`, ok, refused, refused},
-	// instance:manage is held in the oldest Workspace, Acme (ADR 0032).
-	{siteapi.PermissionInstanceManage, http.MethodGet, "/site/instance", "", ok, refused, refused},
+	// release:read is asked of the caller's Memberships in every Workspace; Acme's admin and member
+	// own no Workspace anywhere (ADR 0032).
+	{siteapi.PermissionReleaseRead, http.MethodGet, "/site/instance/release", "", ok, refused, refused},
 }
 
 // shownOnly is the Permissions no operation asks for: the client alone reads them, from the

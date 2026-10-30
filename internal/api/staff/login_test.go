@@ -175,7 +175,7 @@ func TestWithTheLicenseTheEnterpriseRoutesNeedAStaffSession(t *testing.T) {
 func TestWithoutAStaffSecretTheWholeSurfaceIs404(t *testing.T) {
 	h := newHarness(t, testhelper.WithoutStaffSecret())
 
-	for _, path := range []string{"/staff/me", "/staff/auth/second-factor", "/staff/workspaces"} {
+	for _, path := range []string{"/staff/me", "/staff/auth/second-factor", "/staff/instance", "/staff/workspaces"} {
 		rec := get(t, h.env.Server, path)
 		assert.Equal(t, http.StatusNotFound, rec.Code, path)
 		assert.NotContains(t, rec.Header().Get("Content-Type"), "text/html", "%s must not fall through to the SPA shell", path)

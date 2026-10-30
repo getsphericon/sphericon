@@ -3,7 +3,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, StaffAuthLoginData, StaffAuthLoginResponses, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorResponses, StaffMeGetResponses, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateResponses, StaffSignupItemsGetResponses, StaffSignupItemsListResponses, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateResponses } from './types.gen.ts';
+import type { ClientOptions, StaffAuthLoginData, StaffAuthLoginResponses, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceGetStateResponses, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryResponses, StaffMeGetResponses, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateResponses, StaffSignupItemsGetResponses, StaffSignupItemsListResponses, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateResponses } from './types.gen.ts';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
   baseUrl?: ClientOptions['baseUrl'];
@@ -74,6 +74,114 @@ export type HandleStaffAuthSecondFactorResponse = {
  */
 export function handleStaffAuthSecondFactor(response?: HandleStaffAuthSecondFactorResponse | HttpResponseResolver<never, StaffAuthSecondFactorData['body']>, options?: RequestHandlerOptions): HttpHandler {
   return http.post<never, StaffAuthSecondFactorData['body']>(`${options?.baseUrl ?? '*'}/auth/second-factor`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffInstanceGetStateResponse = {
+  body: StaffInstanceGetStateResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /instance` operation.
+ */
+export function handleStaffInstanceGetState(response?: HandleStaffInstanceGetStateResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<never, never>(`${options?.baseUrl ?? '*'}/instance`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffInstanceAcknowledgeNoticeResponse = {
+  body: StaffInstanceAcknowledgeNoticeResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `POST /instance/notice/acknowledge` operation.
+ */
+export function handleStaffInstanceAcknowledgeNotice(response?: HandleStaffInstanceAcknowledgeNoticeResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.post<never, never>(`${options?.baseUrl ?? '*'}/instance/notice/acknowledge`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffInstanceSetTelemetryResponse = {
+  body: StaffInstanceSetTelemetryResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `PUT /instance/telemetry` operation.
+ */
+export function handleStaffInstanceSetTelemetry(response?: HandleStaffInstanceSetTelemetryResponse | HttpResponseResolver<never, StaffInstanceSetTelemetryData['body']>, options?: RequestHandlerOptions): HttpHandler {
+  return http.put<never, StaffInstanceSetTelemetryData['body']>(`${options?.baseUrl ?? '*'}/instance/telemetry`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffInstancePreviewTelemetryReportResponse = {
+  body: StaffInstancePreviewTelemetryReportResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /instance/telemetry/preview` operation.
+ */
+export function handleStaffInstancePreviewTelemetryReport(response?: HandleStaffInstancePreviewTelemetryReportResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<never, never>(`${options?.baseUrl ?? '*'}/instance/telemetry/preview`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -399,6 +507,22 @@ export type MswHandlerFactories = {
    */
   staffAuthSecondFactor: typeof handleStaffAuthSecondFactor;
   /**
+   * Handler for the `GET /instance` operation.
+   */
+  staffInstanceGetState: typeof handleStaffInstanceGetState;
+  /**
+   * Handler for the `POST /instance/notice/acknowledge` operation.
+   */
+  staffInstanceAcknowledgeNotice: typeof handleStaffInstanceAcknowledgeNotice;
+  /**
+   * Handler for the `PUT /instance/telemetry` operation.
+   */
+  staffInstanceSetTelemetry: typeof handleStaffInstanceSetTelemetry;
+  /**
+   * Handler for the `GET /instance/telemetry/preview` operation.
+   */
+  staffInstancePreviewTelemetryReport: typeof handleStaffInstancePreviewTelemetryReport;
+  /**
    * Handler for the `GET /me` operation.
    */
   staffMeGet: typeof handleStaffMeGet;
@@ -458,6 +582,10 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     staffAuthLogin: wrap(handleStaffAuthLogin),
     staffAuthLogout: wrap(handleStaffAuthLogout),
     staffAuthSecondFactor: wrap(handleStaffAuthSecondFactor),
+    staffInstanceGetState: wrap(handleStaffInstanceGetState),
+    staffInstanceAcknowledgeNotice: wrap(handleStaffInstanceAcknowledgeNotice),
+    staffInstanceSetTelemetry: wrap(handleStaffInstanceSetTelemetry),
+    staffInstancePreviewTelemetryReport: wrap(handleStaffInstancePreviewTelemetryReport),
     staffMeGet: wrap(handleStaffMeGet),
     staffSignupItemsList: wrap(handleStaffSignupItemsList),
     staffSignupItemsCreate: wrap(handleStaffSignupItemsCreate),
@@ -479,6 +607,8 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     }
     const overrides = options.pick ?? {};
     return [
+      invoke(pick.staffInstanceAcknowledgeNotice, overrides.staffInstanceAcknowledgeNotice),
+      invoke(pick.staffInstancePreviewTelemetryReport, overrides.staffInstancePreviewTelemetryReport),
       invoke(pick.staffSignupItemsArchive, overrides.staffSignupItemsArchive),
       invoke(pick.staffSignupItemsSaveDraft, overrides.staffSignupItemsSaveDraft),
       invoke(pick.staffSignupItemsListVersions, overrides.staffSignupItemsListVersions),
@@ -486,9 +616,11 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.staffAuthLogin, overrides.staffAuthLogin),
       invoke(pick.staffAuthLogout, overrides.staffAuthLogout),
       invoke(pick.staffAuthSecondFactor, overrides.staffAuthSecondFactor),
+      invoke(pick.staffInstanceSetTelemetry, overrides.staffInstanceSetTelemetry),
       invoke(pick.staffSignupItemsReorder, overrides.staffSignupItemsReorder),
       invoke(pick.staffSignupItemsGet, overrides.staffSignupItemsGet),
       invoke(pick.staffSignupItemsUpdate, overrides.staffSignupItemsUpdate),
+      invoke(pick.staffInstanceGetState, overrides.staffInstanceGetState),
       invoke(pick.staffMeGet, overrides.staffMeGet),
       invoke(pick.staffSignupItemsList, overrides.staffSignupItemsList),
       invoke(pick.staffSignupItemsCreate, overrides.staffSignupItemsCreate)

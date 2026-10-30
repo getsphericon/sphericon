@@ -72,13 +72,6 @@ export const zBadRequestProblem = z.object({
 });
 
 /**
- * RFC 7807 conflict response
- */
-export const zConflictProblem = z.object({
-  body: zProblemDetails
-});
-
-/**
  * RFC 7807 forbidden response
  */
 export const zForbiddenProblem = z.object({
@@ -133,6 +126,27 @@ export const zStaffEnrolment = z.object({
   secret: z.string(),
   uri: z.string(),
   qrCode: z.string()
+});
+
+/**
+ * Switch the Telemetry report on or off
+ */
+export const zStaffInstanceTelemetryInput = z.object({
+  enabled: z.boolean()
+});
+
+/**
+ * Why the environment, not the Staff member, decides the Telemetry report
+ */
+export const zStaffInstanceTelemetryLock = z.enum(['environment', 'do_not_track']);
+
+/**
+ * The Telemetry report setting as it applies right now (ADR 0032)
+ */
+export const zStaffInstanceTelemetry = z.object({
+  enabled: z.boolean(),
+  locked: z.boolean(),
+  lockedBy: z.exactOptional(zStaffInstanceTelemetryLock)
 });
 
 /**
@@ -217,6 +231,18 @@ export const zStaffSignupItemUpdate = z.object({
 export const zTimeZoneName = z.string();
 
 export const zTimestamp = z.iso.datetime();
+
+/**
+ * The Instance's own settings and state, which belong to no Workspace (ADR 0063): what a Staff
+ * member sees and decides about the Instance itself.
+ */
+export const zStaffInstanceState = z.object({
+  telemetry: zStaffInstanceTelemetry,
+  noticeAcknowledged: z.boolean(),
+  latestRelease: z.exactOptional(z.string()),
+  licenseExpiredAt: z.exactOptional(zTimestamp),
+  telemetrySchemaUrl: z.string()
+});
 
 /**
  * A published Legal document version, as the console shows it
@@ -334,6 +360,28 @@ export const zStaffAuthSecondFactorBody = zStaffSecondFactorInput;
  * The request has succeeded.
  */
 export const zStaffAuthSecondFactorResponse = zStaffResource;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffInstanceGetStateResponse = zStaffInstanceState;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffInstanceAcknowledgeNoticeResponse = zStaffInstanceState;
+
+export const zStaffInstanceSetTelemetryBody = zStaffInstanceTelemetryInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffInstanceSetTelemetryResponse = zStaffInstanceState;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffInstancePreviewTelemetryReportResponse = z.record(z.string(), z.unknown());
 
 /**
  * The request has succeeded.

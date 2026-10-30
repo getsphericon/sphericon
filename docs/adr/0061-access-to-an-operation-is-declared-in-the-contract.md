@@ -4,6 +4,11 @@ status: accepted
 
 # Access to an operation is declared in the contract
 
+> Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]: the Instance's
+> settings moved to the Staff console, so `instance:manage` is gone. Its one remaining use, the
+> banner of a newer release ([[0032-instance-telemetry-report-and-release-check]]), is the
+> Permission `release:read`, asked of the caller's Memberships in every live Workspace.
+
 Who may call an operation was decided in each handler: 102 `auth.HasScope` checks on the external
 API and 34 `accounts.Can…` checks on `/site`. They had drifted (a missing scope answered 401 at 99
 sites and 403 at 3), a new operation was open until someone remembered its check, and the frontend
@@ -84,10 +89,10 @@ surface, and refused unless declared.
 | `account_link:open`      | the Account link, which proves who an Owner is        |   ✓   |       |        |
 | `workspace:delete`       | deleting and restoring the Workspace                  |   ✓   |       |        |
 | `owners:manage`          | granting the owner Role; changing, removing an owner  |   ✓   |       |        |
-| `instance:manage`        | the Instance state, used in the oldest Workspace only |   ✓   |       |        |
+| `release:read`           | the banner of a newer release, held in a live one     |   ✓   |       |        |
 
 `holds:resolve`, `owners:manage` (resetting an owner's Second factor too) and `instance:manage`
-were added later, when every Role comparison that decided access became a Permission. No code
+(now `release:read`) were added later, when every Role comparison that decided access became a Permission. No code
 compares a Role outside the table above and the named Role facts of `internal/accounts/roles` (the
 last owner, whom to mail); the ast-grep rules `access-is-a-permission-go` and
 `access-is-a-permission-tsx` refuse one.

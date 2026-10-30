@@ -111,7 +111,7 @@
   "errors.permission.account_link_open": "your role in this workspace does not allow opening the account link",
   "errors.permission.workspace_delete": "your role in this workspace does not allow deleting or restoring it",
   "errors.permission.owners_manage": "only an owner may grant the owner role, change or remove an owner, or reset an owner's second factor",
-  "errors.permission.instance_manage": "only the owners of the oldest workspace can manage the instance",
+  "errors.permission.release_read": "only a workspace owner is told of a newer release",
   "errors.permission.unknown": "your role in this workspace does not allow this",
   "errors.current_password_required": "current password is required",
   "errors.current_password_incorrect": "current password is incorrect",

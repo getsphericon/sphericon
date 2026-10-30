@@ -12,6 +12,7 @@ import (
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
+	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	rules "github.com/getsphericon/sphericon/internal/rules"
@@ -343,6 +344,11 @@ func (c *ConverterImpl) HoldToResource(source *ent.Hold) site.SiteWorkspaceHold 
 		siteapiSiteWorkspaceHold.ActionUrl = optNilString((*source).ActionURL)
 	}
 	return siteapiSiteWorkspaceHold
+}
+func (c *ConverterImpl) InstanceReleaseToResource(source instance.Release) site.SiteInstanceRelease {
+	var siteapiSiteInstanceRelease site.SiteInstanceRelease
+	siteapiSiteInstanceRelease.LatestRelease = optString(source.LatestRelease)
+	return siteapiSiteInstanceRelease
 }
 func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) site.SiteIntegrationResource {
 	var siteapiSiteIntegrationResource site.SiteIntegrationResource

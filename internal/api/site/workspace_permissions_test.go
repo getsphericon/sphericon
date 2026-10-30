@@ -22,6 +22,6 @@ func TestTheWorkspaceCarriesThePermissionsOfTheCallersRole(t *testing.T) {
 	member := workspaceOf(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID)
 
 	assert.Equal(t, all, owner.Permissions)
-	assert.Equal(t, lo.Without(all, siteapi.PermissionAccountLinkOpen, siteapi.PermissionWorkspaceDelete, siteapi.PermissionOwnersManage, siteapi.PermissionInstanceManage), admin.Permissions)
+	assert.Equal(t, lo.Without(all, siteapi.PermissionAccountLinkOpen, siteapi.PermissionWorkspaceDelete, siteapi.PermissionOwnersManage, siteapi.PermissionReleaseRead), admin.Permissions)
 	assert.Empty(t, member.Permissions)
 }

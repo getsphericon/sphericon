@@ -49,27 +49,18 @@ func newLapse(t *testing.T) lapse {
 	return l
 }
 
-func TestAnExpiredLicenseKeyBootsAsTheCoreAndTheOwnerSeesWhen(t *testing.T) {
+// The Staff console shows when the key expired (internal/api/staff); no Workspace does.
+func TestAnExpiredLicenseKeyBootsAsTheCore(t *testing.T) {
 	l := newLapse(t)
 	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.expired), testhelper.WithClock(lapseClock))
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	state := instanceState(t, john)
-	require.True(t, state.LicenseExpiredAt.Set)
-	assert.True(t, time.Time(state.LicenseExpiredAt.Value).Equal(l.expiredOn))
 	_, listed := auditList(t, john, fixtures.AcmePublicID).(*siteapi.SiteAuditEntryList)
-	assert.False(t, listed, "the Audit log is dark without its feature")
 	report, err := env.Instance.Report(t.Context())
 	require.NoError(t, err)
+
+	assert.False(t, listed, "the Audit log is dark without its feature")
 	assert.Equal(t, telemetryapi.TelemetryEditionCore, report.Edition, "a lapsed key reports the core")
-	requireInstanceForbidden(t, env.SiteActor(t, fixtures.MemberMaryEmail))
-}
-
-func TestAValidLicenseKeyShowsNoLapse(t *testing.T) {
-	l := newLapse(t)
-	env := testhelper.Setup(t, testhelper.WithLicenseKey(l.pub, l.valid), testhelper.WithClock(lapseClock))
-
-	assert.False(t, instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).LicenseExpiredAt.Set)
 }
 
 func TestAForgedLicenseKeyIsRefusedEvenWhenItIsNotExpired(t *testing.T) {

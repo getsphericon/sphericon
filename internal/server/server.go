@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/clientip"
 	dbpkg "github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/emailrender"
+	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/logging"
 	"github.com/getsphericon/sphericon/internal/machine"
@@ -202,13 +203,13 @@ type StaffSections interface {
 }
 
 // NewStaffAPI builds the /staff handler with RFC 7807 errors: the core ogen server
-// (internal/api/staff) over the Staff member module and the Sign-up items, whose not-found handler is the
-// Enterprise ogen server, so each contract routes its own paths and none is restated here.
-// While the Staff sign-in is off (no Staff member secret) there is no handler, which New
-// mounts as a 404; nil sections (no `staff` license) leave every path the core does not
-// route a 404.
-func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, sections StaffSections) (http.Handler, error) {
-	core := apistaff.NewSurface(members, items)
+// (internal/api/staff) over the Staff member module, the Sign-up items and the Instance state,
+// whose not-found handler is the Enterprise ogen server, so each contract routes its own paths
+// and none is restated here. While the Staff sign-in is off (no Staff member secret) there is
+// no handler, which New mounts as a 404; nil sections (no `staff` license) leave every path the
+// core does not route a 404.
+func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *instance.Module, sections StaffSections) (http.Handler, error) {
+	core := apistaff.NewSurface(members, items, inst)
 	if core == nil {
 		return nil, nil
 	}

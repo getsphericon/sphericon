@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 )
@@ -25,8 +26,13 @@ import (
 // goverter:extend position
 // goverter:extend optDraft
 // goverter:extend optVersion
+// goverter:extend optString
+// goverter:extend optLapse
+// goverter:extend optLock
 type Converter interface {
 	StaffMemberToResource(source *ent.StaffMember) staffapi.StaffResource
+
+	InstanceStateToResource(source instance.State) staffapi.StaffInstanceState
 
 	SignupItemToResource(source signupitems.Item) staffapi.StaffSignupItemResource
 	SignupItemsToResources(source []signupitems.Item) []staffapi.StaffSignupItemResource
@@ -44,6 +50,29 @@ func optTimestamp(t *time.Time) staffapi.OptTimestamp {
 }
 
 func position(p int) int32 { return narrow.Int32(p) }
+
+func optString(v *string) staffapi.OptString {
+	if v == nil {
+		return staffapi.OptString{}
+	}
+	return staffapi.NewOptString(*v)
+}
+
+// optLapse is when the license key expired, absent unless it has lapsed.
+func optLapse(t time.Time) staffapi.OptTimestamp {
+	if t.IsZero() {
+		return staffapi.OptTimestamp{}
+	}
+	return staffapi.NewOptTimestamp(staffapi.Timestamp(t))
+}
+
+// optLock is what decides the Telemetry report, absent while the Staff member does.
+func optLock(l instance.Lock) staffapi.OptStaffInstanceTelemetryLock {
+	if l == instance.LockNone {
+		return staffapi.OptStaffInstanceTelemetryLock{}
+	}
+	return staffapi.NewOptStaffInstanceTelemetryLock(staffapi.StaffInstanceTelemetryLock(l))
+}
 
 func optDraft(d *string) staffapi.OptLegalDocumentMarkdown {
 	if d == nil {

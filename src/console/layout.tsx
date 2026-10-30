@@ -5,6 +5,7 @@ import {
   IconHome,
   IconListCheck,
   IconLogout,
+  IconServer,
 } from '@tabler/icons-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useRouteContext } from '@tanstack/react-router'
@@ -16,9 +17,11 @@ import { useNotify } from '../hooks/useNotify.ts'
 import { DashboardShell } from '../layouts/DashboardShell.tsx'
 import { Route as consoleWorkspacesRoute } from '../routes/console/_authed/_enterprise/workspaces.index.tsx'
 import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
+import { Route as consoleInstanceRoute } from '../routes/console/_authed/instance.tsx'
 import { Route as consoleAuthedRoute } from '../routes/console/_authed/route.tsx'
 import { Route as consoleSignupItemsRoute } from '../routes/console/_authed/signup-items.index.tsx'
 import { Route as consoleLoginRoute } from '../routes/console/login.tsx'
+import { InstanceNotice } from './InstanceNotice.tsx'
 
 // The sections: the core ones on every Instance, the Enterprise ones only when the server serves
 // them (the `staff` license, ADR 0063). A console with them opens on the Workspaces, so it has no
@@ -41,6 +44,11 @@ function ConsoleNavbar() {
         to={consoleSignupItemsRoute.to}
         label={t(($) => $.console.nav.signupItems)}
         leftSection={<IconListCheck size={18} />}
+      />
+      <NavLinkLink
+        to={consoleInstanceRoute.to}
+        label={t(($) => $.console.nav.instance)}
+        leftSection={<IconServer size={18} />}
       />
       {enterprise && (
         <NavLinkLink
@@ -100,5 +108,11 @@ function StaffMenu() {
 }
 
 export function ConsoleLayout() {
-  return <DashboardShell sidebar={<ConsoleNavbar />} headerRight={<StaffMenu />} />
+  return (
+    <DashboardShell
+      sidebar={<ConsoleNavbar />}
+      headerRight={<StaffMenu />}
+      banner={<InstanceNotice />}
+    />
+  )
 }

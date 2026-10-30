@@ -3,7 +3,7 @@
   "info": {
     "title": "Sphericon StaffMember API",
     "version": "1.0.0",
-    "description": "The core API of the Staff console, served on every Instance (ADR 0063): sign-in with a password and a TOTP, the signed-in Staff member, and the Instance's Sign-up items with their Legal documents (ADR 0062). The Enterprise sections are a contract of their own (staffee), served under the same prefix with the same session cookie."
+    "description": "The core API of the Staff console, served on every Instance (ADR 0063): sign-in with a password and a TOTP, the signed-in Staff member, and the Instance's own settings: its Sign-up items with their Legal documents (ADR 0062) and its Telemetry report (ADR 0032). The Enterprise sections are a contract of their own (staffee), served under the same prefix with the same session cookie."
   },
   "tags": [
     {
@@ -14,6 +14,9 @@
     },
     {
       "name": "StaffMember Signup Items"
+    },
+    {
+      "name": "StaffMember Instance"
     }
   ],
   "paths": {
@@ -226,6 +229,147 @@
           }
         },
         "security": [{}]
+      }
+    },
+    "/instance": {
+      "get": {
+        "operationId": "StaffInstance_getState",
+        "description": "The Instance's own settings and state",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffInstanceState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Instance"]
+      }
+    },
+    "/instance/notice/acknowledge": {
+      "post": {
+        "operationId": "StaffInstance_acknowledgeNotice",
+        "description": "Acknowledge the one-time Telemetry report notice: the first report waits for it. The first\nacknowledgement stands, and a repeat changes nothing.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffInstanceState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Instance"]
+      }
+    },
+    "/instance/telemetry": {
+      "put": {
+        "operationId": "StaffInstance_setTelemetry",
+        "description": "Switch the Telemetry report on or off. Answers 409 while the environment decides.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffInstanceState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Instance"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffInstanceTelemetryInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/instance/telemetry/preview": {
+      "get": {
+        "operationId": "StaffInstance_previewTelemetryReport",
+        "description": "The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the\npublished schema describes, built by the code that sends it. Works whether or not sending is\non.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Instance"]
       }
     },
     "/me": {
@@ -754,16 +898,6 @@
         },
         "description": "RFC 7807 bad request response"
       },
-      "ConflictProblem": {
-        "type": "object",
-        "required": ["body"],
-        "properties": {
-          "body": {
-            "$ref": "#/components/schemas/ProblemDetails"
-          }
-        },
-        "description": "RFC 7807 conflict response"
-      },
       "EmailAddress": {
         "type": "string",
         "maxLength": 320,
@@ -1056,6 +1190,80 @@
           }
         },
         "description": "A TOTP secret awaiting its first confirming code"
+      },
+      "StaffInstanceState": {
+        "type": "object",
+        "required": ["telemetry", "noticeAcknowledged", "telemetrySchemaUrl"],
+        "properties": {
+          "telemetry": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffInstanceTelemetry"
+              }
+            ],
+            "description": "The Telemetry report setting"
+          },
+          "noticeAcknowledged": {
+            "type": "boolean",
+            "description": "Whether a Staff member acknowledged the one-time notice about the Telemetry report. No report\nis sent before."
+          },
+          "latestRelease": {
+            "type": "string",
+            "description": "The newest stable release (a bare version such as `0.4.0`) when the Release check found\none newer than the running version; absent otherwise, and always absent for a build whose\nversion is not a release or in the saas Mode, which makes no Release check."
+          },
+          "licenseExpiredAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the Instance's license key expired, set only while it has lapsed: the Instance then\nruns the open-source core, and nothing Enterprise is deleted (ADR 0035)."
+          },
+          "telemetrySchemaUrl": {
+            "type": "string",
+            "description": "The page that documents the schema of the Telemetry report"
+          }
+        },
+        "description": "The Instance's own settings and state, which belong to no Workspace (ADR 0063): what a Staff\nmember sees and decides about the Instance itself."
+      },
+      "StaffInstanceTelemetry": {
+        "type": "object",
+        "required": ["enabled", "locked"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the Instance sends the Telemetry report"
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Whether the environment decides, which makes the switch in the console read-only"
+          },
+          "lockedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffInstanceTelemetryLock"
+              }
+            ],
+            "description": "What decides, set when locked"
+          }
+        },
+        "description": "The Telemetry report setting as it applies right now (ADR 0032)"
+      },
+      "StaffInstanceTelemetryInput": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "The Staff member's choice"
+          }
+        },
+        "description": "Switch the Telemetry report on or off"
+      },
+      "StaffInstanceTelemetryLock": {
+        "type": "string",
+        "enum": ["environment", "do_not_track"],
+        "description": "Why the environment, not the Staff member, decides the Telemetry report"
       },
       "StaffLegalDocumentDraftInput": {
         "type": "object",

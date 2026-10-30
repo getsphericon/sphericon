@@ -289,20 +289,8 @@ type SiteIdentitiesUnlinkRes interface {
 	siteIdentitiesUnlinkRes()
 }
 
-type SiteInstanceAcknowledgeNoticeRes interface {
-	siteInstanceAcknowledgeNoticeRes()
-}
-
-type SiteInstanceGetStateRes interface {
-	siteInstanceGetStateRes()
-}
-
-type SiteInstancePreviewTelemetryReportRes interface {
-	siteInstancePreviewTelemetryReportRes()
-}
-
-type SiteInstanceSetTelemetryRes interface {
-	siteInstanceSetTelemetryRes()
+type SiteInstanceGetReleaseRes interface {
+	siteInstanceGetReleaseRes()
 }
 
 type SiteIntegrationsArchiveRes interface {

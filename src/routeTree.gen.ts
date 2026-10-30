@@ -27,7 +27,6 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as UnsubscribedRouteImport } from './routes/unsubscribed'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
-import { Route as AccountInstanceRouteImport } from './routes/account/instance'
 import { Route as AccountSecurityRouteImport } from './routes/account/security'
 import { Route as ConsoleAuthedRouteRouteImport } from './routes/console/_authed/route'
 import { Route as ConsoleLoginRouteImport } from './routes/console/login'
@@ -38,6 +37,7 @@ import { Route as WorkspacesWorkspaceIdRouteRouteImport } from './routes/workspa
 import { Route as WorkspacesNewRouteImport } from './routes/workspaces/new'
 import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed/index'
 import { Route as ConsoleAuthedEnterpriseRouteRouteImport } from './routes/console/_authed/_enterprise/route'
+import { Route as ConsoleAuthedInstanceRouteImport } from './routes/console/_authed/instance'
 import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
 import { Route as WorkspacesWorkspaceIdAnalyticsRouteRouteImport } from './routes/workspaces/$workspaceId/analytics/route'
 import { Route as WorkspacesWorkspaceIdBrandKitRouteImport } from './routes/workspaces/$workspaceId/brand-kit'
@@ -191,13 +191,6 @@ const AccountIndexRoute = AccountIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AccountRouteRoute,
 } as any).lazy(() => import('./routes/account/index.lazy').then((d) => d.Route))
-const AccountInstanceRoute = AccountInstanceRouteImport.update({
-  id: '/instance',
-  path: '/instance',
-  getParentRoute: () => AccountRouteRoute,
-} as any).lazy(() =>
-  import('./routes/account/instance.lazy').then((d) => d.Route),
-)
 const AccountSecurityRoute = AccountSecurityRouteImport.update({
   id: '/security',
   path: '/security',
@@ -260,6 +253,13 @@ const ConsoleAuthedEnterpriseRouteRoute =
     id: '/_enterprise',
     getParentRoute: () => ConsoleAuthedRouteRoute,
   } as any)
+const ConsoleAuthedInstanceRoute = ConsoleAuthedInstanceRouteImport.update({
+  id: '/instance',
+  path: '/instance',
+  getParentRoute: () => ConsoleAuthedRouteRoute,
+} as any).lazy(() =>
+  import('./routes/console/_authed/instance.lazy').then((d) => d.Route),
+)
 const WorkspacesWorkspaceIdIndexRoute =
   WorkspacesWorkspaceIdIndexRouteImport.update({
     id: '/',
@@ -790,7 +790,6 @@ export interface FileRoutesByFullPath {
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdRouteRouteWithChildren
-  '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -800,6 +799,7 @@ export interface FileRoutesByFullPath {
   '/account/': typeof AccountIndexRoute
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
+  '/console/instance': typeof ConsoleAuthedInstanceRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
@@ -869,7 +869,6 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -877,6 +876,7 @@ export interface FileRoutesByTo {
   '/oauth/consent': typeof OauthConsentRoute
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account': typeof AccountIndexRoute
+  '/console/instance': typeof ConsoleAuthedInstanceRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
   '/console/signup-items/$itemId': typeof ConsoleAuthedSignupItemsItemIdRoute
@@ -949,7 +949,6 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/console/_authed': typeof ConsoleAuthedRouteRouteWithChildren
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdRouteRouteWithChildren
-  '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -960,6 +959,7 @@ export interface FileRoutesById {
   '/console/_authed/_enterprise': typeof ConsoleAuthedEnterpriseRouteRouteWithChildren
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
+  '/console/_authed/instance': typeof ConsoleAuthedInstanceRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/_authed/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
@@ -1033,7 +1033,6 @@ export interface FileRouteTypes {
     | '/unsubscribed'
     | '/verify-email'
     | '/workspaces/$workspaceId'
-    | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
@@ -1043,6 +1042,7 @@ export interface FileRouteTypes {
     | '/account/'
     | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/settings'
+    | '/console/instance'
     | '/workspaces/$workspaceId/brand-kit'
     | '/console/'
     | '/workspaces/$workspaceId/'
@@ -1112,7 +1112,6 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
-    | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
@@ -1120,6 +1119,7 @@ export interface FileRouteTypes {
     | '/oauth/consent'
     | '/workspaces/new'
     | '/account'
+    | '/console/instance'
     | '/workspaces/$workspaceId/brand-kit'
     | '/workspaces/$workspaceId'
     | '/console/signup-items/$itemId'
@@ -1191,7 +1191,6 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/console/_authed'
     | '/workspaces/$workspaceId'
-    | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
@@ -1202,6 +1201,7 @@ export interface FileRouteTypes {
     | '/console/_authed/_enterprise'
     | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/settings'
+    | '/console/_authed/instance'
     | '/workspaces/$workspaceId/brand-kit'
     | '/console/_authed/'
     | '/workspaces/$workspaceId/'
@@ -1408,13 +1408,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountIndexRouteImport
       parentRoute: typeof AccountRouteRoute
     }
-    '/account/instance': {
-      id: '/account/instance'
-      path: '/instance'
-      fullPath: '/account/instance'
-      preLoaderRoute: typeof AccountInstanceRouteImport
-      parentRoute: typeof AccountRouteRoute
-    }
     '/account/security': {
       id: '/account/security'
       path: '/security'
@@ -1483,6 +1476,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/console'
       preLoaderRoute: typeof ConsoleAuthedEnterpriseRouteRouteImport
+      parentRoute: typeof ConsoleAuthedRouteRoute
+    }
+    '/console/_authed/instance': {
+      id: '/console/_authed/instance'
+      path: '/instance'
+      fullPath: '/console/instance'
+      preLoaderRoute: typeof ConsoleAuthedInstanceRouteImport
       parentRoute: typeof ConsoleAuthedRouteRoute
     }
     '/workspaces/$workspaceId/': {
@@ -1853,13 +1853,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface AccountRouteRouteChildren {
-  AccountInstanceRoute: typeof AccountInstanceRoute
   AccountSecurityRoute: typeof AccountSecurityRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteRouteChildren: AccountRouteRouteChildren = {
-  AccountInstanceRoute: AccountInstanceRoute,
   AccountSecurityRoute: AccountSecurityRoute,
   AccountIndexRoute: AccountIndexRoute,
 }
@@ -1888,6 +1886,7 @@ const ConsoleAuthedEnterpriseRouteRouteWithChildren =
 
 interface ConsoleAuthedRouteRouteChildren {
   ConsoleAuthedEnterpriseRouteRoute: typeof ConsoleAuthedEnterpriseRouteRouteWithChildren
+  ConsoleAuthedInstanceRoute: typeof ConsoleAuthedInstanceRoute
   ConsoleAuthedIndexRoute: typeof ConsoleAuthedIndexRoute
   ConsoleAuthedSignupItemsItemIdRoute: typeof ConsoleAuthedSignupItemsItemIdRoute
   ConsoleAuthedSignupItemsIndexRoute: typeof ConsoleAuthedSignupItemsIndexRoute
@@ -1896,6 +1895,7 @@ interface ConsoleAuthedRouteRouteChildren {
 const ConsoleAuthedRouteRouteChildren: ConsoleAuthedRouteRouteChildren = {
   ConsoleAuthedEnterpriseRouteRoute:
     ConsoleAuthedEnterpriseRouteRouteWithChildren,
+  ConsoleAuthedInstanceRoute: ConsoleAuthedInstanceRoute,
   ConsoleAuthedIndexRoute: ConsoleAuthedIndexRoute,
   ConsoleAuthedSignupItemsItemIdRoute: ConsoleAuthedSignupItemsItemIdRoute,
   ConsoleAuthedSignupItemsIndexRoute: ConsoleAuthedSignupItemsIndexRoute,

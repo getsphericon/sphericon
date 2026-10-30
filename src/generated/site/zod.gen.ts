@@ -176,7 +176,7 @@ export const zPermission = z.enum([
   'account_link:open',
   'workspace:delete',
   'owners:manage',
-  'instance:manage'
+  'release:read'
 ]);
 
 /**
@@ -874,24 +874,11 @@ export const zSiteInboxConfigInput = z.object({
 });
 
 /**
- * Switch the Telemetry report on or off
+ * What the Release check found (ADR 0032): the one part of the Instance's state a Workspace Owner
+ * sees. The Instance's settings are the Staff console's (ADR 0063).
  */
-export const zSiteInstanceTelemetryInput = z.object({
-  enabled: z.boolean()
-});
-
-/**
- * Why the environment, not the Owner, decides the Telemetry report
- */
-export const zSiteInstanceTelemetryLock = z.enum(['environment', 'do_not_track']);
-
-/**
- * The Telemetry report setting as it applies right now (ADR 0032)
- */
-export const zSiteInstanceTelemetry = z.object({
-  enabled: z.boolean(),
-  locked: z.boolean(),
-  lockedBy: z.exactOptional(zSiteInstanceTelemetryLock)
+export const zSiteInstanceRelease = z.object({
+  latestRelease: z.exactOptional(z.string())
 });
 
 /**
@@ -2522,18 +2509,6 @@ export const zSiteEventResource = z.object({
 });
 
 /**
- * What an Instance's Owner sees and decides about the Instance itself: it belongs to no
- * Workspace. Only the Owners of the oldest existing Workspace may read or change it.
- */
-export const zSiteInstanceState = z.object({
-  telemetry: zSiteInstanceTelemetry,
-  noticeAcknowledged: z.boolean(),
-  latestRelease: z.exactOptional(z.string()),
-  licenseExpiredAt: z.exactOptional(zTimestamp),
-  telemetrySchemaUrl: z.string()
-});
-
-/**
  * A workspace sending-provider integration
  */
 export const zSiteIntegrationResource = z.object({
@@ -3584,24 +3559,7 @@ export const zSitePublicConfirmationsPerformResponse = z.void();
 /**
  * The request has succeeded.
  */
-export const zSiteInstanceGetStateResponse = zSiteInstanceState;
-
-/**
- * The request has succeeded.
- */
-export const zSiteInstanceAcknowledgeNoticeResponse = zSiteInstanceState;
-
-export const zSiteInstanceSetTelemetryBody = zSiteInstanceTelemetryInput;
-
-/**
- * The request has succeeded.
- */
-export const zSiteInstanceSetTelemetryResponse = zSiteInstanceState;
-
-/**
- * The request has succeeded.
- */
-export const zSiteInstancePreviewTelemetryReportResponse = z.record(z.string(), z.unknown());
+export const zSiteInstanceGetReleaseResponse = zSiteInstanceRelease;
 
 export const zSitePublicInvitationsLookupPath = z.object({
   token: z.string()

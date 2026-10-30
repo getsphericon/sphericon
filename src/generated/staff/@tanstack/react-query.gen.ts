@@ -4,8 +4,8 @@
 import { queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen.ts';
-import { type Options, staffAuthLogin, staffAuthLogout, staffAuthSecondFactor, staffMeGet, staffSignupItemsArchive, staffSignupItemsCreate, staffSignupItemsGet, staffSignupItemsList, staffSignupItemsListVersions, staffSignupItemsPublish, staffSignupItemsReorder, staffSignupItemsSaveDraft, staffSignupItemsUpdate } from '../sdk.gen.ts';
-import type { StaffAuthLoginData, StaffAuthLoginError, StaffAuthLoginResponse, StaffAuthLogoutData, StaffAuthLogoutError, StaffAuthLogoutResponse, StaffAuthSecondFactorData, StaffAuthSecondFactorError, StaffAuthSecondFactorResponse, StaffMeGetData, StaffMeGetError, StaffMeGetResponse, StaffSignupItemsArchiveData, StaffSignupItemsArchiveError, StaffSignupItemsArchiveResponse, StaffSignupItemsCreateData, StaffSignupItemsCreateError, StaffSignupItemsCreateResponse, StaffSignupItemsGetData, StaffSignupItemsGetError, StaffSignupItemsGetResponse, StaffSignupItemsListData, StaffSignupItemsListError, StaffSignupItemsListResponse, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsError, StaffSignupItemsListVersionsResponse, StaffSignupItemsPublishData, StaffSignupItemsPublishError, StaffSignupItemsPublishResponse, StaffSignupItemsReorderData, StaffSignupItemsReorderError, StaffSignupItemsReorderResponse, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftError, StaffSignupItemsSaveDraftResponse, StaffSignupItemsUpdateData, StaffSignupItemsUpdateError, StaffSignupItemsUpdateResponse } from '../types.gen.ts';
+import { type Options, staffAuthLogin, staffAuthLogout, staffAuthSecondFactor, staffInstanceAcknowledgeNotice, staffInstanceGetState, staffInstancePreviewTelemetryReport, staffInstanceSetTelemetry, staffMeGet, staffSignupItemsArchive, staffSignupItemsCreate, staffSignupItemsGet, staffSignupItemsList, staffSignupItemsListVersions, staffSignupItemsPublish, staffSignupItemsReorder, staffSignupItemsSaveDraft, staffSignupItemsUpdate } from '../sdk.gen.ts';
+import type { StaffAuthLoginData, StaffAuthLoginError, StaffAuthLoginResponse, StaffAuthLogoutData, StaffAuthLogoutError, StaffAuthLogoutResponse, StaffAuthSecondFactorData, StaffAuthSecondFactorError, StaffAuthSecondFactorResponse, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeError, StaffInstanceAcknowledgeNoticeResponse, StaffInstanceGetStateData, StaffInstanceGetStateError, StaffInstanceGetStateResponse, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportError, StaffInstancePreviewTelemetryReportResponse, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryError, StaffInstanceSetTelemetryResponse, StaffMeGetData, StaffMeGetError, StaffMeGetResponse, StaffSignupItemsArchiveData, StaffSignupItemsArchiveError, StaffSignupItemsArchiveResponse, StaffSignupItemsCreateData, StaffSignupItemsCreateError, StaffSignupItemsCreateResponse, StaffSignupItemsGetData, StaffSignupItemsGetError, StaffSignupItemsGetResponse, StaffSignupItemsListData, StaffSignupItemsListError, StaffSignupItemsListResponse, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsError, StaffSignupItemsListVersionsResponse, StaffSignupItemsPublishData, StaffSignupItemsPublishError, StaffSignupItemsPublishResponse, StaffSignupItemsReorderData, StaffSignupItemsReorderError, StaffSignupItemsReorderResponse, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftError, StaffSignupItemsSaveDraftResponse, StaffSignupItemsUpdateData, StaffSignupItemsUpdateError, StaffSignupItemsUpdateResponse } from '../types.gen.ts';
 
 /**
  * Check the password. Answers a challenge (or, at first login, a TOTP enrolment)
@@ -95,6 +95,79 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
   }
   return [params];
 };
+
+export const staffInstanceGetStateQueryKey = (options?: Options<StaffInstanceGetStateData>) => createQueryKey('staffInstanceGetState', options);
+
+/**
+ * The Instance's own settings and state
+ */
+export const staffInstanceGetStateOptions = (options?: Options<StaffInstanceGetStateData>) => queryOptions<StaffInstanceGetStateResponse, StaffInstanceGetStateError, StaffInstanceGetStateResponse, ReturnType<typeof staffInstanceGetStateQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await staffInstanceGetState({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: staffInstanceGetStateQueryKey(options)
+});
+
+/**
+ * Acknowledge the one-time Telemetry report notice: the first report waits for it. The first
+ * acknowledgement stands, and a repeat changes nothing.
+ */
+export const staffInstanceAcknowledgeNoticeMutation = (options?: Partial<Options<StaffInstanceAcknowledgeNoticeData>>): UseMutationOptions<StaffInstanceAcknowledgeNoticeResponse, StaffInstanceAcknowledgeNoticeError, Options<StaffInstanceAcknowledgeNoticeData>> => {
+  const mutationOptions: UseMutationOptions<StaffInstanceAcknowledgeNoticeResponse, StaffInstanceAcknowledgeNoticeError, Options<StaffInstanceAcknowledgeNoticeData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await staffInstanceAcknowledgeNotice({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    }
+  };
+  return mutationOptions;
+};
+
+/**
+ * Switch the Telemetry report on or off. Answers 409 while the environment decides.
+ */
+export const staffInstanceSetTelemetryMutation = (options?: Partial<Options<StaffInstanceSetTelemetryData>>): UseMutationOptions<StaffInstanceSetTelemetryResponse, StaffInstanceSetTelemetryError, Options<StaffInstanceSetTelemetryData>> => {
+  const mutationOptions: UseMutationOptions<StaffInstanceSetTelemetryResponse, StaffInstanceSetTelemetryError, Options<StaffInstanceSetTelemetryData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await staffInstanceSetTelemetry({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    }
+  };
+  return mutationOptions;
+};
+
+export const staffInstancePreviewTelemetryReportQueryKey = (options?: Options<StaffInstancePreviewTelemetryReportData>) => createQueryKey('staffInstancePreviewTelemetryReport', options);
+
+/**
+ * The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the
+ * published schema describes, built by the code that sends it. Works whether or not sending is
+ * on.
+ */
+export const staffInstancePreviewTelemetryReportOptions = (options?: Options<StaffInstancePreviewTelemetryReportData>) => queryOptions<StaffInstancePreviewTelemetryReportResponse, StaffInstancePreviewTelemetryReportError, StaffInstancePreviewTelemetryReportResponse, ReturnType<typeof staffInstancePreviewTelemetryReportQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await staffInstancePreviewTelemetryReport({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: staffInstancePreviewTelemetryReportQueryKey(options)
+});
 
 export const staffMeGetQueryKey = (options?: Options<StaffMeGetData>) => createQueryKey('staffMeGet', options);
 

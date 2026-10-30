@@ -635,7 +635,8 @@ _Avoid_: Ban, lockout, disable, quota (suspension is not an entitlement state �
 
 **Staff console**:
 The Staff member's own web surface (a fourth API surface beside `/site`, `/api`, `/collect`). On
-every Instance it holds the Instance's own settings, such as its Sign-up items.
+every Instance it holds the Instance's own settings: its Sign-up items, the Telemetry report and its
+notice, and the expiry of the License key.
 With the Enterprise feature it also acts across Workspaces: it shows Workspace **metadata only**
 (identity, suspension state, deliverability rates, send volume, Audit log) — never Contacts,
 content, or Events — and offers suspend and unsuspend. Impersonation is out of scope.
@@ -1007,20 +1008,22 @@ not verify is a mistake and stops the start.
 _Avoid_: Licence, serial, activation code
 
 **Release check**:
-The Instance asking where the newest published release is, so an owner can be told one exists.
-It sends nothing about the Instance and is independent of the Telemetry report.
+The Instance asking where the newest published release is, so the owners of every Workspace and
+the Staff member can be told one exists. It sends nothing about the Instance and is independent of
+the Telemetry report.
 _Avoid_: Update ping, phone-home
 
 **Telemetry report**:
 The anonymous, exactly documented summary an Instance sends to the project: coarse facts about the
 Instance, never about a Workspace, Contact or person. On by default, switchable off by the
-Self-hoster's configuration (which then wins) or by the owner in the app. Not the Self-hoster's own
+Self-hoster's configuration (which then wins) or by a Staff member in the Staff console. The first
+one is sent only after a Staff member has acknowledged its notice there. Not the Self-hoster's own
 OpenTelemetry metrics, which go to a collector the Self-hoster chooses.
 _Avoid_: Usage ping, phone-home, analytics, tracking (that is the tracker on customer sites)
 
 **Self-hoster**:
-The person or team that runs an Instance on their own infrastructure. The app knows no such
-identity, only Users; the owner of the Instance's first Workspace may or may not be the Self-hoster.
+The person or team that runs an Instance on their own infrastructure. The app knows them as its
+Staff member, once one is created; a Workspace's owner may or may not be the Self-hoster.
 _Avoid_: Operator (the former name of a platform Staff member), system administrator, sysadmin,
 admin (that is a Workspace Role)
 

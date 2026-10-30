@@ -30,6 +30,32 @@ type Handler interface {
 	//
 	// POST /auth/second-factor
 	StaffAuthSecondFactor(ctx context.Context, req *StaffSecondFactorInput) (StaffAuthSecondFactorRes, error)
+	// StaffInstanceAcknowledgeNotice implements StaffInstance_acknowledgeNotice operation.
+	//
+	// Acknowledge the one-time Telemetry report notice: the first report waits for it. The first
+	// acknowledgement stands, and a repeat changes nothing.
+	//
+	// POST /instance/notice/acknowledge
+	StaffInstanceAcknowledgeNotice(ctx context.Context) (StaffInstanceAcknowledgeNoticeRes, error)
+	// StaffInstanceGetState implements StaffInstance_getState operation.
+	//
+	// The Instance's own settings and state.
+	//
+	// GET /instance
+	StaffInstanceGetState(ctx context.Context) (StaffInstanceGetStateRes, error)
+	// StaffInstancePreviewTelemetryReport implements StaffInstance_previewTelemetryReport operation.
+	//
+	// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
+	// schema describes, built by the code that sends it. Works whether or not sending is on.
+	//
+	// GET /instance/telemetry/preview
+	StaffInstancePreviewTelemetryReport(ctx context.Context) (StaffInstancePreviewTelemetryReportRes, error)
+	// StaffInstanceSetTelemetry implements StaffInstance_setTelemetry operation.
+	//
+	// Switch the Telemetry report on or off. Answers 409 while the environment decides.
+	//
+	// PUT /instance/telemetry
+	StaffInstanceSetTelemetry(ctx context.Context, req *StaffInstanceTelemetryInput) (StaffInstanceSetTelemetryRes, error)
 	// StaffMeGet implements StaffMe_get operation.
 	//
 	// The authenticated Staff member.

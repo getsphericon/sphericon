@@ -2619,7 +2619,7 @@ export const Permission = {
   ACCOUNT_LINK_OPEN: 'account_link:open',
   WORKSPACE_DELETE: 'workspace:delete',
   OWNERS_MANAGE: 'owners:manage',
-  INSTANCE_MANAGE: 'instance:manage'
+  RELEASE_READ: 'release:read'
 } as const;
 
 /**

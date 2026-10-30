@@ -6,8 +6,6 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AppNavbar } from '../components/AppNavbar.tsx'
-import { InstanceNotice } from '../components/InstanceNotice.tsx'
-import { LicenseBanner } from '../components/LicenseBanner.tsx'
 import { SecondFactorBlocked, SecondFactorGraceBanner } from '../components/SecondFactorNotice.tsx'
 import { SettingsNavbar } from '../components/SettingsNavbar.tsx'
 import { UpdateBanner } from '../components/UpdateBanner.tsx'
@@ -206,9 +204,7 @@ export function WorkspaceLayout() {
       }
       banner={
         <>
-          <LicenseBanner />
           <UpdateBanner />
-          <InstanceNotice />
           {current?.suspendedAt ? (
             <SuspensionBanner
               reason={current.suspensionReason}
