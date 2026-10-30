@@ -46,7 +46,11 @@ const workspace = (permissions: Permission[]) => ({
 })
 
 beforeEach(() => {
-  worker.use(handleSiteWorkspacesList({ body: [workspace(['webhooks:manage', 'contacts:erase'])] }))
+  worker.use(
+    handleSiteWorkspacesList({
+      body: [workspace(['audit:read', 'webhooks:manage', 'contacts:erase'])],
+    }),
+  )
 })
 
 test.each(LINKS)('%s links to its workspace-scoped route', async (label, target) => {
@@ -71,7 +75,7 @@ test('General is not current on a page under settings', async () => {
     .not.toHaveAttribute('aria-current')
 })
 
-test('without their Permissions Webhooks and Privacy requests are not offered', async () => {
+test('without their Permissions the Audit log, Webhooks and Privacy requests are not offered', async () => {
   worker.use(handleSiteWorkspacesList({ body: [workspace([])] }))
 
   const { screen } = await renderWithRouter(<SettingsNavbar workspaceId="AcmeWs01" />)
@@ -79,6 +83,9 @@ test('without their Permissions Webhooks and Privacy requests are not offered', 
   await expect
     .element(screen.getByRole('link', { name: 'General', exact: true }))
     .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Audit log', exact: true }))
+    .not.toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: 'Webhooks', exact: true }))
     .not.toBeInTheDocument()

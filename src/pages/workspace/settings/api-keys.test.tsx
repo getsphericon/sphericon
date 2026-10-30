@@ -22,7 +22,7 @@ const workspace = {
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
-  permissions: [],
+  permissions: ['tokens:manage' as const],
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],

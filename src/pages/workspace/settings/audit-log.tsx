@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next'
 
 import { Route as auditLogRoute } from '../../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import type { AuditFilter } from '../../../utils/auditFilter.ts'
+import { can } from '../../../utils/permissions.ts'
 import { AuditLogSection } from '../AuditLogSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
+// The log is read with audit:read, so anyone without it sees the title and no section; its
+// retention is set with audit:configure.
 export function AuditLogPage() {
   const { t } = useTranslation()
   const { workspaceId } = auditLogRoute.useParams()
@@ -17,13 +20,16 @@ export function AuditLogPage() {
 
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.auditLog)}>
-      {(workspace) => (
-        <AuditLogSection
-          workspaceId={workspace.id}
-          filter={auditFilter}
-          onFilterChange={setAuditFilter}
-        />
-      )}
+      {(workspace) =>
+        can(workspace, 'audit:read') ? (
+          <AuditLogSection
+            workspaceId={workspace.id}
+            filter={auditFilter}
+            onFilterChange={setAuditFilter}
+            canConfigureRetention={can(workspace, 'audit:configure')}
+          />
+        ) : null
+      }
     </SettingsFrame>
   )
 }

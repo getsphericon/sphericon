@@ -26,11 +26,13 @@ import {
   siteSuppressionsDeleteMutation,
   siteSuppressionsListOptions,
   siteSuppressionsListQueryKey,
+  siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSuppressionReason } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
+import { can } from '../../utils/permissions.ts'
 
 const REASON_COLORS: Record<SiteSuppressionReason, string> = {
   bounce: 'orange',
@@ -46,7 +48,8 @@ const PAGE_SIZE = 20
 // complaints land here automatically; destinations can also be added manually.
 // The send path skips every active destination listed here; a lifted one stays as a record
 // and is shown on request. (Unsubscribes are a
-// separate, per-source opt-out, not a suppression.)
+// separate, per-source opt-out, not a suppression.) Every member reads the list; adding and
+// lifting are offered only with suppressions:manage, as the API refuses everyone else.
 export function SuppressionsListPage() {
   const { t } = useTranslation()
   const { workspaceId } = suppressionsRoute.useParams()
@@ -54,6 +57,11 @@ export function SuppressionsListPage() {
   const [page, pageHandlers] = useCounter(1, { min: 1 })
   const [lifted, setLifted] = useState(false)
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
+  const workspaces = useQuery(siteWorkspacesListOptions())
+  const canManage = can(
+    workspaces.data?.find((w) => w.id === workspaceId),
+    'suppressions:manage',
+  )
 
   const queryKey = siteSuppressionsListQueryKey({ path: { workspaceId } })
   const suppressionsQuery = useQuery(
@@ -97,9 +105,11 @@ export function SuppressionsListPage() {
     <Box>
       <Group justify="space-between" mb="sm">
         <Title order={2}>{t(($) => $.suppressions.title)}</Title>
-        <Button size="xs" onClick={openCreate}>
-          {t(($) => $.suppressions.create)}
-        </Button>
+        {canManage ? (
+          <Button size="xs" onClick={openCreate}>
+            {t(($) => $.suppressions.create)}
+          </Button>
+        ) : null}
       </Group>
 
       <Switch
@@ -144,7 +154,7 @@ export function SuppressionsListPage() {
                 <Badge variant="light" color="gray">
                   {t(($) => $.suppressions.liftedBadge)}
                 </Badge>
-              ) : (
+              ) : canManage ? (
                 <Group justify="flex-end">
                   <RowActionsMenu>
                     <Menu.Item onClick={() => onLift(record.id)}>
@@ -152,7 +162,7 @@ export function SuppressionsListPage() {
                     </Menu.Item>
                   </RowActionsMenu>
                 </Group>
-              ),
+              ) : null,
           },
         ]}
         emptyState={<EmptyState title={t(($) => $.suppressions.empty)} />}
