@@ -10,6 +10,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
@@ -59,7 +60,7 @@ func NotifySecondFactorRequired(ctx context.Context, client *ent.Client, sender 
 	}
 	var errs []error
 	for _, m := range members {
-		deadline, ok := secondfactor.Deadline(m)
+		deadline, ok := accounts.SecondFactorDeadline(m)
 		if !ok {
 			continue
 		}

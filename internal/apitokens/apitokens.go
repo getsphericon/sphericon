@@ -60,8 +60,8 @@ type Minted struct {
 }
 
 // Mint creates a token with any scope of the vocabulary. The caller has already
-// been authorized to hold that power: an owner/admin on /site, or the bootstrap
-// secret. A token minting another token goes through MintWithin.
+// been authorized to hold that power: a Membership whose Role holds tokens:manage on /site,
+// or the bootstrap secret. A token minting another token goes through MintWithin.
 func Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
 	name := strings.TrimSpace(in.Name)
 	if name == "" {

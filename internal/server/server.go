@@ -77,7 +77,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		apiauth.NewSiteSecurityHandler(cfg.JWTSecret, client, site.Clock, cfg.JWTVerifySecrets()...),
 		siteapi.WithPathPrefix("/site"),
 		siteapi.WithMiddleware(siteHandlers.Access),
-		siteapi.WithErrorHandler(problemErrorHandler),
+		siteapi.WithErrorHandler(ProblemErrorHandler),
 	)
 	if err != nil {
 		return nil, err
@@ -177,7 +177,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 // clock.
 func ExternalSecurity(client *ent.Client, deps apiexternal.Deps) *apiauth.ExternalSecurityHandler {
 	return apiauth.NewExternalSecurityHandler(apiauth.ExternalSecurityDeps{
-		Ent: client, Bus: deps.Bus, ConsentRecords: deps.ConsentRecords, Clock: deps.Clock,
+		Ent: client, Bus: deps.Bus, Accounts: deps.Accounts, Clock: deps.Clock,
 	})
 }
 
@@ -188,7 +188,7 @@ func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, er
 		apiexternal.NewHandlers(deps),
 		ExternalSecurity(client, deps),
 		externalapi.WithPathPrefix("/api"),
-		externalapi.WithErrorHandler(problemErrorHandler),
+		externalapi.WithErrorHandler(ProblemErrorHandler),
 	)
 }
 
@@ -214,13 +214,13 @@ func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, sectio
 	}
 	rest := http.NotFoundHandler()
 	if sections != nil {
-		h, err := sections.Server(staffeeapi.WithErrorHandler(problemErrorHandler))
+		h, err := sections.Server(staffeeapi.WithErrorHandler(ProblemErrorHandler))
 		if err != nil {
 			return nil, err
 		}
 		rest = h
 	}
-	return core.Server(staffapi.WithErrorHandler(problemErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
+	return core.Server(staffapi.WithErrorHandler(ProblemErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
 }
 
 // ServiceSurface is the service endpoints of the Staff surface (ee/staff), built
@@ -239,7 +239,7 @@ func NewInternal(cfg *config.Config, client *ent.Client, surface ServiceSurface)
 	mux := http.NewServeMux()
 	mux.Handle("GET "+paths.TLSAsk, tlsAskHandler(client))
 	if surface != nil {
-		srv, err := surface.Server(serviceapi.WithErrorHandler(problemErrorHandler))
+		srv, err := surface.Server(serviceapi.WithErrorHandler(ProblemErrorHandler))
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +256,7 @@ const collectRetryAfter = "5"
 // renderRetryAfter is the Retry-After (seconds) of a 503 for a document render that could not run.
 const renderRetryAfter = "5"
 
-// collectErrorHandler is problemErrorHandler for /collect, which also tells its client
+// collectErrorHandler is ProblemErrorHandler for /collect, which also tells its client
 // to retry: a database that cannot be reached is a 503 with Retry-After, because a
 // retried event is counted once (clientEventId) and a client can send it again safely.
 func collectErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
@@ -265,22 +265,23 @@ func collectErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Req
 		writeProblem(w, http.StatusServiceUnavailable, "database unavailable, retry later")
 		return
 	}
-	problemErrorHandler(ctx, w, r, err)
+	ProblemErrorHandler(ctx, w, r, err)
 }
 
-// problemErrorHandler renders ogen errors as RFC 7807 application/problem+json.
+// ProblemErrorHandler renders ogen errors as RFC 7807 application/problem+json, on every ogen
+// surface and for the refusals of /mcp's own token check.
 // A reference id from another Workspace (the scoped client's ErrNotInWorkspace,
 // ADR 0017) and a value an ent validator refuses are client errors, so they are a 422 and never
 // a 500.
-func problemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+func ProblemErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
 	// A rate limit rejection already set its headers on the shared writer and was
 	// counted and logged where it was decided (ratelimit.LimitedError).
 	if _, ok := errors.AsType[*ratelimit.LimitedError](err); ok {
 		ratelimit.WriteProblem(w)
 		return
 	}
-	// A handler error that knows its own problem (the site's
-	// second_factor_required, ADR 0020) is rendered as it says.
+	// A handler error that knows its own problem (a token without a scope) is rendered as it
+	// says.
 	if known, ok := errors.AsType[problemError](err); ok {
 		status, code, detail := known.Problem()
 		logging.FromContext(ctx).WarnContext(ctx, "request refused", "method", r.Method, "path", loggedPath(r.URL.Path), "status", status, "code", code, "detail", detail)
@@ -456,7 +457,7 @@ func isCollectPath(path string) bool { return strings.HasPrefix(path, collectPre
 
 // bodyLimit caps every request body before a handler or the ogen decoder reads it:
 // collect gets its own (smaller) caps (a batch of events, or a single event), everything else the default. An oversized
-// body surfaces as *http.MaxBytesError, which problemErrorHandler renders as 413.
+// body surfaces as *http.MaxBytesError, which ProblemErrorHandler renders as 413.
 func bodyLimit(limits config.BodyLimits) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
@@ -55,7 +54,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	r.AccountLinkAvailable = h.accountLink != nil && slices.Contains(held, accounts.PermAccountLinkOpen)
 	// A strong session (a Passkey login or a Second factor step) meets the requirement, so it has
 	// no grace to count down: this is the decision secondfactor.Withheld makes.
-	if end, ok := secondfactor.Deadline(m); ok && !currentSession(ctx).Method.Strong() {
+	if end, ok := accounts.SecondFactorDeadline(m); ok && !currentSession(ctx).Method.Strong() {
 		r.SecondFactorGraceEndsAt = siteapi.NewOptNilTimestamp(siteapi.Timestamp(end))
 	}
 	standing, err := h.holds.Standing(ctx, s)

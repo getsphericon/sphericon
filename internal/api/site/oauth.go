@@ -9,6 +9,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 )
 
@@ -46,10 +47,23 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 // tied to the User's Membership of the chosen Workspace (ADR 0061), so any member may approve,
 // but only scopes their Role may grant: oauthserver.Decide refuses the rest with the Permission's
 // refusal (403 permission_required). The Workspace is named in the body, not the path, so Access
-// does not resolve it: the handler loads the Membership itself, under the Two-factor requirement
-// like any operation of a Workspace.
+// does not resolve it: the handler loads the Membership itself and admits it as Access admits
+// the Membership of any operation of a Workspace.
 func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDecisionInput) (siteapi.SiteOAuthDecideRes, error) {
-	_, m, err := h.member(ctx, string(req.WorkspaceId), false)
+	session := auth.GetSiteAuth(ctx)
+	if session == nil {
+		return nil, accounts.ErrWorkspaceNotFound
+	}
+	_, m, err := h.accounts.Scope(ctx, session.UserID, string(req.WorkspaceId))
+	if err != nil {
+		return nil, err
+	}
+	err = h.accounts.Admit(ctx, accounts.Admission{
+		UserID:        session.UserID,
+		Membership:    m,
+		StrongSession: currentSession(ctx).Method.Strong(),
+		At:            h.now(),
+	})
 	if err != nil {
 		return nil, err
 	}

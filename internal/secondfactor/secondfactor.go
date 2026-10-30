@@ -90,12 +90,6 @@ func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, now func()
 	return &Module{ent: client, bus: bus, cipher: cipher, now: now}
 }
 
-// Active reports whether the User has a confirmed Second factor. A pending
-// enrollment is not one.
-func Active(u *ent.User) bool {
-	return u.SecondFactorConfirmedAt != nil && u.SecondFactorSecretEncrypted != ""
-}
-
 // Status is what the User may know about their Second factor.
 type Status struct {
 	Enabled                bool
@@ -109,7 +103,7 @@ func (m *Module) Status(ctx context.Context, userID int64) (Status, error) {
 	if err != nil {
 		return Status{}, err
 	}
-	if !Active(u) {
+	if !accounts.HasSecondFactor(u) {
 		return Status{Pending: u.SecondFactorSecretEncrypted != ""}, nil
 	}
 	n, err := unusedRecoveryCodes(ctx, m.ent, userID)
@@ -134,7 +128,7 @@ func (m *Module) StartEnrollment(ctx context.Context, userID int64) (*Enrollment
 	if err != nil {
 		return nil, err
 	}
-	if Active(u) {
+	if accounts.HasSecondFactor(u) {
 		return nil, ErrAlreadyActive
 	}
 	key, err := otpcode.New(Issuer, u.Email)
@@ -170,7 +164,7 @@ func (m *Module) ConfirmEnrollment(ctx context.Context, userID int64, code strin
 		if err != nil {
 			return err
 		}
-		if Active(u) {
+		if accounts.HasSecondFactor(u) {
 			return ErrAlreadyActive
 		}
 		if u.SecondFactorSecretEncrypted == "" {
@@ -208,7 +202,7 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, userID int64) (*en
 		if err != nil {
 			return err
 		}
-		if !Active(u) {
+		if !accounts.HasSecondFactor(u) {
 			return ErrNotActive
 		}
 		if codes, err = replaceRecoveryCodes(ctx, tx, userID); err != nil {
@@ -238,7 +232,7 @@ func (m *Module) Disable(ctx context.Context, userID int64, code string) (*ent.U
 		if err != nil {
 			return err
 		}
-		if !Active(u) {
+		if !accounts.HasSecondFactor(u) {
 			return ErrNotActive
 		}
 		if _, err := m.verify(ctx, tx, pub, u, code); err != nil {
@@ -271,7 +265,7 @@ func (m *Module) Verify(ctx context.Context, userID int64, binding, code string)
 		if err != nil {
 			return err
 		}
-		if !Active(u) {
+		if !accounts.HasSecondFactor(u) {
 			return ErrNotActive
 		}
 		current, err := challengeBinding(ctx, tx, u)
@@ -293,7 +287,7 @@ func (m *Module) Verify(ctx context.Context, userID int64, binding, code string)
 // transaction commits. The caller holds u's row locked. ErrNotActive without a Second
 // factor, ErrInvalidCode on a wrong code.
 func (m *Module) VerifyIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, code string) (Method, error) {
-	if !Active(u) {
+	if !accounts.HasSecondFactor(u) {
 		return "", ErrNotActive
 	}
 	return m.verify(ctx, tx, pub, u, code)
@@ -304,7 +298,7 @@ func (m *Module) VerifyIn(ctx context.Context, tx *ent.Client, pub events.Publis
 // code is spent only if the deletion commits; without one it confirms nothing.
 func (m *Module) DeletionCode(code string) accounts.DeleteConfirm {
 	return func(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User) error {
-		if !Active(locked) {
+		if !accounts.HasSecondFactor(locked) {
 			return nil
 		}
 		_, err := m.VerifyIn(ctx, tx, pub, locked, code)
@@ -324,7 +318,7 @@ func (m *Module) DeletionCode(code string) accounts.DeleteConfirm {
 // under a lock, so two racing second steps cannot both use it. ErrNotActive
 // without a Second factor.
 func (m *Module) ChallengeBinding(ctx context.Context, u *ent.User) (string, error) {
-	if !Active(u) {
+	if !accounts.HasSecondFactor(u) {
 		return "", ErrNotActive
 	}
 	return challengeBinding(ctx, m.ent, u)
@@ -375,7 +369,7 @@ func (m *Module) reset(ctx context.Context, userID int64, record func(events.Pub
 		if err != nil {
 			return err
 		}
-		if !Active(u) && !held {
+		if !accounts.HasSecondFactor(u) && !held {
 			return ErrNothingToReset
 		}
 		if _, err := tx.Passkey.Delete().Where(passkey.UserID(userID)).Exec(ctx); err != nil {

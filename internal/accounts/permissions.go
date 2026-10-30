@@ -80,6 +80,36 @@ func Require(role membership.Role, p Permission) error {
 	return g.refusal
 }
 
+// GrantRequires names, for each of scopes that needs one, the Permission a User must hold to grant
+// it (GrantPermissions, declared on each grantable scope in the contract): what the consent screen
+// shows beside a scope.
+func GrantRequires(scopes []string) map[string]Permission {
+	needed := map[string]Permission{}
+	for _, scope := range scopes {
+		if p, ok := GrantPermissions[scope]; ok {
+			needed[scope] = p
+		}
+	}
+	return needed
+}
+
+// MayGrant is nil when role holds the Permission granting each of scopes needs, and otherwise the
+// refusal of the first Permission it lacks, in the order of scopes (ADR 0061). It bounds what a
+// User grants a Connection when they approve it, and what the Connection may still do on each
+// request after the User's Role changed.
+func MayGrant(role membership.Role, scopes []string) error {
+	for _, scope := range scopes {
+		p, ok := GrantPermissions[scope]
+		if !ok {
+			continue
+		}
+		if err := Require(role, p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // errPermissionUnknown refuses a Permission outside the table, which no Role holds.
 var errPermissionUnknown = validation.Forbidden("accounts: the permission is unknown", "errors.permission.unknown")
 
