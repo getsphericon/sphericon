@@ -10,6 +10,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # The scip indexers serve easement alone (the arch job). On a mise cache miss, `go install` of
+  # scip-go fills the Go module cache with read-only files before go-cache restores it, tar cannot
+  # overwrite them and the module cache restore is dropped.
+  MISE_DISABLE_TOOLS: go:github.com/scip-code/scip-go/cmd/scip-go,npm:@sourcegraph/scip-typescript
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -88,6 +94,9 @@ jobs:
   arch:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # easement needs scip-go on PATH even when every index is cached.
+    env:
+      MISE_DISABLE_TOOLS: ''
 
     steps:
       - name: Checkout repository
