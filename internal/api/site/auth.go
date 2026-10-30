@@ -10,8 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/authtoken"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signup"
@@ -34,7 +32,7 @@ func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpIn
 	case signup.Accepted:
 		accepted := &siteapi.SiteAuthSignUpAccepted{}
 		if res.Browser != "" {
-			accepted.SetCookie = siteapi.NewOptString(h.sessions.SignUpBrowser(res.Browser, verifyTokenTTL).String())
+			accepted.SetCookie = siteapi.NewOptString(h.sessions.SignUpBrowser(res.Browser, accounts.VerificationLinkTTL).String())
 		}
 		return accepted, nil
 	}
@@ -86,13 +84,11 @@ type signUpMail struct {
 // newSignUp builds the signup module over the site's adapter (ADR 0030, 0031).
 func (h *Handlers) newSignUp() *signup.Module {
 	return signup.New(signup.Config{
-		Store:     signUpStore{h.accounts},
-		Budget:    h.attempts.For(accounts.KindSignUp),
-		Passwords: h.passwords,
-		Mail:      signUpMail{h.sysmail, h.welcome},
-		Mint: func(u *ent.User, browserHash string) (string, error) {
-			return h.tokens.Mint(authtoken.PurposeEmailVerify, u.ID, u.PasswordHash, verifyTokenTTL, auth.VerifyClaims(u.Email, browserHash))
-		},
+		Store:               signUpStore{h.accounts},
+		Budget:              h.attempts.For(accounts.KindSignUp),
+		Passwords:           h.passwords,
+		Mail:                signUpMail{h.sysmail, h.welcome},
+		Mint:                h.links.VerificationLink,
 		RequireVerification: h.requireVerification,
 		SurveyDue:           h.signupSurvey.Enabled,
 	})
@@ -136,21 +132,18 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, err
 	}
-	// The same binding as at Sign-up: the link works until the password is replaced
-	// or the address verified. It carries the hash of the Sign-up browser cookie the request
-	// holds, none otherwise (then the link asks for a password); every request hashes the
-	// same way, so a cookie changes no timing.
-	var uid int64
-	var binding string
-	to := email
-	if u != nil {
-		uid, binding, to = u.ID, u.PasswordHash, u.Email
-	}
+	// The same link as at Sign-up: it works until the password is replaced or the address
+	// verified. It carries the hash of the Sign-up browser cookie the request holds, none
+	// otherwise (then the link asks for a password); every request hashes the same way, so a
+	// cookie changes no timing. An unknown address gets a throwaway link over the same work.
 	// The cookie is SameSite=Strict: the browser withholds it on the cross-site click from
 	// the mail, but sends it on the page's own request that follows (same site), which is
 	// the one that carries the token.
-	claims := auth.VerifyClaims(to, signup.BrowserHash(params.SIGNUPBROWSER.Or("")))
-	token, err := h.tokens.Mint(authtoken.PurposeEmailVerify, uid, binding, verifyTokenTTL, claims)
+	to := email
+	if u != nil {
+		to = u.Email
+	}
+	token, err := h.links.VerificationLink(u, signup.BrowserHash(params.SIGNUPBROWSER.Or("")))
 	if err != nil {
 		return nil, err
 	}

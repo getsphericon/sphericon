@@ -2,11 +2,8 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -37,12 +34,6 @@ func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.Site
 	s := workspaceScope(ctx)
 
 	created, err := suppression.AddManual(ctx, s, req.Destination)
-	if errors.Is(err, suppression.ErrDestinationEmpty) {
-		v := siteapi.SiteSuppressionsCreateUnprocessableEntity(problemWithErrors(http.StatusUnprocessableEntity, i18n.T("errors.destination_invalid", nil), map[string][]string{
-			"destination": {i18n.T("errors.must_not_be_empty", nil)},
-		}))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +45,7 @@ func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.Si
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := suppression.Remove(ctx, s, id)
-	if errors.Is(err, suppression.ErrNotFound) {
-		v := siteapi.SiteSuppressionsDeleteNotFound(problem(http.StatusNotFound, "suppression not found"))
-		return &v, nil
-	}
-	if err != nil {
+	if err := suppression.Remove(ctx, s, id); err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteSuppressionsDeleteNoContent{}, nil

@@ -8,6 +8,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -19,8 +20,10 @@ import (
 // The refusals every surface answers alike (review rule 15): a handler returns the module's error
 // and refusalProblem turns it into the problem, so no handler maps them itself. The core error
 // types know nothing of HTTP; this is where they meet a status. A module's sentinel refusal
-// (validation.RefusalError) carries its kind, and the kind decides the status: not found 404,
-// refused 422, conflict 409, forbidden 403 with code permission_required. The bodies are the problem models
+// (validation.RefusalError) carries its kind, and the kind decides the status and the code: not
+// found 404, refused 422, conflict 409, forbidden 403 with code permission_required, unauthorized
+// 401, denied 403, unverified 403 with code email_verification_required, an invalid link 400 and
+// incomplete 428. The bodies are the problem models
 // of typespec/common, which every contract shares, so the site's generated types encode them for
 // every surface.
 
@@ -54,6 +57,11 @@ func refusalProblem(err error) (refusal, bool) {
 	if used, ok := errors.AsType[*inuse.Error](err); ok {
 		return refusal{status: http.StatusConflict, body: inUseBody(used)}, true
 	}
+	// A refused User deletion: its answer always lists the Workspaces the User solely owns.
+	if refused, ok := errors.AsType[*accounts.DeletionRefusedError](err); ok {
+		status := kindStatus(refused.Reason.Kind())
+		return refusal{status: status, body: deletionBody(status, refused)}, true
+	}
 	if form, ok := errors.AsType[*validation.FieldsError](err); ok {
 		p := problemBody(http.StatusUnprocessableEntity, form.Detail())
 		p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors(form.Fields))
@@ -67,9 +75,8 @@ func refusalProblem(err error) (refusal, bool) {
 	if refused, ok := errors.AsType[*validation.RefusalError](err); ok {
 		status := kindStatus(refused.Kind())
 		p := fieldBody(status, refused.Field(), validation.Message(err))
-		if refused.Kind() == validation.KindForbidden {
-			// A Role without the Permission: the client tells it from the other 403s by its code.
-			p.Code = siteapi.NewOptProblemCode(siteapi.ProblemCodePermissionRequired)
+		if code, ok := kindCode(refused.Kind()); ok {
+			p.Code = siteapi.NewOptProblemCode(code)
 		}
 		return refusal{status: status, body: p}, true
 	}
@@ -89,10 +96,31 @@ func kindStatus(kind validation.Kind) int {
 		return http.StatusConflict
 	case validation.KindForbidden:
 		return http.StatusForbidden
+	case validation.KindUnauthorized:
+		return http.StatusUnauthorized
+	case validation.KindDenied, validation.KindUnverified:
+		return http.StatusForbidden
+	case validation.KindLinkInvalid:
+		return http.StatusBadRequest
+	case validation.KindIncomplete:
+		return http.StatusPreconditionRequired
 	case validation.KindRefused:
 		return http.StatusUnprocessableEntity
 	}
 	return http.StatusUnprocessableEntity
+}
+
+// kindCode is the problem code a refusal of kind carries, by which the client tells it from the
+// other answers of its status: a Role without the Permission, and an address not proven yet.
+func kindCode(kind validation.Kind) (siteapi.ProblemCode, bool) {
+	switch kind {
+	case validation.KindForbidden:
+		return siteapi.ProblemCodePermissionRequired, true
+	case validation.KindUnverified:
+		return siteapi.ProblemCodeEmailVerificationRequired, true
+	default:
+		return "", false
+	}
 }
 
 // fieldBody is the problem of a refusal that names the request field it is about, or the plain
@@ -112,6 +140,25 @@ func problemBody(status int, detail string) *siteapi.ProblemDetails {
 		Title:  siteapi.NewOptString(http.StatusText(status)),
 		Detail: siteapi.NewOptString(detail),
 	}
+}
+
+// deletionBody is the contract's SiteDeleteUserProblemDetails of a refused User deletion (ADR
+// 0050): the rule's message, the field it is about, and the Workspaces the User solely owns
+// (none for every rule but the sole Owner's).
+func deletionBody(status int, e *accounts.DeletionRefusedError) *siteapi.SiteDeleteUserProblemDetails {
+	base := fieldBody(status, e.Reason.Field(), e.Reason.Message())
+	p := &siteapi.SiteDeleteUserProblemDetails{
+		Status: base.Status,
+		Title:  base.Title,
+		Detail: base.Detail,
+		Workspaces: lo.Map(e.Workspaces, func(w *ent.Workspace, _ int) siteapi.SiteSoleOwnedWorkspace {
+			return siteapi.SiteSoleOwnedWorkspace{ID: siteapi.WorkspaceId(w.PublicID), Name: w.Name}
+		}),
+	}
+	if errs, ok := base.Errors.Get(); ok {
+		p.Errors = siteapi.NewOptSiteDeleteUserProblemDetailsErrors(siteapi.SiteDeleteUserProblemDetailsErrors(errs))
+	}
+	return p
 }
 
 // inUseBody is the contract's InUseProblemDetails of a removal refused because live work uses

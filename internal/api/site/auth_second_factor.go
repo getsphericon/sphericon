@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
@@ -66,12 +64,6 @@ func (h *Handlers) SiteAuthSecondFactor(ctx context.Context, req *siteapi.SiteLo
 	switch res.Outcome {
 	case login.SecondThrottled:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
-	case login.SecondInvalidChallenge:
-		v := problem(http.StatusUnauthorized, i18n.T("errors.login_challenge_invalid", nil))
-		return &v, nil
-	case login.SecondInvalidCode:
-		v := problem(http.StatusUnauthorized, i18n.T("errors.second_factor_code_invalid", nil))
-		return &v, nil
 	case login.SecondAuthenticated:
 		cookie, err := h.issueSession(ctx, res.Principal, res.Method, auth.Session{Method: auth.MethodSecondFactor, ProviderLoginAt: res.ProviderLoginAt})
 		if err != nil {

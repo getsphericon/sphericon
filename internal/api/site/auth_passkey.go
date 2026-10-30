@@ -3,13 +3,11 @@ package site
 import (
 	"context"
 	"errors"
-	"net/http"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
@@ -50,9 +48,6 @@ func (h *Handlers) SitePasskeyLoginFinish(ctx context.Context, req *siteapi.Site
 	switch res.Outcome {
 	case login.PasskeyThrottled:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
-	case login.PasskeyFailed:
-		v := problem(http.StatusUnauthorized, i18n.T("errors.passkey_login_failed", nil))
-		return &v, nil
 	case login.PasskeyAuthenticated:
 		cookie, err := h.issueSession(ctx, res.Principal, accounts.LoginPasskey, auth.Session{Method: auth.MethodPasskey, PasskeyCheckAt: h.now()})
 		if err != nil {
@@ -82,7 +77,7 @@ func (h *Handlers) findPasskeyLogin(ctx context.Context, a login.PasskeyAssertio
 // verifyPasskeyLogin is the site's PasskeyVerify for the login module.
 func (h *Handlers) verifyPasskeyLogin(ctx context.Context, p login.Pending[*ent.User], a login.PasskeyAssertion) error {
 	err := h.passkeys.FinishLogin(ctx, p.Principal, a.Ceremony, a.Response)
-	if isCeremonyFailure(err) || errors.Is(err, secondfactor.ErrPasskeysUnavailable) {
+	if secondfactor.CeremonyFailed(err) || errors.Is(err, secondfactor.ErrPasskeysUnavailable) {
 		return login.ErrPasskeyInvalid
 	}
 	return err

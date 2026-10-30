@@ -23,6 +23,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Reason is why a provider sign-in did not start a session. Its values are the
@@ -260,20 +261,23 @@ func (p *Providers) find(name string) *provider {
 // Has reports whether the provider is enabled.
 func (p *Providers) Has(name string) bool { return p.find(name) != nil }
 
+// ErrProviderUnknown is a Sign-in provider the Instance does not offer.
+var ErrProviderUnknown = validation.NotFound("signin: the provider is not enabled", "errors.signin_provider_unknown")
+
 // Start draws a flow for the provider and returns the URL to send the browser to. The flow
 // (state, PKCE verifier, nonce) is the caller's to keep until the callback; returnTo is
-// carried in it untouched.
-func (p *Providers) Start(name, returnTo string) (authURL string, flow Flow, ok bool) {
+// carried in it untouched. ErrProviderUnknown for a provider the Instance does not offer.
+func (p *Providers) Start(name, returnTo string) (authURL string, flow Flow, err error) {
 	l := p.find(name)
 	if l == nil {
-		return "", Flow{}, false
+		return "", Flow{}, ErrProviderUnknown
 	}
 	flow = Flow{Provider: name, State: rand.Text(), Verifier: oauth2.GenerateVerifier(), Nonce: rand.Text(), ReturnTo: returnTo}
 	opts := []oauth2.AuthCodeOption{oauth2.S256ChallengeOption(flow.Verifier)}
 	if l.verifier != nil {
 		opts = append(opts, oidc.Nonce(flow.Nonce))
 	}
-	return l.oauth.AuthCodeURL(flow.State, opts...), flow, true
+	return l.oauth.AuthCodeURL(flow.State, opts...), flow, nil
 }
 
 // ErrProvider is a failure of the provider's answer: a code it refused, a token that did not

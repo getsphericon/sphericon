@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.
@@ -109,14 +108,6 @@ func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params 
 	}
 
 	err = h.secondFactor.Reset(ctx, target.UserID, h.actor(ctx), s.WorkspaceID())
-	if errors.Is(err, secondfactor.ErrNotActive) {
-		v := siteapi.SiteMembershipsResetSecondFactorUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			"the member has no second factor or passkey",
-			map[string][]string{"member": {i18n.T("errors.second_factor_not_active", nil)}},
-		))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

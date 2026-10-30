@@ -11,7 +11,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
@@ -22,8 +21,10 @@ import (
 // even for a correct password, else guessing until one attempt succeeds would skip
 // the delay. An unknown email, a wrong password and a User without a password all
 // answer the same 401, after the same password hash work, and all count as a
-// failure of the address. A success resets the counter, sets the session cookie and
-// is recorded as `user.login` in each of the User's Workspaces (ADR 0022).
+// failure of the address. An Unverified User is refused by the gate (ADR 0030, unless the
+// install turned it off) with no session, no challenge and nothing counted. The refusals are
+// the login module's errors. A success resets the counter, sets the session cookie and is
+// recorded as `user.login` in each of the User's Workspaces (ADR 0022).
 //
 // A User with an active Second factor gets a challenge instead of the cookie, and
 // the counter is not reset: only the second step resets it, else knowing the
@@ -36,19 +37,6 @@ func (h *Handlers) SiteAuthLogin(ctx context.Context, req *siteapi.SiteLoginInpu
 	switch res.Outcome {
 	case login.Throttled:
 		return nil, ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
-	case login.Gated:
-		// The gate (ADR 0030, unless the install turned it off): an Unverified User gets
-		// no session and no challenge, and the throttle does not count it.
-		v := siteapi.SiteAuthLoginForbidden(siteapi.ProblemDetails{
-			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),
-			Status: siteapi.NewOptInt32(http.StatusForbidden),
-			Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
-			Detail: siteapi.NewOptString(i18n.T("errors.email_verification_required", nil)),
-		})
-		return &v, nil
-	case login.InvalidCredentials:
-		v := siteapi.SiteAuthLoginUnauthorized(problem(http.StatusUnauthorized, i18n.T("errors.invalid_credentials", nil)))
-		return &v, nil
 	case login.SecondFactor:
 		return &siteapi.SiteLoginResultHeaders{Response: siteapi.SiteLoginResult{
 			Outcome:   siteapi.SiteLoginOutcomeChallenge,

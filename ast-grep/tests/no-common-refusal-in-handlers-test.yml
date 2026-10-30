@@ -8,8 +8,11 @@ valid:
     	return &siteapi.SiteTagsDeleteNoContent{}, nil
     }
   - |
-    func forbidden() siteapi.ProblemDetails {
-    	return problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil))
+    func (h *Handlers) proveCurrentPassword(ctx context.Context, u *ent.User, password string) error {
+    	if _, err := h.login.Prove(ctx, u.Email, u.PasswordHash, password); err != nil {
+    		return err
+    	}
+    	return nil
     }
 invalid:
   - |

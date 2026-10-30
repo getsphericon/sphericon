@@ -2,7 +2,6 @@ package accounts
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -21,14 +20,53 @@ type ProfileChange struct {
 
 // Prove is the proof of a User's current password, which the adapter supplies: the login
 // module's one prove path (its throttle first, the decoy hash, a failure counted on the Login
-// budget). It reports whether password is the User's; while the throttle's delay runs it
-// returns that refusal as its error, even for a right password.
-type Prove func(ctx context.Context, u *ent.User, password string) (bool, error)
+// budget). It returns nil when password is the User's and its refusal otherwise (a wrong
+// password, or, while the throttle's delay runs, the delay even for a right password).
+type Prove func(ctx context.Context, u *ent.User, password string) error
 
-// ErrCurrentPasswordIncorrect is a password change whose current password does not prove the
-// User. It is none of the refusal kinds of validation: like every other failed proof of the
-// current password, the site answers it 403.
-var ErrCurrentPasswordIncorrect = errors.New("accounts: current password incorrect")
+// ErrIdentityProofRequired is a step that asks for the password, of a User who has none and
+// whose session holds no fresh proof instead (ADR 0048): a Passkey check or a provider login.
+var ErrIdentityProofRequired = validation.Denied("accounts: a fresh identity proof is required", "errors.identity_proof_required")
+
+// ProveIdentity is the proof the steps that ask for the password need (ADR 0020, ADR 0048). A
+// User with a password proves it through prove, the way a login does (ADR 0025): while the
+// account's Login throttle delay runs it fails even for the right password, a wrong password
+// counts as a failure of the account, and a right one does not reset the counter (only a
+// completed login does, else a session holder could clear a run of second-step guesses). A User
+// with no password proves instead what freshProof reports: a Sign-in provider login or a Passkey
+// check recent enough, carried by the session; there is nothing to guess, so nothing is
+// counted, and without one the step is refused with ErrIdentityProofRequired.
+func ProveIdentity(ctx context.Context, u *ent.User, password string, freshProof bool, prove Prove) error {
+	if u.PasswordHash != "" {
+		return prove(ctx, u, password)
+	}
+	if freshProof {
+		return nil
+	}
+	return ErrIdentityProofRequired
+}
+
+// ErrNewEmailSame refuses an email change to the address the User already has.
+var ErrNewEmailSame = validation.RefuseField("newEmail", "accounts: the new email is the current one", "errors.new_email_must_differ")
+
+// newEmailForm is the address an email change asks for, checked against the address rule.
+type newEmailForm struct {
+	NewEmail string `json:"newEmail" validate:"required,account_email"`
+}
+
+// NewEmailFor is the address the User u asks to change their login email to, typed as it was:
+// trimmed, refused as a *validation.FieldsError when it is no address, and ErrNewEmailSame when
+// it is the User's own.
+func NewEmailFor(u *ent.User, typed string) (string, error) {
+	email := strings.TrimSpace(typed)
+	if err := validation.Form(newEmailForm{NewEmail: email}); err != nil {
+		return "", err
+	}
+	if strings.EqualFold(email, u.Email) {
+		return "", ErrNewEmailSame
+	}
+	return email, nil
+}
 
 // ProfileChanged is what a profile change left.
 type ProfileChanged struct {
@@ -46,9 +84,8 @@ type newPasswordForm struct {
 // ChangeProfile changes the name and/or the password of the User u. A blank name is refused;
 // a new password is checked against the password rule before the current one is proven, so a
 // refused one costs no hash, and it needs the current password, proven through prove. A
-// refused field is a *validation.FieldsError, a current password that does not prove the User
-// ErrCurrentPasswordIncorrect, and prove's own error (a running throttle delay) comes back as
-// it is. Nothing is written unless every rule holds; a change that asks for nothing writes
+// refused field is a *validation.FieldsError, and prove's refusal (a wrong current password, a
+// running throttle delay) comes back as it is. Nothing is written unless every rule holds; a change that asks for nothing writes
 // nothing and returns u.
 func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChange, prove Prove) (ProfileChanged, error) {
 	var name, hash *string
@@ -66,12 +103,8 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 		if c.CurrentPassword == "" {
 			return ProfileChanged{}, validation.Refused("currentPassword", i18n.T("errors.current_password_required", nil))
 		}
-		proved, err := prove(ctx, u, c.CurrentPassword)
-		if err != nil {
+		if err := prove(ctx, u, c.CurrentPassword); err != nil {
 			return ProfileChanged{}, err
-		}
-		if !proved {
-			return ProfileChanged{}, ErrCurrentPasswordIncorrect
 		}
 		h, err := a.passwords.Hash(c.NewPassword)
 		if err != nil {

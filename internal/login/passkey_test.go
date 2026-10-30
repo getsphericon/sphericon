@@ -65,6 +65,14 @@ func (r rig) passkey(t *testing.T, response string) login.PasskeyResult[*ent.Use
 	return res
 }
 
+// passkeyErr is the refusal of a Passkey login that does not authenticate.
+func (r rig) passkeyErr(t *testing.T, response string) error {
+	t.Helper()
+	_, err := r.module.Passkey(t.Context(), login.PasskeyAssertion{Response: []byte(response)})
+	require.Error(t, err)
+	return err
+}
+
 func userResponse(id int) string { return "user-" + strconv.Itoa(id) }
 
 func forgedResponse(id int) string { return "forged-" + strconv.Itoa(id) }
@@ -81,9 +89,9 @@ func TestAVerifiedPasskeyAuthenticatesWithoutASecondStep(t *testing.T) {
 func TestAResponseThatNamesNoCredentialFailsAndMovesNoCounter(t *testing.T) {
 	r, adapter := newPasskeyRig(t)
 
-	res := r.passkey(t, "no credential")
+	err := r.passkeyErr(t, "no credential")
 
-	assert.Equal(t, login.PasskeyFailed, res.Outcome)
+	require.ErrorIs(t, err, login.ErrPasskeyFailed)
 	assert.Zero(t, adapter.verifyHits, "nothing is verified for an unknown credential")
 	assert.Zero(t, delayOf(t, r.login, fixtures.OwnerJohnEmail))
 }
@@ -91,7 +99,7 @@ func TestAResponseThatNamesNoCredentialFailsAndMovesNoCounter(t *testing.T) {
 func TestAResponseThatDoesNotVerifyFailsAndCountsNothing(t *testing.T) {
 	r, _ := newPasskeyRig(t)
 	for range 3 {
-		require.Equal(t, login.PasskeyFailed, r.passkey(t, forgedResponse(fixtures.OwnerJohnID)).Outcome)
+		require.ErrorIs(t, r.passkeyErr(t, forgedResponse(fixtures.OwnerJohnID)), login.ErrPasskeyFailed)
 	}
 
 	assert.Zero(t, delayOf(t, r.login, fixtures.OwnerJohnEmail))
@@ -101,7 +109,7 @@ func TestAResponseThatDoesNotVerifyFailsAndCountsNothing(t *testing.T) {
 func TestTheThrottleOfTheUserFoundPrecedesTheVerification(t *testing.T) {
 	r, adapter := newPasskeyRig(t)
 	for range 2 {
-		require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
+		require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	}
 
 	res := r.passkey(t, userResponse(fixtures.OwnerJohnID))
@@ -115,7 +123,7 @@ func TestTheThrottleOfTheUserFoundPrecedesTheVerification(t *testing.T) {
 func TestAPasskeyLoginWorksAgainOnceTheDelayHasPassed(t *testing.T) {
 	r, _ := newPasskeyRig(t)
 	for range 2 {
-		require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
+		require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	}
 	require.Equal(t, login.PasskeyThrottled, r.passkey(t, userResponse(fixtures.OwnerJohnID)).Outcome)
 
@@ -130,20 +138,20 @@ func TestTheVerificationGateRefusesAPasskeyLoginLikeAnyOtherFailure(t *testing.T
 	}
 	r, adapter := newPasskeyRig(t, gate)
 
-	res := r.passkey(t, userResponse(fixtures.SecondFactorSamID))
+	err := r.passkeyErr(t, userResponse(fixtures.SecondFactorSamID))
 
-	assert.Equal(t, login.PasskeyFailed, res.Outcome)
+	require.ErrorIs(t, err, login.ErrPasskeyFailed, "not the verification refusal: a Passkey login does not tell that the address waits")
 	assert.Zero(t, adapter.verifyHits)
 	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
 }
 
 func TestAVerifiedPasskeyResetsTheCounter(t *testing.T) {
 	r, _ := newPasskeyRig(t)
-	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	require.Equal(t, login.PasskeyAuthenticated, r.passkey(t, userResponse(fixtures.OwnerJohnID)).Outcome)
 
-	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
-	assert.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome, "the count restarted at the Passkey login")
+	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials, "the count restarted at the Passkey login")
 }
 
 func TestAFailedCounterResetDoesNotCostAVerifiedPasskeyLogin(t *testing.T) {

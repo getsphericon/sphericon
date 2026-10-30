@@ -89,11 +89,23 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `internal/api/external` names no `validation.Error`, `validation.RefusalError` or
   `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
   the module's error, and `refusalProblem` in `internal/server` answers a module's sentinel refusal
-  by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409, the
-  message as `detail` and, for `validation.RefuseField`, under its field), a `*validation.Error`
-  with 422 and its field, an `*inuse.Error` with 409 and `usedBy`, content `emailrender` cannot
-  render with 422, and `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is
-  not a member of) with 404.
+  by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409,
+  `validation.Forbidden` 403 `permission_required`, `validation.Unauthorized` 401,
+  `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
+  `validation.LinkInvalid` 400, `validation.Incomplete` 428, the message as `detail` and, for
+  `validation.RefuseField`, under its field), a `*validation.Error` with 422 and its field, an
+  `*inuse.Error` with 409 and `usedBy`, an `*accounts.DeletionRefusedError` with 422 and the
+  Workspaces the User solely owns, content `emailrender` cannot render with 422, and
+  `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is not a member of) with
+  a 404. A sentinel one context answers differently from another is two sentinels of the module,
+  one per context, never a mapping in the handler.
+- **Rule 15, `no-hand-written-problem-in-site` (ast-grep).** A handler in `internal/api/site` calls
+  neither `problem` nor `problemWithErrors`, builds no `siteapi.*ProblemDetails` literal and names
+  no operation's error response (`siteapi.Site…NotFound` and its kin): the module that decides a
+  refusal returns its sentinel. The files that still answer by hand are the rule's `ignores`, a
+  list that only shrinks; `internal/api/site/problem.go` holds the two helpers they call. A single
+  answer kept by hand in a covered file carries `// ast-grep-ignore: no-hand-written-problem-in-site`
+  under a comment that says why.
 - **Rule 15, `access-is-a-permission-go` and `access-is-a-permission-tsx` (ast-grep).** No code compares
   a Role: in Go, `==`/`!=` or a `case` with `RoleOwner`/`RoleAdmin`/`RoleMember` of any package
   (`membership`, `entmembership`, `invitation`), and `RoleEQ`/`RoleNEQ`/`RoleIn`/`RoleNotIn` of a

@@ -7,7 +7,6 @@ package suppression
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
@@ -16,13 +15,15 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 var (
-	// ErrDestinationEmpty: the destination is blank after normalization.
-	ErrDestinationEmpty = errors.New("suppression: destination must not be empty")
+	// ErrDestinationEmpty: the destination is blank after normalization. Every surface answers
+	// it alike, on the `destination` field (review rule 15).
+	ErrDestinationEmpty = validation.RefuseField("destination", "suppression: destination must not be empty", "errors.destination_invalid")
 	// ErrNotFound: no such Suppression in this Workspace.
-	ErrNotFound = errors.New("suppression: not found")
+	ErrNotFound = validation.NotFound("suppression: not found", "errors.suppression_not_found")
 )
 
 // NormalizeDestination is the single definition of "normalized destination":

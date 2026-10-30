@@ -41,10 +41,20 @@ const RecoveryCodeCount = 10
 
 var (
 	// ErrInvalidCode: the code is not a current, unused TOTP code nor an unused
-	// Recovery code of the User.
-	ErrInvalidCode = errors.New("secondfactor: invalid code")
-	// ErrNotActive: the User has no confirmed Second factor.
-	ErrNotActive = errors.New("secondfactor: no active second factor")
+	// Recovery code of the User. It refuses the `code` field of the User's own steps
+	// (confirming an enrollment, disabling); the login adapter answers it as the login
+	// module's ErrInvalidCode.
+	ErrInvalidCode = validation.RefuseField("code", "secondfactor: invalid code", "errors.second_factor_code_invalid")
+	// ErrNotActive: the User has no confirmed Second factor, so their own step that needs one
+	// (regenerating the Recovery codes, disabling) has nothing to act on.
+	ErrNotActive = validation.Conflict("secondfactor: no active second factor", "errors.second_factor_not_active")
+	// ErrNothingToReset: the member has neither a Second factor nor a Passkey, so a reset has
+	// nothing to clear. It refuses the `member` the reset names.
+	ErrNothingToReset = validation.RefuseField("member", "secondfactor: the member has no second factor or passkey", "errors.second_factor_reset_nothing")
+	// ErrDeletionCodeInvalid: the code that confirms the User's own deletion is wrong. Like a
+	// wrong password it fails the proof of who asks (403), and the caller counts it on the
+	// Login throttle (ADR 0025).
+	ErrDeletionCodeInvalid = validation.Denied("secondfactor: invalid deletion code", "errors.second_factor_code_invalid")
 	// ErrAlreadyActive: enrollment is refused while a Second factor is active.
 	ErrAlreadyActive = validation.Conflict("secondfactor: second factor already active", "errors.second_factor_already_active")
 	// ErrNoPending: there is no pending enrollment to confirm.
@@ -290,14 +300,17 @@ func (m *Module) VerifyIn(ctx context.Context, tx *ent.Client, pub events.Publis
 }
 
 // DeletionCode is the accounts.DeleteConfirm of User deletion (ADR 0050): with a Second factor
-// it spends code in the deletion's transaction (ErrInvalidCode on a wrong one), so the code is
-// spent only if the deletion commits; without one it confirms nothing.
+// it spends code in the deletion's transaction (ErrDeletionCodeInvalid on a wrong one), so the
+// code is spent only if the deletion commits; without one it confirms nothing.
 func (m *Module) DeletionCode(code string) accounts.DeleteConfirm {
 	return func(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User) error {
 		if !Active(locked) {
 			return nil
 		}
 		_, err := m.VerifyIn(ctx, tx, pub, locked, code)
+		if errors.Is(err, ErrInvalidCode) {
+			return ErrDeletionCodeInvalid
+		}
 		return err
 	}
 }
@@ -335,7 +348,7 @@ func unusedRecoveryCodes(ctx context.Context, client *ent.Client, userID int64) 
 // Reset clears the User's Second factor, Recovery codes and Passkeys and bumps the session
 // epoch, ending every session of theirs: an Owner or Admin resetting a member of
 // workspaceID. It records `user.second_factor_reset` by actor in that Workspace
-// only. ErrNotActive without a Second factor or a Passkey (nothing changes).
+// only. ErrNothingToReset without a Second factor or a Passkey (nothing changes).
 func (m *Module) Reset(ctx context.Context, userID int64, actor events.Actor, workspaceID int64) error {
 	return m.reset(ctx, userID, func(pub events.Publisher, _ *ent.Client, u *ent.User) error {
 		return accounts.RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserSecondFactorReset, nil, workspaceID)
@@ -363,7 +376,7 @@ func (m *Module) reset(ctx context.Context, userID int64, record func(events.Pub
 			return err
 		}
 		if !Active(u) && !held {
-			return ErrNotActive
+			return ErrNothingToReset
 		}
 		if _, err := tx.Passkey.Delete().Where(passkey.UserID(userID)).Exec(ctx); err != nil {
 			return err

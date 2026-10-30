@@ -238,9 +238,12 @@ func (a *Accounts) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor e
 
 // SetTimezone sets the Workspace time zone (ADR 0057) and records the change as a
 // `workspace.update` Audit entry in the same transaction. A name the zone database does not
-// know is refused with reportday.ErrUnknownZone. The caller has checked the role.
+// know is refused with ErrUnknownZone. The caller has checked the role.
 func (a *Accounts) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.Actor, name string) (*ent.Workspace, error) {
 	if _, err := reportday.Load(name); err != nil {
+		if errors.Is(err, reportday.ErrUnknownZone) {
+			return nil, fmt.Errorf("%w: %w", ErrUnknownZone, err)
+		}
 		return nil, err
 	}
 	var updated *ent.Workspace
@@ -271,7 +274,11 @@ func (a *Accounts) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.
 }
 
 // ErrUnknownCurrency refuses a Reporting currency code that is not in ISO 4217.
-var ErrUnknownCurrency = errors.New("accounts: unknown currency code")
+var ErrUnknownCurrency = validation.RefuseField("reportingCurrency", "accounts: unknown currency code", "errors.currency_unknown")
+
+// ErrUnknownZone refuses a Workspace time zone the zone database does not know. It wraps
+// reportday.ErrUnknownZone.
+var ErrUnknownZone = validation.RefuseField("timezone", "accounts: unknown time zone", "errors.timezone_unknown")
 
 // SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
 // as it is) and records each real change in one `workspace.update` Audit entry in the same
@@ -371,9 +378,10 @@ func ptrEqual(a, b *int) bool {
 // ErrWorkspaceNameEmpty refuses a Workspace name that is empty once trimmed.
 var ErrWorkspaceNameEmpty = validation.RefuseField("name", "accounts: workspace name is empty", "errors.name_empty")
 
-// ErrEmailNotVerified refuses creating a Workspace for a User whose email is not proven
-// (ADR 0030): sign-up verification must not be bypassed by creating Workspaces first.
-var ErrEmailNotVerified = errors.New("accounts: the email is not verified")
+// ErrEmailNotVerified refuses a User whose email is not proven yet (ADR 0030): creating a
+// Workspace, so sign-up verification is not bypassed by creating Workspaces first, and the
+// verification gate of the password login.
+var ErrEmailNotVerified = validation.Unverified("accounts: the email is not verified", "errors.email_verification_required")
 
 // CreateWorkspace creates a Workspace named name for a Verified User, who becomes its
 // Owner (ADR 0043). Names are free text and need not be unique. The Workspace, the Owner
@@ -790,9 +798,9 @@ func (a *Accounts) ChangeEmail(ctx context.Context, id int64, newEmail string) e
 
 // PendingInvitation looks up a pending, unexpired Invitation by its raw token, with
 // its Workspace edge. The token is the authorization, so no Workspace is known up
-// front. An ent NotFound error when there is none.
+// front. ErrInvitationLinkNotFound when there is none.
 func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.Invitation, error) {
-	return a.ent.Invitation.Query().
+	inv, err := a.ent.Invitation.Query().
 		Where(
 			invitation.TokenHash(HashInviteToken(token)),
 			invitation.AcceptedAtIsNil(),
@@ -800,6 +808,10 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 		).
 		WithWorkspace().
 		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, ErrInvitationLinkNotFound
+	}
+	return inv, err
 }
 
 // AcceptInvitation turns a pending Invitation into a Membership. sessionEmail is the
@@ -810,11 +822,20 @@ func (a *Accounts) PendingInvitation(ctx context.Context, token string) (*ent.In
 // (ErrCredentialsRequired otherwise): the link proves control of the address, so the
 // User is created, or the Unverified User's row completed (name and password set,
 // Verified email stamped, session epoch bumped, `user.email_verify` audited), and
-// nothing the person who signed up set survives; if the address was verified meanwhile that is ErrAlreadyVerified. A
-// Verified User is attached as is. The Membership is created (a
+// nothing the person who signed up set survives; if the address was verified meanwhile that is
+// ErrSignInRequired too (wrapping ErrAlreadyVerified): the address now has a Verified User,
+// who signs in to accept. A Verified User is attached as is. The Membership is created (a
 // duplicate is not an error), the Invitation marked accepted and the acceptance
 // audited, all in one transaction.
 func (a *Accounts) AcceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
+	err := a.acceptInvitation(ctx, inv, name, password, sessionEmail)
+	if errors.Is(err, ErrAlreadyVerified) {
+		return fmt.Errorf("%w: %w", ErrSignInRequired, err)
+	}
+	return err
+}
+
+func (a *Accounts) acceptInvitation(ctx context.Context, inv *ent.Invitation, name, password, sessionEmail string) error {
 	role := membership.Role(inv.Role)
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		u, proven, err := invitee(ctx, tx, a.passwords, inv, name, password, sessionEmail)
@@ -1043,14 +1064,13 @@ func (a *Accounts) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor
 	return inv, token, nil
 }
 
-// RevokeInvitation deletes a pending Invitation and records `invitation.revoke`. It
-// reports whether the Invitation existed in the scoped Workspace.
-func (a *Accounts) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor events.Actor, id int64) (bool, error) {
-	found := false
-	err := a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+// RevokeInvitation deletes a pending Invitation and records `invitation.revoke`.
+// ErrInvitationNotFound when the Invitation is not in the scoped Workspace.
+func (a *Accounts) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor events.Actor, id int64) error {
+	return a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		inv, err := ts.Invitation().Query().Where(invitation.ID(id)).Only(ctx)
 		if ent.IsNotFound(err) {
-			return nil
+			return ErrInvitationNotFound
 		}
 		if err != nil {
 			return err
@@ -1058,7 +1078,6 @@ func (a *Accounts) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor ev
 		if err := ts.Invitation().DeleteOneID(id).Exec(ctx); err != nil {
 			return err
 		}
-		found = true
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: s.WorkspaceID(),
 			Actor:       actor,
@@ -1068,7 +1087,6 @@ func (a *Accounts) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor ev
 			TargetName:  inv.Email,
 		})
 	})
-	return found, err
 }
 
 // Workspace is the scoped Workspace's own row.

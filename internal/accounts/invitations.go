@@ -19,7 +19,12 @@ const inviteTokenBytes = 36
 
 var (
 	// ErrEmailEmpty means the invited email is blank.
-	ErrEmailEmpty = errors.New("accounts: invitation email is empty")
+	ErrEmailEmpty = validation.RefuseField("email", "accounts: invitation email is empty", "errors.email_empty")
+	// ErrInvitationNotFound means no pending Invitation of that id is in the Workspace.
+	ErrInvitationNotFound = validation.NotFound("accounts: invitation not found", "errors.invitation_not_found")
+	// ErrInvitationLinkNotFound means an Invitation link's token names no pending, unexpired
+	// Invitation.
+	ErrInvitationLinkNotFound = validation.NotFound("accounts: invitation not found or expired", "errors.invitation_link_not_found")
 	// ErrAlreadyMember means the invited address already has a Membership in the Workspace.
 	ErrAlreadyMember = validation.Conflict("accounts: invited email is already a member", "errors.already_member")
 	// ErrCredentialsRequired means the invited address has no Verified User, so the
@@ -27,10 +32,10 @@ var (
 	ErrCredentialsRequired = errors.New("accounts: invitation needs a name and a password")
 	// ErrSignInRequired means the invited address belongs to a Verified User and no
 	// session was presented: only that User's own session may accept.
-	ErrSignInRequired = errors.New("accounts: sign in to accept this invitation")
+	ErrSignInRequired = validation.Unauthorized("accounts: sign in to accept this invitation", "errors.invitation_sign_in_required")
 	// ErrWrongAccount means the presented session is another User's than the
 	// Verified User the invitation is for.
-	ErrWrongAccount = errors.New("accounts: this invitation is for another account")
+	ErrWrongAccount = validation.Denied("accounts: this invitation is for another account", "errors.invitation_other_account")
 	// ErrAlreadyVerified means the User's email was already verified: a link that
 	// completes an Unverified User lost the race to another one.
 	ErrAlreadyVerified = errors.New("accounts: the email is already verified")

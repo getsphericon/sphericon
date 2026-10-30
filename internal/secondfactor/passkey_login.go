@@ -14,11 +14,20 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// ErrPasskeyUnknown means the response names no credential: it is malformed, or its credential id
-// was never registered (or was removed).
-var ErrPasskeyUnknown = errors.New("secondfactor: passkey credential unknown")
+var (
+	// ErrPasskeyUnknown means the response names no credential: it is malformed, or its
+	// credential id was never registered (or was removed).
+	ErrPasskeyUnknown = errors.New("secondfactor: passkey credential unknown")
+	// ErrNoPasskeys: a Passkey check of a User who holds no Passkey, so there is nothing to
+	// check with.
+	ErrNoPasskeys = validation.NotFound("secondfactor: the user holds no passkey", "errors.passkeys_unavailable")
+	// ErrCheckFailed is every refusal of a Passkey check, indistinguishably: a response that
+	// names no credential or another User's, or a ceremony that cannot finish (CeremonyFailed).
+	ErrCheckFailed = validation.Denied("secondfactor: passkey check failed", "errors.passkey_check_failed")
+)
 
 // BeginLogin starts a usernameless Passkey login: the request options for the browser (JSON)
 // and the sealed ceremony cookie value. The User is not known yet, so the options allow no
@@ -77,7 +86,7 @@ func (p *Passkeys) FinishLogin(ctx context.Context, u *ent.User, ceremony string
 
 // BeginCheck starts a fresh Passkey check of the signed-in User u (ADR 0052): the request
 // options for the browser (JSON), which allow only u's own Passkeys, and the sealed ceremony
-// cookie value, bound to u and their session epoch. It writes nothing. ErrPasskeyUnknown when u
+// cookie value, bound to u and their session epoch. It writes nothing. ErrNoPasskeys when u
 // holds no Passkey.
 func (p *Passkeys) BeginCheck(ctx context.Context, u *ent.User) (options []byte, ceremony string, err error) {
 	if !p.Available() {
@@ -88,7 +97,7 @@ func (p *Passkeys) BeginCheck(ctx context.Context, u *ent.User) (options []byte,
 		return nil, "", err
 	}
 	if len(rows) == 0 {
-		return nil, "", ErrPasskeyUnknown
+		return nil, "", ErrNoPasskeys
 	}
 	assertion, session, err := p.wa.BeginDiscoverableLogin()
 	if err != nil {
@@ -107,12 +116,24 @@ func (p *Passkeys) BeginCheck(ctx context.Context, u *ent.User) (options []byte,
 	return options, ceremony, nil
 }
 
-// FinishCheck verifies a Passkey check for the signed-in User u, whom FindLogin named from the
-// response: it is FinishLogin for a ceremony BeginCheck sealed, which must be u's and of u's
-// current session epoch. It takes no part in the Login throttle: the caller is already signed
-// in, and a refusal reveals nothing a guess could use. The errors are FinishLogin's.
-func (p *Passkeys) FinishCheck(ctx context.Context, u *ent.User, ceremony string, response []byte) error {
-	return p.finishAssertion(ctx, u, PurposeCheck, ceremony, response)
+// Check verifies a fresh Passkey check of the signed-in User u (ADR 0052): the response must be
+// made with a Passkey of u's own and verify against a ceremony BeginCheck sealed, which must be
+// u's and of u's current session epoch. It takes no part in the Login throttle: the caller is
+// already signed in, and a guess cannot succeed without the private key. Every refusal is
+// ErrCheckFailed, wrapping the cause of a ceremony that cannot finish.
+func (p *Passkeys) Check(ctx context.Context, u *ent.User, ceremony string, response []byte) error {
+	owner, err := p.FindLogin(ctx, response)
+	if errors.Is(err, ErrPasskeyUnknown) || (err == nil && owner.ID != u.ID) {
+		return ErrCheckFailed
+	}
+	if err != nil {
+		return err
+	}
+	err = p.finishAssertion(ctx, u, PurposeCheck, ceremony, response)
+	if CeremonyFailed(err) {
+		return fmt.Errorf("%w: %w", ErrCheckFailed, err)
+	}
+	return err
 }
 
 func (p *Passkeys) finishAssertion(ctx context.Context, u *ent.User, purpose ceremonyPurpose, ceremony string, response []byte) error {

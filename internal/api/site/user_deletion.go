@@ -3,43 +3,29 @@ package site
 import (
 	"context"
 	"errors"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
 // SiteUserDeleteUser deletes the caller's own User at once (User deletion, ADR 0050), after
 // the typed email, the password (through the login module's one prove path, so a wrong one
 // is counted on the Login throttle) and, with a Second factor, a current code. The
-// accounts operation does the rest in one transaction; this handler authenticates, proves
-// and maps the outcomes.
+// accounts operation does the rest in one transaction; this handler authenticates and proves.
 func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDeleteUserInput) (siteapi.SiteUserDeleteUserRes, error) {
-	u, mismatch, err := h.deletionSubject(ctx, string(req.Email))
+	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if mismatch != nil {
-		return mismatch, nil
+	u, err := h.accounts.DeletionSubject(ctx, userID, string(req.Email))
+	if err != nil {
+		return nil, err
 	}
 	hadPassword := u.PasswordHash != ""
 	if hadPassword {
-		proved, err := h.proveCurrentPassword(ctx, u, req.CurrentPassword.Or(""))
-		if err != nil {
+		if err := h.proveCurrentPassword(ctx, u, req.CurrentPassword.Or("")); err != nil {
 			return nil, err
-		}
-		if !proved {
-			v := siteapi.SiteUserDeleteUserForbidden(passwordIncorrectProblem())
-			return &v, nil
 		}
 	} else {
 		// A User with no password proves the mailbox instead, and nothing in that proof
@@ -52,35 +38,19 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 		if throttled {
 			return nil, loginDelayError(ctx, delay)
 		}
-		if !h.holdsDeletionLink(req.Token.Or(""), u) {
-			// The link is bound to this User, so an expired, used or foreign one (a new
-			// User on the same address) is dead.
-			v := siteapi.SiteUserDeleteUserBadRequest(problem(http.StatusBadRequest, i18n.T("errors.confirm_link_invalid", nil)))
-			return &v, nil
+		if err := h.links.CheckDeletionLink(req.Token.Or(""), u); err != nil {
+			return nil, err
 		}
 	}
 
 	deleted, err := h.accounts.DeleteUser(ctx, u.ID, &accounts.DeleteProof{HadPassword: hadPassword, Confirm: h.secondFactor.DeletionCode(req.Code.Or(""))})
-	var sole *accounts.SoleOwnerError
-	switch {
-	case errors.As(err, &sole):
-		msg := i18n.T("errors.delete_user_only_owner", nil)
-		listed := lo.Map(sole.Workspaces, func(w *ent.Workspace, _ int) siteapi.SiteSoleOwnedWorkspace {
-			return siteapi.SiteSoleOwnedWorkspace{ID: siteapi.WorkspaceId(w.PublicID), Name: w.Name}
-		})
-		v := deleteUserProblem(msg, nil, listed)
-		return &v, nil
-	case errors.Is(err, accounts.ErrProofStale):
-		v := deleteUserProblem(i18n.T("errors.delete_user_proof_stale", nil), nil, nil)
-		return &v, nil
-	case errors.Is(err, secondfactor.ErrInvalidCode):
+	if errors.Is(err, secondfactor.ErrDeletionCodeInvalid) {
 		// The wrong code is counted like a wrong password (ADR 0025).
-		if err := h.login.CountFailure(ctx, u.Email); err != nil {
-			return nil, err
+		if cerr := h.login.CountFailure(ctx, u.Email); cerr != nil {
+			return nil, cerr
 		}
-		v := siteapi.SiteUserDeleteUserForbidden(problem(http.StatusForbidden, i18n.T("errors.second_factor_code_invalid", nil)))
-		return &v, nil
-	case err != nil:
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -92,22 +62,17 @@ func (h *Handlers) SiteUserDeleteUser(ctx context.Context, req *siteapi.SiteDele
 }
 
 // SiteUserDeleteUserLink mails the one-time deletion link to a User with no password (ADR
-// 0050): the typed email must be the User's, and the link goes to that Verified address. The
-// token is bound to the User and their session epoch, not to the address, and works once (the
-// deletion removes the User it names).
+// 0050): the typed email must be the User's, and the link goes to that Verified address.
 func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.SiteDeleteUserLinkInput) (siteapi.SiteUserDeleteUserLinkRes, error) {
-	u, mismatch, err := h.deletionSubject(ctx, string(req.Email))
+	userID, err := sessionUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if mismatch != nil {
-		return mismatch, nil
+	u, err := h.accounts.DeletionSubject(ctx, userID, string(req.Email))
+	if err != nil {
+		return nil, err
 	}
-	if u.PasswordHash != "" {
-		v := deleteUserProblem(i18n.T("errors.delete_user_use_password", nil), nil, nil)
-		return &v, nil
-	}
-	token, err := h.tokens.Mint(authtoken.PurposeUserDeletion, u.ID, deletionLinkBinding(u), deleteUserLinkTTL, nil)
+	token, err := h.links.DeletionLink(u)
 	if err != nil {
 		return nil, err
 	}
@@ -121,57 +86,4 @@ func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context, req *siteapi.Site
 		mailNotQueued(ctx, "UserDeletionLink", err)
 	}
 	return &siteapi.SiteUserDeleteUserLinkAccepted{}, nil
-}
-
-// deletionSubject is the start of both deletion operations: the User of the session and the
-// check that the typed email is theirs. A mismatch is the 422 to answer with, nil when the
-// email is the User's own.
-func (h *Handlers) deletionSubject(ctx context.Context, typedEmail string) (*ent.User, *siteapi.SiteDeleteUserProblemDetails, error) {
-	userID, err := sessionUserID(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	u, err := h.accounts.User(ctx, userID)
-	if err != nil {
-		return nil, nil, err
-	}
-	if !strings.EqualFold(strings.TrimSpace(typedEmail), u.Email) {
-		msg := i18n.T("errors.delete_user_email_mismatch", nil)
-		v := deleteUserProblem(msg, map[string][]string{fieldEmail: {msg}}, nil)
-		return u, &v, nil
-	}
-	return u, nil, nil
-}
-
-// deleteUserLinkTTL is how long the mailed deletion link lives.
-const deleteUserLinkTTL = time.Hour
-
-// deletionLinkBinding keys the deletion token to the User's session epoch, so signing out
-// everywhere (or any other epoch bump) kills a link already mailed.
-func deletionLinkBinding(u *ent.User) string { return strconv.FormatInt(u.SessionEpoch, 10) }
-
-// holdsDeletionLink reports whether raw is a live deletion link issued to u.
-func (h *Handlers) holdsDeletionLink(raw string, u *ent.User) bool {
-	uid, _, err := h.tokens.Parse(raw, authtoken.PurposeUserDeletion, func(id int64) (string, error) {
-		if id != u.ID {
-			return "", errors.New("deletion link of another user")
-		}
-		return deletionLinkBinding(u), nil
-	})
-	return err == nil && uid == u.ID
-}
-
-// deleteUserProblem is the 422 body of a refused User deletion: the field errors of a
-// mismatched email, or the Workspaces the User solely owns.
-func deleteUserProblem(detail string, errs map[string][]string, workspaces []siteapi.SiteSoleOwnedWorkspace) siteapi.SiteDeleteUserProblemDetails {
-	p := siteapi.SiteDeleteUserProblemDetails{
-		Status:     siteapi.NewOptInt32(http.StatusUnprocessableEntity),
-		Title:      siteapi.NewOptString(http.StatusText(http.StatusUnprocessableEntity)),
-		Detail:     siteapi.NewOptString(detail),
-		Workspaces: workspaces,
-	}
-	if errs != nil {
-		p.Errors = siteapi.NewOptSiteDeleteUserProblemDetailsErrors(siteapi.SiteDeleteUserProblemDetailsErrors(errs))
-	}
-	return p
 }

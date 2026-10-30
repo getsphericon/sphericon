@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -10,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // The Owner invariant of a Role (GLOSSARY "Role"): a Workspace always keeps at least one owner,
@@ -69,12 +71,21 @@ func (a *Accounts) RemoveMembership(ctx context.Context, s *ent.Scoped, actor ev
 	})
 }
 
+// ErrOnlyOwnerLeaves refuses the only Owner leaving the Workspace (Leaving, ADR 0050): they make
+// another member an Owner or delete the Workspace first. It wraps ErrLastOwner.
+var ErrOnlyOwnerLeaves = validation.RefuseField("workspace", "accounts: the only owner cannot leave", "errors.leave_only_owner")
+
 // Leave removes User userID's own Membership in the Workspace s (Leaving, ADR 0050) in a
-// transaction of its own. See LeaveIn for the rules.
+// transaction of its own. See LeaveIn for the rules; the only Owner is refused with
+// ErrOnlyOwnerLeaves.
 func (a *Accounts) Leave(ctx context.Context, s *ent.Scoped, userID int64) error {
-	return a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := a.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return LeaveIn(ctx, ts, pub, userID)
 	})
+	if errors.Is(err, ErrLastOwner) {
+		return fmt.Errorf("%w: %w", ErrOnlyOwnerLeaves, err)
+	}
+	return err
 }
 
 // LeaveIn removes User userID's own Membership through the scope ts, inside the transaction

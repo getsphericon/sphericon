@@ -1,0 +1,61 @@
+id: no-hand-written-problem-in-site
+language: Go
+severity: error
+message: "rule 15: a site handler writes a refusal's problem by hand; fix: return the module's sentinel refusal (validation.Refuse/RefuseField/NotFound/Conflict/Forbidden/Unauthorized/Denied/Unverified/LinkInvalid/Incomplete) and let refusalProblem in internal/server answer it"
+note: >-
+  A refusal answers the same on every surface and is mapped once (review rule 15): the module that
+  decides it returns a sentinel whose kind carries its status and code (not found 404, refused 422,
+  conflict 409, forbidden 403 permission_required, unauthorized 401, denied 403, unverified 403
+  email_verification_required, an invalid link 400, incomplete 428), and the server's error
+  handler writes the problem. A handler that calls problem/problemWithErrors, builds a
+  siteapi.*ProblemDetails literal or names an operation's error response writes a second mapping of the decision, next to the handler
+  rather than the module, which drifts from the other surfaces. The files under `ignores` still
+  answer by hand and shrink as they are converted; a new file is covered at once.
+rule:
+  any:
+    - kind: call_expression
+      has:
+        field: function
+        kind: identifier
+        regex: ^(problem|problemWithErrors)$
+    - kind: composite_literal
+      has:
+        field: type
+        regex: ^siteapi\.\w*ProblemDetails$
+    # An operation's error response, however its body was built: converted to (a selector) or
+    # built as a literal (a qualified type).
+    - kind: selector_expression
+      regex: &response ^siteapi\.Site\w+(BadRequest|Unauthorized|PaymentRequired|Forbidden|NotFound|Conflict|Gone|PreconditionRequired|UnprocessableEntity)$
+    - kind: qualified_type
+      regex: *response
+files:
+  - internal/api/site/**/*.go
+ignores:
+  - '**/*_test.go'
+  - '**/*_gen.go'
+  # The two helpers the files below still call.
+  - internal/api/site/problem.go
+  # Still answered by hand, to convert. No refusal kind fits these yet: the 402 of a missing
+  # Enterprise license (audit), the 410 of an expired confirmation link (consent), the 403
+  # signup_closed and the 409 on the email field of a Sign-up (auth). A single kept answer in a
+  # file that is otherwise covered carries an `ast-grep-ignore` comment saying why instead
+  # (broadcasts, invitations, schema).
+  - internal/api/site/audit.go
+  - internal/api/site/auth.go
+  - internal/api/site/consent.go
+  # A module error each, mapped by hand, several shared with internal/api/external.
+  - internal/api/site/automation_report.go
+  - internal/api/site/broadcast_links.go
+  - internal/api/site/captured_messages.go
+  - internal/api/site/contacts.go
+  - internal/api/site/contacts_erase_by_email.go
+  - internal/api/site/contacts_export.go
+  - internal/api/site/contacts_lookup.go
+  - internal/api/site/enrollments.go
+  - internal/api/site/join_domains.go
+  - internal/api/site/memberships.go
+  - internal/api/site/oauth.go
+  - internal/api/site/privacy_address.go
+  - internal/api/site/sending_domains.go
+  - internal/api/site/signup_survey.go
+  - internal/api/site/tokens.go

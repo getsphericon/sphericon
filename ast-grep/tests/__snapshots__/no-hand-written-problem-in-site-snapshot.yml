@@ -1,0 +1,40 @@
+id: no-hand-written-problem-in-site
+snapshots:
+  "func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.SiteSuppressionsDeleteParams) (siteapi.SiteSuppressionsDeleteRes, error) {\n\tv := siteapi.SiteSuppressionsDeleteNotFound(problem(http.StatusNotFound, \"suppression not found\"))\n\treturn &v, nil\n}\n":
+    labels:
+      - source: siteapi.SiteSuppressionsDeleteNotFound
+        style: primary
+        start: 159
+        end: 197
+  "func deletionRefused(detail string) siteapi.SiteDeleteUserProblemDetails {\n\treturn siteapi.SiteDeleteUserProblemDetails{Detail: siteapi.NewOptString(detail)}\n}\n":
+    labels:
+      - source: 'siteapi.SiteDeleteUserProblemDetails{Detail: siteapi.NewOptString(detail)}'
+        style: primary
+        start: 83
+        end: 157
+      - source: siteapi.SiteDeleteUserProblemDetails
+        style: secondary
+        start: 83
+        end: 119
+  "func gated() siteapi.SiteAuthLoginRes {\n\tv := siteapi.SiteAuthLoginForbidden(siteapi.ProblemDetails{\n\t\tCode:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),\n\t\tDetail: siteapi.NewOptString(i18n.T(\"errors.email_verification_required\", nil)),\n\t})\n\treturn &v\n}\n":
+    labels:
+      - source: siteapi.SiteAuthLoginForbidden
+        style: primary
+        start: 46
+        end: 76
+  "func timezoneUnknown() siteapi.ProblemDetails {\n\tmsg := i18n.T(\"errors.timezone_unknown\", nil)\n\treturn problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{\"timezone\": {msg}})\n}\n":
+    labels:
+      - source: 'problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{"timezone": {msg}})'
+        style: primary
+        start: 103
+        end: 197
+      - source: problemWithErrors
+        style: secondary
+        start: 103
+        end: 120
+  "func tokenNotFound() siteapi.SiteTokensDeleteRes {\n\treturn &siteapi.SiteTokensDeleteNotFound{Detail: siteapi.NewOptString(\"token not found\")}\n}\n":
+    labels:
+      - source: siteapi.SiteTokensDeleteNotFound
+        style: primary
+        start: 60
+        end: 92
