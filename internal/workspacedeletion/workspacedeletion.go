@@ -198,11 +198,12 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 	return deleted, err
 }
 
-// Deleted lists the Workspaces the User owns that are in their deletion window, most
-// recently deleted first, each with its Owner Membership and Workspace loaded.
+// Deleted lists the Workspaces in their deletion window whose User's Role holds workspace:delete
+// (their Owners, ADR 0061), most recently deleted first, each with that Membership and its
+// Workspace loaded.
 func (m *Module) Deleted(ctx context.Context, userID int64, now time.Time) ([]*ent.Membership, error) {
 	return m.client.Membership.Query().
-		Where(membership.UserID(userID), accounts.OwnerMembership(),
+		Where(membership.UserID(userID), accounts.HoldersOf(accounts.PermWorkspaceDelete),
 			membership.HasWorkspaceWith(insideWindow(now), workspace.DiscardedAtNotNil())).
 		WithWorkspace().
 		Order(membership.ByWorkspaceField(workspace.FieldDiscardedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
@@ -223,9 +224,9 @@ func (m *Module) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int64
 }
 
 // Restore ends the deletion of the Workspace publicID for a User: it clears discarded_at, which
-// lifts only the pending-deletion Hold (a suspension or Staff hold stays). A Workspace the
-// User has no Owner Membership on, or one that is not deleted, is accounts.ErrWorkspaceNotFound: a
-// deleted Workspace is not exposed to anyone but its Owners. A Workspace past its window or
+// lifts only the pending-deletion Hold (a suspension or Staff hold stays). A Workspace whose
+// User's Role does not hold workspace:delete (ADR 0061), or one that is not deleted, is
+// accounts.ErrWorkspaceNotFound: a deleted Workspace is not exposed to anyone else. A Workspace past its window or
 // already erased is lifecycle.ErrInvalidTransition. Recorded as `workspace.restore` in the
 // same transaction. It returns the restored Workspace.
 func (m *Module) Restore(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Workspace, error) {
@@ -234,7 +235,7 @@ func (m *Module) Restore(ctx context.Context, userID int64, publicID string, act
 	// lifecycle.ErrInvalidTransition from an erased row is only reachable through the table.
 	workspaceID, err := m.client.Workspace.Query().
 		Where(workspace.PublicID(publicID), workspace.DiscardedAtNotNil(),
-			workspace.HasMembershipsWith(membership.UserID(userID), accounts.OwnerMembership())).
+			workspace.HasMembershipsWith(membership.UserID(userID), accounts.HoldersOf(accounts.PermWorkspaceDelete))).
 		OnlyID(ctx)
 	if ent.IsNotFound(err) {
 		return nil, accounts.ErrWorkspaceNotFound

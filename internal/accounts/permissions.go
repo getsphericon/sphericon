@@ -6,34 +6,12 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// Permission is a named action in a Workspace that a Role allows (GLOSSARY "Permission",
-// ADR 0061), written `resource:verb`. Its values are the contract's Permission enum.
-type Permission string
-
-// The Permissions of the access table of ADR 0061, in its order.
-const (
-	PermMembersManage        Permission = "members:manage"
-	PermAuditRead            Permission = "audit:read"
-	PermAuditConfigure       Permission = "audit:configure"
-	PermTokensManage         Permission = "tokens:manage"
-	PermIntegrationsManage   Permission = "integrations:manage"
-	PermWebhooksManage       Permission = "webhooks:manage"
-	PermSendingDomainsManage Permission = "sending_domains:manage"
-	PermContactsErase        Permission = "contacts:erase"
-	PermContactsExport       Permission = "contacts:export"
-	PermSuppressionsManage   Permission = "suppressions:manage"
-	PermSecondFactorManage   Permission = "second_factor:manage"
-	PermWorkspaceUpdate      Permission = "workspace:update"
-	PermWorkspaceTimezone    Permission = "workspace:timezone"
-	PermRevenueConfigure     Permission = "revenue:configure"
-	PermBrandKitManage       Permission = "brand_kit:manage"
-	PermJoinDomainsManage    Permission = "join_domains:manage"
-	PermAccountLinkOpen      Permission = "account_link:open"
-	PermWorkspaceDelete      Permission = "workspace:delete"
-)
+// The Permission type and its values are generated from the contract's Permission enum
+// (permissions_gen.go); the table below says which Roles hold each.
 
 // grant is one row of the Role table: a Permission, the Roles that hold it, and the refusal a
 // Role without it is answered with (403 with code permission_required on every surface).
@@ -111,4 +89,13 @@ func grantOf(p Permission) (grant, bool) {
 func Permissions(role membership.Role) []Permission {
 	held := lo.Filter(grants, func(g grant, _ int) bool { return Allows(role, g.permission) })
 	return lo.Map(held, func(g grant, _ int) Permission { return g.permission })
+}
+
+// HoldersOf is the Memberships whose Role holds the Permission p: the query form of Allows, for an
+// operation that finds its Workspace through the caller's Membership rather than by a workspaceId
+// (restoring a deleted Workspace). A Permission outside the table has no row and so no Roles,
+// which ent renders as a false predicate: no Membership holds it.
+func HoldersOf(p Permission) predicate.Membership {
+	g, _ := grantOf(p)
+	return membership.RoleIn(g.roles...)
 }

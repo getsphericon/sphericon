@@ -4843,6 +4843,7 @@
           }
         },
         "tags": ["Contacts"],
+        "x-required-permissions": ["contacts:export", "contacts:erase"],
         "x-required-scopes": ["contacts:read"]
       }
     },
@@ -11143,6 +11144,7 @@
             }
           }
         },
+        "x-required-permissions": ["suppressions:manage"],
         "x-required-scopes": ["contacts:write"]
       }
     },

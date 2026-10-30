@@ -475,7 +475,7 @@ description = "fixtures/*.yml -> Go (fixture catalog constants for `# fixture: N
 run = "go run ./cmd/fixturegen"
 
 ["generate:scopes"]
-description = "openapi/{service,external,site} (x-required-scopes, x-required-permissions, x-grant-permissions) -> Go (the access tables of scopegen.Tables)"
+description = "openapi/{service,external,site} (x-required-scopes, x-required-permissions, x-grant-permissions, the Permission and ApiTokenScope enums) -> Go (scopegen.Tables)"
 run = "go run ./cmd/scopegen"
 
 [generate]

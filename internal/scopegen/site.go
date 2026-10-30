@@ -8,7 +8,8 @@ import (
 const (
 	// workspaceParam is the path parameter that addresses a Workspace on /site.
 	workspaceParam = "workspaceId"
-	// permissionsExtension is where an operation of /site declares the Permissions it needs.
+	// permissionsExtension is where an operation declares the Permissions it needs: on /site its
+	// caller's, on /api a Connection's User's.
 	permissionsExtension = "x-required-permissions"
 	// withheldExtension marks the operation a User withheld by the Two-factor requirement may
 	// still call in the Workspace (ADR 0020).

@@ -17,6 +17,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
@@ -58,7 +59,8 @@ func GetTokenAuth(ctx context.Context) *TokenAuth {
 	return v
 }
 
-func HasScope(auth *TokenAuth, scope externalapi.ApiTokenScope) bool {
+// HasScope reports whether the authenticated token carries scope; no token carries none.
+func HasScope(auth *TokenAuth, scope apitokens.Scope) bool {
 	if auth == nil {
 		return false
 	}
@@ -98,8 +100,9 @@ var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
 // HandleBearerAuth authenticates the Bearer token (Authenticate) and then lets it call op only
 // when it carries every scope the contract declares for op (ExternalOperationScopes, ADR 0061)
 // and, for a Connection, when its User's current Role holds the Permission granting each of
-// those scopes needs (accounts.GrantPermissions). An operation absent from the table is refused
-// to every token. A token that is missing, invalid, revoked or expired is ErrUnauthorized (401);
+// those scopes needs (accounts.GrantPermissions) and each Permission op itself declares
+// (ExternalOperationPermissions). An operation absent from the scope table is refused to every
+// token. A token that is missing, invalid, revoked or expired is ErrUnauthorized (401);
 // a valid token without a scope of op is refused with 403, and a Connection whose User's Role
 // lacks the Permission with 403 permission_required; neither counts against the address's
 // failed-authentication budget.
@@ -134,24 +137,27 @@ func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalap
 
 // permitted reports, as a refusal, whether the token may call op: the contract must declare op,
 // the token must carry each of its scopes, and a Connection's User must hold, in their current
-// Role, the Permission granting each scope needs: a demotion takes effect on the next request.
+// Role, the Permission granting each scope needs and each Permission op declares, so a
+// Connection does no more than its User may on /site: a demotion takes effect on the next request.
 func permitted(op externalapi.OperationName, auth *TokenAuth) error {
 	required, declared := ExternalOperationScopes[op]
 	if !declared {
 		return scopeRequiredError{op: op}
 	}
-	missing := lo.Reject(required, func(s externalapi.ApiTokenScope, _ int) bool { return HasScope(auth, s) })
+	missing := lo.Reject(required, func(s apitokens.Scope, _ int) bool { return HasScope(auth, s) })
 	if len(missing) > 0 {
 		return scopeRequiredError{op: op, missing: missing}
 	}
 	if auth.Membership == nil {
 		return nil
 	}
-	for _, s := range required {
-		if p, needed := accounts.GrantPermissions[string(s)]; needed {
-			if err := accounts.Require(auth.Membership.Role, p); err != nil {
-				return err
-			}
+	needed := lo.FilterMap(required, func(s apitokens.Scope, _ int) (accounts.Permission, bool) {
+		p, ok := accounts.GrantPermissions[string(s)]
+		return p, ok
+	})
+	for _, p := range append(needed, ExternalOperationPermissions[op]...) {
+		if err := accounts.Require(auth.Membership.Role, p); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -162,14 +168,14 @@ func permitted(op externalapi.OperationName, auth *TokenAuth) error {
 // Problem method.
 type scopeRequiredError struct {
 	op      externalapi.OperationName
-	missing []externalapi.ApiTokenScope
+	missing []apitokens.Scope
 }
 
 func (e scopeRequiredError) Error() string {
 	if len(e.missing) == 0 {
 		return "the operation " + e.op + " is not open to API tokens"
 	}
-	names := lo.Map(e.missing, func(s externalapi.ApiTokenScope, _ int) string { return string(s) })
+	names := lo.Map(e.missing, func(s apitokens.Scope, _ int) string { return string(s) })
 	if len(names) == 1 {
 		return "the API token lacks the scope " + names[0]
 	}
@@ -238,12 +244,13 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 	actor := events.Actor{Kind: events.ActorAPIToken, ID: strconv.FormatInt(token.ID, 10), Name: token.Name}
 	m := token.Edges.Membership
 	if m != nil {
-		// A Connection acts as its User, under the Workspace's Two-factor requirement like the
-		// User's own session (ADR 0061, ADR 0020); a token carries no Second factor step.
+		// A Connection acts as its User, through its client, under the Workspace's Two-factor
+		// requirement like the User's own session (ADR 0061, ADR 0020); a token carries no Second
+		// factor step.
 		if secondfactor.Withheld(m, h.now(), false) {
 			return ctx, SecondFactorRequiredError{}
 		}
-		actor = events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(m.UserID, 10), Name: m.Edges.User.Name}
+		actor = events.ConnectionActor(m.UserID, m.Edges.User.Name, token.Name)
 	}
 
 	auth := &TokenAuth{

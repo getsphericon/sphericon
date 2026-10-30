@@ -22,8 +22,8 @@ func TestGenerateExternalEmitsOneRowPerOperationWithItsScopes(t *testing.T) {
 	out := string(src)
 	require.Contains(t, out, "Code generated")
 	require.Contains(t, out, "package auth")
-	require.Regexp(t, `ContactsListOperation:\s+\{externalapi.ApiTokenScopeContactsRead\},`, out)
-	require.Regexp(t, `AutomationsDryRunHttpStepOperation:\s+\{externalapi.ApiTokenScopeAutomationsWrite, externalapi.ApiTokenScopeContactsRead\},`, out)
+	require.Regexp(t, `ContactsListOperation:\s+\{apitokens.ScopeContactsRead\},`, out)
+	require.Regexp(t, `AutomationsDryRunHttpStepOperation:\s+\{apitokens.ScopeAutomationsWrite, apitokens.ScopeContactsRead\},`, out)
 	require.Regexp(t, `AuthMeGetOperation:\s+nil,`, out)
 }
 
@@ -39,4 +39,28 @@ func TestGenerateExternalRefusesAScopeThatIsNoApiTokenScope(t *testing.T) {
 	 "components":{"schemas":{"ApiTokenScope":{"type":"string","enum":["contacts:read"]}}}}`))
 
 	require.ErrorContains(t, err, `requires "contacts:peek", which is no ApiTokenScope`)
+}
+
+const externalPermissionSpec = `{"paths":{
+ "/contacts/export":{"get":{"operationId":"Contacts_export","x-required-scopes":["contacts:read"],"x-required-permissions":["contacts:export","contacts:erase"]}},
+ "/suppressions":{"post":{"operationId":"Suppressions_create","x-required-scopes":["contacts:write"],"x-required-permissions":["suppressions:manage"]}},
+ "/contacts":{"get":{"operationId":"Contacts_list","x-required-scopes":["contacts:read"]}}},
+ "components":{"schemas":{"Permission":{"type":"string","enum":["contacts:export","contacts:erase","suppressions:manage"]}}}}`
+
+func TestGenerateExternalPermissionsEmitsTheOperationsThatDeclareThem(t *testing.T) {
+	src, err := scopegen.ExternalPermissions.Generate([]byte(externalPermissionSpec))
+	require.NoError(t, err)
+
+	out := string(src)
+	require.Contains(t, out, "package auth")
+	require.Regexp(t, `ContactsExportOperation:\s+\{accounts.PermContactsExport, accounts.PermContactsErase\},`, out)
+	require.Regexp(t, `SuppressionsCreateOperation:\s+\{accounts.PermSuppressionsManage\},`, out)
+	require.NotContains(t, out, "ContactsListOperation", "an operation that declares no Permission has no entry")
+}
+
+func TestGenerateExternalPermissionsRefusesAnUnknownPermission(t *testing.T) {
+	_, err := scopegen.ExternalPermissions.Generate([]byte(`{"paths":{"/x":{"get":{"operationId":"Contacts_export","x-required-permissions":["contacts:peek"]}}},
+	 "components":{"schemas":{"Permission":{"type":"string","enum":["contacts:export"]}}}}`))
+
+	require.ErrorContains(t, err, `(Contacts_export) requires "contacts:peek", which is no Permission`)
 }

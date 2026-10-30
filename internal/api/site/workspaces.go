@@ -220,7 +220,8 @@ func deletedWorkspaceResource(w *ent.Workspace, onlyOwner bool) siteapi.SiteDele
 	return res
 }
 
-// SiteWorkspacesListDeleted lists the caller's Owner Workspaces in their deletion window.
+// SiteWorkspacesListDeleted lists the Workspaces in their deletion window where the caller's Role
+// holds workspace:delete.
 func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.SiteDeletedWorkspaceResource, error) {
 	a := auth.GetSiteAuth(ctx)
 	if a == nil {

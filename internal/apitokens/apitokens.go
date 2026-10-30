@@ -22,7 +22,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -41,7 +40,7 @@ func nameEmpty() *validation.Error {
 	return &validation.Error{Field: "name", Message: i18n.T("errors.name_empty", nil)}
 }
 
-// unknownScope refuses a scope that is not in the ApiTokenScope vocabulary.
+// unknownScope refuses a scope that is not in the vocabulary (Scopes).
 func unknownScope(scope string) *validation.Error {
 	return &validation.Error{Field: "scopes", Message: i18n.T("errors.token_scope_unknown", map[string]any{"Scope": scope})}
 }
@@ -170,5 +169,5 @@ func Rename(ctx context.Context, s *ent.Scoped, id int64, name string) (*ent.Api
 }
 
 func validScope(scope string) bool {
-	return slices.Contains(externalapi.ApiTokenScope("").AllValues(), externalapi.ApiTokenScope(scope))
+	return slices.Contains(Scopes, Scope(scope))
 }

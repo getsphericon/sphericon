@@ -25,6 +25,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
@@ -103,7 +104,7 @@ func sendLock(sendTools map[string]bool, auth Authenticator) mcp.Middleware {
 			case "tools/call":
 				if params, ok := req.GetParams().(*mcp.CallToolParamsRaw); ok && sendTools[params.Name] &&
 					!canSend(ctx, auth, req.GetExtra()) {
-					return toolError("refused: " + params.Name + " is a send-class tool and needs the " + string(externalapi.ApiTokenScopeMcpSend) + " scope on the API token"), nil
+					return toolError("refused: " + params.Name + " is a send-class tool and needs the " + string(apitokens.ScopeMcpSend) + " scope on the API token"), nil
 				}
 			}
 			return next(ctx, method, req)
@@ -121,7 +122,7 @@ func canSend(ctx context.Context, auth Authenticator, extra *mcp.RequestExtra) b
 		return false
 	}
 	ctx, err := auth.Authenticate(ctx, externalapi.BearerAuth{Token: token})
-	return err == nil && apiauth.HasScope(apiauth.GetTokenAuth(ctx), externalapi.ApiTokenScopeMcpSend)
+	return err == nil && apiauth.HasScope(apiauth.GetTokenAuth(ctx), apitokens.ScopeMcpSend)
 }
 
 // Option configures [New].

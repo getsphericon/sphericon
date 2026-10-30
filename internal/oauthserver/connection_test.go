@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
+	"github.com/getsphericon/sphericon/ent/suppression"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -120,6 +121,65 @@ func TestADemotionTakesEffectOnTheNextRequest(t *testing.T) {
 	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refused.Code.Value)
 }
 
+// A member's Connection is bounded by her Role on what /site gates by a Permission her scopes do
+// not already need to be granted (ADR 0061): exporting a Contact, finding one by address and
+// adding a Suppression answer 403 permission_required, and the refused write leaves no row.
+func TestAMembersConnectionIsBoundedByHerRole(t *testing.T) {
+	env := testhelper.Setup(t)
+	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read contacts:write")
+	api := env.ExternalWithToken(t, tok.AccessToken)
+
+	exported, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(fixtures.ContactBobID))})
+	require.NoError(t, err)
+	refusedExport, isRefused := exported.(*externalapi.ContactsExportForbidden)
+	require.Truef(t, isRefused, "got %T", exported)
+	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refusedExport.Code.Value)
+
+	found, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{Email: externalapi.NewOptEmailAddress(fixtures.ContactBobEmail)})
+	require.NoError(t, err)
+	refusedLookup, isRefused := found.(*externalapi.ContactsExportForbidden)
+	require.Truef(t, isRefused, "got %T", found)
+	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refusedLookup.Code.Value)
+
+	suppressed, err := api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
+	require.NoError(t, err)
+	refusedSuppression, isRefused := suppressed.(*externalapi.SuppressionsCreateForbidden)
+	require.Truef(t, isRefused, "got %T", suppressed)
+	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refusedSuppression.Code.Value)
+	added, err := env.DB.Suppression.Query().Where(suppression.Destination("bounded@example.com")).Exist(t.Context())
+	require.NoError(t, err)
+	assert.False(t, added, "the refused call suppressed nothing")
+}
+
+// An admin's Connection with the same scopes does both: her Role holds the Permissions.
+func TestAnAdminsConnectionExportsAndSuppresses(t *testing.T) {
+	env := testhelper.Setup(t)
+	tok := connectAs(t, env, fixtures.AdminAliceEmail, fixtures.AcmePublicID, "contacts:read contacts:write")
+	api := env.ExternalWithToken(t, tok.AccessToken)
+
+	exported, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{Email: externalapi.NewOptEmailAddress(fixtures.ContactBobEmail)})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.ContactsExportOKApplicationOctetStreamHeaders{}, exported)
+
+	suppressed, err := api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.SuppressionResource{}, suppressed)
+}
+
+// assertConnectionEnded checks that the Connection tok was issued is over: its access token is
+// refused on /mcp and /api, its refresh token is no grant, and no Connection row is left.
+func assertConnectionEnded(t *testing.T, env *testhelper.TestEnv, tok tokenResponse) {
+	t.Helper()
+	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
+	listed, err := env.ExternalWithToken(t, tok.AccessToken).ContactsList(t.Context(), externalapi.ContactsListParams{})
+	require.NoError(t, err)
+	assert.IsType(t, &externalapi.ContactsListUnauthorized{}, listed)
+	assert.Equal(t, "invalid_grant", decodeToken(t, exchange(t, env, refreshForm(tok.RefreshToken))).Error)
+	remaining, err := env.DB.ApiToken.Query().Where(apitoken.MembershipIDNotNil()).Count(t.Context())
+	require.NoError(t, err)
+	assert.Zero(t, remaining)
+}
+
 // A Connection ends with its Membership: Leaving the Workspace removes it and its token is
 // refused from then on.
 func TestLeavingEndsTheUsersConnections(t *testing.T) {
@@ -131,14 +191,41 @@ func TestLeavingEndsTheUsersConnections(t *testing.T) {
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteWorkspacesLeaveNoContent{}, left)
 
-	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
-	assert.Equal(t, "invalid_grant", decodeToken(t, exchange(t, env, refreshForm(tok.RefreshToken))).Error)
-	remaining, err := env.DB.ApiToken.Query().Where(apitoken.MembershipIDNotNil()).Count(t.Context())
-	require.NoError(t, err)
-	assert.Zero(t, remaining)
+	assertConnectionEnded(t, env, tok)
 }
 
-// What a Connection does is recorded in the Audit log as done by its User (ADR 0061).
+// A Connection ends when an Owner or Admin removes its User's Membership.
+func TestRemovalEndsTheUsersConnections(t *testing.T) {
+	env := testhelper.Setup(t)
+	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read")
+	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
+
+	removed, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteMembershipsDelete(t.Context(),
+		siteapi.SiteMembershipsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AcmeMemberMembershipID)})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteMembershipsDeleteNoContent{}, removed)
+
+	assertConnectionEnded(t, env, tok)
+}
+
+// A Connection ends when its User deletes themself.
+func TestUserDeletionEndsTheUsersConnections(t *testing.T) {
+	env := testhelper.Setup(t)
+	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read")
+	require.NotEqual(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
+
+	deleted, err := env.SiteActor(t, fixtures.MemberMaryEmail).SiteUserDeleteUser(t.Context(), &siteapi.SiteDeleteUserInput{
+		Email:           fixtures.MemberMaryEmail,
+		CurrentPassword: siteapi.NewOptString(fixtures.MemberMaryPassword),
+	})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteUserDeleteUserNoContent{}, deleted)
+
+	assertConnectionEnded(t, env, tok)
+}
+
+// What a Connection does is recorded in the Audit log as done by its User, named through the
+// client the User approved (ADR 0061).
 func TestAConnectionActsAsItsUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:write")
@@ -150,7 +237,7 @@ func TestAConnectionActsAsItsUser(t *testing.T) {
 
 	got := env.OutboxEvents(t, events.NameAuditEntry)
 	require.Len(t, got, 1)
-	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.MemberMaryID), Name: fixtures.MemberMaryName},
+	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.MemberMaryID), Name: fixtures.MemberMaryName + " via Fixture Connector"},
 		got[0].(*events.AuditEntry).Actor)
 }
 
