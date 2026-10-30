@@ -79,7 +79,7 @@ func TestAUsedLinkIsRefused(t *testing.T) {
 	deleteUser(t, pia, &siteapi.SiteDeleteUserInput{Email: fixtures.ProviderOnlyPiaEmail, Token: siteapi.NewOptString(token)})
 	// The same address signs up again as a new User; the old link is bound to the old id.
 	// test writes: production Sign-up cannot make a password-less User, the successor of a provider-only User under test; a provider sign-in flow is a far heavier setup than the one row
-	require.NoError(t, env.DB.User.Create().SetName("Pia Again").SetEmail(fixtures.ProviderOnlyPiaEmail).SetEmailVerifiedAt(time.Now()).Exec(t.Context()))
+	require.NoError(t, env.FeedDB.User.Create().SetName("Pia Again").SetEmail(fixtures.ProviderOnlyPiaEmail).SetEmailVerifiedAt(time.Now()).Exec(t.Context()))
 	again := env.SiteActor(t, fixtures.ProviderOnlyPiaEmail)
 
 	res := deleteUser(t, again, &siteapi.SiteDeleteUserInput{Email: fixtures.ProviderOnlyPiaEmail, Token: siteapi.NewOptString(token)})

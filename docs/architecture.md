@@ -24,8 +24,17 @@ coding standards in `CODING_STANDARDS.md`.
     invalid, revoked or expired token. No handler checks a scope; /mcp inherits the check, as each tool call is
     dispatched to /api with the caller's token.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
-  - `/staff/*` — platform staff (the **Staff member**, ADR 0026), Enterprise (license feature `staff`; unlicensed = 404).
-    Auth: its own **JWT cookie** (`STAFF_JWT`, `SPHERICON_STAFF_JWT_SECRET`) after password plus mandatory TOTP. Handlers, store and security handler in `ee/staff`.
+  - `/staff/*` — platform staff (the **Staff member**, ADR 0026, ADR 0063), on every Instance in both Modes and
+    without a License key. Auth: its own **JWT cookie** (`STAFF_JWT`, `SPHERICON_STAFF_JWT_SECRET`) after password
+    plus mandatory TOTP; without the secret the Staff sign-in is off and the whole prefix answers 404 (the `staff`
+    license and the `saas` Mode refuse to start without it). Two contracts share the prefix and the cookie: the
+    core one (`typespec/staff`: sign-in, me, the Sign-up items and their Legal documents), handlers and security
+    handler in `internal/api/staff` over the Staff member module `internal/staffmembers` (store, login adapter,
+    sessions, `Current`) and the Sign-up items module `internal/signupitems` (ADR 0062), whose two anonymous reads
+    `/site` serves for the sign-up form and the public Legal document pages; and the Enterprise
+    sections (`typespec/staffee`: Workspaces, holds, audit, Sign-up survey readout), handlers in `ee/staff`, served
+    only with the license feature `staff` and otherwise 404. `server.NewStaffAPI` mounts the core ogen server
+    with the Enterprise one as its not-found handler, so each contract routes its own paths.
   - `/service/*` — the service endpoints of the Staff surface, called by a platform service with a
     **Service credential** (ADR 0026): **Bearer** `smsc_…`, limited to scopes (`usage:read`,
     `workspaces:read`, `domains:read`, `holds:write`), created only by `sphericon service-credential`. Served **only by
@@ -39,24 +48,28 @@ coding standards in `CODING_STANDARDS.md`.
   address normalization, the throttle consulted first (ADR 0025), the decoy hash, the verification
   gate (ADR 0030), failure counting and the challenge. It holds no database client; an adapter
   supplies the `Store`, `Throttle`, challenge `Parse`/`Verify` and issues the session. `/site`
-  (`internal/api/site/auth_login.go`) and `ee/staff` (`login.go`, the second adapter, ADR 0026) are
+  (`internal/api/site/auth_login.go`) and `internal/staffmembers` (`login.go`, the second adapter, ADR 0026) are
   the two adapters: add sign-in rules in the module, not in a handler. The throttle is
   `accounts.Attempts.For(kind)`, a `Counter` bound to one `Kind` (`KindLogin`, `KindStaffLogin`),
   which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`login.Outcome`,
   `login.SecondOutcome`).
 - **Sign-up sequence**: `internal/signup` (ADR 0030, 0031) is the one core module for a Sign-up with
-  a password, shaped like `login`: the sign-up rule first (ADR 0042, 0060), the form, then the same
+  a password, shaped like `login`: the form first, then the same
   work for every address (a mail budget slot, the hash, the lookup, one write, a token and exactly
   one mail job) so a Taken address is not learnable, the recovery from a race on the unique email,
   the replaced password of an Unverified User, and the Sign-up browser's value (`BrowserHash`,
-  `SameBrowser`). It holds no database client; the `/site` adapter (`internal/api/site/auth.go`)
+  `SameBrowser`). The Sign-up items' answers (ADR 0062) are checked with the form, before any work,
+  through the `Consents` seam (`consentrecords.Module.Check`): a required acceptance not ticked, an item
+  not in effect or a stale version is a field of the same refusal, and the Consent records go to the
+  `Store`, which writes them in the transaction that creates the User (or replaces an Unverified
+  User's password; a Verified User gets none). It holds no database client; the `/site` adapter (`internal/api/site/auth.go`)
   supplies the `Store` over `accounts`, the budget (`accounts.Attempts.For(KindSignUp)`), the
   mails and the token mint, and turns the `signup.Outcome` into the answer and the cookie. The
   profile rules of a User (a blank name, the password rule, the proof of the current password and
   whether the session is issued again) are `accounts.ChangeProfile`, which takes the login module's
   `Prove` as a seam.
 - **Package boundaries are checked by easement (`easement.yml`, `mise run check:arch`).** A surface
-  package (`internal/api/{site,external,collect}`) never imports another surface, `internal/**` core
+  package (`internal/api/{site,external,collect,staff}`) never imports another surface, `internal/**` core
   imports neither a surface nor `ee/`, and only the wiring packages (`internal/app`,
   `internal/server`, `internal/mcpserver`, `internal/testhelper`, `internal/doctor`, `cmd/server`)
   assemble them; only they import `ee/`. A new wiring package is added to the `wiring` component,
@@ -64,7 +77,7 @@ coding standards in `CODING_STANDARDS.md`.
   the `core` and `ee` components, and a new top-level tree must be assigned a component or listed
   as `unowned` in `easement.yml`.
 - **Resource DTOs come from goverter, not from struct literals (review rule 1, analyzer `handmapper`).** Add a method to the surface's
-  `Converter` (`internal/api/{site,external}/resources`, `ee/staff/resources`) with
+  `Converter` (`internal/api/{site,external,staff}/resources`, `ee/staff/resources`) with
   `goverter:map` / `extend` helpers, and attach in the handler only what the mapper cannot see
   (marked `goverter:ignore` with the reason). Hand-built values are limited to response wrappers
   (`*ListOK`, `*Headers`) and aggregates with no single source (setup checklist, lint findings,
@@ -93,13 +106,21 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership with
      `callerMembership(ctx)`). The middleware also applies the Two-factor requirement and the
      Permissions the operation declares in TypeSpec (`x-required-permissions`, generated into
-     `operationAccess`). Two operations name their Workspace elsewhere and call
+     `operationAccess`). Before all of it, on every operation that carries a session, it refuses a
+     User with a required acceptance pending (`consentrecords.Module.Gated`, 403
+     `acceptance_pending`, ADR 0062) unless the operation is marked
+     `x-allowed-while-acceptance-pending` in TypeSpec, the one list of what a gated User may call;
+     an unmarked operation is refused, the mark lifts only the gate (a Workspace's operation still
+     applies the Two-factor requirement and its Permissions), it only declares on an anonymous
+     operation, and a mark that is not `true` fails generation. Two operations name their Workspace elsewhere and call
      `accounts.Accounts.Scope` themselves: `SiteOAuthDecide` (in its body, through `Handlers.member`)
      and `SiteWorkspacesCreate` / `SiteWorkspacesRestore` (a Workspace that was not live before);
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
      in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`. A Connection (an API token
      with a `membership_id`, ADR 0061) is looked up with its Membership: the scope acts as its User,
-     the Two-factor requirement applies, and the Role bounds its scopes on every request;
+     the Two-factor requirement and the acceptance gate apply (`consentrecords.Module.Gated`, 403
+     `acceptance_pending`, ADR 0062), and the Role bounds its scopes on every request; the
+     Workspace's API token meets neither;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
   4. jobs and event subscribers, right after the row that names the Workspace is loaded
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
@@ -114,7 +135,8 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      loaded), and `workspacedeletion.Module.EraseDue`, which lists the due Workspaces with the raw client and
      scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
   5. transactions: `events.Bus.WithinScopedTx`, and `tx.Scoped(...)` inside
-     `accounts.AcceptInvitation`, re-scope a transaction's client to the same Workspace;
+     `accounts.AcceptInvitation` (its `acceptInvitationIn`, which the completion of a pending
+     sign-up also runs in its own transaction), re-scope a transaction's client to the same Workspace;
      `events.Bus.WithinHandOverTx` also scopes it to the Workspace a Join domain moves away from
      (acting as the system), after `joindomains` has read that Workspace off the holder's row;
      the domain-join step of the verification transaction (`applyDomainJoin` in
@@ -149,11 +171,13 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      of `ee/usage` (`raise`, run by its ent hook), which scopes over each
      Workspace id it is given only after loading that Workspace's row and finding it live.
 - **The raw `*ent.Client` is allowed only in:** `internal/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/accounts` (User, Membership,
-  Workspace incl. Workspace id resolution, invitation by token), `internal/api/auth` (credentials, token and key lookup),
+  Workspace incl. Workspace id resolution, invitation by token, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
+  or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
+  transaction; the prune river job only calls it), `internal/api/auth` (credentials, token and key lookup),
   `internal/consent` (signed unsubscribe/confirm tokens: the Workspace comes from the token,
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
-  codes, ADR 0020: they belong to the User, not a Workspace), `internal/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
+  codes, ADR 0020: they belong to the User, not a Workspace), `internal/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
   that no Workspace owns, and who decides about it: the Owners of the oldest Workspace, ADR 0032), `internal/joindomains` (Join
   domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
   by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
@@ -176,12 +200,12 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   abuse detector, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
   exempt, then scopes to judge each, and writes its notice markers by id), `ee/usage` (the periodic
   usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook, installed by `Edition.Hooks()` on the client and the bus's transaction client only with the `staff` license, that keeps the contacts peak as Contacts change), `ee/staff` (the
-  platform Staff member, ADR 0026: the Staff member table, and the Workspace rows, suspension state and
-  rates the console shows as tenant metadata; Workspace data goes through the scopes of
-  list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives
+  Enterprise sections of the Staff console, ADR 0026: the Workspace rows, suspension state and
+  rates the console shows as tenant metadata, the Service credentials and Staff holds; Workspace data goes
+  through the scopes of list item 7), `internal/workspacefeed` (the ent hook, installed on every client, that gives
   a Workspace the next feed position when it is created or an owner is added, removed,
   transferred or changes email or verification: it must reach the Workspace a User or
-  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/trackinghostlog` (the same
+  Membership change belongs to; `ee/staff` serves the feed in `Module.WorkspaceFeed`), `internal/userfeed` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/staff` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Mailings`), `internal/trackinghostlog` (the same
   pair of hooks for the Tracking host change log, ADR 0038: it reads Sending domains of any Workspace
   to log the hosts a change adds or removes; `ee/staff` serves it in `Module.TrackingHostFeed`) and the composition roots
   (`internal/app`, `internal/db`, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else

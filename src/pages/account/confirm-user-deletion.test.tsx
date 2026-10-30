@@ -7,7 +7,7 @@ import {
   handleSiteWorkspacesListDeleted,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteDeletedWorkspaceResource } from '../../generated/site/types.gen.ts'
-import { Route as deleteRoute } from '../../routes/account/delete.tsx'
+import { Route as deleteRoute } from '../../routes/delete-account.tsx'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'

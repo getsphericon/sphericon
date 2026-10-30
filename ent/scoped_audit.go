@@ -180,11 +180,20 @@ func auditChangeApiToken(verb string, before, after *ApiToken) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *ApiTokenCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *ApiTokenUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *ApiTokenUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *ApiTokenDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *ApiTokenCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.ApiToken.Hooks()
+}
+func (b *ApiTokenUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.ApiToken.Hooks()
+}
+func (b *ApiTokenUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.ApiToken.Hooks()
+}
+func (b *ApiTokenDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.ApiToken.Hooks()
+}
 func (b *ApiTokenCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -229,13 +238,20 @@ func auditChangeAutomation(verb string, before, after *Automation) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *AutomationCreate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *AutomationUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *AutomationCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Automation.Hooks()
 }
-func (b *AutomationUpdate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *AutomationDelete) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *AutomationUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Automation.Hooks()
+}
+func (b *AutomationUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Automation.Hooks()
+}
+func (b *AutomationDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Automation.Hooks()
+}
 func (b *AutomationCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -283,11 +299,20 @@ func auditChangeBrandKit(verb string, before, after *BrandKit) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *BrandKitCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *BrandKitUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *BrandKitUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *BrandKitDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *BrandKitCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.BrandKit.Hooks()
+}
+func (b *BrandKitUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.BrandKit.Hooks()
+}
+func (b *BrandKitUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.BrandKit.Hooks()
+}
+func (b *BrandKitDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.BrandKit.Hooks()
+}
 func (b *BrandKitCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -343,11 +368,20 @@ func auditChangeBroadcast(verb string, before, after *Broadcast) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *BroadcastCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *BroadcastUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *BroadcastUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *BroadcastDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *BroadcastCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Broadcast.Hooks()
+}
+func (b *BroadcastUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Broadcast.Hooks()
+}
+func (b *BroadcastUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Broadcast.Hooks()
+}
+func (b *BroadcastDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Broadcast.Hooks()
+}
 func (b *BroadcastCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -403,11 +437,20 @@ func auditChangeContact(verb string, before, after *Contact) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *ContactCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *ContactUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *ContactUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *ContactDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *ContactCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Contact.Hooks()
+}
+func (b *ContactUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Contact.Hooks()
+}
+func (b *ContactUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Contact.Hooks()
+}
+func (b *ContactDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Contact.Hooks()
+}
 func (b *ContactCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -450,13 +493,20 @@ func auditChangeCustomField(verb string, before, after *CustomField) AuditChange
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *CustomFieldCreate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *CustomFieldUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *CustomFieldCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.CustomField.Hooks()
 }
-func (b *CustomFieldUpdate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *CustomFieldDelete) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *CustomFieldUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.CustomField.Hooks()
+}
+func (b *CustomFieldUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.CustomField.Hooks()
+}
+func (b *CustomFieldDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.CustomField.Hooks()
+}
 func (b *CustomFieldCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -501,18 +551,19 @@ func auditChangeEmailTemplate(verb string, before, after *EmailTemplate) AuditCh
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
 func (b *EmailTemplateCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.EmailTemplate.Hooks()
 }
 func (b *EmailTemplateUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.EmailTemplate.Hooks()
 }
 func (b *EmailTemplateUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.EmailTemplate.Hooks()
 }
 func (b *EmailTemplateDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.EmailTemplate.Hooks()
 }
 func (b *EmailTemplateCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
@@ -559,11 +610,20 @@ func auditChangeHold(verb string, before, after *Hold) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *HoldCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *HoldUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *HoldUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *HoldDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *HoldCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Hold.Hooks()
+}
+func (b *HoldUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Hold.Hooks()
+}
+func (b *HoldUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Hold.Hooks()
+}
+func (b *HoldDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Hold.Hooks()
+}
 func (b *HoldCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -623,13 +683,20 @@ func auditChangeIntegration(verb string, before, after *Integration) AuditChange
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *IntegrationCreate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *IntegrationUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *IntegrationCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Integration.Hooks()
 }
-func (b *IntegrationUpdate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *IntegrationDelete) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *IntegrationUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Integration.Hooks()
+}
+func (b *IntegrationUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Integration.Hooks()
+}
+func (b *IntegrationDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Integration.Hooks()
+}
 func (b *IntegrationCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -675,13 +742,20 @@ func auditChangeJoinDomain(verb string, before, after *JoinDomain) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *JoinDomainCreate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *JoinDomainUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *JoinDomainCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.JoinDomain.Hooks()
 }
-func (b *JoinDomainUpdate) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *JoinDomainDelete) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
+func (b *JoinDomainUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.JoinDomain.Hooks()
+}
+func (b *JoinDomainUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.JoinDomain.Hooks()
+}
+func (b *JoinDomainDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.JoinDomain.Hooks()
+}
 func (b *JoinDomainCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -727,11 +801,20 @@ func auditChangeRule(verb string, before, after *Rule) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *RuleCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *RuleUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *RuleUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *RuleDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *RuleCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Rule.Hooks()
+}
+func (b *RuleUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Rule.Hooks()
+}
+func (b *RuleUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Rule.Hooks()
+}
+func (b *RuleDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Rule.Hooks()
+}
 func (b *RuleCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -774,11 +857,20 @@ func auditChangeSegment(verb string, before, after *Segment) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *SegmentCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *SegmentUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *SegmentUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *SegmentDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *SegmentCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Segment.Hooks()
+}
+func (b *SegmentUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Segment.Hooks()
+}
+func (b *SegmentUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Segment.Hooks()
+}
+func (b *SegmentDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Segment.Hooks()
+}
 func (b *SegmentCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -832,18 +924,19 @@ func auditChangeSendingDomain(verb string, before, after *SendingDomain) AuditCh
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
 func (b *SendingDomainCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.SendingDomain.Hooks()
 }
 func (b *SendingDomainUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.SendingDomain.Hooks()
 }
 func (b *SendingDomainUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.SendingDomain.Hooks()
 }
 func (b *SendingDomainDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.SendingDomain.Hooks()
 }
 func (b *SendingDomainCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
@@ -885,11 +978,20 @@ func auditChangeTag(verb string, before, after *Tag) AuditChange {
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
-func (b *TagCreate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *TagUpdateOne) auditRebind(c *Client) { b.config, b.mutation.config = c.config, c.config }
-func (b *TagUpdate) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
-func (b *TagDelete) auditRebind(c *Client)    { b.config, b.mutation.config = c.config, c.config }
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
+func (b *TagCreate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
+}
+func (b *TagUpdateOne) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
+}
+func (b *TagUpdate) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
+}
+func (b *TagDelete) auditRebind(c *Client) {
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
+}
 func (b *TagCreateBulk) auditRebind(c *Client) {
 	b.config = c.config
 	for _, x := range b.builders {
@@ -942,18 +1044,19 @@ func auditChangeWebhookEndpoint(verb string, before, after *WebhookEndpoint) Aud
 }
 
 // auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together.
+// entry, so the mutation and the entry commit together, and runs that client's hooks: the
+// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
 func (b *WebhookEndpointCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.WebhookEndpoint.Hooks()
 }
 func (b *WebhookEndpointUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.WebhookEndpoint.Hooks()
 }
 func (b *WebhookEndpointUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.WebhookEndpoint.Hooks()
 }
 func (b *WebhookEndpointDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config = c.config, c.config
+	b.config, b.mutation.config, b.hooks = c.config, c.config, c.WebhookEndpoint.Hooks()
 }
 func (b *WebhookEndpointCreateBulk) auditRebind(c *Client) {
 	b.config = c.config

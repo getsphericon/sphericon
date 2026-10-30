@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
 func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.License {
@@ -27,50 +28,35 @@ func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.Licens
 	return lic
 }
 
-var (
-	siteSecret = rand.Text() + rand.Text()
-	attempts   = accounts.NewAttempts(nil)
-)
-
-func TestTheStaffSecretIsRequiredOnlyWithTheStaffLicense(t *testing.T) {
-	unset := staff.Config{SessionTTL: time.Hour, Attempts: attempts}
-
-	e, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureAudit), nil, []string{siteSecret}, unset)
-	require.NoError(t, err, "an instance without the staff license needs no staff secret")
-	assert.Nil(t, e.Staff(nil, nil), "and has no staff surface")
-
-	_, err = ee.New(nil, nil, licenseFor(t, licensekey.FeatureStaff), nil, []string{siteSecret}, unset)
-	require.Error(t, err)
-}
-
-func TestTheStaffSecretMustDifferFromTheSiteSecretAndBeLongEnough(t *testing.T) {
-	lic := licenseFor(t, licensekey.FeatureStaff)
-
-	_, err := ee.New(nil, nil, lic, nil, []string{siteSecret}, staff.Config{Secret: siteSecret, SessionTTL: time.Hour, Attempts: attempts})
-	require.Error(t, err, "a StaffMember session must never verify as a User's")
-
-	_, err = ee.New(nil, nil, lic, nil, []string{siteSecret}, staff.Config{Secret: "short", SessionTTL: time.Hour, Attempts: attempts})
-	require.Error(t, err)
-
-	secondary := rand.Text() + rand.Text()
-	_, err = ee.New(nil, nil, lic, nil, []string{siteSecret, secondary}, staff.Config{Secret: secondary, SessionTTL: time.Hour, Attempts: attempts})
-	require.Error(t, err, "a rotation's secondary JWT secret verifies User sessions too")
-
-	e, err := ee.New(nil, nil, lic, nil, []string{siteSecret}, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
+// staffSessions are the sessions of a Staff sign-in that is on.
+func staffSessions(t *testing.T) *staffmembers.Sessions {
+	t.Helper()
+	m, err := staffmembers.New(nil, nil, []string{rand.Text() + rand.Text()}, staffmembers.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: accounts.NewAttempts(nil)})
 	require.NoError(t, err)
-	assert.NotNil(t, e.Staff(nil, nil))
+	return m.Sessions()
 }
 
-func TestTheStaffLoginCounterIsRequiredWithTheStaffLicense(t *testing.T) {
-	lic := licenseFor(t, licensekey.FeatureStaff)
+func TestTheStaffLicenseNeedsTheStaffSignIn(t *testing.T) {
+	_, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureStaff), nil, staff.Config{})
 
-	_, err := ee.New(nil, nil, lic, nil, []string{siteSecret}, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour})
+	require.Error(t, err, "the Enterprise sections take the Staff member's sessions")
+}
 
-	require.Error(t, err, "a missing counter must not silently leave the login unthrottled")
+func TestOnlyTheStaffLicenseServesTheEnterpriseSections(t *testing.T) {
+	plain, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureAudit), staffSessions(t), staff.Config{})
+	require.NoError(t, err)
+	off, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureAudit), nil, staff.Config{})
+	require.NoError(t, err, "an instance without the staff license needs no Staff sign-in")
+	licensed, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureStaff), staffSessions(t), staff.Config{})
+	require.NoError(t, err)
+
+	assert.Nil(t, plain.StaffSections(nil, nil))
+	assert.Nil(t, off.StaffSections(nil, nil))
+	assert.NotNil(t, licensed.StaffSections(nil, nil))
 }
 
 func TestTheEditionRegistersTheAbuseDetectorNextToTheOtherJobs(t *testing.T) {
-	e, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureStaff), nil, []string{siteSecret}, staff.Config{Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
+	e, err := ee.New(nil, nil, licenseFor(t, licensekey.FeatureStaff), staffSessions(t), staff.Config{})
 	require.NoError(t, err)
 
 	jobs := e.Jobs(nil, nil)

@@ -8,9 +8,9 @@ import {
   handleStaffWorkspacesSuspend,
   handleStaffWorkspacesUnexempt,
   handleStaffWorkspacesUnsuspend,
-} from '../generated/staff/msw.gen.ts'
-import type { StaffWorkspaceDetailResource } from '../generated/staff/types.gen.ts'
-import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
+} from '../generated/staffee/msw.gen.ts'
+import type { StaffWorkspaceDetailResource } from '../generated/staffee/types.gen.ts'
+import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'

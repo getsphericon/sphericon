@@ -42,6 +42,8 @@ type User struct {
 	SecondFactorLastStep int64 `json:"second_factor_last_step,omitempty"`
 	// SignupSurveyDueAt holds the value of the "signup_survey_due_at" field.
 	SignupSurveyDueAt *time.Time `json:"signup_survey_due_at,omitempty"`
+	// FeedPosition holds the value of the "feed_position" field.
+	FeedPosition int64 `json:"feed_position,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -62,9 +64,11 @@ type UserEdges struct {
 	Identities []*UserIdentity `json:"identities,omitempty"`
 	// SignupSurveyResponse holds the value of the signup_survey_response edge.
 	SignupSurveyResponse *SignupSurveyResponse `json:"signup_survey_response,omitempty"`
+	// ConsentRecords holds the value of the consent_records edge.
+	ConsentRecords []*ConsentRecord `json:"consent_records,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // MembershipsOrErr returns the Memberships value or an error if the edge
@@ -123,12 +127,21 @@ func (e UserEdges) SignupSurveyResponseOrErr() (*SignupSurveyResponse, error) {
 	return nil, &NotLoadedError{edge: "signup_survey_response"}
 }
 
+// ConsentRecordsOrErr returns the ConsentRecords value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ConsentRecordsOrErr() ([]*ConsentRecord, error) {
+	if e.loadedTypes[6] {
+		return e.ConsentRecords, nil
+	}
+	return nil, &NotLoadedError{edge: "consent_records"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldID, user.FieldSessionEpoch, user.FieldSecondFactorLastStep:
+		case user.FieldID, user.FieldSessionEpoch, user.FieldSecondFactorLastStep, user.FieldFeedPosition:
 			values[i] = new(sql.NullInt64)
 		case user.FieldName, user.FieldEmail, user.FieldPasswordHash, user.FieldSecondFactorSecretEncrypted:
 			values[i] = new(sql.NullString)
@@ -231,6 +244,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				_m.SignupSurveyDueAt = new(time.Time)
 				*_m.SignupSurveyDueAt = value.Time
 			}
+		case user.FieldFeedPosition:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field feed_position", values[i])
+			} else if value.Valid {
+				_m.FeedPosition = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -272,6 +291,11 @@ func (_m *User) QueryIdentities() *UserIdentityQuery {
 // QuerySignupSurveyResponse queries the "signup_survey_response" edge of the User entity.
 func (_m *User) QuerySignupSurveyResponse() *SignupSurveyResponseQuery {
 	return NewUserClient(_m.config).QuerySignupSurveyResponse(_m)
+}
+
+// QueryConsentRecords queries the "consent_records" edge of the User entity.
+func (_m *User) QueryConsentRecords() *ConsentRecordQuery {
+	return NewUserClient(_m.config).QueryConsentRecords(_m)
 }
 
 // Update returns a builder for updating this User.
@@ -338,6 +362,9 @@ func (_m *User) String() string {
 		builder.WriteString("signup_survey_due_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("feed_position=")
+	builder.WriteString(fmt.Sprintf("%v", _m.FeedPosition))
 	builder.WriteByte(')')
 	return builder.String()
 }

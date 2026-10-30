@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
 // PruneUnverified deletes Users that have no Verified email and no Membership and were
@@ -33,7 +35,12 @@ func (a *Accounts) PruneUnverified(ctx context.Context, retention time.Duration,
 		if len(ids) == 0 {
 			return total, nil
 		}
-		n, err := a.ent.User.Delete().Where(stale(user.IDIn(ids...))...).Exec(ctx)
+		// The deletion leaves a tombstone in the service feed of Users in its own transaction.
+		var n int
+		err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+			n, err = tx.User.Delete().Where(stale(user.IDIn(ids...))...).Exec(ctx)
+			return err
+		})
 		if err != nil {
 			return total, err
 		}

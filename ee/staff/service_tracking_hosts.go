@@ -2,8 +2,6 @@ package staff
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -13,13 +11,6 @@ import (
 // verified states since a cursor (needs domains:read).
 func (h *ServiceHandlers) ServiceTrackingHostFeedList(ctx context.Context, params serviceapi.ServiceTrackingHostFeedListParams) (serviceapi.ServiceTrackingHostFeedListRes, error) {
 	page, err := h.module.TrackingHostFeed(ctx, params.Cursor.Or(""), int(params.Limit.Value))
-	if errors.Is(err, ErrInvalidFeedCursor) {
-		return &serviceapi.ServiceTrackingHostFeedListBadRequest{
-			Status: serviceapi.NewOptInt32(http.StatusBadRequest),
-			Title:  serviceapi.NewOptString(http.StatusText(http.StatusBadRequest)),
-			Detail: serviceapi.NewOptString(err.Error()),
-		}, nil
-	}
 	if err != nil {
 		return nil, err
 	}

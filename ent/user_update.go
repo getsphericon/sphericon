@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/passkey"
@@ -231,6 +232,27 @@ func (_u *UserUpdate) ClearSignupSurveyDueAt() *UserUpdate {
 	return _u
 }
 
+// SetFeedPosition sets the "feed_position" field.
+func (_u *UserUpdate) SetFeedPosition(v int64) *UserUpdate {
+	_u.mutation.ResetFeedPosition()
+	_u.mutation.SetFeedPosition(v)
+	return _u
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableFeedPosition(v *int64) *UserUpdate {
+	if v != nil {
+		_u.SetFeedPosition(*v)
+	}
+	return _u
+}
+
+// AddFeedPosition adds value to the "feed_position" field.
+func (_u *UserUpdate) AddFeedPosition(v int64) *UserUpdate {
+	_u.mutation.AddFeedPosition(v)
+	return _u
+}
+
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by IDs.
 func (_u *UserUpdate) AddMembershipIDs(ids ...int64) *UserUpdate {
 	_u.mutation.AddMembershipIDs(ids...)
@@ -323,6 +345,21 @@ func (_u *UserUpdate) SetNillableSignupSurveyResponseID(id *int64) *UserUpdate {
 // SetSignupSurveyResponse sets the "signup_survey_response" edge to the SignupSurveyResponse entity.
 func (_u *UserUpdate) SetSignupSurveyResponse(v *SignupSurveyResponse) *UserUpdate {
 	return _u.SetSignupSurveyResponseID(v.ID)
+}
+
+// AddConsentRecordIDs adds the "consent_records" edge to the ConsentRecord entity by IDs.
+func (_u *UserUpdate) AddConsentRecordIDs(ids ...int64) *UserUpdate {
+	_u.mutation.AddConsentRecordIDs(ids...)
+	return _u
+}
+
+// AddConsentRecords adds the "consent_records" edges to the ConsentRecord entity.
+func (_u *UserUpdate) AddConsentRecords(v ...*ConsentRecord) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConsentRecordIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -439,6 +476,27 @@ func (_u *UserUpdate) RemoveIdentities(v ...*UserIdentity) *UserUpdate {
 func (_u *UserUpdate) ClearSignupSurveyResponse() *UserUpdate {
 	_u.mutation.ClearSignupSurveyResponse()
 	return _u
+}
+
+// ClearConsentRecords clears all "consent_records" edges to the ConsentRecord entity.
+func (_u *UserUpdate) ClearConsentRecords() *UserUpdate {
+	_u.mutation.ClearConsentRecords()
+	return _u
+}
+
+// RemoveConsentRecordIDs removes the "consent_records" edge to ConsentRecord entities by IDs.
+func (_u *UserUpdate) RemoveConsentRecordIDs(ids ...int64) *UserUpdate {
+	_u.mutation.RemoveConsentRecordIDs(ids...)
+	return _u
+}
+
+// RemoveConsentRecords removes "consent_records" edges to ConsentRecord entities.
+func (_u *UserUpdate) RemoveConsentRecords(v ...*ConsentRecord) *UserUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConsentRecordIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -566,6 +624,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SignupSurveyDueAtCleared() {
 		_spec.ClearField(user.FieldSignupSurveyDueAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FeedPosition(); ok {
+		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFeedPosition(); ok {
+		_spec.AddField(user.FieldFeedPosition, field.TypeInt64, value)
 	}
 	if _u.mutation.MembershipsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -814,6 +878,51 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(signupsurveyresponse.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConsentRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConsentRecordsTable,
+			Columns: []string{user.ConsentRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentrecord.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConsentRecordsIDs(); len(nodes) > 0 && !_u.mutation.ConsentRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConsentRecordsTable,
+			Columns: []string{user.ConsentRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentrecord.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConsentRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConsentRecordsTable,
+			Columns: []string{user.ConsentRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentrecord.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1039,6 +1148,27 @@ func (_u *UserUpdateOne) ClearSignupSurveyDueAt() *UserUpdateOne {
 	return _u
 }
 
+// SetFeedPosition sets the "feed_position" field.
+func (_u *UserUpdateOne) SetFeedPosition(v int64) *UserUpdateOne {
+	_u.mutation.ResetFeedPosition()
+	_u.mutation.SetFeedPosition(v)
+	return _u
+}
+
+// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableFeedPosition(v *int64) *UserUpdateOne {
+	if v != nil {
+		_u.SetFeedPosition(*v)
+	}
+	return _u
+}
+
+// AddFeedPosition adds value to the "feed_position" field.
+func (_u *UserUpdateOne) AddFeedPosition(v int64) *UserUpdateOne {
+	_u.mutation.AddFeedPosition(v)
+	return _u
+}
+
 // AddMembershipIDs adds the "memberships" edge to the Membership entity by IDs.
 func (_u *UserUpdateOne) AddMembershipIDs(ids ...int64) *UserUpdateOne {
 	_u.mutation.AddMembershipIDs(ids...)
@@ -1131,6 +1261,21 @@ func (_u *UserUpdateOne) SetNillableSignupSurveyResponseID(id *int64) *UserUpdat
 // SetSignupSurveyResponse sets the "signup_survey_response" edge to the SignupSurveyResponse entity.
 func (_u *UserUpdateOne) SetSignupSurveyResponse(v *SignupSurveyResponse) *UserUpdateOne {
 	return _u.SetSignupSurveyResponseID(v.ID)
+}
+
+// AddConsentRecordIDs adds the "consent_records" edge to the ConsentRecord entity by IDs.
+func (_u *UserUpdateOne) AddConsentRecordIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.AddConsentRecordIDs(ids...)
+	return _u
+}
+
+// AddConsentRecords adds the "consent_records" edges to the ConsentRecord entity.
+func (_u *UserUpdateOne) AddConsentRecords(v ...*ConsentRecord) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConsentRecordIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -1247,6 +1392,27 @@ func (_u *UserUpdateOne) RemoveIdentities(v ...*UserIdentity) *UserUpdateOne {
 func (_u *UserUpdateOne) ClearSignupSurveyResponse() *UserUpdateOne {
 	_u.mutation.ClearSignupSurveyResponse()
 	return _u
+}
+
+// ClearConsentRecords clears all "consent_records" edges to the ConsentRecord entity.
+func (_u *UserUpdateOne) ClearConsentRecords() *UserUpdateOne {
+	_u.mutation.ClearConsentRecords()
+	return _u
+}
+
+// RemoveConsentRecordIDs removes the "consent_records" edge to ConsentRecord entities by IDs.
+func (_u *UserUpdateOne) RemoveConsentRecordIDs(ids ...int64) *UserUpdateOne {
+	_u.mutation.RemoveConsentRecordIDs(ids...)
+	return _u
+}
+
+// RemoveConsentRecords removes "consent_records" edges to ConsentRecord entities.
+func (_u *UserUpdateOne) RemoveConsentRecords(v ...*ConsentRecord) *UserUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConsentRecordIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -1404,6 +1570,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.SignupSurveyDueAtCleared() {
 		_spec.ClearField(user.FieldSignupSurveyDueAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.FeedPosition(); ok {
+		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFeedPosition(); ok {
+		_spec.AddField(user.FieldFeedPosition, field.TypeInt64, value)
 	}
 	if _u.mutation.MembershipsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1652,6 +1824,51 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(signupsurveyresponse.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConsentRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConsentRecordsTable,
+			Columns: []string{user.ConsentRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentrecord.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConsentRecordsIDs(); len(nodes) > 0 && !_u.mutation.ConsentRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConsentRecordsTable,
+			Columns: []string{user.ConsentRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentrecord.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConsentRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ConsentRecordsTable,
+			Columns: []string{user.ConsentRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentrecord.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

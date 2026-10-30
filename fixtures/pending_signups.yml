@@ -1,0 +1,18 @@
+# Sign-in provider sign-ups held for the Sign-up items (ADR 0062): one long expired, which the
+# prune job deletes, and one still open, which it keeps.
+- id: 1 # fixture: PendingSignupExpired
+  provider: google
+  subject: google-subject-of-a-gone-visitor
+  email: gone.visitor@gmail.com
+  name: Gone Visitor
+  expires_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+- id: 2 # fixture: PendingSignupOpen
+  provider: google
+  subject: google-subject-of-a-deciding-visitor
+  email: deciding.visitor@gmail.com
+  name: Deciding Visitor
+  expires_at: '{{daysAhead 1}}'
+  created_at: '{{daysAgo 0}}'
+  updated_at: '{{daysAgo 0}}'

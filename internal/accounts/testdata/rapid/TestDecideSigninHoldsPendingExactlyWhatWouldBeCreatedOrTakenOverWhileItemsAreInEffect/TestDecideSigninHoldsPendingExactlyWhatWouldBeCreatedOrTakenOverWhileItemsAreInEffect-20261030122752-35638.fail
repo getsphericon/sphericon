@@ -1,0 +1,23 @@
+# 2026/10/30 12:27:52.567065 [TestDecideSigninHoldsPendingExactlyWhatWouldBeCreatedOrTakenOverWhileItemsAreInEffect] [rapid] draw known: false
+# 2026/10/30 12:27:52.567067 [TestDecideSigninHoldsPendingExactlyWhatWouldBeCreatedOrTakenOverWhileItemsAreInEffect] [rapid] draw trust: ""
+# 2026/10/30 12:27:52.567068 [TestDecideSigninHoldsPendingExactlyWhatWouldBeCreatedOrTakenOverWhileItemsAreInEffect] [rapid] draw items: true
+# 2026/10/30 12:27:52.567069 [TestDecideSigninHoldsPendingExactlyWhatWouldBeCreatedOrTakenOverWhileItemsAreInEffect] [rapid] draw holder: &accounts.EmailHolder{Verified:false, Proven:false}
+# 2026/10/30 12:27:52.567083 [TestDecideSigninHoldsPendingExactlyWhatWouldBeCreatedOrTakenOverWhileItemsAreInEffect] 
+# 	Error Trace:	/Users/kirillmokevnin/projects/sphericon/.claude/worktrees/agent-ab4746b2672bb4593/internal/accounts/signin_decision_test.go:121
+# 	            				/Users/kirillmokevnin/go/pkg/mod/pgregory.net/rapid@v1.3.0/engine.go:458
+# 	            				/Users/kirillmokevnin/go/pkg/mod/pgregory.net/rapid@v1.3.0/engine.go:467
+# 	            				/Users/kirillmokevnin/go/pkg/mod/pgregory.net/rapid@v1.3.0/engine.go:292
+# 	            				/Users/kirillmokevnin/go/pkg/mod/pgregory.net/rapid@v1.3.0/engine.go:207
+# 	            				/Users/kirillmokevnin/projects/sphericon/.claude/worktrees/agent-ab4746b2672bb4593/internal/accounts/signin_decision_test.go:113
+# 	Error:      	Not equal: 
+# 	            	expected: true
+# 	            	actual  : false
+# 	Test:       	TestDecideSigninHoldsPendingExactlyWhatWouldBeCreatedOrTakenOverWhileItemsAreInEffect
+# 
+v0.4.8#446792075440405821
+0x0
+0x0
+0x0
+0x1
+0x0
+0x1

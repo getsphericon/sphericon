@@ -120,12 +120,15 @@ func TestSigninGitHubADeniedConsentLandsOnLoginWithAnError(t *testing.T) {
 	assert.Equal(t, signin.ReasonDenied, refusalCode(t, denied, loginErrorPath))
 }
 
-func TestSigninGitHubClosedSignupRefusesANewPerson(t *testing.T) {
+func TestSigninGitHubANewPersonGetsAnAccountOnASelfHostedInstance(t *testing.T) {
 	env, fake := githubEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 
 	resp := signInWithGitHub(t, fake, env.NewRedirectBrowser(t), octo)
 
-	assert.Equal(t, signin.ReasonSignupClosed, refusalCode(t, resp, loginErrorPath))
+	assert.Equal(t, "/", resp.Header.Get("Location"))
+	spaces, err := env.SiteActor(t, octo.Email).SiteWorkspacesList(t.Context())
+	require.NoError(t, err)
+	assert.Len(t, spaces, 1)
 }
 
 func TestSigninProvidersListsBothWhenBothAreConfigured(t *testing.T) {

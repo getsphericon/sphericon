@@ -3,7 +3,7 @@
   "info": {
     "title": "Sphericon StaffMember API",
     "version": "1.0.0",
-    "description": "The API of the platform Staff console (Enterprise): sign-in with a password and a TOTP, and the cross-workspace views and actions of a Staff member."
+    "description": "The core API of the Staff console, served on every Instance (ADR 0063): sign-in with a password and a TOTP, the signed-in Staff member, and the Instance's Sign-up items with their Legal documents (ADR 0062). The Enterprise sections are a contract of their own (staffee), served under the same prefix with the same session cookie."
   },
   "tags": [
     {
@@ -13,10 +13,7 @@
       "name": "StaffMember"
     },
     {
-      "name": "StaffMember Workspaces"
-    },
-    {
-      "name": "StaffMember Sign-up survey"
+      "name": "StaffMember Signup Items"
     }
   ],
   "paths": {
@@ -261,10 +258,10 @@
         "tags": ["StaffMember"]
       }
     },
-    "/signup-survey": {
+    "/signup-items": {
       "get": {
-        "operationId": "StaffSignupSurvey_counts",
-        "description": "The Sign-up survey answers, counted per question. Read only.",
+        "operationId": "StaffSignupItems_list",
+        "description": "The Instance's Sign-up items, archived ones included, in the order of the sign-up form",
         "parameters": [],
         "responses": {
           "200": {
@@ -272,7 +269,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffSignupSurveyCounts"
+                  "$ref": "#/components/schemas/StaffSignupItemList"
                 }
               }
             }
@@ -288,16 +285,114 @@
             }
           }
         },
-        "tags": ["StaffMember Sign-up survey"]
+        "tags": ["StaffMember Signup Items"]
+      },
+      "post": {
+        "operationId": "StaffSignupItems_create",
+        "description": "Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional\nconsent, and a second mailings consent are refused (422).",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSignupItemResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Signup Items"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffSignupItemInput"
+              }
+            }
+          }
+        }
       }
     },
-    "/signup-survey/users/{userId}": {
+    "/signup-items/order": {
+      "put": {
+        "operationId": "StaffSignupItems_reorder",
+        "description": "Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that\nis not every item's id exactly once is refused (422).",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSignupItemList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Signup Items"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffSignupItemOrder"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/signup-items/{id}": {
       "get": {
-        "operationId": "StaffSignupSurvey_get",
-        "description": "One User's answers. 404 when the User is unknown or has not answered the survey.",
+        "operationId": "StaffSignupItems_get",
+        "description": "One Sign-up item",
         "parameters": [
           {
-            "name": "userId",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
@@ -311,7 +406,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffSignupSurveyResponseResource"
+                  "$ref": "#/components/schemas/StaffSignupItemResource"
                 }
               }
             }
@@ -337,94 +432,18 @@
             }
           }
         },
-        "tags": ["StaffMember Sign-up survey"]
-      }
-    },
-    "/workspaces": {
-      "get": {
-        "operationId": "StaffWorkspaces_list",
-        "description": "List all Workspaces, newest first, optionally narrowed by an id or name search",
+        "tags": ["StaffMember Signup Items"]
+      },
+      "patch": {
+        "operationId": "StaffSignupItems_update",
+        "description": "Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional\nconsent or is archived, and a second mailings consent are refused (422).",
         "parameters": [
           {
-            "$ref": "#/components/parameters/StaffWorkspaceSearch.review"
-          },
-          {
-            "$ref": "#/components/parameters/StaffWorkspaceSearch.search"
-          },
-          {
-            "$ref": "#/components/parameters/PageQuery.page"
-          },
-          {
-            "$ref": "#/components/parameters/PageQuery.pageSize"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/StaffWorkspaceResource"
-                      },
-                      "description": "List of items"
-                    },
-                    "page": {
-                      "type": "integer",
-                      "format": "int32",
-                      "description": "Page number (1-based)"
-                    },
-                    "pageSize": {
-                      "type": "integer",
-                      "format": "int32",
-                      "description": "Page size"
-                    },
-                    "totalItems": {
-                      "type": "integer",
-                      "format": "int32",
-                      "description": "Total number of elements"
-                    },
-                    "totalPages": {
-                      "type": "integer",
-                      "format": "int32",
-                      "description": "Total number of pages"
-                    }
-                  },
-                  "description": "Paginated response"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["StaffMember Workspaces"]
-      }
-    },
-    "/workspaces/{workspaceId}": {
-      "get": {
-        "operationId": "StaffWorkspaces_get",
-        "description": "One Workspace's metadata, suspension state, rates and send volume",
-        "parameters": [
-          {
-            "name": "workspaceId",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WorkspaceId"
+              "$ref": "#/components/schemas/EntityId"
             }
           }
         ],
@@ -434,188 +453,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffWorkspaceDetailResource"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["StaffMember Workspaces"]
-      }
-    },
-    "/workspaces/{workspaceId}/audit-entries": {
-      "get": {
-        "operationId": "StaffWorkspaceAudit_list",
-        "description": "One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing is then recorded.",
-        "parameters": [
-          {
-            "name": "workspaceId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/WorkspaceId"
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "required": false,
-            "description": "Cursor from a previous page",
-            "schema": {
-              "type": "string"
-            },
-            "explode": false
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "description": "Page size",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 25
-            },
-            "explode": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StaffAuditEntryList"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["StaffMember Workspaces"]
-      }
-    },
-    "/workspaces/{workspaceId}/exempt": {
-      "post": {
-        "operationId": "StaffWorkspaces_exempt",
-        "description": "Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor\nfrozen automatically, but stays listed with its rates and can still be suspended by\nhand. Audited. Idempotent.",
-        "parameters": [
-          {
-            "name": "workspaceId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/WorkspaceId"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StaffExemptionChange"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "RFC 7807 unauthorized response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["StaffMember Workspaces"]
-      }
-    },
-    "/workspaces/{workspaceId}/suspend": {
-      "post": {
-        "operationId": "StaffWorkspaces_suspend",
-        "description": "Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the\nsigned-in Staff member. Idempotent: an already-suspended Workspace is left as it was.",
-        "parameters": [
-          {
-            "name": "workspaceId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/WorkspaceId"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StaffSuspensionChange"
+                  "$ref": "#/components/schemas/StaffSignupItemResource"
                 }
               }
             }
@@ -651,30 +489,30 @@
             }
           }
         },
-        "tags": ["StaffMember Workspaces"],
+        "tags": ["StaffMember Signup Items"],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StaffSuspendInput"
+                "$ref": "#/components/schemas/StaffSignupItemUpdate"
               }
             }
           }
         }
       }
     },
-    "/workspaces/{workspaceId}/unexempt": {
+    "/signup-items/{id}/archive": {
       "post": {
-        "operationId": "StaffWorkspaces_unexempt",
-        "description": "Police a Workspace by the abuse detector again. Audited. Idempotent.",
+        "operationId": "StaffSignupItems_archive",
+        "description": "Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its\npublished versions stay. Archiving an archived item changes nothing, and an archived item is never\nrestored. The item that stands for consent to the operator's mailings is refused (422) until\nit is unmarked.",
         "parameters": [
           {
-            "name": "workspaceId",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WorkspaceId"
+              "$ref": "#/components/schemas/EntityId"
             }
           }
         ],
@@ -684,7 +522,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffExemptionChange"
+                  "$ref": "#/components/schemas/StaffSignupItemResource"
                 }
               }
             }
@@ -708,22 +546,32 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
-        "tags": ["StaffMember Workspaces"]
+        "tags": ["StaffMember Signup Items"]
       }
     },
-    "/workspaces/{workspaceId}/unsuspend": {
-      "post": {
-        "operationId": "StaffWorkspaces_unsuspend",
-        "description": "Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is\nnot suspended is left as it was.",
+    "/signup-items/{id}/draft": {
+      "put": {
+        "operationId": "StaffSignupItems_saveDraft",
+        "description": "Save the draft of the item's Legal document. It is edited freely and changes nothing a\nvisitor sees until it is published.",
         "parameters": [
           {
-            "name": "workspaceId",
+            "name": "id",
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/WorkspaceId"
+              "$ref": "#/components/schemas/EntityId"
             }
           }
         ],
@@ -733,7 +581,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffSuspensionChange"
+                  "$ref": "#/components/schemas/StaffSignupItemResource"
                 }
               }
             }
@@ -759,7 +607,133 @@
             }
           }
         },
-        "tags": ["StaffMember Workspaces"]
+        "tags": ["StaffMember Signup Items"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffLegalDocumentDraftInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/signup-items/{id}/versions": {
+      "get": {
+        "operationId": "StaffSignupItems_listVersions",
+        "description": "Every published version of the item's Legal document with who published it and when, the\nlatest first",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffLegalDocumentVersionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Signup Items"]
+      },
+      "post": {
+        "operationId": "StaffSignupItems_publish",
+        "description": "Publish the draft as a new version under a label: it takes effect at once, and is never\nchanged or removed afterwards. A label the item already has, and an item without a draft,\nare refused (422).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSignupItemResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Signup Items"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffLegalDocumentPublishInput"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -769,56 +743,17 @@
     }
   ],
   "components": {
-    "parameters": {
-      "PageQuery.page": {
-        "name": "page",
-        "in": "query",
-        "required": false,
-        "description": "Page number (1-based)",
-        "schema": {
-          "type": "integer",
-          "format": "int32",
-          "minimum": 1,
-          "default": 1
-        },
-        "explode": false
-      },
-      "PageQuery.pageSize": {
-        "name": "pageSize",
-        "in": "query",
-        "required": false,
-        "description": "Page size",
-        "schema": {
-          "type": "integer",
-          "format": "int32",
-          "minimum": 1,
-          "maximum": 100,
-          "default": 25
-        },
-        "explode": false
-      },
-      "StaffWorkspaceSearch.review": {
-        "name": "review",
-        "in": "query",
-        "required": false,
-        "description": "Only Workspaces in this review state",
-        "schema": {
-          "$ref": "#/components/schemas/StaffWorkspaceReview"
-        },
-        "explode": false
-      },
-      "StaffWorkspaceSearch.search": {
-        "name": "search",
-        "in": "query",
-        "required": false,
-        "description": "Only Workspaces whose id or name contains this text; the name matches case-insensitively,\nthe id exactly",
-        "schema": {
-          "type": "string"
-        },
-        "explode": false
-      }
-    },
     "schemas": {
+      "BadRequestProblem": {
+        "type": "object",
+        "required": ["body"],
+        "properties": {
+          "body": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "description": "RFC 7807 bad request response"
+      },
       "ConflictProblem": {
         "type": "object",
         "required": ["body"],
@@ -947,6 +882,17 @@
         },
         "description": "The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it"
       },
+      "LegalDocumentLabel": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "description": "The label a Staff member gives a published Legal document version, unique per item"
+      },
+      "LegalDocumentMarkdown": {
+        "type": "string",
+        "maxLength": 100000,
+        "description": "A Legal document's text, in Markdown"
+      },
       "PaymentRequiredProblem": {
         "type": "object",
         "required": ["body"],
@@ -972,9 +918,9 @@
         "enum": [
           "second_factor_required",
           "email_verification_required",
-          "signup_closed",
           "permission_required",
-          "migrations_pending"
+          "migrations_pending",
+          "acceptance_pending"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
@@ -1074,276 +1020,23 @@
         },
         "description": "RFC 7807 Problem Details"
       },
-      "StaffAbuse": {
-        "type": "object",
-        "required": ["exempt"],
-        "properties": {
-          "exempt": {
-            "type": "boolean",
-            "description": "Exempt from the detector: neither warned nor frozen automatically"
-          },
-          "clearedAt": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "nullable": true,
-            "description": "When a Staff member last lifted a suspension; the detector counts only Events after it"
-          },
-          "warningNotifiedAt": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "nullable": true,
-            "description": "When the owners were told of the current warning; absent outside an episode"
-          },
-          "freezeNotifiedAt": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "nullable": true,
-            "description": "When the owners were last told of a suspension"
-          },
-          "warning": {
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffAbuseWarning"
-              }
-            ],
-            "nullable": true,
-            "description": "Present while the Workspace is in the warning tier, computed now"
-          }
-        },
-        "description": "A Workspace's standing with the abuse detector (ADR 0026)"
-      },
-      "StaffAbuseMetric": {
+      "SignupItemKey": {
         "type": "string",
-        "enum": ["complaint", "bounce"],
-        "description": "Which metric of a Sending domain breached the abuse detector's warning limit"
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+        "description": "A Sign-up item's key: its address, and the last segment of its Legal document's public page"
       },
-      "StaffAbuseWarning": {
-        "type": "object",
-        "required": ["domain", "metric", "rate"],
-        "properties": {
-          "domain": {
-            "type": "string"
-          },
-          "metric": {
-            "$ref": "#/components/schemas/StaffAbuseMetric"
-          },
-          "rate": {
-            "type": "number",
-            "format": "double",
-            "description": "The rate, 0–1"
-          }
-        },
-        "description": "A Sending domain in the warning tier (ADR 0026), by the detector's own computation"
-      },
-      "StaffAuditActor": {
-        "type": "object",
-        "required": ["kind"],
-        "properties": {
-          "kind": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffAuditActorKind"
-              }
-            ],
-            "description": "The kind of actor; a staff member carries no id and the name \"Sphericon staff\"; a service is a Service credential, named as the Staff member who issued it chose"
-          },
-          "id": {
-            "type": "string",
-            "nullable": true,
-            "description": "The actor's id (a User id or an API token id); absent for the system and a staff member"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true,
-            "description": "Display name snapshot taken when the entry was written"
-          }
-        },
-        "description": "The actor of an Audit entry"
-      },
-      "StaffAuditActorKind": {
+      "SignupItemKind": {
         "type": "string",
-        "enum": ["user", "api_token", "staff", "service", "system"],
-        "description": "Who performed an audited change, as the Workspace's own team sees it"
+        "enum": ["required_acceptance", "optional_consent", "notice"],
+        "description": "What a Sign-up item asks of a person (ADR 0062)"
       },
-      "StaffAuditEntryList": {
-        "type": "object",
-        "required": ["items"],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffAuditEntryResource"
-            }
-          },
-          "nextCursor": {
-            "type": "string",
-            "nullable": true,
-            "description": "Pass as `cursor` for the next page; absent on the last page"
-          }
-        },
-        "description": "A page of a Workspace's Audit log, newest first"
-      },
-      "StaffAuditEntryResource": {
-        "type": "object",
-        "required": ["id", "occurredAt", "actor", "action", "target"],
-        "properties": {
-          "id": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "description": "Unique identifier"
-          },
-          "occurredAt": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "When the change happened"
-          },
-          "actor": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffAuditActor"
-              }
-            ],
-            "description": "Who did it"
-          },
-          "action": {
-            "type": "string",
-            "description": "What was done, as `<entity>.<verb>`"
-          },
-          "target": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffAuditTarget"
-              }
-            ],
-            "description": "What it was done to"
-          },
-          "diff": {
-            "type": "object",
-            "additionalProperties": {},
-            "nullable": true,
-            "description": "Before/after of the changed fields"
-          },
-          "requestId": {
-            "type": "string",
-            "nullable": true,
-            "description": "Request id of the change"
-          },
-          "ip": {
-            "type": "string",
-            "nullable": true,
-            "description": "Client address of the change"
-          },
-          "userAgent": {
-            "type": "string",
-            "nullable": true,
-            "description": "Client user agent of the change"
-          }
-        },
-        "description": "One immutable Audit entry of a Workspace. Secrets are never recorded; they appear as changed only."
-      },
-      "StaffAuditTarget": {
-        "type": "object",
-        "required": ["type"],
-        "properties": {
-          "type": {
-            "type": "string",
-            "description": "Entity type, e.g. membership"
-          },
-          "id": {
-            "type": "string",
-            "nullable": true,
-            "description": "The target's id"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true,
-            "description": "Name snapshot taken when the entry was written"
-          }
-        },
-        "description": "What an audited change was done to"
-      },
-      "StaffDeliverability": {
-        "type": "object",
-        "required": ["windowHours", "volumeFloor", "sendVolume", "domains"],
-        "properties": {
-          "windowHours": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Length of the trailing window, in hours"
-          },
-          "volumeFloor": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Fewest sends in the window (per Sending domain) for a rate to be defined"
-          },
-          "sendVolume": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Messages sent in the window across all Sending domains"
-          },
-          "domains": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffDomainRates"
-            },
-            "description": "One entry per Sending domain, oldest first"
-          }
-        },
-        "description": "A Workspace's deliverability over the trailing window: the rates of ADR 0011 per\nSending domain, and how much it sent. Counts only, never message content."
-      },
-      "StaffDomainRates": {
-        "type": "object",
-        "required": ["sendingDomainId", "domain", "complaintRate", "bounceRate"],
-        "properties": {
-          "sendingDomainId": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "description": "Sending domain id"
-          },
-          "domain": {
-            "type": "string",
-            "description": "The domain the rates are for"
-          },
-          "complaintRate": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffRate"
-              }
-            ],
-            "description": "Complaints over delivered mail; the rate is null when nothing was delivered in the window"
-          },
-          "bounceRate": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffRate"
-              }
-            ],
-            "description": "Hard bounces over sent"
-          }
-        },
-        "description": "The Complaint and Bounce rates of one Sending domain over the trailing window"
+      "SignupItemTitle": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "description": "A Sign-up item's title: what the sign-up form shows"
       },
       "StaffEnrolment": {
         "type": "object",
@@ -1364,62 +1057,74 @@
         },
         "description": "A TOTP secret awaiting its first confirming code"
       },
-      "StaffExemptionChange": {
+      "StaffLegalDocumentDraftInput": {
         "type": "object",
-        "required": ["changed", "workspace"],
+        "required": ["markdown"],
         "properties": {
-          "changed": {
-            "type": "boolean"
-          },
-          "workspace": {
-            "$ref": "#/components/schemas/StaffWorkspaceResource"
+          "markdown": {
+            "$ref": "#/components/schemas/LegalDocumentMarkdown"
           }
         },
-        "description": "The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether\nanything changed"
+        "description": "Save the draft of an item's Legal document"
       },
-      "StaffHold": {
+      "StaffLegalDocumentPublishInput": {
         "type": "object",
-        "required": ["key", "reasonCode", "message", "createdAt", "expiresAt", "setBy"],
+        "required": ["label"],
         "properties": {
-          "key": {
-            "type": "string",
-            "description": "Unique per Workspace, chosen by the setter"
-          },
-          "reasonCode": {
-            "type": "string",
-            "description": "Machine reason code"
-          },
-          "message": {
-            "type": "string",
-            "description": "The message the setter gave for the Owner"
-          },
-          "createdAt": {
+          "label": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/Timestamp"
+                "$ref": "#/components/schemas/LegalDocumentLabel"
               }
             ],
-            "description": "When the hold was first set"
-          },
-          "expiresAt": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "When the hold lapses unless renewed"
-          },
-          "setBy": {
-            "type": "string",
-            "description": "Who set it: the name of its Service credential"
-          },
-          "actionUrl": {
-            "type": "string",
-            "nullable": true,
-            "description": "Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given"
+            "description": "Unique among the item's versions"
           }
         },
-        "description": "An active Staff hold on a Workspace, as the console shows it (read only)"
+        "description": "Publish the draft as a new version"
+      },
+      "StaffLegalDocumentVersion": {
+        "type": "object",
+        "required": ["label", "publishedAt", "publishedBy"],
+        "properties": {
+          "label": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDocumentLabel"
+              }
+            ],
+            "description": "The label it was published with"
+          },
+          "publishedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When it was published, and took effect"
+          },
+          "publishedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffResource"
+              }
+            ],
+            "description": "The Staff member who published it"
+          }
+        },
+        "description": "A published Legal document version, as the console shows it"
+      },
+      "StaffLegalDocumentVersionList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffLegalDocumentVersion"
+            }
+          }
+        },
+        "description": "Every published version of an item's Legal document, the latest (the current one) first"
       },
       "StaffLoginInput": {
         "type": "object",
@@ -1460,29 +1165,6 @@
           }
         }
       },
-      "StaffRate": {
-        "type": "object",
-        "required": ["numerator", "denominator", "rate"],
-        "properties": {
-          "numerator": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Events counted against the rate"
-          },
-          "denominator": {
-            "type": "integer",
-            "format": "int32",
-            "description": "The population the rate is over"
-          },
-          "rate": {
-            "type": "number",
-            "format": "double",
-            "nullable": true,
-            "description": "numerator / denominator; null (undefined) when fewer sends than the volume floor\nwere made in the window, never reported as 0"
-          }
-        },
-        "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011)"
-      },
       "StaffResource": {
         "type": "object",
         "required": ["id", "email"],
@@ -1520,339 +1202,125 @@
         },
         "description": "The second login step: the challenge from the password step and a TOTP code"
       },
-      "StaffSignupCompanySize": {
-        "type": "string",
-        "enum": ["1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"],
-        "description": "How many people work at the User's company (second question)"
-      },
-      "StaffSignupCompanySizeCount": {
+      "StaffSignupItemInput": {
         "type": "object",
-        "required": ["choice", "count"],
+        "required": ["key", "title", "kind"],
         "properties": {
-          "choice": {
-            "$ref": "#/components/schemas/StaffSignupCompanySize"
+          "key": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SignupItemKey"
+              }
+            ],
+            "description": "Unique across the Instance, and never changed"
           },
-          "count": {
-            "type": "integer",
-            "format": "int32"
+          "title": {
+            "$ref": "#/components/schemas/SignupItemTitle"
+          },
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SignupItemKind"
+              }
+            ],
+            "description": "Never changed"
+          },
+          "mailingsConsent": {
+            "type": "boolean",
+            "description": "Mark the item as consent to the operator's mailings: only an optional consent, and only\none item of the Instance"
           }
         },
-        "description": "How many Users chose a company size"
+        "description": "Add a Sign-up item. It goes after the existing ones."
       },
-      "StaffSignupGoal": {
-        "type": "string",
-        "enum": ["broadcasts", "automations", "tracking", "migrating", "other"],
-        "description": "What the User mainly wants to do with the product (third question)"
-      },
-      "StaffSignupGoalCount": {
+      "StaffSignupItemList": {
         "type": "object",
-        "required": ["choice", "count"],
+        "required": ["items"],
         "properties": {
-          "choice": {
-            "$ref": "#/components/schemas/StaffSignupGoal"
-          },
-          "count": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "description": "How many Users chose a main goal"
-      },
-      "StaffSignupOtherTextCount": {
-        "type": "object",
-        "required": ["text", "count"],
-        "properties": {
-          "text": {
-            "type": "string"
-          },
-          "count": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "description": "An `other` text and how many Users wrote it"
-      },
-      "StaffSignupRole": {
-        "type": "string",
-        "enum": ["founder", "marketer", "developer", "product", "other"],
-        "description": "What the User does (Sign-up survey, first question)"
-      },
-      "StaffSignupRoleCount": {
-        "type": "object",
-        "required": ["choice", "count"],
-        "properties": {
-          "choice": {
-            "$ref": "#/components/schemas/StaffSignupRole"
-          },
-          "count": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "description": "How many Users chose a role"
-      },
-      "StaffSignupSource": {
-        "type": "string",
-        "enum": ["search", "github", "social", "recommendation", "other"],
-        "description": "Where the User heard about the product (fourth question, optional)"
-      },
-      "StaffSignupSourceCount": {
-        "type": "object",
-        "required": ["choice", "count"],
-        "properties": {
-          "choice": {
-            "$ref": "#/components/schemas/StaffSignupSource"
-          },
-          "count": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "description": "How many Users chose a source"
-      },
-      "StaffSignupSurveyCounts": {
-        "type": "object",
-        "required": [
-          "responses",
-          "role",
-          "roleOtherTexts",
-          "companySize",
-          "companySizeOtherTexts",
-          "mainGoal",
-          "mainGoalOtherTexts",
-          "heardFrom",
-          "heardFromOtherTexts"
-        ],
-        "properties": {
-          "responses": {
-            "type": "integer",
-            "format": "int32",
-            "description": "How many Users answered the survey"
-          },
-          "role": {
+          "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/StaffSignupRoleCount"
-            }
-          },
-          "roleOtherTexts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffSignupOtherTextCount"
-            }
-          },
-          "companySize": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffSignupCompanySizeCount"
-            }
-          },
-          "companySizeOtherTexts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffSignupOtherTextCount"
-            }
-          },
-          "mainGoal": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffSignupGoalCount"
-            }
-          },
-          "mainGoalOtherTexts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffSignupOtherTextCount"
-            }
-          },
-          "heardFrom": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffSignupSourceCount"
-            },
-            "description": "Only the Users who answered the optional question are counted"
-          },
-          "heardFromOtherTexts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffSignupOtherTextCount"
+              "$ref": "#/components/schemas/StaffSignupItemResource"
             }
           }
         },
-        "description": "The Sign-up survey answers of every User who answered, counted per question. A choice nobody\nmade is absent from its list; a question's `other` texts are listed with their counts, most\nfrequent first."
+        "description": "The Instance's Sign-up items, in the order of the sign-up form"
       },
-      "StaffSignupSurveyResponseResource": {
+      "StaffSignupItemOrder": {
         "type": "object",
-        "required": ["userId", "role", "companySize", "mainGoal", "answeredAt"],
+        "required": ["ids"],
         "properties": {
-          "userId": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        },
+        "description": "The new order of the sign-up form: the id of every Sign-up item, archived ones included, each\nonce"
+      },
+      "StaffSignupItemResource": {
+        "type": "object",
+        "required": ["id", "key", "title", "kind", "position", "mailingsConsent", "createdAt"],
+        "properties": {
+          "id": {
             "allOf": [
               {
                 "$ref": "#/components/schemas/EntityId"
               }
             ],
-            "description": "The answering User's id"
+            "description": "Unique identifier"
           },
-          "role": {
+          "key": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/StaffSignupRole"
+                "$ref": "#/components/schemas/SignupItemKey"
               }
             ],
-            "description": "What the User does"
+            "description": "The item's key: its Legal document's public page is served under it"
           },
-          "roleOtherText": {
-            "type": "string",
-            "nullable": true,
-            "description": "What the User does, when `role` is `other`"
-          },
-          "companySize": {
+          "title": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/StaffSignupCompanySize"
+                "$ref": "#/components/schemas/SignupItemTitle"
               }
             ],
-            "description": "How many people work at the User's company"
+            "description": "What the sign-up form shows"
           },
-          "companySizeOtherText": {
-            "type": "string",
-            "nullable": true,
-            "description": "The company size, when `companySize` is `other`"
-          },
-          "mainGoal": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffSignupGoal"
-              }
-            ],
-            "description": "What the User mainly wants to do with the product"
-          },
-          "mainGoalOtherText": {
-            "type": "string",
-            "nullable": true,
-            "description": "The main goal, when `mainGoal` is `other`"
-          },
-          "heardFrom": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffSignupSource"
-              }
-            ],
-            "nullable": true,
-            "description": "Where the User heard about the product; absent when the optional question was skipped"
-          },
-          "heardFromOtherText": {
-            "type": "string",
-            "nullable": true,
-            "description": "Where the User heard about the product, when `heardFrom` is `other`"
-          },
-          "answeredAt": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "When the User answered"
-          }
-        },
-        "description": "One User's answers to the Sign-up survey. A User who has not answered has none."
-      },
-      "StaffSuspendInput": {
-        "type": "object",
-        "required": ["reason"],
-        "properties": {
-          "reason": {
-            "type": "string",
-            "minLength": 1,
-            "description": "The reason, required: the Workspace owner is told why sending stopped"
-          }
-        },
-        "description": "Why a Workspace is being suspended; the owner is told"
-      },
-      "StaffSuspension": {
-        "type": "object",
-        "required": ["at", "actor"],
-        "properties": {
-          "at": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "When outbound sending was suspended"
-          },
-          "actor": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffSuspensionActor"
-              }
-            ],
-            "description": "Who suspended it"
-          },
-          "reason": {
-            "type": "string",
-            "nullable": true,
-            "description": "Why, as given by the actor"
-          }
-        },
-        "description": "A Workspace's suspension state (ADR 0007)"
-      },
-      "StaffSuspensionActor": {
-        "type": "object",
-        "required": ["kind"],
-        "properties": {
           "kind": {
-            "$ref": "#/components/schemas/StaffSuspensionActorKind"
+            "$ref": "#/components/schemas/SignupItemKind"
           },
-          "id": {
-            "type": "string",
-            "nullable": true,
-            "description": "The Staff member id; present only for the `staff` kind"
-          }
-        },
-        "description": "The actor of a suspension. Unlike a customer, a Staff member sees the real Staff member id."
-      },
-      "StaffSuspensionActorKind": {
-        "type": "string",
-        "enum": ["system", "cli", "staff"],
-        "description": "Who set a Workspace suspension (ADR 0026)"
-      },
-      "StaffSuspensionChange": {
-        "type": "object",
-        "required": ["changed", "workspace"],
-        "properties": {
-          "changed": {
-            "type": "boolean"
+          "position": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Where the item stands in the sign-up form, smallest first"
           },
-          "workspace": {
-            "$ref": "#/components/schemas/StaffWorkspaceResource"
-          }
-        },
-        "description": "The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether\nanything changed (suspending a suspended Workspace and unsuspending an active one\nchange nothing)."
-      },
-      "StaffWorkspaceDetailResource": {
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "createdAt",
-          "exempt",
-          "warned",
-          "holds",
-          "deliverability",
-          "abuse"
-        ],
-        "properties": {
-          "id": {
+          "mailingsConsent": {
+            "type": "boolean",
+            "description": "Whether the item stands for consent to the operator's mailings"
+          },
+          "draft": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/WorkspaceId"
+                "$ref": "#/components/schemas/LegalDocumentMarkdown"
               }
             ],
-            "description": "The Workspace id: its short opaque public address (ADR 0043)"
+            "description": "The draft of the next version, absent until one is written. A visitor never sees it."
           },
-          "name": {
-            "type": "string"
+          "currentVersion": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffLegalDocumentVersion"
+              }
+            ],
+            "description": "The version in effect, absent until one is published. Visitors see the item only once it\nhas one."
+          },
+          "archivedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the item was archived, absent while it is in use. An archived item is no longer asked\nand its public page is gone; its published versions stay."
           },
           "createdAt": {
             "allOf": [
@@ -1860,130 +1328,28 @@
                 "$ref": "#/components/schemas/Timestamp"
               }
             ],
-            "description": "When the Workspace was created"
-          },
-          "discardedAt": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "nullable": true,
-            "description": "When the Workspace was deleted; present from deletion until a restore (ADR 0043)"
-          },
-          "erasedAt": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "nullable": true,
-            "description": "When the Workspace's data was erased; the row stays as a tombstone"
-          },
-          "suspension": {
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffSuspension"
-              }
-            ],
-            "nullable": true,
-            "description": "Present only while sending is suspended"
-          },
-          "exempt": {
-            "type": "boolean",
-            "description": "Exempt from the abuse detector (set by a Staff member)"
-          },
-          "warned": {
-            "type": "boolean",
-            "description": "The owners were warned and the Workspace has not left the warning tier since"
-          },
-          "holds": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StaffHold"
-            },
-            "description": "Active Staff holds by key; a lapsed hold is not listed"
-          },
-          "deliverability": {
-            "$ref": "#/components/schemas/StaffDeliverability"
-          },
-          "abuse": {
-            "$ref": "#/components/schemas/StaffAbuse"
+            "description": "Creation timestamp"
           }
         },
-        "description": "A Workspace with its deliverability and active holds, as the detail page shows it"
+        "description": "A Sign-up item of the Instance (ADR 0062) with its Legal document's draft and current\nversion"
       },
-      "StaffWorkspaceResource": {
+      "StaffSignupItemUpdate": {
         "type": "object",
-        "required": ["id", "name", "createdAt", "exempt", "warned"],
         "properties": {
-          "id": {
+          "title": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/WorkspaceId"
+                "$ref": "#/components/schemas/SignupItemTitle"
               }
             ],
-            "description": "The Workspace id: its short opaque public address (ADR 0043)"
+            "description": "A new title. It is not a new version of the Legal document: the form shows it at once."
           },
-          "name": {
-            "type": "string"
-          },
-          "createdAt": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "When the Workspace was created"
-          },
-          "discardedAt": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "nullable": true,
-            "description": "When the Workspace was deleted; present from deletion until a restore (ADR 0043)"
-          },
-          "erasedAt": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "nullable": true,
-            "description": "When the Workspace's data was erased; the row stays as a tombstone"
-          },
-          "suspension": {
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/StaffSuspension"
-              }
-            ],
-            "nullable": true,
-            "description": "Present only while sending is suspended"
-          },
-          "exempt": {
+          "mailingsConsent": {
             "type": "boolean",
-            "description": "Exempt from the abuse detector (set by a Staff member)"
-          },
-          "warned": {
-            "type": "boolean",
-            "description": "The owners were warned and the Workspace has not left the warning tier since"
+            "description": "Mark or unmark the item as consent to the operator's mailings: only an optional consent,\nand only one item of the Instance"
           }
         },
-        "description": "A Workspace as the Staff console sees it: metadata only, never Contacts,\ncontent or Events (ADR 0026)."
-      },
-      "StaffWorkspaceReview": {
-        "type": "string",
-        "enum": ["warned", "systemFrozen", "deleted"],
-        "description": "Which Workspaces the list surfaces for review"
+        "description": "Change a Sign-up item"
       },
       "TimeZoneName": {
         "type": "string"

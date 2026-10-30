@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,8 +23,8 @@ import (
 // handler's own check: the write itself only lands on a still-Unverified User.
 func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
-	u, err := acc.CreateUnverified(t.Context(), "Grace", "grace@example.com", "signed-up-hash", false)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	u, err := acc.CreateUnverified(t.Context(), signup.NewUser{Name: "Grace", Email: "grace@example.com", PasswordHash: "signed-up-hash"})
 	require.NoError(t, err)
 
 	_, _, err = acc.VerifyEmail(t.Context(), u.ID, new("hash-one"))
@@ -41,14 +42,14 @@ func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 // transaction: whatever the caller believed about the address, no session is refused.
 func TestAcceptInvitationOfAVerifiedUserNeedsTheirSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	inv, _, err := acc.Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		accounts.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
 
-	require.ErrorIs(t, acc.AcceptInvitation(t.Context(), inv, "", "", ""), accounts.ErrSignInRequired)
-	require.ErrorIs(t, acc.AcceptInvitation(t.Context(), inv, "", "", fixtures.OwnerJaneEmail), accounts.ErrWrongAccount)
-	require.NoError(t, acc.AcceptInvitation(t.Context(), inv, "", "", fixtures.OutsiderOscarEmail))
+	require.ErrorIs(t, acc.AcceptInvitation(t.Context(), inv, accounts.InvitationAcceptance{}), accounts.ErrSignInRequired)
+	require.ErrorIs(t, acc.AcceptInvitation(t.Context(), inv, accounts.InvitationAcceptance{SessionEmail: fixtures.OwnerJaneEmail}), accounts.ErrWrongAccount)
+	require.NoError(t, acc.AcceptInvitation(t.Context(), inv, accounts.InvitationAcceptance{SessionEmail: fixtures.OutsiderOscarEmail}))
 }
 
 // firstInsertMember is an ent hook that, just before an invitation's Membership is
@@ -79,13 +80,13 @@ func firstInsertMember(next ent.Mutator) ent.Mutator {
 // and the explicit Invitation's admin Role still raises it.
 func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	inv, _, err := acc.Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		accounts.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleAdmin, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
 	env.Bus.Use(hook.On(firstInsertMember, ent.OpCreate))
 
-	err = acc.AcceptInvitation(t.Context(), inv, "", "", fixtures.OutsiderOscarEmail)
+	err = acc.AcceptInvitation(t.Context(), inv, accounts.InvitationAcceptance{SessionEmail: fixtures.OutsiderOscarEmail})
 
 	require.NoError(t, err)
 	oscar := env.DB.User.Query().Where(user.EmailEqualFold(fixtures.OutsiderOscarEmail)).OnlyX(t.Context())

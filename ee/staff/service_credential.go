@@ -17,6 +17,8 @@ import (
 )
 
 var (
+	// ErrUnauthorized is the service security handler's refusal of a missing or bad credential.
+	ErrUnauthorized = errors.New("staff: unauthorized")
 	// ErrInvalidScope: a scope that no Service credential may carry, or none at all.
 	ErrInvalidScope = errors.New("staff: a service credential needs one or more known scopes")
 	// ErrInvalidCredential: a Service credential without a name, or with an expiry that

@@ -5,9 +5,9 @@
 // OnConflictColumnsWhere) on a type of the ent package, which covers the raw client, a transaction and
 // the generated scoped wrappers (`*ent.Scoped` and its per-entity wrappers). The raw-client packages
 // listed in docs/architecture.md are domain modules and are not entry points, so only the entry-point
-// packages below are checked; test files are not. `ee/staff` holds the Staff surface's handlers and its
-// domain module in one package, so there only the methods of the handler types are checked (`*Module` is
-// the domain module).
+// packages below are checked; test files are not. `ee/staff` holds the handlers of the Staff console's
+// Enterprise sections and their domain module in one package, so there only the methods of the handler
+// types are checked (`*Module` is the domain module).
 //
 // The handlers of the API surfaces (`surfaces`) do not read through ent either: a call that starts a
 // read (Get, GetX, a Query method, or Workspace on the scoped client) on a type of the ent package is a
@@ -41,6 +41,7 @@ var entryPoints = []string{
 	"internal/api/site",
 	"internal/api/external",
 	"internal/api/collect",
+	"internal/api/staff",
 	"internal/mcpserver",
 	"internal/jobs",
 	"internal/server",
@@ -51,6 +52,7 @@ var surfaces = []string{
 	"internal/api/site",
 	"internal/api/external",
 	"internal/api/collect",
+	"internal/api/staff",
 }
 
 // mixedPackages hold handlers next to their domain module, by package, with the receiver types that

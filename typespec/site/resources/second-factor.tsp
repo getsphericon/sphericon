@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -80,8 +81,10 @@ model SiteSecondFactorDisableInput {
 @route("/me/second-factor")
 @tag("Site Second Factor")
 namespace SiteSecondFactor {
-  /** The authenticated User's Second factor status */
+  /** The authenticated User's Second factor status. Answered while an acceptance is pending, for
+   * the account deletion form (ADR 0062). */
   @get
+  @extension("x-allowed-while-acceptance-pending", true)
   op getStatus(): {
     @statusCode statusCode: 200;
     @body body: SiteSecondFactorStatus;

@@ -4705,11 +4705,11 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "email_verification_required":
 		return nil
-	case "signup_closed":
-		return nil
 	case "permission_required":
 		return nil
 	case "migrations_pending":
+		return nil
+	case "acceptance_pending":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

@@ -39,6 +39,9 @@ type CapturedMessage func(*sql.Selector)
 // Confirmation is the predicate function for confirmation builders.
 type Confirmation func(*sql.Selector)
 
+// ConsentRecord is the predicate function for consentrecord builders.
+type ConsentRecord func(*sql.Selector)
+
 // Contact is the predicate function for contact builders.
 type Contact func(*sql.Selector)
 
@@ -75,6 +78,12 @@ type Invitation func(*sql.Selector)
 // JoinDomain is the predicate function for joindomain builders.
 type JoinDomain func(*sql.Selector)
 
+// LegalDocumentDraft is the predicate function for legaldocumentdraft builders.
+type LegalDocumentDraft func(*sql.Selector)
+
+// LegalDocumentVersion is the predicate function for legaldocumentversion builders.
+type LegalDocumentVersion func(*sql.Selector)
+
 // Membership is the predicate function for membership builders.
 type Membership func(*sql.Selector)
 
@@ -107,6 +116,9 @@ type Passkey func(*sql.Selector)
 
 // PasskeyChallenge is the predicate function for passkeychallenge builders.
 type PasskeyChallenge func(*sql.Selector)
+
+// PendingSignup is the predicate function for pendingsignup builders.
+type PendingSignup func(*sql.Selector)
 
 // PrivateRelayRange is the predicate function for privaterelayrange builders.
 type PrivateRelayRange func(*sql.Selector)
@@ -144,6 +156,9 @@ type SendingDomain func(*sql.Selector)
 // ServiceCredential is the predicate function for servicecredential builders.
 type ServiceCredential func(*sql.Selector)
 
+// SignupItem is the predicate function for signupitem builders.
+type SignupItem func(*sql.Selector)
+
 // SignupSurveyResponse is the predicate function for signupsurveyresponse builders.
 type SignupSurveyResponse func(*sql.Selector)
 
@@ -170,6 +185,9 @@ type User func(*sql.Selector)
 
 // UserIdentity is the predicate function for useridentity builders.
 type UserIdentity func(*sql.Selector)
+
+// UserTombstone is the predicate function for usertombstone builders.
+type UserTombstone func(*sql.Selector)
 
 // Visitor is the predicate function for visitor builders.
 type Visitor func(*sql.Selector)

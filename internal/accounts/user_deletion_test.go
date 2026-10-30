@@ -19,7 +19,7 @@ import (
 // User stays, and the second-factor code is not spent.
 func TestDeleteUserRefusesAProofThatNoLongerFitsTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	ctx := context.Background()
 	u, err := env.DB.User.Get(ctx, fixtures.MemberMaryID)
 	require.NoError(t, err)
@@ -40,7 +40,7 @@ func TestDeleteUserRefusesAProofThatNoLongerFitsTheUser(t *testing.T) {
 // A proof that still fits the User spends its code inside the transaction and the User goes.
 func TestDeleteUserSpendsTheCodeOfAProofThatStillFits(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	ctx := context.Background()
 	u, err := env.DB.User.Get(ctx, fixtures.MemberMaryID)
 	require.NoError(t, err)

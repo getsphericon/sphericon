@@ -1,7 +1,7 @@
 import { Card, EmptyState, Stack, Table, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import type { StaffHold } from '../generated/staff/types.gen.ts'
+import type { StaffHold } from '../generated/staffee/types.gen.ts'
 import { formatDateTime } from '../utils/datetime.ts'
 
 // A Workspace's active Staff holds, read only: what the Staff member needs to answer a

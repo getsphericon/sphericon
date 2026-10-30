@@ -25,6 +25,10 @@ type ServiceUsageListRes interface {
 	serviceUsageListRes()
 }
 
+type ServiceUserFeedListRes interface {
+	serviceUserFeedListRes()
+}
+
 type ServiceWorkspaceFeedListRes interface {
 	serviceWorkspaceFeedListRes()
 }

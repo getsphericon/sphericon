@@ -21,7 +21,7 @@ import (
 
 func TestChangeMembershipRoleInvariants(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
@@ -82,7 +82,7 @@ func membershipUpdateEntries(t *testing.T, env *testhelper.TestEnv) int {
 
 func TestChangeMembershipRoleAuditsInTheSameTransaction(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
@@ -101,7 +101,7 @@ func TestChangeMembershipRoleAuditsInTheSameTransaction(t *testing.T) {
 
 func TestRemoveMembershipInvariants(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
@@ -140,7 +140,7 @@ func TestRemoveMembershipInvariants(t *testing.T) {
 
 func TestLeaveRemovesTheCallersOwnMembershipWhateverTheRole(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 
@@ -162,7 +162,7 @@ func TestLeaveRemovesTheCallersOwnMembershipWhateverTheRole(t *testing.T) {
 
 func TestLeaveRefusesTheOnlyOwner(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 
@@ -177,7 +177,7 @@ func TestLeaveRefusesTheOnlyOwner(t *testing.T) {
 
 func TestLeaveByAUserWithoutMembershipIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 
 	err := acc.Leave(t.Context(), env.DB.Scoped(fixtures.InitechID), fixtures.OwnerJohnID)
 	assert.True(t, ent.IsNotFound(err))
@@ -185,7 +185,7 @@ func TestLeaveByAUserWithoutMembershipIsNotFound(t *testing.T) {
 
 func TestLeaveAuditsTheUserAsActor(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
 	ctx := t.Context()
 
 	require.NoError(t, acc.Leave(ctx, env.DB.Scoped(fixtures.InitechID), fixtures.InitechMemberMaxID))
@@ -205,7 +205,8 @@ func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
 	client := db.NewEntClient(sqlDB)
-	acc := accounts.New(client, events.New(sqlDB), testhelper.Passwords())
+	bus := events.New(sqlDB)
+	acc := accounts.New(client, bus, testhelper.Passwords(), testhelper.ConsentRecords(client, bus))
 	s := client.Scoped(fixtures.InitechID)
 
 	errs := make([]error, 2)
@@ -229,7 +230,8 @@ func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
 	client := db.NewEntClient(sqlDB)
-	acc := accounts.New(client, events.New(sqlDB), testhelper.Passwords())
+	bus := events.New(sqlDB)
+	acc := accounts.New(client, bus, testhelper.Passwords(), testhelper.ConsentRecords(client, bus))
 
 	errs := make([]error, 2)
 	var wg sync.WaitGroup

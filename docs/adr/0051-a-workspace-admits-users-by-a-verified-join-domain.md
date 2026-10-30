@@ -4,6 +4,9 @@ status: accepted
 
 # A Workspace admits Users by a verified Join domain
 
+> **Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** sign-up is
+> always open, so the join decision no longer takes the sign-up gate and has no `signup_closed` reason.
+
 A company that runs its marketing in sphericon invited every colleague by hand. An Owner wants
 "everyone at `@acme.com` can join our Workspace" without managing a list, on a self-hosted Instance
 and a hosted one alike, and without anyone being able to claim a domain they do not own. This is a

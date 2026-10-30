@@ -34,17 +34,17 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 
 // operationRolesApiKeyAuth is a private map storing roles per operation.
 var operationRolesApiKeyAuth = map[string][]string{
-	StaffAuthLogoutOperation:          []string{},
-	StaffMeGetOperation:               []string{},
-	StaffSignupSurveyCountsOperation:  []string{},
-	StaffSignupSurveyGetOperation:     []string{},
-	StaffWorkspaceAuditListOperation:  []string{},
-	StaffWorkspacesExemptOperation:    []string{},
-	StaffWorkspacesGetOperation:       []string{},
-	StaffWorkspacesListOperation:      []string{},
-	StaffWorkspacesSuspendOperation:   []string{},
-	StaffWorkspacesUnexemptOperation:  []string{},
-	StaffWorkspacesUnsuspendOperation: []string{},
+	StaffAuthLogoutOperation:              []string{},
+	StaffMeGetOperation:                   []string{},
+	StaffSignupItemsArchiveOperation:      []string{},
+	StaffSignupItemsCreateOperation:       []string{},
+	StaffSignupItemsGetOperation:          []string{},
+	StaffSignupItemsListOperation:         []string{},
+	StaffSignupItemsListVersionsOperation: []string{},
+	StaffSignupItemsPublishOperation:      []string{},
+	StaffSignupItemsReorderOperation:      []string{},
+	StaffSignupItemsSaveDraftOperation:    []string{},
+	StaffSignupItemsUpdateOperation:       []string{},
 }
 
 // GetRolesForApiKeyAuth returns the required roles for the given operation.

@@ -4,10 +4,11 @@
 version: 1
 
 components:
-  # The four public API surfaces. Each has its own TypeSpec contract, handler package and auth scheme.
+  # The public API surfaces. Each has its own TypeSpec contract, handler package and auth scheme.
   api-site: { in: internal/api/site }
   api-external: { in: internal/api/external }
   api-collect: { in: internal/api/collect }
+  api-staff: { in: internal/api/staff }
   # The security handlers every surface shares.
   api-auth: { in: internal/api/auth }
 
@@ -76,6 +77,12 @@ rules:
     forbid_symbol:
       - name: github.com/getsphericon/sphericon/ent.Client
         because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
+  api-staff:
+    may_depend_on: [core]
+    because: the Staff surface depends on the core (its session check is the Staff member module's), never on another surface
+    forbid_symbol:
+      - name: github.com/getsphericon/sphericon/ent.Client
+        because: a handler takes a *ent.Scoped so every query is workspace-bound (docs/architecture.md, Workspace scoping)
   api-auth:
     may_depend_on: [core]
     because: the security handlers sit below every surface
@@ -86,7 +93,7 @@ rules:
     may_depend_on: [core]
     because: the Enterprise Edition builds on the core and never on the open surfaces' handlers
   wiring:
-    may_depend_on: [core, ee, api-site, api-external, api-collect, api-auth]
+    may_depend_on: [core, ee, api-site, api-external, api-collect, api-staff, api-auth]
     because: wiring is where the program is assembled
 
   web-generated:

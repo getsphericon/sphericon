@@ -62,7 +62,7 @@ func domainsReader(t *testing.T, h *harness) *serviceapi.Client {
 // recheck job does. The fixture rows themselves are loaded without the log's hook.
 func setTracking(t *testing.T, h *harness, id int64, state sendingdomain.TrackingState) {
 	t.Helper()
-	require.NoError(t, h.env.DB.Scoped(fixtures.UmbrellaID).SendingDomain().UpdateOneID(id).
+	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().UpdateOneID(id).
 		SetTrackingState(state).Exec(t.Context()))
 }
 
@@ -101,7 +101,7 @@ func TestAHostThatLeavesTheVerifiedStatesIsReportedRemoved(t *testing.T) {
 	h := newHarness(t)
 	c := domainsReader(t, h)
 	_, saved := hostChangesFrom(t, c, "")
-	umbrella := h.env.DB.Scoped(fixtures.UmbrellaID)
+	umbrella := h.env.FeedDB.Scoped(fixtures.UmbrellaID)
 	dnsHost := "track." + fixtures.SendingDomainTrackingDNSVerifiedDomain
 	servingHost := "track." + fixtures.SendingDomainTrackingServingDomain
 
@@ -127,7 +127,7 @@ func TestAHostMovingFromDNSVerifiedToServingIsOneEntry(t *testing.T) {
 	c := domainsReader(t, h)
 	_, saved := hostChangesFrom(t, c, "")
 
-	require.NoError(t, h.env.DB.Scoped(fixtures.UmbrellaID).SendingDomain().
+	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().
 		UpdateOneID(fixtures.SendingDomainTrackingDNSVerifiedID).
 		SetTrackingState(sendingdomain.TrackingStateServing).Exec(t.Context()))
 
@@ -142,7 +142,7 @@ func TestARenamedSendingDomainRemovesTheOldHost(t *testing.T) {
 	c := domainsReader(t, h)
 	_, saved := hostChangesFrom(t, c, "")
 
-	require.NoError(t, h.env.DB.Scoped(fixtures.UmbrellaID).SendingDomain().
+	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).SendingDomain().
 		UpdateOneID(fixtures.SendingDomainTrackingServingID).
 		SetDomain("renamed.umbrella.test").Exec(t.Context()))
 
@@ -192,7 +192,7 @@ func TestArchivingAHostIsReportedRemovedAndRestoringItAdded(t *testing.T) {
 	h := newHarness(t)
 	c := domainsReader(t, h)
 	_, saved := hostChangesFrom(t, c, "")
-	umbrella := h.env.DB.Scoped(fixtures.UmbrellaID)
+	umbrella := h.env.FeedDB.Scoped(fixtures.UmbrellaID)
 	servingHost := "track." + fixtures.SendingDomainTrackingServingDomain
 
 	require.NoError(t, umbrella.SendingDomain().Discard(t.Context(), fixtures.SendingDomainTrackingServingID))

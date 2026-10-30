@@ -572,6 +572,16 @@ export type InUseProblemDetails = {
 };
 
 /**
+ * The label a Staff member gives a published Legal document version, unique per item
+ */
+export type LegalDocumentLabel = string;
+
+/**
+ * A Legal document's text, in Markdown
+ */
+export type LegalDocumentMarkdown = string;
+
+/**
  * What a lint finding is about (ADR 0040)
  */
 export const LintCode = {
@@ -661,9 +671,9 @@ export type Permission = typeof Permission[keyof typeof Permission];
 export const ProblemCode = {
   SECOND_FACTOR_REQUIRED: 'second_factor_required',
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
-  SIGNUP_CLOSED: 'signup_closed',
   PERMISSION_REQUIRED: 'permission_required',
-  MIGRATIONS_PENDING: 'migrations_pending'
+  MIGRATIONS_PENDING: 'migrations_pending',
+  ACCEPTANCE_PENDING: 'acceptance_pending'
 } as const;
 
 /**
@@ -793,6 +803,30 @@ export const SetupScope = { SENDING_DOMAINS_WRITE: 'sending_domains:write', INTE
 export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
 
 /**
+ * A Sign-up item's key: its address, and the last segment of its Legal document's public page
+ */
+export type SignupItemKey = string;
+
+/**
+ * What a Sign-up item asks of a person (ADR 0062)
+ */
+export const SignupItemKind = {
+  REQUIRED_ACCEPTANCE: 'required_acceptance',
+  OPTIONAL_CONSENT: 'optional_consent',
+  NOTICE: 'notice'
+} as const;
+
+/**
+ * What a Sign-up item asks of a person (ADR 0062)
+ */
+export type SignupItemKind = typeof SignupItemKind[keyof typeof SignupItemKind];
+
+/**
+ * A Sign-up item's title: what the sign-up form shows
+ */
+export type SignupItemTitle = string;
+
+/**
  * The metric of a Sending domain that is over a warning limit of the abuse detector
  */
 export const SiteAbuseMetric = { COMPLAINT: 'complaint', BOUNCE: 'bounce' } as const;
@@ -824,12 +858,42 @@ export type SiteAbuseWarning = {
 
 /**
  * Accept an invite. For an address with no User or an Unverified User, name + password
- * are required (422 otherwise). For a Verified User the body is not read: the session of
- * that same User is the proof.
+ * are required (422 otherwise), and the Sign-up items are answered as on the sign-up form. For a
+ * Verified User the body is not read: the session of that same User is the proof, and consent
+ * follows the User, so nothing is asked again (ADR 0062).
  */
 export type SiteAcceptInvitationInput = {
   name?: string;
   password?: string;
+  /**
+   * The answers to the Sign-up items in effect, read only when the accept sets up the account
+   * (ADR 0062). Every required acceptance must be answered ticked at its current version, or the
+   * field `signupItems.<key>` is refused; an optional consent left out is not recorded. Each
+   * answered item is recorded as accepted or declined, and each notice in effect as shown, with
+   * the source Invitation. Absent with no items in effect.
+   */
+  signupItems?: Array<SiteSignupItemAnswer>;
+};
+
+/**
+ * The required acceptances a User accepts after a new version was published (ADR 0062)
+ */
+export type SiteAcceptPendingInput = {
+  /**
+   * Every pending acceptance, at the version the screen showed
+   */
+  items: Array<SiteAcceptance>;
+};
+
+/**
+ * A required acceptance the screen showed: the item's key and the label of the version shown
+ */
+export type SiteAcceptance = {
+  key: SignupItemKey;
+  /**
+   * The label of the version the screen showed
+   */
+  version: LegalDocumentLabel;
 };
 
 /**
@@ -3245,6 +3309,26 @@ export type SiteJoinDomainResource = {
 };
 
 /**
+ * The current version of a Sign-up item's Legal document
+ */
+export type SiteLegalDocument = {
+  key: SignupItemKey;
+  /**
+   * The item's title
+   */
+  title: string;
+  /**
+   * The label of the version
+   */
+  version: LegalDocumentLabel;
+  markdown: LegalDocumentMarkdown;
+  /**
+   * When the version was published, and took effect
+   */
+  publishedAt: Timestamp;
+};
+
+/**
  * How often one link of a broadcast's or an automation's emails was clicked
  */
 export type SiteLinkClicks = {
@@ -3550,6 +3634,67 @@ export type SiteOAuthDecisionResult = {
 };
 
 /**
+ * An optional consent in effect, with the User's current answer to it (ADR 0062)
+ */
+export type SiteOptionalConsent = {
+  key: SignupItemKey;
+  /**
+   * What the form shows
+   */
+  title: string;
+  /**
+   * The label of the current version, the one a change answers
+   */
+  version: LegalDocumentLabel;
+  /**
+   * The User's current answer; absent when they never answered, as a User who signed up before
+   * the item existed
+   */
+  decision?: SiteOptionalConsentDecision;
+  /**
+   * When the current answer was given; absent with no answer
+   */
+  decidedAt?: Timestamp;
+};
+
+/**
+ * A change of the User's answer to an optional consent
+ */
+export type SiteOptionalConsentChange = {
+  /**
+   * The label of the version the page showed; one that is no longer current refuses the change
+   */
+  version: LegalDocumentLabel;
+  /**
+   * True gives the consent, false withdraws it
+   */
+  accepted: boolean;
+};
+
+/**
+ * A User's current answer to an optional consent: the decision of their latest Consent record on
+ * it (ADR 0062)
+ */
+export const SiteOptionalConsentDecision = {
+  ACCEPTED: 'accepted',
+  DECLINED: 'declined',
+  WITHDRAWN: 'withdrawn'
+} as const;
+
+/**
+ * A User's current answer to an optional consent: the decision of their latest Consent record on
+ * it (ADR 0062)
+ */
+export type SiteOptionalConsentDecision = typeof SiteOptionalConsentDecision[keyof typeof SiteOptionalConsentDecision];
+
+/**
+ * The optional consents in effect, in the order of the sign-up form
+ */
+export type SiteOptionalConsentList = {
+  items: Array<SiteOptionalConsent>;
+};
+
+/**
  * One Passkey of the authenticated User (ADR 0051). Its public key and credential id are
  * never returned.
  */
@@ -3798,6 +3943,25 @@ export type SitePasskeyUserEntity = {
   id: string;
   name: string;
   displayName: string;
+};
+
+/**
+ * A Sign-in provider's sign-up held for the Sign-up items (ADR 0062): who the provider proved,
+ * for the screen that asks the items. No User exists yet.
+ */
+export type SitePendingSignup = {
+  /**
+   * The provider's display name (`Google`)
+   */
+  provider: string;
+  /**
+   * The address the User will get
+   */
+  email: EmailAddress;
+  /**
+   * The provider's name of the person; empty when it gave none
+   */
+  name: string;
 };
 
 /**
@@ -4563,6 +4727,13 @@ export type SiteSignUpInput = {
    * Sign-up of the address replaces it.
    */
   password?: string;
+  /**
+   * The answers to the Sign-up items in effect (ADR 0062). Every required acceptance must be
+   * answered ticked at its current version, or the field `signupItems.<key>` is refused; an
+   * optional consent left out is not recorded. Each answered item is recorded as accepted or
+   * declined, and each notice in effect as shown. Absent with no items in effect.
+   */
+  signupItems?: Array<SiteSignupItemAnswer>;
 };
 
 /**
@@ -4576,7 +4747,6 @@ export const SiteSigninError = {
   PROVIDER_UNAVAILABLE: 'provider_unavailable',
   EMAIL_UNVERIFIED: 'email_unverified',
   EMAIL_NOT_TRUSTED: 'email_not_trusted',
-  SIGNUP_CLOSED: 'signup_closed',
   IDENTITY_IN_USE: 'identity_in_use',
   INVITATION_EMAIL_MISMATCH: 'invitation_email_mismatch',
   INVITATION_INVALID: 'invitation_invalid'
@@ -4593,6 +4763,31 @@ export type SiteSigninError = typeof SiteSigninError[keyof typeof SiteSigninErro
  */
 export type SiteSigninNotMeInput = {
   token: string;
+};
+
+/**
+ * Decline a pending sign-up
+ */
+export type SiteSigninPendingDeclineInput = {
+  /**
+   * The signed reference from the screen's URL
+   */
+  token: string;
+};
+
+/**
+ * The answers that complete a pending sign-up
+ */
+export type SiteSigninPendingSubmitInput = {
+  /**
+   * The signed reference from the screen's URL
+   */
+  token: string;
+  /**
+   * The answers to the Sign-up items in effect, by the rules of the sign-up form's
+   * `signupItems`
+   */
+  signupItems?: Array<SiteSignupItemAnswer>;
 };
 
 /**
@@ -4650,6 +4845,47 @@ export const SiteSignupGoal = {
  * What the User mainly wants to do with the product (third question)
  */
 export type SiteSignupGoal = typeof SiteSignupGoal[keyof typeof SiteSignupGoal];
+
+/**
+ * A Sign-up item in effect, with the label of its current Legal document version: what the
+ * sign-up form asks (ADR 0062)
+ */
+export type SiteSignupItem = {
+  key: SignupItemKey;
+  /**
+   * What the form shows
+   */
+  title: string;
+  kind: SignupItemKind;
+  /**
+   * The label of the current version, the one a person accepts
+   */
+  version: LegalDocumentLabel;
+};
+
+/**
+ * A person's answer to one Sign-up item the form showed (ADR 0062). An item named that is not in
+ * effect, a version that is not its current one, or an item named twice refuses the form.
+ */
+export type SiteSignupItemAnswer = {
+  key: SignupItemKey;
+  /**
+   * The label of the version the form showed
+   */
+  version: LegalDocumentLabel;
+  /**
+   * Whether the box was ticked; absent is unticked. A notice has no box, and its answer only
+   * names the version shown.
+   */
+  accepted?: boolean;
+};
+
+/**
+ * The Sign-up items in effect, in the order of the sign-up form
+ */
+export type SiteSignupItemList = {
+  items: Array<SiteSignupItem>;
+};
 
 /**
  * What the User does (Sign-up survey, first question)
@@ -5275,6 +5511,14 @@ export type SiteUserResource = {
    * asks, until the survey is answered.
    */
   signupSurveyDue: boolean;
+  /**
+   * The required acceptances whose current version the User has not accepted, in the order of
+   * the sign-up form (ADR 0062). While any is listed, every operation that is not marked
+   * `x-allowed-while-acceptance-pending` refuses the User with 403 `acceptance_pending`; the app
+   * shows the texts and accepts them with `acceptPending` before any other page. Empty for a User
+   * who holds every current version.
+   */
+  acceptancesPending: Array<SiteSignupItem>;
   /**
    * Creation timestamp
    */
@@ -6237,10 +6481,6 @@ export type SiteAuthSignUpData = {
 
 export type SiteAuthSignUpErrors = {
   /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
    * RFC 7807 conflict response
    */
   409: ProblemDetails;
@@ -6285,6 +6525,78 @@ export type SiteAuthSigninNotMeResponses = {
    */
   200: unknown;
 };
+
+export type SiteAuthSigninPendingData = {
+  body?: never;
+  path?: never;
+  query: {
+    token: string;
+  };
+  url: '/auth/signin-pending';
+};
+
+export type SiteAuthSigninPendingErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+};
+
+export type SiteAuthSigninPendingError = SiteAuthSigninPendingErrors[keyof SiteAuthSigninPendingErrors];
+
+export type SiteAuthSigninPendingResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SitePendingSignup;
+};
+
+export type SiteAuthSigninPendingResponse = SiteAuthSigninPendingResponses[keyof SiteAuthSigninPendingResponses];
+
+export type SiteAuthSigninPendingSubmitData = {
+  body: SiteSigninPendingSubmitInput;
+  path?: never;
+  query?: never;
+  url: '/auth/signin-pending';
+};
+
+export type SiteAuthSigninPendingSubmitErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteAuthSigninPendingSubmitError = SiteAuthSigninPendingSubmitErrors[keyof SiteAuthSigninPendingSubmitErrors];
+
+export type SiteAuthSigninPendingSubmitResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteAuthSigninPendingSubmitResponse = SiteAuthSigninPendingSubmitResponses[keyof SiteAuthSigninPendingSubmitResponses];
+
+export type SiteAuthSigninPendingDeclineData = {
+  body: SiteSigninPendingDeclineInput;
+  path?: never;
+  query?: never;
+  url: '/auth/signin-pending/decline';
+};
+
+export type SiteAuthSigninPendingDeclineResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteAuthSigninPendingDeclineResponse = SiteAuthSigninPendingDeclineResponses[keyof SiteAuthSigninPendingDeclineResponses];
 
 export type SiteAuthSigninProvidersData = {
   body?: never;
@@ -6600,6 +6912,33 @@ export type SitePublicInvitationsAcceptResponses = {
   200: unknown;
 };
 
+export type SiteLegalDocumentsGetData = {
+  body?: never;
+  path: {
+    key: SignupItemKey;
+  };
+  query?: never;
+  url: '/legal-documents/{key}';
+};
+
+export type SiteLegalDocumentsGetErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteLegalDocumentsGetError = SiteLegalDocumentsGetErrors[keyof SiteLegalDocumentsGetErrors];
+
+export type SiteLegalDocumentsGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteLegalDocument;
+};
+
+export type SiteLegalDocumentsGetResponse = SiteLegalDocumentsGetResponses[keyof SiteLegalDocumentsGetResponses];
+
 export type SiteUserGetMeData = {
   body?: never;
   path?: never;
@@ -6648,6 +6987,31 @@ export type SiteUserUpdateMeResponses = {
 };
 
 export type SiteUserUpdateMeResponse = SiteUserUpdateMeResponses[keyof SiteUserUpdateMeResponses];
+
+export type SiteUserAcceptPendingData = {
+  body: SiteAcceptPendingInput;
+  path?: never;
+  query?: never;
+  url: '/me/acceptances';
+};
+
+export type SiteUserAcceptPendingErrors = {
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteUserAcceptPendingError = SiteUserAcceptPendingErrors[keyof SiteUserAcceptPendingErrors];
+
+export type SiteUserAcceptPendingResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteUserResource;
+};
+
+export type SiteUserAcceptPendingResponse = SiteUserAcceptPendingResponses[keyof SiteUserAcceptPendingResponses];
 
 export type SiteUserDeleteUserData = {
   body: SiteDeleteUserInput;
@@ -6809,6 +7173,53 @@ export type SiteIdentitiesLinkErrors = {
 };
 
 export type SiteIdentitiesLinkError = SiteIdentitiesLinkErrors[keyof SiteIdentitiesLinkErrors];
+
+export type SiteOptionalConsentsListData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/me/optional-consents';
+};
+
+export type SiteOptionalConsentsListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteOptionalConsentList;
+};
+
+export type SiteOptionalConsentsListResponse = SiteOptionalConsentsListResponses[keyof SiteOptionalConsentsListResponses];
+
+export type SiteOptionalConsentsSetData = {
+  body: SiteOptionalConsentChange;
+  path: {
+    key: SignupItemKey;
+  };
+  query?: never;
+  url: '/me/optional-consents/{key}';
+};
+
+export type SiteOptionalConsentsSetErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteOptionalConsentsSetError = SiteOptionalConsentsSetErrors[keyof SiteOptionalConsentsSetErrors];
+
+export type SiteOptionalConsentsSetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteOptionalConsent;
+};
+
+export type SiteOptionalConsentsSetResponse = SiteOptionalConsentsSetResponses[keyof SiteOptionalConsentsSetResponses];
 
 export type SitePasskeysListData = {
   body?: never;
@@ -7323,6 +7734,22 @@ export type SiteSchemaApplyMigrationsResponses = {
 };
 
 export type SiteSchemaApplyMigrationsResponse = SiteSchemaApplyMigrationsResponses[keyof SiteSchemaApplyMigrationsResponses];
+
+export type SiteLegalDocumentsSignupItemsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/signup-items';
+};
+
+export type SiteLegalDocumentsSignupItemsResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteSignupItemList;
+};
+
+export type SiteLegalDocumentsSignupItemsResponse = SiteLegalDocumentsSignupItemsResponses[keyof SiteLegalDocumentsSignupItemsResponses];
 
 export type SitePublicUnsubscribesPerformData = {
   body?: never;

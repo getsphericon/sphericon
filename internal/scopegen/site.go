@@ -14,11 +14,17 @@ const (
 	// withheldExtension marks the operation a User withheld by the Two-factor requirement may
 	// still call in the Workspace (ADR 0020).
 	withheldExtension = "x-allowed-while-withheld"
+	// acceptancePendingExtension marks an operation a User with a required acceptance pending may
+	// still call (ADR 0062). Every other operation that carries a session refuses that User. On an
+	// anonymous operation, which carries no session and so is never refused, the mark only
+	// declares in the contract that a gated User may call it.
+	acceptancePendingExtension = "x-allowed-while-acceptance-pending"
 )
 
 // SitePermissions is the /site operation-to-access map (ADR 0061). An operation whose path has a
 // workspaceId declares the Permissions it needs (an empty list: any member); one without
-// declares none and is not marked as allowed while withheld.
+// declares none and is not marked as allowed while withheld. Any operation may be marked as
+// allowed while an acceptance is pending.
 var SitePermissions = Table{
 	Spec:    "openapi/site.openapi.json",
 	Out:     "internal/api/site/access_gen.go",
@@ -29,9 +35,9 @@ var SitePermissions = Table{
 	},
 	Doc: []string{
 		"operationAccess is what each operation of /site declares in the contract: whether it",
-		"addresses a Workspace, the Permissions its caller's Role must hold there, and whether the",
-		"Two-factor requirement lets a withheld caller through. An operation with no entry is",
-		"refused to everyone.",
+		"addresses a Workspace, the Permissions its caller's Role must hold there, whether the",
+		"Two-factor requirement lets a withheld caller through, and whether a User with a required",
+		"acceptance pending may call it. An operation with no entry is refused to everyone.",
 	},
 	Var:  "operationAccess",
 	Type: "map[siteapi.OperationName]access",
@@ -48,7 +54,12 @@ func siteAccess(op Operation) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	acceptancePending, err := op.Flag(acceptancePendingExtension)
+	if err != nil {
+		return "", err
+	}
 	key := "siteapi." + op.Name() + "Operation"
+	var fields []string
 	if !op.HasPathParam(workspaceParam) {
 		if declared {
 			return "", fmt.Errorf("%s declares %s but has no %s in its path: only an operation of a Workspace declares Permissions", op, permissionsExtension, workspaceParam)
@@ -56,17 +67,20 @@ func siteAccess(op Operation) (string, error) {
 		if withheld {
 			return "", fmt.Errorf("%s declares %s but has no %s in its path: only an operation of a Workspace is withheld", op, withheldExtension, workspaceParam)
 		}
-		return key + ": {}", nil
+	} else {
+		if !declared {
+			return "", fmt.Errorf("%s declares no %s: declare its Permissions in TypeSpec, an empty list for any member", op, permissionsExtension)
+		}
+		fields = append(fields, "workspace: true")
+		if len(perms) > 0 {
+			fields = append(fields, "permissions: []accounts.Permission"+names("accounts.Perm", perms))
+		}
+		if withheld {
+			fields = append(fields, "whileWithheld: true")
+		}
 	}
-	if !declared {
-		return "", fmt.Errorf("%s declares no %s: declare its Permissions in TypeSpec, an empty list for any member", op, permissionsExtension)
-	}
-	fields := []string{"workspace: true"}
-	if len(perms) > 0 {
-		fields = append(fields, "permissions: []accounts.Permission"+names("accounts.Perm", perms))
-	}
-	if withheld {
-		fields = append(fields, "whileWithheld: true")
+	if acceptancePending {
+		fields = append(fields, "whileAcceptancePending: true")
 	}
 	return key + ": {" + strings.Join(fields, ", ") + "}", nil
 }

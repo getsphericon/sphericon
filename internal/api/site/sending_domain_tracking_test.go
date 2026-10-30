@@ -45,7 +45,7 @@ func TestSiteSendingDomainShowsTheTrackingState(t *testing.T) {
 	ctx := context.Background()
 	checked := time.Date(2026, 3, 2, 10, 0, 0, 0, time.UTC)
 	changed := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).SendingDomain().UpdateOneID(fixtures.SendingDomainVerifiedID).
+	require.NoError(t, env.FeedDB.Scoped(fixtures.AcmeID).SendingDomain().UpdateOneID(fixtures.SendingDomainVerifiedID).
 		SetTrackingState(sendingdomain.TrackingStateServing).
 		SetTrackingCheckedAt(checked).
 		SetTrackingStateChangedAt(changed).Exec(ctx))
@@ -81,7 +81,7 @@ func TestSiteSendingDomainShowsWhyTheTrackingHostIsHeldBack(t *testing.T) {
 
 	assert.False(t, reason().IsSet())
 
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).SendingDomain().UpdateOneID(fixtures.SendingDomainVerifiedID).
+	require.NoError(t, env.FeedDB.Scoped(fixtures.AcmeID).SendingDomain().UpdateOneID(fixtures.SendingDomainVerifiedID).
 		SetTrackingReason(sendingdomain.TrackingReasonHostTaken).Exec(ctx))
 	got, ok := reason().Get()
 	require.True(t, ok)

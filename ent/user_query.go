@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/passkey"
@@ -36,6 +37,7 @@ type UserQuery struct {
 	withPasskeys             *PasskeyQuery
 	withIdentities           *UserIdentityQuery
 	withSignupSurveyResponse *SignupSurveyResponseQuery
+	withConsentRecords       *ConsentRecordQuery
 	modifiers                []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -198,6 +200,28 @@ func (_q *UserQuery) QuerySignupSurveyResponse() *SignupSurveyResponseQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(signupsurveyresponse.Table, signupsurveyresponse.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, user.SignupSurveyResponseTable, user.SignupSurveyResponseColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryConsentRecords chains the current query on the "consent_records" edge.
+func (_q *UserQuery) QueryConsentRecords() *ConsentRecordQuery {
+	query := (&ConsentRecordClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(consentrecord.Table, consentrecord.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ConsentRecordsTable, user.ConsentRecordsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -403,6 +427,7 @@ func (_q *UserQuery) Clone() *UserQuery {
 		withPasskeys:             _q.withPasskeys.Clone(),
 		withIdentities:           _q.withIdentities.Clone(),
 		withSignupSurveyResponse: _q.withSignupSurveyResponse.Clone(),
+		withConsentRecords:       _q.withConsentRecords.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -473,6 +498,17 @@ func (_q *UserQuery) WithSignupSurveyResponse(opts ...func(*SignupSurveyResponse
 		opt(query)
 	}
 	_q.withSignupSurveyResponse = query
+	return _q
+}
+
+// WithConsentRecords tells the query-builder to eager-load the nodes that are connected to
+// the "consent_records" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserQuery) WithConsentRecords(opts ...func(*ConsentRecordQuery)) *UserQuery {
+	query := (&ConsentRecordClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withConsentRecords = query
 	return _q
 }
 
@@ -554,13 +590,14 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = _q.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			_q.withMemberships != nil,
 			_q.withSentInvitations != nil,
 			_q.withRecoveryCodes != nil,
 			_q.withPasskeys != nil,
 			_q.withIdentities != nil,
 			_q.withSignupSurveyResponse != nil,
+			_q.withConsentRecords != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -622,6 +659,13 @@ func (_q *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if query := _q.withSignupSurveyResponse; query != nil {
 		if err := _q.loadSignupSurveyResponse(ctx, query, nodes, nil,
 			func(n *User, e *SignupSurveyResponse) { n.Edges.SignupSurveyResponse = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withConsentRecords; query != nil {
+		if err := _q.loadConsentRecords(ctx, query, nodes,
+			func(n *User) { n.Edges.ConsentRecords = []*ConsentRecord{} },
+			func(n *User, e *ConsentRecord) { n.Edges.ConsentRecords = append(n.Edges.ConsentRecords, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -793,6 +837,36 @@ func (_q *UserQuery) loadSignupSurveyResponse(ctx context.Context, query *Signup
 	}
 	query.Where(predicate.SignupSurveyResponse(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.SignupSurveyResponseColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserQuery) loadConsentRecords(ctx context.Context, query *ConsentRecordQuery, nodes []*User, init func(*User), assign func(*User, *ConsentRecord)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(consentrecord.FieldUserID)
+	}
+	query.Where(predicate.ConsentRecord(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ConsentRecordsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

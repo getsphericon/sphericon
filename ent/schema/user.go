@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 type User struct {
@@ -77,6 +78,20 @@ func (User) Fields() []ent.Field {
 		field.Time("signup_survey_due_at").
 			Optional().
 			Nillable(),
+		// The User's place in the service feed of Users (ADR 0062): a position that only grows,
+		// taken whenever the User is created, renamed, changes email or verification, makes a
+		// new decision on the mailings consent item or that item's mark moves. 0 until the first
+		// change. A deletion takes its position on the User's tombstone (UserTombstone). Set only
+		// by internal/userfeed.
+		field.Int64("feed_position").
+			Default(0),
+	}
+}
+
+func (User) Indexes() []ent.Index {
+	return []ent.Index{
+		// The feed pages by (feed_position, id).
+		index.Fields("feed_position", "id"),
 	}
 }
 
@@ -92,6 +107,9 @@ func (User) Edges() []ent.Edge {
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("signup_survey_response", SignupSurveyResponse.Type).
 			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// A User's Consent records go with the User (ADR 0062, 0050).
+		edge.To("consent_records", ConsentRecord.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

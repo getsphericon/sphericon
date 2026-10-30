@@ -3,17 +3,13 @@ import { z } from 'zod'
 
 import { zSiteSigninError } from '../generated/site/zod.gen.ts'
 import { isSignedIn } from '../signedIn.ts'
+import { zReturnPath } from '../utils/returnPath.ts'
 import { Route as rootRoute } from './__root.tsx'
 
 export const Route = createFileRoute('/login')({
   validateSearch: z.object({
     // A same-origin path to return to after signing in.
-    redirect: z
-      .string()
-      .startsWith('/')
-      .refine((path) => !path.startsWith('//'))
-      .optional()
-      .catch(undefined),
+    redirect: zReturnPath,
     // Why a sign-in with a provider did not start a session (set by the server's callback).
     error: zSiteSigninError.optional().catch(undefined),
     // The Second factor challenge of a provider sign-in (set by the server's callback).

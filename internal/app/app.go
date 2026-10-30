@@ -29,7 +29,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/analytics"
-	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/authtoken"
@@ -39,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/buildinfo"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/cleanup"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/db"
@@ -72,7 +72,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/sidelistener"
 	"github.com/getsphericon/sphericon/internal/signin"
+	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
+	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/telemetry"
@@ -646,7 +648,7 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 }
 
 // CreateOwner makes a Verified User with its first Workspace and a one-time password
-// (ADR 0042): the way the first Owner of an Instance that closed sign-up comes to exist.
+// (ADR 0042): an Owner made from a shell, with no Sign-up.
 func (a *App) CreateOwner(ctx context.Context, email, name string) (string, error) {
 	acc, err := do.Invoke[*accounts.Accounts](a.injector)
 	if err != nil {
@@ -655,26 +657,26 @@ func (a *App) CreateOwner(ctx context.Context, email, name string) (string, erro
 	return acc.CreateOwner(ctx, email, name)
 }
 
-// CreateStaffMember makes a platform Staff member (ADR 0026) and returns its one-time password:
-// the only way a Staff member comes to exist (there is no signup). It refuses a duplicate
-// email and an instance without the `staff` license.
+// CreateStaffMember makes a platform Staff member (ADR 0026, ADR 0063) and returns its one-time
+// password: the only way a Staff member comes to exist (there is no signup). It refuses a
+// duplicate email and an instance whose Staff sign-in is off (no Staff member secret).
 func (a *App) CreateStaffMember(ctx context.Context, email string) (string, error) {
-	edition, err := do.Invoke[*ee.Edition](a.injector)
+	members, err := do.Invoke[*staffmembers.Module](a.injector)
 	if err != nil {
 		return "", err
 	}
-	return edition.StaffMembers.Create(ctx, email)
+	return members.Create(ctx, email)
 }
 
 // ResetStaffTOTP clears the TOTP of the Staff member with this email and ends its
 // sessions (ADR 0026): the only way a lost TOTP is reset. The Staff member re-enrols at next
-// login. staff.ErrNotFound for an unknown email, ErrNotLicensed without the license.
+// login. staffmembers.ErrNotFound for an unknown email.
 func (a *App) ResetStaffTOTP(ctx context.Context, email string) error {
-	edition, err := do.Invoke[*ee.Edition](a.injector)
+	members, err := do.Invoke[*staffmembers.Module](a.injector)
 	if err != nil {
 		return err
 	}
-	return edition.StaffMembers.ResetTOTP(ctx, email)
+	return members.ResetTOTP(ctx, email)
 }
 
 // IssueServiceCredential creates a Service credential (ADR 0026) and returns it with its
@@ -684,7 +686,7 @@ func (a *App) IssueServiceCredential(ctx context.Context, in staff.IssueInput) (
 	if err != nil {
 		return nil, err
 	}
-	return edition.StaffMembers.IssueServiceCredential(ctx, in)
+	return edition.Staff.IssueServiceCredential(ctx, in)
 }
 
 // RotateServiceCredential issues a new credential with the name and scopes of an active
@@ -694,7 +696,7 @@ func (a *App) RotateServiceCredential(ctx context.Context, id int64, expiresAt *
 	if err != nil {
 		return nil, err
 	}
-	return edition.StaffMembers.RotateServiceCredential(ctx, id, expiresAt)
+	return edition.Staff.RotateServiceCredential(ctx, id, expiresAt)
 }
 
 // RevokeServiceCredential ends a Service credential.
@@ -703,7 +705,7 @@ func (a *App) RevokeServiceCredential(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return edition.StaffMembers.RevokeServiceCredential(ctx, id)
+	return edition.Staff.RevokeServiceCredential(ctx, id)
 }
 
 // ServiceCredentials lists the Service credentials with their state, narrowed to one
@@ -713,7 +715,7 @@ func (a *App) ServiceCredentials(ctx context.Context, name string) ([]*ent.Servi
 	if err != nil {
 		return nil, err
 	}
-	return edition.StaffMembers.ServiceCredentials(ctx, name)
+	return edition.Staff.ServiceCredentials(ctx, name)
 }
 
 // Accounts is the product's Accounts module from the DI container, for harnesses that
@@ -744,6 +746,7 @@ func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
 func register(injector do.Injector, env string, o options) {
 	registerStorage(injector, env, o)
 	registerMessaging(injector, o)
+	registerStaffMembers(injector)
 	registerEvents(injector)
 	registerJobs(injector)
 	registerDelivery(injector)
@@ -898,6 +901,65 @@ func requireStaffLicenseForSaaS(mode config.Mode, lic *licensekey.License) error
 	return nil
 }
 
+// registerStaffMembers provides the Staff member module.
+func registerStaffMembers(injector do.Injector) {
+	// The Staff member (ADR 0026, ADR 0063): its store, sign-in and sessions, on every
+	// Instance; the sign-in is off without SPHERICON_STAFF_JWT_SECRET.
+	do.Provide(injector, func(i do.Injector) (*staffmembers.Module, error) {
+		cfg, err := do.Invoke[*config.Config](i)
+		if err != nil {
+			return nil, err
+		}
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		cipher, err := do.Invoke[*secrets.Cipher](i)
+		if err != nil {
+			return nil, err
+		}
+		attempts, err := do.Invoke[*accounts.Attempts](i)
+		if err != nil {
+			return nil, err
+		}
+		passwords, err := do.Invoke[*credentials.Hasher](i)
+		if err != nil {
+			return nil, err
+		}
+		return staffmembers.New(client.Client, cipher, cfg.JWTSecrets(), staffmembers.Config{
+			Secret: cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, SecureCookies: cfg.SecureCookies(), Attempts: attempts, Passwords: passwords,
+		})
+	})
+	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
+	do.Provide(injector, func(i do.Injector) (*signupitems.Module, error) {
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		return signupitems.New(client.Client, bus.Bus, nil), nil
+	})
+	// The Users' Consent records on those items (ADR 0062).
+	do.Provide(injector, func(i do.Injector) (*consentrecords.Module, error) {
+		client, err := do.Invoke[*entClient](i)
+		if err != nil {
+			return nil, err
+		}
+		bus, err := do.Invoke[*eventsBus](i)
+		if err != nil {
+			return nil, err
+		}
+		items, err := do.Invoke[*signupitems.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		return consentrecords.New(client.Client, bus.Bus, items), nil
+	})
+}
+
 // registerEvents provides the Enterprise Edition and the domain-event bus.
 func registerEvents(injector do.Injector) {
 	// The runtime license key (ADR 0014). An empty or expired key is the plain core
@@ -935,23 +997,14 @@ func registerEvents(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		cipher, err := do.Invoke[*secrets.Cipher](i)
+		members, err := do.Invoke[*staffmembers.Module](i)
 		if err != nil {
 			return nil, err
 		}
-		attempts, err := do.Invoke[*accounts.Attempts](i)
-		if err != nil {
-			return nil, err
-		}
-		passwords, err := do.Invoke[*credentials.Hasher](i)
-		if err != nil {
-			return nil, err
-		}
-		edition, err := ee.New(client.Client, bus.Bus, lic, cipher, cfg.JWTSecrets(), staff.Config{
-			Passwords:    passwords,
-			Abuse:        abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
-			SupportEmail: cfg.SupportEmail,
-			Secret:       cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, HoldMaxExpiry: cfg.StaffHoldMaxExpiry, SecureCookies: cfg.SecureCookies(), Attempts: attempts,
+		edition, err := ee.New(client.Client, bus.Bus, lic, members.Sessions(), staff.Config{
+			Abuse:         abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
+			SupportEmail:  cfg.SupportEmail,
+			HoldMaxExpiry: cfg.StaffHoldMaxExpiry,
 		})
 		if err != nil {
 			return nil, err
@@ -1189,15 +1242,15 @@ func registerAccounts(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
 		passwords, err := do.Invoke[*credentials.Hasher](i)
 		if err != nil {
 			return nil, err
 		}
-		return accounts.New(client.Client, bus.Bus, passwords, accounts.WithSignupRule(accounts.SignupRuleOf(cfg.Mode.SaaS()))), nil
+		consents, err := do.Invoke[*consentrecords.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		return accounts.New(client.Client, bus.Bus, passwords, consents), nil
 	})
 
 	// The Workspace deletion cycle (ADR 0043), over the raw client.
@@ -1531,11 +1584,11 @@ func registerSurfaces(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		bus, err := do.Invoke[*eventsBus](i)
+		deps, err := externalDeps(i)
 		if err != nil {
 			return nil, err
 		}
-		h, err := mcpserver.New(sphericon.ExternalOpenAPI, external.Handler, apiauth.NewExternalSecurityHandler(client.Client, bus.Bus, nil), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
+		h, err := mcpserver.New(sphericon.ExternalOpenAPI, external.Handler, server.ExternalSecurity(client.Client, deps), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
 		if err != nil {
 			return nil, err
 		}
@@ -1613,7 +1666,15 @@ func registerHandler(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		staffAPI, err := server.NewStaffAPI(edition.Staff(bus.Bus, sys.EmailSender))
+		members, err := do.Invoke[*staffmembers.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		items, err := do.Invoke[*signupitems.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		staffAPI, err := server.NewStaffAPI(members, items, edition.StaffSections(bus.Bus, sys.EmailSender))
 		if err != nil {
 			return nil, err
 		}
@@ -1670,6 +1731,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	captured := invoke[*capturedmessages.Module](r)
 	sd := invoke[*sendingdomains.Module](r)
 	edition := invoke[*ee.Edition](r)
+	consents := invoke[*consentrecords.Module](r)
 	if r.err != nil {
 		return apiexternal.Deps{}, r.err
 	}
@@ -1677,6 +1739,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Accounts: acc, Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Transactional: transactional.New(tpl, sender.Module), BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Reputation: rep, Integrations: integ, CapturedMessages: captured, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
+		ConsentRecords: consents,
 	}, nil
 }
 
@@ -1734,10 +1797,12 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	// warning for a switch without the license is logged here, once, at start.
 	survey := signupsurvey.New(bus.Bus, signupsurvey.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default()))
 	return apisite.Deps{
-		SignupSurvey: survey,
-		Instance:     inst,
-		Deletion:     deletion,
-		AccountLink:  accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
+		SignupSurvey:   survey,
+		SignupItems:    invoke[*signupitems.Module](r),
+		ConsentRecords: invoke[*consentrecords.Module](r),
+		Instance:       inst,
+		Deletion:       deletion,
+		AccountLink:    accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
 		Accounts: acc, Passwords: passwords, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ, CapturedMessages: captured,

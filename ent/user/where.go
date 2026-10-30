@@ -115,6 +115,11 @@ func SignupSurveyDueAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSignupSurveyDueAt, v))
 }
 
+// FeedPosition applies equality check predicate on the "feed_position" field. It's identical to FeedPositionEQ.
+func FeedPosition(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldFeedPosition, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCreatedAt, v))
@@ -755,6 +760,46 @@ func SignupSurveyDueAtNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldSignupSurveyDueAt))
 }
 
+// FeedPositionEQ applies the EQ predicate on the "feed_position" field.
+func FeedPositionEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldFeedPosition, v))
+}
+
+// FeedPositionNEQ applies the NEQ predicate on the "feed_position" field.
+func FeedPositionNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldFeedPosition, v))
+}
+
+// FeedPositionIn applies the In predicate on the "feed_position" field.
+func FeedPositionIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldFeedPosition, vs...))
+}
+
+// FeedPositionNotIn applies the NotIn predicate on the "feed_position" field.
+func FeedPositionNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldFeedPosition, vs...))
+}
+
+// FeedPositionGT applies the GT predicate on the "feed_position" field.
+func FeedPositionGT(v int64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldFeedPosition, v))
+}
+
+// FeedPositionGTE applies the GTE predicate on the "feed_position" field.
+func FeedPositionGTE(v int64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldFeedPosition, v))
+}
+
+// FeedPositionLT applies the LT predicate on the "feed_position" field.
+func FeedPositionLT(v int64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldFeedPosition, v))
+}
+
+// FeedPositionLTE applies the LTE predicate on the "feed_position" field.
+func FeedPositionLTE(v int64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldFeedPosition, v))
+}
+
 // HasMemberships applies the HasEdge predicate on the "memberships" edge.
 func HasMemberships() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -885,6 +930,29 @@ func HasSignupSurveyResponse() predicate.User {
 func HasSignupSurveyResponseWith(preds ...predicate.SignupSurveyResponse) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newSignupSurveyResponseStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasConsentRecords applies the HasEdge predicate on the "consent_records" edge.
+func HasConsentRecords() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ConsentRecordsTable, ConsentRecordsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConsentRecordsWith applies the HasEdge predicate on the "consent_records" edge with a given conditions (other predicates).
+func HasConsentRecordsWith(preds ...predicate.ConsentRecord) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newConsentRecordsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

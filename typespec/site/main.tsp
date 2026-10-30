@@ -12,6 +12,7 @@ import "../common/crud.tsp";
 import "../common/contact-export.tsp";
 import "../common/lint.tsp";
 import "../common/permissions.tsp";
+import "../common/signup-items.tsp";
 import "./resources/consent.tsp";
 import "./resources/contacts.tsp";
 import "./resources/custom-fields.tsp";
@@ -50,6 +51,8 @@ import "./resources/oauth.tsp";
 import "./resources/audit.tsp";
 import "./resources/instance.tsp";
 import "./resources/schema.tsp";
+import "./resources/legal-documents.tsp";
+import "./resources/optional-consents.tsp";
 
 using TypeSpec.OpenAPI;
 using TypeSpec.Http;

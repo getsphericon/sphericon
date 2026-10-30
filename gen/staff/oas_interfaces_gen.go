@@ -17,38 +17,38 @@ type StaffMeGetRes interface {
 	staffMeGetRes()
 }
 
-type StaffSignupSurveyCountsRes interface {
-	staffSignupSurveyCountsRes()
+type StaffSignupItemsArchiveRes interface {
+	staffSignupItemsArchiveRes()
 }
 
-type StaffSignupSurveyGetRes interface {
-	staffSignupSurveyGetRes()
+type StaffSignupItemsCreateRes interface {
+	staffSignupItemsCreateRes()
 }
 
-type StaffWorkspaceAuditListRes interface {
-	staffWorkspaceAuditListRes()
+type StaffSignupItemsGetRes interface {
+	staffSignupItemsGetRes()
 }
 
-type StaffWorkspacesExemptRes interface {
-	staffWorkspacesExemptRes()
+type StaffSignupItemsListRes interface {
+	staffSignupItemsListRes()
 }
 
-type StaffWorkspacesGetRes interface {
-	staffWorkspacesGetRes()
+type StaffSignupItemsListVersionsRes interface {
+	staffSignupItemsListVersionsRes()
 }
 
-type StaffWorkspacesListRes interface {
-	staffWorkspacesListRes()
+type StaffSignupItemsPublishRes interface {
+	staffSignupItemsPublishRes()
 }
 
-type StaffWorkspacesSuspendRes interface {
-	staffWorkspacesSuspendRes()
+type StaffSignupItemsReorderRes interface {
+	staffSignupItemsReorderRes()
 }
 
-type StaffWorkspacesUnexemptRes interface {
-	staffWorkspacesUnexemptRes()
+type StaffSignupItemsSaveDraftRes interface {
+	staffSignupItemsSaveDraftRes()
 }
 
-type StaffWorkspacesUnsuspendRes interface {
-	staffWorkspacesUnsuspendRes()
+type StaffSignupItemsUpdateRes interface {
+	staffSignupItemsUpdateRes()
 }

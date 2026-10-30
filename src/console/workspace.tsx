@@ -7,10 +7,10 @@ import { useTranslation } from 'react-i18next'
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { ButtonLink } from '../components/RouterLink.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
-import { staffWorkspacesGetOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
-import type { StaffAbuse, StaffSuspension } from '../generated/staff/types.gen.ts'
-import { Route as consoleHomeRoute } from '../routes/console/_authed/index.tsx'
-import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
+import { staffWorkspacesGetOptions } from '../generated/staffee/@tanstack/react-query.gen.ts'
+import type { StaffAbuse, StaffSuspension } from '../generated/staffee/types.gen.ts'
+import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
+import { Route as consoleWorkspacesRoute } from '../routes/console/_authed/_enterprise/workspaces.index.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
 import { formatPercent } from '../utils/percent.ts'
 import { AuditLogCard } from './AuditLogCard.tsx'
@@ -138,7 +138,7 @@ export function ConsoleWorkspacePage() {
     <Stack>
       <Group>
         <ButtonLink
-          to={consoleHomeRoute.to}
+          to={consoleWorkspacesRoute.to}
           variant="subtle"
           leftSection={<IconArrowLeft size={16} />}
         >

@@ -36,6 +36,8 @@ type Tx struct {
 	CapturedMessage *CapturedMessageClient
 	// Confirmation is the client for interacting with the Confirmation builders.
 	Confirmation *ConfirmationClient
+	// ConsentRecord is the client for interacting with the ConsentRecord builders.
+	ConsentRecord *ConsentRecordClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
 	// ContactTag is the client for interacting with the ContactTag builders.
@@ -60,6 +62,10 @@ type Tx struct {
 	Invitation *InvitationClient
 	// JoinDomain is the client for interacting with the JoinDomain builders.
 	JoinDomain *JoinDomainClient
+	// LegalDocumentDraft is the client for interacting with the LegalDocumentDraft builders.
+	LegalDocumentDraft *LegalDocumentDraftClient
+	// LegalDocumentVersion is the client for interacting with the LegalDocumentVersion builders.
+	LegalDocumentVersion *LegalDocumentVersionClient
 	// Membership is the client for interacting with the Membership builders.
 	Membership *MembershipClient
 	// OAuthClient is the client for interacting with the OAuthClient builders.
@@ -82,6 +88,8 @@ type Tx struct {
 	Passkey *PasskeyClient
 	// PasskeyChallenge is the client for interacting with the PasskeyChallenge builders.
 	PasskeyChallenge *PasskeyChallengeClient
+	// PendingSignup is the client for interacting with the PendingSignup builders.
+	PendingSignup *PendingSignupClient
 	// PrivateRelayRange is the client for interacting with the PrivateRelayRange builders.
 	PrivateRelayRange *PrivateRelayRangeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
@@ -106,6 +114,8 @@ type Tx struct {
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
 	ServiceCredential *ServiceCredentialClient
+	// SignupItem is the client for interacting with the SignupItem builders.
+	SignupItem *SignupItemClient
 	// SignupSurveyResponse is the client for interacting with the SignupSurveyResponse builders.
 	SignupSurveyResponse *SignupSurveyResponseClient
 	// StaffMember is the client for interacting with the StaffMember builders.
@@ -124,6 +134,8 @@ type Tx struct {
 	User *UserClient
 	// UserIdentity is the client for interacting with the UserIdentity builders.
 	UserIdentity *UserIdentityClient
+	// UserTombstone is the client for interacting with the UserTombstone builders.
+	UserTombstone *UserTombstoneClient
 	// Visitor is the client for interacting with the Visitor builders.
 	Visitor *VisitorClient
 	// WebhookEndpoint is the client for interacting with the WebhookEndpoint builders.
@@ -272,6 +284,7 @@ func (tx *Tx) init() {
 	tx.BroadcastRecipient = NewBroadcastRecipientClient(tx.config)
 	tx.CapturedMessage = NewCapturedMessageClient(tx.config)
 	tx.Confirmation = NewConfirmationClient(tx.config)
+	tx.ConsentRecord = NewConsentRecordClient(tx.config)
 	tx.Contact = NewContactClient(tx.config)
 	tx.ContactTag = NewContactTagClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)
@@ -284,6 +297,8 @@ func (tx *Tx) init() {
 	tx.Integration = NewIntegrationClient(tx.config)
 	tx.Invitation = NewInvitationClient(tx.config)
 	tx.JoinDomain = NewJoinDomainClient(tx.config)
+	tx.LegalDocumentDraft = NewLegalDocumentDraftClient(tx.config)
+	tx.LegalDocumentVersion = NewLegalDocumentVersionClient(tx.config)
 	tx.Membership = NewMembershipClient(tx.config)
 	tx.OAuthClient = NewOAuthClientClient(tx.config)
 	tx.OAuthCode = NewOAuthCodeClient(tx.config)
@@ -295,6 +310,7 @@ func (tx *Tx) init() {
 	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)
 	tx.Passkey = NewPasskeyClient(tx.config)
 	tx.PasskeyChallenge = NewPasskeyChallengeClient(tx.config)
+	tx.PendingSignup = NewPendingSignupClient(tx.config)
 	tx.PrivateRelayRange = NewPrivateRelayRangeClient(tx.config)
 	tx.RecoveryCode = NewRecoveryCodeClient(tx.config)
 	tx.RiverJob = NewRiverJobClient(tx.config)
@@ -307,6 +323,7 @@ func (tx *Tx) init() {
 	tx.SendLimiter = NewSendLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
 	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
+	tx.SignupItem = NewSignupItemClient(tx.config)
 	tx.SignupSurveyResponse = NewSignupSurveyResponseClient(tx.config)
 	tx.StaffMember = NewStaffMemberClient(tx.config)
 	tx.Suppression = NewSuppressionClient(tx.config)
@@ -316,6 +333,7 @@ func (tx *Tx) init() {
 	tx.Usage = NewUsageClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.UserIdentity = NewUserIdentityClient(tx.config)
+	tx.UserTombstone = NewUserTombstoneClient(tx.config)
 	tx.Visitor = NewVisitorClient(tx.config)
 	tx.WebhookEndpoint = NewWebhookEndpointClient(tx.config)
 	tx.Workspace = NewWorkspaceClient(tx.config)

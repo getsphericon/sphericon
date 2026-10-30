@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/joindomains"
@@ -34,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
@@ -87,6 +90,7 @@ import (
 // goverter:extend tagNames
 // goverter:extend auditDiff
 // goverter:extend optWebhookDisabledReason
+// goverter:extend optConsentDecision
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
@@ -107,7 +111,14 @@ type Converter interface {
 	// see: the handler sets it from the marker and the Instance switch.
 	// goverter:map EmailVerifiedAt EmailVerified | emailVerified
 	// goverter:ignore SignupSurveyDue
+	// The pending acceptances are read from the Consent records and the Sign-up items in effect,
+	// which the mapper cannot see: the handler attaches them (SignupItemsToSite).
+	// goverter:ignore AcceptancesPending
 	UserToResource(source *ent.User) *siteapi.SiteUserResource
+	// The provider is shown by its display name, which the Instance's registry holds and the
+	// mapper cannot see: the handler sets it.
+	// goverter:ignore Provider
+	PendingSignupToResource(source *ent.PendingSignup) *siteapi.SitePendingSignup
 	// The grace end, the role and its Permissions belong to the authenticated User's Membership,
 	// which the mapper cannot see: the handler attaches them.
 	// goverter:ignore SecondFactorGraceEndsAt
@@ -307,6 +318,17 @@ type Converter interface {
 	ConfirmationToExport(source *ent.Confirmation) siteapi.ContactExportConfirmation
 	OutboundMessageToExport(source *ent.OutboundMessage) siteapi.ContactExportOutboundMessage
 	BroadcastRecipientToExport(source *ent.BroadcastRecipient) siteapi.ContactExportBroadcastRecipient
+
+	// The Sign-up items in effect and their Legal documents (ADR 0062): the contract calls the
+	// current version's label the item's version.
+	// goverter:map Label Version
+	SignupItemToSite(source signupitems.Document) siteapi.SiteSignupItem
+	SignupItemsToSite(source []signupitems.Document) []siteapi.SiteSignupItem
+	// goverter:map Label Version
+	LegalDocumentToSite(source signupitems.Document) siteapi.SiteLegalDocument
+	// The optional consents of account settings with the User's current answer (ADR 0062).
+	OptionalConsentToSite(source consentrecords.OptionalConsent) siteapi.SiteOptionalConsent
+	OptionalConsentsToSite(source []consentrecords.OptionalConsent) []siteapi.SiteOptionalConsent
 }
 
 // ExportMapper adapts the Converter to contactexport.Mapper.
@@ -731,6 +753,15 @@ func optMembershipSource(v *membership.Source) siteapi.OptSiteMembershipSource {
 		return siteapi.OptSiteMembershipSource{}
 	}
 	return siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSource(*v))
+}
+
+// optConsentDecision is a User's current answer to an optional consent, absent with none; it is
+// never `shown`, which only a notice is.
+func optConsentDecision(v *consentrecord.Decision) siteapi.OptSiteOptionalConsentDecision {
+	if v == nil {
+		return siteapi.OptSiteOptionalConsentDecision{}
+	}
+	return siteapi.NewOptSiteOptionalConsentDecision(siteapi.SiteOptionalConsentDecision(*v))
 }
 
 func optTrackingReason(v *sendingdomain.TrackingReason) siteapi.OptSiteTrackingReason {

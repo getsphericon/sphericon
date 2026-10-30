@@ -1,4 +1,5 @@
 using TypeSpec.Http;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -20,6 +21,13 @@ model SiteUserResource {
    * one field and never the Instance setting. True after a public sign-up on an Instance that
    * asks, until the survey is answered. */
   signupSurveyDue: boolean;
+
+  /** The required acceptances whose current version the User has not accepted, in the order of
+   * the sign-up form (ADR 0062). While any is listed, every operation that is not marked
+   * `x-allowed-while-acceptance-pending` refuses the User with 403 `acceptance_pending`; the app
+   * shows the texts and accepts them with `acceptPending` before any other page. Empty for a User
+   * who holds every current version. */
+  acceptancesPending: SiteSignupItem[];
 
   /** Creation timestamp */
   createdAt: Timestamp;
@@ -46,6 +54,20 @@ model SiteUpdateMeInput {
 
   /** New password */
   newPassword?: string;
+}
+
+/** A required acceptance the screen showed: the item's key and the label of the version shown */
+model SiteAcceptance {
+  key: SignupItemKey;
+
+  /** The label of the version the screen showed */
+  version: LegalDocumentLabel;
+}
+
+/** The required acceptances a User accepts after a new version was published (ADR 0062) */
+model SiteAcceptPendingInput {
+  /** Every pending acceptance, at the version the screen showed */
+  items: SiteAcceptance[];
 }
 
 /** A Workspace the User is the only Owner of, which blocks User deletion */
@@ -101,6 +123,7 @@ model SiteDeleteUserRefusedProblem is Response<422> {
 namespace SiteUser {
   /** Get the authenticated user's profile */
   @get
+  @extension("x-allowed-while-acceptance-pending", true)
   op getMe(): {
     @statusCode statusCode: 200;
     @body body: SiteUserResource;
@@ -158,6 +181,7 @@ namespace SiteUser {
    * window does not block. */
   @post
   @route("/delete")
+  @extension("x-allowed-while-acceptance-pending", true)
   op deleteUser(@body body: SiteDeleteUserInput):
     | {
         @statusCode statusCode: 204;
@@ -177,7 +201,23 @@ namespace SiteUser {
    * it instead. */
   @post
   @route("/delete/link")
+  @extension("x-allowed-while-acceptance-pending", true)
   op deleteUserLink(@body body: SiteDeleteUserLinkInput):
     | AcceptedResponse
     | SiteDeleteUserRefusedProblem;
+
+  /** Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted
+   * with the source re-acceptance, and the next request is no longer refused. The body names each
+   * pending item at the version the screen showed; 422 when one is missing or its version is no
+   * longer the current one (a newer version was published meanwhile), and nothing is recorded.
+   * With nothing pending it records nothing. */
+  @post
+  @route("/acceptances")
+  @extension("x-allowed-while-acceptance-pending", true)
+  op acceptPending(@body body: SiteAcceptPendingInput):
+    | {
+        @statusCode statusCode: 200;
+        @body body: SiteUserResource;
+      }
+    | UnprocessableEntityProblem;
 }

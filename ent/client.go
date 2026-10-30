@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -38,6 +39,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
+	"github.com/getsphericon/sphericon/ent/legaldocumentdraft"
+	"github.com/getsphericon/sphericon/ent/legaldocumentversion"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
@@ -49,6 +52,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
+	"github.com/getsphericon/sphericon/ent/pendingsignup"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/riverjob"
@@ -61,6 +65,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
+	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/staffmember"
 	"github.com/getsphericon/sphericon/ent/suppression"
@@ -70,6 +75,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
+	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -104,6 +110,8 @@ type Client struct {
 	CapturedMessage *CapturedMessageClient
 	// Confirmation is the client for interacting with the Confirmation builders.
 	Confirmation *ConfirmationClient
+	// ConsentRecord is the client for interacting with the ConsentRecord builders.
+	ConsentRecord *ConsentRecordClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
 	// ContactTag is the client for interacting with the ContactTag builders.
@@ -128,6 +136,10 @@ type Client struct {
 	Invitation *InvitationClient
 	// JoinDomain is the client for interacting with the JoinDomain builders.
 	JoinDomain *JoinDomainClient
+	// LegalDocumentDraft is the client for interacting with the LegalDocumentDraft builders.
+	LegalDocumentDraft *LegalDocumentDraftClient
+	// LegalDocumentVersion is the client for interacting with the LegalDocumentVersion builders.
+	LegalDocumentVersion *LegalDocumentVersionClient
 	// Membership is the client for interacting with the Membership builders.
 	Membership *MembershipClient
 	// OAuthClient is the client for interacting with the OAuthClient builders.
@@ -150,6 +162,8 @@ type Client struct {
 	Passkey *PasskeyClient
 	// PasskeyChallenge is the client for interacting with the PasskeyChallenge builders.
 	PasskeyChallenge *PasskeyChallengeClient
+	// PendingSignup is the client for interacting with the PendingSignup builders.
+	PendingSignup *PendingSignupClient
 	// PrivateRelayRange is the client for interacting with the PrivateRelayRange builders.
 	PrivateRelayRange *PrivateRelayRangeClient
 	// RecoveryCode is the client for interacting with the RecoveryCode builders.
@@ -174,6 +188,8 @@ type Client struct {
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
 	ServiceCredential *ServiceCredentialClient
+	// SignupItem is the client for interacting with the SignupItem builders.
+	SignupItem *SignupItemClient
 	// SignupSurveyResponse is the client for interacting with the SignupSurveyResponse builders.
 	SignupSurveyResponse *SignupSurveyResponseClient
 	// StaffMember is the client for interacting with the StaffMember builders.
@@ -192,6 +208,8 @@ type Client struct {
 	User *UserClient
 	// UserIdentity is the client for interacting with the UserIdentity builders.
 	UserIdentity *UserIdentityClient
+	// UserTombstone is the client for interacting with the UserTombstone builders.
+	UserTombstone *UserTombstoneClient
 	// Visitor is the client for interacting with the Visitor builders.
 	Visitor *VisitorClient
 	// WebhookEndpoint is the client for interacting with the WebhookEndpoint builders.
@@ -220,6 +238,7 @@ func (c *Client) init() {
 	c.BroadcastRecipient = NewBroadcastRecipientClient(c.config)
 	c.CapturedMessage = NewCapturedMessageClient(c.config)
 	c.Confirmation = NewConfirmationClient(c.config)
+	c.ConsentRecord = NewConsentRecordClient(c.config)
 	c.Contact = NewContactClient(c.config)
 	c.ContactTag = NewContactTagClient(c.config)
 	c.CustomField = NewCustomFieldClient(c.config)
@@ -232,6 +251,8 @@ func (c *Client) init() {
 	c.Integration = NewIntegrationClient(c.config)
 	c.Invitation = NewInvitationClient(c.config)
 	c.JoinDomain = NewJoinDomainClient(c.config)
+	c.LegalDocumentDraft = NewLegalDocumentDraftClient(c.config)
+	c.LegalDocumentVersion = NewLegalDocumentVersionClient(c.config)
 	c.Membership = NewMembershipClient(c.config)
 	c.OAuthClient = NewOAuthClientClient(c.config)
 	c.OAuthCode = NewOAuthCodeClient(c.config)
@@ -243,6 +264,7 @@ func (c *Client) init() {
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
 	c.Passkey = NewPasskeyClient(c.config)
 	c.PasskeyChallenge = NewPasskeyChallengeClient(c.config)
+	c.PendingSignup = NewPendingSignupClient(c.config)
 	c.PrivateRelayRange = NewPrivateRelayRangeClient(c.config)
 	c.RecoveryCode = NewRecoveryCodeClient(c.config)
 	c.RiverJob = NewRiverJobClient(c.config)
@@ -255,6 +277,7 @@ func (c *Client) init() {
 	c.SendLimiter = NewSendLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
 	c.ServiceCredential = NewServiceCredentialClient(c.config)
+	c.SignupItem = NewSignupItemClient(c.config)
 	c.SignupSurveyResponse = NewSignupSurveyResponseClient(c.config)
 	c.StaffMember = NewStaffMemberClient(c.config)
 	c.Suppression = NewSuppressionClient(c.config)
@@ -264,6 +287,7 @@ func (c *Client) init() {
 	c.Usage = NewUsageClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UserIdentity = NewUserIdentityClient(c.config)
+	c.UserTombstone = NewUserTombstoneClient(c.config)
 	c.Visitor = NewVisitorClient(c.config)
 	c.WebhookEndpoint = NewWebhookEndpointClient(c.config)
 	c.Workspace = NewWorkspaceClient(c.config)
@@ -370,6 +394,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
 		CapturedMessage:      NewCapturedMessageClient(cfg),
 		Confirmation:         NewConfirmationClient(cfg),
+		ConsentRecord:        NewConsentRecordClient(cfg),
 		Contact:              NewContactClient(cfg),
 		ContactTag:           NewContactTagClient(cfg),
 		CustomField:          NewCustomFieldClient(cfg),
@@ -382,6 +407,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Integration:          NewIntegrationClient(cfg),
 		Invitation:           NewInvitationClient(cfg),
 		JoinDomain:           NewJoinDomainClient(cfg),
+		LegalDocumentDraft:   NewLegalDocumentDraftClient(cfg),
+		LegalDocumentVersion: NewLegalDocumentVersionClient(cfg),
 		Membership:           NewMembershipClient(cfg),
 		OAuthClient:          NewOAuthClientClient(cfg),
 		OAuthCode:            NewOAuthCodeClient(cfg),
@@ -393,6 +420,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OutboxOffset:         NewOutboxOffsetClient(cfg),
 		Passkey:              NewPasskeyClient(cfg),
 		PasskeyChallenge:     NewPasskeyChallengeClient(cfg),
+		PendingSignup:        NewPendingSignupClient(cfg),
 		PrivateRelayRange:    NewPrivateRelayRangeClient(cfg),
 		RecoveryCode:         NewRecoveryCodeClient(cfg),
 		RiverJob:             NewRiverJobClient(cfg),
@@ -405,6 +433,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		SendLimiter:          NewSendLimiterClient(cfg),
 		SendingDomain:        NewSendingDomainClient(cfg),
 		ServiceCredential:    NewServiceCredentialClient(cfg),
+		SignupItem:           NewSignupItemClient(cfg),
 		SignupSurveyResponse: NewSignupSurveyResponseClient(cfg),
 		StaffMember:          NewStaffMemberClient(cfg),
 		Suppression:          NewSuppressionClient(cfg),
@@ -414,6 +443,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Usage:                NewUsageClient(cfg),
 		User:                 NewUserClient(cfg),
 		UserIdentity:         NewUserIdentityClient(cfg),
+		UserTombstone:        NewUserTombstoneClient(cfg),
 		Visitor:              NewVisitorClient(cfg),
 		WebhookEndpoint:      NewWebhookEndpointClient(cfg),
 		Workspace:            NewWorkspaceClient(cfg),
@@ -447,6 +477,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
 		CapturedMessage:      NewCapturedMessageClient(cfg),
 		Confirmation:         NewConfirmationClient(cfg),
+		ConsentRecord:        NewConsentRecordClient(cfg),
 		Contact:              NewContactClient(cfg),
 		ContactTag:           NewContactTagClient(cfg),
 		CustomField:          NewCustomFieldClient(cfg),
@@ -459,6 +490,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Integration:          NewIntegrationClient(cfg),
 		Invitation:           NewInvitationClient(cfg),
 		JoinDomain:           NewJoinDomainClient(cfg),
+		LegalDocumentDraft:   NewLegalDocumentDraftClient(cfg),
+		LegalDocumentVersion: NewLegalDocumentVersionClient(cfg),
 		Membership:           NewMembershipClient(cfg),
 		OAuthClient:          NewOAuthClientClient(cfg),
 		OAuthCode:            NewOAuthCodeClient(cfg),
@@ -470,6 +503,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OutboxOffset:         NewOutboxOffsetClient(cfg),
 		Passkey:              NewPasskeyClient(cfg),
 		PasskeyChallenge:     NewPasskeyChallengeClient(cfg),
+		PendingSignup:        NewPendingSignupClient(cfg),
 		PrivateRelayRange:    NewPrivateRelayRangeClient(cfg),
 		RecoveryCode:         NewRecoveryCodeClient(cfg),
 		RiverJob:             NewRiverJobClient(cfg),
@@ -482,6 +516,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		SendLimiter:          NewSendLimiterClient(cfg),
 		SendingDomain:        NewSendingDomainClient(cfg),
 		ServiceCredential:    NewServiceCredentialClient(cfg),
+		SignupItem:           NewSignupItemClient(cfg),
 		SignupSurveyResponse: NewSignupSurveyResponseClient(cfg),
 		StaffMember:          NewStaffMemberClient(cfg),
 		Suppression:          NewSuppressionClient(cfg),
@@ -491,6 +526,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Usage:                NewUsageClient(cfg),
 		User:                 NewUserClient(cfg),
 		UserIdentity:         NewUserIdentityClient(cfg),
+		UserTombstone:        NewUserTombstoneClient(cfg),
 		Visitor:              NewVisitorClient(cfg),
 		WebhookEndpoint:      NewWebhookEndpointClient(cfg),
 		Workspace:            NewWorkspaceClient(cfg),
@@ -525,16 +561,18 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
-		c.CapturedMessage, c.Confirmation, c.Contact, c.ContactTag, c.CustomField,
-		c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold, c.InstanceState,
-		c.Integration, c.Invitation, c.JoinDomain, c.Membership, c.OAuthClient,
+		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
+		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold,
+		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
+		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
 		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
 		c.OutboxMessage, c.OutboxOffset, c.Passkey, c.PasskeyChallenge,
-		c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember,
-		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.PendingSignup, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule,
+		c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
+		c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -546,16 +584,18 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationRun,
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
-		c.CapturedMessage, c.Confirmation, c.Contact, c.ContactTag, c.CustomField,
-		c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold, c.InstanceState,
-		c.Integration, c.Invitation, c.JoinDomain, c.Membership, c.OAuthClient,
+		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
+		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold,
+		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
+		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
 		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
 		c.OutboxMessage, c.OutboxOffset, c.Passkey, c.PasskeyChallenge,
-		c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendLimiter,
-		c.SendingDomain, c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember,
-		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.PendingSignup, c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule,
+		c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
+		c.SendLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -586,6 +626,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CapturedMessage.mutate(ctx, m)
 	case *ConfirmationMutation:
 		return c.Confirmation.mutate(ctx, m)
+	case *ConsentRecordMutation:
+		return c.ConsentRecord.mutate(ctx, m)
 	case *ContactMutation:
 		return c.Contact.mutate(ctx, m)
 	case *ContactTagMutation:
@@ -610,6 +652,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Invitation.mutate(ctx, m)
 	case *JoinDomainMutation:
 		return c.JoinDomain.mutate(ctx, m)
+	case *LegalDocumentDraftMutation:
+		return c.LegalDocumentDraft.mutate(ctx, m)
+	case *LegalDocumentVersionMutation:
+		return c.LegalDocumentVersion.mutate(ctx, m)
 	case *MembershipMutation:
 		return c.Membership.mutate(ctx, m)
 	case *OAuthClientMutation:
@@ -632,6 +678,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Passkey.mutate(ctx, m)
 	case *PasskeyChallengeMutation:
 		return c.PasskeyChallenge.mutate(ctx, m)
+	case *PendingSignupMutation:
+		return c.PendingSignup.mutate(ctx, m)
 	case *PrivateRelayRangeMutation:
 		return c.PrivateRelayRange.mutate(ctx, m)
 	case *RecoveryCodeMutation:
@@ -656,6 +704,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SendingDomain.mutate(ctx, m)
 	case *ServiceCredentialMutation:
 		return c.ServiceCredential.mutate(ctx, m)
+	case *SignupItemMutation:
+		return c.SignupItem.mutate(ctx, m)
 	case *SignupSurveyResponseMutation:
 		return c.SignupSurveyResponse.mutate(ctx, m)
 	case *StaffMemberMutation:
@@ -674,6 +724,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	case *UserIdentityMutation:
 		return c.UserIdentity.mutate(ctx, m)
+	case *UserTombstoneMutation:
+		return c.UserTombstone.mutate(ctx, m)
 	case *VisitorMutation:
 		return c.Visitor.mutate(ctx, m)
 	case *WebhookEndpointMutation:
@@ -2628,6 +2680,171 @@ func (c *ConfirmationClient) mutate(ctx context.Context, m *ConfirmationMutation
 	}
 }
 
+// ConsentRecordClient is a client for the ConsentRecord schema.
+type ConsentRecordClient struct {
+	config
+}
+
+// NewConsentRecordClient returns a client for the ConsentRecord from the given config.
+func NewConsentRecordClient(c config) *ConsentRecordClient {
+	return &ConsentRecordClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `consentrecord.Hooks(f(g(h())))`.
+func (c *ConsentRecordClient) Use(hooks ...Hook) {
+	c.hooks.ConsentRecord = append(c.hooks.ConsentRecord, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `consentrecord.Intercept(f(g(h())))`.
+func (c *ConsentRecordClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ConsentRecord = append(c.inters.ConsentRecord, interceptors...)
+}
+
+// Create returns a builder for creating a ConsentRecord entity.
+func (c *ConsentRecordClient) Create() *ConsentRecordCreate {
+	mutation := newConsentRecordMutation(c.config, OpCreate)
+	return &ConsentRecordCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ConsentRecord entities.
+func (c *ConsentRecordClient) CreateBulk(builders ...*ConsentRecordCreate) *ConsentRecordCreateBulk {
+	return &ConsentRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ConsentRecordClient) MapCreateBulk(slice any, setFunc func(*ConsentRecordCreate, int)) *ConsentRecordCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ConsentRecordCreateBulk{err: fmt.Errorf("calling to ConsentRecordClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ConsentRecordCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ConsentRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ConsentRecord.
+func (c *ConsentRecordClient) Update() *ConsentRecordUpdate {
+	mutation := newConsentRecordMutation(c.config, OpUpdate)
+	return &ConsentRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ConsentRecordClient) UpdateOne(_m *ConsentRecord) *ConsentRecordUpdateOne {
+	mutation := newConsentRecordMutation(c.config, OpUpdateOne, withConsentRecord(_m))
+	return &ConsentRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ConsentRecordClient) UpdateOneID(id int64) *ConsentRecordUpdateOne {
+	mutation := newConsentRecordMutation(c.config, OpUpdateOne, withConsentRecordID(id))
+	return &ConsentRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ConsentRecord.
+func (c *ConsentRecordClient) Delete() *ConsentRecordDelete {
+	mutation := newConsentRecordMutation(c.config, OpDelete)
+	return &ConsentRecordDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ConsentRecordClient) DeleteOne(_m *ConsentRecord) *ConsentRecordDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ConsentRecordClient) DeleteOneID(id int64) *ConsentRecordDeleteOne {
+	builder := c.Delete().Where(consentrecord.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ConsentRecordDeleteOne{builder}
+}
+
+// Query returns a query builder for ConsentRecord.
+func (c *ConsentRecordClient) Query() *ConsentRecordQuery {
+	return &ConsentRecordQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeConsentRecord},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ConsentRecord entity by its id.
+func (c *ConsentRecordClient) Get(ctx context.Context, id int64) (*ConsentRecord, error) {
+	return c.Query().Where(consentrecord.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ConsentRecordClient) GetX(ctx context.Context, id int64) *ConsentRecord {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a ConsentRecord.
+func (c *ConsentRecordClient) QueryUser(_m *ConsentRecord) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(consentrecord.Table, consentrecord.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, consentrecord.UserTable, consentrecord.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryVersion queries the version edge of a ConsentRecord.
+func (c *ConsentRecordClient) QueryVersion(_m *ConsentRecord) *LegalDocumentVersionQuery {
+	query := (&LegalDocumentVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(consentrecord.Table, consentrecord.FieldID, id),
+			sqlgraph.To(legaldocumentversion.Table, legaldocumentversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, consentrecord.VersionTable, consentrecord.VersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ConsentRecordClient) Hooks() []Hook {
+	return c.hooks.ConsentRecord
+}
+
+// Interceptors returns the client interceptors.
+func (c *ConsentRecordClient) Interceptors() []Interceptor {
+	return c.inters.ConsentRecord
+}
+
+func (c *ConsentRecordClient) mutate(ctx context.Context, m *ConsentRecordMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ConsentRecordCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ConsentRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ConsentRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ConsentRecordDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ConsentRecord mutation op: %q", m.Op())
+	}
+}
+
 // ContactClient is a client for the Contact schema.
 type ContactClient struct {
 	config
@@ -4337,6 +4554,22 @@ func (c *InvitationClient) QueryInviter(_m *Invitation) *UserQuery {
 	return query
 }
 
+// QueryPendingSignups queries the pending_signups edge of a Invitation.
+func (c *InvitationClient) QueryPendingSignups(_m *Invitation) *PendingSignupQuery {
+	query := (&PendingSignupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(invitation.Table, invitation.FieldID, id),
+			sqlgraph.To(pendingsignup.Table, pendingsignup.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, invitation.PendingSignupsTable, invitation.PendingSignupsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *InvitationClient) Hooks() []Hook {
 	return c.hooks.Invitation
@@ -4508,6 +4741,336 @@ func (c *JoinDomainClient) mutate(ctx context.Context, m *JoinDomainMutation) (V
 		return (&JoinDomainDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown JoinDomain mutation op: %q", m.Op())
+	}
+}
+
+// LegalDocumentDraftClient is a client for the LegalDocumentDraft schema.
+type LegalDocumentDraftClient struct {
+	config
+}
+
+// NewLegalDocumentDraftClient returns a client for the LegalDocumentDraft from the given config.
+func NewLegalDocumentDraftClient(c config) *LegalDocumentDraftClient {
+	return &LegalDocumentDraftClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `legaldocumentdraft.Hooks(f(g(h())))`.
+func (c *LegalDocumentDraftClient) Use(hooks ...Hook) {
+	c.hooks.LegalDocumentDraft = append(c.hooks.LegalDocumentDraft, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `legaldocumentdraft.Intercept(f(g(h())))`.
+func (c *LegalDocumentDraftClient) Intercept(interceptors ...Interceptor) {
+	c.inters.LegalDocumentDraft = append(c.inters.LegalDocumentDraft, interceptors...)
+}
+
+// Create returns a builder for creating a LegalDocumentDraft entity.
+func (c *LegalDocumentDraftClient) Create() *LegalDocumentDraftCreate {
+	mutation := newLegalDocumentDraftMutation(c.config, OpCreate)
+	return &LegalDocumentDraftCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of LegalDocumentDraft entities.
+func (c *LegalDocumentDraftClient) CreateBulk(builders ...*LegalDocumentDraftCreate) *LegalDocumentDraftCreateBulk {
+	return &LegalDocumentDraftCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *LegalDocumentDraftClient) MapCreateBulk(slice any, setFunc func(*LegalDocumentDraftCreate, int)) *LegalDocumentDraftCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &LegalDocumentDraftCreateBulk{err: fmt.Errorf("calling to LegalDocumentDraftClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*LegalDocumentDraftCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &LegalDocumentDraftCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for LegalDocumentDraft.
+func (c *LegalDocumentDraftClient) Update() *LegalDocumentDraftUpdate {
+	mutation := newLegalDocumentDraftMutation(c.config, OpUpdate)
+	return &LegalDocumentDraftUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LegalDocumentDraftClient) UpdateOne(_m *LegalDocumentDraft) *LegalDocumentDraftUpdateOne {
+	mutation := newLegalDocumentDraftMutation(c.config, OpUpdateOne, withLegalDocumentDraft(_m))
+	return &LegalDocumentDraftUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LegalDocumentDraftClient) UpdateOneID(id int64) *LegalDocumentDraftUpdateOne {
+	mutation := newLegalDocumentDraftMutation(c.config, OpUpdateOne, withLegalDocumentDraftID(id))
+	return &LegalDocumentDraftUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for LegalDocumentDraft.
+func (c *LegalDocumentDraftClient) Delete() *LegalDocumentDraftDelete {
+	mutation := newLegalDocumentDraftMutation(c.config, OpDelete)
+	return &LegalDocumentDraftDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LegalDocumentDraftClient) DeleteOne(_m *LegalDocumentDraft) *LegalDocumentDraftDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *LegalDocumentDraftClient) DeleteOneID(id int64) *LegalDocumentDraftDeleteOne {
+	builder := c.Delete().Where(legaldocumentdraft.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LegalDocumentDraftDeleteOne{builder}
+}
+
+// Query returns a query builder for LegalDocumentDraft.
+func (c *LegalDocumentDraftClient) Query() *LegalDocumentDraftQuery {
+	return &LegalDocumentDraftQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeLegalDocumentDraft},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a LegalDocumentDraft entity by its id.
+func (c *LegalDocumentDraftClient) Get(ctx context.Context, id int64) (*LegalDocumentDraft, error) {
+	return c.Query().Where(legaldocumentdraft.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LegalDocumentDraftClient) GetX(ctx context.Context, id int64) *LegalDocumentDraft {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a LegalDocumentDraft.
+func (c *LegalDocumentDraftClient) QueryItem(_m *LegalDocumentDraft) *SignupItemQuery {
+	query := (&SignupItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(legaldocumentdraft.Table, legaldocumentdraft.FieldID, id),
+			sqlgraph.To(signupitem.Table, signupitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, legaldocumentdraft.ItemTable, legaldocumentdraft.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LegalDocumentDraftClient) Hooks() []Hook {
+	return c.hooks.LegalDocumentDraft
+}
+
+// Interceptors returns the client interceptors.
+func (c *LegalDocumentDraftClient) Interceptors() []Interceptor {
+	return c.inters.LegalDocumentDraft
+}
+
+func (c *LegalDocumentDraftClient) mutate(ctx context.Context, m *LegalDocumentDraftMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&LegalDocumentDraftCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&LegalDocumentDraftUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&LegalDocumentDraftUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&LegalDocumentDraftDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown LegalDocumentDraft mutation op: %q", m.Op())
+	}
+}
+
+// LegalDocumentVersionClient is a client for the LegalDocumentVersion schema.
+type LegalDocumentVersionClient struct {
+	config
+}
+
+// NewLegalDocumentVersionClient returns a client for the LegalDocumentVersion from the given config.
+func NewLegalDocumentVersionClient(c config) *LegalDocumentVersionClient {
+	return &LegalDocumentVersionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `legaldocumentversion.Hooks(f(g(h())))`.
+func (c *LegalDocumentVersionClient) Use(hooks ...Hook) {
+	c.hooks.LegalDocumentVersion = append(c.hooks.LegalDocumentVersion, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `legaldocumentversion.Intercept(f(g(h())))`.
+func (c *LegalDocumentVersionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.LegalDocumentVersion = append(c.inters.LegalDocumentVersion, interceptors...)
+}
+
+// Create returns a builder for creating a LegalDocumentVersion entity.
+func (c *LegalDocumentVersionClient) Create() *LegalDocumentVersionCreate {
+	mutation := newLegalDocumentVersionMutation(c.config, OpCreate)
+	return &LegalDocumentVersionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of LegalDocumentVersion entities.
+func (c *LegalDocumentVersionClient) CreateBulk(builders ...*LegalDocumentVersionCreate) *LegalDocumentVersionCreateBulk {
+	return &LegalDocumentVersionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *LegalDocumentVersionClient) MapCreateBulk(slice any, setFunc func(*LegalDocumentVersionCreate, int)) *LegalDocumentVersionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &LegalDocumentVersionCreateBulk{err: fmt.Errorf("calling to LegalDocumentVersionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*LegalDocumentVersionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &LegalDocumentVersionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for LegalDocumentVersion.
+func (c *LegalDocumentVersionClient) Update() *LegalDocumentVersionUpdate {
+	mutation := newLegalDocumentVersionMutation(c.config, OpUpdate)
+	return &LegalDocumentVersionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LegalDocumentVersionClient) UpdateOne(_m *LegalDocumentVersion) *LegalDocumentVersionUpdateOne {
+	mutation := newLegalDocumentVersionMutation(c.config, OpUpdateOne, withLegalDocumentVersion(_m))
+	return &LegalDocumentVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LegalDocumentVersionClient) UpdateOneID(id int64) *LegalDocumentVersionUpdateOne {
+	mutation := newLegalDocumentVersionMutation(c.config, OpUpdateOne, withLegalDocumentVersionID(id))
+	return &LegalDocumentVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for LegalDocumentVersion.
+func (c *LegalDocumentVersionClient) Delete() *LegalDocumentVersionDelete {
+	mutation := newLegalDocumentVersionMutation(c.config, OpDelete)
+	return &LegalDocumentVersionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LegalDocumentVersionClient) DeleteOne(_m *LegalDocumentVersion) *LegalDocumentVersionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *LegalDocumentVersionClient) DeleteOneID(id int64) *LegalDocumentVersionDeleteOne {
+	builder := c.Delete().Where(legaldocumentversion.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LegalDocumentVersionDeleteOne{builder}
+}
+
+// Query returns a query builder for LegalDocumentVersion.
+func (c *LegalDocumentVersionClient) Query() *LegalDocumentVersionQuery {
+	return &LegalDocumentVersionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeLegalDocumentVersion},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a LegalDocumentVersion entity by its id.
+func (c *LegalDocumentVersionClient) Get(ctx context.Context, id int64) (*LegalDocumentVersion, error) {
+	return c.Query().Where(legaldocumentversion.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LegalDocumentVersionClient) GetX(ctx context.Context, id int64) *LegalDocumentVersion {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryItem queries the item edge of a LegalDocumentVersion.
+func (c *LegalDocumentVersionClient) QueryItem(_m *LegalDocumentVersion) *SignupItemQuery {
+	query := (&SignupItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(legaldocumentversion.Table, legaldocumentversion.FieldID, id),
+			sqlgraph.To(signupitem.Table, signupitem.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, legaldocumentversion.ItemTable, legaldocumentversion.ItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPublishedBy queries the published_by edge of a LegalDocumentVersion.
+func (c *LegalDocumentVersionClient) QueryPublishedBy(_m *LegalDocumentVersion) *StaffMemberQuery {
+	query := (&StaffMemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(legaldocumentversion.Table, legaldocumentversion.FieldID, id),
+			sqlgraph.To(staffmember.Table, staffmember.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, legaldocumentversion.PublishedByTable, legaldocumentversion.PublishedByColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryConsentRecords queries the consent_records edge of a LegalDocumentVersion.
+func (c *LegalDocumentVersionClient) QueryConsentRecords(_m *LegalDocumentVersion) *ConsentRecordQuery {
+	query := (&ConsentRecordClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(legaldocumentversion.Table, legaldocumentversion.FieldID, id),
+			sqlgraph.To(consentrecord.Table, consentrecord.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, legaldocumentversion.ConsentRecordsTable, legaldocumentversion.ConsentRecordsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *LegalDocumentVersionClient) Hooks() []Hook {
+	return c.hooks.LegalDocumentVersion
+}
+
+// Interceptors returns the client interceptors.
+func (c *LegalDocumentVersionClient) Interceptors() []Interceptor {
+	return c.inters.LegalDocumentVersion
+}
+
+func (c *LegalDocumentVersionClient) mutate(ctx context.Context, m *LegalDocumentVersionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&LegalDocumentVersionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&LegalDocumentVersionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&LegalDocumentVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&LegalDocumentVersionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown LegalDocumentVersion mutation op: %q", m.Op())
 	}
 }
 
@@ -6403,6 +6966,155 @@ func (c *PasskeyChallengeClient) mutate(ctx context.Context, m *PasskeyChallenge
 		return (&PasskeyChallengeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown PasskeyChallenge mutation op: %q", m.Op())
+	}
+}
+
+// PendingSignupClient is a client for the PendingSignup schema.
+type PendingSignupClient struct {
+	config
+}
+
+// NewPendingSignupClient returns a client for the PendingSignup from the given config.
+func NewPendingSignupClient(c config) *PendingSignupClient {
+	return &PendingSignupClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pendingsignup.Hooks(f(g(h())))`.
+func (c *PendingSignupClient) Use(hooks ...Hook) {
+	c.hooks.PendingSignup = append(c.hooks.PendingSignup, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pendingsignup.Intercept(f(g(h())))`.
+func (c *PendingSignupClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PendingSignup = append(c.inters.PendingSignup, interceptors...)
+}
+
+// Create returns a builder for creating a PendingSignup entity.
+func (c *PendingSignupClient) Create() *PendingSignupCreate {
+	mutation := newPendingSignupMutation(c.config, OpCreate)
+	return &PendingSignupCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PendingSignup entities.
+func (c *PendingSignupClient) CreateBulk(builders ...*PendingSignupCreate) *PendingSignupCreateBulk {
+	return &PendingSignupCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PendingSignupClient) MapCreateBulk(slice any, setFunc func(*PendingSignupCreate, int)) *PendingSignupCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PendingSignupCreateBulk{err: fmt.Errorf("calling to PendingSignupClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PendingSignupCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PendingSignupCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PendingSignup.
+func (c *PendingSignupClient) Update() *PendingSignupUpdate {
+	mutation := newPendingSignupMutation(c.config, OpUpdate)
+	return &PendingSignupUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PendingSignupClient) UpdateOne(_m *PendingSignup) *PendingSignupUpdateOne {
+	mutation := newPendingSignupMutation(c.config, OpUpdateOne, withPendingSignup(_m))
+	return &PendingSignupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PendingSignupClient) UpdateOneID(id int64) *PendingSignupUpdateOne {
+	mutation := newPendingSignupMutation(c.config, OpUpdateOne, withPendingSignupID(id))
+	return &PendingSignupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PendingSignup.
+func (c *PendingSignupClient) Delete() *PendingSignupDelete {
+	mutation := newPendingSignupMutation(c.config, OpDelete)
+	return &PendingSignupDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PendingSignupClient) DeleteOne(_m *PendingSignup) *PendingSignupDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PendingSignupClient) DeleteOneID(id int64) *PendingSignupDeleteOne {
+	builder := c.Delete().Where(pendingsignup.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PendingSignupDeleteOne{builder}
+}
+
+// Query returns a query builder for PendingSignup.
+func (c *PendingSignupClient) Query() *PendingSignupQuery {
+	return &PendingSignupQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePendingSignup},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PendingSignup entity by its id.
+func (c *PendingSignupClient) Get(ctx context.Context, id int64) (*PendingSignup, error) {
+	return c.Query().Where(pendingsignup.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PendingSignupClient) GetX(ctx context.Context, id int64) *PendingSignup {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryInvitation queries the invitation edge of a PendingSignup.
+func (c *PendingSignupClient) QueryInvitation(_m *PendingSignup) *InvitationQuery {
+	query := (&InvitationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(pendingsignup.Table, pendingsignup.FieldID, id),
+			sqlgraph.To(invitation.Table, invitation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, pendingsignup.InvitationTable, pendingsignup.InvitationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PendingSignupClient) Hooks() []Hook {
+	return c.hooks.PendingSignup
+}
+
+// Interceptors returns the client interceptors.
+func (c *PendingSignupClient) Interceptors() []Interceptor {
+	return c.inters.PendingSignup
+}
+
+func (c *PendingSignupClient) mutate(ctx context.Context, m *PendingSignupMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PendingSignupCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PendingSignupUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PendingSignupUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PendingSignupDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PendingSignup mutation op: %q", m.Op())
 	}
 }
 
@@ -8322,6 +9034,171 @@ func (c *ServiceCredentialClient) mutate(ctx context.Context, m *ServiceCredenti
 	}
 }
 
+// SignupItemClient is a client for the SignupItem schema.
+type SignupItemClient struct {
+	config
+}
+
+// NewSignupItemClient returns a client for the SignupItem from the given config.
+func NewSignupItemClient(c config) *SignupItemClient {
+	return &SignupItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `signupitem.Hooks(f(g(h())))`.
+func (c *SignupItemClient) Use(hooks ...Hook) {
+	c.hooks.SignupItem = append(c.hooks.SignupItem, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `signupitem.Intercept(f(g(h())))`.
+func (c *SignupItemClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SignupItem = append(c.inters.SignupItem, interceptors...)
+}
+
+// Create returns a builder for creating a SignupItem entity.
+func (c *SignupItemClient) Create() *SignupItemCreate {
+	mutation := newSignupItemMutation(c.config, OpCreate)
+	return &SignupItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SignupItem entities.
+func (c *SignupItemClient) CreateBulk(builders ...*SignupItemCreate) *SignupItemCreateBulk {
+	return &SignupItemCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SignupItemClient) MapCreateBulk(slice any, setFunc func(*SignupItemCreate, int)) *SignupItemCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SignupItemCreateBulk{err: fmt.Errorf("calling to SignupItemClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SignupItemCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SignupItemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SignupItem.
+func (c *SignupItemClient) Update() *SignupItemUpdate {
+	mutation := newSignupItemMutation(c.config, OpUpdate)
+	return &SignupItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SignupItemClient) UpdateOne(_m *SignupItem) *SignupItemUpdateOne {
+	mutation := newSignupItemMutation(c.config, OpUpdateOne, withSignupItem(_m))
+	return &SignupItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SignupItemClient) UpdateOneID(id int64) *SignupItemUpdateOne {
+	mutation := newSignupItemMutation(c.config, OpUpdateOne, withSignupItemID(id))
+	return &SignupItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SignupItem.
+func (c *SignupItemClient) Delete() *SignupItemDelete {
+	mutation := newSignupItemMutation(c.config, OpDelete)
+	return &SignupItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SignupItemClient) DeleteOne(_m *SignupItem) *SignupItemDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SignupItemClient) DeleteOneID(id int64) *SignupItemDeleteOne {
+	builder := c.Delete().Where(signupitem.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SignupItemDeleteOne{builder}
+}
+
+// Query returns a query builder for SignupItem.
+func (c *SignupItemClient) Query() *SignupItemQuery {
+	return &SignupItemQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSignupItem},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SignupItem entity by its id.
+func (c *SignupItemClient) Get(ctx context.Context, id int64) (*SignupItem, error) {
+	return c.Query().Where(signupitem.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SignupItemClient) GetX(ctx context.Context, id int64) *SignupItem {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryDraft queries the draft edge of a SignupItem.
+func (c *SignupItemClient) QueryDraft(_m *SignupItem) *LegalDocumentDraftQuery {
+	query := (&LegalDocumentDraftClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(signupitem.Table, signupitem.FieldID, id),
+			sqlgraph.To(legaldocumentdraft.Table, legaldocumentdraft.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, signupitem.DraftTable, signupitem.DraftColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryVersions queries the versions edge of a SignupItem.
+func (c *SignupItemClient) QueryVersions(_m *SignupItem) *LegalDocumentVersionQuery {
+	query := (&LegalDocumentVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(signupitem.Table, signupitem.FieldID, id),
+			sqlgraph.To(legaldocumentversion.Table, legaldocumentversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, signupitem.VersionsTable, signupitem.VersionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SignupItemClient) Hooks() []Hook {
+	return c.hooks.SignupItem
+}
+
+// Interceptors returns the client interceptors.
+func (c *SignupItemClient) Interceptors() []Interceptor {
+	return c.inters.SignupItem
+}
+
+func (c *SignupItemClient) mutate(ctx context.Context, m *SignupItemMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SignupItemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SignupItemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SignupItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SignupItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SignupItem mutation op: %q", m.Op())
+	}
+}
+
 // SignupSurveyResponseClient is a client for the SignupSurveyResponse schema.
 type SignupSurveyResponseClient struct {
 	config
@@ -9601,6 +10478,22 @@ func (c *UserClient) QuerySignupSurveyResponse(_m *User) *SignupSurveyResponseQu
 	return query
 }
 
+// QueryConsentRecords queries the consent_records edge of a User.
+func (c *UserClient) QueryConsentRecords(_m *User) *ConsentRecordQuery {
+	query := (&ConsentRecordClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(consentrecord.Table, consentrecord.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ConsentRecordsTable, user.ConsentRecordsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -9772,6 +10665,139 @@ func (c *UserIdentityClient) mutate(ctx context.Context, m *UserIdentityMutation
 		return (&UserIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown UserIdentity mutation op: %q", m.Op())
+	}
+}
+
+// UserTombstoneClient is a client for the UserTombstone schema.
+type UserTombstoneClient struct {
+	config
+}
+
+// NewUserTombstoneClient returns a client for the UserTombstone from the given config.
+func NewUserTombstoneClient(c config) *UserTombstoneClient {
+	return &UserTombstoneClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `usertombstone.Hooks(f(g(h())))`.
+func (c *UserTombstoneClient) Use(hooks ...Hook) {
+	c.hooks.UserTombstone = append(c.hooks.UserTombstone, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `usertombstone.Intercept(f(g(h())))`.
+func (c *UserTombstoneClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserTombstone = append(c.inters.UserTombstone, interceptors...)
+}
+
+// Create returns a builder for creating a UserTombstone entity.
+func (c *UserTombstoneClient) Create() *UserTombstoneCreate {
+	mutation := newUserTombstoneMutation(c.config, OpCreate)
+	return &UserTombstoneCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserTombstone entities.
+func (c *UserTombstoneClient) CreateBulk(builders ...*UserTombstoneCreate) *UserTombstoneCreateBulk {
+	return &UserTombstoneCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserTombstoneClient) MapCreateBulk(slice any, setFunc func(*UserTombstoneCreate, int)) *UserTombstoneCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserTombstoneCreateBulk{err: fmt.Errorf("calling to UserTombstoneClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserTombstoneCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserTombstoneCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserTombstone.
+func (c *UserTombstoneClient) Update() *UserTombstoneUpdate {
+	mutation := newUserTombstoneMutation(c.config, OpUpdate)
+	return &UserTombstoneUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserTombstoneClient) UpdateOne(_m *UserTombstone) *UserTombstoneUpdateOne {
+	mutation := newUserTombstoneMutation(c.config, OpUpdateOne, withUserTombstone(_m))
+	return &UserTombstoneUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserTombstoneClient) UpdateOneID(id int64) *UserTombstoneUpdateOne {
+	mutation := newUserTombstoneMutation(c.config, OpUpdateOne, withUserTombstoneID(id))
+	return &UserTombstoneUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserTombstone.
+func (c *UserTombstoneClient) Delete() *UserTombstoneDelete {
+	mutation := newUserTombstoneMutation(c.config, OpDelete)
+	return &UserTombstoneDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserTombstoneClient) DeleteOne(_m *UserTombstone) *UserTombstoneDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserTombstoneClient) DeleteOneID(id int64) *UserTombstoneDeleteOne {
+	builder := c.Delete().Where(usertombstone.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserTombstoneDeleteOne{builder}
+}
+
+// Query returns a query builder for UserTombstone.
+func (c *UserTombstoneClient) Query() *UserTombstoneQuery {
+	return &UserTombstoneQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserTombstone},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserTombstone entity by its id.
+func (c *UserTombstoneClient) Get(ctx context.Context, id int64) (*UserTombstone, error) {
+	return c.Query().Where(usertombstone.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserTombstoneClient) GetX(ctx context.Context, id int64) *UserTombstone {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UserTombstoneClient) Hooks() []Hook {
+	return c.hooks.UserTombstone
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserTombstoneClient) Interceptors() []Interceptor {
+	return c.inters.UserTombstone
+}
+
+func (c *UserTombstoneClient) mutate(ctx context.Context, m *UserTombstoneMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserTombstoneCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserTombstoneUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserTombstoneUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserTombstoneDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserTombstone mutation op: %q", m.Op())
 	}
 }
 
@@ -10819,28 +11845,30 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
-		Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
+		ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
 		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
-		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, Segment, SendLimiter, SendingDomain,
-		ServiceCredential, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
-		WebhookEndpoint, Workspace []ent.Hook
+		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxMessage,
+		OutboxOffset, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
+		RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion, RuleVersionTrigger,
+		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
-		Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
+		ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
 		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
-		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, Segment, SendLimiter, SendingDomain,
-		ServiceCredential, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
-		WebhookEndpoint, Workspace []ent.Interceptor
+		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxMessage,
+		OutboxOffset, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
+		RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion, RuleVersionTrigger,
+		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

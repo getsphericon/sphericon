@@ -14,14 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
-// proof is what an address's proof tells the domain-join step about the person.
-type proof struct {
-	// SignupPermits is the sign-up gate (ADR 0042) as it stands for this person: true for a
-	// User who already exists (a verify link follows a Sign-up), the Instance's sign-up
-	// switch for a User the proof itself creates.
-	SignupPermits bool
-}
-
 // applyDomainJoin is the one place a Membership is created because an address was proven
 // (ADR 0051). It runs on the transaction of the step that stamps email_proven_at from empty,
 // so the Membership and the proof are atomic; it is called explicitly by each such step and
@@ -33,7 +25,7 @@ type proof struct {
 // creates a `member` Membership with source `domain` and records `membership.domain_join`
 // with the system as the actor and the joiner as target. It returns the joined Workspace,
 // nil when nothing was joined. Nothing is mailed.
-func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, p proof) (*ent.Workspace, error) {
+func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
 	_, host, ok := strings.Cut(u.Email, "@")
 	if !ok {
 		return nil, nil
@@ -67,7 +59,6 @@ func applyDomainJoin(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 		Suspended:     suspension.Is(ws),
 		InDeletion:    ws.DiscardedAt != nil,
 		HasMembership: member,
-		SignupPermits: p.SignupPermits,
 	}
 	if DecideJoin(facts).Outcome != JoinAsMember {
 		return nil, nil

@@ -56,7 +56,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Name:        "create",
 			Usage:       "create a Service credential and print its value once",
 			ArgsUsage:   "<name> <scope>[,<scope>...]",
-			Description: "scopes: usage:read, workspaces:read, domains:read, holds:write",
+			Description: "scopes: usage:read, workspaces:read, users:read, domains:read, holds:write",
 			Flags:       []cli.Flag{expiresIn()},
 			Arguments: []cli.Argument{
 				&cli.StringArg{Name: "name", Required: true},

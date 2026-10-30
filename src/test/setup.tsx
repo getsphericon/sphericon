@@ -15,11 +15,14 @@ import {
   handleSiteAuthSigninProviders,
   handleSiteBrandKitGet,
   handleSiteIdentitiesList,
+  handleSiteLegalDocumentsSignupItems,
+  handleSiteOptionalConsentsList,
   handleSitePasskeyLoginBegin,
   handleSitePasskeysList,
   handleSiteUserGetMe,
 } from '../generated/site/msw.gen.ts'
 import { client as staffClient } from '../generated/staff/client.gen.ts'
+import { client as staffeeClient } from '../generated/staffee/client.gen.ts'
 import { createAppRouter } from '../router.ts'
 import { UNSAVED_BRAND_KIT } from './payloads.ts'
 import { problem } from './problem.ts'
@@ -29,6 +32,7 @@ import { worker } from './worker.ts'
 // The app pins the generated client's base URL in src/main.tsx; mirror it here.
 client.setConfig({ baseUrl: '/site' })
 staffClient.setConfig({ baseUrl: '/staff' })
+staffeeClient.setConfig({ baseUrl: '/staff' })
 
 // A route object gets its `to`, `fullPath` and parent when a router is built over the generated
 // tree (the app builds one in src/main.tsx); tests read them off the routes they import.
@@ -75,6 +79,10 @@ beforeEach(() => {
   worker.use(handleSiteBrandKitGet({ body: UNSAVED_BRAND_KIT }))
   // The login and sign-up pages ask which Sign-in providers are enabled; by default none are.
   worker.use(handleSiteAuthSigninProviders({ body: { items: [] } }))
+  // The sign-up form asks the Sign-up items in effect; by default the Instance has none.
+  worker.use(handleSiteLegalDocumentsSignupItems({ body: { items: [] } }))
+  // Account settings list the optional consents in effect; by default the Instance has none.
+  worker.use(handleSiteOptionalConsentsList({ body: { items: [] } }))
   // The account security page lists the User's Linked identities; by default there are none.
   worker.use(handleSiteIdentitiesList({ body: { items: [] } }))
   // ...and their Passkeys; by default none, and a password to prove with.
@@ -92,6 +100,7 @@ beforeEach(() => {
         email: 'user@example.test',
         emailVerified: true,
         signupSurveyDue: false,
+        acceptancesPending: [],
         createdAt: '2026-01-01T00:00:00Z',
       },
     }),

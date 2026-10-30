@@ -68,10 +68,10 @@ func TestTLSAskRefusesTheHostsOfADeletedWorkspace(t *testing.T) {
 	host := sendingdomains.TrackingHost(fixtures.SendingDomainTrackingServingDomain)
 	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 
-	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(time.Now()).ExecX(t.Context())
+	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(time.Now()).ExecX(t.Context())
 	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host))
 
-	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).ClearDiscardedAt().ExecX(t.Context())
+	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).ClearDiscardedAt().ExecX(t.Context())
 	assert.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 }
 
@@ -84,7 +84,7 @@ func TestTLSAskRefusesTheHostOfAnArchivedSendingDomain(t *testing.T) {
 
 	host := sendingdomains.TrackingHost(fixtures.SendingDomainTrackingServingDomain)
 	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
-	umbrella := env.DB.Scoped(fixtures.UmbrellaID)
+	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
 
 	require.NoError(t, umbrella.SendingDomain().Discard(t.Context(), fixtures.SendingDomainTrackingServingID))
 	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host))

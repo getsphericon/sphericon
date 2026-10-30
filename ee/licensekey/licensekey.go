@@ -29,8 +29,10 @@ const (
 	// FeatureRetention unlocks the advanced-retention control (ADR 0014): a per-Workspace
 	// window after which Enterprise records, today the Audit log, are pruned.
 	FeatureRetention Feature = "retention"
-	// FeatureStaff unlocks the Staff member, its /staff surface and console, and the
-	// abuse detector (ADR 0026): one feature, meaningful only together.
+	// FeatureStaff unlocks the Enterprise sections of the Staff console (the cross-Workspace
+	// views and actions, Staff holds, Service credentials) and the abuse detector (ADR 0026,
+	// ADR 0063): one feature, meaningful only together. The Staff member, its sign-in and the
+	// console itself are core.
 	FeatureStaff Feature = "staff"
 	// FeatureExport unlocks the Export streams (ADR 0045): the pull API a Workspace reads its
 	// rows through into its own warehouse.

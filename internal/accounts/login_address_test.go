@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -16,8 +17,8 @@ import (
 // who signed up as "Grace@Example.com" could never sign in.
 func TestUserByLoginAddressIgnoresTheCaseOfTheStoredEmail(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords())
-	u, err := acc.CreateUnverified(t.Context(), "Grace", "Grace@Example.com", "hash", false)
+	acc := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords)
+	u, err := acc.CreateUnverified(t.Context(), signup.NewUser{Name: "Grace", Email: "Grace@Example.com", PasswordHash: "hash"})
 	require.NoError(t, err)
 
 	found, err := acc.UserByLoginAddress(t.Context(), "grace@example.com")

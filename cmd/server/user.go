@@ -18,8 +18,8 @@ type userOps interface {
 	CreateOwner(ctx context.Context, email, name string) (password string, err error)
 }
 
-// userCommand is the `user` group. `create-owner <email> <name...>` (ADR 0042) is the
-// explicit step that makes the first Owner of an Instance that closed sign-up.
+// userCommand is the `user` group. `create-owner <email> <name...>` (ADR 0042) makes an Owner
+// from a shell, with no Sign-up.
 // `reset-second-factor <email>` (ADR 0020) is the way back in for a User locked out of
 // their Second factor with nobody to reset it in the product (the sole Owner of a
 // self-hosted instance).

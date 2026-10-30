@@ -6,11 +6,13 @@ import type { RootOptions } from 'react-dom/client'
 import { App } from './App.tsx'
 import { client } from './generated/site/client.gen.ts'
 import { client as staffClient } from './generated/staff/client.gen.ts'
+import { client as staffeeClient } from './generated/staffee/client.gen.ts'
 import { sentryDsn } from './instance.ts'
 import { createAppRouter } from './router.ts'
 
 client.setConfig({ baseUrl: '/site' })
 staffClient.setConfig({ baseUrl: '/staff' })
+staffeeClient.setConfig({ baseUrl: '/staff' })
 
 import '@mantine/core/styles.css'
 import '@mantine/charts/styles.css'

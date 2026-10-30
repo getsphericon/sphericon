@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupSurveyCountsData, StaffSignupSurveyCountsErrors, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetData, StaffSignupSurveyGetErrors, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListData, StaffWorkspaceAuditListErrors, StaffWorkspaceAuditListResponses, StaffWorkspacesExemptData, StaffWorkspacesExemptErrors, StaffWorkspacesExemptResponses, StaffWorkspacesGetData, StaffWorkspacesGetErrors, StaffWorkspacesGetResponses, StaffWorkspacesListData, StaffWorkspacesListErrors, StaffWorkspacesListResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendErrors, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptErrors, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendErrors, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
-import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffSignupSurveyGetPath, zStaffWorkspaceAuditListPath, zStaffWorkspaceAuditListQuery, zStaffWorkspacesExemptPath, zStaffWorkspacesGetPath, zStaffWorkspacesListQuery, zStaffWorkspacesSuspendBody, zStaffWorkspacesSuspendPath, zStaffWorkspacesUnexemptPath, zStaffWorkspacesUnsuspendPath } from './zod.gen.ts';
+import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupItemsArchiveData, StaffSignupItemsArchiveErrors, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateErrors, StaffSignupItemsCreateResponses, StaffSignupItemsGetData, StaffSignupItemsGetErrors, StaffSignupItemsGetResponses, StaffSignupItemsListData, StaffSignupItemsListErrors, StaffSignupItemsListResponses, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsErrors, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishErrors, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderErrors, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftErrors, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateErrors, StaffSignupItemsUpdateResponses } from './types.gen.ts';
+import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffSignupItemsArchivePath, zStaffSignupItemsCreateBody, zStaffSignupItemsGetPath, zStaffSignupItemsListVersionsPath, zStaffSignupItemsPublishBody, zStaffSignupItemsPublishPath, zStaffSignupItemsReorderBody, zStaffSignupItemsSaveDraftBody, zStaffSignupItemsSaveDraftPath, zStaffSignupItemsUpdateBody, zStaffSignupItemsUpdatePath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -98,9 +98,9 @@ export const staffMeGet = <ThrowOnError extends boolean = false>(options?: Optio
 });
 
 /**
- * The Sign-up survey answers, counted per question. Read only.
+ * The Instance's Sign-up items, archived ones included, in the order of the sign-up form
  */
-export const staffSignupSurveyCounts = <ThrowOnError extends boolean = false>(options?: Options<StaffSignupSurveyCountsData, ThrowOnError>): RequestResult<StaffSignupSurveyCountsResponses, StaffSignupSurveyCountsErrors, ThrowOnError> => (options?.client ?? client).get<StaffSignupSurveyCountsResponses, StaffSignupSurveyCountsErrors, ThrowOnError>({
+export const staffSignupItemsList = <ThrowOnError extends boolean = false>(options?: Options<StaffSignupItemsListData, ThrowOnError>): RequestResult<StaffSignupItemsListResponses, StaffSignupItemsListErrors, ThrowOnError> => (options?.client ?? client).get<StaffSignupItemsListResponses, StaffSignupItemsListErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
     body: z.never().optional(),
     path: z.never().optional(),
@@ -111,53 +111,18 @@ export const staffSignupSurveyCounts = <ThrowOnError extends boolean = false>(op
       name: 'STAFF_JWT',
       type: 'apiKey'
     }],
-  url: '/signup-survey',
+  url: '/signup-items',
   ...options
 });
 
 /**
- * One User's answers. 404 when the User is unknown or has not answered the survey.
+ * Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional
+ * consent, and a second mailings consent are refused (422).
  */
-export const staffSignupSurveyGet = <ThrowOnError extends boolean = false>(options: Options<StaffSignupSurveyGetData, ThrowOnError>): RequestResult<StaffSignupSurveyGetResponses, StaffSignupSurveyGetErrors, ThrowOnError> => (options.client ?? client).get<StaffSignupSurveyGetResponses, StaffSignupSurveyGetErrors, ThrowOnError>({
+export const staffSignupItemsCreate = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsCreateData, ThrowOnError>): RequestResult<StaffSignupItemsCreateResponses, StaffSignupItemsCreateErrors, ThrowOnError> => (options.client ?? client).post<StaffSignupItemsCreateResponses, StaffSignupItemsCreateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
-    body: z.never().optional(),
-    path: zStaffSignupSurveyGetPath,
-    query: z.never().optional()
-  }).parseAsync(data),
-  security: [{
-      in: 'cookie',
-      name: 'STAFF_JWT',
-      type: 'apiKey'
-    }],
-  url: '/signup-survey/users/{userId}',
-  ...options
-});
-
-/**
- * List all Workspaces, newest first, optionally narrowed by an id or name search
- */
-export const staffWorkspacesList = <ThrowOnError extends boolean = false>(options?: Options<StaffWorkspacesListData, ThrowOnError>): RequestResult<StaffWorkspacesListResponses, StaffWorkspacesListErrors, ThrowOnError> => (options?.client ?? client).get<StaffWorkspacesListResponses, StaffWorkspacesListErrors, ThrowOnError>({
-  requestValidator: async (data) => await z.object({
-    body: z.never().optional(),
+    body: zStaffSignupItemsCreateBody,
     path: z.never().optional(),
-    query: zStaffWorkspacesListQuery.optional()
-  }).parseAsync(data),
-  security: [{
-      in: 'cookie',
-      name: 'STAFF_JWT',
-      type: 'apiKey'
-    }],
-  url: '/workspaces',
-  ...options
-});
-
-/**
- * One Workspace's metadata, suspension state, rates and send volume
- */
-export const staffWorkspacesGet = <ThrowOnError extends boolean = false>(options: Options<StaffWorkspacesGetData, ThrowOnError>): RequestResult<StaffWorkspacesGetResponses, StaffWorkspacesGetErrors, ThrowOnError> => (options.client ?? client).get<StaffWorkspacesGetResponses, StaffWorkspacesGetErrors, ThrowOnError>({
-  requestValidator: async (data) => await z.object({
-    body: z.never().optional(),
-    path: zStaffWorkspacesGetPath,
     query: z.never().optional()
   }).parseAsync(data),
   security: [{
@@ -165,64 +130,7 @@ export const staffWorkspacesGet = <ThrowOnError extends boolean = false>(options
       name: 'STAFF_JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{workspaceId}',
-  ...options
-});
-
-/**
- * One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing is then recorded.
- */
-export const staffWorkspaceAuditList = <ThrowOnError extends boolean = false>(options: Options<StaffWorkspaceAuditListData, ThrowOnError>): RequestResult<StaffWorkspaceAuditListResponses, StaffWorkspaceAuditListErrors, ThrowOnError> => (options.client ?? client).get<StaffWorkspaceAuditListResponses, StaffWorkspaceAuditListErrors, ThrowOnError>({
-  requestValidator: async (data) => await z.object({
-    body: z.never().optional(),
-    path: zStaffWorkspaceAuditListPath,
-    query: zStaffWorkspaceAuditListQuery.optional()
-  }).parseAsync(data),
-  security: [{
-      in: 'cookie',
-      name: 'STAFF_JWT',
-      type: 'apiKey'
-    }],
-  url: '/workspaces/{workspaceId}/audit-entries',
-  ...options
-});
-
-/**
- * Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor
- * frozen automatically, but stays listed with its rates and can still be suspended by
- * hand. Audited. Idempotent.
- */
-export const staffWorkspacesExempt = <ThrowOnError extends boolean = false>(options: Options<StaffWorkspacesExemptData, ThrowOnError>): RequestResult<StaffWorkspacesExemptResponses, StaffWorkspacesExemptErrors, ThrowOnError> => (options.client ?? client).post<StaffWorkspacesExemptResponses, StaffWorkspacesExemptErrors, ThrowOnError>({
-  requestValidator: async (data) => await z.object({
-    body: z.never().optional(),
-    path: zStaffWorkspacesExemptPath,
-    query: z.never().optional()
-  }).parseAsync(data),
-  security: [{
-      in: 'cookie',
-      name: 'STAFF_JWT',
-      type: 'apiKey'
-    }],
-  url: '/workspaces/{workspaceId}/exempt',
-  ...options
-});
-
-/**
- * Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the
- * signed-in Staff member. Idempotent: an already-suspended Workspace is left as it was.
- */
-export const staffWorkspacesSuspend = <ThrowOnError extends boolean = false>(options: Options<StaffWorkspacesSuspendData, ThrowOnError>): RequestResult<StaffWorkspacesSuspendResponses, StaffWorkspacesSuspendErrors, ThrowOnError> => (options.client ?? client).post<StaffWorkspacesSuspendResponses, StaffWorkspacesSuspendErrors, ThrowOnError>({
-  requestValidator: async (data) => await z.object({
-    body: zStaffWorkspacesSuspendBody,
-    path: zStaffWorkspacesSuspendPath,
-    query: z.never().optional()
-  }).parseAsync(data),
-  security: [{
-      in: 'cookie',
-      name: 'STAFF_JWT',
-      type: 'apiKey'
-    }],
-  url: '/workspaces/{workspaceId}/suspend',
+  url: '/signup-items',
   ...options,
   headers: {
     'Content-Type': 'application/json',
@@ -231,12 +139,13 @@ export const staffWorkspacesSuspend = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
- * Police a Workspace by the abuse detector again. Audited. Idempotent.
+ * Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that
+ * is not every item's id exactly once is refused (422).
  */
-export const staffWorkspacesUnexempt = <ThrowOnError extends boolean = false>(options: Options<StaffWorkspacesUnexemptData, ThrowOnError>): RequestResult<StaffWorkspacesUnexemptResponses, StaffWorkspacesUnexemptErrors, ThrowOnError> => (options.client ?? client).post<StaffWorkspacesUnexemptResponses, StaffWorkspacesUnexemptErrors, ThrowOnError>({
+export const staffSignupItemsReorder = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsReorderData, ThrowOnError>): RequestResult<StaffSignupItemsReorderResponses, StaffSignupItemsReorderErrors, ThrowOnError> => (options.client ?? client).put<StaffSignupItemsReorderResponses, StaffSignupItemsReorderErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
-    body: z.never().optional(),
-    path: zStaffWorkspacesUnexemptPath,
+    body: zStaffSignupItemsReorderBody,
+    path: z.never().optional(),
     query: z.never().optional()
   }).parseAsync(data),
   security: [{
@@ -244,18 +153,40 @@ export const staffWorkspacesUnexempt = <ThrowOnError extends boolean = false>(op
       name: 'STAFF_JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{workspaceId}/unexempt',
+  url: '/signup-items/order',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * One Sign-up item
+ */
+export const staffSignupItemsGet = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsGetData, ThrowOnError>): RequestResult<StaffSignupItemsGetResponses, StaffSignupItemsGetErrors, ThrowOnError> => (options.client ?? client).get<StaffSignupItemsGetResponses, StaffSignupItemsGetErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zStaffSignupItemsGetPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/signup-items/{id}',
   ...options
 });
 
 /**
- * Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is
- * not suspended is left as it was.
+ * Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
+ * consent or is archived, and a second mailings consent are refused (422).
  */
-export const staffWorkspacesUnsuspend = <ThrowOnError extends boolean = false>(options: Options<StaffWorkspacesUnsuspendData, ThrowOnError>): RequestResult<StaffWorkspacesUnsuspendResponses, StaffWorkspacesUnsuspendErrors, ThrowOnError> => (options.client ?? client).post<StaffWorkspacesUnsuspendResponses, StaffWorkspacesUnsuspendErrors, ThrowOnError>({
+export const staffSignupItemsUpdate = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsUpdateData, ThrowOnError>): RequestResult<StaffSignupItemsUpdateResponses, StaffSignupItemsUpdateErrors, ThrowOnError> => (options.client ?? client).patch<StaffSignupItemsUpdateResponses, StaffSignupItemsUpdateErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({
-    body: z.never().optional(),
-    path: zStaffWorkspacesUnsuspendPath,
+    body: zStaffSignupItemsUpdateBody,
+    path: zStaffSignupItemsUpdatePath,
     query: z.never().optional()
   }).parseAsync(data),
   security: [{
@@ -263,6 +194,97 @@ export const staffWorkspacesUnsuspend = <ThrowOnError extends boolean = false>(o
       name: 'STAFF_JWT',
       type: 'apiKey'
     }],
-  url: '/workspaces/{workspaceId}/unsuspend',
+  url: '/signup-items/{id}',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its
+ * published versions stay. Archiving an archived item changes nothing, and an archived item is never
+ * restored. The item that stands for consent to the operator's mailings is refused (422) until
+ * it is unmarked.
+ */
+export const staffSignupItemsArchive = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsArchiveData, ThrowOnError>): RequestResult<StaffSignupItemsArchiveResponses, StaffSignupItemsArchiveErrors, ThrowOnError> => (options.client ?? client).post<StaffSignupItemsArchiveResponses, StaffSignupItemsArchiveErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zStaffSignupItemsArchivePath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/signup-items/{id}/archive',
   ...options
+});
+
+/**
+ * Save the draft of the item's Legal document. It is edited freely and changes nothing a
+ * visitor sees until it is published.
+ */
+export const staffSignupItemsSaveDraft = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsSaveDraftData, ThrowOnError>): RequestResult<StaffSignupItemsSaveDraftResponses, StaffSignupItemsSaveDraftErrors, ThrowOnError> => (options.client ?? client).put<StaffSignupItemsSaveDraftResponses, StaffSignupItemsSaveDraftErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: zStaffSignupItemsSaveDraftBody,
+    path: zStaffSignupItemsSaveDraftPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/signup-items/{id}/draft',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Every published version of the item's Legal document with who published it and when, the
+ * latest first
+ */
+export const staffSignupItemsListVersions = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsListVersionsData, ThrowOnError>): RequestResult<StaffSignupItemsListVersionsResponses, StaffSignupItemsListVersionsErrors, ThrowOnError> => (options.client ?? client).get<StaffSignupItemsListVersionsResponses, StaffSignupItemsListVersionsErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zStaffSignupItemsListVersionsPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/signup-items/{id}/versions',
+  ...options
+});
+
+/**
+ * Publish the draft as a new version under a label: it takes effect at once, and is never
+ * changed or removed afterwards. A label the item already has, and an item without a draft,
+ * are refused (422).
+ */
+export const staffSignupItemsPublish = <ThrowOnError extends boolean = false>(options: Options<StaffSignupItemsPublishData, ThrowOnError>): RequestResult<StaffSignupItemsPublishResponses, StaffSignupItemsPublishErrors, ThrowOnError> => (options.client ?? client).post<StaffSignupItemsPublishResponses, StaffSignupItemsPublishErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: zStaffSignupItemsPublishBody,
+    path: zStaffSignupItemsPublishPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/signup-items/{id}/versions',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });

@@ -22,7 +22,7 @@ import (
 // deleteUmbrella puts Umbrella into its deletion window, deleted ago before now.
 func deleteUmbrella(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	t.Helper()
-	env.DB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(now.Add(-ago)).ExecX(t.Context())
+	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(now.Add(-ago)).ExecX(t.Context())
 }
 
 // runErase is one erase at now.
@@ -61,7 +61,7 @@ func rowsOfAll(t *testing.T, env *testhelper.TestEnv) map[string]int {
 // The fixtures hold rows of every scoped entity, which the first check requires.
 func TestEraseCoversEveryWorkspaceOwnedEntity(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.Update().SetDiscardedAt(now.Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(t.Context())
+	env.FeedDB.Workspace.Update().SetDiscardedAt(now.Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(t.Context())
 	before := rowsOfAll(t, env)
 	for _, e := range ent.ScopedEntities() {
 		assert.Positivef(t, before[e.Name], "the fixtures hold a %s row", e.Name)
@@ -168,7 +168,7 @@ func TestEraseDueRemovesRowsWrittenWhileItDeletes(t *testing.T) {
 // messages before the Broadcast; the other Workspaces keep theirs.
 func TestEraseRemovesABroadcastThatHasSentOutboundMessages(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(now.Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(t.Context())
+	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(now.Add(-workspacedeletion.DeletionWindow - time.Hour)).ExecX(t.Context())
 	sent := env.DB.Scoped(fixtures.InitechID).OutboundMessage().Query().Where(outboundmessage.BroadcastID(fixtures.BroadcastInitechID)).CountX(t.Context())
 	require.NotZero(t, sent)
 	acmeBefore := rowsOf(t, env, fixtures.AcmeID)
@@ -203,7 +203,7 @@ func TestASecondEraseRunChangesNothing(t *testing.T) {
 // feedTail reads the Workspace feed after cursor and returns its entries and the next cursor.
 func feedTail(t *testing.T, env *testhelper.TestEnv, cursor string) (entries []staff.FeedEntry, next string) {
 	t.Helper()
-	page, err := env.StaffMembers.WorkspaceFeed(t.Context(), cursor, 200)
+	page, err := env.StaffEnterprise.WorkspaceFeed(t.Context(), cursor, 200)
 	require.NoError(t, err)
 	return page.Entries, page.NextCursor
 }

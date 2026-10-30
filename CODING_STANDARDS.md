@@ -75,27 +75,30 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   (`Create`, `CreateBulk`, `Update`, `UpdateOne`, `UpdateOneID`, `Delete`, `DeleteOne`, `DeleteOneID`) or an
   upsert (`OnConflict`, `OnConflictColumns`, `OnConflictColumnsWhere`) on a type of the `ent` package (the raw
   client, a transaction, the scoped client and its wrappers) is a finding; test files are not read. The handlers
-  of the API surfaces (`surfaces`: `internal/api/site`, `external` and `collect`) do not read through ent either:
+  of the API surfaces (`surfaces`: `internal/api/site`, `external`, `collect` and `staff`) do not read through ent either:
   a `Get`, `GetX`, a `Query…` method or the scoped client's `Workspace` there is a finding, and the read is a
   function of the module that owns the entity; the other entry points may read. Nor does a handler there open a
   transaction (a `Within…` method of the events bus): the module it calls does. The closed list of entry points
-  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external and collect handlers, `internal/mcpserver`, `internal/jobs` and `internal/server`. `ee/staff` holds
-  the Staff handlers and their domain module in one package, so only the methods of its handler types
+  is `entryPoints` in `tools/analyzers/entrywrite`: the site, external, collect and staff handlers, `internal/mcpserver`, `internal/jobs` and `internal/server`. `ee/staff` holds
+  the handlers of the Staff console's Enterprise sections and their domain module in one package, so only the methods of its handler types
   (`Handlers`, `ServiceHandlers`, `SecurityHandler`, `ServiceSecurityHandler`, `Surface`, `ServiceSurface`) are
   checked and `*Module` is the domain module; a new handler type there is added to `mixedPackages`. The write
   goes into the domain module that owns the entity (the raw-client packages of `docs/architecture.md`), which the entry
   point calls. The helpers the analyzers share about the generated package are in `tools/analyzers/entx`.
-- **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site` or
-  `internal/api/external` names no `validation.Error`, `validation.RefusalError` or
-  `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
+- **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
+  `internal/api/external` or `internal/api/staff` names no `validation.Error`, `validation.RefusalError`,
+  `validation.FieldsError` or `validation.Message` and nothing of `inuse`, and never spells `"workspace not found"`: it returns
   the module's error, and `refusalProblem` in `internal/server` answers a module's sentinel refusal
   by its kind (`validation.NotFound` 404, `validation.Refuse` 422, `validation.Conflict` 409,
   `validation.Forbidden` 403 `permission_required`, `validation.Unauthorized` 401,
   `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
-  `validation.LinkInvalid` 400, `validation.Incomplete` 428, the message as `detail` and, for
-  `validation.RefuseField`, under its field), a `*validation.Error` with 422 and its field, an
-  `*inuse.Error` with 409 and `usedBy`, an `*accounts.DeletionRefusedError` with 422 and the
-  Workspaces the User solely owns, content `emailrender` cannot render with 422, and
+  `validation.LinkInvalid` 400 (a mailed link that does not stand), `validation.Incomplete` 428,
+  `validation.UnknownReference` 400 (a reference that names nothing, such as a pending sign-up that
+  is gone or a cursor never handed out), the message as `detail` and, for
+  `validation.RefuseField`, under its field), a `*validation.Error` with 422 and its field, a
+  `*validation.FieldsError` (a form a module refused) with 422, every field and its `Detail` as
+  `detail`, an `*inuse.Error` with 409 and `usedBy`, an `*accounts.DeletionRefusedError` with 422
+  and the Workspaces the User solely owns, content `emailrender` cannot render with 422, and
   `accounts.ErrWorkspaceNotFound` (an unknown Workspace or one the caller is not a member of) with
   a 404. A sentinel one context answers differently from another is two sentinels of the module,
   one per context, never a mapping in the handler.

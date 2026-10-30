@@ -171,7 +171,7 @@ func TestContactsPeakIsNotKeptForAWorkspaceInItsDeletionWindow(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	before, err := s.Usage().Query().Count(t.Context())
 	require.NoError(t, err)
-	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now).ExecX(t.Context())
+	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now).ExecX(t.Context())
 
 	addContact(t, env, "late@acme.test")
 

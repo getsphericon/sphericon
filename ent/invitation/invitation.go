@@ -37,6 +37,8 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeInviter holds the string denoting the inviter edge name in mutations.
 	EdgeInviter = "inviter"
+	// EdgePendingSignups holds the string denoting the pending_signups edge name in mutations.
+	EdgePendingSignups = "pending_signups"
 	// Table holds the table name of the invitation in the database.
 	Table = "invitations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -53,6 +55,13 @@ const (
 	InviterInverseTable = "users"
 	// InviterColumn is the table column denoting the inviter relation/edge.
 	InviterColumn = "invited_by"
+	// PendingSignupsTable is the table that holds the pending_signups relation/edge.
+	PendingSignupsTable = "pending_signups"
+	// PendingSignupsInverseTable is the table name for the PendingSignup entity.
+	// It exists in this package in order to avoid circular dependency with the "pendingsignup" package.
+	PendingSignupsInverseTable = "pending_signups"
+	// PendingSignupsColumn is the table column denoting the pending_signups relation/edge.
+	PendingSignupsColumn = "invitation_id"
 )
 
 // Columns holds all SQL columns for invitation fields.
@@ -181,6 +190,20 @@ func ByInviterField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newInviterStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByPendingSignupsCount orders the results by pending_signups count.
+func ByPendingSignupsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPendingSignupsStep(), opts...)
+	}
+}
+
+// ByPendingSignups orders the results by pending_signups terms.
+func ByPendingSignups(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPendingSignupsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -193,5 +216,12 @@ func newInviterStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(InviterInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, InviterTable, InviterColumn),
+	)
+}
+func newPendingSignupsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PendingSignupsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PendingSignupsTable, PendingSignupsColumn),
 	)
 }

@@ -8,10 +8,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
-import { staffWorkspacesListOptions } from '../generated/staff/@tanstack/react-query.gen.ts'
-import type { StaffWorkspaceReview } from '../generated/staff/types.gen.ts'
-import { zStaffWorkspaceReview } from '../generated/staff/zod.gen.ts'
-import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/workspaces.$workspaceId.tsx'
+import { staffWorkspacesListOptions } from '../generated/staffee/@tanstack/react-query.gen.ts'
+import type { StaffWorkspaceReview } from '../generated/staffee/types.gen.ts'
+import { zStaffWorkspaceReview } from '../generated/staffee/zod.gen.ts'
+import { Route as consoleWorkspaceRoute } from '../routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
 
 const PAGE_SIZE = 25

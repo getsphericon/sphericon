@@ -57,14 +57,14 @@ func TestAProviderSigninOfAKnownIdentityJoinsNobodyAgain(t *testing.T) {
 	requireNotInAcme(t, env, colleague.Email)
 }
 
-func TestAProviderSigninOnAClosedInstanceCreatesNoUserAndJoinsNobody(t *testing.T) {
+// ADR 0063: sign-up is always open, so the Mode does not stop a new User from joining by domain.
+func TestAProviderSigninThatCreatesAUserOnASelfHostedInstanceJoinsTheWorkspaceOfTheAddressDomain(t *testing.T) {
 	env, fake := githubEnv(t, testhelper.WithMode(config.ModeSelfHosted))
 	enableAcmeJoin(t, env)
 
 	signInWithGitHub(t, fake, env.NewRedirectBrowser(t), colleague)
 
-	requireNotInAcme(t, env, colleague.Email)
-	assert.Equal(t, 0, usersWithEmail(t, env, colleague.Email), "no User is made")
+	requireDomainJoined(t, env, colleague.Email)
 }
 
 func TestAProviderLinkOfAnAddressNeverProvenJoinsTheUser(t *testing.T) {

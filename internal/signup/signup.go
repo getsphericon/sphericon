@@ -1,25 +1,24 @@
 // Package signup is a person creating a User for themself with a name, an email and a
-// password (the Sign-up, ADR 0030). It checks the Instance's sign-up rule (ADR 0042, 0060) and
-// the form, and then, on an Instance that requires email verification, does the same work for
-// every address so that nobody but its owner learns that an address is Taken (ADR 0031). It
-// returns one Result and holds no database client: an adapter supplies the Store, the address's
-// mail budget, the verification token and the mails, and turns the Result into the answer and
-// the Sign-up browser's cookie.
+// password (the Sign-up, ADR 0030). Sign-up is open on every Instance (ADR 0063). It checks the
+// form, and then, on an Instance that requires email verification, does the same work for every
+// address so that nobody but its owner learns that an address is Taken (ADR 0031). It returns
+// one Result and holds no database client: an adapter supplies the Store, the address's mail
+// budget, the verification token and the mails, and turns the Result into the answer and the
+// Sign-up browser's cookie.
 //
 // The order is the module's contract:
 //
-//  1. the sign-up rule is consulted first: a closed sign-up reads and creates nothing;
-//  2. the form is checked before any work, so a refused one costs no hash;
-//  3. with verification required, every address costs the same: a slot of its mail budget, a
+//  1. the form is checked before any work, so a refused one costs no hash;
+//  2. with verification required, every address costs the same: a slot of its mail budget, a
 //     password hash, a lookup, a write (the create, or the replace that a Verified User's row
 //     ignores), a token and exactly one mail job, which delivers only when the budget granted
 //     it. Only what the job carries differs: a verification link for a new or Unverified User,
 //     a tokenless notice for a Verified one;
-//  4. two Sign-ups of one new address may race on the unique email: the loser finds the
+//  3. two Sign-ups of one new address may race on the unique email: the loser finds the
 //     winner's User and goes on as a repeated Sign-up of it, so a race is no answer of its own;
-//  5. a repeated Sign-up of an Unverified address replaces its password, which ends every
+//  4. a repeated Sign-up of an Unverified address replaces its password, which ends every
 //     earlier link, and draws a new Sign-up browser;
-//  6. with verification off there is no mail to tell the owner, so a Taken address is the
+//  5. with verification off there is no mail to tell the owner, so a Taken address is the
 //     answer (the one exception, ADR 0031), and the User is Verified at once.
 package signup
 
@@ -32,9 +31,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/consentrecord"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -43,31 +45,36 @@ import (
 type Outcome int
 
 const (
-	// Closed: the Instance's sign-up rule refuses a person with no Invitation. Nothing was
-	// read or created.
-	Closed Outcome = iota + 1
 	// Taken: the address belongs to a User, on an Instance that does not require email
 	// verification. Nothing was created.
-	Taken
+	Taken Outcome = iota + 1
 	// Accepted: the Sign-up went through. With verification required, Result.Browser is the
 	// Sign-up browser's value, whatever the address; without, the User is Verified with its
 	// first Workspace and the welcome mail is queued.
 	Accepted
 )
 
-var (
-	// ErrTaken is what a Store's create returns when the unique email refuses the address.
-	ErrTaken = errors.New("signup: address taken")
-	// ErrClosed is what a Store's CreateVerified returns when the sign-up rule refuses inside
-	// its transaction (another Sign-up took the first place meanwhile).
-	ErrClosed = errors.New("signup: sign-up closed")
-)
+// ErrTaken is what a Store's create returns when the unique email refuses the address.
+var ErrTaken = errors.New("signup: address taken")
 
 // Input is the Sign-up form as typed.
 type Input struct {
 	Name     string
 	Email    string
 	Password string
+	// SignupItems is the answers to the Sign-up items the form showed (ADR 0062).
+	SignupItems []consentrecords.Answer
+}
+
+// NewUser is a User a Sign-up creates, with the Consent records its answers make, which the Store
+// writes in the transaction that creates the User.
+type NewUser struct {
+	Name         string
+	Email        string
+	PasswordHash string
+	// SurveyDue marks the User as owing the Sign-up survey.
+	SurveyDue bool
+	Consents  consentrecords.Consents
 }
 
 // Result is the one answer of a Sign-up.
@@ -80,22 +87,18 @@ type Result struct {
 
 // Store is the adapter's side of the Users.
 type Store interface {
-	// Open reports whether a person with no Invitation may sign up now: the early answer that
-	// refuses before any work. CreateVerified decides again inside its transaction.
-	Open(ctx context.Context) (bool, error)
 	// Lookup finds the User that holds an address, whatever its case; ok is false when none.
 	Lookup(ctx context.Context, email string) (u *ent.User, ok bool, err error)
-	// CreateUnverified creates an Unverified User with the password hash and nothing else, or
-	// returns ErrTaken when the unique email refuses the address. surveyDue marks the User as
-	// owing the Sign-up survey.
-	CreateUnverified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error)
-	// ReplaceUnverifiedPassword stores the hash on the User while it is Unverified, which ends
-	// every link minted over the earlier hash; a Verified User is left as it is. It returns the
-	// User as it stands afterwards.
-	ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string) (*ent.User, error)
-	// CreateVerified creates a Verified User with its first Workspace, deciding the sign-up rule
-	// again in its transaction: ErrClosed when it refuses, ErrTaken when the address is taken.
-	CreateVerified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error)
+	// CreateUnverified creates an Unverified User with the password hash and its Consent records
+	// and nothing else, or returns ErrTaken when the unique email refuses the address.
+	CreateUnverified(ctx context.Context, u NewUser) (*ent.User, error)
+	// ReplaceUnverifiedPassword stores the hash and adds the Consent records on the User while it
+	// is Unverified, which ends every link minted over the earlier hash; a Verified User is left
+	// as it is, records included. It returns the User as it stands afterwards.
+	ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string, consents consentrecords.Consents) (*ent.User, error)
+	// CreateVerified creates a Verified User with its first Workspace and its Consent records, or
+	// returns ErrTaken when the address is taken.
+	CreateVerified(ctx context.Context, u NewUser) (*ent.User, error)
 }
 
 // Budget is the mail budget of an address (ADR 0031): Take grants one slot and reports
@@ -113,11 +116,18 @@ type Mail interface {
 	EnqueueWelcome(ctx context.Context, email, name string) error
 }
 
+// Consents answers a form's answers against the Sign-up items in effect: the Consent records
+// they make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check).
+type Consents interface {
+	Check(ctx context.Context, answers []consentrecords.Answer, source consentrecord.Source) (consentrecords.Consents, error)
+}
+
 // Config wires the module to its adapter.
 type Config struct {
-	Store  Store
-	Budget Budget
-	Mail   Mail
+	Store    Store
+	Consents Consents
+	Budget   Budget
+	Mail     Mail
 	// Mint mints the verification token of a User, bound to its stored password hash and
 	// carrying the hash of the Sign-up browser it trusts.
 	Mint func(u *ent.User, browserHash string) (string, error)
@@ -142,23 +152,26 @@ type form struct {
 	Password string `json:"password" validate:"required,password_not_blank,password_length"`
 }
 
-// SignUp runs a Sign-up. A refused form is a *validation.FieldsError naming every field.
+// SignUp runs a Sign-up. A refused form is a *validation.FieldsError naming every field, the
+// Sign-up items' answers included (ADR 0062).
 func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
-	open, err := m.cfg.Store.Open(ctx)
-	if err != nil {
-		return Result{}, err
-	}
-	if !open {
-		return Result{Outcome: Closed}, nil
-	}
 	name := strings.TrimSpace(in.Name)
 	email := strings.TrimSpace(in.Email)
 	// The password is kept as sent: sign-in compares it as typed.
-	if err := validation.Form(form{Name: name, Email: email, Password: in.Password}); err != nil {
+	fields, err := validation.Fields(form{Name: name, Email: email, Password: in.Password})
+	if err != nil {
 		return Result{}, err
 	}
+	consents, err := m.cfg.Consents.Check(ctx, in.SignupItems, consentrecord.SourceSignUpForm)
+	refused, itemsRefused := errors.AsType[*validation.FieldsError](err)
+	if err != nil && !itemsRefused {
+		return Result{}, err
+	}
+	if fields != nil || itemsRefused {
+		return Result{}, merged(fields, refused)
+	}
 	if !m.cfg.RequireVerification {
-		return m.signUpVerified(ctx, name, email, in.Password)
+		return m.signUpVerified(ctx, NewUser{Name: name, Email: email, SurveyDue: m.cfg.SurveyDue(), Consents: consents}, in.Password)
 	}
 
 	granted, err := m.cfg.Budget.Take(ctx, email)
@@ -171,7 +184,7 @@ func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	u, err := m.user(ctx, name, email, hash)
+	u, err := m.user(ctx, NewUser{Name: name, Email: email, PasswordHash: hash, SurveyDue: m.cfg.SurveyDue(), Consents: consents})
 	if err != nil {
 		return Result{}, err
 	}
@@ -198,13 +211,14 @@ func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
 // user is the User a Sign-up with verification required ends on: a new Unverified User, or the
 // one that holds the address with the password replaced while it is Unverified. Every path
 // writes once, so the work does not say which one it took.
-func (m *Module) user(ctx context.Context, name, email, hash string) (*ent.User, error) {
+func (m *Module) user(ctx context.Context, n NewUser) (*ent.User, error) {
+	email := n.Email
 	u, found, err := m.cfg.Store.Lookup(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		u, err = m.cfg.Store.CreateUnverified(ctx, name, email, hash, m.cfg.SurveyDue())
+		u, err = m.cfg.Store.CreateUnverified(ctx, n)
 		if !errors.Is(err, ErrTaken) {
 			return u, err
 		}
@@ -218,21 +232,20 @@ func (m *Module) user(ctx context.Context, name, email, hash string) (*ent.User,
 			return nil, fmt.Errorf("signup: %q is taken but holds no User", email)
 		}
 	}
-	return m.cfg.Store.ReplaceUnverifiedPassword(ctx, u.ID, hash)
+	return m.cfg.Store.ReplaceUnverifiedPassword(ctx, u.ID, n.PasswordHash, n.Consents)
 }
 
 // signUpVerified is a Sign-up on an Instance that does not require email verification: the
 // User is Verified with its first Workspace at once, and the welcome mail follows as it does
 // after a verification link. No session starts; the User signs in next.
-func (m *Module) signUpVerified(ctx context.Context, name, email, password string) (Result, error) {
+func (m *Module) signUpVerified(ctx context.Context, n NewUser, password string) (Result, error) {
 	hash, err := m.cfg.Passwords.Hash(password)
 	if err != nil {
 		return Result{}, err
 	}
-	u, err := m.cfg.Store.CreateVerified(ctx, name, email, hash, m.cfg.SurveyDue())
+	n.PasswordHash = hash
+	u, err := m.cfg.Store.CreateVerified(ctx, n)
 	switch {
-	case errors.Is(err, ErrClosed):
-		return Result{Outcome: Closed}, nil
 	case errors.Is(err, ErrTaken):
 		return Result{Outcome: Taken}, nil
 	case err != nil:
@@ -242,6 +255,16 @@ func (m *Module) signUpVerified(ctx context.Context, name, email, password strin
 		mailNotQueued(ctx, "Welcome", err)
 	}
 	return Result{Outcome: Accepted}, nil
+}
+
+// merged is the one refusal of a form whose fields and Sign-up items' answers both may fail.
+func merged(fields map[string][]string, items *validation.FieldsError) *validation.FieldsError {
+	all := map[string][]string{}
+	maps.Copy(all, fields)
+	if items != nil {
+		maps.Copy(all, items.Fields)
+	}
+	return &validation.FieldsError{Fields: all}
 }
 
 func mailNotQueued(ctx context.Context, mail string, err error) {

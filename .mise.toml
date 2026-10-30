@@ -101,7 +101,7 @@ SPHERICON_METRICS_ADDR = "127.0.0.1:{{ env.BACKEND_PORT | int - 3300 + 9090 }}"
 CGO_ENABLED = "0"
 # Dev-only secret so a fresh clone authenticates out of the box.
 SPHERICON_JWT_SECRET = "dev-secret-change-in-production"
-# Dev-only Staff member secret (read only with the `staff` license); never the site's.
+# Dev-only Staff member secret (turns the Staff sign-in on, ADR 0063); never the site's.
 SPHERICON_STAFF_JWT_SECRET = "dev-staff-secret-change-in-production"
 # Dev-only Tink keyset (same one the old .env.docker.sample shipped); never use in prod.
 SPHERICON_ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EiIaIIOWohIqGhyD2NeiOazlLrnrHqCirukTjCjD1iMFPqiEGAEQARiGprHOCSAB"

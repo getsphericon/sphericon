@@ -34,6 +34,14 @@ func (c *ServiceConverterImpl) OwnerToResource(source *ent.User) service.Service
 	}
 	return serviceapiServiceWorkspaceOwner
 }
+func (c *ServiceConverterImpl) TombstoneToResource(source *ent.UserTombstone) service.ServiceUserResource {
+	var serviceapiServiceUserResource service.ServiceUserResource
+	if source != nil {
+		serviceapiServiceUserResource.ID = service.EntityId((*source).UserID)
+		serviceapiServiceUserResource.DeletedAt = serviceOptNilTimestampAt((*source).CreatedAt)
+	}
+	return serviceapiServiceUserResource
+}
 func (c *ServiceConverterImpl) UsageFigureToResource(source usage.Figure) service.UsageFigure {
 	var serviceapiUsageFigure service.UsageFigure
 	serviceapiUsageFigure.Metric = service.UsageMetric(source.Metric)
@@ -52,6 +60,17 @@ func (c *ServiceConverterImpl) UsageToResource(source usage.WorkspaceUsage) serv
 		}
 	}
 	return serviceapiWorkspaceUsageResource
+}
+func (c *ServiceConverterImpl) UserToResource(source *ent.User) service.ServiceUserResource {
+	var serviceapiServiceUserResource service.ServiceUserResource
+	if source != nil {
+		serviceapiServiceUserResource.ID = service.EntityId((*source).ID)
+		serviceapiServiceUserResource.Name = serviceOptString((*source).Name)
+		serviceapiServiceUserResource.Email = serviceOptEmail((*source).Email)
+		serviceapiServiceUserResource.EmailVerifiedAt = serviceOptNilTimestamp((*source).EmailVerifiedAt)
+		serviceapiServiceUserResource.CreatedAt = serviceOptTimestamp((*source).CreatedAt)
+	}
+	return serviceapiServiceUserResource
 }
 func (c *ServiceConverterImpl) WorkspaceToResource(source *ent.Workspace) service.ServiceWorkspaceResource {
 	var serviceapiServiceWorkspaceResource service.ServiceWorkspaceResource

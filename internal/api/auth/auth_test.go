@@ -71,7 +71,7 @@ func TestAuthContextsRoundTrip(t *testing.T) {
 
 func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(env.DB, env.Bus, nil)
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, ConsentRecords: env.ConsentRecords})
 
 	ctx, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
@@ -93,7 +93,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 
 func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(env.DB, env.Bus, nil)
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, ConsentRecords: env.ConsentRecords})
 	ctx := context.Background()
 	valid := credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)
 
@@ -132,7 +132,7 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 // unauthorized credential.
 func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(env.DB, env.Bus, nil)
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: env.DB, Bus: env.Bus, ConsentRecords: env.ConsentRecords})
 	reader := externalapi.BearerAuth{Token: env.ScopedBearer(t, string(externalapi.ApiTokenScopeContactsRead))}
 
 	ctx, err := h.HandleBearerAuth(t.Context(), externalapi.ContactsListOperation, reader)
@@ -152,7 +152,7 @@ func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 }
 
 func TestBearerAuthStorageFailureIsNotAnUnauthorizedAnswer(t *testing.T) {
-	h := auth.NewExternalSecurityHandler(closedClient(t), nil, nil)
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Ent: closedClient(t)})
 	_, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
 	})

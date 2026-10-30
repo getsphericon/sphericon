@@ -422,6 +422,9 @@ run = "pnpm exec tsp compile typespec/collect"
 ["generate:typespec-staff"]
 run = "pnpm exec tsp compile typespec/staff"
 
+["generate:typespec-staffee"]
+run = "pnpm exec tsp compile typespec/staffee"
+
 ["generate:typespec-service"]
 run = "pnpm exec tsp compile typespec/service"
 
@@ -435,12 +438,13 @@ depends = [
   "generate:typespec-site",
   "generate:typespec-collect",
   "generate:typespec-staff",
+  "generate:typespec-staffee",
   "generate:typespec-service",
   "generate:typespec-telemetry",
 ]
 
 ["generate:openapi"]
-description = "OpenAPI -> TS clients (site and staff clients, collect types, one config)"
+description = "OpenAPI -> TS clients (site, staff and staffee clients, collect types, one config)"
 run = "pnpm exec openapi-ts -f openapi-ts.config.ts"
 
 ["generate:routes"]
@@ -458,9 +462,10 @@ run = [
   "heavy -- go tool ogen --target gen/external --package externalapi --clean openapi/external.openapi.json",
   "heavy -- go tool ogen --target gen/collect --package collectapi --clean openapi/collect.openapi.json",
   "heavy -- go tool ogen --target gen/staff --package staffapi --clean openapi/staff.openapi.json",
+  "heavy -- go tool ogen --target gen/staffee --package staffeeapi --clean openapi/staffee.openapi.json",
   "heavy -- go tool ogen --target gen/service --package serviceapi --clean openapi/service.openapi.json",
   "heavy -- go tool ogen --config ogen.telemetry.yml --target gen/telemetry --package telemetryapi --clean openapi/telemetry.openapi.json",
-  "heavy -- go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources ./ee/staff/resources",
+  "heavy -- go tool goverter gen ./internal/api/site/resources ./internal/api/external/resources ./internal/api/staff/resources ./ee/staff/resources",
 ]
 
 ["generate:mocks"]

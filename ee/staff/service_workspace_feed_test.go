@@ -124,7 +124,7 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	ws, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords()).CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Hooli")
+	ws, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).CreateWorkspace(t.Context(), fixtures.MemberMaryID, "Hooli")
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)
@@ -136,7 +136,7 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 func TestAnOwnerAddedRemovedOrTransferredPutsTheWorkspaceBackInTheFeed(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
-	initech := h.env.DB.Scoped(fixtures.InitechID)
+	initech := h.env.FeedDB.Scoped(fixtures.InitechID)
 	_, saved := feedFrom(t, c, "")
 
 	// Added.
@@ -166,7 +166,7 @@ func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *test
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	_, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords()).DeleteUser(t.Context(), fixtures.InitechCoOwnerOwenID, nil)
+	_, err := accounts.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords).DeleteUser(t.Context(), fixtures.InitechCoOwnerOwenID, nil)
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)
@@ -177,7 +177,7 @@ func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *test
 func TestAMemberJoiningOrLeavingIsNotAChangeOfOwners(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
-	initech := h.env.DB.Scoped(fixtures.InitechID)
+	initech := h.env.FeedDB.Scoped(fixtures.InitechID)
 	_, saved := feedFrom(t, c, "")
 
 	// test writes: the Workspace feed hook fires on this write
@@ -194,12 +194,12 @@ func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed
 	c := h.env.ServiceClient(t, primary)
 	// The fixture Users are verified; Initech's owners start unverified here.
 	for _, id := range []int64{fixtures.InitechOwnerOlgaID, fixtures.InitechCoOwnerOwenID} {
-		require.NoError(t, h.env.DB.User.UpdateOneID(id).ClearEmailVerifiedAt().Exec(t.Context()))
+		require.NoError(t, h.env.FeedDB.User.UpdateOneID(id).ClearEmailVerifiedAt().Exec(t.Context()))
 	}
 	_, saved := feedFrom(t, c, "")
 
 	verifiedAt := time.Now().UTC().Truncate(time.Second)
-	require.NoError(t, h.env.DB.User.UpdateOneID(fixtures.InitechOwnerOlgaID).SetEmailVerifiedAt(verifiedAt).Exec(t.Context()))
+	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.InitechOwnerOlgaID).SetEmailVerifiedAt(verifiedAt).Exec(t.Context()))
 	got, saved := feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
 	olga, foundOlga := lo.Find(got[0].Owners, func(o serviceapi.ServiceWorkspaceOwner) bool { return o.UserId == 5 })
@@ -211,13 +211,13 @@ func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed
 	assert.WithinDuration(t, verifiedAt, time.Time(at), time.Second)
 	assert.False(t, owen.EmailVerifiedAt.IsSet() && !owen.EmailVerifiedAt.IsNull(), "the co-owner stays unverified")
 
-	require.NoError(t, h.env.DB.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("john@acme.test").Exec(t.Context()))
+	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("john@acme.test").Exec(t.Context()))
 	got, saved = feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.AcmePublicID}, feedIDs(got))
 	assert.Equal(t, "john@acme.test", string(got[0].Owners[0].Email))
 
 	// A User who owns nothing is nobody's change.
-	require.NoError(t, h.env.DB.User.UpdateOneID(fixtures.MemberMaryID).SetEmail("mary@elsewhere.test").Exec(t.Context()))
+	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.MemberMaryID).SetEmail("mary@elsewhere.test").Exec(t.Context()))
 	got, _ = feedFrom(t, c, saved)
 	assert.Empty(t, got)
 }

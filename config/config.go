@@ -130,8 +130,9 @@ type Config struct {
 	// token (SPHERICON_ACCOUNT_LINK_SIGNING_KEY).
 	AccountLinkSigningKey string
 	// StaffJWTSecret signs the Staff member session and login challenge (SPHERICON_STAFF_JWT_SECRET,
-	// ADR 0026). It is required, and must differ from SPHERICON_JWT_SECRET, only when the license
-	// has the `staff` feature; ee.New validates it there.
+	// ADR 0026, ADR 0063). Empty turns the Staff sign-in off; set, it must differ from
+	// SPHERICON_JWT_SECRET (staffmembers.New validates it). The `staff` license feature and the
+	// saas Mode require it.
 	StaffJWTSecret string
 	// StaffSessionTTL is the lifetime of a Staff member session (SPHERICON_STAFF_SESSION_TTL,
 	// default 4h, no refresh, no remember-me): shorter than a customer's.

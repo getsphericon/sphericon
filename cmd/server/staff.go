@@ -5,7 +5,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/ee/staff"
+	"github.com/getsphericon/sphericon/internal/staffmembers"
 )
 
 // staffOps is what the `staff` commands need from the app. The app implements
@@ -15,7 +15,8 @@ type staffOps interface {
 	ResetStaffTOTP(ctx context.Context, email string) error
 }
 
-// staffCommand is `sphericon staff create|reset-totp <email>` (ADR 0026). `create` is the only
+// staffCommand is `sphericon staff create|reset-totp <email>` (ADR 0026, ADR 0063), on every
+// Instance without a License key. `create` is the only
 // way a platform Staff member comes to exist, since there is no signup; it prints the
 // one-time password, and the Staff member enrols a TOTP at first login. `reset-totp`
 // is the only way a lost TOTP is reset (no web flow can): it clears the factor and ends
@@ -30,7 +31,7 @@ func staffCommand(d deps) *cli.Command {
 			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
 				email := cmd.StringArg("email")
 				password, err := ops.CreateStaffMember(ctx, email)
-				return staff.ReportCreated(out(cmd), email, password, err)
+				return staffmembers.ReportCreated(out(cmd), email, password, err)
 			}),
 		},
 		&cli.Command{
@@ -41,7 +42,7 @@ func staffCommand(d deps) *cli.Command {
 			Action: d.withOps(func(ctx context.Context, cmd *cli.Command, ops commandOps) error {
 				email := cmd.StringArg("email")
 				err := ops.ResetStaffTOTP(ctx, email)
-				return staff.ReportTOTPReset(out(cmd), email, err)
+				return staffmembers.ReportTOTPReset(out(cmd), email, err)
 			}),
 		},
 	)

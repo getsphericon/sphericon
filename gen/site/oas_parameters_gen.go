@@ -2959,6 +2959,63 @@ func decodeSiteAuthSigninCallbackParams(args [1]string, argsEscaped bool, r *htt
 	return params, nil
 }
 
+// SiteAuthSigninPendingParams is parameters of SiteAuth_signinPending operation.
+type SiteAuthSigninPendingParams struct {
+	Token string
+}
+
+func unpackSiteAuthSigninPendingParams(packed middleware.Parameters) (params SiteAuthSigninPendingParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "token",
+			In:   "query",
+		}
+		params.Token = packed[key].(string)
+	}
+	return params
+}
+
+func decodeSiteAuthSigninPendingParams(args [0]string, argsEscaped bool, r *http.Request) (params SiteAuthSigninPendingParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: token.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "token",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.Token = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "token",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteAuthSigninStartParams is parameters of SiteAuth_signinStart operation.
 type SiteAuthSigninStartParams struct {
 	Provider string
@@ -12237,6 +12294,86 @@ func decodeSiteJoinDomainsVerifyParams(args [2]string, argsEscaped bool, r *http
 	return params, nil
 }
 
+// SiteLegalDocumentsGetParams is parameters of SiteLegalDocuments_get operation.
+type SiteLegalDocumentsGetParams struct {
+	Key SignupItemKey
+}
+
+func unpackSiteLegalDocumentsGetParams(packed middleware.Parameters) (params SiteLegalDocumentsGetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "key",
+			In:   "path",
+		}
+		params.Key = packed[key].(SignupItemKey)
+	}
+	return params
+}
+
+func decodeSiteLegalDocumentsGetParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteLegalDocumentsGetParams, _ error) {
+	// Decode path: key.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "key",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Key = SignupItemKey(paramsDotKeyVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.Key.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "key",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteMembershipsDeleteParams is parameters of SiteMemberships_delete operation.
 type SiteMembershipsDeleteParams struct {
 	// The Workspace id: its short opaque public address and the route key for nested workspace resources
@@ -12894,6 +13031,86 @@ func decodeSiteOAuthDescribeParams(args [0]string, argsEscaped bool, r *http.Req
 		return params, &ogenerrors.DecodeParamError{
 			Name: "scope",
 			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteOptionalConsentsSetParams is parameters of SiteOptionalConsents_set operation.
+type SiteOptionalConsentsSetParams struct {
+	Key SignupItemKey
+}
+
+func unpackSiteOptionalConsentsSetParams(packed middleware.Parameters) (params SiteOptionalConsentsSetParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "key",
+			In:   "path",
+		}
+		params.Key = packed[key].(SignupItemKey)
+	}
+	return params
+}
+
+func decodeSiteOptionalConsentsSetParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteOptionalConsentsSetParams, _ error) {
+	// Decode path: key.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "key",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Key = SignupItemKey(paramsDotKeyVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.Key.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "key",
+			In:   "path",
 			Err:  err,
 		}
 	}

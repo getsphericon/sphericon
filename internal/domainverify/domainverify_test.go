@@ -271,7 +271,7 @@ func TestVerifyTracking_featureOffDoesNothing(t *testing.T) {
 func TestVerifyTracking_staleCheckLosesWithoutErrorOrNotice(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	s := env.DB.Scoped(fixtures.UmbrellaID)
+	s := env.FeedDB.Scoped(fixtures.UmbrellaID)
 
 	v := trackingVerifier(t, env, nil, nil)
 	lookup := v.Lookup

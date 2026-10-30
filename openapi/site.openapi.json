@@ -97,6 +97,9 @@
       "name": "Site Schema"
     },
     {
+      "name": "Site Legal Documents"
+    },
+    {
       "name": "Site Contacts"
     },
     {
@@ -339,7 +342,7 @@
     "/auth/logout": {
       "post": {
         "operationId": "SiteAuth_logout",
-        "description": "End the session on this browser: clears the session cookie.",
+        "description": "End the session on this browser: clears the session cookie. Answered while an\nacceptance is pending (ADR 0062), so a gated User can sign out.",
         "parameters": [],
         "responses": {
           "204": {
@@ -356,7 +359,8 @@
           }
         },
         "tags": ["Site Auth"],
-        "security": [{}]
+        "security": [{}],
+        "x-allowed-while-acceptance-pending": true
       }
     },
     "/auth/passkey": {
@@ -724,7 +728,7 @@
     "/auth/sign-up": {
       "post": {
         "operationId": "SiteAuth_signUp",
-        "description": "Create an Unverified User (ADR 0030): no session, no Workspace. A verification\nemail with the link is on its way (202), and 202 is the answer for every address,\ntaken or not (ADR 0031): the owner of a taken address gets a notice by mail\ninstead. The answer always sets the Sign-up browser cookie (httpOnly, SameSite=Strict,\nscoped to the auth prefix shared by verify and resend), which binds the link to this browser, so the\nheader does not say whether the address is taken either. The password is required\n(422 otherwise). On an Instance that does not require email verification (the selfhosted Mode) there is no\nmail to carry that notice and no link: the request creates a Verified User with its\nfirst Workspace at once (202, no session and no cookie: the User signs in next), and\na taken address answers 409. An Instance whose sign-up is closed\n(ADR 0042, 0060) answers 403 with code `signup_closed`\nbefore anything is read or created; accepting an Invitation still works.",
+        "description": "Create an Unverified User (ADR 0030): no session, no Workspace. A verification\nemail with the link is on its way (202), and 202 is the answer for every address,\ntaken or not (ADR 0031): the owner of a taken address gets a notice by mail\ninstead. The answer always sets the Sign-up browser cookie (httpOnly, SameSite=Strict,\nscoped to the auth prefix shared by verify and resend), which binds the link to this browser, so the\nheader does not say whether the address is taken either. The password is required\n(422 otherwise). On an Instance that does not require email verification (the selfhosted Mode) there is no\nmail to carry that notice and no link: the request creates a Verified User with its\nfirst Workspace at once (202, no session and no cookie: the User signs in next), and\na taken address answers 409. Sign-up is open on every Instance (ADR 0063).",
         "parameters": [],
         "responses": {
           "202": {
@@ -735,16 +739,6 @@
                 "description": "The Sign-up browser cookie, absent when the install does not require verification",
                 "schema": {
                   "type": "string"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "RFC 7807 forbidden response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -862,6 +856,122 @@
         "security": [{}]
       }
     },
+    "/auth/signin-pending": {
+      "get": {
+        "operationId": "SiteAuth_signinPending",
+        "description": "A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up\nitems. The token is the signed reference of the callback's redirect, valid for ten minutes;\nan expired, completed, declined or forged one answers 400.",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SitePendingSignup"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Auth"],
+        "security": [{}]
+      },
+      "post": {
+        "operationId": "SiteAuth_signinPendingSubmit",
+        "description": "Complete a pending sign-up with the answers to the Sign-up items: creates the User with its\nVerified email, its Linked identity, its first Workspace (and the Membership of the\nInvitation the flow began from) and the Consent records (source `provider_screen`) in one\ntransaction, and starts the session. A required acceptance not ticked answers 422 under\n`signupItems.<key>` and keeps the pending sign-up; an item not in effect or a stale version\nanswers 422 under `signupItems`. An expired, completed, declined or forged token answers 400,\nand so does one whose address or provider account was taken meanwhile.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful. ",
+            "headers": {
+              "Set-Cookie": {
+                "required": true,
+                "description": "The session cookie of the new User",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSigninPendingSubmitInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
+    "/auth/signin-pending/decline": {
+      "post": {
+        "operationId": "SiteAuth_signinPendingDecline",
+        "description": "Decline a pending sign-up: it is deleted and nothing is created. Answers 204 also for a\ntoken that names nothing any more.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          }
+        },
+        "tags": ["Site Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSigninPendingDeclineInput"
+              }
+            }
+          }
+        },
+        "security": [{}]
+      }
+    },
     "/auth/signin-providers": {
       "get": {
         "operationId": "SiteAuth_signinProviders",
@@ -886,7 +996,7 @@
     "/auth/signin/{provider}/callback": {
       "get": {
         "operationId": "SiteAuth_signinCallback",
-        "description": "Where the provider sends the browser back (the redirect URI derived from the app URL).\nAlways answers 302: to `return_to` (or `/`) with the session cookie when the sign-in\nsucceeds, and to `/login?error=<code>` (see SiteSigninError) when it does not. A known\nidentity signs in; a new, trusted email creates a Verified User with its first Workspace\nand no mail. A User with a Second factor gets no session and no cookie: the redirect is\nto `/login?challenge=<token>`, the challenge of `/auth/second-factor` (ADR 0020), which\na TOTP or Recovery code finishes under the Login throttle. Every parameter is optional so that a denied consent (`error` only) or a\nstray visit reaches the handler and gets the same redirect as any other refusal.",
+        "description": "Where the provider sends the browser back (the redirect URI derived from the app URL).\nAlways answers 302: to `return_to` (or `/`) with the session cookie when the sign-in\nsucceeds, and to `/login?error=<code>` (see SiteSigninError) when it does not. A known\nidentity signs in; a new, trusted email creates a Verified User with its first Workspace\nand no mail; while the Instance has Sign-up items in effect it creates no User yet and the\nredirect is to `/signin-pending?token=<reference>` (plus `redirect` when the flow had a\n`return_to`), the screen that asks the items and completes the sign-up through\n`/auth/signin-pending` (ADR 0062). A User with a Second factor gets no session and no cookie: the redirect is\nto `/login?challenge=<token>`, the challenge of `/auth/second-factor` (ADR 0020), which\na TOTP or Recovery code finishes under the Login throttle. Every parameter is optional so that a denied consent (`error` only) or a\nstray visit reaches the handler and gets the same redirect as any other refusal.",
         "parameters": [
           {
             "name": "provider",
@@ -1556,6 +1666,47 @@
         ]
       }
     },
+    "/legal-documents/{key}": {
+      "get": {
+        "operationId": "SiteLegalDocuments_get",
+        "description": "The current version of a Sign-up item's Legal document, for its public page. Public. 404\nfor an unknown or archived item and for one with no published version. Answered while an\nacceptance is pending, for the screen that shows the new texts (ADR 0062).",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SignupItemKey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteLegalDocument"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Legal Documents"],
+        "security": [{}],
+        "x-allowed-while-acceptance-pending": true
+      }
+    },
     "/me": {
       "get": {
         "operationId": "SiteUser_getMe",
@@ -1573,7 +1724,8 @@
             }
           }
         },
-        "tags": ["Site User"]
+        "tags": ["Site User"],
+        "x-allowed-while-acceptance-pending": true
       },
       "put": {
         "operationId": "SiteUser_updateMe",
@@ -1675,6 +1827,47 @@
             }
           }
         }
+      }
+    },
+    "/me/acceptances": {
+      "post": {
+        "operationId": "SiteUser_acceptPending",
+        "description": "Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted\nwith the source re-acceptance, and the next request is no longer refused. The body names each\npending item at the version the screen showed; 422 when one is missing or its version is no\nlonger the current one (a newer version was published meanwhile), and nothing is recorded.\nWith nothing pending it records nothing.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteUserResource"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site User"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteAcceptPendingInput"
+              }
+            }
+          }
+        },
+        "x-allowed-while-acceptance-pending": true
       }
     },
     "/me/delete": {
@@ -1780,7 +1973,8 @@
               }
             }
           }
-        }
+        },
+        "x-allowed-while-acceptance-pending": true
       }
     },
     "/me/delete/link": {
@@ -1813,7 +2007,8 @@
               }
             }
           }
-        }
+        },
+        "x-allowed-while-acceptance-pending": true
       }
     },
     "/me/email-change": {
@@ -2030,6 +2225,85 @@
           }
         },
         "tags": ["Site Linked Identities"]
+      }
+    },
+    "/me/optional-consents": {
+      "get": {
+        "operationId": "SiteOptionalConsents_list",
+        "description": "The optional consents in effect (not archived, with a published version) and the User's\ncurrent answer to each. They belong to the User, so no Workspace is read. Empty when the\nInstance has none. A required acceptance and a notice are not listed: they are not the User's\nto change.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteOptionalConsentList"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site User"]
+      }
+    },
+    "/me/optional-consents/{key}": {
+      "put": {
+        "operationId": "SiteOptionalConsents_set",
+        "description": "Give or withdraw an optional consent. Giving it records `accepted` on the current version,\nwithdrawing a given one records `withdrawn`, both with the source account settings; a change\nthat leaves the answer as it is records nothing. 404 for an item not in effect. 422 for a\nrequired acceptance or a notice, which cannot be changed here, and for a version that is not\nthe current one (field `version`).",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SignupItemKey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteOptionalConsent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site User"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteOptionalConsentChange"
+              }
+            }
+          }
+        }
       }
     },
     "/me/passkeys": {
@@ -2492,7 +2766,7 @@
     "/me/second-factor": {
       "get": {
         "operationId": "SiteSecondFactor_getStatus",
-        "description": "The authenticated User's Second factor status",
+        "description": "The authenticated User's Second factor status. Answered while an acceptance is pending, for\nthe account deletion form (ADR 0062).",
         "parameters": [],
         "responses": {
           "200": {
@@ -2506,7 +2780,8 @@
             }
           }
         },
-        "tags": ["Site Second Factor"]
+        "tags": ["Site Second Factor"],
+        "x-allowed-while-acceptance-pending": true
       }
     },
     "/me/second-factor/disable": {
@@ -3207,6 +3482,28 @@
         "security": [{}]
       }
     },
+    "/signup-items": {
+      "get": {
+        "operationId": "SiteLegalDocuments_signupItems",
+        "description": "The Sign-up items in effect: those not archived that have a published version, with that\nversion's label. Public; empty when the Instance has none. Answered while an acceptance\nis pending (ADR 0062).",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteSignupItemList"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Legal Documents"],
+        "security": [{}],
+        "x-allowed-while-acceptance-pending": true
+      }
+    },
     "/unsubscribes/{token}": {
       "post": {
         "operationId": "SitePublicUnsubscribes_perform",
@@ -3314,7 +3611,7 @@
     "/workspaces/deleted": {
       "get": {
         "operationId": "SiteWorkspaces_listDeleted",
-        "description": "List the Workspaces in their deletion window that the authenticated User owns, with\nthe date their data will be erased.",
+        "description": "List the Workspaces in their deletion window that the authenticated User owns, with\nthe date their data will be erased. Answered while an acceptance is pending, for the\naccount deletion form (ADR 0062).",
         "parameters": [],
         "responses": {
           "200": {
@@ -3331,7 +3628,8 @@
             }
           }
         },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Workspaces"],
+        "x-allowed-while-acceptance-pending": true
       }
     },
     "/workspaces/deleted/{id}/restore": {
@@ -7111,7 +7409,7 @@
     "/workspaces/{workspaceId}/delete": {
       "post": {
         "operationId": "SiteWorkspaces_delete",
-        "description": "Delete a Workspace (Owner only). The typed name must equal the Workspace's name,\nelse 422. The Workspace is frozen at once and hidden: it answers 404 on its paths\nand leaves every Member's list; an Owner restores it within 30 days. Recorded as an\nAudit entry.",
+        "description": "Delete a Workspace (Owner only). The typed name must equal the Workspace's name,\nelse 422. The Workspace is frozen at once and hidden: it answers 404 on its paths\nand leaves every Member's list; an Owner restores it within 30 days. Recorded as an\nAudit entry. Answered while an acceptance is pending (ADR 0062), so a User who solely owns\na Workspace can delete it and then their account; the Two-factor requirement still\napplies.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -7175,6 +7473,7 @@
             }
           }
         },
+        "x-allowed-while-acceptance-pending": true,
         "x-required-permissions": ["workspace:delete"]
       }
     },
@@ -13496,6 +13795,17 @@
         },
         "description": "The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it"
       },
+      "LegalDocumentLabel": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "description": "The label a Staff member gives a published Legal document version, unique per item"
+      },
+      "LegalDocumentMarkdown": {
+        "type": "string",
+        "maxLength": 100000,
+        "description": "A Legal document's text, in Markdown"
+      },
       "LintCode": {
         "type": "string",
         "enum": [
@@ -13575,9 +13885,9 @@
         "enum": [
           "second_factor_required",
           "email_verification_required",
-          "signup_closed",
           "permission_required",
-          "migrations_pending"
+          "migrations_pending",
+          "acceptance_pending"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
@@ -13718,6 +14028,24 @@
           }
         ]
       },
+      "SignupItemKey": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+        "description": "A Sign-up item's key: its address, and the last segment of its Legal document's public page"
+      },
+      "SignupItemKind": {
+        "type": "string",
+        "enum": ["required_acceptance", "optional_consent", "notice"],
+        "description": "What a Sign-up item asks of a person (ADR 0062)"
+      },
+      "SignupItemTitle": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "description": "A Sign-up item's title: what the sign-up form shows"
+      },
       "SiteAbuseMetric": {
         "type": "string",
         "enum": ["complaint", "bounce"],
@@ -13755,9 +14083,48 @@
           },
           "password": {
             "type": "string"
+          },
+          "signupItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSignupItemAnswer"
+            },
+            "description": "The answers to the Sign-up items in effect, read only when the accept sets up the account\n(ADR 0062). Every required acceptance must be answered ticked at its current version, or the\nfield `signupItems.<key>` is refused; an optional consent left out is not recorded. Each\nanswered item is recorded as accepted or declined, and each notice in effect as shown, with\nthe source Invitation. Absent with no items in effect."
           }
         },
-        "description": "Accept an invite. For an address with no User or an Unverified User, name + password\nare required (422 otherwise). For a Verified User the body is not read: the session of\nthat same User is the proof."
+        "description": "Accept an invite. For an address with no User or an Unverified User, name + password\nare required (422 otherwise), and the Sign-up items are answered as on the sign-up form. For a\nVerified User the body is not read: the session of that same User is the proof, and consent\nfollows the User, so nothing is asked again (ADR 0062)."
+      },
+      "SiteAcceptPendingInput": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAcceptance"
+            },
+            "description": "Every pending acceptance, at the version the screen showed"
+          }
+        },
+        "description": "The required acceptances a User accepts after a new version was published (ADR 0062)"
+      },
+      "SiteAcceptance": {
+        "type": "object",
+        "required": ["key", "version"],
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/SignupItemKey"
+          },
+          "version": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDocumentLabel"
+              }
+            ],
+            "description": "The label of the version the screen showed"
+          }
+        },
+        "description": "A required acceptance the screen showed: the item's key and the label of the version shown"
       },
       "SiteAccountLinkResource": {
         "type": "object",
@@ -17098,6 +17465,39 @@
         },
         "description": "A Join domain: a domain whose Users may join the Workspace once domain join\nis on, proven by a TXT record. `verified` is a live property: it holds while the record\nis published. Any Workspace may claim a domain, and only one holds it verified."
       },
+      "SiteLegalDocument": {
+        "type": "object",
+        "required": ["key", "title", "version", "markdown", "publishedAt"],
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/SignupItemKey"
+          },
+          "title": {
+            "type": "string",
+            "description": "The item's title"
+          },
+          "version": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDocumentLabel"
+              }
+            ],
+            "description": "The label of the version"
+          },
+          "markdown": {
+            "$ref": "#/components/schemas/LegalDocumentMarkdown"
+          },
+          "publishedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the version was published, and took effect"
+          }
+        },
+        "description": "The current version of a Sign-up item's Legal document"
+      },
       "SiteLinkClicks": {
         "type": "object",
         "required": ["url", "clicks"],
@@ -17477,6 +17877,81 @@
         },
         "description": "Where to send the user's browser next (back to the client, with a code or an error)"
       },
+      "SiteOptionalConsent": {
+        "type": "object",
+        "required": ["key", "title", "version"],
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/SignupItemKey"
+          },
+          "title": {
+            "type": "string",
+            "description": "What the form shows"
+          },
+          "version": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDocumentLabel"
+              }
+            ],
+            "description": "The label of the current version, the one a change answers"
+          },
+          "decision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteOptionalConsentDecision"
+              }
+            ],
+            "description": "The User's current answer; absent when they never answered, as a User who signed up before\nthe item existed"
+          },
+          "decidedAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the current answer was given; absent with no answer"
+          }
+        },
+        "description": "An optional consent in effect, with the User's current answer to it (ADR 0062)"
+      },
+      "SiteOptionalConsentChange": {
+        "type": "object",
+        "required": ["version", "accepted"],
+        "properties": {
+          "version": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDocumentLabel"
+              }
+            ],
+            "description": "The label of the version the page showed; one that is no longer current refuses the change"
+          },
+          "accepted": {
+            "type": "boolean",
+            "description": "True gives the consent, false withdraws it"
+          }
+        },
+        "description": "A change of the User's answer to an optional consent"
+      },
+      "SiteOptionalConsentDecision": {
+        "type": "string",
+        "enum": ["accepted", "declined", "withdrawn"],
+        "description": "A User's current answer to an optional consent: the decision of their latest Consent record on\nit (ADR 0062)"
+      },
+      "SiteOptionalConsentList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteOptionalConsent"
+            }
+          }
+        },
+        "description": "The optional consents in effect, in the order of the sign-up form"
+      },
       "SitePasskey": {
         "type": "object",
         "required": ["id", "name", "createdAt"],
@@ -17825,6 +18300,29 @@
           }
         },
         "description": "The account a Passkey is created for"
+      },
+      "SitePendingSignup": {
+        "type": "object",
+        "required": ["provider", "email", "name"],
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "The provider's display name (`Google`)"
+          },
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "The address the User will get"
+          },
+          "name": {
+            "type": "string",
+            "description": "The provider's name of the person; empty when it gave none"
+          }
+        },
+        "description": "A Sign-in provider's sign-up held for the Sign-up items (ADR 0062): who the provider proved,\nfor the screen that asks the items. No User exists yet."
       },
       "SitePresetResource": {
         "type": "object",
@@ -18857,6 +19355,13 @@
           "password": {
             "type": "string",
             "description": "Required whenever sign-up is open. Stored hashed on the Unverified User; a repeated\nSign-up of the address replaces it."
+          },
+          "signupItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSignupItemAnswer"
+            },
+            "description": "The answers to the Sign-up items in effect (ADR 0062). Every required acceptance must be\nanswered ticked at its current version, or the field `signupItems.<key>` is refused; an\noptional consent left out is not recorded. Each answered item is recorded as accepted or\ndeclined, and each notice in effect as shown. Absent with no items in effect."
           }
         },
         "description": "Sign up with a name, an email and a password. The User stays Unverified until the\naddress is proven (ADR 0030); the password is trusted only when the verification link\nis opened in the Sign-up browser."
@@ -18870,7 +19375,6 @@
           "provider_unavailable",
           "email_unverified",
           "email_not_trusted",
-          "signup_closed",
           "identity_in_use",
           "invitation_email_mismatch",
           "invitation_invalid"
@@ -18886,6 +19390,35 @@
           }
         },
         "description": "The \"this was not me\" link of the notice mailed when a Sign-in provider was linked to an account"
+      },
+      "SiteSigninPendingDeclineInput": {
+        "type": "object",
+        "required": ["token"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The signed reference from the screen's URL"
+          }
+        },
+        "description": "Decline a pending sign-up"
+      },
+      "SiteSigninPendingSubmitInput": {
+        "type": "object",
+        "required": ["token"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The signed reference from the screen's URL"
+          },
+          "signupItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSignupItemAnswer"
+            },
+            "description": "The answers to the Sign-up items in effect, by the rules of the sign-up form's\n`signupItems`"
+          }
+        },
+        "description": "The answers that complete a pending sign-up"
       },
       "SiteSigninProvider": {
         "type": "object",
@@ -18924,6 +19457,66 @@
         "type": "string",
         "enum": ["broadcasts", "automations", "tracking", "migrating", "other"],
         "description": "What the User mainly wants to do with the product (third question)"
+      },
+      "SiteSignupItem": {
+        "type": "object",
+        "required": ["key", "title", "kind", "version"],
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/SignupItemKey"
+          },
+          "title": {
+            "type": "string",
+            "description": "What the form shows"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SignupItemKind"
+          },
+          "version": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDocumentLabel"
+              }
+            ],
+            "description": "The label of the current version, the one a person accepts"
+          }
+        },
+        "description": "A Sign-up item in effect, with the label of its current Legal document version: what the\nsign-up form asks (ADR 0062)"
+      },
+      "SiteSignupItemAnswer": {
+        "type": "object",
+        "required": ["key", "version"],
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/SignupItemKey"
+          },
+          "version": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalDocumentLabel"
+              }
+            ],
+            "description": "The label of the version the form showed"
+          },
+          "accepted": {
+            "type": "boolean",
+            "description": "Whether the box was ticked; absent is unticked. A notice has no box, and its answer only\nnames the version shown."
+          }
+        },
+        "description": "A person's answer to one Sign-up item the form showed (ADR 0062). An item named that is not in\neffect, a version that is not its current one, or an item named twice refuses the form."
+      },
+      "SiteSignupItemList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSignupItem"
+            }
+          }
+        },
+        "description": "The Sign-up items in effect, in the order of the sign-up form"
       },
       "SiteSignupRole": {
         "type": "string",
@@ -19735,7 +20328,15 @@
       },
       "SiteUserResource": {
         "type": "object",
-        "required": ["id", "name", "email", "emailVerified", "signupSurveyDue", "createdAt"],
+        "required": [
+          "id",
+          "name",
+          "email",
+          "emailVerified",
+          "signupSurveyDue",
+          "acceptancesPending",
+          "createdAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -19764,6 +20365,13 @@
           "signupSurveyDue": {
             "type": "boolean",
             "description": "Whether the User owes the Sign-up survey: computed on the server, so the app reads this\none field and never the Instance setting. True after a public sign-up on an Instance that\nasks, until the survey is answered."
+          },
+          "acceptancesPending": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteSignupItem"
+            },
+            "description": "The required acceptances whose current version the User has not accepted, in the order of\nthe sign-up form (ADR 0062). While any is listed, every operation that is not marked\n`x-allowed-while-acceptance-pending` refuses the User with 403 `acceptance_pending`; the app\nshows the texts and accepts them with `acceptPending` before any other page. Empty for a User\nwho holds every current version."
           },
           "createdAt": {
             "allOf": [

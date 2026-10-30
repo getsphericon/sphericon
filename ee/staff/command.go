@@ -12,40 +12,12 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 )
 
-// What the `sphericon staff` and `sphericon service-credential` commands print (ADR 0026): each
+// What the `sphericon service-credential` commands print (ADR 0026): each
 // Report function takes what the module returned, prints the outcome to w, or says in its error
 // why nothing changed.
 
 // errNoLicense explains ErrNotLicensed to the operator.
 var errNoLicense = errors.New("this instance has no staff license (feature `staff`)")
-
-// ReportCreated reports `staff create`: the one-time password, shown once.
-func ReportCreated(w io.Writer, email, password string, err error) error {
-	switch {
-	case errors.Is(err, ErrDuplicate):
-		return fmt.Errorf("a staff with email %q already exists; nothing changed", email)
-	case errors.Is(err, ErrNotLicensed):
-		return errNoLicense
-	case err != nil:
-		return err
-	}
-	_, _ = fmt.Fprintf(w, "staff %q created\npassword (shown once): %s\nthe staff enrols a TOTP at first login\n", email, password)
-	return nil
-}
-
-// ReportTOTPReset reports `staff reset-totp`.
-func ReportTOTPReset(w io.Writer, email string, err error) error {
-	switch {
-	case errors.Is(err, ErrNotFound):
-		return fmt.Errorf("no staff with email %q; nothing changed", email)
-	case errors.Is(err, ErrNotLicensed):
-		return errNoLicense
-	case err != nil:
-		return err
-	}
-	_, _ = fmt.Fprintf(w, "totp of staff %q reset: every session has ended and the staff must re-enrol at next login\n", email)
-	return nil
-}
 
 // ReportIssued reports `service-credential create`: the credential and its value, shown once.
 func ReportIssued(w io.Writer, c *Issued, err error) error {
@@ -128,7 +100,7 @@ func explainCredential(err error, id int64) error {
 	case errors.Is(err, ErrNotLicensed):
 		return errNoLicense
 	case errors.Is(err, ErrInvalidScope):
-		return errors.New("a service credential needs one or more known scopes (usage:read, workspaces:read, domains:read, holds:write)")
+		return errors.New("a service credential needs one or more known scopes (usage:read, workspaces:read, users:read, domains:read, holds:write)")
 	case errors.Is(err, ErrInvalidCredential):
 		return errors.New("a service credential needs a name and an expiry in the future")
 	case errors.Is(err, ErrCredentialNotFound):

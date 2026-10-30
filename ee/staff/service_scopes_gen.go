@@ -14,6 +14,7 @@ var ServiceOperationScopes = map[serviceapi.OperationName][]serviceapi.ServiceSc
 	serviceapi.ServiceIdentityGetOperation:          nil,
 	serviceapi.ServiceTrackingHostFeedListOperation: {serviceapi.ServiceScopeDomainsRead},
 	serviceapi.ServiceUsageListOperation:            {serviceapi.ServiceScopeUsageRead},
+	serviceapi.ServiceUserFeedListOperation:         {serviceapi.ServiceScopeUsersRead},
 	serviceapi.ServiceWorkspaceFeedListOperation:    {serviceapi.ServiceScopeWorkspacesRead},
 	serviceapi.ServiceWorkspaceUsageGetOperation:    {serviceapi.ServiceScopeUsageRead},
 }

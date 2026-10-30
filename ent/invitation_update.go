@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/invitation"
+	"github.com/getsphericon/sphericon/ent/pendingsignup"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -171,6 +172,21 @@ func (_u *InvitationUpdate) SetInviter(v *User) *InvitationUpdate {
 	return _u.SetInviterID(v.ID)
 }
 
+// AddPendingSignupIDs adds the "pending_signups" edge to the PendingSignup entity by IDs.
+func (_u *InvitationUpdate) AddPendingSignupIDs(ids ...int64) *InvitationUpdate {
+	_u.mutation.AddPendingSignupIDs(ids...)
+	return _u
+}
+
+// AddPendingSignups adds the "pending_signups" edges to the PendingSignup entity.
+func (_u *InvitationUpdate) AddPendingSignups(v ...*PendingSignup) *InvitationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPendingSignupIDs(ids...)
+}
+
 // Mutation returns the InvitationMutation object of the builder.
 func (_u *InvitationUpdate) Mutation() *InvitationMutation {
 	return _u.mutation
@@ -186,6 +202,27 @@ func (_u *InvitationUpdate) ClearWorkspace() *InvitationUpdate {
 func (_u *InvitationUpdate) ClearInviter() *InvitationUpdate {
 	_u.mutation.ClearInviter()
 	return _u
+}
+
+// ClearPendingSignups clears all "pending_signups" edges to the PendingSignup entity.
+func (_u *InvitationUpdate) ClearPendingSignups() *InvitationUpdate {
+	_u.mutation.ClearPendingSignups()
+	return _u
+}
+
+// RemovePendingSignupIDs removes the "pending_signups" edge to PendingSignup entities by IDs.
+func (_u *InvitationUpdate) RemovePendingSignupIDs(ids ...int64) *InvitationUpdate {
+	_u.mutation.RemovePendingSignupIDs(ids...)
+	return _u
+}
+
+// RemovePendingSignups removes "pending_signups" edges to PendingSignup entities.
+func (_u *InvitationUpdate) RemovePendingSignups(v ...*PendingSignup) *InvitationUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePendingSignupIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -337,6 +374,51 @@ func (_u *InvitationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PendingSignupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   invitation.PendingSignupsTable,
+			Columns: []string{invitation.PendingSignupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pendingsignup.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPendingSignupsIDs(); len(nodes) > 0 && !_u.mutation.PendingSignupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   invitation.PendingSignupsTable,
+			Columns: []string{invitation.PendingSignupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pendingsignup.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PendingSignupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   invitation.PendingSignupsTable,
+			Columns: []string{invitation.PendingSignupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pendingsignup.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -506,6 +588,21 @@ func (_u *InvitationUpdateOne) SetInviter(v *User) *InvitationUpdateOne {
 	return _u.SetInviterID(v.ID)
 }
 
+// AddPendingSignupIDs adds the "pending_signups" edge to the PendingSignup entity by IDs.
+func (_u *InvitationUpdateOne) AddPendingSignupIDs(ids ...int64) *InvitationUpdateOne {
+	_u.mutation.AddPendingSignupIDs(ids...)
+	return _u
+}
+
+// AddPendingSignups adds the "pending_signups" edges to the PendingSignup entity.
+func (_u *InvitationUpdateOne) AddPendingSignups(v ...*PendingSignup) *InvitationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddPendingSignupIDs(ids...)
+}
+
 // Mutation returns the InvitationMutation object of the builder.
 func (_u *InvitationUpdateOne) Mutation() *InvitationMutation {
 	return _u.mutation
@@ -521,6 +618,27 @@ func (_u *InvitationUpdateOne) ClearWorkspace() *InvitationUpdateOne {
 func (_u *InvitationUpdateOne) ClearInviter() *InvitationUpdateOne {
 	_u.mutation.ClearInviter()
 	return _u
+}
+
+// ClearPendingSignups clears all "pending_signups" edges to the PendingSignup entity.
+func (_u *InvitationUpdateOne) ClearPendingSignups() *InvitationUpdateOne {
+	_u.mutation.ClearPendingSignups()
+	return _u
+}
+
+// RemovePendingSignupIDs removes the "pending_signups" edge to PendingSignup entities by IDs.
+func (_u *InvitationUpdateOne) RemovePendingSignupIDs(ids ...int64) *InvitationUpdateOne {
+	_u.mutation.RemovePendingSignupIDs(ids...)
+	return _u
+}
+
+// RemovePendingSignups removes "pending_signups" edges to PendingSignup entities.
+func (_u *InvitationUpdateOne) RemovePendingSignups(v ...*PendingSignup) *InvitationUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemovePendingSignupIDs(ids...)
 }
 
 // Where appends a list predicates to the InvitationUpdate builder.
@@ -702,6 +820,51 @@ func (_u *InvitationUpdateOne) sqlSave(ctx context.Context) (_node *Invitation, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.PendingSignupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   invitation.PendingSignupsTable,
+			Columns: []string{invitation.PendingSignupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pendingsignup.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedPendingSignupsIDs(); len(nodes) > 0 && !_u.mutation.PendingSignupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   invitation.PendingSignupsTable,
+			Columns: []string{invitation.PendingSignupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pendingsignup.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.PendingSignupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   invitation.PendingSignupsTable,
+			Columns: []string{invitation.PendingSignupsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(pendingsignup.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

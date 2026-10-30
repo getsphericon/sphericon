@@ -1,5 +1,5 @@
 // Package resources holds goverter-generated mappers from ent rows and the platform read models
-// to the Staff API (gen/staff) and service API (gen/service) resources, plus the custom
+// to the Enterprise Staff API (gen/staffee) and service API (gen/service) resources, plus the custom
 // conversions goverter cannot infer on its own. The implementations live in
 // staff_converter_gen.go and service_converter_gen.go; ee/staff instantiates them.
 package resources
@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/reputation"
@@ -24,7 +24,8 @@ import (
 // PeriodLayout is how a Usage period is written on the wire: the calendar month, YYYY-MM.
 const PeriodLayout = "2006-01"
 
-// StaffConverter maps ent rows and the console's read models to the Staff API resources.
+// StaffConverter maps ent rows and the console's read models to the Enterprise Staff API
+// resources.
 //
 // goverter:converter
 // goverter:name StaffConverterImpl
@@ -40,15 +41,13 @@ const PeriodLayout = "2006-01"
 // goverter:extend count
 // goverter:extend optNilSource
 type StaffConverter interface {
-	StaffMemberToResource(source *ent.StaffMember) staffapi.StaffResource
-
 	// The console's view of a Workspace: metadata and suspension state only. The Staff
 	// member sees the real actor id, which a customer never does.
 	// goverter:map PublicID ID
 	// goverter:map AbuseExempt Exempt
 	// goverter:map AbuseWarningNotifiedAt Warned | isSet
 	// goverter:map . Suspension | workspaceSuspension
-	WorkspaceToResource(source *ent.Workspace) staffapi.StaffWorkspaceResource
+	WorkspaceToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceResource
 
 	// The detail page is the metadata of WorkspaceToResource plus figures read through other
 	// modules (the active holds, the abuse state, the deliverability counts): the handler
@@ -60,34 +59,34 @@ type StaffConverter interface {
 	// goverter:ignore Holds
 	// goverter:ignore Abuse
 	// goverter:ignore Deliverability
-	WorkspaceDetailToResource(source *ent.Workspace) staffapi.StaffWorkspaceDetailResource
+	WorkspaceDetailToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceDetailResource
 
-	HoldToResource(source *ent.Hold) staffapi.StaffHold
+	HoldToResource(source *ent.Hold) staffeeapi.StaffHold
 
 	// The detected breach, if any, is attached by the handler.
 	// goverter:map AbuseExempt Exempt
 	// goverter:map AbuseWarningNotifiedAt WarningNotifiedAt
 	// goverter:map AbuseFreezeNotifiedAt FreezeNotifiedAt
 	// goverter:ignore Warning
-	AbuseToResource(source *ent.Workspace) staffapi.StaffAbuse
+	AbuseToResource(source *ent.Workspace) staffeeapi.StaffAbuse
 	// goverter:map . Rate | breachRate
-	BreachToWarning(source abuse.Breach) staffapi.StaffAbuseWarning
+	BreachToWarning(source abuse.Breach) staffeeapi.StaffAbuseWarning
 
 	// goverter:map Complaint ComplaintRate
 	// goverter:map Bounce BounceRate
-	DomainRatesToResource(source abuse.DomainRates) staffapi.StaffDomainRates
-	RateToResource(source reputation.Rate) staffapi.StaffRate
+	DomainRatesToResource(source abuse.DomainRates) staffeeapi.StaffDomainRates
+	RateToResource(source reputation.Rate) staffeeapi.StaffRate
 	// goverter:map Window WindowHours | windowHours
-	DeliverabilityToResource(source abuse.Deliverability) staffapi.StaffDeliverability
+	DeliverabilityToResource(source abuse.Deliverability) staffeeapi.StaffDeliverability
 
 	// goverter:map . Actor | staffAuditActor
 	// goverter:map . Target | staffAuditTarget
-	AuditEntryToResource(source auditapi.View) staffapi.StaffAuditEntryResource
+	AuditEntryToResource(source auditapi.View) staffeeapi.StaffAuditEntryResource
 
 	// One User's Sign-up survey answers. The enums share the contract's values.
 	// goverter:map UserID UserId
 	// goverter:map CreatedAt AnsweredAt
-	SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffapi.StaffSignupSurveyResponseResource
+	SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffeeapi.StaffSignupSurveyResponseResource
 }
 
 // ServiceConverter maps ent rows and the usage figures to the service API resources.
@@ -101,6 +100,10 @@ type StaffConverter interface {
 // goverter:extend serviceTimestamp
 // goverter:extend serviceNilableString
 // goverter:extend serviceOptNilTimestamp
+// goverter:extend serviceOptString
+// goverter:extend serviceOptEmail
+// goverter:extend serviceOptTimestamp
+// goverter:extend serviceOptNilTimestampAt
 type ServiceConverter interface {
 	HoldToResource(source *ent.Hold) serviceapi.HoldResource
 
@@ -111,6 +114,23 @@ type ServiceConverter interface {
 	// goverter:map ID UserId
 	OwnerToResource(source *ent.User) serviceapi.ServiceWorkspaceOwner
 
+	// The mailings consent is the feed entry's, which the mapper cannot see: the handler
+	// attaches it.
+	// goverter:ignore DeletedAt
+	// goverter:ignore MailingsConsent
+	// goverter:ignore MailingsConsentChangedAt
+	UserToResource(source *ent.User) serviceapi.ServiceUserResource
+	// A tombstone carries the deleted User's id and when they were deleted, nothing else.
+	// goverter:map UserID ID
+	// goverter:map CreatedAt DeletedAt
+	// goverter:ignore Name
+	// goverter:ignore Email
+	// goverter:ignore EmailVerifiedAt
+	// goverter:ignore CreatedAt
+	// goverter:ignore MailingsConsent
+	// goverter:ignore MailingsConsentChangedAt
+	TombstoneToResource(source *ent.UserTombstone) serviceapi.ServiceUserResource
+
 	UsageFigureToResource(source usage.Figure) serviceapi.UsageFigure
 	// The public id is the Workspace's, which the usage row does not carry: the handler
 	// attaches it.
@@ -119,15 +139,15 @@ type ServiceConverter interface {
 	UsageToResource(source usage.WorkspaceUsage) serviceapi.WorkspaceUsageResource
 }
 
-func staffTimestamp(t time.Time) staffapi.Timestamp { return staffapi.Timestamp(t) }
+func staffTimestamp(t time.Time) staffeeapi.Timestamp { return staffeeapi.Timestamp(t) }
 
 func serviceTimestamp(t time.Time) serviceapi.Timestamp { return serviceapi.Timestamp(t) }
 
-func nilableString(v *string) staffapi.OptNilString {
+func nilableString(v *string) staffeeapi.OptNilString {
 	if v == nil {
-		return staffapi.OptNilString{}
+		return staffeeapi.OptNilString{}
 	}
-	return staffapi.NewOptNilString(*v)
+	return staffeeapi.NewOptNilString(*v)
 }
 
 func serviceNilableString(v *string) serviceapi.OptNilString {
@@ -137,11 +157,11 @@ func serviceNilableString(v *string) serviceapi.OptNilString {
 	return serviceapi.NewOptNilString(*v)
 }
 
-func optNilTimestamp(t *time.Time) staffapi.OptNilTimestamp {
+func optNilTimestamp(t *time.Time) staffeeapi.OptNilTimestamp {
 	if t == nil {
-		return staffapi.OptNilTimestamp{}
+		return staffeeapi.OptNilTimestamp{}
 	}
-	return staffapi.NewOptNilTimestamp(staffapi.Timestamp(*t))
+	return staffeeapi.NewOptNilTimestamp(staffeeapi.Timestamp(*t))
 }
 
 func serviceOptNilTimestamp(t *time.Time) serviceapi.OptNilTimestamp {
@@ -151,6 +171,20 @@ func serviceOptNilTimestamp(t *time.Time) serviceapi.OptNilTimestamp {
 	return serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
 }
 
+func serviceOptString(v string) serviceapi.OptString { return serviceapi.NewOptString(v) }
+
+func serviceOptEmail(v string) serviceapi.OptEmailAddress {
+	return serviceapi.NewOptEmailAddress(serviceapi.EmailAddress(v))
+}
+
+func serviceOptTimestamp(t time.Time) serviceapi.OptTimestamp {
+	return serviceapi.NewOptTimestamp(serviceapi.Timestamp(t))
+}
+
+func serviceOptNilTimestampAt(t time.Time) serviceapi.OptNilTimestamp {
+	return serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(t))
+}
+
 func isSet(t *time.Time) bool { return t != nil }
 
 func breachRate(b abuse.Breach) float64 { return b.Rate() }
@@ -158,54 +192,54 @@ func breachRate(b abuse.Breach) float64 { return b.Rate() }
 func periodString(t time.Time) string { return t.Format(PeriodLayout) }
 
 // workspaceSuspension is the Workspace's suspension and who set it; absent unless it is suspended.
-func workspaceSuspension(w *ent.Workspace) staffapi.OptNilStaffSuspension {
+func workspaceSuspension(w *ent.Workspace) staffeeapi.OptNilStaffSuspension {
 	if w.SuspendedAt == nil {
-		return staffapi.OptNilStaffSuspension{}
+		return staffeeapi.OptNilStaffSuspension{}
 	}
-	actor := staffapi.StaffSuspensionActor{}
+	actor := staffeeapi.StaffSuspensionActor{}
 	if w.SuspendedByKind != nil {
-		actor.Kind = staffapi.StaffSuspensionActorKind(*w.SuspendedByKind)
+		actor.Kind = staffeeapi.StaffSuspensionActorKind(*w.SuspendedByKind)
 	}
 	if w.SuspendedByKind != nil && *w.SuspendedByKind == workspace.SuspendedByKindStaff && w.SuspendedByID != nil {
-		actor.ID = staffapi.NewOptNilString(*w.SuspendedByID)
+		actor.ID = staffeeapi.NewOptNilString(*w.SuspendedByID)
 	}
-	return staffapi.NewOptNilStaffSuspension(staffapi.StaffSuspension{
-		At:     staffapi.Timestamp(*w.SuspendedAt),
+	return staffeeapi.NewOptNilStaffSuspension(staffeeapi.StaffSuspension{
+		At:     staffeeapi.Timestamp(*w.SuspendedAt),
 		Actor:  actor,
 		Reason: nilableString(w.SuspensionReason),
 	})
 }
 
-func staffAuditActor(v auditapi.View) staffapi.StaffAuditActor {
-	return staffapi.StaffAuditActor{Kind: staffapi.StaffAuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)}
+func staffAuditActor(v auditapi.View) staffeeapi.StaffAuditActor {
+	return staffeeapi.StaffAuditActor{Kind: staffeeapi.StaffAuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)}
 }
 
-func staffAuditTarget(v auditapi.View) staffapi.StaffAuditTarget {
-	return staffapi.StaffAuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)}
+func staffAuditTarget(v auditapi.View) staffeeapi.StaffAuditTarget {
+	return staffeeapi.StaffAuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)}
 }
 
-func staffAuditDiff(d map[string]jx.Raw) staffapi.OptNilStaffAuditEntryResourceDiff {
+func staffAuditDiff(d map[string]jx.Raw) staffeeapi.OptNilStaffAuditEntryResourceDiff {
 	if d == nil {
-		return staffapi.OptNilStaffAuditEntryResourceDiff{}
+		return staffeeapi.OptNilStaffAuditEntryResourceDiff{}
 	}
-	return staffapi.NewOptNilStaffAuditEntryResourceDiff(d)
+	return staffeeapi.NewOptNilStaffAuditEntryResourceDiff(d)
 }
 
-func nilFloat64(v *float64) staffapi.NilFloat64 {
+func nilFloat64(v *float64) staffeeapi.NilFloat64 {
 	if v == nil {
-		return staffapi.NilFloat64{Null: true}
+		return staffeeapi.NilFloat64{Null: true}
 	}
-	return staffapi.NewNilFloat64(*v)
+	return staffeeapi.NewNilFloat64(*v)
 }
 
 // count narrows a count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
 
-func optNilSource(v *signupsurveyresponse.HeardFrom) staffapi.OptNilStaffSignupSource {
+func optNilSource(v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilStaffSignupSource {
 	if v == nil {
-		return staffapi.OptNilStaffSignupSource{}
+		return staffeeapi.OptNilStaffSignupSource{}
 	}
-	return staffapi.NewOptNilStaffSignupSource(staffapi.StaffSignupSource(*v))
+	return staffeeapi.NewOptNilStaffSignupSource(staffeeapi.StaffSignupSource(*v))
 }
 
 func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }

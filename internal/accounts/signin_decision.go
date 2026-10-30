@@ -12,8 +12,8 @@ type SigninFacts struct {
 	TrustFailure signin.Reason
 	// EmailHolder is the User that already holds the provider's email, nil when none does.
 	EmailHolder *EmailHolder
-	// SignupOpen is whether the Instance lets new Users sign up (ADR 0042).
-	SignupOpen bool
+	// SignupItemsInEffect: the Instance asks Sign-up items at sign-up (ADR 0062).
+	SignupItemsInEffect bool
 }
 
 // EmailHolder is what the decision needs to know of the User who holds the address.
@@ -39,6 +39,10 @@ const (
 	SigninTakeOver
 	// SigninCreate: a trusted email nobody holds; create a Verified User with the identity.
 	SigninCreate
+	// SigninPending: a trusted email nobody holds, or held by an Unverified User, while Sign-up
+	// items are in effect; keep a pending sign-up, and create the User or take it over once the
+	// items are answered (ADR 0062).
+	SigninPending
 )
 
 // SigninDecision is an outcome with the Reason of a refusal.
@@ -51,8 +55,10 @@ type SigninDecision struct {
 // signs its User in whatever the provider says of the email now (a person who changed
 // the address at the provider keeps the account); a provider whose email proof is not
 // accepted creates and links nothing; a trusted email held by a User links to it (Verified
-// holder) or takes it over (Unverified holder); an address nobody holds creates a User if
-// sign-up is open.
+// holder) or takes it over (Unverified holder); an address nobody holds creates a User, since
+// sign-up is always open (ADR 0063). While the Instance has Sign-up items, what would create a User
+// or take one over is held pending instead, for the person to answer them first (ADR 0062); the
+// completion decides again on the facts it then reads, with the items answered.
 func DecideSignin(f SigninFacts) SigninDecision {
 	switch {
 	case f.KnownIdentity:
@@ -61,10 +67,10 @@ func DecideSignin(f SigninFacts) SigninDecision {
 		return SigninDecision{Outcome: SigninRefuse, Reason: f.TrustFailure}
 	case f.EmailHolder != nil && f.EmailHolder.Verified:
 		return SigninDecision{Outcome: SigninLink}
+	case f.SignupItemsInEffect:
+		return SigninDecision{Outcome: SigninPending}
 	case f.EmailHolder != nil:
 		return SigninDecision{Outcome: SigninTakeOver}
-	case !f.SignupOpen:
-		return SigninDecision{Outcome: SigninRefuse, Reason: signin.ReasonSignupClosed}
 	default:
 		return SigninDecision{Outcome: SigninCreate}
 	}

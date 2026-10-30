@@ -31,9 +31,10 @@ know the rules. It gives the operator a mechanism instead: **Sign-up items**, ea
   Sign-in provider show the items, and the server refuses a sign-up that lacks a required
   acceptance; the browser's checkbox is never the only check.
 - **A Sign-in provider creates no User before the items are answered.** When the decision of ADR 0048
-  would create a User and the Instance has Sign-up items, the callback keeps a short-lived pending
-  sign-up on the server and the app shows the items; the User, its Linked identity, its first
-  Workspace and the Consent records are created together on submit, and declining creates nothing. A
+  would create a User, or take over an Unverified User holding the address, and the Instance has
+  Sign-up items, the callback keeps a short-lived pending sign-up on the server and the app shows the
+  items; the User (created, or taken over), its Linked identity, its first Workspace and the Consent
+  records are written together on submit, and declining changes nothing. A
   known Linked identity signs in as before.
 - **A new version of a required item stops every User who has not accepted it**, on their next
   request, at an accept-or-sign-out screen, from which they may also delete their account. Their

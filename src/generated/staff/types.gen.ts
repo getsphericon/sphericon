@@ -6,6 +6,13 @@ export type ClientOptions = {
 };
 
 /**
+ * RFC 7807 bad request response
+ */
+export type BadRequestProblem = {
+  body: ProblemDetails;
+};
+
+/**
  * RFC 7807 conflict response
  */
 export type ConflictProblem = {
@@ -105,6 +112,16 @@ export type InUseProblemDetails = {
 };
 
 /**
+ * The label a Staff member gives a published Legal document version, unique per item
+ */
+export type LegalDocumentLabel = string;
+
+/**
+ * A Legal document's text, in Markdown
+ */
+export type LegalDocumentMarkdown = string;
+
+/**
  * RFC 7807 payment required response: the feature needs an Enterprise license
  */
 export type PaymentRequiredProblem = {
@@ -125,9 +142,9 @@ export type PreconditionRequiredProblem = {
 export const ProblemCode = {
   SECOND_FACTOR_REQUIRED: 'second_factor_required',
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
-  SIGNUP_CLOSED: 'signup_closed',
   PERMISSION_REQUIRED: 'permission_required',
-  MIGRATIONS_PENDING: 'migrations_pending'
+  MIGRATIONS_PENDING: 'migrations_pending',
+  ACCEPTANCE_PENDING: 'acceptance_pending'
 } as const;
 
 /**
@@ -217,204 +234,28 @@ export type ProblemDetails = {
 };
 
 /**
- * A Workspace's standing with the abuse detector (ADR 0026)
+ * A Sign-up item's key: its address, and the last segment of its Legal document's public page
  */
-export type StaffAbuse = {
-  /**
-   * Exempt from the detector: neither warned nor frozen automatically
-   */
-  exempt: boolean;
-  /**
-   * When a Staff member last lifted a suspension; the detector counts only Events after it
-   */
-  clearedAt?: Timestamp | null;
-  /**
-   * When the owners were told of the current warning; absent outside an episode
-   */
-  warningNotifiedAt?: Timestamp | null;
-  /**
-   * When the owners were last told of a suspension
-   */
-  freezeNotifiedAt?: Timestamp | null;
-  /**
-   * Present while the Workspace is in the warning tier, computed now
-   */
-  warning?: StaffAbuseWarning | null;
-};
+export type SignupItemKey = string;
 
 /**
- * Which metric of a Sending domain breached the abuse detector's warning limit
+ * What a Sign-up item asks of a person (ADR 0062)
  */
-export const StaffAbuseMetric = { COMPLAINT: 'complaint', BOUNCE: 'bounce' } as const;
-
-/**
- * Which metric of a Sending domain breached the abuse detector's warning limit
- */
-export type StaffAbuseMetric = typeof StaffAbuseMetric[keyof typeof StaffAbuseMetric];
-
-/**
- * A Sending domain in the warning tier (ADR 0026), by the detector's own computation
- */
-export type StaffAbuseWarning = {
-  domain: string;
-  metric: StaffAbuseMetric;
-  /**
-   * The rate, 0–1
-   */
-  rate: number;
-};
-
-/**
- * The actor of an Audit entry
- */
-export type StaffAuditActor = {
-  /**
-   * The kind of actor; a staff member carries no id and the name "Sphericon staff"; a service is a Service credential, named as the Staff member who issued it chose
-   */
-  kind: StaffAuditActorKind;
-  /**
-   * The actor's id (a User id or an API token id); absent for the system and a staff member
-   */
-  id?: string | null;
-  /**
-   * Display name snapshot taken when the entry was written
-   */
-  name?: string | null;
-};
-
-/**
- * Who performed an audited change, as the Workspace's own team sees it
- */
-export const StaffAuditActorKind = {
-  USER: 'user',
-  API_TOKEN: 'api_token',
-  STAFF: 'staff',
-  SERVICE: 'service',
-  SYSTEM: 'system'
+export const SignupItemKind = {
+  REQUIRED_ACCEPTANCE: 'required_acceptance',
+  OPTIONAL_CONSENT: 'optional_consent',
+  NOTICE: 'notice'
 } as const;
 
 /**
- * Who performed an audited change, as the Workspace's own team sees it
+ * What a Sign-up item asks of a person (ADR 0062)
  */
-export type StaffAuditActorKind = typeof StaffAuditActorKind[keyof typeof StaffAuditActorKind];
+export type SignupItemKind = typeof SignupItemKind[keyof typeof SignupItemKind];
 
 /**
- * A page of a Workspace's Audit log, newest first
+ * A Sign-up item's title: what the sign-up form shows
  */
-export type StaffAuditEntryList = {
-  items: Array<StaffAuditEntryResource>;
-  /**
-   * Pass as `cursor` for the next page; absent on the last page
-   */
-  nextCursor?: string | null;
-};
-
-/**
- * One immutable Audit entry of a Workspace. Secrets are never recorded; they appear as changed only.
- */
-export type StaffAuditEntryResource = {
-  /**
-   * Unique identifier
-   */
-  id: EntityId;
-  /**
-   * When the change happened
-   */
-  occurredAt: Timestamp;
-  /**
-   * Who did it
-   */
-  actor: StaffAuditActor;
-  /**
-   * What was done, as `<entity>.<verb>`
-   */
-  action: string;
-  /**
-   * What it was done to
-   */
-  target: StaffAuditTarget;
-  /**
-   * Before/after of the changed fields
-   */
-  diff?: {
-    [key: string]: unknown;
-  } | null;
-  /**
-   * Request id of the change
-   */
-  requestId?: string | null;
-  /**
-   * Client address of the change
-   */
-  ip?: string | null;
-  /**
-   * Client user agent of the change
-   */
-  userAgent?: string | null;
-};
-
-/**
- * What an audited change was done to
- */
-export type StaffAuditTarget = {
-  /**
-   * Entity type, e.g. membership
-   */
-  type: string;
-  /**
-   * The target's id
-   */
-  id?: string | null;
-  /**
-   * Name snapshot taken when the entry was written
-   */
-  name?: string | null;
-};
-
-/**
- * A Workspace's deliverability over the trailing window: the rates of ADR 0011 per
- * Sending domain, and how much it sent. Counts only, never message content.
- */
-export type StaffDeliverability = {
-  /**
-   * Length of the trailing window, in hours
-   */
-  windowHours: number;
-  /**
-   * Fewest sends in the window (per Sending domain) for a rate to be defined
-   */
-  volumeFloor: number;
-  /**
-   * Messages sent in the window across all Sending domains
-   */
-  sendVolume: number;
-  /**
-   * One entry per Sending domain, oldest first
-   */
-  domains: Array<StaffDomainRates>;
-};
-
-/**
- * The Complaint and Bounce rates of one Sending domain over the trailing window
- */
-export type StaffDomainRates = {
-  /**
-   * Sending domain id
-   */
-  sendingDomainId: EntityId;
-  /**
-   * The domain the rates are for
-   */
-  domain: string;
-  /**
-   * Complaints over delivered mail; the rate is null when nothing was delivered in the window
-   */
-  complaintRate: StaffRate;
-  /**
-   * Hard bounces over sent
-   */
-  bounceRate: StaffRate;
-};
+export type SignupItemTitle = string;
 
 /**
  * A TOTP secret awaiting its first confirming code
@@ -435,46 +276,45 @@ export type StaffEnrolment = {
 };
 
 /**
- * The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
- * anything changed
+ * Save the draft of an item's Legal document
  */
-export type StaffExemptionChange = {
-  changed: boolean;
-  workspace: StaffWorkspaceResource;
+export type StaffLegalDocumentDraftInput = {
+  markdown: LegalDocumentMarkdown;
 };
 
 /**
- * An active Staff hold on a Workspace, as the console shows it (read only)
+ * Publish the draft as a new version
  */
-export type StaffHold = {
+export type StaffLegalDocumentPublishInput = {
   /**
-   * Unique per Workspace, chosen by the setter
+   * Unique among the item's versions
    */
-  key: string;
+  label: LegalDocumentLabel;
+};
+
+/**
+ * A published Legal document version, as the console shows it
+ */
+export type StaffLegalDocumentVersion = {
   /**
-   * Machine reason code
+   * The label it was published with
    */
-  reasonCode: string;
+  label: LegalDocumentLabel;
   /**
-   * The message the setter gave for the Owner
+   * When it was published, and took effect
    */
-  message: string;
+  publishedAt: Timestamp;
   /**
-   * When the hold was first set
+   * The Staff member who published it
    */
-  createdAt: Timestamp;
-  /**
-   * When the hold lapses unless renewed
-   */
-  expiresAt: Timestamp;
-  /**
-   * Who set it: the name of its Service credential
-   */
-  setBy: string;
-  /**
-   * Where an Owner or Admin can resolve the hold, as the setter gave it; absent when none was given
-   */
-  actionUrl?: string | null;
+  publishedBy: StaffResource;
+};
+
+/**
+ * Every published version of an item's Legal document, the latest (the current one) first
+ */
+export type StaffLegalDocumentVersionList = {
+  items: Array<StaffLegalDocumentVersion>;
 };
 
 /**
@@ -516,25 +356,6 @@ export type StaffLoginResult = {
 };
 
 /**
- * A rate as the (numerator, denominator, rate) triple (ADR 0011)
- */
-export type StaffRate = {
-  /**
-   * Events counted against the rate
-   */
-  numerator: number;
-  /**
-   * The population the rate is over
-   */
-  denominator: number;
-  /**
-   * numerator / denominator; null (undefined) when fewer sends than the volume floor
-   * were made in the window, never reported as 0
-   */
-  rate: number | null;
-};
-
-/**
  * The authenticated platform Staff member (shown to customers only as "Sphericon staff")
  */
 export type StaffResource = {
@@ -560,333 +381,100 @@ export type StaffSecondFactorInput = {
 };
 
 /**
- * How many people work at the User's company (second question)
+ * Add a Sign-up item. It goes after the existing ones.
  */
-export const StaffSignupCompanySize = {
-  1: '1',
-  '2_10': '2_10',
-  '11_50': '11_50',
-  '51_200': '51_200',
-  '201_1000': '201_1000',
-  '1000_PLUS': '1000_plus',
-  OTHER: 'other'
-} as const;
-
-/**
- * How many people work at the User's company (second question)
- */
-export type StaffSignupCompanySize = typeof StaffSignupCompanySize[keyof typeof StaffSignupCompanySize];
-
-/**
- * How many Users chose a company size
- */
-export type StaffSignupCompanySizeCount = {
-  choice: StaffSignupCompanySize;
-  count: number;
+export type StaffSignupItemInput = {
+  /**
+   * Unique across the Instance, and never changed
+   */
+  key: SignupItemKey;
+  title: SignupItemTitle;
+  /**
+   * Never changed
+   */
+  kind: SignupItemKind;
+  /**
+   * Mark the item as consent to the operator's mailings: only an optional consent, and only
+   * one item of the Instance
+   */
+  mailingsConsent?: boolean;
 };
 
 /**
- * What the User mainly wants to do with the product (third question)
+ * The Instance's Sign-up items, in the order of the sign-up form
  */
-export const StaffSignupGoal = {
-  BROADCASTS: 'broadcasts',
-  AUTOMATIONS: 'automations',
-  TRACKING: 'tracking',
-  MIGRATING: 'migrating',
-  OTHER: 'other'
-} as const;
-
-/**
- * What the User mainly wants to do with the product (third question)
- */
-export type StaffSignupGoal = typeof StaffSignupGoal[keyof typeof StaffSignupGoal];
-
-/**
- * How many Users chose a main goal
- */
-export type StaffSignupGoalCount = {
-  choice: StaffSignupGoal;
-  count: number;
+export type StaffSignupItemList = {
+  items: Array<StaffSignupItemResource>;
 };
 
 /**
- * An `other` text and how many Users wrote it
+ * The new order of the sign-up form: the id of every Sign-up item, archived ones included, each
+ * once
  */
-export type StaffSignupOtherTextCount = {
-  text: string;
-  count: number;
+export type StaffSignupItemOrder = {
+  ids: Array<EntityId>;
 };
 
 /**
- * What the User does (Sign-up survey, first question)
+ * A Sign-up item of the Instance (ADR 0062) with its Legal document's draft and current
+ * version
  */
-export const StaffSignupRole = {
-  FOUNDER: 'founder',
-  MARKETER: 'marketer',
-  DEVELOPER: 'developer',
-  PRODUCT: 'product',
-  OTHER: 'other'
-} as const;
-
-/**
- * What the User does (Sign-up survey, first question)
- */
-export type StaffSignupRole = typeof StaffSignupRole[keyof typeof StaffSignupRole];
-
-/**
- * How many Users chose a role
- */
-export type StaffSignupRoleCount = {
-  choice: StaffSignupRole;
-  count: number;
-};
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export const StaffSignupSource = {
-  SEARCH: 'search',
-  GITHUB: 'github',
-  SOCIAL: 'social',
-  RECOMMENDATION: 'recommendation',
-  OTHER: 'other'
-} as const;
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export type StaffSignupSource = typeof StaffSignupSource[keyof typeof StaffSignupSource];
-
-/**
- * How many Users chose a source
- */
-export type StaffSignupSourceCount = {
-  choice: StaffSignupSource;
-  count: number;
-};
-
-/**
- * The Sign-up survey answers of every User who answered, counted per question. A choice nobody
- * made is absent from its list; a question's `other` texts are listed with their counts, most
- * frequent first.
- */
-export type StaffSignupSurveyCounts = {
+export type StaffSignupItemResource = {
   /**
-   * How many Users answered the survey
+   * Unique identifier
    */
-  responses: number;
-  role: Array<StaffSignupRoleCount>;
-  roleOtherTexts: Array<StaffSignupOtherTextCount>;
-  companySize: Array<StaffSignupCompanySizeCount>;
-  companySizeOtherTexts: Array<StaffSignupOtherTextCount>;
-  mainGoal: Array<StaffSignupGoalCount>;
-  mainGoalOtherTexts: Array<StaffSignupOtherTextCount>;
+  id: EntityId;
   /**
-   * Only the Users who answered the optional question are counted
+   * The item's key: its Legal document's public page is served under it
    */
-  heardFrom: Array<StaffSignupSourceCount>;
-  heardFromOtherTexts: Array<StaffSignupOtherTextCount>;
-};
-
-/**
- * One User's answers to the Sign-up survey. A User who has not answered has none.
- */
-export type StaffSignupSurveyResponseResource = {
+  key: SignupItemKey;
   /**
-   * The answering User's id
+   * What the sign-up form shows
    */
-  userId: EntityId;
+  title: SignupItemTitle;
+  kind: SignupItemKind;
   /**
-   * What the User does
+   * Where the item stands in the sign-up form, smallest first
    */
-  role: StaffSignupRole;
+  position: number;
   /**
-   * What the User does, when `role` is `other`
+   * Whether the item stands for consent to the operator's mailings
    */
-  roleOtherText?: string | null;
+  mailingsConsent: boolean;
   /**
-   * How many people work at the User's company
+   * The draft of the next version, absent until one is written. A visitor never sees it.
    */
-  companySize: StaffSignupCompanySize;
+  draft?: LegalDocumentMarkdown;
   /**
-   * The company size, when `companySize` is `other`
+   * The version in effect, absent until one is published. Visitors see the item only once it
+   * has one.
    */
-  companySizeOtherText?: string | null;
+  currentVersion?: StaffLegalDocumentVersion;
   /**
-   * What the User mainly wants to do with the product
+   * When the item was archived, absent while it is in use. An archived item is no longer asked
+   * and its public page is gone; its published versions stay.
    */
-  mainGoal: StaffSignupGoal;
+  archivedAt?: Timestamp;
   /**
-   * The main goal, when `mainGoal` is `other`
-   */
-  mainGoalOtherText?: string | null;
-  /**
-   * Where the User heard about the product; absent when the optional question was skipped
-   */
-  heardFrom?: StaffSignupSource | null;
-  /**
-   * Where the User heard about the product, when `heardFrom` is `other`
-   */
-  heardFromOtherText?: string | null;
-  /**
-   * When the User answered
-   */
-  answeredAt: Timestamp;
-};
-
-/**
- * Why a Workspace is being suspended; the owner is told
- */
-export type StaffSuspendInput = {
-  /**
-   * The reason, required: the Workspace owner is told why sending stopped
-   */
-  reason: string;
-};
-
-/**
- * A Workspace's suspension state (ADR 0007)
- */
-export type StaffSuspension = {
-  /**
-   * When outbound sending was suspended
-   */
-  at: Timestamp;
-  /**
-   * Who suspended it
-   */
-  actor: StaffSuspensionActor;
-  /**
-   * Why, as given by the actor
-   */
-  reason?: string | null;
-};
-
-/**
- * The actor of a suspension. Unlike a customer, a Staff member sees the real Staff member id.
- */
-export type StaffSuspensionActor = {
-  kind: StaffSuspensionActorKind;
-  /**
-   * The Staff member id; present only for the `staff` kind
-   */
-  id?: string | null;
-};
-
-/**
- * Who set a Workspace suspension (ADR 0026)
- */
-export const StaffSuspensionActorKind = {
-  SYSTEM: 'system',
-  CLI: 'cli',
-  STAFF: 'staff'
-} as const;
-
-/**
- * Who set a Workspace suspension (ADR 0026)
- */
-export type StaffSuspensionActorKind = typeof StaffSuspensionActorKind[keyof typeof StaffSuspensionActorKind];
-
-/**
- * The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether
- * anything changed (suspending a suspended Workspace and unsuspending an active one
- * change nothing).
- */
-export type StaffSuspensionChange = {
-  changed: boolean;
-  workspace: StaffWorkspaceResource;
-};
-
-/**
- * A Workspace with its deliverability and active holds, as the detail page shows it
- */
-export type StaffWorkspaceDetailResource = {
-  /**
-   * The Workspace id: its short opaque public address (ADR 0043)
-   */
-  id: WorkspaceId;
-  name: string;
-  /**
-   * When the Workspace was created
+   * Creation timestamp
    */
   createdAt: Timestamp;
-  /**
-   * When the Workspace was deleted; present from deletion until a restore (ADR 0043)
-   */
-  discardedAt?: Timestamp | null;
-  /**
-   * When the Workspace's data was erased; the row stays as a tombstone
-   */
-  erasedAt?: Timestamp | null;
-  /**
-   * Present only while sending is suspended
-   */
-  suspension?: StaffSuspension | null;
-  /**
-   * Exempt from the abuse detector (set by a Staff member)
-   */
-  exempt: boolean;
-  /**
-   * The owners were warned and the Workspace has not left the warning tier since
-   */
-  warned: boolean;
-  /**
-   * Active Staff holds by key; a lapsed hold is not listed
-   */
-  holds: Array<StaffHold>;
-  deliverability: StaffDeliverability;
-  abuse: StaffAbuse;
 };
 
 /**
- * A Workspace as the Staff console sees it: metadata only, never Contacts,
- * content or Events (ADR 0026).
+ * Change a Sign-up item
  */
-export type StaffWorkspaceResource = {
+export type StaffSignupItemUpdate = {
   /**
-   * The Workspace id: its short opaque public address (ADR 0043)
+   * A new title. It is not a new version of the Legal document: the form shows it at once.
    */
-  id: WorkspaceId;
-  name: string;
+  title?: SignupItemTitle;
   /**
-   * When the Workspace was created
+   * Mark or unmark the item as consent to the operator's mailings: only an optional consent,
+   * and only one item of the Instance
    */
-  createdAt: Timestamp;
-  /**
-   * When the Workspace was deleted; present from deletion until a restore (ADR 0043)
-   */
-  discardedAt?: Timestamp | null;
-  /**
-   * When the Workspace's data was erased; the row stays as a tombstone
-   */
-  erasedAt?: Timestamp | null;
-  /**
-   * Present only while sending is suspended
-   */
-  suspension?: StaffSuspension | null;
-  /**
-   * Exempt from the abuse detector (set by a Staff member)
-   */
-  exempt: boolean;
-  /**
-   * The owners were warned and the Workspace has not left the warning tier since
-   */
-  warned: boolean;
+  mailingsConsent?: boolean;
 };
-
-/**
- * Which Workspaces the list surfaces for review
- */
-export const StaffWorkspaceReview = {
-  WARNED: 'warned',
-  SYSTEM_FROZEN: 'systemFrozen',
-  DELETED: 'deleted'
-} as const;
-
-/**
- * Which Workspaces the list surfaces for review
- */
-export type StaffWorkspaceReview = typeof StaffWorkspaceReview[keyof typeof StaffWorkspaceReview];
 
 export type TimeZoneName = string;
 
@@ -942,27 +530,6 @@ export type UsedByKind = typeof UsedByKind[keyof typeof UsedByKind];
  * Workspace's one public address.
  */
 export type WorkspaceId = string;
-
-/**
- * Page number (1-based)
- */
-export type PageQueryPage = number;
-
-/**
- * Page size
- */
-export type PageQueryPageSize = number;
-
-/**
- * Only Workspaces in this review state
- */
-export type StaffWorkspaceSearchReview = StaffWorkspaceReview;
-
-/**
- * Only Workspaces whose id or name contains this text; the name matches case-insensitively,
- * the id exactly
- */
-export type StaffWorkspaceSearchSearch = string;
 
 export type StaffAuthLoginData = {
   body: StaffLoginInput;
@@ -1072,136 +639,99 @@ export type StaffMeGetResponses = {
 
 export type StaffMeGetResponse = StaffMeGetResponses[keyof StaffMeGetResponses];
 
-export type StaffSignupSurveyCountsData = {
+export type StaffSignupItemsListData = {
   body?: never;
   path?: never;
   query?: never;
-  url: '/signup-survey';
+  url: '/signup-items';
 };
 
-export type StaffSignupSurveyCountsErrors = {
+export type StaffSignupItemsListErrors = {
   /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
 };
 
-export type StaffSignupSurveyCountsError = StaffSignupSurveyCountsErrors[keyof StaffSignupSurveyCountsErrors];
+export type StaffSignupItemsListError = StaffSignupItemsListErrors[keyof StaffSignupItemsListErrors];
 
-export type StaffSignupSurveyCountsResponses = {
+export type StaffSignupItemsListResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffSignupSurveyCounts;
+  200: StaffSignupItemList;
 };
 
-export type StaffSignupSurveyCountsResponse = StaffSignupSurveyCountsResponses[keyof StaffSignupSurveyCountsResponses];
+export type StaffSignupItemsListResponse = StaffSignupItemsListResponses[keyof StaffSignupItemsListResponses];
 
-export type StaffSignupSurveyGetData = {
-  body?: never;
-  path: {
-    userId: EntityId;
-  };
-  query?: never;
-  url: '/signup-survey/users/{userId}';
-};
-
-export type StaffSignupSurveyGetErrors = {
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-};
-
-export type StaffSignupSurveyGetError = StaffSignupSurveyGetErrors[keyof StaffSignupSurveyGetErrors];
-
-export type StaffSignupSurveyGetResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: StaffSignupSurveyResponseResource;
-};
-
-export type StaffSignupSurveyGetResponse = StaffSignupSurveyGetResponses[keyof StaffSignupSurveyGetResponses];
-
-export type StaffWorkspacesListData = {
-  body?: never;
+export type StaffSignupItemsCreateData = {
+  body: StaffSignupItemInput;
   path?: never;
-  query?: {
-    /**
-     * Only Workspaces in this review state
-     */
-    review?: StaffWorkspaceReview;
-    /**
-     * Only Workspaces whose id or name contains this text; the name matches case-insensitively,
-     * the id exactly
-     */
-    search?: string;
-    /**
-     * Page number (1-based)
-     */
-    page?: number;
-    /**
-     * Page size
-     */
-    pageSize?: number;
-  };
-  url: '/workspaces';
+  query?: never;
+  url: '/signup-items';
 };
 
-export type StaffWorkspacesListErrors = {
+export type StaffSignupItemsCreateErrors = {
   /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
-};
-
-export type StaffWorkspacesListError = StaffWorkspacesListErrors[keyof StaffWorkspacesListErrors];
-
-export type StaffWorkspacesListResponses = {
   /**
-   * Paginated response
+   * RFC 7807 validation response
    */
-  200: {
-    /**
-     * List of items
-     */
-    items: Array<StaffWorkspaceResource>;
-    /**
-     * Page number (1-based)
-     */
-    page: number;
-    /**
-     * Page size
-     */
-    pageSize: number;
-    /**
-     * Total number of elements
-     */
-    totalItems: number;
-    /**
-     * Total number of pages
-     */
-    totalPages: number;
-  };
+  422: ProblemDetails;
 };
 
-export type StaffWorkspacesListResponse = StaffWorkspacesListResponses[keyof StaffWorkspacesListResponses];
+export type StaffSignupItemsCreateError = StaffSignupItemsCreateErrors[keyof StaffSignupItemsCreateErrors];
 
-export type StaffWorkspacesGetData = {
+export type StaffSignupItemsCreateResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: StaffSignupItemResource;
+};
+
+export type StaffSignupItemsCreateResponse = StaffSignupItemsCreateResponses[keyof StaffSignupItemsCreateResponses];
+
+export type StaffSignupItemsReorderData = {
+  body: StaffSignupItemOrder;
+  path?: never;
+  query?: never;
+  url: '/signup-items/order';
+};
+
+export type StaffSignupItemsReorderErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type StaffSignupItemsReorderError = StaffSignupItemsReorderErrors[keyof StaffSignupItemsReorderErrors];
+
+export type StaffSignupItemsReorderResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSignupItemList;
+};
+
+export type StaffSignupItemsReorderResponse = StaffSignupItemsReorderResponses[keyof StaffSignupItemsReorderResponses];
+
+export type StaffSignupItemsGetData = {
   body?: never;
   path: {
-    workspaceId: WorkspaceId;
+    id: EntityId;
   };
   query?: never;
-  url: '/workspaces/{workspaceId}';
+  url: '/signup-items/{id}';
 };
 
-export type StaffWorkspacesGetErrors = {
+export type StaffSignupItemsGetErrors = {
   /**
    * RFC 7807 unauthorized response
    */
@@ -1212,102 +742,27 @@ export type StaffWorkspacesGetErrors = {
   404: ProblemDetails;
 };
 
-export type StaffWorkspacesGetError = StaffWorkspacesGetErrors[keyof StaffWorkspacesGetErrors];
+export type StaffSignupItemsGetError = StaffSignupItemsGetErrors[keyof StaffSignupItemsGetErrors];
 
-export type StaffWorkspacesGetResponses = {
+export type StaffSignupItemsGetResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffWorkspaceDetailResource;
+  200: StaffSignupItemResource;
 };
 
-export type StaffWorkspacesGetResponse = StaffWorkspacesGetResponses[keyof StaffWorkspacesGetResponses];
+export type StaffSignupItemsGetResponse = StaffSignupItemsGetResponses[keyof StaffSignupItemsGetResponses];
 
-export type StaffWorkspaceAuditListData = {
-  body?: never;
+export type StaffSignupItemsUpdateData = {
+  body: StaffSignupItemUpdate;
   path: {
-    workspaceId: WorkspaceId;
-  };
-  query?: {
-    /**
-     * Cursor from a previous page
-     */
-    cursor?: string;
-    /**
-     * Page size
-     */
-    limit?: number;
-  };
-  url: '/workspaces/{workspaceId}/audit-entries';
-};
-
-export type StaffWorkspaceAuditListErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-};
-
-export type StaffWorkspaceAuditListError = StaffWorkspaceAuditListErrors[keyof StaffWorkspaceAuditListErrors];
-
-export type StaffWorkspaceAuditListResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: StaffAuditEntryList;
-};
-
-export type StaffWorkspaceAuditListResponse = StaffWorkspaceAuditListResponses[keyof StaffWorkspaceAuditListResponses];
-
-export type StaffWorkspacesExemptData = {
-  body?: never;
-  path: {
-    workspaceId: WorkspaceId;
+    id: EntityId;
   };
   query?: never;
-  url: '/workspaces/{workspaceId}/exempt';
+  url: '/signup-items/{id}';
 };
 
-export type StaffWorkspacesExemptErrors = {
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-};
-
-export type StaffWorkspacesExemptError = StaffWorkspacesExemptErrors[keyof StaffWorkspacesExemptErrors];
-
-export type StaffWorkspacesExemptResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: StaffExemptionChange;
-};
-
-export type StaffWorkspacesExemptResponse = StaffWorkspacesExemptResponses[keyof StaffWorkspacesExemptResponses];
-
-export type StaffWorkspacesSuspendData = {
-  body: StaffSuspendInput;
-  path: {
-    workspaceId: WorkspaceId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/suspend';
-};
-
-export type StaffWorkspacesSuspendErrors = {
+export type StaffSignupItemsUpdateErrors = {
   /**
    * RFC 7807 unauthorized response
    */
@@ -1322,27 +777,62 @@ export type StaffWorkspacesSuspendErrors = {
   422: ProblemDetails;
 };
 
-export type StaffWorkspacesSuspendError = StaffWorkspacesSuspendErrors[keyof StaffWorkspacesSuspendErrors];
+export type StaffSignupItemsUpdateError = StaffSignupItemsUpdateErrors[keyof StaffSignupItemsUpdateErrors];
 
-export type StaffWorkspacesSuspendResponses = {
+export type StaffSignupItemsUpdateResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffSuspensionChange;
+  200: StaffSignupItemResource;
 };
 
-export type StaffWorkspacesSuspendResponse = StaffWorkspacesSuspendResponses[keyof StaffWorkspacesSuspendResponses];
+export type StaffSignupItemsUpdateResponse = StaffSignupItemsUpdateResponses[keyof StaffSignupItemsUpdateResponses];
 
-export type StaffWorkspacesUnexemptData = {
+export type StaffSignupItemsArchiveData = {
   body?: never;
   path: {
-    workspaceId: WorkspaceId;
+    id: EntityId;
   };
   query?: never;
-  url: '/workspaces/{workspaceId}/unexempt';
+  url: '/signup-items/{id}/archive';
 };
 
-export type StaffWorkspacesUnexemptErrors = {
+export type StaffSignupItemsArchiveErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type StaffSignupItemsArchiveError = StaffSignupItemsArchiveErrors[keyof StaffSignupItemsArchiveErrors];
+
+export type StaffSignupItemsArchiveResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSignupItemResource;
+};
+
+export type StaffSignupItemsArchiveResponse = StaffSignupItemsArchiveResponses[keyof StaffSignupItemsArchiveResponses];
+
+export type StaffSignupItemsSaveDraftData = {
+  body: StaffLegalDocumentDraftInput;
+  path: {
+    id: EntityId;
+  };
+  query?: never;
+  url: '/signup-items/{id}/draft';
+};
+
+export type StaffSignupItemsSaveDraftErrors = {
   /**
    * RFC 7807 unauthorized response
    */
@@ -1353,27 +843,27 @@ export type StaffWorkspacesUnexemptErrors = {
   404: ProblemDetails;
 };
 
-export type StaffWorkspacesUnexemptError = StaffWorkspacesUnexemptErrors[keyof StaffWorkspacesUnexemptErrors];
+export type StaffSignupItemsSaveDraftError = StaffSignupItemsSaveDraftErrors[keyof StaffSignupItemsSaveDraftErrors];
 
-export type StaffWorkspacesUnexemptResponses = {
+export type StaffSignupItemsSaveDraftResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffExemptionChange;
+  200: StaffSignupItemResource;
 };
 
-export type StaffWorkspacesUnexemptResponse = StaffWorkspacesUnexemptResponses[keyof StaffWorkspacesUnexemptResponses];
+export type StaffSignupItemsSaveDraftResponse = StaffSignupItemsSaveDraftResponses[keyof StaffSignupItemsSaveDraftResponses];
 
-export type StaffWorkspacesUnsuspendData = {
+export type StaffSignupItemsListVersionsData = {
   body?: never;
   path: {
-    workspaceId: WorkspaceId;
+    id: EntityId;
   };
   query?: never;
-  url: '/workspaces/{workspaceId}/unsuspend';
+  url: '/signup-items/{id}/versions';
 };
 
-export type StaffWorkspacesUnsuspendErrors = {
+export type StaffSignupItemsListVersionsErrors = {
   /**
    * RFC 7807 unauthorized response
    */
@@ -1384,13 +874,48 @@ export type StaffWorkspacesUnsuspendErrors = {
   404: ProblemDetails;
 };
 
-export type StaffWorkspacesUnsuspendError = StaffWorkspacesUnsuspendErrors[keyof StaffWorkspacesUnsuspendErrors];
+export type StaffSignupItemsListVersionsError = StaffSignupItemsListVersionsErrors[keyof StaffSignupItemsListVersionsErrors];
 
-export type StaffWorkspacesUnsuspendResponses = {
+export type StaffSignupItemsListVersionsResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffSuspensionChange;
+  200: StaffLegalDocumentVersionList;
 };
 
-export type StaffWorkspacesUnsuspendResponse = StaffWorkspacesUnsuspendResponses[keyof StaffWorkspacesUnsuspendResponses];
+export type StaffSignupItemsListVersionsResponse = StaffSignupItemsListVersionsResponses[keyof StaffSignupItemsListVersionsResponses];
+
+export type StaffSignupItemsPublishData = {
+  body: StaffLegalDocumentPublishInput;
+  path: {
+    id: EntityId;
+  };
+  query?: never;
+  url: '/signup-items/{id}/versions';
+};
+
+export type StaffSignupItemsPublishErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type StaffSignupItemsPublishError = StaffSignupItemsPublishErrors[keyof StaffSignupItemsPublishErrors];
+
+export type StaffSignupItemsPublishResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: StaffSignupItemResource;
+};
+
+export type StaffSignupItemsPublishResponse = StaffSignupItemsPublishResponses[keyof StaffSignupItemsPublishResponses];

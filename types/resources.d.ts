@@ -18,6 +18,15 @@ export default interface Resources {
       "successTitle": "Invitation accepted",
       "title": "Accept invitation"
     },
+    "acceptance": {
+      "accept": "Accept and continue",
+      "acceptErrorTitle": "Could not record your acceptance",
+      "deleteWorkspace": "Delete {{name}}",
+      "intro": "A document you must accept to use this app has a new version. Read it and accept it to go on, or sign out. You can also delete your account here.",
+      "signOut": "Sign out",
+      "soleOwned": "You are the only owner of these workspaces. Delete them first, then delete your account.",
+      "title": "Before you go on"
+    },
     "account": {
       "backToDashboard": "Dashboard",
       "instance": "Instance",
@@ -488,6 +497,10 @@ export default interface Resources {
       "deleteTitle": "Are you sure?"
     },
     "console": {
+      "home": {
+        "signedInAs": "Signed in as {{email}}",
+        "title": "Staff console"
+      },
       "login": {
         "codeLabel": "Authentication code",
         "confirmButton": "Confirm and sign in",
@@ -512,7 +525,92 @@ export default interface Resources {
         "logoutErrorTitle": "Sign out failed"
       },
       "nav": {
+        "home": "Home",
+        "signupItems": "Sign-up items",
         "workspaces": "Workspaces"
+      },
+      "signupItem": {
+        "archive": "Archive",
+        "archiveDescription": "It leaves the sign-up form and its public page at once, and cannot be restored. Its published versions stay listed.",
+        "archiveDone": "Item archived",
+        "archiveError": "Could not archive the item",
+        "archiveTitle": "Archive this item?",
+        "archived": "Archived",
+        "archivedDescription": "Archived {{date}}: it is no longer asked at sign-up and its public page is gone. Its published versions stay listed.",
+        "currentVersion": "Current version: {{label}}, published {{date}}",
+        "draftDescription": "Markdown. Visitors see nothing of the draft until it is published.",
+        "draftError": "Could not save the draft",
+        "draftLabel": "Draft",
+        "draftSaved": "Draft saved",
+        "draftTitle": "Draft",
+        "labelDescription": "Unique among the versions of this item, such as a date",
+        "labelLabel": "Version label",
+        "labelRequired": "Enter a label",
+        "loadError": "Could not load the sign-up item",
+        "mailingsError": "Could not change the mailings consent",
+        "noVersion": "No version is published yet: visitors do not see this item.",
+        "noVersions": "No version is published yet",
+        "preview": "Preview",
+        "publicPage": "Open the public page",
+        "publish": "Publish",
+        "publishError": "Could not publish the version",
+        "publishWarning": "It takes effect at once and stops every User who has not accepted it: until they accept it, they can only read it, sign out or delete their account.",
+        "publishWarningTitle": "Publish a new version of a required item?",
+        "published": "Version published",
+        "saveBeforePublishing": "Save the draft first: publishing takes the saved text.",
+        "saveDraft": "Save draft",
+        "saveTitle": "Save title",
+        "titleDescription": "What the sign-up form shows. A new title is not a new version of the document.",
+        "titleError": "Could not change the title",
+        "titleLabel": "Title",
+        "titleRequired": "Enter a title",
+        "titleSaved": "Title saved",
+        "versionColumns": {
+          "label": "Label",
+          "publishedAt": "Published",
+          "publishedBy": "Published by"
+        },
+        "versionsLoadError": "Could not load the versions",
+        "versionsTitle": "Versions",
+        "write": "Write"
+      },
+      "signupItems": {
+        "add": {
+          "error": "Could not add the item",
+          "keyDescription": "Lower-case letters, digits and hyphens; the address of its public page. It never changes.",
+          "keyLabel": "Key",
+          "keyRequired": "Enter a key",
+          "kindLabel": "Kind",
+          "kindRequired": "Choose a kind",
+          "submit": "Add item",
+          "title": "Add an item",
+          "titleLabel": "Title",
+          "titleRequired": "Enter a title"
+        },
+        "archivedBadge": "Archived",
+        "columns": {
+          "key": "Key",
+          "kind": "Kind",
+          "order": "Order",
+          "title": "Title",
+          "version": "Current version"
+        },
+        "description": "What a person is asked or told at sign-up, each with its legal document. A visitor sees an item once a version of its document is published.",
+        "empty": "No sign-up items yet",
+        "kind": {
+          "notice": "Notice",
+          "optional_consent": "Optional consent",
+          "required_acceptance": "Required acceptance"
+        },
+        "loadError": "Could not load the sign-up items",
+        "mailingsBadge": "Mailings consent",
+        "mailingsDescription": "This item stands for consent to your own mailings. Only one optional consent can.",
+        "mailingsLabel": "Consent to the mailings",
+        "moveDown": "Move {{title}} down",
+        "moveUp": "Move {{title}} up",
+        "notPublished": "Not published",
+        "reorderError": "Could not change the order",
+        "title": "Sign-up items"
       },
       "workspace": {
         "abuse": {
@@ -762,6 +860,11 @@ export default interface Resources {
       "verify": "Verify",
       "verifyError": "Could not verify the domain"
     },
+    "legal": {
+      "loadError": "Could not load the document",
+      "notFound": "This document does not exist.",
+      "version": "Version {{version}}, in effect since {{date}}"
+    },
     "linkClicks": {
       "clicks": "Clicks",
       "hint": "Every click counts here, so a link clicked twice by one person shows twice. Counts cover the Event retention window.",
@@ -957,6 +1060,10 @@ export default interface Resources {
       "changeEmailButton": "Send confirmation link",
       "changeEmailErrorTitle": "Could not change email",
       "changeEmailSuccess": "Check your new inbox for a confirmation link.",
+      "consentsDescription": "What you agreed to receive. Untick a box to withdraw your consent.",
+      "consentsErrorTitle": "Could not change your consent",
+      "consentsSaved": "Your consent is saved.",
+      "consentsSectionTitle": "Consents",
       "currentPasswordForEmailLabel": "Current password",
       "currentPasswordLabel": "Current password",
       "deleteUserButton": "Delete my user",
@@ -1616,6 +1723,7 @@ export default interface Resources {
       "mismatch": "Passwords do not match",
       "nameLabel": "Name",
       "passwordLabel": "Password",
+      "readItem": "Read the {{title}}",
       "resendIn": "Resend in {{seconds}}s",
       "signInLink": "Sign in",
       "submitButton": "Sign up",
@@ -1633,8 +1741,7 @@ export default interface Resources {
         "invitation_email_mismatch": "This invitation is for a different email address than the one this provider vouches for. Use the account with the invited address, or sign in another way.",
         "invitation_invalid": "This invitation is no longer valid. Ask for a new one.",
         "provider_error": "The provider could not complete the sign-in. Try again.",
-        "provider_unavailable": "That sign-in method is not available on this instance.",
-        "signup_closed": "Sign-up is closed on this instance. Ask an owner for an invitation."
+        "provider_unavailable": "That sign-in method is not available on this instance."
       },
       "linked": {
         "empty": "No provider is linked to your account yet.",
@@ -1654,6 +1761,17 @@ export default interface Resources {
       "successBody": "The sign-in provider was unlinked and every session of your account has ended. If you forgot your password, you can reset it from the sign-in page.",
       "successTitle": "Provider unlinked",
       "working": "Unlinking the sign-in provider…"
+    },
+    "signinPending": {
+      "body": "You are signing up as {{email}} with {{provider}}. Your account is created once you answer.",
+      "declineButton": "Cancel",
+      "errorMessage": "We couldn't create your account. Please try again.",
+      "errorTitle": "Sign-up failed",
+      "goneBody": "It was cancelled, completed or left open for too long. Start again from the sign-up page.",
+      "goneTitle": "This sign-up has expired",
+      "startAgain": "Sign up again",
+      "submitButton": "Create account",
+      "title": "Finish signing up"
     },
     "signupSurvey": {
       "back": "Back",

@@ -10,35 +10,40 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AcceptanceRouteImport } from './routes/acceptance'
 import { Route as AccountRouteRouteImport } from './routes/account/route'
 import { Route as ConfirmRouteImport } from './routes/confirm'
 import { Route as ConfirmEmailChangeRouteImport } from './routes/confirm-email-change'
 import { Route as ConsoleRouteRouteImport } from './routes/console/route'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SigninNotMeRouteImport } from './routes/signin-not-me'
+import { Route as SigninPendingRouteImport } from './routes/signin-pending'
 import { Route as SignupSurveyRouteImport } from './routes/signup-survey'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as UnsubscribedRouteImport } from './routes/unsubscribed'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
-import { Route as AccountDeleteRouteImport } from './routes/account/delete'
 import { Route as AccountInstanceRouteImport } from './routes/account/instance'
 import { Route as AccountSecurityRouteImport } from './routes/account/security'
 import { Route as ConsoleAuthedRouteRouteImport } from './routes/console/_authed/route'
 import { Route as ConsoleLoginRouteImport } from './routes/console/login'
 import { Route as InvitationsTokenRouteImport } from './routes/invitations/$token'
+import { Route as LegalKeyRouteImport } from './routes/legal.$key'
 import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as WorkspacesWorkspaceIdRouteRouteImport } from './routes/workspaces/$workspaceId/route'
 import { Route as WorkspacesNewRouteImport } from './routes/workspaces/new'
 import { Route as ConsoleAuthedIndexRouteImport } from './routes/console/_authed/index'
+import { Route as ConsoleAuthedEnterpriseRouteRouteImport } from './routes/console/_authed/_enterprise/route'
 import { Route as WorkspacesWorkspaceIdIndexRouteImport } from './routes/workspaces/$workspaceId/index'
 import { Route as WorkspacesWorkspaceIdAnalyticsRouteRouteImport } from './routes/workspaces/$workspaceId/analytics/route'
 import { Route as WorkspacesWorkspaceIdBrandKitRouteImport } from './routes/workspaces/$workspaceId/brand-kit'
 import { Route as WorkspacesWorkspaceIdSettingsRouteRouteImport } from './routes/workspaces/$workspaceId/settings/route'
-import { Route as ConsoleAuthedWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/workspaces.$workspaceId'
+import { Route as ConsoleAuthedSignupItemsIndexRouteImport } from './routes/console/_authed/signup-items.index'
+import { Route as ConsoleAuthedSignupItemsItemIdRouteImport } from './routes/console/_authed/signup-items.$itemId'
 import { Route as WorkspacesWorkspaceIdAnalyticsIndexRouteImport } from './routes/workspaces/$workspaceId/analytics/index'
 import { Route as WorkspacesWorkspaceIdAnalyticsClicksByLinkRouteImport } from './routes/workspaces/$workspaceId/analytics/clicks-by-link'
 import { Route as WorkspacesWorkspaceIdAnalyticsEmailMetricsRouteImport } from './routes/workspaces/$workspaceId/analytics/email-metrics'
@@ -71,6 +76,8 @@ import { Route as WorkspacesWorkspaceIdTagsIndexRouteImport } from './routes/wor
 import { Route as WorkspacesWorkspaceIdTemplatesIndexRouteImport } from './routes/workspaces/$workspaceId/templates/index'
 import { Route as WorkspacesWorkspaceIdTemplatesNewRouteImport } from './routes/workspaces/$workspaceId/templates/new'
 import { Route as WorkspacesWorkspaceIdTransactionalEmailsIndexRouteImport } from './routes/workspaces/$workspaceId/transactional-emails/index'
+import { Route as ConsoleAuthedEnterpriseWorkspacesIndexRouteImport } from './routes/console/_authed/_enterprise/workspaces.index'
+import { Route as ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/_enterprise/workspaces.$workspaceId'
 import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/index'
 import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/edit'
 import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
@@ -89,6 +96,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcceptanceRoute = AcceptanceRouteImport.update({
+  id: '/acceptance',
+  path: '/acceptance',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/acceptance.lazy').then((d) => d.Route))
 const AccountRouteRoute = AccountRouteRouteImport.update({
   id: '/account',
   path: '/account',
@@ -111,6 +123,13 @@ const ConsoleRouteRoute = ConsoleRouteRouteImport.update({
   path: '/console',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/delete-account.lazy').then((d) => d.Route),
+)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
@@ -140,6 +159,13 @@ const SigninNotMeRoute = SigninNotMeRouteImport.update({
   path: '/signin-not-me',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/signin-not-me.lazy').then((d) => d.Route))
+const SigninPendingRoute = SigninPendingRouteImport.update({
+  id: '/signin-pending',
+  path: '/signin-pending',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/signin-pending.lazy').then((d) => d.Route),
+)
 const SignupSurveyRoute = SignupSurveyRouteImport.update({
   id: '/signup-survey',
   path: '/signup-survey',
@@ -165,13 +191,6 @@ const AccountIndexRoute = AccountIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AccountRouteRoute,
 } as any).lazy(() => import('./routes/account/index.lazy').then((d) => d.Route))
-const AccountDeleteRoute = AccountDeleteRouteImport.update({
-  id: '/delete',
-  path: '/delete',
-  getParentRoute: () => AccountRouteRoute,
-} as any).lazy(() =>
-  import('./routes/account/delete.lazy').then((d) => d.Route),
-)
 const AccountInstanceRoute = AccountInstanceRouteImport.update({
   id: '/instance',
   path: '/instance',
@@ -204,6 +223,11 @@ const InvitationsTokenRoute = InvitationsTokenRouteImport.update({
 } as any).lazy(() =>
   import('./routes/invitations/$token.lazy').then((d) => d.Route),
 )
+const LegalKeyRoute = LegalKeyRouteImport.update({
+  id: '/legal/$key',
+  path: '/legal/$key',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/legal.$key.lazy').then((d) => d.Route))
 const OauthConsentRoute = OauthConsentRouteImport.update({
   id: '/oauth/consent',
   path: '/oauth/consent',
@@ -231,6 +255,11 @@ const ConsoleAuthedIndexRoute = ConsoleAuthedIndexRouteImport.update({
 } as any).lazy(() =>
   import('./routes/console/_authed/index.lazy').then((d) => d.Route),
 )
+const ConsoleAuthedEnterpriseRouteRoute =
+  ConsoleAuthedEnterpriseRouteRouteImport.update({
+    id: '/_enterprise',
+    getParentRoute: () => ConsoleAuthedRouteRoute,
+  } as any)
 const WorkspacesWorkspaceIdIndexRoute =
   WorkspacesWorkspaceIdIndexRouteImport.update({
     id: '/',
@@ -265,13 +294,23 @@ const WorkspacesWorkspaceIdSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
   } as any)
-const ConsoleAuthedWorkspacesWorkspaceIdRoute =
-  ConsoleAuthedWorkspacesWorkspaceIdRouteImport.update({
-    id: '/workspaces/$workspaceId',
-    path: '/workspaces/$workspaceId',
+const ConsoleAuthedSignupItemsIndexRoute =
+  ConsoleAuthedSignupItemsIndexRouteImport.update({
+    id: '/signup-items/',
+    path: '/signup-items/',
     getParentRoute: () => ConsoleAuthedRouteRoute,
   } as any).lazy(() =>
-    import('./routes/console/_authed/workspaces.$workspaceId.lazy').then(
+    import('./routes/console/_authed/signup-items.index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const ConsoleAuthedSignupItemsItemIdRoute =
+  ConsoleAuthedSignupItemsItemIdRouteImport.update({
+    id: '/signup-items/$itemId',
+    path: '/signup-items/$itemId',
+    getParentRoute: () => ConsoleAuthedRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/console/_authed/signup-items.$itemId.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -591,6 +630,26 @@ const WorkspacesWorkspaceIdTransactionalEmailsIndexRoute =
       (d) => d.Route,
     ),
   )
+const ConsoleAuthedEnterpriseWorkspacesIndexRoute =
+  ConsoleAuthedEnterpriseWorkspacesIndexRouteImport.update({
+    id: '/workspaces/',
+    path: '/workspaces/',
+    getParentRoute: () => ConsoleAuthedEnterpriseRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/console/_authed/_enterprise/workspaces.index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute =
+  ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRouteImport.update({
+    id: '/workspaces/$workspaceId',
+    path: '/workspaces/$workspaceId',
+    getParentRoute: () => ConsoleAuthedEnterpriseRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/console/_authed/_enterprise/workspaces.$workspaceId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute =
   WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport.update({
     id: '/automations/$automationId/',
@@ -716,23 +775,26 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
   '/console': typeof ConsoleRouteRouteWithChildren
+  '/acceptance': typeof AcceptanceRoute
   '/confirm': typeof ConfirmRoute
   '/confirm-email-change': typeof ConfirmEmailChangeRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-up': typeof SignUpRoute
   '/signin-not-me': typeof SigninNotMeRoute
+  '/signin-pending': typeof SigninPendingRoute
   '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdRouteRouteWithChildren
-  '/account/delete': typeof AccountDeleteRoute
   '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
+  '/legal/$key': typeof LegalKeyRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account/': typeof AccountIndexRoute
@@ -741,7 +803,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
-  '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
+  '/console/signup-items/$itemId': typeof ConsoleAuthedSignupItemsItemIdRoute
   '/workspaces/$workspaceId/analytics/clicks-by-link': typeof WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
   '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
@@ -761,6 +823,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
+  '/console/signup-items/': typeof ConsoleAuthedSignupItemsIndexRoute
   '/workspaces/$workspaceId/analytics/': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations/': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
@@ -774,6 +837,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/tags/': typeof WorkspacesWorkspaceIdTagsIndexRoute
   '/workspaces/$workspaceId/templates/': typeof WorkspacesWorkspaceIdTemplatesIndexRoute
   '/workspaces/$workspaceId/transactional-emails/': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
+  '/console/workspaces/$workspaceId': typeof ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/$automationId/edit': typeof WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
@@ -781,6 +845,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/rules/$ruleId/edit': typeof WorkspacesWorkspaceIdRulesRuleIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
+  '/console/workspaces/': typeof ConsoleAuthedEnterpriseWorkspacesIndexRoute
   '/workspaces/$workspaceId/automations/$automationId/': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/captured-messages/$messageId/': typeof WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId/': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
@@ -790,28 +855,31 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/console': typeof ConsoleAuthedIndexRoute
+  '/acceptance': typeof AcceptanceRoute
   '/confirm': typeof ConfirmRoute
   '/confirm-email-change': typeof ConfirmEmailChangeRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-up': typeof SignUpRoute
   '/signin-not-me': typeof SigninNotMeRoute
+  '/signin-pending': typeof SigninPendingRoute
   '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/account/delete': typeof AccountDeleteRoute
   '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
+  '/legal/$key': typeof LegalKeyRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account': typeof AccountIndexRoute
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdIndexRoute
-  '/console/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
+  '/console/signup-items/$itemId': typeof ConsoleAuthedSignupItemsItemIdRoute
   '/workspaces/$workspaceId/analytics/clicks-by-link': typeof WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
   '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
@@ -831,6 +899,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
+  '/console/signup-items': typeof ConsoleAuthedSignupItemsIndexRoute
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
@@ -844,6 +913,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/tags': typeof WorkspacesWorkspaceIdTagsIndexRoute
   '/workspaces/$workspaceId/templates': typeof WorkspacesWorkspaceIdTemplatesIndexRoute
   '/workspaces/$workspaceId/transactional-emails': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
+  '/console/workspaces/$workspaceId': typeof ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/$automationId/edit': typeof WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
@@ -851,6 +921,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/rules/$ruleId/edit': typeof WorkspacesWorkspaceIdRulesRuleIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
+  '/console/workspaces': typeof ConsoleAuthedEnterpriseWorkspacesIndexRoute
   '/workspaces/$workspaceId/automations/$automationId': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/captured-messages/$messageId': typeof WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
@@ -862,33 +933,37 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
   '/console': typeof ConsoleRouteRouteWithChildren
+  '/acceptance': typeof AcceptanceRoute
   '/confirm': typeof ConfirmRoute
   '/confirm-email-change': typeof ConfirmEmailChangeRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-up': typeof SignUpRoute
   '/signin-not-me': typeof SigninNotMeRoute
+  '/signin-pending': typeof SigninPendingRoute
   '/signup-survey': typeof SignupSurveyRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
   '/console/_authed': typeof ConsoleAuthedRouteRouteWithChildren
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdRouteRouteWithChildren
-  '/account/delete': typeof AccountDeleteRoute
   '/account/instance': typeof AccountInstanceRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
+  '/legal/$key': typeof LegalKeyRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/workspaces/new': typeof WorkspacesNewRoute
   '/account/': typeof AccountIndexRoute
+  '/console/_authed/_enterprise': typeof ConsoleAuthedEnterpriseRouteRouteWithChildren
   '/workspaces/$workspaceId/analytics': typeof WorkspacesWorkspaceIdAnalyticsRouteRouteWithChildren
   '/workspaces/$workspaceId/settings': typeof WorkspacesWorkspaceIdSettingsRouteRouteWithChildren
   '/workspaces/$workspaceId/brand-kit': typeof WorkspacesWorkspaceIdBrandKitRoute
   '/console/_authed/': typeof ConsoleAuthedIndexRoute
   '/workspaces/$workspaceId/': typeof WorkspacesWorkspaceIdIndexRoute
-  '/console/_authed/workspaces/$workspaceId': typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
+  '/console/_authed/signup-items/$itemId': typeof ConsoleAuthedSignupItemsItemIdRoute
   '/workspaces/$workspaceId/analytics/clicks-by-link': typeof WorkspacesWorkspaceIdAnalyticsClicksByLinkRoute
   '/workspaces/$workspaceId/analytics/email-metrics': typeof WorkspacesWorkspaceIdAnalyticsEmailMetricsRoute
   '/workspaces/$workspaceId/analytics/events': typeof WorkspacesWorkspaceIdAnalyticsEventsRoute
@@ -908,6 +983,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/settings/tracking': typeof WorkspacesWorkspaceIdSettingsTrackingRoute
   '/workspaces/$workspaceId/settings/webhooks': typeof WorkspacesWorkspaceIdSettingsWebhooksRoute
   '/workspaces/$workspaceId/templates/new': typeof WorkspacesWorkspaceIdTemplatesNewRoute
+  '/console/_authed/signup-items/': typeof ConsoleAuthedSignupItemsIndexRoute
   '/workspaces/$workspaceId/analytics/': typeof WorkspacesWorkspaceIdAnalyticsIndexRoute
   '/workspaces/$workspaceId/automations/': typeof WorkspacesWorkspaceIdAutomationsIndexRoute
   '/workspaces/$workspaceId/broadcasts/': typeof WorkspacesWorkspaceIdBroadcastsIndexRoute
@@ -921,6 +997,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/tags/': typeof WorkspacesWorkspaceIdTagsIndexRoute
   '/workspaces/$workspaceId/templates/': typeof WorkspacesWorkspaceIdTemplatesIndexRoute
   '/workspaces/$workspaceId/transactional-emails/': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
+  '/console/_authed/_enterprise/workspaces/$workspaceId': typeof ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/$automationId/edit': typeof WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
@@ -928,6 +1005,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/rules/$ruleId/edit': typeof WorkspacesWorkspaceIdRulesRuleIdEditRoute
   '/workspaces/$workspaceId/segments/$segmentId/edit': typeof WorkspacesWorkspaceIdSegmentsSegmentIdEditRoute
   '/workspaces/$workspaceId/templates/$templateId/edit': typeof WorkspacesWorkspaceIdTemplatesTemplateIdEditRoute
+  '/console/_authed/_enterprise/workspaces/': typeof ConsoleAuthedEnterpriseWorkspacesIndexRoute
   '/workspaces/$workspaceId/automations/$automationId/': typeof WorkspacesWorkspaceIdAutomationsAutomationIdIndexRoute
   '/workspaces/$workspaceId/captured-messages/$messageId/': typeof WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRoute
   '/workspaces/$workspaceId/contacts/$contactId/': typeof WorkspacesWorkspaceIdContactsContactIdIndexRoute
@@ -940,23 +1018,26 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/console'
+    | '/acceptance'
     | '/confirm'
     | '/confirm-email-change'
+    | '/delete-account'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
     | '/sign-up'
     | '/signin-not-me'
+    | '/signin-pending'
     | '/signup-survey'
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
     | '/workspaces/$workspaceId'
-    | '/account/delete'
     | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
+    | '/legal/$key'
     | '/oauth/consent'
     | '/workspaces/new'
     | '/account/'
@@ -965,7 +1046,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/brand-kit'
     | '/console/'
     | '/workspaces/$workspaceId/'
-    | '/console/workspaces/$workspaceId'
+    | '/console/signup-items/$itemId'
     | '/workspaces/$workspaceId/analytics/clicks-by-link'
     | '/workspaces/$workspaceId/analytics/email-metrics'
     | '/workspaces/$workspaceId/analytics/events'
@@ -985,6 +1066,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
+    | '/console/signup-items/'
     | '/workspaces/$workspaceId/analytics/'
     | '/workspaces/$workspaceId/automations/'
     | '/workspaces/$workspaceId/broadcasts/'
@@ -998,6 +1080,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/tags/'
     | '/workspaces/$workspaceId/templates/'
     | '/workspaces/$workspaceId/transactional-emails/'
+    | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/$automationId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
@@ -1005,6 +1088,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/rules/$ruleId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
+    | '/console/workspaces/'
     | '/workspaces/$workspaceId/automations/$automationId/'
     | '/workspaces/$workspaceId/captured-messages/$messageId/'
     | '/workspaces/$workspaceId/contacts/$contactId/'
@@ -1014,28 +1098,31 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/console'
+    | '/acceptance'
     | '/confirm'
     | '/confirm-email-change'
+    | '/delete-account'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
     | '/sign-up'
     | '/signin-not-me'
+    | '/signin-pending'
     | '/signup-survey'
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
-    | '/account/delete'
     | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
+    | '/legal/$key'
     | '/oauth/consent'
     | '/workspaces/new'
     | '/account'
     | '/workspaces/$workspaceId/brand-kit'
     | '/workspaces/$workspaceId'
-    | '/console/workspaces/$workspaceId'
+    | '/console/signup-items/$itemId'
     | '/workspaces/$workspaceId/analytics/clicks-by-link'
     | '/workspaces/$workspaceId/analytics/email-metrics'
     | '/workspaces/$workspaceId/analytics/events'
@@ -1055,6 +1142,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
+    | '/console/signup-items'
     | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/automations'
     | '/workspaces/$workspaceId/broadcasts'
@@ -1068,6 +1156,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/tags'
     | '/workspaces/$workspaceId/templates'
     | '/workspaces/$workspaceId/transactional-emails'
+    | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/$automationId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
@@ -1075,6 +1164,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/rules/$ruleId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
+    | '/console/workspaces'
     | '/workspaces/$workspaceId/automations/$automationId'
     | '/workspaces/$workspaceId/captured-messages/$messageId'
     | '/workspaces/$workspaceId/contacts/$contactId'
@@ -1085,33 +1175,37 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/console'
+    | '/acceptance'
     | '/confirm'
     | '/confirm-email-change'
+    | '/delete-account'
     | '/forgot-password'
     | '/login'
     | '/reset-password'
     | '/sign-up'
     | '/signin-not-me'
+    | '/signin-pending'
     | '/signup-survey'
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
     | '/console/_authed'
     | '/workspaces/$workspaceId'
-    | '/account/delete'
     | '/account/instance'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
+    | '/legal/$key'
     | '/oauth/consent'
     | '/workspaces/new'
     | '/account/'
+    | '/console/_authed/_enterprise'
     | '/workspaces/$workspaceId/analytics'
     | '/workspaces/$workspaceId/settings'
     | '/workspaces/$workspaceId/brand-kit'
     | '/console/_authed/'
     | '/workspaces/$workspaceId/'
-    | '/console/_authed/workspaces/$workspaceId'
+    | '/console/_authed/signup-items/$itemId'
     | '/workspaces/$workspaceId/analytics/clicks-by-link'
     | '/workspaces/$workspaceId/analytics/email-metrics'
     | '/workspaces/$workspaceId/analytics/events'
@@ -1131,6 +1225,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/settings/tracking'
     | '/workspaces/$workspaceId/settings/webhooks'
     | '/workspaces/$workspaceId/templates/new'
+    | '/console/_authed/signup-items/'
     | '/workspaces/$workspaceId/analytics/'
     | '/workspaces/$workspaceId/automations/'
     | '/workspaces/$workspaceId/broadcasts/'
@@ -1144,6 +1239,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/tags/'
     | '/workspaces/$workspaceId/templates/'
     | '/workspaces/$workspaceId/transactional-emails/'
+    | '/console/_authed/_enterprise/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/$automationId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
@@ -1151,6 +1247,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/rules/$ruleId/edit'
     | '/workspaces/$workspaceId/segments/$segmentId/edit'
     | '/workspaces/$workspaceId/templates/$templateId/edit'
+    | '/console/_authed/_enterprise/workspaces/'
     | '/workspaces/$workspaceId/automations/$automationId/'
     | '/workspaces/$workspaceId/captured-messages/$messageId/'
     | '/workspaces/$workspaceId/contacts/$contactId/'
@@ -1162,19 +1259,23 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRouteRoute: typeof AccountRouteRouteWithChildren
   ConsoleRouteRoute: typeof ConsoleRouteRouteWithChildren
+  AcceptanceRoute: typeof AcceptanceRoute
   ConfirmRoute: typeof ConfirmRoute
   ConfirmEmailChangeRoute: typeof ConfirmEmailChangeRoute
+  DeleteAccountRoute: typeof DeleteAccountRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignUpRoute: typeof SignUpRoute
   SigninNotMeRoute: typeof SigninNotMeRoute
+  SigninPendingRoute: typeof SigninPendingRoute
   SignupSurveyRoute: typeof SignupSurveyRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   UnsubscribedRoute: typeof UnsubscribedRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   WorkspacesWorkspaceIdRouteRoute: typeof WorkspacesWorkspaceIdRouteRouteWithChildren
   InvitationsTokenRoute: typeof InvitationsTokenRoute
+  LegalKeyRoute: typeof LegalKeyRoute
   OauthConsentRoute: typeof OauthConsentRoute
   WorkspacesNewRoute: typeof WorkspacesNewRoute
 }
@@ -1186,6 +1287,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acceptance': {
+      id: '/acceptance'
+      path: '/acceptance'
+      fullPath: '/acceptance'
+      preLoaderRoute: typeof AcceptanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -1214,6 +1322,13 @@ declare module '@tanstack/react-router' {
       path: '/console'
       fullPath: '/console'
       preLoaderRoute: typeof ConsoleRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -1251,6 +1366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SigninNotMeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signin-pending': {
+      id: '/signin-pending'
+      path: '/signin-pending'
+      fullPath: '/signin-pending'
+      preLoaderRoute: typeof SigninPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup-survey': {
       id: '/signup-survey'
       path: '/signup-survey'
@@ -1284,13 +1406,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/account/'
       preLoaderRoute: typeof AccountIndexRouteImport
-      parentRoute: typeof AccountRouteRoute
-    }
-    '/account/delete': {
-      id: '/account/delete'
-      path: '/delete'
-      fullPath: '/account/delete'
-      preLoaderRoute: typeof AccountDeleteRouteImport
       parentRoute: typeof AccountRouteRoute
     }
     '/account/instance': {
@@ -1328,6 +1443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvitationsTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal/$key': {
+      id: '/legal/$key'
+      path: '/legal/$key'
+      fullPath: '/legal/$key'
+      preLoaderRoute: typeof LegalKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth/consent': {
       id: '/oauth/consent'
       path: '/oauth/consent'
@@ -1354,6 +1476,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/console/'
       preLoaderRoute: typeof ConsoleAuthedIndexRouteImport
+      parentRoute: typeof ConsoleAuthedRouteRoute
+    }
+    '/console/_authed/_enterprise': {
+      id: '/console/_authed/_enterprise'
+      path: ''
+      fullPath: '/console'
+      preLoaderRoute: typeof ConsoleAuthedEnterpriseRouteRouteImport
       parentRoute: typeof ConsoleAuthedRouteRoute
     }
     '/workspaces/$workspaceId/': {
@@ -1384,11 +1513,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdSettingsRouteRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
-    '/console/_authed/workspaces/$workspaceId': {
-      id: '/console/_authed/workspaces/$workspaceId'
-      path: '/workspaces/$workspaceId'
-      fullPath: '/console/workspaces/$workspaceId'
-      preLoaderRoute: typeof ConsoleAuthedWorkspacesWorkspaceIdRouteImport
+    '/console/_authed/signup-items/': {
+      id: '/console/_authed/signup-items/'
+      path: '/signup-items'
+      fullPath: '/console/signup-items/'
+      preLoaderRoute: typeof ConsoleAuthedSignupItemsIndexRouteImport
+      parentRoute: typeof ConsoleAuthedRouteRoute
+    }
+    '/console/_authed/signup-items/$itemId': {
+      id: '/console/_authed/signup-items/$itemId'
+      path: '/signup-items/$itemId'
+      fullPath: '/console/signup-items/$itemId'
+      preLoaderRoute: typeof ConsoleAuthedSignupItemsItemIdRouteImport
       parentRoute: typeof ConsoleAuthedRouteRoute
     }
     '/workspaces/$workspaceId/analytics/': {
@@ -1615,6 +1751,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
+    '/console/_authed/_enterprise/workspaces/': {
+      id: '/console/_authed/_enterprise/workspaces/'
+      path: '/workspaces'
+      fullPath: '/console/workspaces/'
+      preLoaderRoute: typeof ConsoleAuthedEnterpriseWorkspacesIndexRouteImport
+      parentRoute: typeof ConsoleAuthedEnterpriseRouteRoute
+    }
+    '/console/_authed/_enterprise/workspaces/$workspaceId': {
+      id: '/console/_authed/_enterprise/workspaces/$workspaceId'
+      path: '/workspaces/$workspaceId'
+      fullPath: '/console/workspaces/$workspaceId'
+      preLoaderRoute: typeof ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRouteImport
+      parentRoute: typeof ConsoleAuthedEnterpriseRouteRoute
+    }
     '/workspaces/$workspaceId/automations/$automationId/': {
       id: '/workspaces/$workspaceId/automations/$automationId/'
       path: '/automations/$automationId'
@@ -1703,14 +1853,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AccountRouteRouteChildren {
-  AccountDeleteRoute: typeof AccountDeleteRoute
   AccountInstanceRoute: typeof AccountInstanceRoute
   AccountSecurityRoute: typeof AccountSecurityRoute
   AccountIndexRoute: typeof AccountIndexRoute
 }
 
 const AccountRouteRouteChildren: AccountRouteRouteChildren = {
-  AccountDeleteRoute: AccountDeleteRoute,
   AccountInstanceRoute: AccountInstanceRoute,
   AccountSecurityRoute: AccountSecurityRoute,
   AccountIndexRoute: AccountIndexRoute,
@@ -1720,15 +1868,37 @@ const AccountRouteRouteWithChildren = AccountRouteRoute._addFileChildren(
   AccountRouteRouteChildren,
 )
 
+interface ConsoleAuthedEnterpriseRouteRouteChildren {
+  ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute: typeof ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute
+  ConsoleAuthedEnterpriseWorkspacesIndexRoute: typeof ConsoleAuthedEnterpriseWorkspacesIndexRoute
+}
+
+const ConsoleAuthedEnterpriseRouteRouteChildren: ConsoleAuthedEnterpriseRouteRouteChildren =
+  {
+    ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute:
+      ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute,
+    ConsoleAuthedEnterpriseWorkspacesIndexRoute:
+      ConsoleAuthedEnterpriseWorkspacesIndexRoute,
+  }
+
+const ConsoleAuthedEnterpriseRouteRouteWithChildren =
+  ConsoleAuthedEnterpriseRouteRoute._addFileChildren(
+    ConsoleAuthedEnterpriseRouteRouteChildren,
+  )
+
 interface ConsoleAuthedRouteRouteChildren {
+  ConsoleAuthedEnterpriseRouteRoute: typeof ConsoleAuthedEnterpriseRouteRouteWithChildren
   ConsoleAuthedIndexRoute: typeof ConsoleAuthedIndexRoute
-  ConsoleAuthedWorkspacesWorkspaceIdRoute: typeof ConsoleAuthedWorkspacesWorkspaceIdRoute
+  ConsoleAuthedSignupItemsItemIdRoute: typeof ConsoleAuthedSignupItemsItemIdRoute
+  ConsoleAuthedSignupItemsIndexRoute: typeof ConsoleAuthedSignupItemsIndexRoute
 }
 
 const ConsoleAuthedRouteRouteChildren: ConsoleAuthedRouteRouteChildren = {
+  ConsoleAuthedEnterpriseRouteRoute:
+    ConsoleAuthedEnterpriseRouteRouteWithChildren,
   ConsoleAuthedIndexRoute: ConsoleAuthedIndexRoute,
-  ConsoleAuthedWorkspacesWorkspaceIdRoute:
-    ConsoleAuthedWorkspacesWorkspaceIdRoute,
+  ConsoleAuthedSignupItemsItemIdRoute: ConsoleAuthedSignupItemsItemIdRoute,
+  ConsoleAuthedSignupItemsIndexRoute: ConsoleAuthedSignupItemsIndexRoute,
 }
 
 const ConsoleAuthedRouteRouteWithChildren =
@@ -1927,19 +2097,23 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRouteRoute: AccountRouteRouteWithChildren,
   ConsoleRouteRoute: ConsoleRouteRouteWithChildren,
+  AcceptanceRoute: AcceptanceRoute,
   ConfirmRoute: ConfirmRoute,
   ConfirmEmailChangeRoute: ConfirmEmailChangeRoute,
+  DeleteAccountRoute: DeleteAccountRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignUpRoute: SignUpRoute,
   SigninNotMeRoute: SigninNotMeRoute,
+  SigninPendingRoute: SigninPendingRoute,
   SignupSurveyRoute: SignupSurveyRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   UnsubscribedRoute: UnsubscribedRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   WorkspacesWorkspaceIdRouteRoute: WorkspacesWorkspaceIdRouteRouteWithChildren,
   InvitationsTokenRoute: InvitationsTokenRoute,
+  LegalKeyRoute: LegalKeyRoute,
   OauthConsentRoute: OauthConsentRoute,
   WorkspacesNewRoute: WorkspacesNewRoute,
 }

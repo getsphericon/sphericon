@@ -142,7 +142,7 @@ func TestAUserWhoAnsweredIsNeverDueAndCannotSubmitAgain(t *testing.T) {
 }
 
 func TestAnInstanceInTheSelfHostedModeNeverAsks(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted), testhelper.WithSignupRule(accounts.SignupAlways))
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 	newcomer := signUpForSurvey(t, env)
 
 	due := surveyDue(t, newcomer)
@@ -186,7 +186,7 @@ func TestAnInvitedUserIsNeverAsked(t *testing.T) {
 
 func TestTheFirstOwnerMadeByTheOperatorIsNeverAsked(t *testing.T) {
 	env := surveyOn(t)
-	_, err := accounts.New(env.DB, env.Bus, testhelper.Passwords()).CreateOwner(t.Context(), surveyEmail, "Ada Lovelace")
+	_, err := accounts.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords).CreateOwner(t.Context(), surveyEmail, "Ada Lovelace")
 	require.NoError(t, err)
 
 	due := surveyDue(t, env.SiteActor(t, surveyEmail))
@@ -293,7 +293,7 @@ func TestAMarkedUserIsDueOnlyWhileTheInstanceAsks(t *testing.T) {
 }
 
 func TestASubmitIsRefusedWhenTheInstanceNoLongerAsks(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted), testhelper.WithSignupRule(accounts.SignupAlways))
+	env := testhelper.Setup(t, testhelper.WithMode(config.ModeSelfHosted))
 	dan := env.SiteActor(t, fixtures.SurveyDueDanEmail)
 
 	res := submitSurvey(t, dan, validAnswers())

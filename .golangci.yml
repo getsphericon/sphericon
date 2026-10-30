@@ -347,7 +347,7 @@ linters:
       #
       # G124: the Secure attribute follows the instance's URL scheme (config.SecureCookies): a
       # plain-http instance would never get a Secure cookie back. The rule wants a constant true.
-      - path: ^(ee/staff/session\.go|internal/api/auth/(session|passkey_ceremony|sign_up_browser|signin_flow)\.go)$
+      - path: ^(internal/staffmembers/session\.go|internal/api/auth/(session|passkey_ceremony|sign_up_browser|signin_flow)\.go)$
         linters:
           - gosec
         text: G124

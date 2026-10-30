@@ -7,6 +7,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
@@ -22,16 +23,43 @@ func (h *Handlers) SiteUserGetMe(ctx context.Context) (*siteapi.SiteUserResource
 	if err != nil {
 		return nil, err
 	}
-	return h.userResource(u), nil
+	return h.userResource(ctx, u)
 }
 
 // userResource is the User's profile with the Sign-up survey due only while the User carries the
-// marker and the Instance still asks the survey: a switch turned off or a lapsed license stops
-// asking at once, for a User marked earlier too.
-func (h *Handlers) userResource(u *ent.User) *siteapi.SiteUserResource {
+// marker and the Instance still asks the survey (a switch turned off or a lapsed license stops
+// asking at once, for a User marked earlier too), and the required acceptances pending for them
+// (ADR 0062).
+func (h *Handlers) userResource(ctx context.Context, u *ent.User) (*siteapi.SiteUserResource, error) {
+	pending, err := h.consentRecords.Pending(ctx, u.ID)
+	if err != nil {
+		return nil, err
+	}
 	res := mapper.UserToResource(u)
 	res.SignupSurveyDue = u.SignupSurveyDueAt != nil && h.signupSurvey.Enabled()
-	return res
+	res.AcceptancesPending = mapper.SignupItemsToSite(pending)
+	return res, nil
+}
+
+// SiteUserAcceptPending accepts every required acceptance pending for the signed-in User at the
+// versions the screen showed (ADR 0062), and is their profile after it.
+func (h *Handlers) SiteUserAcceptPending(ctx context.Context, req *siteapi.SiteAcceptPendingInput) (siteapi.SiteUserAcceptPendingRes, error) {
+	a := auth.GetSiteAuth(ctx)
+	if a == nil {
+		return nil, auth.ErrUnauthorized
+	}
+	accepted := make([]consentrecords.ReAcceptance, len(req.Items))
+	for i, item := range req.Items {
+		accepted[i] = consentrecords.ReAcceptance{Key: string(item.Key), Version: string(item.Version)}
+	}
+	if err := h.consentRecords.AcceptPending(ctx, a.UserID, accepted); err != nil {
+		return nil, err
+	}
+	u, err := h.accounts.User(ctx, a.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return h.userResource(ctx, u)
 }
 
 // SiteUserUpdateMe changes the authenticated User's name and/or password through accounts,
@@ -54,7 +82,11 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 	if err != nil {
 		return nil, err
 	}
-	res := &siteapi.SiteUserResourceHeaders{Response: *h.userResource(changed.User)}
+	profile, err := h.userResource(ctx, changed.User)
+	if err != nil {
+		return nil, err
+	}
+	res := &siteapi.SiteUserResourceHeaders{Response: *profile}
 	if changed.PasswordChanged {
 		cookie, err := h.sessions.Issue(changed.User, currentSession(ctx))
 		if err != nil {

@@ -77,6 +77,14 @@ type SiteAuthSigninNotMeRes interface {
 	siteAuthSigninNotMeRes()
 }
 
+type SiteAuthSigninPendingRes interface {
+	siteAuthSigninPendingRes()
+}
+
+type SiteAuthSigninPendingSubmitRes interface {
+	siteAuthSigninPendingSubmitRes()
+}
+
 type SiteAuthSigninStartRes interface {
 	siteAuthSigninStartRes()
 }
@@ -353,6 +361,10 @@ type SiteJoinDomainsVerifyRes interface {
 	siteJoinDomainsVerifyRes()
 }
 
+type SiteLegalDocumentsGetRes interface {
+	siteLegalDocumentsGetRes()
+}
+
 type SiteMembershipsDeleteRes interface {
 	siteMembershipsDeleteRes()
 }
@@ -375,6 +387,10 @@ type SiteOAuthDecideRes interface {
 
 type SiteOAuthDescribeRes interface {
 	siteOAuthDescribeRes()
+}
+
+type SiteOptionalConsentsSetRes interface {
+	siteOptionalConsentsSetRes()
 }
 
 type SitePasskeyLoginBeginRes interface {
@@ -627,6 +643,10 @@ type SiteTokensUpdateRes interface {
 
 type SiteTransactionalEmailsListRes interface {
 	siteTransactionalEmailsListRes()
+}
+
+type SiteUserAcceptPendingRes interface {
+	siteUserAcceptPendingRes()
 }
 
 type SiteUserDeleteUserLinkRes interface {

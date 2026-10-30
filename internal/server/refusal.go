@@ -22,8 +22,9 @@ import (
 // types know nothing of HTTP; this is where they meet a status. A module's sentinel refusal
 // (validation.RefusalError) carries its kind, and the kind decides the status and the code: not
 // found 404, refused 422, conflict 409, forbidden 403 with code permission_required, unauthorized
-// 401, denied 403, unverified 403 with code email_verification_required, an invalid link 400 and
-// incomplete 428. The bodies are the problem models
+// 401, denied 403, unverified 403 with code email_verification_required, an invalid link 400,
+// incomplete 428 and an unknown reference (a pending sign-up that is gone, a foreign cursor) 400.
+// The bodies are the problem models
 // of typespec/common, which every contract shares, so the site's generated types encode them for
 // every surface.
 
@@ -100,7 +101,7 @@ func kindStatus(kind validation.Kind) int {
 		return http.StatusUnauthorized
 	case validation.KindDenied, validation.KindUnverified:
 		return http.StatusForbidden
-	case validation.KindLinkInvalid:
+	case validation.KindLinkInvalid, validation.KindUnknownReference:
 		return http.StatusBadRequest
 	case validation.KindIncomplete:
 		return http.StatusPreconditionRequired

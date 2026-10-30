@@ -19,6 +19,9 @@
       "name": "Service Workspaces"
     },
     {
+      "name": "Service Users"
+    },
+    {
       "name": "Service Domains"
     }
   ],
@@ -352,6 +355,126 @@
         },
         "tags": ["Service Usage"],
         "x-required-scopes": ["usage:read"]
+      }
+    },
+    "/users/changes": {
+      "get": {
+        "operationId": "ServiceUserFeed_list",
+        "description": "The Users created or changed since an opaque cursor, each with their current consent\nto the operator's mailings, in a stable order by change position. A change is a new\nUser, a new name, email or email verification, a new decision on the mailings item, the\nmark of that item moving, or the User's deletion (a tombstone). Delivery is\nat-least-once: replaying a cursor returns the same entries, and an empty cursor starts\nfrom the beginning.",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "The `nextCursor` of a page the caller has saved; empty starts from the beginning",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Most entries on the page",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 100
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUserFeedPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Service Users"],
+        "x-required-scopes": ["users:read"]
       }
     },
     "/workspaces/changes": {
@@ -1236,9 +1359,9 @@
         "enum": [
           "second_factor_required",
           "email_verification_required",
-          "signup_closed",
           "permission_required",
-          "migrations_pending"
+          "migrations_pending",
+          "acceptance_pending"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
@@ -1368,7 +1491,7 @@
       },
       "ServiceScope": {
         "type": "string",
-        "enum": ["usage:read", "workspaces:read", "domains:read", "holds:write"],
+        "enum": ["usage:read", "workspaces:read", "users:read", "domains:read", "holds:write"],
         "description": "A scope a Service credential may carry"
       },
       "ServiceTrackingHostChange": {
@@ -1432,6 +1555,97 @@
         "type": "string",
         "enum": ["dns_verified", "serving", "removed"],
         "description": "What a Tracking domain host did at one change"
+      },
+      "ServiceUserFeedPage": {
+        "type": "object",
+        "required": ["items", "nextCursor", "hasMore"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceUserResource"
+            },
+            "description": "Users created or changed after the requested cursor, in change order"
+          },
+          "nextCursor": {
+            "type": "string",
+            "description": "Pass it back as the cursor to read what follows this page. It is the requested\ncursor itself when the page is empty. Saving it is what advances the caller: the\ncore keeps no position of its own."
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Whether more entries follow this page right now"
+          }
+        },
+        "description": "One page of the Users feed"
+      },
+      "ServiceUserResource": {
+        "type": "object",
+        "required": ["id", "mailingsConsent"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The User id"
+          },
+          "name": {
+            "type": "string",
+            "description": "The User's current name; absent on a tombstone"
+          },
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "The User's current email; absent on a tombstone"
+          },
+          "emailVerifiedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the User confirmed their email; absent while it is unverified and on a tombstone"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the User was created; absent on a tombstone"
+          },
+          "deletedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the User was deleted; absent while the User exists. A tombstone carries nothing\nelse: the control plane erases the User from its mailing list."
+          },
+          "mailingsConsent": {
+            "type": "boolean",
+            "description": "Whether the User's latest decision on the Sign-up item that stands for consent to the\noperator's mailings is an acceptance. False when they declined or withdrew it, never\nanswered it, on a tombstone, and when no item stands for it."
+          },
+          "mailingsConsentChangedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the User made that latest decision; absent when they never answered the item"
+          }
+        },
+        "description": "A User as the feed reports it, with their current consent to the operator's mailings\n(ADR 0062). A deleted User is a tombstone: only its id and when it was deleted, nothing\nelse of theirs is kept."
       },
       "ServiceWorkspaceFeedPage": {
         "type": "object",

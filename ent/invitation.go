@@ -49,9 +49,11 @@ type InvitationEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Inviter holds the value of the inviter edge.
 	Inviter *User `json:"inviter,omitempty"`
+	// PendingSignups holds the value of the pending_signups edge.
+	PendingSignups []*PendingSignup `json:"pending_signups,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -74,6 +76,15 @@ func (e InvitationEdges) InviterOrErr() (*User, error) {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "inviter"}
+}
+
+// PendingSignupsOrErr returns the PendingSignups value or an error if the edge
+// was not loaded in eager-loading.
+func (e InvitationEdges) PendingSignupsOrErr() ([]*PendingSignup, error) {
+	if e.loadedTypes[2] {
+		return e.PendingSignups, nil
+	}
+	return nil, &NotLoadedError{edge: "pending_signups"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -185,6 +196,11 @@ func (_m *Invitation) QueryWorkspace() *WorkspaceQuery {
 // QueryInviter queries the "inviter" edge of the Invitation entity.
 func (_m *Invitation) QueryInviter() *UserQuery {
 	return NewInvitationClient(_m.config).QueryInviter(_m)
+}
+
+// QueryPendingSignups queries the "pending_signups" edge of the Invitation entity.
+func (_m *Invitation) QueryPendingSignups() *PendingSignupQuery {
+	return NewInvitationClient(_m.config).QueryPendingSignups(_m)
 }
 
 // Update returns a builder for updating this Invitation.

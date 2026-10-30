@@ -511,6 +511,29 @@ func HasInviterWith(preds ...predicate.User) predicate.Invitation {
 	})
 }
 
+// HasPendingSignups applies the HasEdge predicate on the "pending_signups" edge.
+func HasPendingSignups() predicate.Invitation {
+	return predicate.Invitation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PendingSignupsTable, PendingSignupsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPendingSignupsWith applies the HasEdge predicate on the "pending_signups" edge with a given conditions (other predicates).
+func HasPendingSignupsWith(preds ...predicate.PendingSignup) predicate.Invitation {
+	return predicate.Invitation(func(s *sql.Selector) {
+		step := newPendingSignupsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Invitation) predicate.Invitation {
 	return predicate.Invitation(sql.AndPredicates(predicates...))

@@ -23,13 +23,21 @@ type access struct {
 	// whileWithheld lets a caller the Two-factor requirement withholds through (ADR 0020): only
 	// switching the requirement off.
 	whileWithheld bool
+	// whileAcceptancePending lets a signed-in User with a required acceptance pending through
+	// (ADR 0062): the operation is marked x-allowed-while-acceptance-pending in TypeSpec, which
+	// is where the operations are listed. Every other operation that carries a session refuses
+	// them; an anonymous one carries none and is never refused for it. It lifts only the gate: an
+	// operation of a Workspace still applies the Two-factor requirement and its Permissions.
+	whileAcceptancePending bool
 }
 
 // errUndeclared refuses an operation the generated table has no entry for: refused to everyone.
 var errUndeclared = validation.Forbidden("site: the operation declares no access", "errors.permission.unknown")
 
 // Access is the ogen middleware of /site (ADR 0061), and the site's construction point of the
-// scoped client (ADR 0017). For an operation of a Workspace it loads the caller's Membership of
+// scoped client (ADR 0017). It first refuses a signed-in User with a required acceptance pending
+// (auth.AcceptancePendingError, 403 acceptance_pending, ADR 0062) unless the operation declares it
+// allowed. For an operation of a Workspace it then loads the caller's Membership of
 // the Workspace its workspaceId names, applies the Two-factor requirement, checks the
 // Permissions the operation declares and puts the Workspace's *ent.Scoped (acting as the caller,
 // ADR 0022) and the Membership in the context, where the handler reads them with workspaceScope
@@ -40,6 +48,9 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 	a, ok := operationAccess[req.OperationName]
 	if !ok {
 		return middleware.Response{}, errUndeclared
+	}
+	if err := h.acceptanceGate(req.Context, a); err != nil {
+		return middleware.Response{}, err
 	}
 	if !a.workspace {
 		return next(req)
@@ -57,6 +68,24 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 	}
 	req.SetContext(context.WithValue(req.Context, workspaceKey{}, caller{scoped: s, membership: m}))
 	return next(req)
+}
+
+// acceptanceGate refuses the request of a signed-in User with a required acceptance pending, unless
+// the operation is allowed while one is. A request without a session (an anonymous operation, or
+// an optional session not given) is never refused here.
+func (h *Handlers) acceptanceGate(ctx context.Context, a access) error {
+	session := auth.GetSiteAuth(ctx)
+	if session == nil || a.whileAcceptancePending {
+		return nil
+	}
+	gated, err := h.consentRecords.Gated(ctx, session.UserID)
+	if err != nil {
+		return err
+	}
+	if gated {
+		return auth.AcceptancePendingError{}
+	}
+	return nil
 }
 
 // member is the signed-in User's Membership of the Workspace publicID names (its User and

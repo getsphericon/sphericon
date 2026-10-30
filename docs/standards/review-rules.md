@@ -110,9 +110,14 @@ or `AGENTS.md`.
 ## Refusals
 
 15. **A refusal answers the same on every surface, and is mapped once.** 400: the request could not
-    be decoded. 422: it was decoded and a module's rule refused it. 409: the subject is in use. 401:
-    no credential, or an invalid one. 403: a valid credential without the scope or Permission. 404:
-    not found, or a Workspace the caller is not a member of. A handler returns the module's error;
-    the server's error handler turns it into the problem, so no handler writes the same mapping again.
+    be decoded, or it names a reference that is unknown or expired (a mailed link that does not
+    stand: `validation.LinkInvalid`; a pending sign-up, a feed cursor:
+    `validation.UnknownReference`). 422: it was decoded and a module's rule refused it. 409: the
+    subject is in use. 401: no credential, or an invalid one (a sign-in that does not hold). 403: a
+    valid credential without the scope or Permission, a step the caller did not prove, an address
+    not proven yet, or a required acceptance pending (`acceptance_pending`). 428: an input only this
+    case needs is missing. 404: not found, or a Workspace the caller is not a member of. A handler
+    returns the module's error; the server's error handler turns it into the problem, so no handler
+    writes the same mapping again.
     Every access decision is a Permission (ADR 0061): no code, server or client, decides access by
     comparing a Role.

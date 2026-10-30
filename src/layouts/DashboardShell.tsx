@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ThemeToggle } from '../components/ThemeToggle.tsx'
+import { useAcceptanceWatch } from '../hooks/useAcceptanceWatch.ts'
 import { DOCS_URL } from '../utils/docs.ts'
 
 // DashboardShell is the common authenticated chrome shared by the
@@ -27,6 +28,8 @@ export function DashboardShell({
   /** Shown instead of the routed page (e.g. a Workspace withheld by its Two-factor requirement). */
   content?: ReactNode
 }) {
+  // A request refused for a pending acceptance leaves for the accept-or-sign-out screen (ADR 0062).
+  useAcceptanceWatch()
   const { t } = useTranslation()
   const [opened, { toggle, close }] = useDisclosure(false)
   const location = useLocation()

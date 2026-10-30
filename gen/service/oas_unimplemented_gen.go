@@ -75,6 +75,19 @@ func (UnimplementedHandler) ServiceUsageList(ctx context.Context, params Service
 	return r, ht.ErrNotImplemented
 }
 
+// ServiceUserFeedList implements ServiceUserFeed_list operation.
+//
+// The Users created or changed since an opaque cursor, each with their current consent to the
+// operator's mailings, in a stable order by change position. A change is a new User, a new name, email
+// or email verification, a new decision on the mailings item, the mark of that item moving, or the
+// User's deletion (a tombstone). Delivery is at-least-once: replaying a cursor returns the same
+// entries, and an empty cursor starts from the beginning.
+//
+// GET /users/changes
+func (UnimplementedHandler) ServiceUserFeedList(ctx context.Context, params ServiceUserFeedListParams) (r ServiceUserFeedListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ServiceWorkspaceFeedList implements ServiceWorkspaceFeed_list operation.
 //
 // The Workspaces created or changed since an opaque cursor, each with all of its owners, in a stable

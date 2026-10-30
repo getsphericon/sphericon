@@ -40,3 +40,8 @@ invalid:
     	_, ok := errors.AsType[*validation.RefusalError](err)
     	return ok
     }
+  - |
+    func refusedForm(err error) bool {
+    	_, ok := errors.AsType[*validation.FieldsError](err)
+    	return ok
+    }

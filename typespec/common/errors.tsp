@@ -15,10 +15,6 @@ enum ProblemCode {
    * link sent to the address is followed */
   emailVerificationRequired: "email_verification_required",
 
-  /** The Instance closed public sign-up (ADR 0042): a new User comes only through an
-   * Invitation or the Instance operator's `sphericon user create-owner` */
-  signupClosed: "signup_closed",
-
   /** The caller's Role in the Workspace lacks the Permission the operation needs
    * (ADR 0061); another Role in the Workspace may perform it */
   permissionRequired: "permission_required",
@@ -27,6 +23,10 @@ enum ProblemCode {
    * (ADR 0033); `POST /site/schema/migrations` runs them. A production Instance never
    * sends it: its start guard refuses to start instead */
   migrationsPending: "migrations_pending",
+
+  /** A required Sign-up item has a version the User has not accepted (ADR 0062): until they
+   * accept it, only the few operations marked `x-allowed-while-acceptance-pending` answer them */
+  acceptancePending: "acceptance_pending",
 }
 
 /** What a development server adds to a 500 so the page can show the fault; a production

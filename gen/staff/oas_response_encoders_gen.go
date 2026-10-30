@@ -293,9 +293,9 @@ func encodeStaffMeGetResponse(response StaffMeGetRes, w http.ResponseWriter, spa
 	}
 }
 
-func encodeStaffSignupSurveyCountsResponse(response StaffSignupSurveyCountsRes, w http.ResponseWriter, span trace.Span) error {
+func encodeStaffSignupItemsArchiveResponse(response StaffSignupItemsArchiveRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *StaffSignupSurveyCounts:
+	case *StaffSignupItemResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 
@@ -307,7 +307,7 @@ func encodeStaffSignupSurveyCountsResponse(response StaffSignupSurveyCountsRes, 
 
 		return nil
 
-	case *ProblemDetails:
+	case *StaffSignupItemsArchiveUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
 
@@ -319,38 +319,7 @@ func encodeStaffSignupSurveyCountsResponse(response StaffSignupSurveyCountsRes, 
 
 		return nil
 
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeStaffSignupSurveyGetResponse(response StaffSignupSurveyGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *StaffSignupSurveyResponseResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffSignupSurveyGetUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffSignupSurveyGetNotFound:
+	case *StaffSignupItemsArchiveNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -362,222 +331,7 @@ func encodeStaffSignupSurveyGetResponse(response StaffSignupSurveyGetRes, w http
 
 		return nil
 
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeStaffWorkspaceAuditListResponse(response StaffWorkspaceAuditListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *StaffAuditEntryList:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspaceAuditListBadRequest:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(400)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspaceAuditListUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspaceAuditListNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeStaffWorkspacesExemptResponse(response StaffWorkspacesExemptRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *StaffExemptionChange:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspacesExemptUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspacesExemptNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeStaffWorkspacesGetResponse(response StaffWorkspacesGetRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *StaffWorkspaceDetailResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspacesGetUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspacesGetNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeStaffWorkspacesListResponse(response StaffWorkspacesListRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *StaffWorkspacesListOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeStaffWorkspacesSuspendResponse(response StaffWorkspacesSuspendRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *StaffSuspensionChange:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspacesSuspendUnauthorized:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(401)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspacesSuspendNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *StaffWorkspacesSuspendUnprocessableEntity:
+	case *StaffSignupItemsArchiveUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
 
@@ -594,11 +348,11 @@ func encodeStaffWorkspacesSuspendResponse(response StaffWorkspacesSuspendRes, w 
 	}
 }
 
-func encodeStaffWorkspacesUnexemptResponse(response StaffWorkspacesUnexemptRes, w http.ResponseWriter, span trace.Span) error {
+func encodeStaffSignupItemsCreateResponse(response StaffSignupItemsCreateRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *StaffExemptionChange:
+	case *StaffSignupItemResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
+		w.WriteHeader(201)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -608,7 +362,7 @@ func encodeStaffWorkspacesUnexemptResponse(response StaffWorkspacesUnexemptRes, 
 
 		return nil
 
-	case *StaffWorkspacesUnexemptUnauthorized:
+	case *StaffSignupItemsCreateUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
 
@@ -620,7 +374,50 @@ func encodeStaffWorkspacesUnexemptResponse(response StaffWorkspacesUnexemptRes, 
 
 		return nil
 
-	case *StaffWorkspacesUnexemptNotFound:
+	case *StaffSignupItemsCreateUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeStaffSignupItemsGetResponse(response StaffSignupItemsGetRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *StaffSignupItemResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsGetUnauthorized:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(401)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsGetNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -637,9 +434,9 @@ func encodeStaffWorkspacesUnexemptResponse(response StaffWorkspacesUnexemptRes, 
 	}
 }
 
-func encodeStaffWorkspacesUnsuspendResponse(response StaffWorkspacesUnsuspendRes, w http.ResponseWriter, span trace.Span) error {
+func encodeStaffSignupItemsListResponse(response StaffSignupItemsListRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *StaffSuspensionChange:
+	case *StaffSignupItemList:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 
@@ -651,7 +448,7 @@ func encodeStaffWorkspacesUnsuspendResponse(response StaffWorkspacesUnsuspendRes
 
 		return nil
 
-	case *StaffWorkspacesUnsuspendUnauthorized:
+	case *ProblemDetails:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
 
@@ -663,9 +460,236 @@ func encodeStaffWorkspacesUnsuspendResponse(response StaffWorkspacesUnsuspendRes
 
 		return nil
 
-	case *StaffWorkspacesUnsuspendNotFound:
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeStaffSignupItemsListVersionsResponse(response StaffSignupItemsListVersionsRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *StaffLegalDocumentVersionList:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsListVersionsUnauthorized:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(401)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsListVersionsNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeStaffSignupItemsPublishResponse(response StaffSignupItemsPublishRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *StaffSignupItemResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsPublishUnauthorized:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(401)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsPublishNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsPublishUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeStaffSignupItemsReorderResponse(response StaffSignupItemsReorderRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *StaffSignupItemList:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsReorderUnauthorized:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(401)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsReorderUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeStaffSignupItemsSaveDraftResponse(response StaffSignupItemsSaveDraftRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *StaffSignupItemResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsSaveDraftUnauthorized:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(401)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsSaveDraftNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeStaffSignupItemsUpdateResponse(response StaffSignupItemsUpdateRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *StaffSignupItemResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsUpdateUnauthorized:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(401)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsUpdateNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffSignupItemsUpdateUnprocessableEntity:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(422)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

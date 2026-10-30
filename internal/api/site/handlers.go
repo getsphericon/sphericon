@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/erasure"
@@ -41,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/signin"
 	"github.com/getsphericon/sphericon/internal/signup"
+	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/templates"
@@ -140,6 +142,10 @@ type Handlers struct {
 	// signupSurvey is the Sign-up survey: whether a public sign-up marks its User as owing it,
 	// and the submit.
 	signupSurvey *signupsurvey.Module
+	// signupItems is the Instance's Sign-up items and their Legal documents (ADR 0062).
+	signupItems *signupitems.Module
+	// consentRecords is the Users' decisions on the Sign-up items (ADR 0062).
+	consentRecords *consentrecords.Module
 	// challenges signs the login challenge on the env clock (ADR 0020).
 	challenges *authtoken.Signer
 	// login is the password step of signing in (ADR 0020).
@@ -241,6 +247,10 @@ type Deps struct {
 	RequireEmailVerification bool
 	// SignupSurvey is the Sign-up survey module (built with signupsurvey.Enabled).
 	SignupSurvey *signupsurvey.Module
+	// SignupItems is the Instance's Sign-up items and their Legal documents.
+	SignupItems *signupitems.Module
+	// ConsentRecords is the Users' decisions on the Sign-up items.
+	ConsentRecords *consentrecords.Module
 	// Signin is the Sign-in providers the Instance enabled (ADR 0048); none enabled when
 	// no provider is configured.
 	Signin *signin.Providers
@@ -265,7 +275,7 @@ func NewHandlers(d Deps) *Handlers {
 		segments: d.Segments, eventlog: d.EventLog, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, templates: d.Templates, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, welcome: d.Welcome,
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, links: accounts.NewLinks(d.Accounts, d.Tokens), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey,
+		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		challenges: d.Tokens.WithClock(d.Clock),

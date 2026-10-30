@@ -217,9 +217,11 @@ namespace SiteWorkspaces {
     | UnprocessableEntityProblem;
 
   /** List the Workspaces in their deletion window that the authenticated User owns, with
-   * the date their data will be erased. */
+   * the date their data will be erased. Answered while an acceptance is pending, for the
+   * account deletion form (ADR 0062). */
   @get
   @route("/deleted")
+  @extension("x-allowed-while-acceptance-pending", true)
   op listDeleted(): {
     @statusCode statusCode: 200;
     @body body: SiteDeletedWorkspaceResource[];
@@ -228,10 +230,13 @@ namespace SiteWorkspaces {
   /** Delete a Workspace (Owner only). The typed name must equal the Workspace's name,
    * else 422. The Workspace is frozen at once and hidden: it answers 404 on its paths
    * and leaves every Member's list; an Owner restores it within 30 days. Recorded as an
-   * Audit entry. */
+   * Audit entry. Answered while an acceptance is pending (ADR 0062), so a User who solely owns
+   * a Workspace can delete it and then their account; the Two-factor requirement still
+   * applies. */
   @post
   @route("/{workspaceId}/delete")
   @extension("x-required-permissions", #[Permission.workspaceDelete])
+  @extension("x-allowed-while-acceptance-pending", true)
   op delete(
     @path workspaceId: WorkspaceId,
     @body body: SiteDeleteWorkspaceInput,

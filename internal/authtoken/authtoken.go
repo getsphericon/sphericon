@@ -56,6 +56,10 @@ const (
 	// own purpose, and a signer on the Staff member secret, keep it from ever verifying
 	// as a User's challenge: Staff member and User ids share no space.
 	PurposeStaffLoginChallenge Purpose = "staff_login_challenge"
+	// PurposePendingSignup is the signed reference of a Sign-in provider's sign-up held for the
+	// Sign-up items (ADR 0062). Its id is the pending sign-up's, not a User's, and it is keyed to
+	// the provider's subject: once the pending sign-up is gone the reference names nothing.
+	PurposePendingSignup Purpose = "pending_signup"
 )
 
 // claims are the token's typed payload. The user id travels as a JSON string

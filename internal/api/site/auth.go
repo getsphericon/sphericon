@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signup"
@@ -20,13 +20,13 @@ import (
 // (whatever the address, ADR 0031). No session starts and no Workspace is made here; they
 // follow the proof.
 func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpInput) (siteapi.SiteAuthSignUpRes, error) {
-	res, err := h.signup.SignUp(ctx, signup.Input{Name: req.Name, Email: string(req.Email), Password: req.Password.Or("")})
+	res, err := h.signup.SignUp(ctx, signup.Input{
+		Name: req.Name, Email: string(req.Email), Password: req.Password.Or(""), SignupItems: signupAnswers(req.SignupItems),
+	})
 	if err != nil {
 		return nil, err
 	}
 	switch res.Outcome {
-	case signup.Closed:
-		return signupClosed(), nil
 	case signup.Taken:
 		return emailTaken(), nil
 	case signup.Accepted:
@@ -42,8 +42,6 @@ func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpIn
 // signUpStore is the site's side of the signup module's seam: Users through accounts.
 type signUpStore struct{ accounts *accounts.Accounts }
 
-func (s signUpStore) Open(ctx context.Context) (bool, error) { return s.accounts.SignupOpen(ctx) }
-
 func (s signUpStore) Lookup(ctx context.Context, email string) (*ent.User, bool, error) {
 	u, err := s.accounts.UserByEmail(ctx, email)
 	if ent.IsNotFound(err) {
@@ -52,24 +50,21 @@ func (s signUpStore) Lookup(ctx context.Context, email string) (*ent.User, bool,
 	return u, err == nil, err
 }
 
-func (s signUpStore) CreateUnverified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
-	u, err := s.accounts.CreateUnverified(ctx, name, email, passwordHash, surveyDue)
+func (s signUpStore) CreateUnverified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+	u, err := s.accounts.CreateUnverified(ctx, n)
 	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
 	}
 	return u, err
 }
 
-func (s signUpStore) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string) (*ent.User, error) {
-	return s.accounts.ReplaceUnverifiedPassword(ctx, id, passwordHash)
+func (s signUpStore) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string, consents consentrecords.Consents) (*ent.User, error) {
+	return s.accounts.ReplaceUnverifiedPassword(ctx, id, passwordHash, consents)
 }
 
-func (s signUpStore) CreateVerified(ctx context.Context, name, email, passwordHash string, surveyDue bool) (*ent.User, error) {
-	u, err := s.accounts.SignUpVerified(ctx, name, email, passwordHash, surveyDue)
-	switch {
-	case errors.Is(err, accounts.ErrSignupClosed):
-		return nil, signup.ErrClosed
-	case db.IsUniqueViolation(err):
+func (s signUpStore) CreateVerified(ctx context.Context, n signup.NewUser) (*ent.User, error) {
+	u, err := s.accounts.SignUpVerified(ctx, n)
+	if db.IsUniqueViolation(err) {
 		return nil, signup.ErrTaken
 	}
 	return u, err
@@ -85,6 +80,7 @@ type signUpMail struct {
 func (h *Handlers) newSignUp() *signup.Module {
 	return signup.New(signup.Config{
 		Store:               signUpStore{h.accounts},
+		Consents:            h.consentRecords,
 		Budget:              h.attempts.For(accounts.KindSignUp),
 		Passwords:           h.passwords,
 		Mail:                signUpMail{h.sysmail, h.welcome},
@@ -94,16 +90,13 @@ func (h *Handlers) newSignUp() *signup.Module {
 	})
 }
 
-// signupClosed is the 403 answer to a Sign-up the Instance's sign-up rule refuses
-// (ADR 0060); accepting an Invitation still works.
-func signupClosed() siteapi.SiteAuthSignUpRes {
-	v := siteapi.SiteAuthSignUpForbidden(siteapi.ProblemDetails{
-		Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeSignupClosed),
-		Status: siteapi.NewOptInt32(http.StatusForbidden),
-		Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
-		Detail: siteapi.NewOptString(i18n.T("errors.signup_closed", nil)),
-	})
-	return &v
+// signupAnswers is the Sign-up items' answers of a form as the consentrecords module takes them.
+func signupAnswers(answers []siteapi.SiteSignupItemAnswer) []consentrecords.Answer {
+	out := make([]consentrecords.Answer, len(answers))
+	for i, a := range answers {
+		out[i] = consentrecords.Answer{Key: string(a.Key), Version: string(a.Version), Accepted: a.Accepted.Or(false)}
+	}
+	return out
 }
 
 // emailTaken is the 409 answer to a Sign-up with an address already in use, on an Instance

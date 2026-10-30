@@ -12,7 +12,7 @@ import (
 
 // everythingAllows is the one set of facts that joins; each branch test breaks one fact.
 func everythingAllows() accounts.JoinFacts {
-	return accounts.JoinFacts{ProvenNow: true, DomainHeld: true, SwitchOn: true, SignupPermits: true}
+	return accounts.JoinFacts{ProvenNow: true, DomainHeld: true, SwitchOn: true}
 }
 
 func TestDecideJoinAnAddressProvenNowOnAHeldDomainWithTheSwitchOnJoins(t *testing.T) {
@@ -75,15 +75,6 @@ func TestDecideJoinAMemberOfAnyRoleIsNotJoinedAgain(t *testing.T) {
 	assert.Equal(t, accounts.JoinDecision{Reason: accounts.JoinReasonAlreadyMember}, got)
 }
 
-func TestDecideJoinAClosedSignupStaysClosedWhateverDomainMatches(t *testing.T) {
-	facts := everythingAllows()
-	facts.SignupPermits = false
-
-	got := accounts.DecideJoin(facts)
-
-	assert.Equal(t, accounts.JoinDecision{Reason: accounts.JoinReasonSignupClosed}, got)
-}
-
 func TestDecideJoinJoinsExactlyWhenEveryFactAllows(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		facts := drawJoinFacts(t)
@@ -91,7 +82,7 @@ func TestDecideJoinJoinsExactlyWhenEveryFactAllows(t *testing.T) {
 		got := accounts.DecideJoin(facts)
 
 		allows := facts.ProvenNow && facts.DomainHeld && facts.SwitchOn && !facts.Suspended &&
-			!facts.InDeletion && !facts.HasMembership && facts.SignupPermits
+			!facts.InDeletion && !facts.HasMembership
 		require.Equal(t, allows, got.Outcome == accounts.JoinAsMember)
 	})
 }
@@ -123,6 +114,5 @@ func drawJoinFacts(t *rapid.T) accounts.JoinFacts {
 		Suspended:     rapid.Bool().Draw(t, "suspended"),
 		InDeletion:    rapid.Bool().Draw(t, "inDeletion"),
 		HasMembership: rapid.Bool().Draw(t, "hasMembership"),
-		SignupPermits: rapid.Bool().Draw(t, "signupPermits"),
 	}
 }
