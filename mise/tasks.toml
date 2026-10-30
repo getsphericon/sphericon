@@ -215,7 +215,7 @@ mise daemons prune --yes
 '''
 
 ["worktrees:gc"]
-description = "Drop the databases of deleted worktrees from the shared Postgres and the daemon state they left (mise daemons prune); idempotent, dry run unless --apply"
+description = "Drop the databases of deleted worktrees from the shared Postgres and the daemon state they left (mise daemons prune), and empty the Go build cache once it outgrows GO_CACHE_LIMIT_GB (default 40); idempotent, dry run unless --apply"
 usage = 'flag "--apply" help="actually drop and prune, instead of listing"'
 quiet = true
 run = '''
@@ -292,6 +292,22 @@ fi
 # 3. Daemon state of deleted worktrees and projects (stops their daemons, deletes state and
 #    data). Live checkouts, the primary and its Postgres included, are never touched.
 if [ -z "$apply" ]; then mise daemons prune --dry-run; else mise daemons prune --yes; fi
+
+# 4. The Go build cache. Every worktree sits in a directory of its own and the paths are part of
+#    the cache keys, so each one compiles everything again and the cache grows by gigabytes a
+#    worktree; Go itself trims only what went unused for five days. Past the limit it is emptied:
+#    the next build of each checkout fills it again, and one running right then may fail once.
+cache=$(go env GOCACHE)
+limit_gb=${GO_CACHE_LIMIT_GB:-40}
+used_gb=$(( $(du -sk "$cache" 2>/dev/null | cut -f1) / 1024 / 1024 ))
+if [ "$used_gb" -le "$limit_gb" ]; then
+  echo "keep    Go build cache ($used_gb GB, limit $limit_gb GB)"
+elif [ -z "$apply" ]; then
+  echo "would empty the Go build cache ($used_gb GB, limit $limit_gb GB)"
+else
+  go clean -cache || echo "go: the build cache was not emptied completely (a build was writing to it)" >&2
+  echo "emptied the Go build cache ($used_gb GB, limit $limit_gb GB)"
+fi
 exit "$status"
 '''
 
