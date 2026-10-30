@@ -2,12 +2,12 @@ import { Box, Stack, Switch, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import type { SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
-import { canManage } from '../../hooks/useCurrentRole.ts'
 import {
   useLiftSecondFactorRequirement,
   useRequireSecondFactor,
 } from '../../hooks/useSecondFactorRequirement.ts'
 import { formatDate } from '../../utils/datetime.ts'
+import { can } from '../../utils/permissions.ts'
 
 // The grace a member without a Second factor gets (ADR 0020), counted from the later
 // of the requirement's start and their Membership's creation.
@@ -22,7 +22,7 @@ export function SecondFactorRequirementSection({
   workspace: SiteWorkspaceResource
 }) {
   const { t } = useTranslation()
-  const canChange = canManage(workspace.role)
+  const canChange = can(workspace, 'second_factor:manage')
   const requiredAt = workspace.secondFactorRequiredAt
   const requireMutation = useRequireSecondFactor()
   const liftMutation = useLiftSecondFactorRequirement()

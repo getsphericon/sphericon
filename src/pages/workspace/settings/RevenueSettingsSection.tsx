@@ -13,8 +13,8 @@ import type {
   SiteWorkspaceResource,
 } from '../../../generated/site/types.gen.ts'
 import { zAttributionWindowDays } from '../../../generated/site/zod.gen.ts'
-import { canManage } from '../../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
+import { can } from '../../../utils/permissions.ts'
 
 // The bounds the contract declares for the Attribution window, read off its generated schema.
 const MIN_WINDOW_DAYS = zAttributionWindowDays.minValue ?? undefined
@@ -30,7 +30,7 @@ function RevenueSettingsForm({
   settings: SiteRevenueSettingsResource
 }) {
   const { t } = useTranslation()
-  const canEdit = canManage(workspace.role)
+  const canEdit = can(workspace, 'revenue:configure')
   const form = useForm<{ currency: string | null; days: number }>({
     initialValues: {
       currency: settings.reportingCurrency,

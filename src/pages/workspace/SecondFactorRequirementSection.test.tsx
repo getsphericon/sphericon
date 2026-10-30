@@ -32,7 +32,7 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
 
 const listRoute = handleSiteWorkspacesList({ body: [workspace()] })
 
-test('an owner switches the requirement on', async () => {
+test('a member holding second_factor:manage switches the requirement on', async () => {
   const required: string[] = []
   worker.use(
     listRoute,
@@ -42,7 +42,9 @@ test('an owner switches the requirement on', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <SecondFactorRequirementSection workspace={workspace({ role: 'owner' })} />,
+    <SecondFactorRequirementSection
+      workspace={workspace({ permissions: ['second_factor:manage'] })}
+    />,
   )
 
   const toggle = screen.getByRole('switch', { name: 'Require two-factor authentication' })
@@ -52,7 +54,7 @@ test('an owner switches the requirement on', async () => {
   await expect.poll(() => required).toEqual([workspace().id])
 })
 
-test('a member sees the requirement and its grace but cannot change it', async () => {
+test('without second_factor:manage the requirement and its grace show but do not change', async () => {
   worker.use(listRoute)
   const required = workspace({ secondFactorRequiredAt: '2026-03-01T00:00:00Z' })
   const { screen } = await renderWithRouter(<SecondFactorRequirementSection workspace={required} />)

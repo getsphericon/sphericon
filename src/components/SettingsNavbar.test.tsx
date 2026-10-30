@@ -1,7 +1,7 @@
 import { beforeEach, expect, test } from 'vitest'
 
 import { handleSiteWorkspacesList } from '../generated/site/msw.gen.ts'
-import type { SiteMembershipRole } from '../generated/site/types.gen.ts'
+import type { Permission } from '../generated/site/types.gen.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as apiKeysRoute } from '../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { Route as auditLogRoute } from '../routes/workspaces/$workspaceId/settings/audit-log.tsx'
@@ -30,23 +30,23 @@ const LINKS = [
   ['Privacy requests', privacyRoute],
 ] as const
 
-const workspace = (role: SiteMembershipRole) => ({
+const workspace = (permissions: Permission[]) => ({
   id: 'AcmeWs01',
   name: 'Acme',
   collectKey: 'omck_test_key',
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
-  permissions: [],
+  permissions,
   mcpUrl: 'https://mcp.sphericon.test/',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
-  role,
+  role: 'member' as const,
   createdAt: '2026-01-01T00:00:00Z',
 })
 
 beforeEach(() => {
-  worker.use(handleSiteWorkspacesList({ body: [workspace('owner')] }))
+  worker.use(handleSiteWorkspacesList({ body: [workspace(['webhooks:manage', 'contacts:erase'])] }))
 })
 
 test.each(LINKS)('%s links to its workspace-scoped route', async (label, target) => {
@@ -71,8 +71,8 @@ test('General is not current on a page under settings', async () => {
     .not.toHaveAttribute('aria-current')
 })
 
-test('a plain member is not offered Webhooks or Privacy requests', async () => {
-  worker.use(handleSiteWorkspacesList({ body: [workspace('member')] }))
+test('without their Permissions Webhooks and Privacy requests are not offered', async () => {
+  worker.use(handleSiteWorkspacesList({ body: [workspace([])] }))
 
   const { screen } = await renderWithRouter(<SettingsNavbar workspaceId="AcmeWs01" />)
 

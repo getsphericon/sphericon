@@ -7,13 +7,14 @@ import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts
 import { Route as apiKeysRoute } from '../../../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { Route as mcpRoute } from '../../../routes/workspaces/$workspaceId/settings/mcp.tsx'
 import { DOCS_URL } from '../../../utils/docs.ts'
+import { can } from '../../../utils/permissions.ts'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 // The guide with the Bearer token setup the app does not repeat.
 const MCP_GUIDE_URL = `${DOCS_URL}/guide/mcp`
 
 // McpSection tells how to connect an AI agent: the endpoint to paste into a connector
-// and what approving it does. Everyone sees it, but only an Owner or Admin can approve.
+// and what approving it does. Everyone sees it, but approving needs tokens:manage.
 function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const { t } = useTranslation()
   const url = `${workspace.mcpUrl.replace(/\/$/, '')}/mcp`
@@ -53,7 +54,7 @@ function McpSection({ workspace }: { workspace: SiteWorkspaceResource }) {
       </Text>
       <Text size="sm" mt="xs">
         {t(($) => $.settings.mcp.approveNote)}
-        {workspace.role === 'member' ? ` ${t(($) => $.settings.mcp.memberNote)}` : ''}
+        {!can(workspace, 'tokens:manage') ? ` ${t(($) => $.settings.mcp.memberNote)}` : ''}
       </Text>
       <Anchor href={MCP_GUIDE_URL} target="_blank" rel="noreferrer" size="sm" mt="xs">
         {t(($) => $.settings.mcp.guideLink)}

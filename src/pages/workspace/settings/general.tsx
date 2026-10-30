@@ -10,6 +10,7 @@ import {
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
+import { can } from '../../../utils/permissions.ts'
 import { DangerZoneSection } from './DangerZoneSection.tsx'
 import { RevenueSettingsSection } from './RevenueSettingsSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
@@ -22,8 +23,8 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
     initialValues: { name: workspace.name, postalAddress: workspace.postalAddress },
   })
 
-  // Renaming is for Owner and Admin (ADR 0043); a Member sees the values read-only.
-  const canEdit = workspace.role !== 'member'
+  // Renaming needs workspace:update (ADR 0043); anyone else sees the values read-only.
+  const canEdit = can(workspace, 'workspace:update')
 
   const updateMutation = useResourceMutation({
     mutation: siteWorkspacesUpdateMutation(),
@@ -75,11 +76,11 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 const TIMEZONES = ['UTC', ...Intl.supportedValuesOf('timeZone').filter((zone) => zone !== 'UTC')]
 
 // TimezoneSection sets the Workspace time zone (ADR 0057): the zone every report counts its days
-// in. Only an Owner changes it; everyone else sees it read-only.
+// in. Changing it needs workspace:timezone; anyone else sees it read-only.
 function TimezoneSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const { t } = useTranslation()
   const form = useForm<{ timezone: string }>({ initialValues: { timezone: workspace.timezone } })
-  const canEdit = workspace.role === 'owner'
+  const canEdit = can(workspace, 'workspace:timezone')
 
   const mutation = useResourceMutation({
     mutation: siteWorkspacesSetTimezoneMutation(),

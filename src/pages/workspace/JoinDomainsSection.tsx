@@ -114,10 +114,10 @@ function JoinDomainRow({
   )
 }
 
-// JoinDomainsSection is the Owner's "Domain access" panel: add a domain, publish
-// the TXT record it shows, Verify, remove, and switch domain join on or off (a person who
-// proves an address on a verified domain after that becomes a member). Owners only: the page does not render it for
-// anyone else, and the API refuses them.
+// JoinDomainsSection is the "Domain access" panel: add a domain, publish the TXT record it
+// shows, Verify, remove, and switch domain join on or off (a person who proves an address on a
+// verified domain after that becomes a member). It needs join_domains:manage: the page does not
+// render it for anyone else, and the API refuses them.
 export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmDelete = useConfirmation()

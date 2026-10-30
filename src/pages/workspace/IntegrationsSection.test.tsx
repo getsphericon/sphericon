@@ -9,16 +9,16 @@ import {
   handleSiteIntegrationsArchive,
   handleSiteIntegrationsList,
   handleSiteIntegrationsUpdate,
-  handleSiteMembershipsList,
-  handleSiteUserGetMe,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteIntegrationResource, SiteMembershipRole } from '../../generated/site/types.gen.ts'
+import type {
+  Permission,
+  SiteIntegrationResource,
+  SiteWorkspaceResource,
+} from '../../generated/site/types.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { IntegrationsSection } from './IntegrationsSection.tsx'
-
-const WORKSPACE_ID = 'TestWs01'
 
 const smtp: SiteIntegrationResource = {
   id: '1',
@@ -44,31 +44,22 @@ const smtp: SiteIntegrationResource = {
   updatedAt: '2026-01-01T00:00:00Z',
 }
 
-// The signed-in User holds `role` in the Workspace (writes are owner/admin-only).
-const signedInAs = (role: SiteMembershipRole) => [
-  handleSiteUserGetMe({
-    body: {
-      id: '10',
-      name: 'Ann',
-      email: 'ann@acme.com',
-      emailVerified: true,
-      signupSurveyDue: false,
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-  }),
-  handleSiteMembershipsList({
-    body: [
-      {
-        id: '1',
-        userId: '10',
-        email: 'ann@acme.com',
-        name: 'Ann',
-        role,
-        createdAt: '2026-01-01T00:00:00Z',
-      },
-    ],
-  }),
-]
+// The Workspace as the signed-in User sees it: writing Integrations needs integrations:manage.
+const workspaceWith = (permissions: Permission[]): SiteWorkspaceResource => ({
+  id: 'TestWs01',
+  name: 'Acme',
+  collectKey: 'omck_test_key',
+  postalAddress: '',
+  timezone: 'UTC',
+  accountLinkAvailable: false,
+  permissions,
+  mcpUrl: 'https://sphericon.test',
+  trackerUrl: 'https://t.sphericon.test',
+  holds: [],
+  role: 'member',
+  createdAt: '2026-01-01T00:00:00Z',
+})
+const manager = workspaceWith(['integrations:manage'])
 
 const list = (items: SiteIntegrationResource[]) => handleSiteIntegrationsList({ body: items })
 
@@ -80,15 +71,12 @@ const create = (bodies: unknown[]) =>
 
 // Without a license the change-history link probes the Audit log and hides itself.
 beforeEach(() => {
-  worker.use(
-    handleSiteAuditList(() => problem(402)),
-    ...signedInAs('owner'),
-  )
+  worker.use(handleSiteAuditList(() => problem(402)))
 })
 
 test('lists connected providers', async () => {
   worker.use(list([smtp]))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
 })
@@ -96,7 +84,7 @@ test('lists connected providers', async () => {
 test('connects an SMTP provider and names it after its host', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -129,7 +117,7 @@ test('connects an SMTP provider and names it after its host', async () => {
 test('a second provider is the default only when asked, and may be named', async () => {
   const bodies: unknown[] = []
   worker.use(list([smtp]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -147,7 +135,7 @@ test('a second provider is the default only when asked, and may be named', async
 test('connects an Amazon SES provider', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -184,7 +172,7 @@ test('connects an Amazon SES provider', async () => {
 test('connects an SES-compatible service at its own endpoint', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -212,7 +200,7 @@ test('connects an SES-compatible service at its own endpoint', async () => {
 
 test('Amazon SES asks for no endpoint', async () => {
   worker.use(list([]))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -224,7 +212,7 @@ test('Amazon SES asks for no endpoint', async () => {
 test('connects the Test inbox with no credentials form', async () => {
   const bodies: unknown[] = []
   worker.use(list([smtp]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -249,7 +237,7 @@ test('says why a second Test inbox is refused', async () => {
       problem(409, { detail: 'The workspace already has a Test inbox' }),
     ),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -270,7 +258,7 @@ test('removes a provider', async () => {
       return HttpResponse.json({ ...smtp, isDefault: false, archivedAt: '2026-02-01T00:00:00Z' })
     }),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Remove' }).click()
@@ -285,7 +273,7 @@ test('a provider that live work uses is not removed and the work is named', asyn
       problem(409, { usedBy: [{ kind: 'broadcast', id: '7', name: 'Summer sale teaser' }] }),
     ),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Remove' }).click()
@@ -295,7 +283,7 @@ test('a provider that live work uses is not removed and the work is named', asyn
 })
 test('shows an error alert when providers fail to load', async () => {
   worker.use(handleSiteIntegrationsList(() => problem(500, { detail: 'boom' })))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Failed to load providers').first()).toBeInTheDocument()
 })
@@ -305,7 +293,7 @@ test('reports a create failure', async () => {
     list([]),
     handleSiteIntegrationsCreate(() => problem(422, { detail: 'bad host' })),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -337,7 +325,7 @@ const update = (bodies: unknown[]) =>
 
 test('warns when an Integration has no send limit', async () => {
   worker.use(list([smtp]))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Primary SMTP has no send limit')).toBeInTheDocument()
   await expect.element(screen.getByText('Per second: Unlimited')).toBeInTheDocument()
@@ -350,7 +338,7 @@ test('warns when the provider send quota could not be read', async () => {
     sendLimit: { ...limited.sendLimit, warnings: ['providerQuotaUnavailable'] },
   }
   worker.use(list([ses]))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect
     .element(screen.getByText("Amazon SES: the provider's send quota could not be read"))
@@ -362,7 +350,7 @@ test('warns when the provider send quota could not be read', async () => {
 
 test('shows no quota warning when the provider quota is known', async () => {
   worker.use(list([limited]))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Per second: 14')).toBeInTheDocument()
   await expect
@@ -372,7 +360,7 @@ test('shows no quota warning when the provider quota is known', async () => {
 
 test('shows the effective limit, its source and the 24-hour usage', async () => {
   worker.use(list([limited]))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await expect.element(screen.getByText('Per second: 14')).toBeInTheDocument()
   await expect.element(screen.getByText('Per 24 h: 50 000')).toBeInTheDocument()
@@ -386,7 +374,7 @@ test('shows the effective limit, its source and the 24-hour usage', async () => 
 test('connects a provider with send limits', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'Connect provider' }).click()
   const dialog = screen.getByRole('dialog')
@@ -406,7 +394,7 @@ test('connects a provider with send limits', async () => {
 test('edits only the limits of an existing provider, and a blank clears one', async () => {
   const bodies: unknown[] = []
   worker.use(list([limited]), update(bodies))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Limits' }).click()
@@ -419,9 +407,9 @@ test('edits only the limits of an existing provider, and a blank clears one', as
   await expect.poll(() => bodies).toEqual([{ maxPerSecond: 20, maxPerDay: null }])
 })
 
-test('a member can read the providers but not change them', async () => {
-  worker.use(list([smtp]), ...signedInAs('member'))
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+test('a member without integrations:manage reads the providers but does not change them', async () => {
+  worker.use(list([smtp]))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={workspaceWith([])} />)
 
   await expect.element(screen.getByText('Primary SMTP')).toBeInTheDocument()
   await expect
@@ -456,7 +444,7 @@ test('shows the hook URL and chooses a Preset with its params', async () => {
       return HttpResponse.json(withPreset)
     }),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Inbound' }).click()
@@ -479,7 +467,7 @@ test('retires the old secrets of a rotating Preset', async () => {
       return HttpResponse.json({ ...withPreset, secretsRetiring: [] })
     }),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Inbound' }).click()
@@ -498,7 +486,7 @@ test('regenerates the hook URL after a confirmation', async () => {
       return HttpResponse.json({ ...smtp, hookUrl: 'https://app.test/hooks/omik_two' })
     }),
   )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspaceId={WORKSPACE_ID} />)
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Inbound' }).click()

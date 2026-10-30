@@ -15,7 +15,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { siteWorkspacesListOptions } from '../generated/site/@tanstack/react-query.gen.ts'
-import { canManage } from '../hooks/useCurrentRole.ts'
 import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.tsx'
 import { Route as apiKeysRoute } from '../routes/workspaces/$workspaceId/settings/api-keys.tsx'
 import { Route as auditLogRoute } from '../routes/workspaces/$workspaceId/settings/audit-log.tsx'
@@ -26,6 +25,7 @@ import { Route as privacyRoute } from '../routes/workspaces/$workspaceId/setting
 import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
 import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { Route as webhooksRoute } from '../routes/workspaces/$workspaceId/settings/webhooks.tsx'
+import { can } from '../utils/permissions.ts'
 import { NavLinkLink } from './RouterLink.tsx'
 
 // SettingsNavbar is the sidebar of the workspace settings area: a way back to the
@@ -34,7 +34,7 @@ import { NavLinkLink } from './RouterLink.tsx'
 export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const workspaces = useQuery(siteWorkspacesListOptions())
-  const role = workspaces.data?.find((w) => w.id === workspaceId)?.role
+  const workspace = workspaces.data?.find((w) => w.id === workspaceId)
 
   const pages = [
     {
@@ -73,8 +73,9 @@ export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
       icon: <IconKey size={18} />,
       exact: false,
     },
-    // Webhooks and Privacy requests are for owners and admins; the API refuses everyone else.
-    ...(canManage(role)
+    // Webhooks and Privacy requests are offered only to a member who holds their Permission;
+    // the API refuses everyone else.
+    ...(can(workspace, 'webhooks:manage')
       ? [
           {
             route: webhooksRoute,
@@ -90,7 +91,7 @@ export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
       icon: <IconRobot size={18} />,
       exact: false,
     },
-    ...(canManage(role)
+    ...(can(workspace, 'contacts:erase')
       ? [
           {
             route: privacyRoute,

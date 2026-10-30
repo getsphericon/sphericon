@@ -7,7 +7,10 @@ import {
   handleSiteContactsLookup,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
-import type { SiteContactHoldings } from '../../../generated/site/types.gen.ts'
+import type {
+  SiteContactHoldings,
+  SiteWorkspaceResource,
+} from '../../../generated/site/types.gen.ts'
 import { Route as privacyRoute } from '../../../routes/workspaces/$workspaceId/settings/privacy.tsx'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
@@ -25,18 +28,18 @@ vi.mock('file-saver', () => ({
 
 const PRIVACY_ROUTE = routeMount(privacyRoute, { workspaceId: 'TestWs01' })
 
-const workspace = {
+const workspace: SiteWorkspaceResource = {
   id: 'TestWs01',
   name: 'Acme',
   collectKey: 'omck_test_key',
   postalAddress: '',
   timezone: 'UTC',
   accountLinkAvailable: false,
-  permissions: [],
+  permissions: ['contacts:erase'],
   mcpUrl: 'https://mcp.sphericon.test/',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
-  role: 'owner' as const,
+  role: 'owner',
   createdAt: '2026-01-01T00:00:00Z',
 }
 
@@ -57,7 +60,7 @@ async function lookUp(
   await screen.getByRole('button', { name: 'Look up' }).click()
 }
 
-test('an owner looks up an address and sees what is held as counts', async () => {
+test('contacts:erase looks up an address and sees what is held as counts', async () => {
   const asked: (string | null)[] = []
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
@@ -125,14 +128,6 @@ test('a failed lookup other than a rejected address shows the generic error', as
   await expect.element(screen.getByText('Could not look up the address.')).toBeInTheDocument()
 })
 
-test('an admin sees the section', async () => {
-  worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'admin' as const }] }))
-
-  const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
-
-  await expect.element(screen.getByLabelText('Email address')).toBeInTheDocument()
-})
-
 test('a found Contact can be exported by the looked-up address', async () => {
   const asked: (string | null)[] = []
   worker.use(
@@ -177,8 +172,10 @@ test('Export is disabled when the address has no Contact', async () => {
   await expect.element(screen.getByRole('button', { name: 'Export data' })).toBeDisabled()
 })
 
-test('a plain member is not offered the section', async () => {
-  worker.use(handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member' as const }] }))
+test('without contacts:erase the section is not offered', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [{ ...workspace, role: 'member', permissions: [] }] }),
+  )
 
   const { screen } = await renderWithRouter(<PrivacyPage />, PRIVACY_ROUTE)
 

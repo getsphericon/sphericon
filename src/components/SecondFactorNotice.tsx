@@ -2,10 +2,10 @@ import { Alert, Button, Card, Divider, Group, Stack, Text, Title } from '@mantin
 import { useTranslation } from 'react-i18next'
 
 import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
-import { canManage } from '../hooks/useCurrentRole.ts'
 import { useLiftSecondFactorRequirement } from '../hooks/useSecondFactorRequirement.ts'
 import { Route as securityRoute } from '../routes/account/security.tsx'
 import { formatDate } from '../utils/datetime.ts'
+import { can } from '../utils/permissions.ts'
 import { ButtonLink } from './RouterLink.tsx'
 
 // SecondFactorGraceBanner reminds the User, on every page of the Workspace, of the
@@ -27,13 +27,15 @@ export function SecondFactorGraceBanner({ endsAt }: { endsAt: string }) {
 }
 
 // SecondFactorBlocked replaces the Workspace's pages once the grace is over: every
-// request to the Workspace is refused until the User enrolls a Second factor. An
-// Owner or Admin may instead turn the requirement off (the one operation the server
+// request to the Workspace is refused until the User enrolls a Second factor. A member
+// who holds second_factor:manage may instead turn the requirement off (the one operation the server
 // still accepts from them), so a Workspace is never left without anyone able to lift it.
 export function SecondFactorBlocked({
   workspace,
 }: {
-  workspace: Pick<SiteWorkspaceResource, 'id' | 'role' | 'secondFactorRequiredAt'> | undefined
+  workspace:
+    | Pick<SiteWorkspaceResource, 'id' | 'permissions' | 'secondFactorRequiredAt'>
+    | undefined
 }) {
   const { t } = useTranslation()
   return (
@@ -44,7 +46,7 @@ export function SecondFactorBlocked({
         <Group>
           <ButtonLink to={securityRoute.to}>{t(($) => $.secondFactorRequirement.setUp)}</ButtonLink>
         </Group>
-        {workspace?.secondFactorRequiredAt && canManage(workspace.role) ? (
+        {workspace?.secondFactorRequiredAt && can(workspace, 'second_factor:manage') ? (
           <TurnRequirementOff workspaceId={workspace.id} />
         ) : null}
       </Stack>

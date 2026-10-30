@@ -27,9 +27,9 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBrandKitResource, SiteSaveBrandKitInput } from '../../generated/site/types.gen.ts'
 import { zSiteSaveBrandKitInput } from '../../generated/site/zod.gen.ts'
-import { canManageBrandKit } from '../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
+import { can } from '../../utils/permissions.ts'
 
 // The contract's bounds (TypeSpec -> zod) are the single source for the inputs' range.
 const RADIUS = zSiteSaveBrandKitInput.shape.buttonRadius
@@ -203,8 +203,8 @@ function BrandKitForm({
 }
 
 // BrandKitPage edits the Workspace's Brand kit (ADR 0040): the colors, fonts, logo, button
-// style and footer the editor offers. Owners save it; every member sees it. Saving it
-// changes no message already written.
+// style and footer the editor offers. Saving it needs brand_kit:manage; every member sees it.
+// Saving it changes no message already written.
 export function BrandKitPage() {
   const { t } = useTranslation()
   const { workspaceId } = brandKitRoute.useParams()
@@ -229,7 +229,7 @@ export function BrandKitPage() {
           key={kitQuery.data.updatedAt ?? 'unsaved'}
           workspaceId={workspaceId}
           kit={kitQuery.data}
-          canChange={canManageBrandKit(workspace.role)}
+          canChange={can(workspace, 'brand_kit:manage')}
         />
       ) : null}
     </Stack>

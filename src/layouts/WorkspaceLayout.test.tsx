@@ -271,11 +271,12 @@ test('a 403 second_factor_required from the workspace shows the blocked screen',
   await expect.element(screen.getByText('Two-factor authentication required')).toBeInTheDocument()
 })
 
-// Story 35: an Owner or Admin withheld by the requirement can still lift it.
-test('a withheld owner can turn the requirement off from the blocked screen', async () => {
+// Story 35: a member holding second_factor:manage, withheld by the requirement, can still lift it.
+test('a withheld second_factor:manage holder can turn the requirement off from the blocked screen', async () => {
   const lifted: string[] = []
   let current = workspace({
     role: 'owner',
+    permissions: ['second_factor:manage'],
     secondFactorRequiredAt: '2026-03-01T00:00:00Z',
     secondFactorGraceEndsAt: new Date(Date.now() - DAY).toISOString(),
   })
@@ -283,7 +284,7 @@ test('a withheld owner can turn the requirement off from the blocked screen', as
     handleSiteWorkspacesList(() => HttpResponse.json([current])),
     handleSiteWorkspacesLiftSecondFactorRequirement(({ params }) => {
       lifted.push(params.workspaceId)
-      current = workspace({ role: 'owner' })
+      current = workspace({ role: 'owner', permissions: ['second_factor:manage'] })
       return HttpResponse.json(current)
     }),
     handleSiteTagsList(() =>

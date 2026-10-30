@@ -37,10 +37,11 @@ import type {
   SiteIntegrationConfigInput,
   SiteIntegrationProvider,
   SiteIntegrationResource,
+  SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
-import { canManage, useCurrentRole } from '../../hooks/useCurrentRole.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
+import { can } from '../../utils/permissions.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
 import { InboundModal } from './InboundModal.tsx'
 import { NO_LIMITS, toLimit, useSendLimitValidators } from './sendLimit.ts'
@@ -125,13 +126,13 @@ function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput 
   }
 }
 
-export function IntegrationsSection({ workspaceId }: { workspaceId: string }) {
+export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+  const workspaceId = workspace.id
   const { t } = useTranslation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [advanced, { toggle: toggleAdvanced, close: closeAdvanced }] = useDisclosure(false)
   const [tile, setTile] = useState<Tile | null>(null)
-  const role = useCurrentRole(workspaceId)
-  const canManageIntegrations = canManage(role)
+  const canManageIntegrations = can(workspace, 'integrations:manage')
 
   const queryKey = siteIntegrationsListQueryKey({ path: { workspaceId } })
   const integrationsQuery = useQuery(
