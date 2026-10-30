@@ -10,7 +10,7 @@ import {
   siteIdentitiesUnlinkMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import { client } from '../generated/site/client.gen.ts'
-import type { SiteIdentitiesLinkData } from '../generated/site/types.gen.ts'
+import type { SiteIdentitiesLinkData, SiteLinkedIdentity } from '../generated/site/types.gen.ts'
 import { zSiteSigninError } from '../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { BlockSkeleton } from './Skeletons.tsx'
@@ -24,10 +24,10 @@ function linkUrl(provider: string) {
   })
 }
 
-// The account's Linked identities (ADR 0048): the Sign-in providers the User can sign in with,
-// a button to unlink each, and one to link another account of each provider the Instance
-// enabled (a different email is fine). Nothing is shown on an Instance with no provider and
-// an account with no identity.
+// The account's Linked identities (ADR 0048): one row per Sign-in provider the Instance enabled,
+// with Connect while the User has no account of it linked and Disconnect once they have, and a
+// Disconnect row for an identity whose provider the Instance no longer offers. Nothing is shown
+// on an Instance with no provider and an account with no identity.
 export function LinkedIdentities() {
   const { t } = useTranslation()
   const search = useSearch({ strict: false })
@@ -37,8 +37,8 @@ export function LinkedIdentities() {
   const unlink = useResourceMutation({
     mutation: siteIdentitiesUnlinkMutation(),
     invalidate: [siteIdentitiesListQueryKey()],
-    successMessage: t(($) => $.signin.linked.unlinked),
-    errorTitle: t(($) => $.signin.linked.unlinkErrorTitle),
+    successMessage: t(($) => $.signin.linked.disconnected),
+    errorTitle: t(($) => $.signin.linked.disconnectErrorTitle),
   })
 
   const items = identities.data?.items ?? []
@@ -46,6 +46,20 @@ export function LinkedIdentities() {
   if (identities.isSuccess && providers.isSuccess && items.length === 0 && enabled.length === 0) {
     return null
   }
+
+  const disconnect = (identity: SiteLinkedIdentity) => (
+    <Group key={identity.id} justify="space-between">
+      <Text>{identity.displayName}</Text>
+      <Button
+        color="red"
+        variant="light"
+        loading={unlink.isPending && unlink.variables.path.id === identity.id}
+        onClick={() => unlink.mutate({ path: { id: identity.id } })}
+      >
+        {t(($) => $.signin.linked.disconnect)}
+      </Button>
+    </Group>
+  )
 
   return (
     <Stack>
@@ -59,29 +73,24 @@ export function LinkedIdentities() {
         <Alert color="red" title={t(($) => $.security.loadErrorTitle)} />
       ) : null}
       {identities.isLoading ? <BlockSkeleton /> : null}
-      {identities.isSuccess && items.length === 0 ? (
-        <Text size="sm" c="dimmed">
-          {t(($) => $.signin.linked.empty)}
-        </Text>
-      ) : null}
-      {items.map((identity) => (
-        <Group key={identity.id} justify="space-between">
-          <Text>{identity.displayName}</Text>
-          <Button
-            color="red"
-            variant="light"
-            loading={unlink.isPending && unlink.variables.path.id === identity.id}
-            onClick={() => unlink.mutate({ path: { id: identity.id } })}
-          >
-            {t(($) => $.signin.linked.unlink)}
-          </Button>
-        </Group>
-      ))}
-      {enabled.map((provider) => (
-        <Button key={provider.name} component="a" href={linkUrl(provider.name)} variant="default">
-          {t(($) => $.signin.linked.link, { provider: provider.displayName })}
-        </Button>
-      ))}
+      {identities.isSuccess
+        ? enabled.map((provider) => {
+            const linked = items.filter((identity) => identity.provider === provider.name)
+            return linked.length > 0 ? (
+              linked.map((identity) => disconnect(identity))
+            ) : (
+              <Group key={provider.name} justify="space-between">
+                <Text>{provider.displayName}</Text>
+                <Button component="a" href={linkUrl(provider.name)} variant="default">
+                  {t(($) => $.signin.linked.connect)}
+                </Button>
+              </Group>
+            )
+          })
+        : null}
+      {items
+        .filter((identity) => !enabled.some((provider) => provider.name === identity.provider))
+        .map((identity) => disconnect(identity))}
     </Stack>
   )
 }

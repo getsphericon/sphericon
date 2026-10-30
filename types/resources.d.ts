@@ -1756,13 +1756,12 @@ export default interface Resources {
         "provider_unavailable": "That sign-in method is not available on this instance."
       },
       "linked": {
-        "empty": "No provider is linked to your account yet.",
-        "errorTitle": "Could not link the account",
-        "link": "Link a {{provider}} account",
-        "title": "Sign-in providers",
-        "unlink": "Unlink",
-        "unlinkErrorTitle": "Could not unlink the provider",
-        "unlinked": "Provider unlinked"
+        "connect": "Connect",
+        "disconnect": "Disconnect",
+        "disconnectErrorTitle": "Could not disconnect the provider",
+        "disconnected": "Provider disconnected",
+        "errorTitle": "Could not connect the account",
+        "title": "Sign-in providers"
       },
       "or": "or"
     },

@@ -7,6 +7,7 @@ import {
   handleSiteIdentitiesUnlink,
   handleSiteSecondFactorGetStatus,
 } from '../../generated/site/msw.gen.ts'
+import type { SiteLinkedIdentity } from '../../generated/site/types.gen.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -19,7 +20,7 @@ const LINKED = {
   ],
 }
 
-function serve(identities: typeof LINKED | { items: [] }) {
+function serve(identities: { items: SiteLinkedIdentity[] }) {
   worker.use(
     handleSiteSecondFactorGetStatus({
       body: {
@@ -35,14 +36,35 @@ function serve(identities: typeof LINKED | { items: [] }) {
   )
 }
 
-test('the settings list the linked providers and offer to link another account', async () => {
+test('a linked provider offers only Disconnect', async () => {
   serve(LINKED)
   const { screen } = await renderWithRouter(<SecurityPage />)
 
-  await expect.element(screen.getByRole('button', { name: 'Unlink' })).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: 'Disconnect' })).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Connect' }).elements()).toHaveLength(0)
+})
+
+test('a provider not linked yet offers only Connect', async () => {
+  serve({ items: [] })
+  const { screen } = await renderWithRouter(<SecurityPage />)
+
   await expect
-    .element(screen.getByRole('link', { name: 'Link a Google account' }))
+    .element(screen.getByRole('link', { name: 'Connect' }))
     .toHaveAttribute('href', '/site/me/identities/google/link')
+  expect(screen.getByRole('button', { name: 'Disconnect' }).elements()).toHaveLength(0)
+})
+
+test('an identity of a provider the Instance no longer offers can still be disconnected', async () => {
+  serve({
+    items: [
+      { id: '8', provider: 'github', displayName: 'github', createdAt: '2026-01-01T00:00:00Z' },
+    ],
+  })
+  const { screen } = await renderWithRouter(<SecurityPage />)
+
+  await expect.element(screen.getByText('github')).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: 'Disconnect' })).toBeVisible()
+  await expect.element(screen.getByRole('link', { name: 'Connect' })).toBeVisible()
 })
 
 test('unlinking a provider calls the unlink operation of that identity', async () => {
@@ -56,7 +78,7 @@ test('unlinking a provider calls the unlink operation of that identity', async (
   )
   const { screen } = await renderWithRouter(<SecurityPage />)
 
-  await screen.getByRole('button', { name: 'Unlink' }).click()
+  await screen.getByRole('button', { name: 'Disconnect' }).click()
 
   await expect.poll(() => called).toEqual(['7'])
 })
@@ -73,9 +95,9 @@ test('an unlink the server refuses is reported', async () => {
   )
   const { screen } = await renderWithRouter(<SecurityPage />)
 
-  await screen.getByRole('button', { name: 'Unlink' }).click()
+  await screen.getByRole('button', { name: 'Disconnect' }).click()
 
-  await expect.element(screen.getByText('Could not unlink the provider')).toBeVisible()
+  await expect.element(screen.getByText('Could not disconnect the provider')).toBeVisible()
 })
 
 test('a refused link is explained when the callback lands on the settings', async () => {
@@ -84,5 +106,5 @@ test('a refused link is explained when the callback lands on the settings', asyn
     initialPath: '/workspaces/TestWs01?error=identity_in_use',
   })
 
-  await expect.element(screen.getByText('Could not link the account')).toBeVisible()
+  await expect.element(screen.getByText('Could not connect the account')).toBeVisible()
 })

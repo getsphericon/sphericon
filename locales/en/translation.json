@@ -1756,13 +1756,12 @@
     },
     "errorTitle": "Could not sign in with your account",
     "linked": {
-      "empty": "No provider is linked to your account yet.",
-      "errorTitle": "Could not link the account",
-      "link": "Link a {{provider}} account",
-      "title": "Sign-in providers",
-      "unlink": "Unlink",
-      "unlinked": "Provider unlinked",
-      "unlinkErrorTitle": "Could not unlink the provider"
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "disconnected": "Provider disconnected",
+      "disconnectErrorTitle": "Could not disconnect the provider",
+      "errorTitle": "Could not connect the account",
+      "title": "Sign-in providers"
     },
     "or": "or"
   },
