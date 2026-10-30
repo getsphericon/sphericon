@@ -64,7 +64,20 @@ export default defineConfig({
   // vitest-browser-react imports react-dom/client from inside node_modules, where Vite's first scan
   // does not see it: found late, it re-bundles the dependencies and reloads a test mid-run, and
   // that test's page never comes back. Pre-bundle it up front.
-  optimizeDeps: { include: ['react-dom/client'] },
+  // Every dependency a test can reach is optimized before the run: one Vite discovers mid-run
+  // (it found @mantine/notifications through a logic test's imports) reloads the browser and
+  // fails whatever test file was collecting.
+  optimizeDeps: {
+    include: [
+      'react-dom/client',
+      '@mantine/charts',
+      '@mantine/core',
+      '@mantine/form',
+      '@mantine/hooks',
+      '@mantine/modals',
+      '@mantine/notifications',
+    ],
+  },
   // Under Vitest browser mode the page loads @vite/client, which would try to open
   // the dev HMR websocket below (wss://sphericon.localhost:443 — unreachable in CI) and
   // race the teardown with an unhandled "WebSocket closed without opened" rejection.
