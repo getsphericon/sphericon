@@ -10,8 +10,13 @@ import { StatCard } from '../../components/StatCard.tsx'
 import {
   siteBroadcastLinksListOptions,
   siteBroadcastsGetOptions,
+  siteSegmentsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteBroadcastStats, SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
+import type {
+  SiteBroadcastResource,
+  SiteBroadcastStats,
+  SiteBroadcastStatus,
+} from '../../generated/site/types.gen.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
 import { BroadcastHoldAlert } from './BroadcastHold.tsx'
@@ -70,6 +75,49 @@ function rateEntries(t: TFunction, stats: SiteBroadcastStats): { label: string; 
   ]
 }
 
+// Where the audience came from (ADR 0065): the Segment, archived or not, or all contacts. Past draft
+// the Broadcast holds a copy of the Segment's Condition, so an edit of the Segment since changes
+// nothing for it.
+function BroadcastAudience({
+  workspaceId,
+  broadcast,
+}: {
+  workspaceId: string
+  broadcast: SiteBroadcastResource
+}) {
+  const { t } = useTranslation()
+  const segmentId = broadcast.segmentId ?? ''
+  const segmentQuery = useQuery({
+    ...siteSegmentsGetOptions({ path: { workspaceId, id: segmentId } }),
+    enabled: segmentId !== '',
+  })
+
+  if (segmentId === '') {
+    return <Text size="sm">{t(($) => $.broadcasts.audience.all)}</Text>
+  }
+  const segment = segmentQuery.data
+  if (!segment) {
+    return null
+  }
+  return (
+    <Stack gap={4}>
+      <Group gap="xs">
+        <Text size="sm">{t(($) => $.broadcasts.audience.segment, { name: segment.name })}</Text>
+        {segment.archivedAt && (
+          <Badge color="gray" variant="light" size="sm">
+            {t(($) => $.archive.archived)}
+          </Badge>
+        )}
+      </Group>
+      {broadcast.status !== 'draft' && (
+        <Text size="sm" c="dimmed">
+          {t(($) => $.broadcasts.audience.copied)}
+        </Text>
+      )}
+    </Stack>
+  )
+}
+
 // The per-link figures load beside the report: while they fail or are empty, the report stays.
 function BroadcastLinks({
   workspaceId,
@@ -113,6 +161,7 @@ export function BroadcastReportPage() {
         </Badge>
       </Group>
       <Text c="dimmed">{broadcast.subject}</Text>
+      <BroadcastAudience workspaceId={workspaceId} broadcast={broadcast} />
       {broadcast.holdReason && <BroadcastHoldAlert reason={broadcast.holdReason} />}
       {broadcast.progress && <BroadcastProgress progress={broadcast.progress} />}
 

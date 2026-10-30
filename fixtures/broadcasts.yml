@@ -182,7 +182,8 @@
   created_at: '{{daysAgo 61}}'
   updated_at: '{{daysAgo 60}}'
 
-# Scheduled to its own Segment, so archiving that Segment is refused while this Broadcast is live.
+# Scheduled to its own Segment, with the Condition it copied from it then (ADR 0065); the Segment was
+# edited since, so the copy alone names the Tag renewal-due, which stays in use while this is armed.
 - id: 109 # fixture: BroadcastScheduledRenewal
   name: Renewal reminder
   subject: Your renewal is coming up
@@ -192,6 +193,7 @@
   status: scheduled
   scheduled_at: '{{daysAhead 4}}'
   segment_id: 107
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"renewal-due"}]}'
   integration_id: 20
   workspace_id: 1
   created_at: '{{daysAgo 2}}'
@@ -361,6 +363,7 @@
   status: 'scheduled'
   scheduled_at: '{{daysAhead 4}}'
   segment_id: 20004
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"newsletter"},{"kind":"rule","field":"custom:plan","operator":"neq","value":"team"}]}'
   workspace_id: 20
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'

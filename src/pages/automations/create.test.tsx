@@ -23,7 +23,7 @@ test('creating an automation sends the trimmed name and the default trigger, the
         {
           id: '7',
           name: 'Welcome',
-          status: 'draft',
+          status: 'inactive',
           triggerEvent: 'contact.created',
           steps: [],
           createdAt: NOW,

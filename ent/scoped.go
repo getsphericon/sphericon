@@ -38,7 +38,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -532,18 +533,34 @@ func (s *Scoped) verifyRuleFiring(ctx context.Context, ids []int64) error {
 	return nil
 }
 
-// verifyRuleTrigger fails with ErrNotInWorkspace unless every id is a RuleTrigger of the Workspace.
-func (s *Scoped) verifyRuleTrigger(ctx context.Context, ids []int64) error {
+// verifyRuleVersion fails with ErrNotInWorkspace unless every id is a RuleVersion of the Workspace.
+func (s *Scoped) verifyRuleVersion(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.RuleTrigger.Query().Where(ruletrigger.IDIn(ids...), ruletrigger.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.RuleVersion.Query().Where(ruleversion.IDIn(ids...), ruleversion.WorkspaceID(s.ws)).Count(ctx)
 	if err != nil {
 		return err
 	}
 	if n != len(ids) {
-		return fmt.Errorf("RuleTrigger: %w", ErrNotInWorkspace)
+		return fmt.Errorf("RuleVersion: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyRuleVersionTrigger fails with ErrNotInWorkspace unless every id is a RuleVersionTrigger of the Workspace.
+func (s *Scoped) verifyRuleVersionTrigger(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.RuleVersionTrigger.Query().Where(ruleversiontrigger.IDIn(ids...), ruleversiontrigger.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("RuleVersionTrigger: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -2374,21 +2391,27 @@ func (x *AutomationScopedCreate) SetNillableStatus(v *automation.Status) *Automa
 	return x
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationScopedCreate) SetTriggerEvent(v string) *AutomationScopedCreate {
-	x.b.SetTriggerEvent(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (x *AutomationScopedCreate) SetLiveVersionID(v int64) *AutomationScopedCreate {
+	x.b.SetLiveVersionID(v)
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationScopedCreate) SetIntegrationID(v int64) *AutomationScopedCreate {
-	x.b.SetIntegrationID(v)
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableLiveVersionID(v *int64) *AutomationScopedCreate {
+	x.b.SetNillableLiveVersionID(v)
 	return x
 }
 
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationScopedCreate) SetNillableIntegrationID(v *int64) *AutomationScopedCreate {
-	x.b.SetNillableIntegrationID(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (x *AutomationScopedCreate) SetDraftVersionID(v int64) *AutomationScopedCreate {
+	x.b.SetDraftVersionID(v)
+	return x
+}
+
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableDraftVersionID(v *int64) *AutomationScopedCreate {
+	x.b.SetNillableDraftVersionID(v)
 	return x
 }
 
@@ -2428,9 +2451,15 @@ func (x *AutomationScopedCreate) AddOutboundMessages(v ...*OutboundMessage) *Aut
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationScopedCreate) SetIntegration(v *Integration) *AutomationScopedCreate {
-	x.b.SetIntegration(v)
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedCreate) SetLiveVersion(v *AutomationVersion) *AutomationScopedCreate {
+	x.b.SetLiveVersion(v)
+	return x
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedCreate) SetDraftVersion(v *AutomationVersion) *AutomationScopedCreate {
+	x.b.SetDraftVersion(v)
 	return x
 }
 
@@ -2446,8 +2475,11 @@ func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
 		return fmt.Errorf("outbound_messages: %w", err)
 	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
+	if err := x.s.verifyAutomationVersion(ctx, m.LiveVersionIDs()); err != nil {
+		return fmt.Errorf("live_version: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.DraftVersionIDs()); err != nil {
+		return fmt.Errorf("draft_version: %w", err)
 	}
 	return nil
 }
@@ -2597,27 +2629,27 @@ func (u *AutomationScopedUpsert) UpdateStatus() *AutomationScopedUpsert {
 	return u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationScopedUpsert) SetTriggerEvent(v string) *AutomationScopedUpsert {
-	u.u.Set(automation.FieldTriggerEvent, v)
+// UpdateLiveVersionID sets the "live_version_id" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateLiveVersionID() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldLiveVersionID)
 	return u
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationScopedUpsert) UpdateTriggerEvent() *AutomationScopedUpsert {
-	u.u.SetExcluded(automation.FieldTriggerEvent)
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (u *AutomationScopedUpsert) ClearLiveVersionID() *AutomationScopedUpsert {
+	u.u.SetNull(automation.FieldLiveVersionID)
 	return u
 }
 
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationScopedUpsert) UpdateIntegrationID() *AutomationScopedUpsert {
-	u.u.SetExcluded(automation.FieldIntegrationID)
+// UpdateDraftVersionID sets the "draft_version_id" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateDraftVersionID() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldDraftVersionID)
 	return u
 }
 
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationScopedUpsert) ClearIntegrationID() *AutomationScopedUpsert {
-	u.u.SetNull(automation.FieldIntegrationID)
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (u *AutomationScopedUpsert) ClearDraftVersionID() *AutomationScopedUpsert {
+	u.u.SetNull(automation.FieldDraftVersionID)
 	return u
 }
 
@@ -2847,33 +2879,39 @@ func (x *AutomationScopedUpdateOne) SetNillableStatus(v *automation.Status) *Aut
 	return x
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationScopedUpdateOne) SetTriggerEvent(v string) *AutomationScopedUpdateOne {
-	x.b.SetTriggerEvent(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (x *AutomationScopedUpdateOne) SetLiveVersionID(v int64) *AutomationScopedUpdateOne {
+	x.b.SetLiveVersionID(v)
 	return x
 }
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (x *AutomationScopedUpdateOne) SetNillableTriggerEvent(v *string) *AutomationScopedUpdateOne {
-	x.b.SetNillableTriggerEvent(v)
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableLiveVersionID(v *int64) *AutomationScopedUpdateOne {
+	x.b.SetNillableLiveVersionID(v)
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationScopedUpdateOne) SetIntegrationID(v int64) *AutomationScopedUpdateOne {
-	x.b.SetIntegrationID(v)
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (x *AutomationScopedUpdateOne) ClearLiveVersionID() *AutomationScopedUpdateOne {
+	x.b.ClearLiveVersionID()
 	return x
 }
 
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationScopedUpdateOne) SetNillableIntegrationID(v *int64) *AutomationScopedUpdateOne {
-	x.b.SetNillableIntegrationID(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (x *AutomationScopedUpdateOne) SetDraftVersionID(v int64) *AutomationScopedUpdateOne {
+	x.b.SetDraftVersionID(v)
 	return x
 }
 
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (x *AutomationScopedUpdateOne) ClearIntegrationID() *AutomationScopedUpdateOne {
-	x.b.ClearIntegrationID()
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableDraftVersionID(v *int64) *AutomationScopedUpdateOne {
+	x.b.SetNillableDraftVersionID(v)
+	return x
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (x *AutomationScopedUpdateOne) ClearDraftVersionID() *AutomationScopedUpdateOne {
+	x.b.ClearDraftVersionID()
 	return x
 }
 
@@ -2967,15 +3005,27 @@ func (x *AutomationScopedUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationScopedUpdateOne) SetIntegration(v *Integration) *AutomationScopedUpdateOne {
-	x.b.SetIntegration(v)
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) SetLiveVersion(v *AutomationVersion) *AutomationScopedUpdateOne {
+	x.b.SetLiveVersion(v)
 	return x
 }
 
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (x *AutomationScopedUpdateOne) ClearIntegration() *AutomationScopedUpdateOne {
-	x.b.ClearIntegration()
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) ClearLiveVersion() *AutomationScopedUpdateOne {
+	x.b.ClearLiveVersion()
+	return x
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) SetDraftVersion(v *AutomationVersion) *AutomationScopedUpdateOne {
+	x.b.SetDraftVersion(v)
+	return x
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) ClearDraftVersion() *AutomationScopedUpdateOne {
+	x.b.ClearDraftVersion()
 	return x
 }
 
@@ -2991,8 +3041,11 @@ func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
 		return fmt.Errorf("outbound_messages: %w", err)
 	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
+	if err := x.s.verifyAutomationVersion(ctx, m.LiveVersionIDs()); err != nil {
+		return fmt.Errorf("live_version: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.DraftVersionIDs()); err != nil {
+		return fmt.Errorf("draft_version: %w", err)
 	}
 	return nil
 }
@@ -3111,33 +3164,39 @@ func (x *AutomationScopedUpdate) SetNillableStatus(v *automation.Status) *Automa
 	return x
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationScopedUpdate) SetTriggerEvent(v string) *AutomationScopedUpdate {
-	x.b.SetTriggerEvent(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (x *AutomationScopedUpdate) SetLiveVersionID(v int64) *AutomationScopedUpdate {
+	x.b.SetLiveVersionID(v)
 	return x
 }
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (x *AutomationScopedUpdate) SetNillableTriggerEvent(v *string) *AutomationScopedUpdate {
-	x.b.SetNillableTriggerEvent(v)
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableLiveVersionID(v *int64) *AutomationScopedUpdate {
+	x.b.SetNillableLiveVersionID(v)
 	return x
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (x *AutomationScopedUpdate) SetIntegrationID(v int64) *AutomationScopedUpdate {
-	x.b.SetIntegrationID(v)
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (x *AutomationScopedUpdate) ClearLiveVersionID() *AutomationScopedUpdate {
+	x.b.ClearLiveVersionID()
 	return x
 }
 
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (x *AutomationScopedUpdate) SetNillableIntegrationID(v *int64) *AutomationScopedUpdate {
-	x.b.SetNillableIntegrationID(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (x *AutomationScopedUpdate) SetDraftVersionID(v int64) *AutomationScopedUpdate {
+	x.b.SetDraftVersionID(v)
 	return x
 }
 
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (x *AutomationScopedUpdate) ClearIntegrationID() *AutomationScopedUpdate {
-	x.b.ClearIntegrationID()
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableDraftVersionID(v *int64) *AutomationScopedUpdate {
+	x.b.SetNillableDraftVersionID(v)
+	return x
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (x *AutomationScopedUpdate) ClearDraftVersionID() *AutomationScopedUpdate {
+	x.b.ClearDraftVersionID()
 	return x
 }
 
@@ -3231,15 +3290,27 @@ func (x *AutomationScopedUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *
 	return x
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (x *AutomationScopedUpdate) SetIntegration(v *Integration) *AutomationScopedUpdate {
-	x.b.SetIntegration(v)
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) SetLiveVersion(v *AutomationVersion) *AutomationScopedUpdate {
+	x.b.SetLiveVersion(v)
 	return x
 }
 
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (x *AutomationScopedUpdate) ClearIntegration() *AutomationScopedUpdate {
-	x.b.ClearIntegration()
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) ClearLiveVersion() *AutomationScopedUpdate {
+	x.b.ClearLiveVersion()
+	return x
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) SetDraftVersion(v *AutomationVersion) *AutomationScopedUpdate {
+	x.b.SetDraftVersion(v)
+	return x
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) ClearDraftVersion() *AutomationScopedUpdate {
+	x.b.ClearDraftVersion()
 	return x
 }
 
@@ -3255,8 +3326,11 @@ func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
 		return fmt.Errorf("outbound_messages: %w", err)
 	}
-	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
-		return fmt.Errorf("integration: %w", err)
+	if err := x.s.verifyAutomationVersion(ctx, m.LiveVersionIDs()); err != nil {
+		return fmt.Errorf("live_version: %w", err)
+	}
+	if err := x.s.verifyAutomationVersion(ctx, m.DraftVersionIDs()); err != nil {
+		return fmt.Errorf("draft_version: %w", err)
 	}
 	return nil
 }
@@ -4470,6 +4544,24 @@ func (x *AutomationVersionScopedCreate) SetNillableSteps(v *string) *AutomationV
 	return x
 }
 
+// SetTriggerEvent sets the "trigger_event" field.
+func (x *AutomationVersionScopedCreate) SetTriggerEvent(v string) *AutomationVersionScopedCreate {
+	x.b.SetTriggerEvent(v)
+	return x
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (x *AutomationVersionScopedCreate) SetIntegrationID(v int64) *AutomationVersionScopedCreate {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableIntegrationID(v *int64) *AutomationVersionScopedCreate {
+	x.b.SetNillableIntegrationID(v)
+	return x
+}
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedCreate) SetAutomation(v *Automation) *AutomationVersionScopedCreate {
 	x.b.SetAutomation(v)
@@ -4488,6 +4580,12 @@ func (x *AutomationVersionScopedCreate) AddRuns(v ...*AutomationRun) *Automation
 	return x
 }
 
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *AutomationVersionScopedCreate) SetIntegration(v *Integration) *AutomationVersionScopedCreate {
+	x.b.SetIntegration(v)
+	return x
+}
+
 func (x *AutomationVersionScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -4496,6 +4594,9 @@ func (x *AutomationVersionScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -4589,6 +4690,30 @@ func (u *AutomationVersionScopedUpsert) SetSteps(v string) *AutomationVersionSco
 // UpdateSteps sets the "steps" field to the value that was provided on create.
 func (u *AutomationVersionScopedUpsert) UpdateSteps() *AutomationVersionScopedUpsert {
 	u.u.SetExcluded(automationversion.FieldSteps)
+	return u
+}
+
+// SetTriggerEvent sets the "trigger_event" field.
+func (u *AutomationVersionScopedUpsert) SetTriggerEvent(v string) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldTriggerEvent, v)
+	return u
+}
+
+// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateTriggerEvent() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldTriggerEvent)
+	return u
+}
+
+// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateIntegrationID() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldIntegrationID)
+	return u
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (u *AutomationVersionScopedUpsert) ClearIntegrationID() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldIntegrationID)
 	return u
 }
 
@@ -4768,6 +4893,36 @@ func (x *AutomationVersionScopedUpdateOne) SetNillableSteps(v *string) *Automati
 	return x
 }
 
+// SetTriggerEvent sets the "trigger_event" field.
+func (x *AutomationVersionScopedUpdateOne) SetTriggerEvent(v string) *AutomationVersionScopedUpdateOne {
+	x.b.SetTriggerEvent(v)
+	return x
+}
+
+// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableTriggerEvent(v *string) *AutomationVersionScopedUpdateOne {
+	x.b.SetNillableTriggerEvent(v)
+	return x
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (x *AutomationVersionScopedUpdateOne) SetIntegrationID(v int64) *AutomationVersionScopedUpdateOne {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableIntegrationID(v *int64) *AutomationVersionScopedUpdateOne {
+	x.b.SetNillableIntegrationID(v)
+	return x
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (x *AutomationVersionScopedUpdateOne) ClearIntegrationID() *AutomationVersionScopedUpdateOne {
+	x.b.ClearIntegrationID()
+	return x
+}
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdateOne) SetAutomation(v *Automation) *AutomationVersionScopedUpdateOne {
 	x.b.SetAutomation(v)
@@ -4810,6 +4965,18 @@ func (x *AutomationVersionScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *Auto
 	return x
 }
 
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *AutomationVersionScopedUpdateOne) SetIntegration(v *Integration) *AutomationVersionScopedUpdateOne {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (x *AutomationVersionScopedUpdateOne) ClearIntegration() *AutomationVersionScopedUpdateOne {
+	x.b.ClearIntegration()
+	return x
+}
+
 func (x *AutomationVersionScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -4818,6 +4985,9 @@ func (x *AutomationVersionScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -4902,6 +5072,36 @@ func (x *AutomationVersionScopedUpdate) SetNillableSteps(v *string) *AutomationV
 	return x
 }
 
+// SetTriggerEvent sets the "trigger_event" field.
+func (x *AutomationVersionScopedUpdate) SetTriggerEvent(v string) *AutomationVersionScopedUpdate {
+	x.b.SetTriggerEvent(v)
+	return x
+}
+
+// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableTriggerEvent(v *string) *AutomationVersionScopedUpdate {
+	x.b.SetNillableTriggerEvent(v)
+	return x
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (x *AutomationVersionScopedUpdate) SetIntegrationID(v int64) *AutomationVersionScopedUpdate {
+	x.b.SetIntegrationID(v)
+	return x
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableIntegrationID(v *int64) *AutomationVersionScopedUpdate {
+	x.b.SetNillableIntegrationID(v)
+	return x
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (x *AutomationVersionScopedUpdate) ClearIntegrationID() *AutomationVersionScopedUpdate {
+	x.b.ClearIntegrationID()
+	return x
+}
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdate) SetAutomation(v *Automation) *AutomationVersionScopedUpdate {
 	x.b.SetAutomation(v)
@@ -4944,6 +5144,18 @@ func (x *AutomationVersionScopedUpdate) RemoveRuns(v ...*AutomationRun) *Automat
 	return x
 }
 
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *AutomationVersionScopedUpdate) SetIntegration(v *Integration) *AutomationVersionScopedUpdate {
+	x.b.SetIntegration(v)
+	return x
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (x *AutomationVersionScopedUpdate) ClearIntegration() *AutomationVersionScopedUpdate {
+	x.b.ClearIntegration()
+	return x
+}
+
 func (x *AutomationVersionScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -4952,6 +5164,9 @@ func (x *AutomationVersionScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
 		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyIntegration(ctx, m.IntegrationIDs()); err != nil {
+		return fmt.Errorf("integration: %w", err)
 	}
 	return nil
 }
@@ -6238,6 +6453,18 @@ func (x *BroadcastScopedCreate) SetNillableSegmentID(v *int64) *BroadcastScopedC
 	return x
 }
 
+// SetCondition sets the "condition" field.
+func (x *BroadcastScopedCreate) SetCondition(v string) *BroadcastScopedCreate {
+	x.b.SetCondition(v)
+	return x
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableCondition(v *string) *BroadcastScopedCreate {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (x *BroadcastScopedCreate) SetIntegrationID(v int64) *BroadcastScopedCreate {
 	x.b.SetIntegrationID(v)
@@ -6587,6 +6814,24 @@ func (u *BroadcastScopedUpsert) UpdateSegmentID() *BroadcastScopedUpsert {
 // ClearSegmentID clears the value of the "segment_id" field.
 func (u *BroadcastScopedUpsert) ClearSegmentID() *BroadcastScopedUpsert {
 	u.u.SetNull(broadcast.FieldSegmentID)
+	return u
+}
+
+// SetCondition sets the "condition" field.
+func (u *BroadcastScopedUpsert) SetCondition(v string) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldCondition, v)
+	return u
+}
+
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateCondition() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldCondition)
+	return u
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (u *BroadcastScopedUpsert) ClearCondition() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldCondition)
 	return u
 }
 
@@ -7014,6 +7259,24 @@ func (x *BroadcastScopedUpdateOne) ClearSegmentID() *BroadcastScopedUpdateOne {
 	return x
 }
 
+// SetCondition sets the "condition" field.
+func (x *BroadcastScopedUpdateOne) SetCondition(v string) *BroadcastScopedUpdateOne {
+	x.b.SetCondition(v)
+	return x
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableCondition(v *string) *BroadcastScopedUpdateOne {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (x *BroadcastScopedUpdateOne) ClearCondition() *BroadcastScopedUpdateOne {
+	x.b.ClearCondition()
+	return x
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (x *BroadcastScopedUpdateOne) SetIntegrationID(v int64) *BroadcastScopedUpdateOne {
 	x.b.SetIntegrationID(v)
@@ -7398,6 +7661,24 @@ func (x *BroadcastScopedUpdate) SetNillableSegmentID(v *int64) *BroadcastScopedU
 // ClearSegmentID clears the value of the "segment_id" field.
 func (x *BroadcastScopedUpdate) ClearSegmentID() *BroadcastScopedUpdate {
 	x.b.ClearSegmentID()
+	return x
+}
+
+// SetCondition sets the "condition" field.
+func (x *BroadcastScopedUpdate) SetCondition(v string) *BroadcastScopedUpdate {
+	x.b.SetCondition(v)
+	return x
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableCondition(v *string) *BroadcastScopedUpdate {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (x *BroadcastScopedUpdate) ClearCondition() *BroadcastScopedUpdate {
+	x.b.ClearCondition()
 	return x
 }
 
@@ -22912,39 +23193,51 @@ func (x *RuleScopedCreate) SetNillableActivatedAt(v *time.Time) *RuleScopedCreat
 	return x
 }
 
-// SetCondition sets the "condition" field.
-func (x *RuleScopedCreate) SetCondition(v string) *RuleScopedCreate {
-	x.b.SetCondition(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (x *RuleScopedCreate) SetLiveVersionID(v int64) *RuleScopedCreate {
+	x.b.SetLiveVersionID(v)
 	return x
 }
 
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleScopedCreate) SetNillableCondition(v *string) *RuleScopedCreate {
-	x.b.SetNillableCondition(v)
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableLiveVersionID(v *int64) *RuleScopedCreate {
+	x.b.SetNillableLiveVersionID(v)
 	return x
 }
 
-// SetActions sets the "actions" field.
-func (x *RuleScopedCreate) SetActions(v string) *RuleScopedCreate {
-	x.b.SetActions(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (x *RuleScopedCreate) SetDraftVersionID(v int64) *RuleScopedCreate {
+	x.b.SetDraftVersionID(v)
 	return x
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleScopedCreate) SetNillableActions(v *string) *RuleScopedCreate {
-	x.b.SetNillableActions(v)
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (x *RuleScopedCreate) SetNillableDraftVersionID(v *int64) *RuleScopedCreate {
+	x.b.SetNillableDraftVersionID(v)
 	return x
 }
 
-// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
-func (x *RuleScopedCreate) AddTriggerIDs(ids ...int64) *RuleScopedCreate {
-	x.b.AddTriggerIDs(ids...)
+// AddVersionIDs adds the "versions" edge to the RuleVersion entity by IDs.
+func (x *RuleScopedCreate) AddVersionIDs(ids ...int64) *RuleScopedCreate {
+	x.b.AddVersionIDs(ids...)
 	return x
 }
 
-// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
-func (x *RuleScopedCreate) AddTriggers(v ...*RuleTrigger) *RuleScopedCreate {
-	x.b.AddTriggers(v...)
+// AddVersions adds the "versions" edges to the RuleVersion entity.
+func (x *RuleScopedCreate) AddVersions(v ...*RuleVersion) *RuleScopedCreate {
+	x.b.AddVersions(v...)
+	return x
+}
+
+// SetLiveVersion sets the "live_version" edge to the RuleVersion entity.
+func (x *RuleScopedCreate) SetLiveVersion(v *RuleVersion) *RuleScopedCreate {
+	x.b.SetLiveVersion(v)
+	return x
+}
+
+// SetDraftVersion sets the "draft_version" edge to the RuleVersion entity.
+func (x *RuleScopedCreate) SetDraftVersion(v *RuleVersion) *RuleScopedCreate {
+	x.b.SetDraftVersion(v)
 	return x
 }
 
@@ -22963,8 +23256,14 @@ func (x *RuleScopedCreate) AddFirings(v ...*RuleFiring) *RuleScopedCreate {
 func (x *RuleScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyRuleTrigger(ctx, m.TriggersIDs()); err != nil {
-		return fmt.Errorf("triggers: %w", err)
+	if err := x.s.verifyRuleVersion(ctx, m.VersionsIDs()); err != nil {
+		return fmt.Errorf("versions: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.LiveVersionIDs()); err != nil {
+		return fmt.Errorf("live_version: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.DraftVersionIDs()); err != nil {
+		return fmt.Errorf("draft_version: %w", err)
 	}
 	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
 		return fmt.Errorf("firings: %w", err)
@@ -23135,33 +23434,27 @@ func (u *RuleScopedUpsert) ClearActivatedAt() *RuleScopedUpsert {
 	return u
 }
 
-// SetCondition sets the "condition" field.
-func (u *RuleScopedUpsert) SetCondition(v string) *RuleScopedUpsert {
-	u.u.Set(rule.FieldCondition, v)
+// UpdateLiveVersionID sets the "live_version_id" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateLiveVersionID() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldLiveVersionID)
 	return u
 }
 
-// UpdateCondition sets the "condition" field to the value that was provided on create.
-func (u *RuleScopedUpsert) UpdateCondition() *RuleScopedUpsert {
-	u.u.SetExcluded(rule.FieldCondition)
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (u *RuleScopedUpsert) ClearLiveVersionID() *RuleScopedUpsert {
+	u.u.SetNull(rule.FieldLiveVersionID)
 	return u
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (u *RuleScopedUpsert) ClearCondition() *RuleScopedUpsert {
-	u.u.SetNull(rule.FieldCondition)
+// UpdateDraftVersionID sets the "draft_version_id" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateDraftVersionID() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldDraftVersionID)
 	return u
 }
 
-// SetActions sets the "actions" field.
-func (u *RuleScopedUpsert) SetActions(v string) *RuleScopedUpsert {
-	u.u.Set(rule.FieldActions, v)
-	return u
-}
-
-// UpdateActions sets the "actions" field to the value that was provided on create.
-func (u *RuleScopedUpsert) UpdateActions() *RuleScopedUpsert {
-	u.u.SetExcluded(rule.FieldActions)
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (u *RuleScopedUpsert) ClearDraftVersionID() *RuleScopedUpsert {
+	u.u.SetNull(rule.FieldDraftVersionID)
 	return u
 }
 
@@ -23409,63 +23702,93 @@ func (x *RuleScopedUpdateOne) ClearActivatedAt() *RuleScopedUpdateOne {
 	return x
 }
 
-// SetCondition sets the "condition" field.
-func (x *RuleScopedUpdateOne) SetCondition(v string) *RuleScopedUpdateOne {
-	x.b.SetCondition(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (x *RuleScopedUpdateOne) SetLiveVersionID(v int64) *RuleScopedUpdateOne {
+	x.b.SetLiveVersionID(v)
 	return x
 }
 
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleScopedUpdateOne) SetNillableCondition(v *string) *RuleScopedUpdateOne {
-	x.b.SetNillableCondition(v)
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableLiveVersionID(v *int64) *RuleScopedUpdateOne {
+	x.b.SetNillableLiveVersionID(v)
 	return x
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (x *RuleScopedUpdateOne) ClearCondition() *RuleScopedUpdateOne {
-	x.b.ClearCondition()
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (x *RuleScopedUpdateOne) ClearLiveVersionID() *RuleScopedUpdateOne {
+	x.b.ClearLiveVersionID()
 	return x
 }
 
-// SetActions sets the "actions" field.
-func (x *RuleScopedUpdateOne) SetActions(v string) *RuleScopedUpdateOne {
-	x.b.SetActions(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (x *RuleScopedUpdateOne) SetDraftVersionID(v int64) *RuleScopedUpdateOne {
+	x.b.SetDraftVersionID(v)
 	return x
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleScopedUpdateOne) SetNillableActions(v *string) *RuleScopedUpdateOne {
-	x.b.SetNillableActions(v)
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableDraftVersionID(v *int64) *RuleScopedUpdateOne {
+	x.b.SetNillableDraftVersionID(v)
 	return x
 }
 
-// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
-func (x *RuleScopedUpdateOne) AddTriggerIDs(ids ...int64) *RuleScopedUpdateOne {
-	x.b.AddTriggerIDs(ids...)
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (x *RuleScopedUpdateOne) ClearDraftVersionID() *RuleScopedUpdateOne {
+	x.b.ClearDraftVersionID()
 	return x
 }
 
-// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
-func (x *RuleScopedUpdateOne) AddTriggers(v ...*RuleTrigger) *RuleScopedUpdateOne {
-	x.b.AddTriggers(v...)
+// AddVersionIDs adds the "versions" edge to the RuleVersion entity by IDs.
+func (x *RuleScopedUpdateOne) AddVersionIDs(ids ...int64) *RuleScopedUpdateOne {
+	x.b.AddVersionIDs(ids...)
 	return x
 }
 
-// ClearTriggers clears the "triggers" edges to the RuleTrigger entity.
-func (x *RuleScopedUpdateOne) ClearTriggers() *RuleScopedUpdateOne {
-	x.b.ClearTriggers()
+// AddVersions adds the "versions" edges to the RuleVersion entity.
+func (x *RuleScopedUpdateOne) AddVersions(v ...*RuleVersion) *RuleScopedUpdateOne {
+	x.b.AddVersions(v...)
 	return x
 }
 
-// RemoveTriggerIDs removes the "triggers" edge to RuleTrigger entities by IDs.
-func (x *RuleScopedUpdateOne) RemoveTriggerIDs(ids ...int64) *RuleScopedUpdateOne {
-	x.b.RemoveTriggerIDs(ids...)
+// ClearVersions clears the "versions" edges to the RuleVersion entity.
+func (x *RuleScopedUpdateOne) ClearVersions() *RuleScopedUpdateOne {
+	x.b.ClearVersions()
 	return x
 }
 
-// RemoveTriggers removes "triggers" edges to RuleTrigger entities.
-func (x *RuleScopedUpdateOne) RemoveTriggers(v ...*RuleTrigger) *RuleScopedUpdateOne {
-	x.b.RemoveTriggers(v...)
+// RemoveVersionIDs removes the "versions" edge to RuleVersion entities by IDs.
+func (x *RuleScopedUpdateOne) RemoveVersionIDs(ids ...int64) *RuleScopedUpdateOne {
+	x.b.RemoveVersionIDs(ids...)
+	return x
+}
+
+// RemoveVersions removes "versions" edges to RuleVersion entities.
+func (x *RuleScopedUpdateOne) RemoveVersions(v ...*RuleVersion) *RuleScopedUpdateOne {
+	x.b.RemoveVersions(v...)
+	return x
+}
+
+// SetLiveVersion sets the "live_version" edge to the RuleVersion entity.
+func (x *RuleScopedUpdateOne) SetLiveVersion(v *RuleVersion) *RuleScopedUpdateOne {
+	x.b.SetLiveVersion(v)
+	return x
+}
+
+// ClearLiveVersion clears the "live_version" edge to the RuleVersion entity.
+func (x *RuleScopedUpdateOne) ClearLiveVersion() *RuleScopedUpdateOne {
+	x.b.ClearLiveVersion()
+	return x
+}
+
+// SetDraftVersion sets the "draft_version" edge to the RuleVersion entity.
+func (x *RuleScopedUpdateOne) SetDraftVersion(v *RuleVersion) *RuleScopedUpdateOne {
+	x.b.SetDraftVersion(v)
+	return x
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the RuleVersion entity.
+func (x *RuleScopedUpdateOne) ClearDraftVersion() *RuleScopedUpdateOne {
+	x.b.ClearDraftVersion()
 	return x
 }
 
@@ -23502,8 +23825,14 @@ func (x *RuleScopedUpdateOne) RemoveFirings(v ...*RuleFiring) *RuleScopedUpdateO
 func (x *RuleScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyRuleTrigger(ctx, m.TriggersIDs()); err != nil {
-		return fmt.Errorf("triggers: %w", err)
+	if err := x.s.verifyRuleVersion(ctx, m.VersionsIDs()); err != nil {
+		return fmt.Errorf("versions: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.LiveVersionIDs()); err != nil {
+		return fmt.Errorf("live_version: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.DraftVersionIDs()); err != nil {
+		return fmt.Errorf("draft_version: %w", err)
 	}
 	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
 		return fmt.Errorf("firings: %w", err)
@@ -23643,63 +23972,93 @@ func (x *RuleScopedUpdate) ClearActivatedAt() *RuleScopedUpdate {
 	return x
 }
 
-// SetCondition sets the "condition" field.
-func (x *RuleScopedUpdate) SetCondition(v string) *RuleScopedUpdate {
-	x.b.SetCondition(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (x *RuleScopedUpdate) SetLiveVersionID(v int64) *RuleScopedUpdate {
+	x.b.SetLiveVersionID(v)
 	return x
 }
 
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleScopedUpdate) SetNillableCondition(v *string) *RuleScopedUpdate {
-	x.b.SetNillableCondition(v)
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableLiveVersionID(v *int64) *RuleScopedUpdate {
+	x.b.SetNillableLiveVersionID(v)
 	return x
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (x *RuleScopedUpdate) ClearCondition() *RuleScopedUpdate {
-	x.b.ClearCondition()
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (x *RuleScopedUpdate) ClearLiveVersionID() *RuleScopedUpdate {
+	x.b.ClearLiveVersionID()
 	return x
 }
 
-// SetActions sets the "actions" field.
-func (x *RuleScopedUpdate) SetActions(v string) *RuleScopedUpdate {
-	x.b.SetActions(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (x *RuleScopedUpdate) SetDraftVersionID(v int64) *RuleScopedUpdate {
+	x.b.SetDraftVersionID(v)
 	return x
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleScopedUpdate) SetNillableActions(v *string) *RuleScopedUpdate {
-	x.b.SetNillableActions(v)
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableDraftVersionID(v *int64) *RuleScopedUpdate {
+	x.b.SetNillableDraftVersionID(v)
 	return x
 }
 
-// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
-func (x *RuleScopedUpdate) AddTriggerIDs(ids ...int64) *RuleScopedUpdate {
-	x.b.AddTriggerIDs(ids...)
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (x *RuleScopedUpdate) ClearDraftVersionID() *RuleScopedUpdate {
+	x.b.ClearDraftVersionID()
 	return x
 }
 
-// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
-func (x *RuleScopedUpdate) AddTriggers(v ...*RuleTrigger) *RuleScopedUpdate {
-	x.b.AddTriggers(v...)
+// AddVersionIDs adds the "versions" edge to the RuleVersion entity by IDs.
+func (x *RuleScopedUpdate) AddVersionIDs(ids ...int64) *RuleScopedUpdate {
+	x.b.AddVersionIDs(ids...)
 	return x
 }
 
-// ClearTriggers clears the "triggers" edges to the RuleTrigger entity.
-func (x *RuleScopedUpdate) ClearTriggers() *RuleScopedUpdate {
-	x.b.ClearTriggers()
+// AddVersions adds the "versions" edges to the RuleVersion entity.
+func (x *RuleScopedUpdate) AddVersions(v ...*RuleVersion) *RuleScopedUpdate {
+	x.b.AddVersions(v...)
 	return x
 }
 
-// RemoveTriggerIDs removes the "triggers" edge to RuleTrigger entities by IDs.
-func (x *RuleScopedUpdate) RemoveTriggerIDs(ids ...int64) *RuleScopedUpdate {
-	x.b.RemoveTriggerIDs(ids...)
+// ClearVersions clears the "versions" edges to the RuleVersion entity.
+func (x *RuleScopedUpdate) ClearVersions() *RuleScopedUpdate {
+	x.b.ClearVersions()
 	return x
 }
 
-// RemoveTriggers removes "triggers" edges to RuleTrigger entities.
-func (x *RuleScopedUpdate) RemoveTriggers(v ...*RuleTrigger) *RuleScopedUpdate {
-	x.b.RemoveTriggers(v...)
+// RemoveVersionIDs removes the "versions" edge to RuleVersion entities by IDs.
+func (x *RuleScopedUpdate) RemoveVersionIDs(ids ...int64) *RuleScopedUpdate {
+	x.b.RemoveVersionIDs(ids...)
+	return x
+}
+
+// RemoveVersions removes "versions" edges to RuleVersion entities.
+func (x *RuleScopedUpdate) RemoveVersions(v ...*RuleVersion) *RuleScopedUpdate {
+	x.b.RemoveVersions(v...)
+	return x
+}
+
+// SetLiveVersion sets the "live_version" edge to the RuleVersion entity.
+func (x *RuleScopedUpdate) SetLiveVersion(v *RuleVersion) *RuleScopedUpdate {
+	x.b.SetLiveVersion(v)
+	return x
+}
+
+// ClearLiveVersion clears the "live_version" edge to the RuleVersion entity.
+func (x *RuleScopedUpdate) ClearLiveVersion() *RuleScopedUpdate {
+	x.b.ClearLiveVersion()
+	return x
+}
+
+// SetDraftVersion sets the "draft_version" edge to the RuleVersion entity.
+func (x *RuleScopedUpdate) SetDraftVersion(v *RuleVersion) *RuleScopedUpdate {
+	x.b.SetDraftVersion(v)
+	return x
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the RuleVersion entity.
+func (x *RuleScopedUpdate) ClearDraftVersion() *RuleScopedUpdate {
+	x.b.ClearDraftVersion()
 	return x
 }
 
@@ -23736,8 +24095,14 @@ func (x *RuleScopedUpdate) RemoveFirings(v ...*RuleFiring) *RuleScopedUpdate {
 func (x *RuleScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyRuleTrigger(ctx, m.TriggersIDs()); err != nil {
-		return fmt.Errorf("triggers: %w", err)
+	if err := x.s.verifyRuleVersion(ctx, m.VersionsIDs()); err != nil {
+		return fmt.Errorf("versions: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.LiveVersionIDs()); err != nil {
+		return fmt.Errorf("live_version: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.DraftVersionIDs()); err != nil {
+		return fmt.Errorf("draft_version: %w", err)
 	}
 	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
 		return fmt.Errorf("firings: %w", err)
@@ -23918,15 +24283,15 @@ func (x *RuleFiringScopedCreate) SetSourceID(v string) *RuleFiringScopedCreate {
 	return x
 }
 
-// SetActions sets the "actions" field.
-func (x *RuleFiringScopedCreate) SetActions(v string) *RuleFiringScopedCreate {
-	x.b.SetActions(v)
+// SetVersionID sets the "version_id" field.
+func (x *RuleFiringScopedCreate) SetVersionID(v int64) *RuleFiringScopedCreate {
+	x.b.SetVersionID(v)
 	return x
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleFiringScopedCreate) SetNillableActions(v *string) *RuleFiringScopedCreate {
-	x.b.SetNillableActions(v)
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (x *RuleFiringScopedCreate) SetNillableVersionID(v *int64) *RuleFiringScopedCreate {
+	x.b.SetNillableVersionID(v)
 	return x
 }
 
@@ -23978,6 +24343,12 @@ func (x *RuleFiringScopedCreate) SetContact(v *Contact) *RuleFiringScopedCreate 
 	return x
 }
 
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (x *RuleFiringScopedCreate) SetVersion(v *RuleVersion) *RuleFiringScopedCreate {
+	x.b.SetVersion(v)
+	return x
+}
+
 func (x *RuleFiringScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -23986,6 +24357,9 @@ func (x *RuleFiringScopedCreate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
 	}
 	return nil
 }
@@ -24100,15 +24474,15 @@ func (u *RuleFiringScopedUpsert) UpdateSourceID() *RuleFiringScopedUpsert {
 	return u
 }
 
-// SetActions sets the "actions" field.
-func (u *RuleFiringScopedUpsert) SetActions(v string) *RuleFiringScopedUpsert {
-	u.u.Set(rulefiring.FieldActions, v)
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *RuleFiringScopedUpsert) UpdateVersionID() *RuleFiringScopedUpsert {
+	u.u.SetExcluded(rulefiring.FieldVersionID)
 	return u
 }
 
-// UpdateActions sets the "actions" field to the value that was provided on create.
-func (u *RuleFiringScopedUpsert) UpdateActions() *RuleFiringScopedUpsert {
-	u.u.SetExcluded(rulefiring.FieldActions)
+// ClearVersionID clears the value of the "version_id" field.
+func (u *RuleFiringScopedUpsert) ClearVersionID() *RuleFiringScopedUpsert {
+	u.u.SetNull(rulefiring.FieldVersionID)
 	return u
 }
 
@@ -24360,15 +24734,21 @@ func (x *RuleFiringScopedUpdateOne) SetNillableSourceID(v *string) *RuleFiringSc
 	return x
 }
 
-// SetActions sets the "actions" field.
-func (x *RuleFiringScopedUpdateOne) SetActions(v string) *RuleFiringScopedUpdateOne {
-	x.b.SetActions(v)
+// SetVersionID sets the "version_id" field.
+func (x *RuleFiringScopedUpdateOne) SetVersionID(v int64) *RuleFiringScopedUpdateOne {
+	x.b.SetVersionID(v)
 	return x
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleFiringScopedUpdateOne) SetNillableActions(v *string) *RuleFiringScopedUpdateOne {
-	x.b.SetNillableActions(v)
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (x *RuleFiringScopedUpdateOne) SetNillableVersionID(v *int64) *RuleFiringScopedUpdateOne {
+	x.b.SetNillableVersionID(v)
+	return x
+}
+
+// ClearVersionID clears the value of the "version_id" field.
+func (x *RuleFiringScopedUpdateOne) ClearVersionID() *RuleFiringScopedUpdateOne {
+	x.b.ClearVersionID()
 	return x
 }
 
@@ -24444,6 +24824,18 @@ func (x *RuleFiringScopedUpdateOne) ClearContact() *RuleFiringScopedUpdateOne {
 	return x
 }
 
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (x *RuleFiringScopedUpdateOne) SetVersion(v *RuleVersion) *RuleFiringScopedUpdateOne {
+	x.b.SetVersion(v)
+	return x
+}
+
+// ClearVersion clears the "version" edge to the RuleVersion entity.
+func (x *RuleFiringScopedUpdateOne) ClearVersion() *RuleFiringScopedUpdateOne {
+	x.b.ClearVersion()
+	return x
+}
+
 func (x *RuleFiringScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -24452,6 +24844,9 @@ func (x *RuleFiringScopedUpdateOne) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
 	}
 	return nil
 }
@@ -24560,15 +24955,21 @@ func (x *RuleFiringScopedUpdate) SetNillableSourceID(v *string) *RuleFiringScope
 	return x
 }
 
-// SetActions sets the "actions" field.
-func (x *RuleFiringScopedUpdate) SetActions(v string) *RuleFiringScopedUpdate {
-	x.b.SetActions(v)
+// SetVersionID sets the "version_id" field.
+func (x *RuleFiringScopedUpdate) SetVersionID(v int64) *RuleFiringScopedUpdate {
+	x.b.SetVersionID(v)
 	return x
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleFiringScopedUpdate) SetNillableActions(v *string) *RuleFiringScopedUpdate {
-	x.b.SetNillableActions(v)
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (x *RuleFiringScopedUpdate) SetNillableVersionID(v *int64) *RuleFiringScopedUpdate {
+	x.b.SetNillableVersionID(v)
+	return x
+}
+
+// ClearVersionID clears the value of the "version_id" field.
+func (x *RuleFiringScopedUpdate) ClearVersionID() *RuleFiringScopedUpdate {
+	x.b.ClearVersionID()
 	return x
 }
 
@@ -24644,6 +25045,18 @@ func (x *RuleFiringScopedUpdate) ClearContact() *RuleFiringScopedUpdate {
 	return x
 }
 
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (x *RuleFiringScopedUpdate) SetVersion(v *RuleVersion) *RuleFiringScopedUpdate {
+	x.b.SetVersion(v)
+	return x
+}
+
+// ClearVersion clears the "version" edge to the RuleVersion entity.
+func (x *RuleFiringScopedUpdate) ClearVersion() *RuleFiringScopedUpdate {
+	x.b.ClearVersion()
+	return x
+}
+
 func (x *RuleFiringScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
@@ -24652,6 +25065,9 @@ func (x *RuleFiringScopedUpdate) check(ctx context.Context) error {
 	}
 	if err := x.s.verifyContact(ctx, m.ContactIDs()); err != nil {
 		return fmt.Errorf("contact: %w", err)
+	}
+	if err := x.s.verifyRuleVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
 	}
 	return nil
 }
@@ -24674,132 +25090,186 @@ func (x *RuleFiringScopedUpdate) Exec(ctx context.Context) error {
 	return err
 }
 
-// RuleTriggerScoped reaches RuleTrigger entities of one Workspace.
-type RuleTriggerScoped struct{ s *Scoped }
+// RuleVersionScoped reaches RuleVersion entities of one Workspace.
+type RuleVersionScoped struct{ s *Scoped }
 
-// RuleTrigger returns the RuleTrigger entities of the Workspace.
-func (s *Scoped) RuleTrigger() *RuleTriggerScoped { return &RuleTriggerScoped{s: s} }
+// RuleVersion returns the RuleVersion entities of the Workspace.
+func (s *Scoped) RuleVersion() *RuleVersionScoped { return &RuleVersionScoped{s: s} }
 
-// Query returns a RuleTrigger query already confined to the Workspace.
-func (t *RuleTriggerScoped) Query() *RuleTriggerQuery {
-	return t.s.c.RuleTrigger.Query().Where(ruletrigger.WorkspaceID(t.s.ws))
+// Query returns a RuleVersion query already confined to the Workspace.
+func (t *RuleVersionScoped) Query() *RuleVersionQuery {
+	return t.s.c.RuleVersion.Query().Where(ruleversion.WorkspaceID(t.s.ws))
 }
 
-// Get returns the RuleTrigger with the id; a row of another Workspace is not found.
-func (t *RuleTriggerScoped) Get(ctx context.Context, id int64) (*RuleTrigger, error) {
-	return t.Query().Where(ruletrigger.ID(id)).Only(ctx)
+// Get returns the RuleVersion with the id; a row of another Workspace is not found.
+func (t *RuleVersionScoped) Get(ctx context.Context, id int64) (*RuleVersion, error) {
+	return t.Query().Where(ruleversion.ID(id)).Only(ctx)
 }
 
-// RuleTriggerScopedDeleteOne wraps RuleTriggerDeleteOne.
-type RuleTriggerScopedDeleteOne struct {
+// RuleVersionScopedDeleteOne wraps RuleVersionDeleteOne.
+type RuleVersionScopedDeleteOne struct {
 	s *Scoped
-	b *RuleTriggerDeleteOne
+	b *RuleVersionDeleteOne
 }
 
-// DeleteOneID deletes the RuleTrigger with the id; a row of another Workspace is not found.
-func (t *RuleTriggerScoped) DeleteOneID(id int64) *RuleTriggerScopedDeleteOne {
-	return &RuleTriggerScopedDeleteOne{s: t.s, b: t.s.c.RuleTrigger.DeleteOneID(id).Where(ruletrigger.WorkspaceID(t.s.ws))}
+// DeleteOneID deletes the RuleVersion with the id; a row of another Workspace is not found.
+func (t *RuleVersionScoped) DeleteOneID(id int64) *RuleVersionScopedDeleteOne {
+	return &RuleVersionScopedDeleteOne{s: t.s, b: t.s.c.RuleVersion.DeleteOneID(id).Where(ruleversion.WorkspaceID(t.s.ws))}
 }
 
 // Where appends predicates the row must also match (fencing).
-func (x *RuleTriggerScopedDeleteOne) Where(ps ...predicate.RuleTrigger) *RuleTriggerScopedDeleteOne {
+func (x *RuleVersionScopedDeleteOne) Where(ps ...predicate.RuleVersion) *RuleVersionScopedDeleteOne {
 	x.b.Where(ps...)
 	return x
 }
 
 // Exec deletes the row; a missing row is a NotFoundError.
-func (x *RuleTriggerScopedDeleteOne) Exec(ctx context.Context) error {
+func (x *RuleVersionScopedDeleteOne) Exec(ctx context.Context) error {
 	return x.b.Exec(ctx)
 }
 
-// RuleTriggerScopedDelete wraps RuleTriggerDelete.
-type RuleTriggerScopedDelete struct {
+// RuleVersionScopedDelete wraps RuleVersionDelete.
+type RuleVersionScopedDelete struct {
 	s *Scoped
-	b *RuleTriggerDelete
+	b *RuleVersionDelete
 }
 
-// Delete deletes the RuleTrigger entities of the Workspace that match the predicates.
-func (t *RuleTriggerScoped) Delete() *RuleTriggerScopedDelete {
-	return &RuleTriggerScopedDelete{s: t.s, b: t.s.c.RuleTrigger.Delete().Where(ruletrigger.WorkspaceID(t.s.ws))}
+// Delete deletes the RuleVersion entities of the Workspace that match the predicates.
+func (t *RuleVersionScoped) Delete() *RuleVersionScopedDelete {
+	return &RuleVersionScopedDelete{s: t.s, b: t.s.c.RuleVersion.Delete().Where(ruleversion.WorkspaceID(t.s.ws))}
 }
 
 // Where appends predicates the rows must match.
-func (x *RuleTriggerScopedDelete) Where(ps ...predicate.RuleTrigger) *RuleTriggerScopedDelete {
+func (x *RuleVersionScopedDelete) Where(ps ...predicate.RuleVersion) *RuleVersionScopedDelete {
 	x.b.Where(ps...)
 	return x
 }
 
 // Exec deletes the rows and returns how many were deleted.
-func (x *RuleTriggerScopedDelete) Exec(ctx context.Context) (int, error) {
+func (x *RuleVersionScopedDelete) Exec(ctx context.Context) (int, error) {
 	return x.b.Exec(ctx)
 }
 
 // ---------------------------------------------------------------- create
 
-// RuleTriggerScopedCreate wraps RuleTriggerCreate. It has no way to name a Workspace.
-type RuleTriggerScopedCreate struct {
+// RuleVersionScopedCreate wraps RuleVersionCreate. It has no way to name a Workspace.
+type RuleVersionScopedCreate struct {
 	s *Scoped
-	b *RuleTriggerCreate
+	b *RuleVersionCreate
 }
 
-// Create starts a RuleTrigger in the Workspace.
-func (t *RuleTriggerScoped) Create() *RuleTriggerScopedCreate {
-	return &RuleTriggerScopedCreate{s: t.s, b: t.s.c.RuleTrigger.Create().SetWorkspaceID(t.s.ws)}
+// Create starts a RuleVersion in the Workspace.
+func (t *RuleVersionScoped) Create() *RuleVersionScopedCreate {
+	return &RuleVersionScopedCreate{s: t.s, b: t.s.c.RuleVersion.Create().SetWorkspaceID(t.s.ws)}
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (x *RuleTriggerScopedCreate) SetCreatedAt(v time.Time) *RuleTriggerScopedCreate {
+func (x *RuleVersionScopedCreate) SetCreatedAt(v time.Time) *RuleVersionScopedCreate {
 	x.b.SetCreatedAt(v)
 	return x
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (x *RuleTriggerScopedCreate) SetNillableCreatedAt(v *time.Time) *RuleTriggerScopedCreate {
+func (x *RuleVersionScopedCreate) SetNillableCreatedAt(v *time.Time) *RuleVersionScopedCreate {
 	x.b.SetNillableCreatedAt(v)
 	return x
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (x *RuleTriggerScopedCreate) SetUpdatedAt(v time.Time) *RuleTriggerScopedCreate {
+func (x *RuleVersionScopedCreate) SetUpdatedAt(v time.Time) *RuleVersionScopedCreate {
 	x.b.SetUpdatedAt(v)
 	return x
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (x *RuleTriggerScopedCreate) SetNillableUpdatedAt(v *time.Time) *RuleTriggerScopedCreate {
+func (x *RuleVersionScopedCreate) SetNillableUpdatedAt(v *time.Time) *RuleVersionScopedCreate {
 	x.b.SetNillableUpdatedAt(v)
 	return x
 }
 
 // SetRuleID sets the "rule_id" field.
-func (x *RuleTriggerScopedCreate) SetRuleID(v int64) *RuleTriggerScopedCreate {
+func (x *RuleVersionScopedCreate) SetRuleID(v int64) *RuleVersionScopedCreate {
 	x.b.SetRuleID(v)
 	return x
 }
 
-// SetAction sets the "action" field.
-func (x *RuleTriggerScopedCreate) SetAction(v string) *RuleTriggerScopedCreate {
-	x.b.SetAction(v)
+// SetVersion sets the "version" field.
+func (x *RuleVersionScopedCreate) SetVersion(v int) *RuleVersionScopedCreate {
+	x.b.SetVersion(v)
+	return x
+}
+
+// SetCondition sets the "condition" field.
+func (x *RuleVersionScopedCreate) SetCondition(v string) *RuleVersionScopedCreate {
+	x.b.SetCondition(v)
+	return x
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *RuleVersionScopedCreate) SetNillableCondition(v *string) *RuleVersionScopedCreate {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleVersionScopedCreate) SetActions(v string) *RuleVersionScopedCreate {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleVersionScopedCreate) SetNillableActions(v *string) *RuleVersionScopedCreate {
+	x.b.SetNillableActions(v)
 	return x
 }
 
 // SetRule sets the "rule" edge to the Rule entity.
-func (x *RuleTriggerScopedCreate) SetRule(v *Rule) *RuleTriggerScopedCreate {
+func (x *RuleVersionScopedCreate) SetRule(v *Rule) *RuleVersionScopedCreate {
 	x.b.SetRule(v)
 	return x
 }
 
-func (x *RuleTriggerScopedCreate) check(ctx context.Context) error {
+// AddTriggerIDs adds the "triggers" edge to the RuleVersionTrigger entity by IDs.
+func (x *RuleVersionScopedCreate) AddTriggerIDs(ids ...int64) *RuleVersionScopedCreate {
+	x.b.AddTriggerIDs(ids...)
+	return x
+}
+
+// AddTriggers adds the "triggers" edges to the RuleVersionTrigger entity.
+func (x *RuleVersionScopedCreate) AddTriggers(v ...*RuleVersionTrigger) *RuleVersionScopedCreate {
+	x.b.AddTriggers(v...)
+	return x
+}
+
+// AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
+func (x *RuleVersionScopedCreate) AddFiringIDs(ids ...int64) *RuleVersionScopedCreate {
+	x.b.AddFiringIDs(ids...)
+	return x
+}
+
+// AddFirings adds the "firings" edges to the RuleFiring entity.
+func (x *RuleVersionScopedCreate) AddFirings(v ...*RuleFiring) *RuleVersionScopedCreate {
+	x.b.AddFirings(v...)
+	return x
+}
+
+func (x *RuleVersionScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
 		return fmt.Errorf("rule: %w", err)
 	}
+	if err := x.s.verifyRuleVersionTrigger(ctx, m.TriggersIDs()); err != nil {
+		return fmt.Errorf("triggers: %w", err)
+	}
+	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
+		return fmt.Errorf("firings: %w", err)
+	}
 	return nil
 }
 
-// Save verifies the references against the Workspace, then creates the RuleTrigger.
-func (x *RuleTriggerScopedCreate) Save(ctx context.Context) (*RuleTrigger, error) {
+// Save verifies the references against the Workspace, then creates the RuleVersion.
+func (x *RuleVersionScopedCreate) Save(ctx context.Context) (*RuleVersion, error) {
 	if err := x.check(ctx); err != nil {
 		return nil, err
 	}
@@ -24807,40 +25277,40 @@ func (x *RuleTriggerScopedCreate) Save(ctx context.Context) (*RuleTrigger, error
 }
 
 // Exec is like Save, discarding the entity.
-func (x *RuleTriggerScopedCreate) Exec(ctx context.Context) error {
+func (x *RuleVersionScopedCreate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }
 
 // ---------------------------------------------------------------- create bulk
 
-// RuleTriggerScopedCreateBulk creates several RuleTrigger entities of one Workspace at once.
-type RuleTriggerScopedCreateBulk struct {
+// RuleVersionScopedCreateBulk creates several RuleVersion entities of one Workspace at once.
+type RuleVersionScopedCreateBulk struct {
 	s  *Scoped
-	xs []*RuleTriggerScopedCreate
+	xs []*RuleVersionScopedCreate
 }
 
 // CreateBulk batches creates started on this Workspace.
-func (t *RuleTriggerScoped) CreateBulk(xs ...*RuleTriggerScopedCreate) *RuleTriggerScopedCreateBulk {
-	return &RuleTriggerScopedCreateBulk{s: t.s, xs: xs}
+func (t *RuleVersionScoped) CreateBulk(xs ...*RuleVersionScopedCreate) *RuleVersionScopedCreateBulk {
+	return &RuleVersionScopedCreateBulk{s: t.s, xs: xs}
 }
 
-func (b *RuleTriggerScopedCreateBulk) raw(ctx context.Context) (*RuleTriggerCreateBulk, error) {
-	builders := make([]*RuleTriggerCreate, len(b.xs))
+func (b *RuleVersionScopedCreateBulk) raw(ctx context.Context) (*RuleVersionCreateBulk, error) {
+	builders := make([]*RuleVersionCreate, len(b.xs))
 	for i, x := range b.xs {
 		if x.s.ws != b.s.ws {
-			return nil, fmt.Errorf("RuleTrigger: builder of another scope: %w", ErrNotInWorkspace)
+			return nil, fmt.Errorf("RuleVersion: builder of another scope: %w", ErrNotInWorkspace)
 		}
 		if err := x.check(ctx); err != nil {
 			return nil, err
 		}
 		builders[i] = x.b
 	}
-	return b.s.c.RuleTrigger.CreateBulk(builders...), nil
+	return b.s.c.RuleVersion.CreateBulk(builders...), nil
 }
 
-// Save verifies every builder's references, then creates the RuleTrigger entities.
-func (b *RuleTriggerScopedCreateBulk) Save(ctx context.Context) ([]*RuleTrigger, error) {
+// Save verifies every builder's references, then creates the RuleVersion entities.
+func (b *RuleVersionScopedCreateBulk) Save(ctx context.Context) ([]*RuleVersion, error) {
 	raw, err := b.raw(ctx)
 	if err != nil {
 		return nil, err
@@ -24849,53 +25319,71 @@ func (b *RuleTriggerScopedCreateBulk) Save(ctx context.Context) ([]*RuleTrigger,
 }
 
 // Exec is like Save, discarding the entities.
-func (b *RuleTriggerScopedCreateBulk) Exec(ctx context.Context) error {
+func (b *RuleVersionScopedCreateBulk) Exec(ctx context.Context) error {
 	_, err := b.Save(ctx)
 	return err
 }
 
 // ---------------------------------------------------------------- upsert
 
-// RuleTriggerScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// RuleVersionScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
 // another Workspace or point a reference at a value that was not verified on create.
-type RuleTriggerScopedUpsert struct{ u *sql.UpdateSet }
+type RuleVersionScopedUpsert struct{ u *sql.UpdateSet }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (u *RuleTriggerScopedUpsert) SetUpdatedAt(v time.Time) *RuleTriggerScopedUpsert {
-	u.u.Set(ruletrigger.FieldUpdatedAt, v)
+func (u *RuleVersionScopedUpsert) SetUpdatedAt(v time.Time) *RuleVersionScopedUpsert {
+	u.u.Set(ruleversion.FieldUpdatedAt, v)
 	return u
 }
 
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *RuleTriggerScopedUpsert) UpdateUpdatedAt() *RuleTriggerScopedUpsert {
-	u.u.SetExcluded(ruletrigger.FieldUpdatedAt)
+func (u *RuleVersionScopedUpsert) UpdateUpdatedAt() *RuleVersionScopedUpsert {
+	u.u.SetExcluded(ruleversion.FieldUpdatedAt)
 	return u
 }
 
 // UpdateRuleID sets the "rule_id" field to the value that was provided on create.
-func (u *RuleTriggerScopedUpsert) UpdateRuleID() *RuleTriggerScopedUpsert {
-	u.u.SetExcluded(ruletrigger.FieldRuleID)
+func (u *RuleVersionScopedUpsert) UpdateRuleID() *RuleVersionScopedUpsert {
+	u.u.SetExcluded(ruleversion.FieldRuleID)
 	return u
 }
 
-// SetAction sets the "action" field.
-func (u *RuleTriggerScopedUpsert) SetAction(v string) *RuleTriggerScopedUpsert {
-	u.u.Set(ruletrigger.FieldAction, v)
+// SetCondition sets the "condition" field.
+func (u *RuleVersionScopedUpsert) SetCondition(v string) *RuleVersionScopedUpsert {
+	u.u.Set(ruleversion.FieldCondition, v)
 	return u
 }
 
-// UpdateAction sets the "action" field to the value that was provided on create.
-func (u *RuleTriggerScopedUpsert) UpdateAction() *RuleTriggerScopedUpsert {
-	u.u.SetExcluded(ruletrigger.FieldAction)
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *RuleVersionScopedUpsert) UpdateCondition() *RuleVersionScopedUpsert {
+	u.u.SetExcluded(ruleversion.FieldCondition)
+	return u
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (u *RuleVersionScopedUpsert) ClearCondition() *RuleVersionScopedUpsert {
+	u.u.SetNull(ruleversion.FieldCondition)
+	return u
+}
+
+// SetActions sets the "actions" field.
+func (u *RuleVersionScopedUpsert) SetActions(v string) *RuleVersionScopedUpsert {
+	u.u.Set(ruleversion.FieldActions, v)
+	return u
+}
+
+// UpdateActions sets the "actions" field to the value that was provided on create.
+func (u *RuleVersionScopedUpsert) UpdateActions() *RuleVersionScopedUpsert {
+	u.u.SetExcluded(ruleversion.FieldActions)
 	return u
 }
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
-func (t *RuleTriggerScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+func (t *RuleVersionScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
 	opts := []sql.ConflictOption{
 		sql.ConflictColumns(columns...),
-		sql.UpdateWhere(sql.EQ(ruletrigger.FieldWorkspaceID, t.s.ws)),
+		sql.UpdateWhere(sql.EQ(ruleversion.FieldWorkspaceID, t.s.ws)),
 	}
 	if target != nil {
 		opts = append(opts, sql.ConflictWhere(target))
@@ -24903,53 +25391,53 @@ func (t *RuleTriggerScoped) conflictOptions(columns []string, target *sql.Predic
 	return opts
 }
 
-// RuleTriggerScopedUpsertOne is the "upsert" of one RuleTrigger.
-type RuleTriggerScopedUpsertOne struct {
-	x *RuleTriggerScopedCreate
-	u *RuleTriggerUpsertOne
+// RuleVersionScopedUpsertOne is the "upsert" of one RuleVersion.
+type RuleVersionScopedUpsertOne struct {
+	x *RuleVersionScopedCreate
+	u *RuleVersionUpsertOne
 	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
 	doNothing bool
 }
 
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
-func (x *RuleTriggerScopedCreate) OnConflictColumns(columns ...string) *RuleTriggerScopedUpsertOne {
+func (x *RuleVersionScopedCreate) OnConflictColumns(columns ...string) *RuleVersionScopedUpsertOne {
 	return x.OnConflictColumnsWhere(nil, columns...)
 }
 
 // OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
 // index's predicate, which Postgres needs to infer the index from the columns.
-func (x *RuleTriggerScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *RuleTriggerScopedUpsertOne {
-	return &RuleTriggerScopedUpsertOne{x: x, u: x.b.OnConflict((&RuleTriggerScoped{s: x.s}).conflictOptions(columns, target)...)}
+func (x *RuleVersionScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *RuleVersionScopedUpsertOne {
+	return &RuleVersionScopedUpsertOne{x: x, u: x.b.OnConflict((&RuleVersionScoped{s: x.s}).conflictOptions(columns, target)...)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
-func (u *RuleTriggerScopedUpsertOne) UpdateNewValues() *RuleTriggerScopedUpsertOne {
+func (u *RuleVersionScopedUpsertOne) UpdateNewValues() *RuleVersionScopedUpsertOne {
 	u.u.UpdateNewValues()
 	return u
 }
 
 // Ignore sets each column to itself in case of conflict.
-func (u *RuleTriggerScopedUpsertOne) Ignore() *RuleTriggerScopedUpsertOne {
+func (u *RuleVersionScopedUpsertOne) Ignore() *RuleVersionScopedUpsertOne {
 	u.u.Ignore()
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
-func (u *RuleTriggerScopedUpsertOne) DoNothing() *RuleTriggerScopedUpsertOne {
+func (u *RuleVersionScopedUpsertOne) DoNothing() *RuleVersionScopedUpsertOne {
 	u.u.DoNothing()
 	u.doNothing = true
 	return u
 }
 
 // Update overrides fields' `UPDATE` values.
-func (u *RuleTriggerScopedUpsertOne) Update(set func(*RuleTriggerScopedUpsert)) *RuleTriggerScopedUpsertOne {
-	u.u.Update(func(s *RuleTriggerUpsert) { set(&RuleTriggerScopedUpsert{u: s.UpdateSet}) })
+func (u *RuleVersionScopedUpsertOne) Update(set func(*RuleVersionScopedUpsert)) *RuleVersionScopedUpsertOne {
+	u.u.Update(func(s *RuleVersionUpsert) { set(&RuleVersionScopedUpsert{u: s.UpdateSet}) })
 	return u
 }
 
 // Exec verifies the references, then executes the upsert.
-func (u *RuleTriggerScopedUpsertOne) Exec(ctx context.Context) error {
+func (u *RuleVersionScopedUpsertOne) Exec(ctx context.Context) error {
 	if err := u.x.check(ctx); err != nil {
 		return err
 	}
@@ -24957,55 +25445,55 @@ func (u *RuleTriggerScopedUpsertOne) Exec(ctx context.Context) error {
 }
 
 // ID is like Exec, returning the inserted or updated id.
-func (u *RuleTriggerScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+func (u *RuleVersionScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	if err := u.x.check(ctx); err != nil {
 		return 0, err
 	}
 	return u.u.ID(ctx)
 }
 
-// RuleTriggerScopedUpsertBulk is the "upsert" of several RuleTrigger entities.
-type RuleTriggerScopedUpsertBulk struct {
-	b       *RuleTriggerScopedCreateBulk
-	t       *RuleTriggerScoped
+// RuleVersionScopedUpsertBulk is the "upsert" of several RuleVersion entities.
+type RuleVersionScopedUpsertBulk struct {
+	b       *RuleVersionScopedCreateBulk
+	t       *RuleVersionScoped
 	columns []string
-	opts    []func(*RuleTriggerUpsertBulk)
+	opts    []func(*RuleVersionUpsertBulk)
 }
 
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
 // another Workspace is never updated.
-func (b *RuleTriggerScopedCreateBulk) OnConflictColumns(columns ...string) *RuleTriggerScopedUpsertBulk {
-	return &RuleTriggerScopedUpsertBulk{b: b, t: &RuleTriggerScoped{s: b.s}, columns: columns}
+func (b *RuleVersionScopedCreateBulk) OnConflictColumns(columns ...string) *RuleVersionScopedUpsertBulk {
+	return &RuleVersionScopedUpsertBulk{b: b, t: &RuleVersionScoped{s: b.s}, columns: columns}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
-func (u *RuleTriggerScopedUpsertBulk) UpdateNewValues() *RuleTriggerScopedUpsertBulk {
-	u.opts = append(u.opts, func(r *RuleTriggerUpsertBulk) { r.UpdateNewValues() })
+func (u *RuleVersionScopedUpsertBulk) UpdateNewValues() *RuleVersionScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleVersionUpsertBulk) { r.UpdateNewValues() })
 	return u
 }
 
 // Ignore sets each column to itself in case of conflict.
-func (u *RuleTriggerScopedUpsertBulk) Ignore() *RuleTriggerScopedUpsertBulk {
-	u.opts = append(u.opts, func(r *RuleTriggerUpsertBulk) { r.Ignore() })
+func (u *RuleVersionScopedUpsertBulk) Ignore() *RuleVersionScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleVersionUpsertBulk) { r.Ignore() })
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
-func (u *RuleTriggerScopedUpsertBulk) DoNothing() *RuleTriggerScopedUpsertBulk {
-	u.opts = append(u.opts, func(r *RuleTriggerUpsertBulk) { r.DoNothing() })
+func (u *RuleVersionScopedUpsertBulk) DoNothing() *RuleVersionScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleVersionUpsertBulk) { r.DoNothing() })
 	return u
 }
 
 // Update overrides fields' `UPDATE` values.
-func (u *RuleTriggerScopedUpsertBulk) Update(set func(*RuleTriggerScopedUpsert)) *RuleTriggerScopedUpsertBulk {
-	u.opts = append(u.opts, func(r *RuleTriggerUpsertBulk) {
-		r.Update(func(s *RuleTriggerUpsert) { set(&RuleTriggerScopedUpsert{u: s.UpdateSet}) })
+func (u *RuleVersionScopedUpsertBulk) Update(set func(*RuleVersionScopedUpsert)) *RuleVersionScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleVersionUpsertBulk) {
+		r.Update(func(s *RuleVersionUpsert) { set(&RuleVersionScopedUpsert{u: s.UpdateSet}) })
 	})
 	return u
 }
 
 // Exec verifies every builder's references, then executes the upsert.
-func (u *RuleTriggerScopedUpsertBulk) Exec(ctx context.Context) error {
+func (u *RuleVersionScopedUpsertBulk) Exec(ctx context.Context) error {
 	raw, err := u.b.raw(ctx)
 	if err != nil {
 		return err
@@ -25019,76 +25507,160 @@ func (u *RuleTriggerScopedUpsertBulk) Exec(ctx context.Context) error {
 
 // ---------------------------------------------------------------- update
 
-// RuleTriggerScopedUpdateOne wraps RuleTriggerUpdateOne. It has no way to move the row to another Workspace.
-type RuleTriggerScopedUpdateOne struct {
+// RuleVersionScopedUpdateOne wraps RuleVersionUpdateOne. It has no way to move the row to another Workspace.
+type RuleVersionScopedUpdateOne struct {
 	s *Scoped
-	b *RuleTriggerUpdateOne
+	b *RuleVersionUpdateOne
 }
 
-// UpdateOneID updates the RuleTrigger with the id; a row of another Workspace is not found.
-func (t *RuleTriggerScoped) UpdateOneID(id int64) *RuleTriggerScopedUpdateOne {
-	return &RuleTriggerScopedUpdateOne{s: t.s, b: t.s.c.RuleTrigger.UpdateOneID(id).Where(ruletrigger.WorkspaceID(t.s.ws))}
+// UpdateOneID updates the RuleVersion with the id; a row of another Workspace is not found.
+func (t *RuleVersionScoped) UpdateOneID(id int64) *RuleVersionScopedUpdateOne {
+	return &RuleVersionScopedUpdateOne{s: t.s, b: t.s.c.RuleVersion.UpdateOneID(id).Where(ruleversion.WorkspaceID(t.s.ws))}
 }
 
 // Where appends predicates the row must also match (fencing).
-func (x *RuleTriggerScopedUpdateOne) Where(ps ...predicate.RuleTrigger) *RuleTriggerScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) Where(ps ...predicate.RuleVersion) *RuleVersionScopedUpdateOne {
 	x.b.Where(ps...)
 	return x
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (x *RuleTriggerScopedUpdateOne) SetUpdatedAt(v time.Time) *RuleTriggerScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetUpdatedAt(v time.Time) *RuleVersionScopedUpdateOne {
 	x.b.SetUpdatedAt(v)
 	return x
 }
 
 // SetRuleID sets the "rule_id" field.
-func (x *RuleTriggerScopedUpdateOne) SetRuleID(v int64) *RuleTriggerScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetRuleID(v int64) *RuleVersionScopedUpdateOne {
 	x.b.SetRuleID(v)
 	return x
 }
 
 // SetNillableRuleID sets the "rule_id" field if the given value is not nil.
-func (x *RuleTriggerScopedUpdateOne) SetNillableRuleID(v *int64) *RuleTriggerScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetNillableRuleID(v *int64) *RuleVersionScopedUpdateOne {
 	x.b.SetNillableRuleID(v)
 	return x
 }
 
-// SetAction sets the "action" field.
-func (x *RuleTriggerScopedUpdateOne) SetAction(v string) *RuleTriggerScopedUpdateOne {
-	x.b.SetAction(v)
+// SetCondition sets the "condition" field.
+func (x *RuleVersionScopedUpdateOne) SetCondition(v string) *RuleVersionScopedUpdateOne {
+	x.b.SetCondition(v)
 	return x
 }
 
-// SetNillableAction sets the "action" field if the given value is not nil.
-func (x *RuleTriggerScopedUpdateOne) SetNillableAction(v *string) *RuleTriggerScopedUpdateOne {
-	x.b.SetNillableAction(v)
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *RuleVersionScopedUpdateOne) SetNillableCondition(v *string) *RuleVersionScopedUpdateOne {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (x *RuleVersionScopedUpdateOne) ClearCondition() *RuleVersionScopedUpdateOne {
+	x.b.ClearCondition()
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleVersionScopedUpdateOne) SetActions(v string) *RuleVersionScopedUpdateOne {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleVersionScopedUpdateOne) SetNillableActions(v *string) *RuleVersionScopedUpdateOne {
+	x.b.SetNillableActions(v)
 	return x
 }
 
 // SetRule sets the "rule" edge to the Rule entity.
-func (x *RuleTriggerScopedUpdateOne) SetRule(v *Rule) *RuleTriggerScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetRule(v *Rule) *RuleVersionScopedUpdateOne {
 	x.b.SetRule(v)
 	return x
 }
 
 // ClearRule clears the "rule" edge to the Rule entity.
-func (x *RuleTriggerScopedUpdateOne) ClearRule() *RuleTriggerScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) ClearRule() *RuleVersionScopedUpdateOne {
 	x.b.ClearRule()
 	return x
 }
 
-func (x *RuleTriggerScopedUpdateOne) check(ctx context.Context) error {
+// AddTriggerIDs adds the "triggers" edge to the RuleVersionTrigger entity by IDs.
+func (x *RuleVersionScopedUpdateOne) AddTriggerIDs(ids ...int64) *RuleVersionScopedUpdateOne {
+	x.b.AddTriggerIDs(ids...)
+	return x
+}
+
+// AddTriggers adds the "triggers" edges to the RuleVersionTrigger entity.
+func (x *RuleVersionScopedUpdateOne) AddTriggers(v ...*RuleVersionTrigger) *RuleVersionScopedUpdateOne {
+	x.b.AddTriggers(v...)
+	return x
+}
+
+// ClearTriggers clears the "triggers" edges to the RuleVersionTrigger entity.
+func (x *RuleVersionScopedUpdateOne) ClearTriggers() *RuleVersionScopedUpdateOne {
+	x.b.ClearTriggers()
+	return x
+}
+
+// RemoveTriggerIDs removes the "triggers" edge to RuleVersionTrigger entities by IDs.
+func (x *RuleVersionScopedUpdateOne) RemoveTriggerIDs(ids ...int64) *RuleVersionScopedUpdateOne {
+	x.b.RemoveTriggerIDs(ids...)
+	return x
+}
+
+// RemoveTriggers removes "triggers" edges to RuleVersionTrigger entities.
+func (x *RuleVersionScopedUpdateOne) RemoveTriggers(v ...*RuleVersionTrigger) *RuleVersionScopedUpdateOne {
+	x.b.RemoveTriggers(v...)
+	return x
+}
+
+// AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
+func (x *RuleVersionScopedUpdateOne) AddFiringIDs(ids ...int64) *RuleVersionScopedUpdateOne {
+	x.b.AddFiringIDs(ids...)
+	return x
+}
+
+// AddFirings adds the "firings" edges to the RuleFiring entity.
+func (x *RuleVersionScopedUpdateOne) AddFirings(v ...*RuleFiring) *RuleVersionScopedUpdateOne {
+	x.b.AddFirings(v...)
+	return x
+}
+
+// ClearFirings clears the "firings" edges to the RuleFiring entity.
+func (x *RuleVersionScopedUpdateOne) ClearFirings() *RuleVersionScopedUpdateOne {
+	x.b.ClearFirings()
+	return x
+}
+
+// RemoveFiringIDs removes the "firings" edge to RuleFiring entities by IDs.
+func (x *RuleVersionScopedUpdateOne) RemoveFiringIDs(ids ...int64) *RuleVersionScopedUpdateOne {
+	x.b.RemoveFiringIDs(ids...)
+	return x
+}
+
+// RemoveFirings removes "firings" edges to RuleFiring entities.
+func (x *RuleVersionScopedUpdateOne) RemoveFirings(v ...*RuleFiring) *RuleVersionScopedUpdateOne {
+	x.b.RemoveFirings(v...)
+	return x
+}
+
+func (x *RuleVersionScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
 		return fmt.Errorf("rule: %w", err)
 	}
+	if err := x.s.verifyRuleVersionTrigger(ctx, m.TriggersIDs()); err != nil {
+		return fmt.Errorf("triggers: %w", err)
+	}
+	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
+		return fmt.Errorf("firings: %w", err)
+	}
 	return nil
 }
 
-// Save verifies the references against the Workspace, then updates the RuleTrigger.
-func (x *RuleTriggerScopedUpdateOne) Save(ctx context.Context) (*RuleTrigger, error) {
+// Save verifies the references against the Workspace, then updates the RuleVersion.
+func (x *RuleVersionScopedUpdateOne) Save(ctx context.Context) (*RuleVersion, error) {
 	if err := x.check(ctx); err != nil {
 		return nil, err
 	}
@@ -25096,26 +25668,26 @@ func (x *RuleTriggerScopedUpdateOne) Save(ctx context.Context) (*RuleTrigger, er
 }
 
 // Exec is like Save, discarding the entity.
-func (x *RuleTriggerScopedUpdateOne) Exec(ctx context.Context) error {
+func (x *RuleVersionScopedUpdateOne) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }
 
-// RuleTriggerScopedUpdate wraps RuleTriggerUpdate: a conditional bulk update of one Workspace.
-type RuleTriggerScopedUpdate struct {
+// RuleVersionScopedUpdate wraps RuleVersionUpdate: a conditional bulk update of one Workspace.
+type RuleVersionScopedUpdate struct {
 	s *Scoped
-	b *RuleTriggerUpdate
+	b *RuleVersionUpdate
 	// modErr is set when a Modify modifier tried to assign workspace_id.
 	modErr error
 }
 
-// Update updates the RuleTrigger entities of the Workspace that match the predicates.
-func (t *RuleTriggerScoped) Update() *RuleTriggerScopedUpdate {
-	return &RuleTriggerScopedUpdate{s: t.s, b: t.s.c.RuleTrigger.Update().Where(ruletrigger.WorkspaceID(t.s.ws))}
+// Update updates the RuleVersion entities of the Workspace that match the predicates.
+func (t *RuleVersionScoped) Update() *RuleVersionScopedUpdate {
+	return &RuleVersionScopedUpdate{s: t.s, b: t.s.c.RuleVersion.Update().Where(ruleversion.WorkspaceID(t.s.ws))}
 }
 
 // Where appends predicates the rows must match.
-func (x *RuleTriggerScopedUpdate) Where(ps ...predicate.RuleTrigger) *RuleTriggerScopedUpdate {
+func (x *RuleVersionScopedUpdate) Where(ps ...predicate.RuleVersion) *RuleVersionScopedUpdate {
 	x.b.Where(ps...)
 	return x
 }
@@ -25125,9 +25697,9 @@ func (x *RuleTriggerScopedUpdate) Where(ps ...predicate.RuleTrigger) *RuleTrigge
 // (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
 // workspace_id is refused: each modifier is probed against a scratch statement here, and
 // Save fails with ErrWorkspaceAssign.
-func (x *RuleTriggerScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *RuleTriggerScopedUpdate {
+func (x *RuleVersionScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *RuleVersionScopedUpdate {
 	for _, m := range modifiers {
-		probe := &ScopedAssign{u: sql.Update(ruletrigger.Table)}
+		probe := &ScopedAssign{u: sql.Update(ruleversion.Table)}
 		m(probe)
 		if probe.workspace {
 			x.modErr = ErrWorkspaceAssign
@@ -25138,59 +25710,143 @@ func (x *RuleTriggerScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *Ru
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (x *RuleTriggerScopedUpdate) SetUpdatedAt(v time.Time) *RuleTriggerScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetUpdatedAt(v time.Time) *RuleVersionScopedUpdate {
 	x.b.SetUpdatedAt(v)
 	return x
 }
 
 // SetRuleID sets the "rule_id" field.
-func (x *RuleTriggerScopedUpdate) SetRuleID(v int64) *RuleTriggerScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetRuleID(v int64) *RuleVersionScopedUpdate {
 	x.b.SetRuleID(v)
 	return x
 }
 
 // SetNillableRuleID sets the "rule_id" field if the given value is not nil.
-func (x *RuleTriggerScopedUpdate) SetNillableRuleID(v *int64) *RuleTriggerScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetNillableRuleID(v *int64) *RuleVersionScopedUpdate {
 	x.b.SetNillableRuleID(v)
 	return x
 }
 
-// SetAction sets the "action" field.
-func (x *RuleTriggerScopedUpdate) SetAction(v string) *RuleTriggerScopedUpdate {
-	x.b.SetAction(v)
+// SetCondition sets the "condition" field.
+func (x *RuleVersionScopedUpdate) SetCondition(v string) *RuleVersionScopedUpdate {
+	x.b.SetCondition(v)
 	return x
 }
 
-// SetNillableAction sets the "action" field if the given value is not nil.
-func (x *RuleTriggerScopedUpdate) SetNillableAction(v *string) *RuleTriggerScopedUpdate {
-	x.b.SetNillableAction(v)
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (x *RuleVersionScopedUpdate) SetNillableCondition(v *string) *RuleVersionScopedUpdate {
+	x.b.SetNillableCondition(v)
+	return x
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (x *RuleVersionScopedUpdate) ClearCondition() *RuleVersionScopedUpdate {
+	x.b.ClearCondition()
+	return x
+}
+
+// SetActions sets the "actions" field.
+func (x *RuleVersionScopedUpdate) SetActions(v string) *RuleVersionScopedUpdate {
+	x.b.SetActions(v)
+	return x
+}
+
+// SetNillableActions sets the "actions" field if the given value is not nil.
+func (x *RuleVersionScopedUpdate) SetNillableActions(v *string) *RuleVersionScopedUpdate {
+	x.b.SetNillableActions(v)
 	return x
 }
 
 // SetRule sets the "rule" edge to the Rule entity.
-func (x *RuleTriggerScopedUpdate) SetRule(v *Rule) *RuleTriggerScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetRule(v *Rule) *RuleVersionScopedUpdate {
 	x.b.SetRule(v)
 	return x
 }
 
 // ClearRule clears the "rule" edge to the Rule entity.
-func (x *RuleTriggerScopedUpdate) ClearRule() *RuleTriggerScopedUpdate {
+func (x *RuleVersionScopedUpdate) ClearRule() *RuleVersionScopedUpdate {
 	x.b.ClearRule()
 	return x
 }
 
-func (x *RuleTriggerScopedUpdate) check(ctx context.Context) error {
+// AddTriggerIDs adds the "triggers" edge to the RuleVersionTrigger entity by IDs.
+func (x *RuleVersionScopedUpdate) AddTriggerIDs(ids ...int64) *RuleVersionScopedUpdate {
+	x.b.AddTriggerIDs(ids...)
+	return x
+}
+
+// AddTriggers adds the "triggers" edges to the RuleVersionTrigger entity.
+func (x *RuleVersionScopedUpdate) AddTriggers(v ...*RuleVersionTrigger) *RuleVersionScopedUpdate {
+	x.b.AddTriggers(v...)
+	return x
+}
+
+// ClearTriggers clears the "triggers" edges to the RuleVersionTrigger entity.
+func (x *RuleVersionScopedUpdate) ClearTriggers() *RuleVersionScopedUpdate {
+	x.b.ClearTriggers()
+	return x
+}
+
+// RemoveTriggerIDs removes the "triggers" edge to RuleVersionTrigger entities by IDs.
+func (x *RuleVersionScopedUpdate) RemoveTriggerIDs(ids ...int64) *RuleVersionScopedUpdate {
+	x.b.RemoveTriggerIDs(ids...)
+	return x
+}
+
+// RemoveTriggers removes "triggers" edges to RuleVersionTrigger entities.
+func (x *RuleVersionScopedUpdate) RemoveTriggers(v ...*RuleVersionTrigger) *RuleVersionScopedUpdate {
+	x.b.RemoveTriggers(v...)
+	return x
+}
+
+// AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
+func (x *RuleVersionScopedUpdate) AddFiringIDs(ids ...int64) *RuleVersionScopedUpdate {
+	x.b.AddFiringIDs(ids...)
+	return x
+}
+
+// AddFirings adds the "firings" edges to the RuleFiring entity.
+func (x *RuleVersionScopedUpdate) AddFirings(v ...*RuleFiring) *RuleVersionScopedUpdate {
+	x.b.AddFirings(v...)
+	return x
+}
+
+// ClearFirings clears the "firings" edges to the RuleFiring entity.
+func (x *RuleVersionScopedUpdate) ClearFirings() *RuleVersionScopedUpdate {
+	x.b.ClearFirings()
+	return x
+}
+
+// RemoveFiringIDs removes the "firings" edge to RuleFiring entities by IDs.
+func (x *RuleVersionScopedUpdate) RemoveFiringIDs(ids ...int64) *RuleVersionScopedUpdate {
+	x.b.RemoveFiringIDs(ids...)
+	return x
+}
+
+// RemoveFirings removes "firings" edges to RuleFiring entities.
+func (x *RuleVersionScopedUpdate) RemoveFirings(v ...*RuleFiring) *RuleVersionScopedUpdate {
+	x.b.RemoveFirings(v...)
+	return x
+}
+
+func (x *RuleVersionScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
 	if err := x.s.verifyRule(ctx, m.RuleIDs()); err != nil {
 		return fmt.Errorf("rule: %w", err)
+	}
+	if err := x.s.verifyRuleVersionTrigger(ctx, m.TriggersIDs()); err != nil {
+		return fmt.Errorf("triggers: %w", err)
+	}
+	if err := x.s.verifyRuleFiring(ctx, m.FiringsIDs()); err != nil {
+		return fmt.Errorf("firings: %w", err)
 	}
 	return nil
 }
 
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
-func (x *RuleTriggerScopedUpdate) Save(ctx context.Context) (int, error) {
+func (x *RuleVersionScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
@@ -25201,7 +25857,541 @@ func (x *RuleTriggerScopedUpdate) Save(ctx context.Context) (int, error) {
 }
 
 // Exec is like Save, discarding the count.
-func (x *RuleTriggerScopedUpdate) Exec(ctx context.Context) error {
+func (x *RuleVersionScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// RuleVersionTriggerScoped reaches RuleVersionTrigger entities of one Workspace.
+type RuleVersionTriggerScoped struct{ s *Scoped }
+
+// RuleVersionTrigger returns the RuleVersionTrigger entities of the Workspace.
+func (s *Scoped) RuleVersionTrigger() *RuleVersionTriggerScoped {
+	return &RuleVersionTriggerScoped{s: s}
+}
+
+// Query returns a RuleVersionTrigger query already confined to the Workspace.
+func (t *RuleVersionTriggerScoped) Query() *RuleVersionTriggerQuery {
+	return t.s.c.RuleVersionTrigger.Query().Where(ruleversiontrigger.WorkspaceID(t.s.ws))
+}
+
+// Get returns the RuleVersionTrigger with the id; a row of another Workspace is not found.
+func (t *RuleVersionTriggerScoped) Get(ctx context.Context, id int64) (*RuleVersionTrigger, error) {
+	return t.Query().Where(ruleversiontrigger.ID(id)).Only(ctx)
+}
+
+// RuleVersionTriggerScopedDeleteOne wraps RuleVersionTriggerDeleteOne.
+type RuleVersionTriggerScopedDeleteOne struct {
+	s *Scoped
+	b *RuleVersionTriggerDeleteOne
+}
+
+// DeleteOneID deletes the RuleVersionTrigger with the id; a row of another Workspace is not found.
+func (t *RuleVersionTriggerScoped) DeleteOneID(id int64) *RuleVersionTriggerScopedDeleteOne {
+	return &RuleVersionTriggerScopedDeleteOne{s: t.s, b: t.s.c.RuleVersionTrigger.DeleteOneID(id).Where(ruleversiontrigger.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *RuleVersionTriggerScopedDeleteOne) Where(ps ...predicate.RuleVersionTrigger) *RuleVersionTriggerScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *RuleVersionTriggerScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// RuleVersionTriggerScopedDelete wraps RuleVersionTriggerDelete.
+type RuleVersionTriggerScopedDelete struct {
+	s *Scoped
+	b *RuleVersionTriggerDelete
+}
+
+// Delete deletes the RuleVersionTrigger entities of the Workspace that match the predicates.
+func (t *RuleVersionTriggerScoped) Delete() *RuleVersionTriggerScopedDelete {
+	return &RuleVersionTriggerScopedDelete{s: t.s, b: t.s.c.RuleVersionTrigger.Delete().Where(ruleversiontrigger.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *RuleVersionTriggerScopedDelete) Where(ps ...predicate.RuleVersionTrigger) *RuleVersionTriggerScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *RuleVersionTriggerScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// RuleVersionTriggerScopedCreate wraps RuleVersionTriggerCreate. It has no way to name a Workspace.
+type RuleVersionTriggerScopedCreate struct {
+	s *Scoped
+	b *RuleVersionTriggerCreate
+}
+
+// Create starts a RuleVersionTrigger in the Workspace.
+func (t *RuleVersionTriggerScoped) Create() *RuleVersionTriggerScopedCreate {
+	return &RuleVersionTriggerScopedCreate{s: t.s, b: t.s.c.RuleVersionTrigger.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *RuleVersionTriggerScopedCreate) SetCreatedAt(v time.Time) *RuleVersionTriggerScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *RuleVersionTriggerScopedCreate) SetNillableCreatedAt(v *time.Time) *RuleVersionTriggerScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleVersionTriggerScopedCreate) SetUpdatedAt(v time.Time) *RuleVersionTriggerScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *RuleVersionTriggerScopedCreate) SetNillableUpdatedAt(v *time.Time) *RuleVersionTriggerScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetVersionID sets the "version_id" field.
+func (x *RuleVersionTriggerScopedCreate) SetVersionID(v int64) *RuleVersionTriggerScopedCreate {
+	x.b.SetVersionID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleVersionTriggerScopedCreate) SetAction(v string) *RuleVersionTriggerScopedCreate {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (x *RuleVersionTriggerScopedCreate) SetVersion(v *RuleVersion) *RuleVersionTriggerScopedCreate {
+	x.b.SetVersion(v)
+	return x
+}
+
+func (x *RuleVersionTriggerScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRuleVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the RuleVersionTrigger.
+func (x *RuleVersionTriggerScopedCreate) Save(ctx context.Context) (*RuleVersionTrigger, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *RuleVersionTriggerScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// RuleVersionTriggerScopedCreateBulk creates several RuleVersionTrigger entities of one Workspace at once.
+type RuleVersionTriggerScopedCreateBulk struct {
+	s  *Scoped
+	xs []*RuleVersionTriggerScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *RuleVersionTriggerScoped) CreateBulk(xs ...*RuleVersionTriggerScopedCreate) *RuleVersionTriggerScopedCreateBulk {
+	return &RuleVersionTriggerScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *RuleVersionTriggerScopedCreateBulk) raw(ctx context.Context) (*RuleVersionTriggerCreateBulk, error) {
+	builders := make([]*RuleVersionTriggerCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("RuleVersionTrigger: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.RuleVersionTrigger.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the RuleVersionTrigger entities.
+func (b *RuleVersionTriggerScopedCreateBulk) Save(ctx context.Context) ([]*RuleVersionTrigger, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *RuleVersionTriggerScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// RuleVersionTriggerScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type RuleVersionTriggerScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *RuleVersionTriggerScopedUpsert) SetUpdatedAt(v time.Time) *RuleVersionTriggerScopedUpsert {
+	u.u.Set(ruleversiontrigger.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *RuleVersionTriggerScopedUpsert) UpdateUpdatedAt() *RuleVersionTriggerScopedUpsert {
+	u.u.SetExcluded(ruleversiontrigger.FieldUpdatedAt)
+	return u
+}
+
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *RuleVersionTriggerScopedUpsert) UpdateVersionID() *RuleVersionTriggerScopedUpsert {
+	u.u.SetExcluded(ruleversiontrigger.FieldVersionID)
+	return u
+}
+
+// SetAction sets the "action" field.
+func (u *RuleVersionTriggerScopedUpsert) SetAction(v string) *RuleVersionTriggerScopedUpsert {
+	u.u.Set(ruleversiontrigger.FieldAction, v)
+	return u
+}
+
+// UpdateAction sets the "action" field to the value that was provided on create.
+func (u *RuleVersionTriggerScopedUpsert) UpdateAction() *RuleVersionTriggerScopedUpsert {
+	u.u.SetExcluded(ruleversiontrigger.FieldAction)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *RuleVersionTriggerScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(ruleversiontrigger.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// RuleVersionTriggerScopedUpsertOne is the "upsert" of one RuleVersionTrigger.
+type RuleVersionTriggerScopedUpsertOne struct {
+	x *RuleVersionTriggerScopedCreate
+	u *RuleVersionTriggerUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *RuleVersionTriggerScopedCreate) OnConflictColumns(columns ...string) *RuleVersionTriggerScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *RuleVersionTriggerScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *RuleVersionTriggerScopedUpsertOne {
+	return &RuleVersionTriggerScopedUpsertOne{x: x, u: x.b.OnConflict((&RuleVersionTriggerScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *RuleVersionTriggerScopedUpsertOne) UpdateNewValues() *RuleVersionTriggerScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *RuleVersionTriggerScopedUpsertOne) Ignore() *RuleVersionTriggerScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *RuleVersionTriggerScopedUpsertOne) DoNothing() *RuleVersionTriggerScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *RuleVersionTriggerScopedUpsertOne) Update(set func(*RuleVersionTriggerScopedUpsert)) *RuleVersionTriggerScopedUpsertOne {
+	u.u.Update(func(s *RuleVersionTriggerUpsert) { set(&RuleVersionTriggerScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *RuleVersionTriggerScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *RuleVersionTriggerScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// RuleVersionTriggerScopedUpsertBulk is the "upsert" of several RuleVersionTrigger entities.
+type RuleVersionTriggerScopedUpsertBulk struct {
+	b       *RuleVersionTriggerScopedCreateBulk
+	t       *RuleVersionTriggerScoped
+	columns []string
+	opts    []func(*RuleVersionTriggerUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *RuleVersionTriggerScopedCreateBulk) OnConflictColumns(columns ...string) *RuleVersionTriggerScopedUpsertBulk {
+	return &RuleVersionTriggerScopedUpsertBulk{b: b, t: &RuleVersionTriggerScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *RuleVersionTriggerScopedUpsertBulk) UpdateNewValues() *RuleVersionTriggerScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleVersionTriggerUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *RuleVersionTriggerScopedUpsertBulk) Ignore() *RuleVersionTriggerScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleVersionTriggerUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *RuleVersionTriggerScopedUpsertBulk) DoNothing() *RuleVersionTriggerScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleVersionTriggerUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *RuleVersionTriggerScopedUpsertBulk) Update(set func(*RuleVersionTriggerScopedUpsert)) *RuleVersionTriggerScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *RuleVersionTriggerUpsertBulk) {
+		r.Update(func(s *RuleVersionTriggerUpsert) { set(&RuleVersionTriggerScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *RuleVersionTriggerScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// RuleVersionTriggerScopedUpdateOne wraps RuleVersionTriggerUpdateOne. It has no way to move the row to another Workspace.
+type RuleVersionTriggerScopedUpdateOne struct {
+	s *Scoped
+	b *RuleVersionTriggerUpdateOne
+}
+
+// UpdateOneID updates the RuleVersionTrigger with the id; a row of another Workspace is not found.
+func (t *RuleVersionTriggerScoped) UpdateOneID(id int64) *RuleVersionTriggerScopedUpdateOne {
+	return &RuleVersionTriggerScopedUpdateOne{s: t.s, b: t.s.c.RuleVersionTrigger.UpdateOneID(id).Where(ruleversiontrigger.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *RuleVersionTriggerScopedUpdateOne) Where(ps ...predicate.RuleVersionTrigger) *RuleVersionTriggerScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleVersionTriggerScopedUpdateOne) SetUpdatedAt(v time.Time) *RuleVersionTriggerScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetVersionID sets the "version_id" field.
+func (x *RuleVersionTriggerScopedUpdateOne) SetVersionID(v int64) *RuleVersionTriggerScopedUpdateOne {
+	x.b.SetVersionID(v)
+	return x
+}
+
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (x *RuleVersionTriggerScopedUpdateOne) SetNillableVersionID(v *int64) *RuleVersionTriggerScopedUpdateOne {
+	x.b.SetNillableVersionID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleVersionTriggerScopedUpdateOne) SetAction(v string) *RuleVersionTriggerScopedUpdateOne {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (x *RuleVersionTriggerScopedUpdateOne) SetNillableAction(v *string) *RuleVersionTriggerScopedUpdateOne {
+	x.b.SetNillableAction(v)
+	return x
+}
+
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (x *RuleVersionTriggerScopedUpdateOne) SetVersion(v *RuleVersion) *RuleVersionTriggerScopedUpdateOne {
+	x.b.SetVersion(v)
+	return x
+}
+
+// ClearVersion clears the "version" edge to the RuleVersion entity.
+func (x *RuleVersionTriggerScopedUpdateOne) ClearVersion() *RuleVersionTriggerScopedUpdateOne {
+	x.b.ClearVersion()
+	return x
+}
+
+func (x *RuleVersionTriggerScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRuleVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the RuleVersionTrigger.
+func (x *RuleVersionTriggerScopedUpdateOne) Save(ctx context.Context) (*RuleVersionTrigger, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *RuleVersionTriggerScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// RuleVersionTriggerScopedUpdate wraps RuleVersionTriggerUpdate: a conditional bulk update of one Workspace.
+type RuleVersionTriggerScopedUpdate struct {
+	s *Scoped
+	b *RuleVersionTriggerUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the RuleVersionTrigger entities of the Workspace that match the predicates.
+func (t *RuleVersionTriggerScoped) Update() *RuleVersionTriggerScopedUpdate {
+	return &RuleVersionTriggerScopedUpdate{s: t.s, b: t.s.c.RuleVersionTrigger.Update().Where(ruleversiontrigger.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *RuleVersionTriggerScopedUpdate) Where(ps ...predicate.RuleVersionTrigger) *RuleVersionTriggerScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *RuleVersionTriggerScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *RuleVersionTriggerScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(ruleversiontrigger.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *RuleVersionTriggerScopedUpdate) SetUpdatedAt(v time.Time) *RuleVersionTriggerScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetVersionID sets the "version_id" field.
+func (x *RuleVersionTriggerScopedUpdate) SetVersionID(v int64) *RuleVersionTriggerScopedUpdate {
+	x.b.SetVersionID(v)
+	return x
+}
+
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (x *RuleVersionTriggerScopedUpdate) SetNillableVersionID(v *int64) *RuleVersionTriggerScopedUpdate {
+	x.b.SetNillableVersionID(v)
+	return x
+}
+
+// SetAction sets the "action" field.
+func (x *RuleVersionTriggerScopedUpdate) SetAction(v string) *RuleVersionTriggerScopedUpdate {
+	x.b.SetAction(v)
+	return x
+}
+
+// SetNillableAction sets the "action" field if the given value is not nil.
+func (x *RuleVersionTriggerScopedUpdate) SetNillableAction(v *string) *RuleVersionTriggerScopedUpdate {
+	x.b.SetNillableAction(v)
+	return x
+}
+
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (x *RuleVersionTriggerScopedUpdate) SetVersion(v *RuleVersion) *RuleVersionTriggerScopedUpdate {
+	x.b.SetVersion(v)
+	return x
+}
+
+// ClearVersion clears the "version" edge to the RuleVersion entity.
+func (x *RuleVersionTriggerScopedUpdate) ClearVersion() *RuleVersionTriggerScopedUpdate {
+	x.b.ClearVersion()
+	return x
+}
+
+func (x *RuleVersionTriggerScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyRuleVersion(ctx, m.VersionIDs()); err != nil {
+		return fmt.Errorf("version: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *RuleVersionTriggerScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *RuleVersionTriggerScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

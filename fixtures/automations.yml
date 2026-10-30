@@ -1,24 +1,29 @@
 # Workspace acme (id 1). Triggers deliberately avoid "contact.created" (used by the
 # jobs/automation tests' inline automations) so EvaluateTrigger never enrolls a test
-# contact into a fixture automation. The steps live in automation_versions.yml (ADR 0049).
+# contact into a fixture automation. The definition (Trigger, Integration, steps) lives in
+# automation_versions.yml (ADR 0049, ADR 0065). live_version_id and draft_version_id follow the
+# migration that moved the definitions: an active Automation, or one with Enrollments on its newest
+# version, has it live; otherwise the newest is the draft and the one before it (if any) is live.
+# The Welcome series (100) is active with a live version and a draft.
 - id: 100 # fixture: AutomationWelcomeSeries
   name: Welcome series
   status: active
-  trigger_event: signup
+  live_version_id: 100
+  draft_version_id: 1001
   workspace_id: 1
   created_at: '{{daysAgo 90}}'
   updated_at: '{{daysAgo 20}}'
 - id: 101
   name: Course completion congrats
   status: active
-  trigger_event: course_completed
+  live_version_id: 101
   workspace_id: 1
   created_at: '{{daysAgo 75}}'
   updated_at: '{{daysAgo 15}}'
 - id: 102 # fixture: AutomationWinBack
   name: Win-back lapsed learners
-  status: draft
-  trigger_event: subscription_cancelled
+  status: inactive
+  draft_version_id: 102
   workspace_id: 1
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
@@ -26,7 +31,7 @@
 - id: 103 # fixture: AutomationHoldDemo
   name: Hold demo
   status: active
-  trigger_event: hold_demo
+  live_version_id: 103
   workspace_id: 1
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 10}}'
@@ -34,34 +39,34 @@
 - id: 104 # fixture: AutomationTagOnEngagement
   name: Tag on engagement
   status: active
-  trigger_event: tag_demo
+  live_version_id: 104
   workspace_id: 1
   created_at: '{{daysAgo 5}}'
   updated_at: '{{daysAgo 5}}'
 # An HTTP step (ADR 0039): URL, header value and signing secret are sealed per field, as
-# a saved step stores them. Draft, trigger unused elsewhere.
+# a saved step stores them. Inactive, trigger unused elsewhere.
 - id: 105 # fixture: AutomationNotifySlack
   name: Notify Slack on signup
-  status: draft
-  trigger_event: http_demo
+  status: inactive
+  live_version_id: 105
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 # Steps edited while Enrollments stood on the first version (ADR 0049): version 1 keeps its
-# Enrollments, the later ones began on version 2. Draft, trigger unused elsewhere.
+# Enrollments, the later ones began on version 2. Inactive, trigger unused elsewhere.
 - id: 106 # fixture: AutomationOnboardingDrip
   name: Onboarding drip
-  status: draft
-  trigger_event: onboarding_drip
+  status: inactive
+  live_version_id: 1060
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 6}}'
-# Archived (ADR 0049): a discarded draft with no Enrollments. Trigger unused elsewhere.
+# Archived (ADR 0049): a discarded inactive one with no Enrollments. Trigger unused elsewhere.
 - id: 107 # fixture: AutomationArchived
   name: Old referral nudge
-  status: draft
-  trigger_event: referral_nudge
+  status: inactive
   discarded_at: '{{daysAgo 8}}'
+  draft_version_id: 107
   workspace_id: 1
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 8}}'
@@ -69,8 +74,8 @@
 # Globex (workspace 2).
 - id: 900 # fixture: AutomationGlobex
   name: Globex automation
-  status: draft
-  trigger_event: globex_trigger
+  status: inactive
+  live_version_id: 900
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -79,7 +84,7 @@
 - id: 300 # fixture: AutomationInitech
   name: Initech onboarding
   status: active
-  trigger_event: initech_signup
+  live_version_id: 300
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -88,7 +93,7 @@
 - id: 301 # fixture: AutomationInitechHTTP
   name: Initech hook
   status: active
-  trigger_event: initech_hook
+  live_version_id: 301
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -97,9 +102,9 @@
 # erasure must reach it (ADR 0049).
 - id: 302 # fixture: AutomationInitechArchived
   name: Initech retired drip
-  status: draft
-  trigger_event: initech_retired
+  status: inactive
   discarded_at: '2026-01-03 00:00:00'
+  live_version_id: 302
   workspace_id: 3
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-03 00:00:00'
@@ -110,7 +115,7 @@
 - id: 5560 # fixture: AutomationJobsGreeting
   name: Jobs greeting
   status: active
-  trigger_event: job_greeting
+  live_version_id: 5560
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -118,7 +123,7 @@
 - id: 5561 # fixture: AutomationJobsSingleEmail
   name: Jobs single email
   status: active
-  trigger_event: job_single_email
+  live_version_id: 5561
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -126,7 +131,7 @@
 - id: 5562 # fixture: AutomationJobsWaitFirst
   name: Jobs wait first
   status: active
-  trigger_event: job_wait_first
+  live_version_id: 5562
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -135,7 +140,7 @@
 - id: 5563 # fixture: AutomationJobsBranches
   name: Jobs step outcomes
   status: active
-  trigger_event: job_branches
+  live_version_id: 55634
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -143,7 +148,7 @@
 - id: 5564 # fixture: AutomationJobsEditable
   name: Jobs editable
   status: active
-  trigger_event: job_editable
+  live_version_id: 5564
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -151,15 +156,15 @@
 - id: 5565 # fixture: AutomationJobsSystemTag
   name: Jobs system tag
   status: active
-  trigger_event: job_system_tag
+  live_version_id: 5565
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
-# A draft on the greeting's trigger: it never enrolls anyone.
-- id: 5566 # fixture: AutomationJobsGreetingDraft
-  name: Jobs greeting draft
-  status: draft
-  trigger_event: job_greeting
+# An inactive one on the greeting's trigger: it never enrolls anyone.
+- id: 5566 # fixture: AutomationJobsGreetingInactive
+  name: Jobs greeting inactive
+  status: inactive
+  draft_version_id: 5566
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -169,7 +174,7 @@
 - id: 5570 # fixture: AutomationOnOpen
   name: On open
   status: active
-  trigger_event: email.opened
+  live_version_id: 5570
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -178,42 +183,42 @@
 - id: 20001
   name: 'Welcome series'
   status: 'active'
-  trigger_event: 'signup'
+  live_version_id: 20001
   workspace_id: 20
   created_at: '{{hoursAgo 2400}}'
   updated_at: '{{hoursAgo 600}}'
 - id: 20002
   name: 'Trial nudge: pricing questions'
   status: 'active'
-  trigger_event: 'viewed_pricing'
+  live_version_id: 20002
   workspace_id: 20
   created_at: '{{hoursAgo 1440}}'
   updated_at: '{{hoursAgo 360}}'
 - id: 20003
   name: 'Course completion congrats'
   status: 'active'
-  trigger_event: 'course_completed'
+  live_version_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 1800}}'
   updated_at: '{{hoursAgo 432}}'
 - id: 20004
   name: 'Win-back lapsed learners'
   status: 'active'
-  trigger_event: 'subscription_cancelled'
+  live_version_id: 20004
   workspace_id: 20
   created_at: '{{hoursAgo 960}}'
   updated_at: '{{hoursAgo 240}}'
 - id: 20005
   name: 'Tag engaged learners'
   status: 'active'
-  trigger_event: 'lesson_completed'
+  live_version_id: 20005
   workspace_id: 20
   created_at: '{{hoursAgo 720}}'
   updated_at: '{{hoursAgo 168}}'
 - id: 20006
   name: 'Black Friday countdown'
-  status: 'draft'
-  trigger_event: 'black_friday_optin'
+  status: 'inactive'
+  draft_version_id: 20006
   workspace_id: 20
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 24}}'

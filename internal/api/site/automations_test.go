@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestSiteAutomationsCRUDAndActivation(t *testing.T) {
+func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -30,19 +30,19 @@ func TestSiteAutomationsCRUDAndActivation(t *testing.T) {
 	res, ok := created.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", created)
 	assert.Equal(t, "Welcome series", res.Name)
-	assert.Equal(t, siteapi.SiteAutomationStatusDraft, res.Status)
-	assert.Equal(t, "contact.created", res.TriggerEvent)
+	assert.Equal(t, siteapi.SiteAutomationStatusInactive, res.Status)
+	assert.Equal(t, "contact.created", res.Draft.Value.TriggerEvent)
 
 	// Steps round-trip through the typed contract (stored as the executor's JSON
 	// string, decoded back into the typed DTO).
-	require.Len(t, res.Steps, 2)
-	assert.Equal(t, siteapi.SiteAutomationStepTypeEmail, res.Steps[0].Type)
-	assert.Equal(t, "Hi", res.Steps[0].Subject.Or(""))
-	assert.Equal(t, siteapi.SiteAutomationStepTypeWait, res.Steps[1].Type)
-	assert.Equal(t, int32(3600), res.Steps[1].Seconds.Or(0))
+	require.Len(t, res.Draft.Value.Steps, 2)
+	assert.Equal(t, siteapi.SiteAutomationStepTypeEmail, res.Draft.Value.Steps[0].Type)
+	assert.Equal(t, "Hi", res.Draft.Value.Steps[0].Subject.Or(""))
+	assert.Equal(t, siteapi.SiteAutomationStepTypeWait, res.Draft.Value.Steps[1].Type)
+	assert.Equal(t, int32(3600), res.Draft.Value.Steps[1].Seconds.Or(0))
 
-	// Activate / deactivate flip the status.
-	act, err := c.SiteAutomationsActivate(ctx, siteapi.SiteAutomationsActivateParams{WorkspaceId: workspaceID, ID: res.ID})
+	// Publish / deactivate flip the status.
+	act, err := c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	actRes, ok := act.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", act)
@@ -52,7 +52,7 @@ func TestSiteAutomationsCRUDAndActivation(t *testing.T) {
 	require.NoError(t, err)
 	deactRes, ok := deact.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", deact)
-	assert.Equal(t, siteapi.SiteAutomationStatusDraft, deactRes.Status)
+	assert.Equal(t, siteapi.SiteAutomationStatusInactive, deactRes.Status)
 
 	// Fetch the created automation back by id (selection by key).
 	got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: res.ID})

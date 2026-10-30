@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { conditionCodec, emptyGroup } from '../../components/conditions/condition.ts'
+import { DraftControls } from '../../components/DraftControls.tsx'
 import {
   siteRulesCreateMutation,
   siteRulesGetOptions,
@@ -13,6 +15,7 @@ import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { actionsCodec, triggerEventsCodec } from './actions.ts'
+import { ruleDraftActions } from './draftActions.ts'
 import { RuleDryRun } from './RuleDryRun.tsx'
 import { RuleForm } from './RuleForm.tsx'
 
@@ -49,6 +52,9 @@ const ruleResource = defineResource({
     to: rulesEditRoute.to,
     params: { workspaceId, ruleId: created.id },
   }),
+  // The editor edits the draft, else the live version (ADR 0065); a Revert reloads it.
+  editedValues: (rule) => ({ name: rule.name, ...(rule.draft ?? rule.live) }),
+  revision: (rule) => String((rule.draft ?? rule.live)?.number ?? 0),
 })
 
 // Function declarations (hoisted) because the route files and this module import each other.
@@ -57,10 +63,21 @@ export function RuleCreatePage() {
 }
 
 export function RuleEditPage() {
+  const { t } = useTranslation()
   const { workspaceId, ruleId } = rulesEditRoute.useParams()
   return (
     <ruleResource.EditPage>
-      {() => <RuleDryRun workspaceId={workspaceId} ruleId={ruleId} />}
+      {(rule, { dirty }) => (
+        <>
+          <DraftControls
+            workspaceId={workspaceId}
+            resource={rule}
+            dirty={dirty}
+            {...ruleDraftActions(t, workspaceId, rule.id)}
+          />
+          <RuleDryRun workspaceId={workspaceId} ruleId={ruleId} />
+        </>
+      )}
     </ruleResource.EditPage>
   )
 }

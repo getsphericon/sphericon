@@ -42,7 +42,7 @@ func TestRuleActionSkipsAnAutomationThatIsNotActive(t *testing.T) {
 		assert.NotEmpty(t, res[0].Detail)
 	}
 	enrolled := env.DB.AutomationRun.Query().
-		Where(automationrun.ContactID(fixtures.ContactBobID), automationrun.AutomationIDIn(fixtures.AutomationJobsGreetingDraftID, fixtures.AutomationJobsSingleEmailID)).
+		Where(automationrun.ContactID(fixtures.ContactBobID), automationrun.AutomationIDIn(fixtures.AutomationJobsGreetingInactiveID, fixtures.AutomationJobsSingleEmailID)).
 		CountX(context.Background())
 	assert.Zero(t, enrolled)
 }

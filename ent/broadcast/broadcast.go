@@ -39,6 +39,8 @@ const (
 	FieldEditorVersion = "editor_version"
 	// FieldSegmentID holds the string denoting the segment_id field in the database.
 	FieldSegmentID = "segment_id"
+	// FieldCondition holds the string denoting the condition field in the database.
+	FieldCondition = "condition"
 	// FieldIntegrationID holds the string denoting the integration_id field in the database.
 	FieldIntegrationID = "integration_id"
 	// FieldStatus holds the string denoting the status field in the database.
@@ -106,6 +108,7 @@ var Columns = []string{
 	FieldDoc,
 	FieldEditorVersion,
 	FieldSegmentID,
+	FieldCondition,
 	FieldIntegrationID,
 	FieldStatus,
 	FieldScheduledAt,
@@ -229,6 +232,11 @@ func ByEditorVersion(opts ...sql.OrderTermOption) OrderOption {
 // BySegmentID orders the results by the segment_id field.
 func BySegmentID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSegmentID, opts...).ToFunc()
+}
+
+// ByCondition orders the results by the condition field.
+func ByCondition(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCondition, opts...).ToFunc()
 }
 
 // ByIntegrationID orders the results by the integration_id field.

@@ -9,10 +9,11 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// Automation is a workspace-scoped, event-triggered workflow. A contact is
-// enrolled when an Event whose action equals trigger_event is recorded for them;
-// the run then walks the linear list of steps of the Automation version it began on.
-// Branch/goal nodes and a visual builder come later.
+// Automation is a workspace-scoped, event-triggered workflow. Its definition (Trigger,
+// Integration and steps) lives in its versions (ADR 0049, ADR 0065): a contact is enrolled into
+// the live version when an Event whose action equals that version's trigger_event is recorded
+// for them, and the run walks the steps of the version it began on. Edits write the draft, the
+// one version above live, which Publish makes live.
 type Automation struct {
 	ent.Schema
 }
@@ -35,15 +36,19 @@ func (Automation) Fields() []ent.Field {
 			Immutable(),
 		field.String(nameField).
 			NotEmpty(),
+		// active: enrolls Contacts; inactive: enrolls nobody. Publish makes an Automation active,
+		// Deactivate inactive (ADR 0065).
 		field.Enum("status").
-			Values("draft", "active").
-			Default("draft"),
-		// The Event.action that enrolls a contact (e.g. "contact.created",
-		// "email.opened", a custom collect event).
-		field.String("trigger_event").
-			NotEmpty(),
-		// Nil integration_id means "the workspace default email integration".
-		field.Int64("integration_id").
+			Values("active", "inactive").
+			Default("inactive"),
+		// What the Automation does: the version new Enrollments begin on. Nil until it is first
+		// published (ADR 0065).
+		field.Int64("live_version_id").
+			Optional().
+			Nillable(),
+		// The unpublished changes: the one version above live, rewritten in place until it is
+		// published or reverted. Nil when there are none.
+		field.Int64("draft_version_id").
 			Optional().
 			Nillable(),
 	}
@@ -55,8 +60,8 @@ func (Automation) Edges() []ent.Edge {
 		// with it; an Automation with history is discarded instead.
 		edge.To("runs", AutomationRun.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
-		// The steps live in the versions (ADR 0049); the latest one is the Automation's
-		// current steps. Purging an Automation purges its versions with it.
+		// The definition lives in the versions (ADR 0049, ADR 0065). Purging an Automation purges
+		// its versions with it.
 		edge.To("versions", AutomationVersion.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		// The mail the Automation sent: facts that outlive their Enrollments (Contact erasure
@@ -64,19 +69,25 @@ func (Automation) Edges() []ent.Edge {
 		// the predicate (HasOutboundMessages); the key stays on OutboundMessage.
 		edge.From("outbound_messages", OutboundMessage.Type).
 			Ref("automation"),
-		// An Integration is discarded, never deleted (ADR 0049), so the reference always
-		// resolves. Only Workspace erasure purges it, after the Automations.
-		edge.To("integration", Integration.Type).
-			Field("integration_id").
+		// The pointers into the Automation's own versions. SET NULL breaks the cycle with the
+		// versions' key on the Automation: a purge cascades the versions, Workspace erasure deletes
+		// them first.
+		edge.To("live_version", AutomationVersion.Type).
+			Field("live_version_id").
 			Unique().
-			Annotations(entsql.OnDelete(entsql.Restrict)),
+			Annotations(entsql.OnDelete(entsql.SetNull)),
+		edge.To("draft_version", AutomationVersion.Type).
+			Field("draft_version_id").
+			Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 
 func (Automation) Indexes() []ent.Index {
 	return []ent.Index{
-		// Trigger lookup: active automations for a given event action.
-		index.Fields("workspace_id", "status", "trigger_event"),
-		index.Fields("integration_id"),
+		// The Workspace foreign key's index. The Trigger lookup goes through the versions.
+		index.Fields("workspace_id"),
+		index.Fields("live_version_id"),
+		index.Fields("draft_version_id"),
 	}
 }

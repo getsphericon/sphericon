@@ -29,7 +29,7 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 	}, nil
 }
 
-// AutomationsCreate always stores a draft: activating is the send-class operation.
+// AutomationsCreate always stores an inactive Automation: publishing is the send-class operation.
 func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.CreateAutomationInput) (externalapi.AutomationsCreateRes, error) {
 	in := automations.CreateInput{Name: req.Name, TriggerEvent: req.TriggerEvent, IntegrationID: convert.Int64Ptr(req.IntegrationId)}
 	if req.Steps != nil {
@@ -116,12 +116,11 @@ func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.
 	return &res, nil
 }
 
-// AutomationsActivate and AutomationsDeactivate need automations:activate, which
-// authoring scopes never imply (ADR 0016). Over MCP, activate additionally needs
-// mcp:send (the x-mcp send flag).
-func (h *Handlers) AutomationsActivate(ctx context.Context, params externalapi.AutomationsActivateParams) (externalapi.AutomationsActivateRes, error) {
+// AutomationsPublish needs automations:publish, which authoring scopes never imply (ADR 0016,
+// ADR 0065). Over MCP, it additionally needs mcp:send (the x-mcp send flag).
+func (h *Handlers) AutomationsPublish(ctx context.Context, params externalapi.AutomationsPublishParams) (externalapi.AutomationsPublishRes, error) {
 	id := int64(params.ID)
-	a, err := h.automations.Activate(ctx, auth.TokenScoped(ctx), id)
+	a, err := h.automations.Publish(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
 		return nil, err
 	}
@@ -129,9 +128,21 @@ func (h *Handlers) AutomationsActivate(ctx context.Context, params externalapi.A
 	return &res, nil
 }
 
+// AutomationsDeactivate only stops new Enrollments, so it is authoring: automations:write.
 func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi.AutomationsDeactivateParams) (externalapi.AutomationsDeactivateRes, error) {
 	id := int64(params.ID)
 	a, err := h.automations.Deactivate(ctx, auth.TokenScoped(ctx), id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.AutomationToResource(a)
+	return &res, nil
+}
+
+// AutomationsRevert drops the draft and changes nothing that sends, so it is authoring:
+// automations:write.
+func (h *Handlers) AutomationsRevert(ctx context.Context, params externalapi.AutomationsRevertParams) (externalapi.AutomationsRevertRes, error) {
+	a, err := h.automations.Revert(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
 	}

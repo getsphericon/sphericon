@@ -156,13 +156,19 @@ type Converter interface {
 
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
-	// The stored definition string (the executor's JSON format) is decoded into
-	// the typed steps DTO at this boundary.
-	// goverter:map . Steps | automationSteps
+	// The live version and the draft are the edges the automations module loads (ADR 0065).
+	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
+	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
 	// The revenue is summed from Order Movements, which the mapper cannot see: the handler
 	// attaches it.
 	// goverter:ignore Revenue
 	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
+	// The stored definition string (the executor's JSON format) is decoded into the typed steps
+	// DTO at this boundary. The contract names the version "number".
+	// goverter:map Version Number | count
+	// goverter:map . Steps | automationSteps
+	// goverter:map IntegrationID IntegrationId
+	AutomationVersionToResource(source *ent.AutomationVersion) siteapi.SiteAutomationVersion
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
@@ -219,12 +225,18 @@ type Converter interface {
 	// goverter:map . InvitedByEmail | inviterEmail
 	InvitationToResource(source *ent.Invitation) siteapi.SiteInvitationResource
 
-	// The contract names the discarded state "archived" (ADR 0049). The Trigger events are
-	// the rows of the Rule's `triggers` edge, loaded with the Rule; the stored actions JSON
-	// is decoded into the typed Actions at this boundary.
+	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
+	// are the edges the rules module loads (ADR 0065).
 	// goverter:map DiscardedAt ArchivedAt
-	// goverter:map . TriggerEvents | ruleTriggerEvents
+	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
+	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
 	RuleToResource(source *ent.Rule) siteapi.SiteRuleResource
+
+	// The contract numbers a version; its Trigger events are the rows of its `triggers` edge,
+	// loaded with it, and the stored actions JSON is decoded into the typed Actions.
+	// goverter:map Version Number
+	// goverter:map . TriggerEvents | ruleTriggerEvents
+	RuleVersionToResource(source *ent.RuleVersion) siteapi.SiteRuleVersion
 
 	// The store names the Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
@@ -576,10 +588,18 @@ func eventProperties(m map[string]any) siteapi.OptNilSiteEventResourceProperties
 	return siteapi.NewOptNilSiteEventResourceProperties(props)
 }
 
-// automationSteps decodes the steps of the Automation's latest version into the typed steps
-// DTO. Malformed or missing steps yield no steps rather than an error.
-func automationSteps(a *ent.Automation) []siteapi.SiteAutomationStep {
-	stored, err := automations.CurrentSteps(a)
+// automationVersionOrNull is a version of the Automation, or null when it has none.
+func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilSiteAutomationVersion {
+	if v == nil {
+		return siteapi.NilSiteAutomationVersion{Null: true}
+	}
+	return siteapi.NewNilSiteAutomationVersion(c.AutomationVersionToResource(v))
+}
+
+// automationSteps decodes the steps of an Automation version into the typed steps DTO.
+// Malformed steps yield no steps rather than an error.
+func automationSteps(v *ent.AutomationVersion) []siteapi.SiteAutomationStep {
+	stored, err := automations.Decode(v.Steps)
 	if err != nil {
 		return nil
 	}
@@ -852,8 +872,16 @@ func sendingDomainVerified(d ent.SendingDomain) bool { return dkimstate.Is(&d) }
 // webhookEnabled derives the enabled flag: an endpoint is enabled until it has a disabled moment.
 func webhookEnabled(e ent.WebhookEndpoint) bool { return e.DisabledAt == nil }
 
-// ruleTriggerEvents names a Rule's Trigger events: the rows of its `triggers` edge.
-func ruleTriggerEvents(r *ent.Rule) []string { return rules.Triggers(r) }
+// ruleTriggerEvents names a Rule version's Trigger events: the rows of its `triggers` edge.
+func ruleTriggerEvents(v *ent.RuleVersion) []string { return rules.Triggers(v) }
+
+// ruleVersionOrNull is a version of the Rule, or null when it has none.
+func ruleVersionOrNull(c Converter, v *ent.RuleVersion) siteapi.NilSiteRuleVersion {
+	if v == nil {
+		return siteapi.NilSiteRuleVersion{Null: true}
+	}
+	return siteapi.NewNilSiteRuleVersion(c.RuleVersionToResource(v))
+}
 
 // ruleOptString is a text that is absent when empty.
 func ruleOptString(s string) siteapi.OptString {

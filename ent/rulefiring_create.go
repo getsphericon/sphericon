@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -83,16 +84,16 @@ func (_c *RuleFiringCreate) SetSourceID(v string) *RuleFiringCreate {
 	return _c
 }
 
-// SetActions sets the "actions" field.
-func (_c *RuleFiringCreate) SetActions(v string) *RuleFiringCreate {
-	_c.mutation.SetActions(v)
+// SetVersionID sets the "version_id" field.
+func (_c *RuleFiringCreate) SetVersionID(v int64) *RuleFiringCreate {
+	_c.mutation.SetVersionID(v)
 	return _c
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_c *RuleFiringCreate) SetNillableActions(v *string) *RuleFiringCreate {
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (_c *RuleFiringCreate) SetNillableVersionID(v *int64) *RuleFiringCreate {
 	if v != nil {
-		_c.SetActions(*v)
+		_c.SetVersionID(*v)
 	}
 	return _c
 }
@@ -160,6 +161,11 @@ func (_c *RuleFiringCreate) SetContact(v *Contact) *RuleFiringCreate {
 	return _c.SetContactID(v.ID)
 }
 
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (_c *RuleFiringCreate) SetVersion(v *RuleVersion) *RuleFiringCreate {
+	return _c.SetVersionID(v.ID)
+}
+
 // Mutation returns the RuleFiringMutation object of the builder.
 func (_c *RuleFiringCreate) Mutation() *RuleFiringMutation {
 	return _c.mutation
@@ -203,10 +209,6 @@ func (_c *RuleFiringCreate) defaults() {
 		v := rulefiring.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.Actions(); !ok {
-		v := rulefiring.DefaultActions
-		_c.mutation.SetActions(v)
-	}
 	if _, ok := _c.mutation.Results(); !ok {
 		v := rulefiring.DefaultResults
 		_c.mutation.SetResults(v)
@@ -245,9 +247,6 @@ func (_c *RuleFiringCreate) check() error {
 		if err := rulefiring.SourceIDValidator(v); err != nil {
 			return &ValidationError{Name: "source_id", err: fmt.Errorf(`ent: validator failed for field "RuleFiring.source_id": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.Actions(); !ok {
-		return &ValidationError{Name: "actions", err: errors.New(`ent: missing required field "RuleFiring.actions"`)}
 	}
 	if _, ok := _c.mutation.Results(); !ok {
 		return &ValidationError{Name: "results", err: errors.New(`ent: missing required field "RuleFiring.results"`)}
@@ -310,10 +309,6 @@ func (_c *RuleFiringCreate) createSpec() (*RuleFiring, *sqlgraph.CreateSpec) {
 		_spec.SetField(rulefiring.FieldSourceID, field.TypeString, value)
 		_node.SourceID = value
 	}
-	if value, ok := _c.mutation.Actions(); ok {
-		_spec.SetField(rulefiring.FieldActions, field.TypeString, value)
-		_node.Actions = value
-	}
 	if value, ok := _c.mutation.Properties(); ok {
 		_spec.SetField(rulefiring.FieldProperties, field.TypeString, value)
 		_node.Properties = &value
@@ -375,6 +370,23 @@ func (_c *RuleFiringCreate) createSpec() (*RuleFiring, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ContactID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.VersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rulefiring.VersionTable,
+			Columns: []string{rulefiring.VersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.VersionID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -501,15 +513,21 @@ func (u *RuleFiringUpsert) UpdateSourceID() *RuleFiringUpsert {
 	return u
 }
 
-// SetActions sets the "actions" field.
-func (u *RuleFiringUpsert) SetActions(v string) *RuleFiringUpsert {
-	u.Set(rulefiring.FieldActions, v)
+// SetVersionID sets the "version_id" field.
+func (u *RuleFiringUpsert) SetVersionID(v int64) *RuleFiringUpsert {
+	u.Set(rulefiring.FieldVersionID, v)
 	return u
 }
 
-// UpdateActions sets the "actions" field to the value that was provided on create.
-func (u *RuleFiringUpsert) UpdateActions() *RuleFiringUpsert {
-	u.SetExcluded(rulefiring.FieldActions)
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *RuleFiringUpsert) UpdateVersionID() *RuleFiringUpsert {
+	u.SetExcluded(rulefiring.FieldVersionID)
+	return u
+}
+
+// ClearVersionID clears the value of the "version_id" field.
+func (u *RuleFiringUpsert) ClearVersionID() *RuleFiringUpsert {
+	u.SetNull(rulefiring.FieldVersionID)
 	return u
 }
 
@@ -696,17 +714,24 @@ func (u *RuleFiringUpsertOne) UpdateSourceID() *RuleFiringUpsertOne {
 	})
 }
 
-// SetActions sets the "actions" field.
-func (u *RuleFiringUpsertOne) SetActions(v string) *RuleFiringUpsertOne {
+// SetVersionID sets the "version_id" field.
+func (u *RuleFiringUpsertOne) SetVersionID(v int64) *RuleFiringUpsertOne {
 	return u.Update(func(s *RuleFiringUpsert) {
-		s.SetActions(v)
+		s.SetVersionID(v)
 	})
 }
 
-// UpdateActions sets the "actions" field to the value that was provided on create.
-func (u *RuleFiringUpsertOne) UpdateActions() *RuleFiringUpsertOne {
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *RuleFiringUpsertOne) UpdateVersionID() *RuleFiringUpsertOne {
 	return u.Update(func(s *RuleFiringUpsert) {
-		s.UpdateActions()
+		s.UpdateVersionID()
+	})
+}
+
+// ClearVersionID clears the value of the "version_id" field.
+func (u *RuleFiringUpsertOne) ClearVersionID() *RuleFiringUpsertOne {
+	return u.Update(func(s *RuleFiringUpsert) {
+		s.ClearVersionID()
 	})
 }
 
@@ -1067,17 +1092,24 @@ func (u *RuleFiringUpsertBulk) UpdateSourceID() *RuleFiringUpsertBulk {
 	})
 }
 
-// SetActions sets the "actions" field.
-func (u *RuleFiringUpsertBulk) SetActions(v string) *RuleFiringUpsertBulk {
+// SetVersionID sets the "version_id" field.
+func (u *RuleFiringUpsertBulk) SetVersionID(v int64) *RuleFiringUpsertBulk {
 	return u.Update(func(s *RuleFiringUpsert) {
-		s.SetActions(v)
+		s.SetVersionID(v)
 	})
 }
 
-// UpdateActions sets the "actions" field to the value that was provided on create.
-func (u *RuleFiringUpsertBulk) UpdateActions() *RuleFiringUpsertBulk {
+// UpdateVersionID sets the "version_id" field to the value that was provided on create.
+func (u *RuleFiringUpsertBulk) UpdateVersionID() *RuleFiringUpsertBulk {
 	return u.Update(func(s *RuleFiringUpsert) {
-		s.UpdateActions()
+		s.UpdateVersionID()
+	})
+}
+
+// ClearVersionID clears the value of the "version_id" field.
+func (u *RuleFiringUpsertBulk) ClearVersionID() *RuleFiringUpsertBulk {
+	return u.Update(func(s *RuleFiringUpsert) {
+		s.ClearVersionID()
 	})
 }
 

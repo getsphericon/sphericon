@@ -5,7 +5,7 @@ status: accepted
 # A live Automation or Rule changes only by Publish, and a scheduled Broadcast holds a copy of its Condition
 
 ADR 0016 makes sending a second lock: an API token authors drafts, and only a send scope
-(`automations:activate`, `broadcasts:send`, `emails:send`, plus `mcp:send` over MCP) lets it send.
+(`automations:publish`, `broadcasts:send`, `emails:send`, plus `mcp:send` over MCP) lets it send.
 Three edits got past that lock (#748). Saving Steps on an active Automation wrote a new version that
 every later Enrollment began on, and its Trigger and Integration were plain columns of the
 Automation. Editing an active Rule changed its Condition and Actions at once. A scheduled Broadcast
@@ -28,7 +28,7 @@ stays authoring or ingest, as before.
   the **draft**, the one version above live, rewritten in place until it is published; a live
   version is never rewritten, even when no Enrollment stands on it yet. The name, the status and
   archiving stay on the object, outside the version.
-- **Operations.** **Publish** (send-class, `automations:activate` and over MCP `mcp:send`) makes the
+- **Operations.** **Publish** (send-class, `automations:publish` and over MCP `mcp:send`) makes the
   draft live and the object active; with no draft, it makes the live version active again.
   **Deactivate** (authoring) stops new Enrollments or Firings and keeps the live version. **Revert**
   (authoring) drops the draft. There is no separate activate. The status is `active` or `inactive`;
@@ -69,7 +69,10 @@ the last published one). Customer.io edits live campaigns in place, which is wha
 ## Consequences
 
 - ADR 0016's send-class list becomes Automation and Rule Publish, Email send, Broadcast schedule and
-  unschedule. ADR 0054's Rule lifecycle (`draft`, `active`) gives way to the one above.
+  unschedule. The send-class scope `automations:activate` is renamed `automations:publish` to match
+  the operation it gates; it stays in the send group of the OAuth consent screen and brings `mcp:send`,
+  and a migration moves the scope stored on existing API tokens and pending OAuth codes to the new
+  name, so they keep the right. ADR 0054's Rule lifecycle (`draft`, `active`) gives way to the one above.
 - A scheduled Broadcast no longer keeps its Segment in use. A Tag or Custom field named in a copied
   Condition, or in a live or draft version, still does.
 - "Revert" is the verb for dropping a draft because Discard is the soft-delete mechanism (ADR 0049).

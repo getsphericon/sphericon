@@ -109,8 +109,10 @@ const (
 	EdgeAutomationRuns = "automation_runs"
 	// EdgeRules holds the string denoting the rules edge name in mutations.
 	EdgeRules = "rules"
-	// EdgeRuleTriggers holds the string denoting the rule_triggers edge name in mutations.
-	EdgeRuleTriggers = "rule_triggers"
+	// EdgeRuleVersions holds the string denoting the rule_versions edge name in mutations.
+	EdgeRuleVersions = "rule_versions"
+	// EdgeRuleVersionTriggers holds the string denoting the rule_version_triggers edge name in mutations.
+	EdgeRuleVersionTriggers = "rule_version_triggers"
 	// EdgeRuleFirings holds the string denoting the rule_firings edge name in mutations.
 	EdgeRuleFirings = "rule_firings"
 	// EdgeWebhookEndpoints holds the string denoting the webhook_endpoints edge name in mutations.
@@ -298,13 +300,20 @@ const (
 	RulesInverseTable = "rules"
 	// RulesColumn is the table column denoting the rules relation/edge.
 	RulesColumn = "workspace_id"
-	// RuleTriggersTable is the table that holds the rule_triggers relation/edge.
-	RuleTriggersTable = "rule_triggers"
-	// RuleTriggersInverseTable is the table name for the RuleTrigger entity.
-	// It exists in this package in order to avoid circular dependency with the "ruletrigger" package.
-	RuleTriggersInverseTable = "rule_triggers"
-	// RuleTriggersColumn is the table column denoting the rule_triggers relation/edge.
-	RuleTriggersColumn = "workspace_id"
+	// RuleVersionsTable is the table that holds the rule_versions relation/edge.
+	RuleVersionsTable = "rule_versions"
+	// RuleVersionsInverseTable is the table name for the RuleVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "ruleversion" package.
+	RuleVersionsInverseTable = "rule_versions"
+	// RuleVersionsColumn is the table column denoting the rule_versions relation/edge.
+	RuleVersionsColumn = "workspace_id"
+	// RuleVersionTriggersTable is the table that holds the rule_version_triggers relation/edge.
+	RuleVersionTriggersTable = "rule_version_triggers"
+	// RuleVersionTriggersInverseTable is the table name for the RuleVersionTrigger entity.
+	// It exists in this package in order to avoid circular dependency with the "ruleversiontrigger" package.
+	RuleVersionTriggersInverseTable = "rule_version_triggers"
+	// RuleVersionTriggersColumn is the table column denoting the rule_version_triggers relation/edge.
+	RuleVersionTriggersColumn = "workspace_id"
 	// RuleFiringsTable is the table that holds the rule_firings relation/edge.
 	RuleFiringsTable = "rule_firings"
 	// RuleFiringsInverseTable is the table name for the RuleFiring entity.
@@ -937,17 +946,31 @@ func ByRules(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByRuleTriggersCount orders the results by rule_triggers count.
-func ByRuleTriggersCount(opts ...sql.OrderTermOption) OrderOption {
+// ByRuleVersionsCount orders the results by rule_versions count.
+func ByRuleVersionsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newRuleTriggersStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newRuleVersionsStep(), opts...)
 	}
 }
 
-// ByRuleTriggers orders the results by rule_triggers terms.
-func ByRuleTriggers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByRuleVersions orders the results by rule_versions terms.
+func ByRuleVersions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newRuleTriggersStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newRuleVersionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByRuleVersionTriggersCount orders the results by rule_version_triggers count.
+func ByRuleVersionTriggersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRuleVersionTriggersStep(), opts...)
+	}
+}
+
+// ByRuleVersionTriggers orders the results by rule_version_triggers terms.
+func ByRuleVersionTriggers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRuleVersionTriggersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1279,11 +1302,18 @@ func newRulesStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, RulesTable, RulesColumn),
 	)
 }
-func newRuleTriggersStep() *sqlgraph.Step {
+func newRuleVersionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(RuleTriggersInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, RuleTriggersTable, RuleTriggersColumn),
+		sqlgraph.To(RuleVersionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RuleVersionsTable, RuleVersionsColumn),
+	)
+}
+func newRuleVersionTriggersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RuleVersionTriggersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RuleVersionTriggersTable, RuleVersionTriggersColumn),
 	)
 }
 func newRuleFiringsStep() *sqlgraph.Step {

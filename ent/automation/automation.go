@@ -27,10 +27,10 @@ const (
 	FieldName = "name"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
-	// FieldTriggerEvent holds the string denoting the trigger_event field in the database.
-	FieldTriggerEvent = "trigger_event"
-	// FieldIntegrationID holds the string denoting the integration_id field in the database.
-	FieldIntegrationID = "integration_id"
+	// FieldLiveVersionID holds the string denoting the live_version_id field in the database.
+	FieldLiveVersionID = "live_version_id"
+	// FieldDraftVersionID holds the string denoting the draft_version_id field in the database.
+	FieldDraftVersionID = "draft_version_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeRuns holds the string denoting the runs edge name in mutations.
@@ -39,8 +39,10 @@ const (
 	EdgeVersions = "versions"
 	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
 	EdgeOutboundMessages = "outbound_messages"
-	// EdgeIntegration holds the string denoting the integration edge name in mutations.
-	EdgeIntegration = "integration"
+	// EdgeLiveVersion holds the string denoting the live_version edge name in mutations.
+	EdgeLiveVersion = "live_version"
+	// EdgeDraftVersion holds the string denoting the draft_version edge name in mutations.
+	EdgeDraftVersion = "draft_version"
 	// Table holds the table name of the automation in the database.
 	Table = "automations"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -71,13 +73,20 @@ const (
 	OutboundMessagesInverseTable = "outbound_messages"
 	// OutboundMessagesColumn is the table column denoting the outbound_messages relation/edge.
 	OutboundMessagesColumn = "automation_id"
-	// IntegrationTable is the table that holds the integration relation/edge.
-	IntegrationTable = "automations"
-	// IntegrationInverseTable is the table name for the Integration entity.
-	// It exists in this package in order to avoid circular dependency with the "integration" package.
-	IntegrationInverseTable = "integrations"
-	// IntegrationColumn is the table column denoting the integration relation/edge.
-	IntegrationColumn = "integration_id"
+	// LiveVersionTable is the table that holds the live_version relation/edge.
+	LiveVersionTable = "automations"
+	// LiveVersionInverseTable is the table name for the AutomationVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "automationversion" package.
+	LiveVersionInverseTable = "automation_versions"
+	// LiveVersionColumn is the table column denoting the live_version relation/edge.
+	LiveVersionColumn = "live_version_id"
+	// DraftVersionTable is the table that holds the draft_version relation/edge.
+	DraftVersionTable = "automations"
+	// DraftVersionInverseTable is the table name for the AutomationVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "automationversion" package.
+	DraftVersionInverseTable = "automation_versions"
+	// DraftVersionColumn is the table column denoting the draft_version relation/edge.
+	DraftVersionColumn = "draft_version_id"
 )
 
 // Columns holds all SQL columns for automation fields.
@@ -89,8 +98,8 @@ var Columns = []string{
 	FieldDiscardedAt,
 	FieldName,
 	FieldStatus,
-	FieldTriggerEvent,
-	FieldIntegrationID,
+	FieldLiveVersionID,
+	FieldDraftVersionID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -112,20 +121,18 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// TriggerEventValidator is a validator for the "trigger_event" field. It is called by the builders before save.
-	TriggerEventValidator func(string) error
 )
 
 // Status defines the type for the "status" enum field.
 type Status string
 
-// StatusDraft is the default value of the Status enum.
-const DefaultStatus = StatusDraft
+// StatusInactive is the default value of the Status enum.
+const DefaultStatus = StatusInactive
 
 // Status values.
 const (
-	StatusDraft  Status = "draft"
-	StatusActive Status = "active"
+	StatusActive   Status = "active"
+	StatusInactive Status = "inactive"
 )
 
 func (s Status) String() string {
@@ -135,7 +142,7 @@ func (s Status) String() string {
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s Status) error {
 	switch s {
-	case StatusDraft, StatusActive:
+	case StatusActive, StatusInactive:
 		return nil
 	default:
 		return fmt.Errorf("automation: invalid enum value for status field: %q", s)
@@ -180,14 +187,14 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
-// ByTriggerEvent orders the results by the trigger_event field.
-func ByTriggerEvent(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTriggerEvent, opts...).ToFunc()
+// ByLiveVersionID orders the results by the live_version_id field.
+func ByLiveVersionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLiveVersionID, opts...).ToFunc()
 }
 
-// ByIntegrationID orders the results by the integration_id field.
-func ByIntegrationID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldIntegrationID, opts...).ToFunc()
+// ByDraftVersionID orders the results by the draft_version_id field.
+func ByDraftVersionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDraftVersionID, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.
@@ -239,10 +246,17 @@ func ByOutboundMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption 
 	}
 }
 
-// ByIntegrationField orders the results by integration field.
-func ByIntegrationField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByLiveVersionField orders the results by live_version field.
+func ByLiveVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newIntegrationStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newLiveVersionStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByDraftVersionField orders the results by draft_version field.
+func ByDraftVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDraftVersionStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newWorkspaceStep() *sqlgraph.Step {
@@ -273,10 +287,17 @@ func newOutboundMessagesStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
 	)
 }
-func newIntegrationStep() *sqlgraph.Step {
+func newLiveVersionStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(IntegrationInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
+		sqlgraph.To(LiveVersionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, LiveVersionTable, LiveVersionColumn),
+	)
+}
+func newDraftVersionStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DraftVersionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, DraftVersionTable, DraftVersionColumn),
 	)
 }

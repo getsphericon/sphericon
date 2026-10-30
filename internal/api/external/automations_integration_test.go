@@ -25,14 +25,14 @@ func TestExternalAutomationsNameTheirIntegration(t *testing.T) {
 	require.NoError(t, err)
 	res, ok := created.(*externalapi.AutomationResource)
 	require.Truef(t, ok, "got %T", created)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, res.IntegrationId.Or(0))
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, res.Draft.Value.IntegrationId.Or(0))
 
 	renamed, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Name: externalapi.NewOptString("Renamed")},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	kept, ok := renamed.(*externalapi.AutomationResource)
 	require.Truef(t, ok, "got %T", renamed)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, kept.IntegrationId.Or(0), "an absent key keeps it")
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, kept.Draft.Value.IntegrationId.Or(0), "an absent key keeps it")
 
 	var null externalapi.OptNilEntityId
 	null.SetToNull()
@@ -40,7 +40,7 @@ func TestExternalAutomationsNameTheirIntegration(t *testing.T) {
 	require.NoError(t, err)
 	got, ok := cleared.(*externalapi.AutomationResource)
 	require.Truef(t, ok, "got %T", cleared)
-	assert.Empty(t, got.IntegrationId.Or(0), "an explicit null goes back to the default")
+	assert.Empty(t, got.Draft.Value.IntegrationId.Or(0), "an explicit null goes back to the default")
 
 	bad := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationGlobexID)) // another Workspace's
 	refusedCreate, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "signup", IntegrationId: bad})

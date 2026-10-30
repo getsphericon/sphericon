@@ -41,17 +41,17 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", created)
-	require.Len(t, res.Steps, 3)
+	require.Len(t, res.Draft.Value.Steps, 3)
 
-	assert.Contains(t, res.Steps[0].Body.Value, "Hello {{ first_name }}")
-	assert.True(t, res.Steps[0].Doc.Set, "the response carries the document")
-	assert.Equal(t, emaildoc.EditorVersion(), res.Steps[0].EditorVersion.Value)
-	assert.False(t, res.Steps[2].Doc.Set, "a step with no document stays HTML-only")
+	assert.Contains(t, res.Draft.Value.Steps[0].Body.Value, "Hello {{ first_name }}")
+	assert.True(t, res.Draft.Value.Steps[0].Doc.Set, "the response carries the document")
+	assert.Equal(t, emaildoc.EditorVersion(), res.Draft.Value.Steps[0].EditorVersion.Value)
+	assert.False(t, res.Draft.Value.Steps[2].Doc.Set, "a step with no document stays HTML-only")
 
 	stored, err := automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(stored[0].Doc))
-	assert.Equal(t, res.Steps[0].Body.Value, stored[0].Body)
+	assert.Equal(t, res.Draft.Value.Steps[0].Body.Value, stored[0].Body)
 	assert.Equal(t, emailrender.SanitizeHTML(stored[0].Body), stored[0].Body, "the stored body survives the sanitizer")
 	assert.Empty(t, stored[2].Doc)
 
@@ -62,8 +62,8 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", updated)
-	assert.Contains(t, upd.Steps[0].Body.Value, "Second")
-	assert.NotContains(t, upd.Steps[0].Body.Value, "Hello")
+	assert.Contains(t, upd.Draft.Value.Steps[0].Body.Value, "Second")
+	assert.NotContains(t, upd.Draft.Value.Steps[0].Body.Value, "Hello")
 
 	// A body-only write to the step clears its document.
 	cleared, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{
@@ -74,8 +74,8 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	require.NoError(t, err)
 	clr, ok := cleared.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", cleared)
-	assert.False(t, clr.Steps[0].Doc.Set)
-	assert.False(t, clr.Steps[0].EditorVersion.Set)
+	assert.False(t, clr.Draft.Value.Steps[0].Doc.Set)
+	assert.False(t, clr.Draft.Value.Steps[0].EditorVersion.Set)
 	stored, err = automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)
 	assert.Empty(t, stored[0].Doc)

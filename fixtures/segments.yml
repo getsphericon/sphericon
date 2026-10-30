@@ -57,7 +57,8 @@
   discarded_at: '{{daysAgo 5}}'
   created_at: '{{daysAgo 50}}'
   updated_at: '{{daysAgo 5}}'
-# Only the scheduled Broadcast 109 uses it.
+# The Segment of origin of the scheduled Broadcast 109, edited since: the Broadcast keeps the
+# Condition it copied when it was scheduled (ADR 0065), so this Segment is free to edit and archive.
 - id: 107 # fixture: SegmentRenewalAudience
   name: Renewal audience
   workspace_id: 1

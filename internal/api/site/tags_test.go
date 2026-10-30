@@ -36,7 +36,7 @@ func TestSiteTagsListApplyRemove(t *testing.T) {
 	require.NoError(t, err)
 	listed, ok := all.(*siteapi.SiteTagsListOK)
 	require.Truef(t, ok, "got %T", all)
-	assert.Equal(t, []string{"newsletter", "unused", "vip"}, siteTagNames(listed.Items))
+	assert.Equal(t, []string{"newsletter", "renewal-due", "unused", "vip"}, siteTagNames(listed.Items))
 
 	mine, err := c.SiteTagsListForContact(ctx, siteapi.SiteTagsListForContactParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactAliceID)})
 	require.NoError(t, err)

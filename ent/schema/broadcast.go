@@ -15,7 +15,8 @@ import (
 // draft -> scheduled -> sending -> sent (or failed). The body is authored as
 // HTML; the plain-text part is derived from the final HTML of each send and never stored
 // (ADR 0056). Its Segment is the one named by
-// segment_id, or all contacts in the workspace when it is unset.
+// segment_id, or all contacts in the workspace when it is unset; leaving draft takes a copy of the
+// Segment's Condition, which the plan resolves (ADR 0065).
 // Aggregate counters are denormalized for cheap reporting; per-recipient state
 // lives in BroadcastRecipient.
 type Broadcast struct {
@@ -61,6 +62,14 @@ func (Broadcast) Fields() []ent.Field {
 			Nillable(),
 		// Nil segment_id means "all contacts in the workspace".
 		field.Int64("segment_id").
+			Optional().
+			Nillable(),
+		// The Segment's Condition, copied when the Broadcast leaves draft (schedule, send) and
+		// dropped when it returns to draft (ADR 0065): the plan resolves Recipients from it, so a
+		// later edit of the Segment changes nothing for an armed Broadcast, and segment_id stays
+		// as provenance. Nil on a draft and on a Broadcast to all contacts; "" is a Segment with
+		// no rules yet.
+		field.String("condition").
 			Optional().
 			Nillable(),
 		// Nil integration_id means "the workspace default email integration".

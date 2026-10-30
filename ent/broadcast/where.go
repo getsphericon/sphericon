@@ -110,6 +110,11 @@ func SegmentID(v int64) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldSegmentID, v))
 }
 
+// Condition applies equality check predicate on the "condition" field. It's identical to ConditionEQ.
+func Condition(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldCondition, v))
+}
+
 // IntegrationID applies equality check predicate on the "integration_id" field. It's identical to IntegrationIDEQ.
 func IntegrationID(v int64) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldIntegrationID, v))
@@ -743,6 +748,81 @@ func SegmentIDIsNil() predicate.Broadcast {
 // SegmentIDNotNil applies the NotNil predicate on the "segment_id" field.
 func SegmentIDNotNil() predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNotNull(FieldSegmentID))
+}
+
+// ConditionEQ applies the EQ predicate on the "condition" field.
+func ConditionEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldCondition, v))
+}
+
+// ConditionNEQ applies the NEQ predicate on the "condition" field.
+func ConditionNEQ(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldCondition, v))
+}
+
+// ConditionIn applies the In predicate on the "condition" field.
+func ConditionIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldCondition, vs...))
+}
+
+// ConditionNotIn applies the NotIn predicate on the "condition" field.
+func ConditionNotIn(vs ...string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldCondition, vs...))
+}
+
+// ConditionGT applies the GT predicate on the "condition" field.
+func ConditionGT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGT(FieldCondition, v))
+}
+
+// ConditionGTE applies the GTE predicate on the "condition" field.
+func ConditionGTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGTE(FieldCondition, v))
+}
+
+// ConditionLT applies the LT predicate on the "condition" field.
+func ConditionLT(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLT(FieldCondition, v))
+}
+
+// ConditionLTE applies the LTE predicate on the "condition" field.
+func ConditionLTE(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLTE(FieldCondition, v))
+}
+
+// ConditionContains applies the Contains predicate on the "condition" field.
+func ConditionContains(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContains(FieldCondition, v))
+}
+
+// ConditionHasPrefix applies the HasPrefix predicate on the "condition" field.
+func ConditionHasPrefix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasPrefix(FieldCondition, v))
+}
+
+// ConditionHasSuffix applies the HasSuffix predicate on the "condition" field.
+func ConditionHasSuffix(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldHasSuffix(FieldCondition, v))
+}
+
+// ConditionIsNil applies the IsNil predicate on the "condition" field.
+func ConditionIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldCondition))
+}
+
+// ConditionNotNil applies the NotNil predicate on the "condition" field.
+func ConditionNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldCondition))
+}
+
+// ConditionEqualFold applies the EqualFold predicate on the "condition" field.
+func ConditionEqualFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEqualFold(FieldCondition, v))
+}
+
+// ConditionContainsFold applies the ContainsFold predicate on the "condition" field.
+func ConditionContainsFold(v string) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldContainsFold(FieldCondition, v))
 }
 
 // IntegrationIDEQ applies the EQ predicate on the "integration_id" field.

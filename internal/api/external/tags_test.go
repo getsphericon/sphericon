@@ -27,7 +27,7 @@ func TestExternalTagsListAndPerContact(t *testing.T) {
 	require.NoError(t, err)
 	listed, ok := all.(*externalapi.TagsListOK)
 	require.Truef(t, ok, "got %T", all)
-	assert.Equal(t, []string{"newsletter", "unused", "vip"}, tagNames(listed.Items))
+	assert.Equal(t, []string{"newsletter", "renewal-due", "unused", "vip"}, tagNames(listed.Items))
 
 	mine, err := c.TagsListForContact(ctx, externalapi.TagsListForContactParams{ContactId: entityIDString(fixtures.ContactAliceID)})
 	require.NoError(t, err)

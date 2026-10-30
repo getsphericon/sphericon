@@ -5,10 +5,10 @@ using TypeSpec.Rest.Resource;
 
 namespace Sphericon;
 
-/** Rule lifecycle status */
+/** Rule lifecycle status: active reacts to Events, inactive acts on nothing */
 enum RuleStatus {
-  draft,
   active,
+  inactive,
 }
 
 /** Kind of Rule action */
@@ -52,6 +52,21 @@ model RuleAction {
   hasSecret?: boolean;
 }
 
+/** One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions */
+model RuleVersion {
+  /** 1 for the first version, plus one per version after it */
+  number: int32;
+
+  /** The Event actions that make the Rule fire; any one of them does */
+  triggerEvents: string[];
+
+  /** The Contact must match this condition for the Rule to fire; absent means every Contact */
+  condition?: ConditionGroup;
+
+  /** The Rule's ordered Actions */
+  actions: RuleAction[];
+}
+
 /** How one Action of a Firing ended */
 enum RuleActionStatus {
   succeeded,
@@ -73,8 +88,9 @@ model RuleActionResult {
 }
 
 /** A Rule: a stateless reaction to an Event. When any of its Trigger events is recorded for a
- * Contact and its condition holds, its Actions run at once, in order. Created Rules are drafts;
- * activating is a separate, send-class operation. */
+ * Contact and its condition holds, its Actions run at once, in order. Its definition is versioned
+ * (ADR 0065): an edit writes the draft, and publishing, a separate send-class operation, makes it
+ * live. Created Rules are inactive. */
 @resource("rules")
 @segment("rules")
 model RuleResource {
@@ -88,16 +104,13 @@ model RuleResource {
   /** Lifecycle status */
   status: RuleStatus;
 
-  /** The Event actions that make the Rule fire; any one of them does */
-  triggerEvents: string[];
+  /** What the Rule does now; null until it is first published */
+  live: RuleVersion | null;
 
-  /** The Contact must match this condition for the Rule to fire; absent or empty means every Contact */
-  condition?: ConditionGroup;
+  /** Unpublished changes, the one version above live; null when there are none */
+  draft: RuleVersion | null;
 
-  /** The Rule's ordered Actions */
-  actions: RuleAction[];
-
-  /** When the Rule was last activated. It acts only on Events recorded after it. */
+  /** When the Rule last became active by Publish. It acts only on Events recorded after it. */
   activatedAt?: Timestamp | null;
 
   /** When the Rule was archived; null while it is kept */
@@ -110,7 +123,7 @@ model RuleResource {
   updatedAt: Timestamp;
 }
 
-/** Request body for creating a Rule (always created as a draft) */
+/** Request body for creating a Rule: it is created inactive, with its definition as the draft */
 model CreateRuleInput {
   name: string;
 
@@ -124,7 +137,7 @@ model CreateRuleInput {
   actions?: RuleAction[];
 }
 
-/** Request body for updating a Rule */
+/** Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's. */
 model UpdateRuleInput {
   name?: string;
 
@@ -189,7 +202,7 @@ interface Rules
       InUseProblem,
       ArchivedFilter
     > {
-  /** Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its Firings. It can be restored, as a draft. */
+  /** Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its Firings. It can be restored, inactive. */
   @action("archive")
   @autoRoute
   @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
@@ -201,7 +214,7 @@ interface Rules
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Restore an archived Rule to the list, as a draft */
+  /** Restore an archived Rule to the list, inactive */
   @action("unarchive")
   @autoRoute
   @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
@@ -213,11 +226,24 @@ interface Rules
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the automations:activate scope. */
-  @action("activate")
+  /** Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version. Needs the automations:publish scope. */
+  @action("publish")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsActivate])
-  activate(...ResourceParameters<RuleResource>):
+  @extension("x-required-scopes", #[ApiTokenScope.automationsPublish])
+  publish(...ResourceParameters<RuleResource>):
+    | RuleResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | ForbiddenProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope. */
+  @action("revert")
+  @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  revert(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
     | UnauthorizedProblem
@@ -238,10 +264,10 @@ interface Rules
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Deactivate a Rule: it stops firing. Needs the automations:activate scope. */
+  /** Deactivate a Rule: it stops firing. Needs the automations:write scope. */
   @action("deactivate")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsActivate])
+  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
   deactivate(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem

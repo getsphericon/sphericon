@@ -2,10 +2,10 @@
 # still to run. Unique (rule_id, source_id).
 - id: 100 # fixture: RuleFiringDone
   rule_id: 100
+  version_id: 100
   contact_id: 1
   action: rule_click
   source_id: 'fixture:rule-firing-done'
-  actions: '[{"type":"apply_tag","tag":"rule-clicked"}]'
   results: '[{"type":"apply_tag","status":"succeeded"}]'
   completed_at: '{{daysAgo 2}}'
   workspace_id: 1
@@ -13,10 +13,10 @@
   updated_at: '{{daysAgo 2}}'
 - id: 101 # fixture: RuleFiringPending
   rule_id: 100
+  version_id: 100
   contact_id: 2
   action: rule_click
   source_id: 'fixture:rule-firing-pending'
-  actions: '[{"type":"apply_tag","tag":"rule-clicked"}]'
   results: '[]'
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
@@ -25,10 +25,10 @@
 # Globex (workspace 2) foreign row.
 - id: 900 # fixture: RuleFiringGlobex
   rule_id: 900
+  version_id: 900
   contact_id: 900
   action: rule_click
   source_id: 'fixture:rule-firing-globex'
-  actions: '[{"type":"apply_tag","tag":"globex-rule"}]'
   results: '[{"type":"apply_tag","status":"succeeded"}]'
   completed_at: '{{daysAgo 2}}'
   workspace_id: 2
@@ -38,10 +38,10 @@
 # Initech (workspace 3): one Firing of the erasable Contact and one of its bystander.
 - id: 300 # fixture: RuleFiringErasable
   rule_id: 300
+  version_id: 300
   contact_id: 300
   action: rule_initech
   source_id: 'fixture:rule-firing-erasable'
-  actions: '[{"type":"apply_tag","tag":"initech-rule"}]'
   results: '[{"type":"apply_tag","status":"succeeded"}]'
   completed_at: '{{daysAgo 2}}'
   workspace_id: 3
@@ -49,10 +49,10 @@
   updated_at: '{{daysAgo 2}}'
 - id: 301 # fixture: RuleFiringBystander
   rule_id: 300
+  version_id: 300
   contact_id: 301
   action: rule_initech
   source_id: 'fixture:rule-firing-bystander'
-  actions: '[{"type":"apply_tag","tag":"initech-rule"}]'
   results: '[{"type":"apply_tag","status":"succeeded"}]'
   completed_at: '{{daysAgo 2}}'
   workspace_id: 3
@@ -63,10 +63,10 @@
 # removes it. Its recent counterpart is RuleFiringDone.
 - id: 102 # fixture: RuleFiringExpired
   rule_id: 101
+  version_id: 101
   contact_id: 1
   action: rule_vip
   source_id: 'fixture:rule-firing-expired'
-  actions: '[{"type":"apply_tag","tag":"rule-vip-seen"}]'
   results: '[{"type":"apply_tag","status":"succeeded"}]'
   completed_at: '{{daysAgo 500}}'
   workspace_id: 1
@@ -76,10 +76,10 @@
 # --- Brightpath (workspace 20): rules react to the storefront's events (ids 21001+) ---
 - id: 21001
   rule_id: 21001
+  version_id: 21001
   contact_id: 20001
   action: viewed_pricing
   source_id: 'bp:pricing-1'
-  actions: '[{"type":"apply_tag","tag":"pricing-interest"}]'
   results: '[{"type":"apply_tag","status":"succeeded"}]'
   completed_at: '{{hoursAgo 30}}'
   workspace_id: 20
@@ -87,10 +87,10 @@
   updated_at: '{{hoursAgo 30}}'
 - id: 21002
   rule_id: 21001
+  version_id: 21001
   contact_id: 20002
   action: viewed_pricing
   source_id: 'bp:pricing-2'
-  actions: '[{"type":"apply_tag","tag":"pricing-interest"}]'
   results: '[{"type":"apply_tag","status":"succeeded"}]'
   completed_at: '{{hoursAgo 12}}'
   workspace_id: 20
@@ -98,10 +98,10 @@
   updated_at: '{{hoursAgo 12}}'
 - id: 21003
   rule_id: 21002
+  version_id: 21002
   contact_id: 20003
   action: signup
   source_id: 'bp:signup-1'
-  actions: '[{"type":"enroll_automation","automation_id":20001}]'
   results: '[{"type":"enroll_automation","status":"succeeded"}]'
   completed_at: '{{hoursAgo 90}}'
   workspace_id: 20

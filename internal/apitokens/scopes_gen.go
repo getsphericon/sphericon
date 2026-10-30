@@ -30,7 +30,7 @@ const (
 	ScopeIntegrationsRead      Scope = "integrations:read"
 	ScopeEmailsSend            Scope = "emails:send"
 	ScopeBroadcastsSend        Scope = "broadcasts:send"
-	ScopeAutomationsActivate   Scope = "automations:activate"
+	ScopeAutomationsPublish    Scope = "automations:publish"
 	ScopeMcpSend               Scope = "mcp:send"
 	ScopeSendingDomainsWrite   Scope = "sending_domains:write"
 	ScopeIntegrationsWrite     Scope = "integrations:write"
@@ -67,7 +67,7 @@ var Scopes = []Scope{
 	ScopeIntegrationsRead,
 	ScopeEmailsSend,
 	ScopeBroadcastsSend,
-	ScopeAutomationsActivate,
+	ScopeAutomationsPublish,
 	ScopeMcpSend,
 	ScopeSendingDomainsWrite,
 	ScopeIntegrationsWrite,

@@ -90,9 +90,9 @@ func SourceID(v string) predicate.RuleFiring {
 	return predicate.RuleFiring(sql.FieldEQ(FieldSourceID, v))
 }
 
-// Actions applies equality check predicate on the "actions" field. It's identical to ActionsEQ.
-func Actions(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldEQ(FieldActions, v))
+// VersionID applies equality check predicate on the "version_id" field. It's identical to VersionIDEQ.
+func VersionID(v int64) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldEQ(FieldVersionID, v))
 }
 
 // Properties applies equality check predicate on the "properties" field. It's identical to PropertiesEQ.
@@ -380,69 +380,34 @@ func SourceIDContainsFold(v string) predicate.RuleFiring {
 	return predicate.RuleFiring(sql.FieldContainsFold(FieldSourceID, v))
 }
 
-// ActionsEQ applies the EQ predicate on the "actions" field.
-func ActionsEQ(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldEQ(FieldActions, v))
+// VersionIDEQ applies the EQ predicate on the "version_id" field.
+func VersionIDEQ(v int64) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldEQ(FieldVersionID, v))
 }
 
-// ActionsNEQ applies the NEQ predicate on the "actions" field.
-func ActionsNEQ(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldNEQ(FieldActions, v))
+// VersionIDNEQ applies the NEQ predicate on the "version_id" field.
+func VersionIDNEQ(v int64) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldNEQ(FieldVersionID, v))
 }
 
-// ActionsIn applies the In predicate on the "actions" field.
-func ActionsIn(vs ...string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldIn(FieldActions, vs...))
+// VersionIDIn applies the In predicate on the "version_id" field.
+func VersionIDIn(vs ...int64) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldIn(FieldVersionID, vs...))
 }
 
-// ActionsNotIn applies the NotIn predicate on the "actions" field.
-func ActionsNotIn(vs ...string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldNotIn(FieldActions, vs...))
+// VersionIDNotIn applies the NotIn predicate on the "version_id" field.
+func VersionIDNotIn(vs ...int64) predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldNotIn(FieldVersionID, vs...))
 }
 
-// ActionsGT applies the GT predicate on the "actions" field.
-func ActionsGT(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldGT(FieldActions, v))
+// VersionIDIsNil applies the IsNil predicate on the "version_id" field.
+func VersionIDIsNil() predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldIsNull(FieldVersionID))
 }
 
-// ActionsGTE applies the GTE predicate on the "actions" field.
-func ActionsGTE(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldGTE(FieldActions, v))
-}
-
-// ActionsLT applies the LT predicate on the "actions" field.
-func ActionsLT(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldLT(FieldActions, v))
-}
-
-// ActionsLTE applies the LTE predicate on the "actions" field.
-func ActionsLTE(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldLTE(FieldActions, v))
-}
-
-// ActionsContains applies the Contains predicate on the "actions" field.
-func ActionsContains(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldContains(FieldActions, v))
-}
-
-// ActionsHasPrefix applies the HasPrefix predicate on the "actions" field.
-func ActionsHasPrefix(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldHasPrefix(FieldActions, v))
-}
-
-// ActionsHasSuffix applies the HasSuffix predicate on the "actions" field.
-func ActionsHasSuffix(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldHasSuffix(FieldActions, v))
-}
-
-// ActionsEqualFold applies the EqualFold predicate on the "actions" field.
-func ActionsEqualFold(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldEqualFold(FieldActions, v))
-}
-
-// ActionsContainsFold applies the ContainsFold predicate on the "actions" field.
-func ActionsContainsFold(v string) predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldContainsFold(FieldActions, v))
+// VersionIDNotNil applies the NotNil predicate on the "version_id" field.
+func VersionIDNotNil() predicate.RuleFiring {
+	return predicate.RuleFiring(sql.FieldNotNull(FieldVersionID))
 }
 
 // PropertiesEQ applies the EQ predicate on the "properties" field.
@@ -696,6 +661,29 @@ func HasContact() predicate.RuleFiring {
 func HasContactWith(preds ...predicate.Contact) predicate.RuleFiring {
 	return predicate.RuleFiring(func(s *sql.Selector) {
 		step := newContactStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasVersion applies the HasEdge predicate on the "version" edge.
+func HasVersion() predicate.RuleFiring {
+	return predicate.RuleFiring(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, VersionTable, VersionColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasVersionWith applies the HasEdge predicate on the "version" edge with a given conditions (other predicates).
+func HasVersionWith(preds ...predicate.RuleVersion) predicate.RuleFiring {
+	return predicate.RuleFiring(func(s *sql.Selector) {
+		step := newVersionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

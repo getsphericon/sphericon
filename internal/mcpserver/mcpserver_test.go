@@ -76,10 +76,10 @@ var (
 		"webhooks_regenerate_secret", "webhooks_test",
 		"tags_list", "tags_list_for_contact", "tags_apply", "tags_remove", "tags_delete",
 		"automations_list", "automations_create", "automations_get", "automations_update", "automations_delete",
-		"rules_list", "rules_create", "rules_get", "rules_update", "rules_dry_run", "rules_deactivate", "rules_archive", "rules_unarchive", "rules_delete", "rule_firings_list",
-		"automations_deactivate", "automations_archive", "automations_unarchive", "automations_dry_run_http_step", "enrollments_list", "enrollments_get",
+		"rules_list", "rules_create", "rules_get", "rules_update", "rules_dry_run", "rules_deactivate", "rules_revert", "rules_archive", "rules_unarchive", "rules_delete", "rule_firings_list",
+		"automations_deactivate", "automations_revert", "automations_archive", "automations_unarchive", "automations_dry_run_http_step", "enrollments_list", "enrollments_get",
 	}
-	sendTools = []string{"emails_send", "broadcasts_schedule", "broadcasts_unschedule", "automations_activate", "rules_activate"}
+	sendTools = []string{"emails_send", "broadcasts_schedule", "broadcasts_unschedule", "automations_publish", "rules_publish"}
 )
 
 func listedTools(t *testing.T, s *mcp.ClientSession) map[string]*mcp.Tool {
@@ -146,6 +146,40 @@ func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	b, err = env.DB.Broadcast.Get(context.Background(), fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
+}
+
+// Publishing an Automation or a Rule is send-class (ADR 0065): the publish scope alone is refused
+// by the MCP lock, and with mcp:send it runs. Deactivating is authoring: the write scope is enough.
+func TestMCPPublishNeedsMCPSendAndDeactivateDoesNot(t *testing.T) {
+	env := testhelper.Setup(t)
+	automationID := map[string]any{"id": strconv.Itoa(fixtures.AutomationWinBackID)}
+	ruleID := map[string]any{"id": strconv.Itoa(fixtures.RuleInactiveID)}
+
+	publishOnly := env.MCPClient(t, env.ScopedBearer(t, "automations:read", "automations:publish"))
+	refusedAutomation := call(t, publishOnly, "automations_publish", automationID)
+	refusedRule := call(t, publishOnly, "rules_publish", ruleID)
+	unchanged := text(t, call(t, publishOnly, "automations_get", automationID))
+	assert.True(t, refusedAutomation.IsError)
+	assert.Contains(t, text(t, refusedAutomation), "mcp:send")
+	assert.True(t, refusedRule.IsError)
+	assert.Contains(t, text(t, refusedRule), "mcp:send")
+	assert.Contains(t, unchanged, `"status":"inactive"`, "the refused call changed nothing")
+
+	publisher := env.MCPClient(t, env.ScopedBearer(t, "automations:publish", "mcp:send"))
+	publishedAutomation := call(t, publisher, "automations_publish", automationID)
+	publishedRule := call(t, publisher, "rules_publish", ruleID)
+	require.False(t, publishedAutomation.IsError, text(t, publishedAutomation))
+	require.False(t, publishedRule.IsError, text(t, publishedRule))
+	assert.Contains(t, text(t, publishedAutomation), `"status":"active"`)
+	assert.Contains(t, text(t, publishedRule), `"status":"active"`)
+
+	author := env.MCPClient(t, env.ScopedBearer(t, "automations:write"))
+	deactivatedAutomation := call(t, author, "automations_deactivate", automationID)
+	deactivatedRule := call(t, author, "rules_deactivate", ruleID)
+	require.False(t, deactivatedAutomation.IsError, text(t, deactivatedAutomation))
+	require.False(t, deactivatedRule.IsError, text(t, deactivatedRule))
+	assert.Contains(t, text(t, deactivatedAutomation), `"status":"inactive"`)
+	assert.Contains(t, text(t, deactivatedRule), `"status":"inactive"`)
 }
 
 // Regenerating an Integration's hook key is hidden from agents: the new URL is a secret an

@@ -7,6 +7,10 @@ import {
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
+import type {
+  SiteAutomationResource,
+  SiteAutomationVersion,
+} from '../../generated/site/types.gen.ts'
 import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -16,12 +20,17 @@ import { AutomationEditPage } from './edit.tsx'
 
 const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
 const NOW = '2026-01-01T00:00:00Z'
-const STORED = {
-  id: '5',
-  name: 'Welcome flow',
-  status: 'draft',
+const DRAFT: SiteAutomationVersion = {
+  number: 1,
   triggerEvent: 'email.clicked',
   steps: [{ type: 'wait', seconds: 60 }],
+}
+const STORED: SiteAutomationResource = {
+  id: '5',
+  name: 'Welcome flow',
+  status: 'inactive',
+  live: null,
+  draft: DRAFT,
   createdAt: NOW,
   updatedAt: NOW,
 }
@@ -70,7 +79,7 @@ test('the Integration of the email steps is chosen in the bar and saved with the
     handleSiteAutomationsGet(() => HttpResponse.json(STORED)),
     handleSiteAutomationsUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ ...STORED, integrationId: '21' })
+      return HttpResponse.json({ ...STORED, draft: { ...DRAFT, integrationId: '21' } })
     }),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
     enrollments,
@@ -87,7 +96,9 @@ test('the Integration of the email steps is chosen in the bar and saved with the
 test('choosing the workspace default saves null and the picker lists email Integrations only', async () => {
   const bodies: unknown[] = []
   worker.use(
-    handleSiteAutomationsGet(() => HttpResponse.json({ ...STORED, integrationId: '21' })),
+    handleSiteAutomationsGet(() =>
+      HttpResponse.json({ ...STORED, draft: { ...DRAFT, integrationId: '21' } }),
+    ),
     handleSiteAutomationsUpdate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json(STORED)

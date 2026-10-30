@@ -19,7 +19,7 @@ func tagAction(kind siteapi.SiteRuleActionType, name string) siteapi.SiteRuleAct
 	return siteapi.SiteRuleAction{Type: kind, Tag: siteapi.NewOptString(name)}
 }
 
-func TestSiteRulesCRUDAndActivation(t *testing.T) {
+func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -34,25 +34,33 @@ func TestSiteRulesCRUDAndActivation(t *testing.T) {
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteRuleResource)
 	require.Truef(t, ok, "got %T", created)
-	assert.Equal(t, siteapi.SiteRuleStatusDraft, res.Status)
-	assert.Equal(t, []string{"email.clicked", "link_followed"}, res.TriggerEvents, "a repeated Trigger event is kept once")
-	require.Len(t, res.Actions, 2)
-	assert.Equal(t, siteapi.SiteRuleActionTypeApplyTag, res.Actions[0].Type)
-	assert.Equal(t, "clicker", res.Actions[0].Tag.Or(""))
-	assert.Equal(t, siteapi.SiteRuleActionTypeRemoveTag, res.Actions[1].Type)
-	condition, hasCondition := res.Condition.Get()
+	assert.Equal(t, siteapi.SiteRuleStatusInactive, res.Status)
+	assert.True(t, res.Live.Null, "a new Rule is not live")
+	draft, drafted := res.Draft.Get()
+	require.True(t, drafted)
+	assert.EqualValues(t, 1, draft.Number)
+	assert.Equal(t, []string{"email.clicked", "link_followed"}, draft.TriggerEvents, "a repeated Trigger event is kept once")
+	require.Len(t, draft.Actions, 2)
+	assert.Equal(t, siteapi.SiteRuleActionTypeApplyTag, draft.Actions[0].Type)
+	assert.Equal(t, "clicker", draft.Actions[0].Tag.Or(""))
+	assert.Equal(t, siteapi.SiteRuleActionTypeRemoveTag, draft.Actions[1].Type)
+	condition, hasCondition := draft.Condition.Get()
 	require.True(t, hasCondition)
 	assert.Len(t, condition.Rules, 1)
 	_, activated := res.ActivatedAt.Get()
 	assert.False(t, activated)
 
-	act, err := c.SiteRulesActivate(ctx, siteapi.SiteRulesActivateParams{WorkspaceId: workspaceID, ID: res.ID})
+	act, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	actRes, ok := act.(*siteapi.SiteRuleResource)
 	require.Truef(t, ok, "got %T", act)
 	assert.Equal(t, siteapi.SiteRuleStatusActive, actRes.Status)
 	_, activated = actRes.ActivatedAt.Get()
 	assert.True(t, activated)
+	published, isLive := actRes.Live.Get()
+	require.True(t, isLive)
+	assert.EqualValues(t, 1, published.Number, "the draft became live")
+	assert.True(t, actRes.Draft.Null)
 
 	upd, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{
 		Name:          siteapi.NewOptString("Tag the clickers"),
@@ -62,15 +70,20 @@ func TestSiteRulesCRUDAndActivation(t *testing.T) {
 	updRes, ok := upd.(*siteapi.SiteRuleResource)
 	require.Truef(t, ok, "got %T", upd)
 	assert.Equal(t, "Tag the clickers", updRes.Name)
-	assert.Equal(t, []string{"email.clicked"}, updRes.TriggerEvents)
-	assert.Len(t, updRes.Actions, 2, "an update that leaves the actions out keeps them")
+	edited, drafted := updRes.Draft.Get()
+	require.True(t, drafted, "an edit of a live Rule is a draft")
+	assert.EqualValues(t, 2, edited.Number)
+	assert.Equal(t, []string{"email.clicked"}, edited.TriggerEvents)
+	assert.Len(t, edited.Actions, 2, "an update that leaves the actions out keeps them")
+	stillLive, _ := updRes.Live.Get()
+	assert.Equal(t, []string{"email.clicked", "link_followed"}, stillLive.TriggerEvents, "the live version is untouched")
 	assert.Equal(t, siteapi.SiteRuleStatusActive, updRes.Status)
 
 	deact, err := c.SiteRulesDeactivate(ctx, siteapi.SiteRulesDeactivateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	deactRes, ok := deact.(*siteapi.SiteRuleResource)
 	require.Truef(t, ok, "got %T", deact)
-	assert.Equal(t, siteapi.SiteRuleStatusDraft, deactRes.Status)
+	assert.Equal(t, siteapi.SiteRuleStatusInactive, deactRes.Status)
 
 	got, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
@@ -150,7 +163,7 @@ func TestSiteTriggerLeafIsAcceptedInARuleAndRefusedInASegment(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, segment)
 }
 
-func TestSiteRulesActivateRefusesARuleWithNoActions(t *testing.T) {
+func TestSiteRulesPublishRefusesARuleWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -160,10 +173,10 @@ func TestSiteRulesActivateRefusesARuleWithNoActions(t *testing.T) {
 	require.NoError(t, err)
 	res := created.(*siteapi.SiteRuleResource)
 
-	out, err := c.SiteRulesActivate(ctx, siteapi.SiteRulesActivateParams{WorkspaceId: workspaceID, ID: res.ID})
+	out, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: res.ID})
 
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesActivateUnprocessableEntity{}, out)
+	assert.IsType(t, &siteapi.SiteRulesPublishUnprocessableEntity{}, out)
 }
 
 func TestSiteRulesStayInTheirWorkspace(t *testing.T) {
@@ -176,9 +189,9 @@ func TestSiteRulesStayInTheirWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteRulesGetNotFound{}, get)
 
-	activate, err := c.SiteRulesActivate(ctx, siteapi.SiteRulesActivateParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
+	published, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: workspaceID, ID: fixtures.RuleGlobexID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesActivateNotFound{}, activate)
+	assert.IsType(t, &siteapi.SiteRulesPublishNotFound{}, published)
 
 	firings, err := c.SiteRuleFiringsList(ctx, siteapi.SiteRuleFiringsListParams{WorkspaceId: workspaceID, RuleId: fixtures.RuleGlobexID})
 	require.NoError(t, err)

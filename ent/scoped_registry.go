@@ -32,7 +32,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -238,9 +239,11 @@ func ScopedEntities() []ScopedEntity {
 				}
 				b.SetName(src.Name)
 				b.SetStatus(src.Status)
-				b.SetTriggerEvent(src.TriggerEvent)
-				if src.IntegrationID != nil {
-					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
+				if src.LiveVersionID != nil {
+					b.SetLiveVersionID(remap("AutomationVersion", *src.LiveVersionID))
+				}
+				if src.DraftVersionID != nil {
+					b.SetDraftVersionID(remap("AutomationVersion", *src.DraftVersionID))
 				}
 				created, err := b.Save(ctx)
 				if err != nil {
@@ -268,9 +271,15 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
-					Name: "integration", Target: "Integration",
+					Name: "live_version", Target: "AutomationVersion",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Automation().UpdateOneID(id).SetIntegrationID(target).Exec(ctx)
+						return s.Automation().UpdateOneID(id).SetLiveVersionID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "draft_version", Target: "AutomationVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Automation().UpdateOneID(id).SetDraftVersionID(target).Exec(ctx)
 					},
 				},
 			},
@@ -380,6 +389,10 @@ func ScopedEntities() []ScopedEntity {
 				b.SetAutomationID(remap("Automation", src.AutomationID))
 				b.SetVersion(src.Version)
 				b.SetSteps(src.Steps)
+				b.SetTriggerEvent(src.TriggerEvent)
+				if src.IntegrationID != nil {
+					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -397,6 +410,12 @@ func ScopedEntities() []ScopedEntity {
 					Name: "runs", Target: "AutomationRun",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.AutomationVersion().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "integration", Target: "Integration",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.AutomationVersion().UpdateOneID(id).SetIntegrationID(target).Exec(ctx)
 					},
 				},
 			},
@@ -496,6 +515,9 @@ func ScopedEntities() []ScopedEntity {
 				}
 				if src.SegmentID != nil {
 					b.SetSegmentID(remap("Segment", *src.SegmentID))
+				}
+				if src.Condition != nil {
+					b.SetCondition(*src.Condition)
 				}
 				if src.IntegrationID != nil {
 					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
@@ -1617,10 +1639,12 @@ func ScopedEntities() []ScopedEntity {
 				if src.ActivatedAt != nil {
 					b.SetActivatedAt(*src.ActivatedAt)
 				}
-				if src.Condition != nil {
-					b.SetCondition(*src.Condition)
+				if src.LiveVersionID != nil {
+					b.SetLiveVersionID(remap("RuleVersion", *src.LiveVersionID))
 				}
-				b.SetActions(src.Actions)
+				if src.DraftVersionID != nil {
+					b.SetDraftVersionID(remap("RuleVersion", *src.DraftVersionID))
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -1629,9 +1653,21 @@ func ScopedEntities() []ScopedEntity {
 			},
 			Refs: []ScopedRef{
 				{
-					Name: "triggers", Target: "RuleTrigger",
+					Name: "versions", Target: "RuleVersion",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Rule().UpdateOneID(id).AddTriggerIDs(target).Exec(ctx)
+						return s.Rule().UpdateOneID(id).AddVersionIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "live_version", Target: "RuleVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Rule().UpdateOneID(id).SetLiveVersionID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "draft_version", Target: "RuleVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Rule().UpdateOneID(id).SetDraftVersionID(target).Exec(ctx)
 					},
 				},
 				{
@@ -1675,7 +1711,9 @@ func ScopedEntities() []ScopedEntity {
 				b.SetContactID(remap("Contact", src.ContactID))
 				b.SetAction(src.Action)
 				b.SetSourceID(src.SourceID)
-				b.SetActions(src.Actions)
+				if src.VersionID != 0 {
+					b.SetVersionID(remap("RuleVersion", src.VersionID))
+				}
 				if src.Properties != nil {
 					b.SetProperties(*src.Properties)
 				}
@@ -1702,39 +1740,49 @@ func ScopedEntities() []ScopedEntity {
 						return s.RuleFiring().UpdateOneID(id).SetContactID(target).Exec(ctx)
 					},
 				},
+				{
+					Name: "version", Target: "RuleVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.RuleFiring().UpdateOneID(id).SetVersionID(target).Exec(ctx)
+					},
+				},
 			},
 		},
 		{
-			Name:    "RuleTrigger",
+			Name:    "RuleVersion",
 			Audited: false,
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
-				return c.RuleTrigger.Query().Where(ruletrigger.WorkspaceID(ws)).Order(Asc(ruletrigger.FieldID)).IDs(ctx)
+				return c.RuleVersion.Query().Where(ruleversion.WorkspaceID(ws)).Order(Asc(ruleversion.FieldID)).IDs(ctx)
 			},
 			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.RuleTrigger().Get(ctx, id)
+				_, err := s.RuleVersion().Get(ctx, id)
 				return err
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.RuleTrigger().UpdateOneID(id).Exec(ctx)
+				return s.RuleVersion().UpdateOneID(id).Exec(ctx)
 			},
 			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.RuleTrigger().Update().Where(ruletrigger.ID(id)).Save(ctx)
+				return s.RuleVersion().Update().Where(ruleversion.ID(id)).Save(ctx)
 			},
 			Delete: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.RuleTrigger().DeleteOneID(id).Exec(ctx)
+				return s.RuleVersion().DeleteOneID(id).Exec(ctx)
 			},
 			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.RuleTrigger().Delete().Where(ruletrigger.ID(id)).Exec(ctx)
+				return s.RuleVersion().Delete().Where(ruleversion.ID(id)).Exec(ctx)
 			},
 			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
-				src, err := s.c.RuleTrigger.Get(ctx, id)
+				src, err := s.c.RuleVersion.Get(ctx, id)
 				if err != nil {
 					return 0, err
 				}
 				_ = remap
-				b := s.RuleTrigger().Create()
+				b := s.RuleVersion().Create()
 				b.SetRuleID(remap("Rule", src.RuleID))
-				b.SetAction(src.Action)
+				b.SetVersion(src.Version)
+				if src.Condition != nil {
+					b.SetCondition(*src.Condition)
+				}
+				b.SetActions(src.Actions)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -1745,7 +1793,65 @@ func ScopedEntities() []ScopedEntity {
 				{
 					Name: "rule", Target: "Rule",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.RuleTrigger().UpdateOneID(id).SetRuleID(target).Exec(ctx)
+						return s.RuleVersion().UpdateOneID(id).SetRuleID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "triggers", Target: "RuleVersionTrigger",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.RuleVersion().UpdateOneID(id).AddTriggerIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "firings", Target: "RuleFiring",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.RuleVersion().UpdateOneID(id).AddFiringIDs(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Name:    "RuleVersionTrigger",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.RuleVersionTrigger.Query().Where(ruleversiontrigger.WorkspaceID(ws)).Order(Asc(ruleversiontrigger.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.RuleVersionTrigger().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.RuleVersionTrigger().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.RuleVersionTrigger().Update().Where(ruleversiontrigger.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.RuleVersionTrigger().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.RuleVersionTrigger().Delete().Where(ruleversiontrigger.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.RuleVersionTrigger.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.RuleVersionTrigger().Create()
+				b.SetVersionID(remap("RuleVersion", src.VersionID))
+				b.SetAction(src.Action)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "version", Target: "RuleVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.RuleVersionTrigger().UpdateOneID(id).SetVersionID(target).Exec(ctx)
 					},
 				},
 			},

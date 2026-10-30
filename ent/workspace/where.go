@@ -1889,21 +1889,44 @@ func HasRulesWith(preds ...predicate.Rule) predicate.Workspace {
 	})
 }
 
-// HasRuleTriggers applies the HasEdge predicate on the "rule_triggers" edge.
-func HasRuleTriggers() predicate.Workspace {
+// HasRuleVersions applies the HasEdge predicate on the "rule_versions" edge.
+func HasRuleVersions() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, RuleTriggersTable, RuleTriggersColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, RuleVersionsTable, RuleVersionsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasRuleTriggersWith applies the HasEdge predicate on the "rule_triggers" edge with a given conditions (other predicates).
-func HasRuleTriggersWith(preds ...predicate.RuleTrigger) predicate.Workspace {
+// HasRuleVersionsWith applies the HasEdge predicate on the "rule_versions" edge with a given conditions (other predicates).
+func HasRuleVersionsWith(preds ...predicate.RuleVersion) predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
-		step := newRuleTriggersStep()
+		step := newRuleVersionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRuleVersionTriggers applies the HasEdge predicate on the "rule_version_triggers" edge.
+func HasRuleVersionTriggers() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RuleVersionTriggersTable, RuleVersionTriggersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRuleVersionTriggersWith applies the HasEdge predicate on the "rule_version_triggers" edge with a given conditions (other predicates).
+func HasRuleVersionTriggersWith(preds ...predicate.RuleVersionTrigger) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newRuleVersionTriggersStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

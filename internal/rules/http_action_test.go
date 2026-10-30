@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -28,7 +29,7 @@ func newHTTPRule(t *testing.T, env *testhelper.TestEnv, m *rules.Module) (id int
 		}},
 	})
 	require.NoError(t, err)
-	stored, err := rules.DecodeActions(r.Actions)
+	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
 	require.NoError(t, err)
 	require.Len(t, stored, 1)
 	return r.ID, stored[0].ID
@@ -43,9 +44,9 @@ func TestAnHTTPActionIsStoredSealed(t *testing.T) {
 	r, err := m.Get(context.Background(), env.DB.Scoped(fixtures.AcmeID), id)
 	require.NoError(t, err)
 	for _, secret := range []string{hookURL, "hooks.example.com", "hunter2", testSigner} {
-		assert.NotContains(t, r.Actions, secret, "the stored Actions hold only ciphertext")
+		assert.NotContains(t, draftOf(t, r).Actions, secret, "the stored Actions hold only ciphertext")
 	}
-	stored, err := rules.DecodeActions(r.Actions)
+	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
 	require.NoError(t, err)
 	opened, err := m.OpenHTTP(stored[0])
 	require.NoError(t, err)
@@ -54,11 +55,23 @@ func TestAnHTTPActionIsStoredSealed(t *testing.T) {
 	assert.Equal(t, testSigner, opened.Secret)
 }
 
+// draftOf is the Rule's draft, which a test that just wrote it expects.
+func draftOf(t *testing.T, r *ent.Rule) *ent.RuleVersion {
+	t.Helper()
+	_, draft := rules.LiveAndDraft(r)
+	require.NotNil(t, draft)
+	return draft
+}
+
+// The edit is a new draft above the published version, and the http Action keeps what the live
+// version holds.
 func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := rules.New(env.Cipher, env.Bus)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	id, actionID := newHTTPRule(t, env, m)
+	_, err := m.Publish(context.Background(), s, id)
+	require.NoError(t, err)
 
 	r, err := m.Update(context.Background(), s, id, rules.UpdateInput{Actions: &[]rules.Action{{
 		Type: rules.ActionHTTP, ID: actionID, Body: `{"changed":true}`,
@@ -66,7 +79,7 @@ func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 	}}})
 
 	require.NoError(t, err)
-	stored, err := rules.DecodeActions(r.Actions)
+	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
 	require.NoError(t, err)
 	require.Len(t, stored, 1)
 	assert.Equal(t, actionID, stored[0].ID)

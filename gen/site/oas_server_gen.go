@@ -209,12 +209,6 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/report
 	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (SiteAutomationReportsGetRes, error)
-	// SiteAutomationsActivate implements SiteAutomations_activate operation.
-	//
-	// Activate an automation (starts enrolling contacts).
-	//
-	// POST /workspaces/{workspaceId}/automations/{id}/activate
-	SiteAutomationsActivate(ctx context.Context, params SiteAutomationsActivateParams) (SiteAutomationsActivateRes, error)
 	// SiteAutomationsArchive implements SiteAutomations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
@@ -258,6 +252,19 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/automations
 	SiteAutomationsList(ctx context.Context, params SiteAutomationsListParams) (SiteAutomationsListRes, error)
+	// SiteAutomationsPublish implements SiteAutomations_publish operation.
+	//
+	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
+	// draft, the live version is resumed. 422 with neither.
+	//
+	// POST /workspaces/{workspaceId}/automations/{id}/publish
+	SiteAutomationsPublish(ctx context.Context, params SiteAutomationsPublishParams) (SiteAutomationsPublishRes, error)
+	// SiteAutomationsRevert implements SiteAutomations_revert operation.
+	//
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	//
+	// POST /workspaces/{workspaceId}/automations/{id}/revert
+	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error)
 	// SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
 	//
 	// Restore an archived automation to the list.
@@ -333,13 +340,16 @@ type Handler interface {
 	SiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (SiteBroadcastsListRes, error)
 	// SiteBroadcastsSchedule implements SiteBroadcasts_schedule operation.
 	//
-	// Schedule a broadcast to send at a future time.
+	// Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients
+	// are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
+	// rescheduling keeps it. An archived segment is refused.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 	SiteBroadcastsSchedule(ctx context.Context, req *SiteScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error)
 	// SiteBroadcastsSend implements SiteBroadcasts_send operation.
 	//
-	// Send a broadcast immediately.
+	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
+	// resolved from; an archived segment is refused.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/send
 	SiteBroadcastsSend(ctx context.Context, params SiteBroadcastsSendParams) (SiteBroadcastsSendRes, error)
@@ -799,16 +809,10 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/rules/{ruleId}/firings
 	SiteRuleFiringsList(ctx context.Context, params SiteRuleFiringsListParams) (SiteRuleFiringsListRes, error)
-	// SiteRulesActivate implements SiteRules_activate operation.
-	//
-	// Activate a Rule: it reacts to Events recorded from now on, never to past ones.
-	//
-	// POST /workspaces/{workspaceId}/rules/{id}/activate
-	SiteRulesActivate(ctx context.Context, params SiteRulesActivateParams) (SiteRulesActivateRes, error)
 	// SiteRulesArchive implements SiteRules_archive operation.
 	//
 	// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-	// Firings. It can be restored, as a draft.
+	// Firings. It can be restored, inactive.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/archive
 	SiteRulesArchive(ctx context.Context, params SiteRulesArchiveParams) (SiteRulesArchiveRes, error)
@@ -849,9 +853,23 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/rules
 	SiteRulesList(ctx context.Context, params SiteRulesListParams) (SiteRulesListRes, error)
+	// SiteRulesPublish implements SiteRules_publish operation.
+	//
+	// Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an
+	// inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with
+	// neither draft nor live version.
+	//
+	// POST /workspaces/{workspaceId}/rules/{id}/publish
+	SiteRulesPublish(ctx context.Context, params SiteRulesPublishParams) (SiteRulesPublishRes, error)
+	// SiteRulesRevert implements SiteRules_revert operation.
+	//
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	//
+	// POST /workspaces/{workspaceId}/rules/{id}/revert
+	SiteRulesRevert(ctx context.Context, params SiteRulesRevertParams) (SiteRulesRevertRes, error)
 	// SiteRulesUnarchive implements SiteRules_unarchive operation.
 	//
-	// Restore an archived Rule to the list, as a draft.
+	// Restore an archived Rule to the list, inactive.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/unarchive
 	SiteRulesUnarchive(ctx context.Context, params SiteRulesUnarchiveParams) (SiteRulesUnarchiveRes, error)

@@ -35,7 +35,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	res, ok := created.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", created)
 
-	step := res.Steps[0]
+	step := res.Draft.Value.Steps[0]
 	sealedAtCreate := sealedValues(t, env, int64(res.ID))
 	assert.NotEmpty(t, step.ID.Or(""))
 	assert.True(t, step.HasSecret.Or(false))
@@ -52,7 +52,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", updated)
-	assert.True(t, upd.Steps[0].HasSecret.Or(false))
+	assert.True(t, upd.Draft.Value.Steps[0].HasSecret.Or(false))
 
 	steps, err := automations.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
 	require.NoError(t, err)

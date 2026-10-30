@@ -14,9 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// An Automation an active Rule enrolls Contacts in is not removed: the refusal names the Rule
-// (ADR 0049, ADR 0054). A deactivated Rule does not hold it.
-func TestAnAutomationAnActiveRuleEnrollsInIsNotRemoved(t *testing.T) {
+// An Automation a kept Rule enrolls Contacts in, by its live version or its draft, is not removed:
+// the refusal names the Rule (ADR 0049, ADR 0054, spec #767). An archived Rule does not hold it.
+func TestAnAutomationARuleEnrollsInIsNotRemoved(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -34,7 +34,6 @@ func TestAnAutomationAnActiveRuleEnrollsInIsNotRemoved(t *testing.T) {
 	_, err := m.Get(ctx, s, fixtures.AutomationJobsWaitFirstID)
 	require.NoError(t, err)
 
-	_, err = rules.New(env.Cipher, env.Bus).Deactivate(ctx, s, fixtures.RuleEnrollWaitFirstID)
-	require.NoError(t, err)
-	require.NoError(t, m.Delete(ctx, s, fixtures.AutomationJobsWaitFirstID), "a draft Rule holds nothing")
+	require.NoError(t, rules.New(env.Cipher, env.Bus).Archive(ctx, s, fixtures.RuleEnrollWaitFirstID))
+	require.NoError(t, m.Delete(ctx, s, fixtures.AutomationJobsWaitFirstID), "an archived Rule holds nothing")
 }

@@ -231,7 +231,6 @@ export default interface Resources {
       "websiteUrl": "https://getsphericon.com"
     },
     "automations": {
-      "activate": "Activate",
       "addAutomation": "New automation",
       "applyTagNodeDescription": "Add a tag to the contact.",
       "bounced": "Bounced",
@@ -284,14 +283,16 @@ export default interface Resources {
       "leaveMessage": "Your changes to this automation are not saved.",
       "leaveStay": "Keep editing",
       "leaveTitle": "Leave without saving?",
+      "liveVersion": "Live version {{number}}",
       "messageDone": "Done",
       "nameLabel": "Name",
       "noEnrollments": "No contacts enrolled yet",
       "noRecords": "No automations yet",
       "opens": "Opens",
+      "publish": "Publish",
       "removeTagNodeDescription": "Take a tag off the contact.",
       "statusActive": "Active",
-      "statusDraft": "Draft",
+      "statusInactive": "Inactive",
       "statusLabel": "Status",
       "stepApplyTag": "Apply tag",
       "stepEmail": "Send email",
@@ -299,6 +300,7 @@ export default interface Resources {
       "stepRemoveTag": "Remove tag",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
+      "stepsLabel": "Steps",
       "tagNameLabel": "Tag",
       "triggerColumn": "Trigger",
       "triggerHint": "The event that enrolls a contact into this automation.",
@@ -338,6 +340,11 @@ export default interface Resources {
     },
     "broadcasts": {
       "addBroadcast": "New broadcast",
+      "audience": {
+        "all": "Audience: all contacts",
+        "copied": "Its audience is the segment's conditions as they were when it was scheduled or sent: editing the segment since changes nothing for it.",
+        "segment": "Audience: segment {{name}}"
+      },
       "createTitle": "New broadcast",
       "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
       "deliveryLabel": "Delivery",
@@ -667,6 +674,11 @@ export default interface Resources {
         "string": "Text"
       }
     },
+    "draft": {
+      "pending": "Unpublished changes",
+      "publish": "Publish",
+      "revert": "Revert"
+    },
     "forgotPassword": {
       "backToLogin": "Back to sign in",
       "description": "Enter your email and we'll send you a reset link.",
@@ -832,12 +844,13 @@ export default interface Resources {
       "title": "Page not found"
     },
     "notifications": {
-      "automationActivated": "Automation activated",
       "automationArchived": "Automation archived",
       "automationCreated": "Automation created",
       "automationDeactivated": "Automation deactivated",
       "automationDeleted": "Automation deleted",
+      "automationPublished": "Automation published",
       "automationRestored": "Automation restored",
+      "automationReverted": "Unpublished changes reverted",
       "automationUpdated": "Automation updated",
       "broadcastArchived": "Broadcast archived",
       "broadcastCreated": "Broadcast created",
@@ -854,12 +867,13 @@ export default interface Resources {
       "rateLimited": "Too many requests. Please wait a minute and try again.",
       "rateLimitedMinutes": "Too many attempts. Try again in {{count}} minutes." | "Too many attempts. Try again in {{count}} minute." | "Too many attempts. Try again in {{count}} minutes.",
       "rateLimitedSeconds": "Too many attempts. Try again in {{count}} seconds." | "Too many attempts. Try again in {{count}} second." | "Too many attempts. Try again in {{count}} seconds.",
-      "ruleActivated": "Rule activated",
       "ruleArchived": "Rule archived",
       "ruleCreated": "Rule created",
       "ruleDeactivated": "Rule deactivated",
       "ruleDeleted": "Rule deleted",
+      "rulePublished": "Rule published",
       "ruleRestored": "Rule restored",
+      "ruleReverted": "Unpublished changes dropped",
       "ruleUpdated": "Rule updated",
       "segmentArchived": "Segment archived",
       "segmentCreated": "Segment created",
@@ -996,7 +1010,6 @@ export default interface Resources {
       "actionTypeLabel": "Action",
       "actionsHint": "Run in order each time the rule fires.",
       "actionsLabel": "Actions",
-      "activate": "Activate",
       "addAction": "Add action",
       "addRule": "New rule",
       "conditionHint": "Leave empty to fire for every contact.",
@@ -1042,11 +1055,13 @@ export default interface Resources {
         "secretLabel": "Signing secret",
         "urlLabel": "URL"
       },
+      "liveVersion": "Live version {{number}}",
       "nameLabel": "Name",
       "noFirings": "This rule has not fired yet",
       "noRecords": "No rules yet",
+      "publish": "Publish",
       "statusActive": "Active",
-      "statusDraft": "Draft",
+      "statusInactive": "Inactive",
       "statusLabel": "Status",
       "triggerColumn": "Trigger events",
       "triggerEventsHint": "The rule fires when any of these events is recorded for a contact.",

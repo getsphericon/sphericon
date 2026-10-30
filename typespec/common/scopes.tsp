@@ -81,14 +81,14 @@ enum GrantableScope {
   #[
     #{ scope: SendScope.emailsSend },
     #{ scope: SendScope.broadcastsSend },
-    #{ scope: SendScope.automationsActivate },
+    #{ scope: SendScope.automationsPublish },
     #{ scope: SendScope.mcpSend }
   ]
 )
 enum SendScope {
   emailsSend: "emails:send",
   broadcastsSend: "broadcasts:send",
-  automationsActivate: "automations:activate",
+  automationsPublish: "automations:publish",
   mcpSend: "mcp:send",
 }
 

@@ -16,21 +16,23 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
 // RuleQuery is the builder for querying Rule entities.
 type RuleQuery struct {
 	config
-	ctx           *QueryContext
-	order         []rule.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.Rule
-	withWorkspace *WorkspaceQuery
-	withTriggers  *RuleTriggerQuery
-	withFirings   *RuleFiringQuery
-	modifiers     []func(*sql.Selector)
+	ctx              *QueryContext
+	order            []rule.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.Rule
+	withWorkspace    *WorkspaceQuery
+	withVersions     *RuleVersionQuery
+	withLiveVersion  *RuleVersionQuery
+	withDraftVersion *RuleVersionQuery
+	withFirings      *RuleFiringQuery
+	modifiers        []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -89,9 +91,9 @@ func (_q *RuleQuery) QueryWorkspace() *WorkspaceQuery {
 	return query
 }
 
-// QueryTriggers chains the current query on the "triggers" edge.
-func (_q *RuleQuery) QueryTriggers() *RuleTriggerQuery {
-	query := (&RuleTriggerClient{config: _q.config}).Query()
+// QueryVersions chains the current query on the "versions" edge.
+func (_q *RuleQuery) QueryVersions() *RuleVersionQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -102,8 +104,52 @@ func (_q *RuleQuery) QueryTriggers() *RuleTriggerQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(rule.Table, rule.FieldID, selector),
-			sqlgraph.To(ruletrigger.Table, ruletrigger.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, rule.TriggersTable, rule.TriggersColumn),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, rule.VersionsTable, rule.VersionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryLiveVersion chains the current query on the "live_version" edge.
+func (_q *RuleQuery) QueryLiveVersion() *RuleVersionQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, selector),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, rule.LiveVersionTable, rule.LiveVersionColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDraftVersion chains the current query on the "draft_version" edge.
+func (_q *RuleQuery) QueryDraftVersion() *RuleVersionQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, selector),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, rule.DraftVersionTable, rule.DraftVersionColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -320,14 +366,16 @@ func (_q *RuleQuery) Clone() *RuleQuery {
 		return nil
 	}
 	return &RuleQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]rule.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.Rule{}, _q.predicates...),
-		withWorkspace: _q.withWorkspace.Clone(),
-		withTriggers:  _q.withTriggers.Clone(),
-		withFirings:   _q.withFirings.Clone(),
+		config:           _q.config,
+		ctx:              _q.ctx.Clone(),
+		order:            append([]rule.OrderOption{}, _q.order...),
+		inters:           append([]Interceptor{}, _q.inters...),
+		predicates:       append([]predicate.Rule{}, _q.predicates...),
+		withWorkspace:    _q.withWorkspace.Clone(),
+		withVersions:     _q.withVersions.Clone(),
+		withLiveVersion:  _q.withLiveVersion.Clone(),
+		withDraftVersion: _q.withDraftVersion.Clone(),
+		withFirings:      _q.withFirings.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -346,14 +394,36 @@ func (_q *RuleQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *RuleQuery {
 	return _q
 }
 
-// WithTriggers tells the query-builder to eager-load the nodes that are connected to
-// the "triggers" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RuleQuery) WithTriggers(opts ...func(*RuleTriggerQuery)) *RuleQuery {
-	query := (&RuleTriggerClient{config: _q.config}).Query()
+// WithVersions tells the query-builder to eager-load the nodes that are connected to
+// the "versions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RuleQuery) WithVersions(opts ...func(*RuleVersionQuery)) *RuleQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withTriggers = query
+	_q.withVersions = query
+	return _q
+}
+
+// WithLiveVersion tells the query-builder to eager-load the nodes that are connected to
+// the "live_version" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RuleQuery) WithLiveVersion(opts ...func(*RuleVersionQuery)) *RuleQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withLiveVersion = query
+	return _q
+}
+
+// WithDraftVersion tells the query-builder to eager-load the nodes that are connected to
+// the "draft_version" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RuleQuery) WithDraftVersion(opts ...func(*RuleVersionQuery)) *RuleQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withDraftVersion = query
 	return _q
 }
 
@@ -446,9 +516,11 @@ func (_q *RuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Rule, e
 	var (
 		nodes       = []*Rule{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [5]bool{
 			_q.withWorkspace != nil,
-			_q.withTriggers != nil,
+			_q.withVersions != nil,
+			_q.withLiveVersion != nil,
+			_q.withDraftVersion != nil,
 			_q.withFirings != nil,
 		}
 	)
@@ -479,10 +551,22 @@ func (_q *RuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Rule, e
 			return nil, err
 		}
 	}
-	if query := _q.withTriggers; query != nil {
-		if err := _q.loadTriggers(ctx, query, nodes,
-			func(n *Rule) { n.Edges.Triggers = []*RuleTrigger{} },
-			func(n *Rule, e *RuleTrigger) { n.Edges.Triggers = append(n.Edges.Triggers, e) }); err != nil {
+	if query := _q.withVersions; query != nil {
+		if err := _q.loadVersions(ctx, query, nodes,
+			func(n *Rule) { n.Edges.Versions = []*RuleVersion{} },
+			func(n *Rule, e *RuleVersion) { n.Edges.Versions = append(n.Edges.Versions, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withLiveVersion; query != nil {
+		if err := _q.loadLiveVersion(ctx, query, nodes, nil,
+			func(n *Rule, e *RuleVersion) { n.Edges.LiveVersion = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withDraftVersion; query != nil {
+		if err := _q.loadDraftVersion(ctx, query, nodes, nil,
+			func(n *Rule, e *RuleVersion) { n.Edges.DraftVersion = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -525,7 +609,7 @@ func (_q *RuleQuery) loadWorkspace(ctx context.Context, query *WorkspaceQuery, n
 	}
 	return nil
 }
-func (_q *RuleQuery) loadTriggers(ctx context.Context, query *RuleTriggerQuery, nodes []*Rule, init func(*Rule), assign func(*Rule, *RuleTrigger)) error {
+func (_q *RuleQuery) loadVersions(ctx context.Context, query *RuleVersionQuery, nodes []*Rule, init func(*Rule), assign func(*Rule, *RuleVersion)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*Rule)
 	for i := range nodes {
@@ -536,10 +620,10 @@ func (_q *RuleQuery) loadTriggers(ctx context.Context, query *RuleTriggerQuery, 
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(ruletrigger.FieldRuleID)
+		query.ctx.AppendFieldOnce(ruleversion.FieldRuleID)
 	}
-	query.Where(predicate.RuleTrigger(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(rule.TriggersColumn), fks...))
+	query.Where(predicate.RuleVersion(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(rule.VersionsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -552,6 +636,70 @@ func (_q *RuleQuery) loadTriggers(ctx context.Context, query *RuleTriggerQuery, 
 			return fmt.Errorf(`unexpected referenced foreign-key "rule_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (_q *RuleQuery) loadLiveVersion(ctx context.Context, query *RuleVersionQuery, nodes []*Rule, init func(*Rule), assign func(*Rule, *RuleVersion)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Rule)
+	for i := range nodes {
+		if nodes[i].LiveVersionID == nil {
+			continue
+		}
+		fk := *nodes[i].LiveVersionID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(ruleversion.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "live_version_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *RuleQuery) loadDraftVersion(ctx context.Context, query *RuleVersionQuery, nodes []*Rule, init func(*Rule), assign func(*Rule, *RuleVersion)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Rule)
+	for i := range nodes {
+		if nodes[i].DraftVersionID == nil {
+			continue
+		}
+		fk := *nodes[i].DraftVersionID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(ruleversion.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "draft_version_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
@@ -616,6 +764,12 @@ func (_q *RuleQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withWorkspace != nil {
 			_spec.Node.AddColumnOnce(rule.FieldWorkspaceID)
+		}
+		if _q.withLiveVersion != nil {
+			_spec.Node.AddColumnOnce(rule.FieldLiveVersionID)
+		}
+		if _q.withDraftVersion != nil {
+			_spec.Node.AddColumnOnce(rule.FieldDraftVersionID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

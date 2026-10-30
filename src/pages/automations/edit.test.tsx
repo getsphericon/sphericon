@@ -4,11 +4,15 @@ import { page } from 'vitest/browser'
 
 import {
   handleSiteAutomationsGet,
+  handleSiteAutomationsPublish,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteAutomationResource,
+  SiteAutomationVersion,
+} from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -36,9 +40,9 @@ test('loads the automation into the builder', async () => {
       body: {
         id: '5',
         name: 'Welcome flow',
-        status: 'draft',
-        triggerEvent: 'email.clicked',
-        steps: [{ type: 'wait', seconds: 60 }],
+        status: 'inactive',
+        live: null,
+        draft: { number: 1, triggerEvent: 'email.clicked', steps: [{ type: 'wait', seconds: 60 }] },
         createdAt: NOW,
         updatedAt: NOW,
       },
@@ -67,12 +71,16 @@ test('shows an error alert when the automation fails to load', async () => {
 const STORED: SiteAutomationResource = {
   id: '5',
   name: 'Welcome flow',
-  status: 'draft',
-  triggerEvent: 'email.clicked',
-  steps: [
-    { type: 'wait', seconds: 60 },
-    { type: 'apply_tag', tag: 'vip' },
-  ],
+  status: 'inactive',
+  live: null,
+  draft: {
+    number: 1,
+    triggerEvent: 'email.clicked',
+    steps: [
+      { type: 'wait', seconds: 60 },
+      { type: 'apply_tag', tag: 'vip' },
+    ],
+  },
   createdAt: NOW,
   updatedAt: NOW,
 }
@@ -127,6 +135,11 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
   await expect.poll(() => bodies).toMatchObject([{ triggerEvent: 'course_completed' }])
 })
 
+// withSteps is STORED's draft with other steps.
+function withSteps(steps: SiteAutomationVersion['steps']): SiteAutomationVersion {
+  return { number: 1, triggerEvent: 'email.clicked', steps }
+}
+
 const AUTHORED_DOC = {
   type: 'doc',
   content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }],
@@ -136,7 +149,7 @@ test('saving an email step written in the editor sends its document and no body'
   const bodies: unknown[] = []
   const authored: SiteAutomationResource = {
     ...STORED,
-    steps: [
+    draft: withSteps([
       {
         type: 'email',
         subject: 'Hi',
@@ -144,7 +157,7 @@ test('saving an email step written in the editor sends its document and no body'
         doc: AUTHORED_DOC,
         editorVersion: '1.7.14',
       },
-    ],
+    ]),
   }
   worker.use(
     handleSiteAutomationsGet({ body: authored }),
@@ -271,7 +284,9 @@ test('an email step opens its document in the editor from the properties panel',
     handleSiteAutomationsGet({
       body: {
         ...STORED,
-        steps: [{ type: 'email', subject: 'Hi', body: '<p>Hello</p>', doc: AUTHORED_DOC }],
+        draft: withSteps([
+          { type: 'email', subject: 'Hi', body: '<p>Hello</p>', doc: AUTHORED_DOC },
+        ]),
       },
     }),
   )
@@ -301,4 +316,54 @@ test('a refused document shows the server reason naming the step', async () => {
 
   await expect.element(screen.getByText('Failed to save automation')).toBeInTheDocument()
   await expect.element(screen.getByText(/step 2: heading level 9/)).toBeInTheDocument()
+})
+
+test('the builder edits the draft and shows it pending above the live version', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        status: 'active',
+        live: { number: 1, triggerEvent: 'email.opened', steps: [] },
+        draft: { number: 2, triggerEvent: 'email.clicked', steps: [] },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByText('Unpublished changes')).toBeInTheDocument()
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+
+  await expect
+    .element(screen.getByRole('combobox', { name: 'Trigger Event' }))
+    .toHaveValue('email.clicked')
+})
+
+test('Publish waits for unsaved changes to be saved', async () => {
+  worker.use(handleSiteAutomationsGet({ body: STORED }))
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
+  await screen.getByLabelText('Name', { exact: false }).fill('Renamed')
+
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
+})
+
+test('Publish from the builder publishes the saved draft', async () => {
+  const published: string[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsPublish(({ params }) => {
+      published.push(params.id)
+      return HttpResponse.json({ ...STORED, status: 'active', live: STORED.draft, draft: null })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await screen.getByRole('button', { name: 'Publish' }).click()
+
+  await expect.poll(() => published).toEqual(['5'])
+  await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
 })

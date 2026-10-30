@@ -13,7 +13,7 @@ func TestCollectedEventTagsTheContactThroughARule(t *testing.T) {
 	w := env.NewWorkspace(t)
 	clicker, bystander := w.NewRecipient(), w.NewRecipient()
 	w.ImportContacts(clicker, bystander)
-	w.ActivateRule(Rule{TriggerEvent: "e2e.pricing_viewed", Tag: "e2e-interested"})
+	w.PublishRule(Rule{TriggerEvent: "e2e.pricing_viewed", Tag: "e2e-interested"})
 
 	// An Event no Rule reacts to first, for a Contact the matching Event never touches.
 	w.Visit(bystander, "e2e.something_else")
@@ -32,12 +32,12 @@ func TestCollectedEventMakesARuleTagAndEnrollTheContact(t *testing.T) {
 	w := env.NewWorkspace(t).Ready()
 	visitor, bystander := w.NewRecipient(), w.NewRecipient()
 	w.ImportContacts(visitor, bystander)
-	automation := w.ActivateAutomation(Automation{
+	automation := w.PublishAutomation(Automation{
 		TriggerEvent: "e2e.never_recorded",
 		Subject:      "Enrolled by a rule",
 		Body:         HTML("A Rule enrolled you"),
 	})
-	w.ActivateRule(Rule{TriggerEvent: "e2e.pricing_viewed", Tag: "e2e-interested", EnrollIn: automation})
+	w.PublishRule(Rule{TriggerEvent: "e2e.pricing_viewed", Tag: "e2e-interested", EnrollIn: automation})
 
 	w.Visit(bystander, "e2e.something_else")
 	w.Visit(visitor, "e2e.pricing_viewed")

@@ -13,7 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -107,30 +107,30 @@ func (_c *RuleCreate) SetNillableActivatedAt(v *time.Time) *RuleCreate {
 	return _c
 }
 
-// SetCondition sets the "condition" field.
-func (_c *RuleCreate) SetCondition(v string) *RuleCreate {
-	_c.mutation.SetCondition(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (_c *RuleCreate) SetLiveVersionID(v int64) *RuleCreate {
+	_c.mutation.SetLiveVersionID(v)
 	return _c
 }
 
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_c *RuleCreate) SetNillableCondition(v *string) *RuleCreate {
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (_c *RuleCreate) SetNillableLiveVersionID(v *int64) *RuleCreate {
 	if v != nil {
-		_c.SetCondition(*v)
+		_c.SetLiveVersionID(*v)
 	}
 	return _c
 }
 
-// SetActions sets the "actions" field.
-func (_c *RuleCreate) SetActions(v string) *RuleCreate {
-	_c.mutation.SetActions(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (_c *RuleCreate) SetDraftVersionID(v int64) *RuleCreate {
+	_c.mutation.SetDraftVersionID(v)
 	return _c
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_c *RuleCreate) SetNillableActions(v *string) *RuleCreate {
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (_c *RuleCreate) SetNillableDraftVersionID(v *int64) *RuleCreate {
 	if v != nil {
-		_c.SetActions(*v)
+		_c.SetDraftVersionID(*v)
 	}
 	return _c
 }
@@ -146,19 +146,29 @@ func (_c *RuleCreate) SetWorkspace(v *Workspace) *RuleCreate {
 	return _c.SetWorkspaceID(v.ID)
 }
 
-// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
-func (_c *RuleCreate) AddTriggerIDs(ids ...int64) *RuleCreate {
-	_c.mutation.AddTriggerIDs(ids...)
+// AddVersionIDs adds the "versions" edge to the RuleVersion entity by IDs.
+func (_c *RuleCreate) AddVersionIDs(ids ...int64) *RuleCreate {
+	_c.mutation.AddVersionIDs(ids...)
 	return _c
 }
 
-// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
-func (_c *RuleCreate) AddTriggers(v ...*RuleTrigger) *RuleCreate {
+// AddVersions adds the "versions" edges to the RuleVersion entity.
+func (_c *RuleCreate) AddVersions(v ...*RuleVersion) *RuleCreate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _c.AddTriggerIDs(ids...)
+	return _c.AddVersionIDs(ids...)
+}
+
+// SetLiveVersion sets the "live_version" edge to the RuleVersion entity.
+func (_c *RuleCreate) SetLiveVersion(v *RuleVersion) *RuleCreate {
+	return _c.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the RuleVersion entity.
+func (_c *RuleCreate) SetDraftVersion(v *RuleVersion) *RuleCreate {
+	return _c.SetDraftVersionID(v.ID)
 }
 
 // AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
@@ -223,10 +233,6 @@ func (_c *RuleCreate) defaults() {
 		v := rule.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
-	if _, ok := _c.mutation.Actions(); !ok {
-		v := rule.DefaultActions
-		_c.mutation.SetActions(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -255,9 +261,6 @@ func (_c *RuleCreate) check() error {
 		if err := rule.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Rule.status": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.Actions(); !ok {
-		return &ValidationError{Name: "actions", err: errors.New(`ent: missing required field "Rule.actions"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Rule.workspace"`)}
@@ -319,14 +322,6 @@ func (_c *RuleCreate) createSpec() (*Rule, *sqlgraph.CreateSpec) {
 		_spec.SetField(rule.FieldActivatedAt, field.TypeTime, value)
 		_node.ActivatedAt = &value
 	}
-	if value, ok := _c.mutation.Condition(); ok {
-		_spec.SetField(rule.FieldCondition, field.TypeString, value)
-		_node.Condition = &value
-	}
-	if value, ok := _c.mutation.Actions(); ok {
-		_spec.SetField(rule.FieldActions, field.TypeString, value)
-		_node.Actions = value
-	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -344,20 +339,54 @@ func (_c *RuleCreate) createSpec() (*Rule, *sqlgraph.CreateSpec) {
 		_node.WorkspaceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.TriggersIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.VersionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   rule.TriggersTable,
-			Columns: []string{rule.TriggersColumn},
+			Table:   rule.VersionsTable,
+			Columns: []string{rule.VersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.LiveVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.LiveVersionTable,
+			Columns: []string{rule.LiveVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.LiveVersionID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.DraftVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.DraftVersionTable,
+			Columns: []string{rule.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.DraftVersionID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.FiringsIDs(); len(nodes) > 0 {
@@ -512,33 +541,39 @@ func (u *RuleUpsert) ClearActivatedAt() *RuleUpsert {
 	return u
 }
 
-// SetCondition sets the "condition" field.
-func (u *RuleUpsert) SetCondition(v string) *RuleUpsert {
-	u.Set(rule.FieldCondition, v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (u *RuleUpsert) SetLiveVersionID(v int64) *RuleUpsert {
+	u.Set(rule.FieldLiveVersionID, v)
 	return u
 }
 
-// UpdateCondition sets the "condition" field to the value that was provided on create.
-func (u *RuleUpsert) UpdateCondition() *RuleUpsert {
-	u.SetExcluded(rule.FieldCondition)
+// UpdateLiveVersionID sets the "live_version_id" field to the value that was provided on create.
+func (u *RuleUpsert) UpdateLiveVersionID() *RuleUpsert {
+	u.SetExcluded(rule.FieldLiveVersionID)
 	return u
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (u *RuleUpsert) ClearCondition() *RuleUpsert {
-	u.SetNull(rule.FieldCondition)
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (u *RuleUpsert) ClearLiveVersionID() *RuleUpsert {
+	u.SetNull(rule.FieldLiveVersionID)
 	return u
 }
 
-// SetActions sets the "actions" field.
-func (u *RuleUpsert) SetActions(v string) *RuleUpsert {
-	u.Set(rule.FieldActions, v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (u *RuleUpsert) SetDraftVersionID(v int64) *RuleUpsert {
+	u.Set(rule.FieldDraftVersionID, v)
 	return u
 }
 
-// UpdateActions sets the "actions" field to the value that was provided on create.
-func (u *RuleUpsert) UpdateActions() *RuleUpsert {
-	u.SetExcluded(rule.FieldActions)
+// UpdateDraftVersionID sets the "draft_version_id" field to the value that was provided on create.
+func (u *RuleUpsert) UpdateDraftVersionID() *RuleUpsert {
+	u.SetExcluded(rule.FieldDraftVersionID)
+	return u
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (u *RuleUpsert) ClearDraftVersionID() *RuleUpsert {
+	u.SetNull(rule.FieldDraftVersionID)
 	return u
 }
 
@@ -691,38 +726,45 @@ func (u *RuleUpsertOne) ClearActivatedAt() *RuleUpsertOne {
 	})
 }
 
-// SetCondition sets the "condition" field.
-func (u *RuleUpsertOne) SetCondition(v string) *RuleUpsertOne {
+// SetLiveVersionID sets the "live_version_id" field.
+func (u *RuleUpsertOne) SetLiveVersionID(v int64) *RuleUpsertOne {
 	return u.Update(func(s *RuleUpsert) {
-		s.SetCondition(v)
+		s.SetLiveVersionID(v)
 	})
 }
 
-// UpdateCondition sets the "condition" field to the value that was provided on create.
-func (u *RuleUpsertOne) UpdateCondition() *RuleUpsertOne {
+// UpdateLiveVersionID sets the "live_version_id" field to the value that was provided on create.
+func (u *RuleUpsertOne) UpdateLiveVersionID() *RuleUpsertOne {
 	return u.Update(func(s *RuleUpsert) {
-		s.UpdateCondition()
+		s.UpdateLiveVersionID()
 	})
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (u *RuleUpsertOne) ClearCondition() *RuleUpsertOne {
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (u *RuleUpsertOne) ClearLiveVersionID() *RuleUpsertOne {
 	return u.Update(func(s *RuleUpsert) {
-		s.ClearCondition()
+		s.ClearLiveVersionID()
 	})
 }
 
-// SetActions sets the "actions" field.
-func (u *RuleUpsertOne) SetActions(v string) *RuleUpsertOne {
+// SetDraftVersionID sets the "draft_version_id" field.
+func (u *RuleUpsertOne) SetDraftVersionID(v int64) *RuleUpsertOne {
 	return u.Update(func(s *RuleUpsert) {
-		s.SetActions(v)
+		s.SetDraftVersionID(v)
 	})
 }
 
-// UpdateActions sets the "actions" field to the value that was provided on create.
-func (u *RuleUpsertOne) UpdateActions() *RuleUpsertOne {
+// UpdateDraftVersionID sets the "draft_version_id" field to the value that was provided on create.
+func (u *RuleUpsertOne) UpdateDraftVersionID() *RuleUpsertOne {
 	return u.Update(func(s *RuleUpsert) {
-		s.UpdateActions()
+		s.UpdateDraftVersionID()
+	})
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (u *RuleUpsertOne) ClearDraftVersionID() *RuleUpsertOne {
+	return u.Update(func(s *RuleUpsert) {
+		s.ClearDraftVersionID()
 	})
 }
 
@@ -1041,38 +1083,45 @@ func (u *RuleUpsertBulk) ClearActivatedAt() *RuleUpsertBulk {
 	})
 }
 
-// SetCondition sets the "condition" field.
-func (u *RuleUpsertBulk) SetCondition(v string) *RuleUpsertBulk {
+// SetLiveVersionID sets the "live_version_id" field.
+func (u *RuleUpsertBulk) SetLiveVersionID(v int64) *RuleUpsertBulk {
 	return u.Update(func(s *RuleUpsert) {
-		s.SetCondition(v)
+		s.SetLiveVersionID(v)
 	})
 }
 
-// UpdateCondition sets the "condition" field to the value that was provided on create.
-func (u *RuleUpsertBulk) UpdateCondition() *RuleUpsertBulk {
+// UpdateLiveVersionID sets the "live_version_id" field to the value that was provided on create.
+func (u *RuleUpsertBulk) UpdateLiveVersionID() *RuleUpsertBulk {
 	return u.Update(func(s *RuleUpsert) {
-		s.UpdateCondition()
+		s.UpdateLiveVersionID()
 	})
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (u *RuleUpsertBulk) ClearCondition() *RuleUpsertBulk {
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (u *RuleUpsertBulk) ClearLiveVersionID() *RuleUpsertBulk {
 	return u.Update(func(s *RuleUpsert) {
-		s.ClearCondition()
+		s.ClearLiveVersionID()
 	})
 }
 
-// SetActions sets the "actions" field.
-func (u *RuleUpsertBulk) SetActions(v string) *RuleUpsertBulk {
+// SetDraftVersionID sets the "draft_version_id" field.
+func (u *RuleUpsertBulk) SetDraftVersionID(v int64) *RuleUpsertBulk {
 	return u.Update(func(s *RuleUpsert) {
-		s.SetActions(v)
+		s.SetDraftVersionID(v)
 	})
 }
 
-// UpdateActions sets the "actions" field to the value that was provided on create.
-func (u *RuleUpsertBulk) UpdateActions() *RuleUpsertBulk {
+// UpdateDraftVersionID sets the "draft_version_id" field to the value that was provided on create.
+func (u *RuleUpsertBulk) UpdateDraftVersionID() *RuleUpsertBulk {
 	return u.Update(func(s *RuleUpsert) {
-		s.UpdateActions()
+		s.UpdateDraftVersionID()
+	})
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (u *RuleUpsertBulk) ClearDraftVersionID() *RuleUpsertBulk {
+	return u.Update(func(s *RuleUpsert) {
+		s.ClearDraftVersionID()
 	})
 }
 

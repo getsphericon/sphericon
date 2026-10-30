@@ -137,14 +137,27 @@ func TestPlanFailsTheWholeBroadcastOnABrokenTemplate(t *testing.T) {
 }
 
 func TestPlanFailsOnABrokenSegment(t *testing.T) {
+	// A draft takes the copy of its Segment's Condition as it leaves draft (ADR 0065): a Segment it
+	// cannot read refuses the move, and the draft stays a draft.
 	t.Run("segment of another workspace", func(t *testing.T) {
 		d := newDelivery(t)
 		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentGlobexID).ExecX(d.t.Context())
 
 		_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastDraftID)
 
-		require.Error(t, err)
+		require.ErrorIs(t, err, broadcasts.ErrSegmentNotFound)
 		status := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastDraftID).Status
+		assert.Equal(t, broadcast.StatusDraft, status)
+	})
+
+	t.Run("sending broadcast whose condition was never copied", func(t *testing.T) {
+		d := newDelivery(t)
+		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetSegmentID(fixtures.SegmentProPlanID).ExecX(d.t.Context())
+
+		_, err := d.del.Plan(d.t.Context(), d.s, fixtures.BroadcastSendingID)
+
+		require.Error(t, err)
+		status := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastSendingID).Status
 		assert.Equal(t, broadcast.StatusFailed, status)
 	})
 

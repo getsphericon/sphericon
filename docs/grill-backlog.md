@@ -55,7 +55,7 @@ native editor under the existing `draft`/`inactive` approval gate. Open forks:
   output is an _artifact_ — a Segment, a `draft` Broadcast, an `inactive` Automation, a
   Template, a Recommendation. `send`/`activate` is **not** an AI capability unless the human
   grants it per token: the default token gets `read` + `write`-drafts only, and the send-class
-  scopes (`emails:send`, `broadcasts:send`, `automations:activate`) additionally need `mcp:send`
+  scopes (`emails:send`, `broadcasts:send`, `automations:publish`) additionally need `mcp:send`
   to be reachable over MCP at all (ADR 0016, "Send is a second lock"). Pulling the trigger is
   otherwise a human action. The `draft`/`inactive` states are the _boundary of what the AI can touch_, not just a review
   gate. The core choke points (Send-eligibility, Suppression, verified domain,

@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -31,10 +31,10 @@ type Automation struct {
 	Name string `json:"name,omitempty"`
 	// Status holds the value of the "status" field.
 	Status automation.Status `json:"status,omitempty"`
-	// TriggerEvent holds the value of the "trigger_event" field.
-	TriggerEvent string `json:"trigger_event,omitempty"`
-	// IntegrationID holds the value of the "integration_id" field.
-	IntegrationID *int64 `json:"integration_id,omitempty"`
+	// LiveVersionID holds the value of the "live_version_id" field.
+	LiveVersionID *int64 `json:"live_version_id,omitempty"`
+	// DraftVersionID holds the value of the "draft_version_id" field.
+	DraftVersionID *int64 `json:"draft_version_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationQuery when eager-loading is set.
 	Edges        AutomationEdges `json:"edges"`
@@ -51,11 +51,13 @@ type AutomationEdges struct {
 	Versions []*AutomationVersion `json:"versions,omitempty"`
 	// OutboundMessages holds the value of the outbound_messages edge.
 	OutboundMessages []*OutboundMessage `json:"outbound_messages,omitempty"`
-	// Integration holds the value of the integration edge.
-	Integration *Integration `json:"integration,omitempty"`
+	// LiveVersion holds the value of the live_version edge.
+	LiveVersion *AutomationVersion `json:"live_version,omitempty"`
+	// DraftVersion holds the value of the draft_version edge.
+	DraftVersion *AutomationVersion `json:"draft_version,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -96,15 +98,26 @@ func (e AutomationEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 	return nil, &NotLoadedError{edge: "outbound_messages"}
 }
 
-// IntegrationOrErr returns the Integration value or an error if the edge
+// LiveVersionOrErr returns the LiveVersion value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e AutomationEdges) IntegrationOrErr() (*Integration, error) {
-	if e.Integration != nil {
-		return e.Integration, nil
+func (e AutomationEdges) LiveVersionOrErr() (*AutomationVersion, error) {
+	if e.LiveVersion != nil {
+		return e.LiveVersion, nil
 	} else if e.loadedTypes[4] {
-		return nil, &NotFoundError{label: integration.Label}
+		return nil, &NotFoundError{label: automationversion.Label}
 	}
-	return nil, &NotLoadedError{edge: "integration"}
+	return nil, &NotLoadedError{edge: "live_version"}
+}
+
+// DraftVersionOrErr returns the DraftVersion value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AutomationEdges) DraftVersionOrErr() (*AutomationVersion, error) {
+	if e.DraftVersion != nil {
+		return e.DraftVersion, nil
+	} else if e.loadedTypes[5] {
+		return nil, &NotFoundError{label: automationversion.Label}
+	}
+	return nil, &NotLoadedError{edge: "draft_version"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -112,9 +125,9 @@ func (*Automation) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automation.FieldID, automation.FieldWorkspaceID, automation.FieldIntegrationID:
+		case automation.FieldID, automation.FieldWorkspaceID, automation.FieldLiveVersionID, automation.FieldDraftVersionID:
 			values[i] = new(sql.NullInt64)
-		case automation.FieldName, automation.FieldStatus, automation.FieldTriggerEvent:
+		case automation.FieldName, automation.FieldStatus:
 			values[i] = new(sql.NullString)
 		case automation.FieldCreatedAt, automation.FieldUpdatedAt, automation.FieldDiscardedAt:
 			values[i] = new(sql.NullTime)
@@ -176,18 +189,19 @@ func (_m *Automation) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Status = automation.Status(value.String)
 			}
-		case automation.FieldTriggerEvent:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field trigger_event", values[i])
-			} else if value.Valid {
-				_m.TriggerEvent = value.String
-			}
-		case automation.FieldIntegrationID:
+		case automation.FieldLiveVersionID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field integration_id", values[i])
+				return fmt.Errorf("unexpected type %T for field live_version_id", values[i])
 			} else if value.Valid {
-				_m.IntegrationID = new(int64)
-				*_m.IntegrationID = value.Int64
+				_m.LiveVersionID = new(int64)
+				*_m.LiveVersionID = value.Int64
+			}
+		case automation.FieldDraftVersionID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field draft_version_id", values[i])
+			} else if value.Valid {
+				_m.DraftVersionID = new(int64)
+				*_m.DraftVersionID = value.Int64
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -222,9 +236,14 @@ func (_m *Automation) QueryOutboundMessages() *OutboundMessageQuery {
 	return NewAutomationClient(_m.config).QueryOutboundMessages(_m)
 }
 
-// QueryIntegration queries the "integration" edge of the Automation entity.
-func (_m *Automation) QueryIntegration() *IntegrationQuery {
-	return NewAutomationClient(_m.config).QueryIntegration(_m)
+// QueryLiveVersion queries the "live_version" edge of the Automation entity.
+func (_m *Automation) QueryLiveVersion() *AutomationVersionQuery {
+	return NewAutomationClient(_m.config).QueryLiveVersion(_m)
+}
+
+// QueryDraftVersion queries the "draft_version" edge of the Automation entity.
+func (_m *Automation) QueryDraftVersion() *AutomationVersionQuery {
+	return NewAutomationClient(_m.config).QueryDraftVersion(_m)
 }
 
 // Update returns a builder for updating this Automation.
@@ -270,11 +289,13 @@ func (_m *Automation) String() string {
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
 	builder.WriteString(", ")
-	builder.WriteString("trigger_event=")
-	builder.WriteString(_m.TriggerEvent)
+	if v := _m.LiveVersionID; v != nil {
+		builder.WriteString("live_version_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
-	if v := _m.IntegrationID; v != nil {
-		builder.WriteString("integration_id=")
+	if v := _m.DraftVersionID; v != nil {
+		builder.WriteString("draft_version_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')

@@ -1,0 +1,136 @@
+# The Rule versions of rules.yml (ADR 0065): version 1 of every Rule has the id of its Rule. A
+# Rule ever published runs its version 1 (live); a Rule never published has it as its draft.
+# The Trigger events are in rule_version_triggers.yml. Actions are stored JSON: ent writes the
+# same text.
+- id: 100 # fixture: RuleTagClickedLiveVersion
+  rule_id: 100
+  version: 1
+  actions: '[{"type":"apply_tag","tag":"rule-clicked"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+# The draft above RuleTagClicked's live version: it applies another Tag. Publishing it makes
+# the next Firing apply that Tag; until then the Rule keeps applying rule-clicked.
+- id: 120 # fixture: RuleTagClickedDraftVersion
+  rule_id: 100
+  version: 2
+  actions: '[{"type":"apply_tag","tag":"rule-clicked-v2"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 101
+  rule_id: 101
+  version: 1
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}'
+  actions: '[{"type":"apply_tag","tag":"rule-vip-seen"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 102
+  rule_id: 102
+  version: 1
+  actions: '[{"type":"apply_tag","tag":"rule-inactive"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
+- id: 103
+  rule_id: 103
+  version: 1
+  actions: '[{"type":"apply_tag","tag":"rule-multi"},{"type":"remove_tag","tag":"vip"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 104
+  rule_id: 104
+  version: 1
+  actions: '[{"type":"apply_tag","tag":""},{"type":"apply_tag","tag":"rule-after-failure"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 105
+  rule_id: 105
+  version: 1
+  actions: '[{"type":"apply_tag","tag":"rule-later"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 110
+  rule_id: 110
+  version: 1
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"pricing"}]}'
+  actions: '[{"type":"apply_tag","tag":"rule-pricing"}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 106
+  rule_id: 106
+  version: 1
+  actions: '[{"type":"enroll_automation","automation_id":5560}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 107
+  rule_id: 107
+  version: 1
+  actions: '[{"type":"enroll_automation","automation_id":5566}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 108
+  rule_id: 108
+  version: 1
+  actions: '[{"type":"enroll_automation","automation_id":5561}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 109
+  rule_id: 109
+  version: 1
+  actions: '[{"type":"enroll_automation","automation_id":5562}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+# Globex's Rule was published twice: version 2 is live, version 1 is history. (Its number also
+# keeps the scoped-client test, which re-creates this row in Acme, clear of Acme's versions 1.)
+- id: 900
+  rule_id: 900
+  version: 2
+  actions: '[{"type":"apply_tag","tag":"globex-rule"}]'
+  workspace_id: 2
+  created_at: '{{daysAgo 35}}'
+  updated_at: '{{daysAgo 35}}'
+- id: 901
+  rule_id: 900
+  version: 1
+  actions: '[{"type":"apply_tag","tag":"globex-rule"}]'
+  workspace_id: 2
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 300
+  rule_id: 300
+  version: 1
+  actions: '[{"type":"apply_tag","tag":"initech-rule"}]'
+  workspace_id: 3
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 21001
+  rule_id: 21001
+  version: 1
+  actions: '[{"type":"apply_tag","tag":"pricing-interest"}]'
+  workspace_id: 20
+  created_at: '{{daysAgo 50}}'
+  updated_at: '{{daysAgo 50}}'
+- id: 21002
+  rule_id: 21002
+  version: 1
+  actions: '[{"type":"enroll_automation","automation_id":20001}]'
+  workspace_id: 20
+  created_at: '{{daysAgo 50}}'
+  updated_at: '{{daysAgo 50}}'
+- id: 21003
+  rule_id: 21003
+  version: 1
+  actions: '[{"type":"apply_tag","tag":"customer"},{"type":"remove_tag","tag":"trial"}]'
+  workspace_id: 20
+  created_at: '{{daysAgo 6}}'
+  updated_at: '{{daysAgo 6}}'

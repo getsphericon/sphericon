@@ -39,14 +39,23 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAu
 		siteapiSiteAutomationResource.ID = site.EntityId((*source).ID)
 		siteapiSiteAutomationResource.Name = (*source).Name
 		siteapiSiteAutomationResource.Status = site.SiteAutomationStatus((*source).Status)
-		siteapiSiteAutomationResource.TriggerEvent = (*source).TriggerEvent
-		siteapiSiteAutomationResource.Steps = automationSteps(source)
-		siteapiSiteAutomationResource.IntegrationId = optNilEntityID((*source).IntegrationID)
+		siteapiSiteAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
+		siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
 		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteAutomationResource
+}
+func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) site.SiteAutomationVersion {
+	var siteapiSiteAutomationVersion site.SiteAutomationVersion
+	if source != nil {
+		siteapiSiteAutomationVersion.Number = count((*source).Version)
+		siteapiSiteAutomationVersion.TriggerEvent = (*source).TriggerEvent
+		siteapiSiteAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
+		siteapiSiteAutomationVersion.Steps = automationSteps(source)
+	}
+	return siteapiSiteAutomationVersion
 }
 func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKitResource {
 	var siteapiSiteBrandKitResource site.SiteBrandKitResource
@@ -505,15 +514,24 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) site.SiteRuleResource {
 		siteapiSiteRuleResource.ID = site.EntityId((*source).ID)
 		siteapiSiteRuleResource.Name = (*source).Name
 		siteapiSiteRuleResource.Status = site.SiteRuleStatus((*source).Status)
-		siteapiSiteRuleResource.TriggerEvents = ruleTriggerEvents(source)
-		siteapiSiteRuleResource.Condition = segmentCondition((*source).Condition)
-		siteapiSiteRuleResource.Actions = ruleActions((*source).Actions)
+		siteapiSiteRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
+		siteapiSiteRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		siteapiSiteRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
 		siteapiSiteRuleResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteRuleResource
+}
+func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) site.SiteRuleVersion {
+	var siteapiSiteRuleVersion site.SiteRuleVersion
+	if source != nil {
+		siteapiSiteRuleVersion.Number = count((*source).Version)
+		siteapiSiteRuleVersion.TriggerEvents = ruleTriggerEvents(source)
+		siteapiSiteRuleVersion.Condition = segmentCondition((*source).Condition)
+		siteapiSiteRuleVersion.Actions = ruleActions((*source).Actions)
+	}
+	return siteapiSiteRuleVersion
 }
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentResource {
 	var siteapiSiteSegmentResource site.SiteSegmentResource

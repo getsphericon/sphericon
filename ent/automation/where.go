@@ -80,14 +80,14 @@ func Name(v string) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldName, v))
 }
 
-// TriggerEvent applies equality check predicate on the "trigger_event" field. It's identical to TriggerEventEQ.
-func TriggerEvent(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldTriggerEvent, v))
+// LiveVersionID applies equality check predicate on the "live_version_id" field. It's identical to LiveVersionIDEQ.
+func LiveVersionID(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldLiveVersionID, v))
 }
 
-// IntegrationID applies equality check predicate on the "integration_id" field. It's identical to IntegrationIDEQ.
-func IntegrationID(v int64) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldIntegrationID, v))
+// DraftVersionID applies equality check predicate on the "draft_version_id" field. It's identical to DraftVersionIDEQ.
+func DraftVersionID(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldDraftVersionID, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -325,99 +325,64 @@ func StatusNotIn(vs ...Status) predicate.Automation {
 	return predicate.Automation(sql.FieldNotIn(FieldStatus, vs...))
 }
 
-// TriggerEventEQ applies the EQ predicate on the "trigger_event" field.
-func TriggerEventEQ(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldTriggerEvent, v))
+// LiveVersionIDEQ applies the EQ predicate on the "live_version_id" field.
+func LiveVersionIDEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldLiveVersionID, v))
 }
 
-// TriggerEventNEQ applies the NEQ predicate on the "trigger_event" field.
-func TriggerEventNEQ(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldNEQ(FieldTriggerEvent, v))
+// LiveVersionIDNEQ applies the NEQ predicate on the "live_version_id" field.
+func LiveVersionIDNEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNEQ(FieldLiveVersionID, v))
 }
 
-// TriggerEventIn applies the In predicate on the "trigger_event" field.
-func TriggerEventIn(vs ...string) predicate.Automation {
-	return predicate.Automation(sql.FieldIn(FieldTriggerEvent, vs...))
+// LiveVersionIDIn applies the In predicate on the "live_version_id" field.
+func LiveVersionIDIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldIn(FieldLiveVersionID, vs...))
 }
 
-// TriggerEventNotIn applies the NotIn predicate on the "trigger_event" field.
-func TriggerEventNotIn(vs ...string) predicate.Automation {
-	return predicate.Automation(sql.FieldNotIn(FieldTriggerEvent, vs...))
+// LiveVersionIDNotIn applies the NotIn predicate on the "live_version_id" field.
+func LiveVersionIDNotIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNotIn(FieldLiveVersionID, vs...))
 }
 
-// TriggerEventGT applies the GT predicate on the "trigger_event" field.
-func TriggerEventGT(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldGT(FieldTriggerEvent, v))
+// LiveVersionIDIsNil applies the IsNil predicate on the "live_version_id" field.
+func LiveVersionIDIsNil() predicate.Automation {
+	return predicate.Automation(sql.FieldIsNull(FieldLiveVersionID))
 }
 
-// TriggerEventGTE applies the GTE predicate on the "trigger_event" field.
-func TriggerEventGTE(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldGTE(FieldTriggerEvent, v))
+// LiveVersionIDNotNil applies the NotNil predicate on the "live_version_id" field.
+func LiveVersionIDNotNil() predicate.Automation {
+	return predicate.Automation(sql.FieldNotNull(FieldLiveVersionID))
 }
 
-// TriggerEventLT applies the LT predicate on the "trigger_event" field.
-func TriggerEventLT(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldLT(FieldTriggerEvent, v))
+// DraftVersionIDEQ applies the EQ predicate on the "draft_version_id" field.
+func DraftVersionIDEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldDraftVersionID, v))
 }
 
-// TriggerEventLTE applies the LTE predicate on the "trigger_event" field.
-func TriggerEventLTE(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldLTE(FieldTriggerEvent, v))
+// DraftVersionIDNEQ applies the NEQ predicate on the "draft_version_id" field.
+func DraftVersionIDNEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNEQ(FieldDraftVersionID, v))
 }
 
-// TriggerEventContains applies the Contains predicate on the "trigger_event" field.
-func TriggerEventContains(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldContains(FieldTriggerEvent, v))
+// DraftVersionIDIn applies the In predicate on the "draft_version_id" field.
+func DraftVersionIDIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldIn(FieldDraftVersionID, vs...))
 }
 
-// TriggerEventHasPrefix applies the HasPrefix predicate on the "trigger_event" field.
-func TriggerEventHasPrefix(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldHasPrefix(FieldTriggerEvent, v))
+// DraftVersionIDNotIn applies the NotIn predicate on the "draft_version_id" field.
+func DraftVersionIDNotIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNotIn(FieldDraftVersionID, vs...))
 }
 
-// TriggerEventHasSuffix applies the HasSuffix predicate on the "trigger_event" field.
-func TriggerEventHasSuffix(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldHasSuffix(FieldTriggerEvent, v))
+// DraftVersionIDIsNil applies the IsNil predicate on the "draft_version_id" field.
+func DraftVersionIDIsNil() predicate.Automation {
+	return predicate.Automation(sql.FieldIsNull(FieldDraftVersionID))
 }
 
-// TriggerEventEqualFold applies the EqualFold predicate on the "trigger_event" field.
-func TriggerEventEqualFold(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldEqualFold(FieldTriggerEvent, v))
-}
-
-// TriggerEventContainsFold applies the ContainsFold predicate on the "trigger_event" field.
-func TriggerEventContainsFold(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldContainsFold(FieldTriggerEvent, v))
-}
-
-// IntegrationIDEQ applies the EQ predicate on the "integration_id" field.
-func IntegrationIDEQ(v int64) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldIntegrationID, v))
-}
-
-// IntegrationIDNEQ applies the NEQ predicate on the "integration_id" field.
-func IntegrationIDNEQ(v int64) predicate.Automation {
-	return predicate.Automation(sql.FieldNEQ(FieldIntegrationID, v))
-}
-
-// IntegrationIDIn applies the In predicate on the "integration_id" field.
-func IntegrationIDIn(vs ...int64) predicate.Automation {
-	return predicate.Automation(sql.FieldIn(FieldIntegrationID, vs...))
-}
-
-// IntegrationIDNotIn applies the NotIn predicate on the "integration_id" field.
-func IntegrationIDNotIn(vs ...int64) predicate.Automation {
-	return predicate.Automation(sql.FieldNotIn(FieldIntegrationID, vs...))
-}
-
-// IntegrationIDIsNil applies the IsNil predicate on the "integration_id" field.
-func IntegrationIDIsNil() predicate.Automation {
-	return predicate.Automation(sql.FieldIsNull(FieldIntegrationID))
-}
-
-// IntegrationIDNotNil applies the NotNil predicate on the "integration_id" field.
-func IntegrationIDNotNil() predicate.Automation {
-	return predicate.Automation(sql.FieldNotNull(FieldIntegrationID))
+// DraftVersionIDNotNil applies the NotNil predicate on the "draft_version_id" field.
+func DraftVersionIDNotNil() predicate.Automation {
+	return predicate.Automation(sql.FieldNotNull(FieldDraftVersionID))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
@@ -512,21 +477,44 @@ func HasOutboundMessagesWith(preds ...predicate.OutboundMessage) predicate.Autom
 	})
 }
 
-// HasIntegration applies the HasEdge predicate on the "integration" edge.
-func HasIntegration() predicate.Automation {
+// HasLiveVersion applies the HasEdge predicate on the "live_version" edge.
+func HasLiveVersion() predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, LiveVersionTable, LiveVersionColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasIntegrationWith applies the HasEdge predicate on the "integration" edge with a given conditions (other predicates).
-func HasIntegrationWith(preds ...predicate.Integration) predicate.Automation {
+// HasLiveVersionWith applies the HasEdge predicate on the "live_version" edge with a given conditions (other predicates).
+func HasLiveVersionWith(preds ...predicate.AutomationVersion) predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
-		step := newIntegrationStep()
+		step := newLiveVersionStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasDraftVersion applies the HasEdge predicate on the "draft_version" edge.
+func HasDraftVersion() predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, DraftVersionTable, DraftVersionColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDraftVersionWith applies the HasEdge predicate on the "draft_version" edge with a given conditions (other predicates).
+func HasDraftVersionWith(preds ...predicate.AutomationVersion) predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := newDraftVersionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

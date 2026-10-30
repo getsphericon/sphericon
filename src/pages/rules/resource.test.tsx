@@ -10,6 +10,7 @@ import {
   handleSiteRulesDryRun,
   handleSiteRulesCreate,
   handleSiteRulesGet,
+  handleSiteRulesRevert,
   handleSiteRulesUpdate,
 } from '../../generated/site/msw.gen.ts'
 import type {
@@ -34,11 +35,27 @@ const CONDITION: SiteConditionGroup = {
 const STORED: SiteRuleResource = {
   id: '7',
   name: 'Tag signups',
-  status: 'draft',
-  triggerEvents: ['signed_up'],
-  condition: CONDITION,
-  actions: [{ type: 'apply_tag', tag: 'new' }],
+  status: 'inactive',
+  live: null,
+  draft: {
+    number: 1,
+    triggerEvents: ['signed_up'],
+    condition: CONDITION,
+    actions: [{ type: 'apply_tag', tag: 'new' }],
+  },
   ...TIMESTAMPS,
+}
+
+// Published as version 1, with a draft above it that applies another Tag.
+const EDITED: SiteRuleResource = {
+  ...STORED,
+  status: 'active',
+  live: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'live' }] },
+  draft: {
+    number: 2,
+    triggerEvents: ['signed_up'],
+    actions: [{ type: 'apply_tag', tag: 'drafted' }],
+  },
 }
 
 const CREATE_ROUTE = routeMount(rulesCreateRoute, { workspaceId: 'TestWs01' })
@@ -116,7 +133,11 @@ test('editing shows the stored rule and saves a change, a removed action include
     handleSiteRulesGet({ body: STORED }),
     handleSiteRulesUpdate(async ({ request }) => {
       bodies.push(await request.json())
-      return HttpResponse.json({ ...STORED, name: 'Renamed', actions: [] })
+      return HttpResponse.json({
+        ...STORED,
+        name: 'Renamed',
+        draft: { number: 1, triggerEvents: ['signed_up'], condition: CONDITION, actions: [] },
+      })
     }),
   )
 
@@ -139,8 +160,8 @@ const automation = (id: string, name: string): SiteAutomationResource => ({
   id,
   name,
   status: 'active',
-  triggerEvent: 'signed_up',
-  steps: [],
+  live: { number: 1, triggerEvent: 'signed_up', steps: [] },
+  draft: null,
   ...TIMESTAMPS,
 })
 
@@ -152,7 +173,15 @@ test('an enroll action picks one of the automations and saves it', async () => {
       body: page([automation('5', 'Welcome flow'), automation('6', 'Nurture flow')], 2),
     }),
     handleSiteRulesGet({
-      body: { ...STORED, actions: [{ type: 'enroll_automation', automationId: '5' }] },
+      body: {
+        ...STORED,
+        draft: {
+          number: 1,
+          triggerEvents: ['signed_up'],
+          condition: CONDITION,
+          actions: [{ type: 'enroll_automation', automationId: '5' }],
+        },
+      },
     }),
     handleSiteRulesUpdate(async ({ request }) => {
       bodies.push(await request.json())
@@ -209,4 +238,37 @@ test('trying the rule on a recorded event shows whether it would fire and which 
   await expect.poll(() => bodies).toEqual([{ eventId: '55' }])
   await expect.element(screen.getByText('Would fire. These actions would run:')).toBeInTheDocument()
   await expect.element(screen.getByText('Apply tag "new"')).toBeInTheDocument()
+})
+
+test('the editor edits the draft of a live rule, and Publish waits for unsaved changes', async () => {
+  serveCatalogue()
+  worker.use(handleSiteRulesGet({ body: EDITED }))
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('drafted')
+  await expect.element(screen.getByText('Unpublished changes')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
+  await screen.getByLabelText('Tag').fill('edited')
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
+})
+
+test('after a revert the editor shows the live version', async () => {
+  const reverted: string[] = []
+  const afterRevert = { ...EDITED, draft: null }
+  serveCatalogue()
+  worker.use(
+    handleSiteRulesGet(() => HttpResponse.json(reverted.length > 0 ? afterRevert : EDITED)),
+    handleSiteRulesRevert(({ params }) => {
+      reverted.push(params.id)
+      return HttpResponse.json(afterRevert)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('drafted')
+  await screen.getByRole('button', { name: 'Revert' }).click()
+
+  await expect.poll(() => reverted).toEqual(['7'])
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('live')
 })

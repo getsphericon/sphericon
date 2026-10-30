@@ -205,6 +205,9 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	mod := automations.New(cipher, bus, testhelper.Renderer())
 	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
 	require.NoError(t, err)
+	// The edit is a draft until it is published (ADR 0065); the Enrollment begins on the live one.
+	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID)
+	require.NoError(t, err)
 	runID, enrolled, err := automations.Enroll(ctx, e.scoped, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, enrolled)

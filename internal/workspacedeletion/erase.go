@@ -34,7 +34,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -221,7 +222,8 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).OutboundMessage, outboundmessage.IDIn),
 	stepOf((*ent.Scoped).BroadcastRecipient, broadcastrecipient.IDIn),
 	stepOf((*ent.Scoped).RuleFiring, rulefiring.IDIn),
-	stepOf((*ent.Scoped).RuleTrigger, ruletrigger.IDIn),
+	stepOf((*ent.Scoped).RuleVersionTrigger, ruleversiontrigger.IDIn),
+	stepOf((*ent.Scoped).RuleVersion, ruleversion.IDIn),
 	purgeStepOf((*ent.Scoped).Rule, rule.IDIn),
 	stepOf((*ent.Scoped).AutomationRun, automationrun.IDIn),
 	stepOf((*ent.Scoped).AutomationVersion, automationversion.IDIn),

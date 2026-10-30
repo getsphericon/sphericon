@@ -133,11 +133,11 @@ func (h *Handlers) SiteRulesUnarchive(ctx context.Context, params siteapi.SiteRu
 	return &res, nil
 }
 
-// SiteRulesActivate makes the Rule react to the Events recorded from now on.
-func (h *Handlers) SiteRulesActivate(ctx context.Context, params siteapi.SiteRulesActivateParams) (siteapi.SiteRulesActivateRes, error) {
+// SiteRulesPublish makes the Rule active: it reacts to the Events recorded from now on.
+func (h *Handlers) SiteRulesPublish(ctx context.Context, params siteapi.SiteRulesPublishParams) (siteapi.SiteRulesPublishRes, error) {
 	ws := workspaceScope(ctx)
 
-	r, err := h.rules.Activate(ctx, ws, int64(params.ID))
+	r, err := h.rules.Publish(ctx, ws, int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -145,6 +145,19 @@ func (h *Handlers) SiteRulesActivate(ctx context.Context, params siteapi.SiteRul
 	return &res, nil
 }
 
+// SiteRulesRevert drops the Rule's draft: its live version is again the latest.
+func (h *Handlers) SiteRulesRevert(ctx context.Context, params siteapi.SiteRulesRevertParams) (siteapi.SiteRulesRevertRes, error) {
+	ws := workspaceScope(ctx)
+
+	r, err := h.rules.Revert(ctx, ws, int64(params.ID))
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+// SiteRulesDeactivate makes the Rule inactive: it stops firing.
 func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteRulesDeactivateParams) (siteapi.SiteRulesDeactivateRes, error) {
 	ws := workspaceScope(ctx)
 

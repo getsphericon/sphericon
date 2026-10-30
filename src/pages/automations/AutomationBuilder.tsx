@@ -28,6 +28,7 @@ import i18next from 'i18next'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
 
+import { DraftControls } from '../../components/DraftControls.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import {
   siteAutomationsGetQueryKey,
@@ -35,13 +36,17 @@ import {
   siteAutomationsUpdateMutation,
   siteIntegrationsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteAutomationResource,
+  SiteAutomationVersion,
+} from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { i18n } from '../../i18n.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { getApiErrorMessage } from '../../utils/apiErrors.ts'
 import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
+import { automationDraftActions } from './draftActions.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { LeaveGuard } from './LeaveGuard.tsx'
 import { automationSnapshot } from './leaveSnapshot.ts'
@@ -113,6 +118,8 @@ function useAutomationBarForm(name: string, integrationId: string | null) {
 interface AutomationBuilderProps {
   workspaceId: string
   automation: SiteAutomationResource
+  // The version the canvas edits and a save writes over: the draft, else the live one.
+  edited: SiteAutomationVersion
 }
 
 // The SDK owns its own editor theme and only auto-detects it from
@@ -134,21 +141,31 @@ function ThemeSync() {
 }
 
 // The bar floating over the canvas replaces the SDK's own top bar: the way back, the
-// automation's name, the failed Enrollments and the Save that persists the canvas. It sits inside
-// <WorkflowBuilder.Root> to reach the save action, and under the SDK's i18next instance, which
-// does not hold the app's strings, so it is bound back to the app's instance.
+// automation's name, the failed Enrollments, the Save that persists the canvas to the draft, and
+// Publish and Revert (ADR 0065), which wait for unsaved changes to be saved. It sits inside
+// <WorkflowBuilder.Root> to reach the save action and the canvas, and under the SDK's i18next
+// instance, which does not hold the app's strings, so it is bound back to the app's instance.
 function BuilderBar({
   form,
   workspaceId,
-  automationId,
+  automation,
+  saved,
   onSave,
 }: {
   form: AutomationBarForm
   workspaceId: string
-  automationId: string
+  automation: SiteAutomationResource
+  saved: string
   onSave: (graph: AutomationGraph) => Promise<DidSaveStatus>
 }) {
   const { t } = useTranslation()
+  const canvasNodes = useStore((state) => state.nodes)
+  const canvasEdges = useStore((state) => state.edges)
+  const dirty =
+    automationSnapshot(form.values.name, form.values.integrationId, {
+      nodes: canvasNodes,
+      edges: canvasEdges,
+    }) !== saved
   const integrationsQuery = useQuery(
     siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
   )
@@ -195,7 +212,7 @@ function BuilderBar({
               )
             }
           />
-          <FailedEnrollments workspaceId={workspaceId} automationId={automationId} />
+          <FailedEnrollments workspaceId={workspaceId} automationId={automation.id} />
           <Button
             loading={saveMutation.isPending}
             onClick={() => {
@@ -206,17 +223,25 @@ function BuilderBar({
           >
             {t(($) => $.actions.save)}
           </Button>
+          <DraftControls
+            workspaceId={workspaceId}
+            resource={automation}
+            dirty={dirty}
+            {...automationDraftActions(t, workspaceId, automation.id)}
+          />
         </Group>
       </Group>
     </Paper>
   )
 }
 
-// AutomationBuilder hosts the visual flow editor. The name is edited in the bar over the canvas;
-// the Trigger is the canvas's first node. Save drives onDataSave, which converts the graph to
-// the trigger event and the linear []step definition and persists name, trigger and steps
-// together through the generated update mutation.
-export function AutomationBuilder({ workspaceId, automation }: AutomationBuilderProps) {
+// AutomationBuilder hosts the visual flow editor. It edits the draft, or the live version when
+// there is none (ADR 0065); a save writes the draft and leaves the live version alone. The name is
+// edited in the bar over the canvas; the Trigger is the canvas's first node. Save drives
+// onDataSave, which converts the graph to the trigger event and the linear []step definition and
+// persists name, trigger and steps together through the generated update mutation. The page
+// remounts it when the version it edits changes (a publish or a revert).
+export function AutomationBuilder({ workspaceId, automation, edited }: AutomationBuilderProps) {
   const { t } = useTranslation()
   const notify = useNotify()
   const queryClient = useQueryClient()
@@ -233,17 +258,17 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     return () => style.remove()
   }, [])
 
-  const form = useAutomationBarForm(automation.name, automation.integrationId ?? null)
+  const form = useAutomationBarForm(automation.name, edited.integrationId ?? null)
 
   const initialGraph = useMemo(() => {
     const labels = Object.fromEntries(
       nodeTypes.flatMap((item) => ('type' in item ? [[item.type, item.label]] : [])),
     )
-    return stepsToGraph(automation.triggerEvent, automation.steps, labels)
-  }, [automation.triggerEvent, automation.steps, nodeTypes])
+    return stepsToGraph(edited.triggerEvent, edited.steps, labels)
+  }, [edited.triggerEvent, edited.steps, nodeTypes])
 
   const [saved, setSaved] = useState(() =>
-    automationSnapshot(automation.name, automation.integrationId ?? null, initialGraph),
+    automationSnapshot(automation.name, edited.integrationId ?? null, initialGraph),
   )
 
   const updateMutation = useMutation({
@@ -364,7 +389,8 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
               <BuilderBar
                 form={form}
                 workspaceId={workspaceId}
-                automationId={automation.id}
+                automation={automation}
+                saved={saved}
                 onSave={saveGraph}
               />
             </I18nextProvider>

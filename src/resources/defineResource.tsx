@@ -99,11 +99,18 @@ export interface ResourceDescription<
     created: TCreated,
     params: { workspaceId: string },
   ) => { to: string; params: Record<string, string> }
+  // The edited values of a loaded resource whose fields are not at its top level (a Rule keeps
+  // its definition in its draft or live version). Without it the resource is edited as it is.
+  editedValues?: (loaded: TResource) => ResourceValues<TPayload>
+  // Which revision of the resource the form edits, when something besides the form's own save
+  // can replace what it edits (a Rule's draft dropped by Revert): a new revision reloads the form.
+  revision?: (loaded: TResource) => string
 }
 
 export interface ResourceEditPageProps<TResource> {
-  // Extra content rendered under the form, given the loaded resource (e.g. delivery actions).
-  children?: (loaded: TResource) => ReactNode
+  // Extra content rendered under the form, given the loaded resource (e.g. delivery actions) and
+  // whether the form holds unsaved changes.
+  children?: (loaded: TResource, form: { dirty: boolean }) => ReactNode
 }
 
 export function defineResource<
@@ -182,7 +189,9 @@ export function defineResource<
   // (the schema's encode direction) and never renders blank. It is keyed by resource id by the
   // caller and not by the fetched data: a background refetch (invalidation, window focus) must
   // not remount the form and clobber unsaved edits. After a successful save the form is reset
-  // to the saved resource instead, so it is clean and shows the server's normalized values.
+  // to the saved resource instead, so it is clean and shows the server's normalized values. A
+  // resource with revisions is keyed by its revision too: when another action replaces what the
+  // form edits, the form reloads.
   function EditForm({
     workspaceId,
     id,
@@ -192,7 +201,9 @@ export function defineResource<
     const { t } = useTranslation()
     const texts = resource.texts(t)
 
-    const form = useResourceForm(resource.schema.toValues(loaded), resource.schema.update)
+    const values = (from: TResource) =>
+      resource.schema.toValues(resource.editedValues?.(from) ?? from)
+    const form = useResourceForm(values(loaded), resource.schema.update)
 
     const mutation = useResourceMutation({
       mutation: resource.updateMutation(),
@@ -203,9 +214,9 @@ export function defineResource<
       successMessage: texts.updated,
       errorTitle: texts.saveErrorTitle,
       onDone: (saved) => {
-        const values = resource.schema.toValues(saved)
-        form.setValues(values)
-        form.resetDirty(values)
+        const next = values(saved)
+        form.setValues(next)
+        form.resetDirty(next)
       },
     })
 
@@ -217,7 +228,7 @@ export function defineResource<
           isPending={mutation.isPending}
           onSubmit={(body) => mutation.mutate({ path: { workspaceId, id }, body })}
         />
-        {children?.(loaded)}
+        {children?.(loaded, { dirty: form.isDirty() })}
       </Stack>
     )
   }
@@ -245,7 +256,7 @@ export function defineResource<
 
     return (
       <EditForm
-        key={id}
+        key={`${id}:${resource.revision?.(query.data) ?? ''}`}
         workspaceId={workspaceId}
         id={id}
         loaded={query.data}

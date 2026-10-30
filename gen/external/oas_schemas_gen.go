@@ -148,7 +148,7 @@ const (
 	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
 	ApiTokenScopeEmailsSend            ApiTokenScope = "emails:send"
 	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
-	ApiTokenScopeAutomationsActivate   ApiTokenScope = "automations:activate"
+	ApiTokenScopeAutomationsPublish    ApiTokenScope = "automations:publish"
 	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
@@ -186,7 +186,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeIntegrationsRead,
 		ApiTokenScopeEmailsSend,
 		ApiTokenScopeBroadcastsSend,
-		ApiTokenScopeAutomationsActivate,
+		ApiTokenScopeAutomationsPublish,
 		ApiTokenScopeMcpSend,
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
@@ -247,7 +247,7 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeBroadcastsSend:
 		return []byte(s), nil
-	case ApiTokenScopeAutomationsActivate:
+	case ApiTokenScopeAutomationsPublish:
 		return []byte(s), nil
 	case ApiTokenScopeMcpSend:
 		return []byte(s), nil
@@ -343,8 +343,8 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeBroadcastsSend:
 		*s = ApiTokenScopeBroadcastsSend
 		return nil
-	case ApiTokenScopeAutomationsActivate:
-		*s = ApiTokenScopeAutomationsActivate
+	case ApiTokenScopeAutomationsPublish:
+		*s = ApiTokenScopeAutomationsPublish
 		return nil
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
@@ -842,8 +842,9 @@ func (s *AutomationHttpHeader) SetValue(val OptString) {
 	s.Value = val
 }
 
-// An Automation: an event-triggered, ordered sequence of steps. Created automations are always draft;
-// activating is a separate, send-class operation.
+// An Automation: an event-triggered, ordered sequence of steps. Edits write a draft beside the live
+// version, and only publishing (a send-class operation) changes what it does. Created automations are
+// always inactive, with the definition as their draft.
 // Ref: #/components/schemas/AutomationResource
 type AutomationResource struct {
 	// Unique identifier.
@@ -852,12 +853,10 @@ type AutomationResource struct {
 	Name string `json:"name"`
 	// Lifecycle status.
 	Status AutomationStatus `json:"status"`
-	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
-	TriggerEvent string `json:"triggerEvent"`
-	// The automation's ordered, linear steps.
-	Steps []AutomationStep `json:"steps"`
-	// Sending integration of the email steps; null means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
+	// What it does now: the version new enrollments begin on; null until first published.
+	Live NilAutomationVersion `json:"live"`
+	// Unpublished changes, the one version above live; null when there are none.
+	Draft NilAutomationVersion `json:"draft"`
 	// When the automation was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Creation timestamp.
@@ -881,19 +880,14 @@ func (s *AutomationResource) GetStatus() AutomationStatus {
 	return s.Status
 }
 
-// GetTriggerEvent returns the value of TriggerEvent.
-func (s *AutomationResource) GetTriggerEvent() string {
-	return s.TriggerEvent
+// GetLive returns the value of Live.
+func (s *AutomationResource) GetLive() NilAutomationVersion {
+	return s.Live
 }
 
-// GetSteps returns the value of Steps.
-func (s *AutomationResource) GetSteps() []AutomationStep {
-	return s.Steps
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *AutomationResource) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
+// GetDraft returns the value of Draft.
+func (s *AutomationResource) GetDraft() NilAutomationVersion {
+	return s.Draft
 }
 
 // GetArchivedAt returns the value of ArchivedAt.
@@ -926,19 +920,14 @@ func (s *AutomationResource) SetStatus(val AutomationStatus) {
 	s.Status = val
 }
 
-// SetTriggerEvent sets the value of TriggerEvent.
-func (s *AutomationResource) SetTriggerEvent(val string) {
-	s.TriggerEvent = val
+// SetLive sets the value of Live.
+func (s *AutomationResource) SetLive(val NilAutomationVersion) {
+	s.Live = val
 }
 
-// SetSteps sets the value of Steps.
-func (s *AutomationResource) SetSteps(val []AutomationStep) {
-	s.Steps = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *AutomationResource) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
+// SetDraft sets the value of Draft.
+func (s *AutomationResource) SetDraft(val NilAutomationVersion) {
+	s.Draft = val
 }
 
 // SetArchivedAt sets the value of ArchivedAt.
@@ -956,37 +945,38 @@ func (s *AutomationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*AutomationResource) automationsActivateRes()   {}
 func (*AutomationResource) automationsArchiveRes()    {}
 func (*AutomationResource) automationsCreateRes()     {}
 func (*AutomationResource) automationsDeactivateRes() {}
 func (*AutomationResource) automationsGetRes()        {}
+func (*AutomationResource) automationsPublishRes()    {}
+func (*AutomationResource) automationsRevertRes()     {}
 func (*AutomationResource) automationsUnarchiveRes()  {}
 func (*AutomationResource) automationsUpdateRes()     {}
 
-// Automation lifecycle status.
+// Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
 // Ref: #/components/schemas/AutomationStatus
 type AutomationStatus string
 
 const (
-	AutomationStatusDraft  AutomationStatus = "draft"
-	AutomationStatusActive AutomationStatus = "active"
+	AutomationStatusActive   AutomationStatus = "active"
+	AutomationStatusInactive AutomationStatus = "inactive"
 )
 
 // AllValues returns all AutomationStatus values.
 func (AutomationStatus) AllValues() []AutomationStatus {
 	return []AutomationStatus{
-		AutomationStatusDraft,
 		AutomationStatusActive,
+		AutomationStatusInactive,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s AutomationStatus) MarshalText() ([]byte, error) {
 	switch s {
-	case AutomationStatusDraft:
-		return []byte(s), nil
 	case AutomationStatusActive:
+		return []byte(s), nil
+	case AutomationStatusInactive:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -996,11 +986,11 @@ func (s AutomationStatus) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *AutomationStatus) UnmarshalText(data []byte) error {
 	switch AutomationStatus(data) {
-	case AutomationStatusDraft:
-		*s = AutomationStatusDraft
-		return nil
 	case AutomationStatusActive:
 		*s = AutomationStatusActive
+		return nil
+	case AutomationStatusInactive:
+		*s = AutomationStatusInactive
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -1254,25 +1244,58 @@ func (s *AutomationStepType) UnmarshalText(data []byte) error {
 	}
 }
 
-type AutomationsActivateBadRequest ProblemDetails
+// One version of an automation's definition: what publishing makes it do (ADR 0065).
+// Ref: #/components/schemas/AutomationVersion
+type AutomationVersion struct {
+	// 1 for the first version, plus one per version after it.
+	Number int32 `json:"number"`
+	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
+	TriggerEvent string `json:"triggerEvent"`
+	// Sending integration of the email steps; null means the workspace default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The ordered, linear steps.
+	Steps []AutomationStep `json:"steps"`
+}
 
-func (*AutomationsActivateBadRequest) automationsActivateRes() {}
+// GetNumber returns the value of Number.
+func (s *AutomationVersion) GetNumber() int32 {
+	return s.Number
+}
 
-type AutomationsActivateForbidden ProblemDetails
+// GetTriggerEvent returns the value of TriggerEvent.
+func (s *AutomationVersion) GetTriggerEvent() string {
+	return s.TriggerEvent
+}
 
-func (*AutomationsActivateForbidden) automationsActivateRes() {}
+// GetIntegrationId returns the value of IntegrationId.
+func (s *AutomationVersion) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
 
-type AutomationsActivateNotFound ProblemDetails
+// GetSteps returns the value of Steps.
+func (s *AutomationVersion) GetSteps() []AutomationStep {
+	return s.Steps
+}
 
-func (*AutomationsActivateNotFound) automationsActivateRes() {}
+// SetNumber sets the value of Number.
+func (s *AutomationVersion) SetNumber(val int32) {
+	s.Number = val
+}
 
-type AutomationsActivateUnauthorized ProblemDetails
+// SetTriggerEvent sets the value of TriggerEvent.
+func (s *AutomationVersion) SetTriggerEvent(val string) {
+	s.TriggerEvent = val
+}
 
-func (*AutomationsActivateUnauthorized) automationsActivateRes() {}
+// SetIntegrationId sets the value of IntegrationId.
+func (s *AutomationVersion) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
 
-type AutomationsActivateUnprocessableEntity ProblemDetails
-
-func (*AutomationsActivateUnprocessableEntity) automationsActivateRes() {}
+// SetSteps sets the value of Steps.
+func (s *AutomationVersion) SetSteps(val []AutomationStep) {
+	s.Steps = val
+}
 
 type AutomationsArchiveBadRequest ProblemDetails
 
@@ -1464,6 +1487,46 @@ func (*AutomationsListUnauthorized) automationsListRes() {}
 type AutomationsListUnprocessableEntity ProblemDetails
 
 func (*AutomationsListUnprocessableEntity) automationsListRes() {}
+
+type AutomationsPublishBadRequest ProblemDetails
+
+func (*AutomationsPublishBadRequest) automationsPublishRes() {}
+
+type AutomationsPublishForbidden ProblemDetails
+
+func (*AutomationsPublishForbidden) automationsPublishRes() {}
+
+type AutomationsPublishNotFound ProblemDetails
+
+func (*AutomationsPublishNotFound) automationsPublishRes() {}
+
+type AutomationsPublishUnauthorized ProblemDetails
+
+func (*AutomationsPublishUnauthorized) automationsPublishRes() {}
+
+type AutomationsPublishUnprocessableEntity ProblemDetails
+
+func (*AutomationsPublishUnprocessableEntity) automationsPublishRes() {}
+
+type AutomationsRevertBadRequest ProblemDetails
+
+func (*AutomationsRevertBadRequest) automationsRevertRes() {}
+
+type AutomationsRevertForbidden ProblemDetails
+
+func (*AutomationsRevertForbidden) automationsRevertRes() {}
+
+type AutomationsRevertNotFound ProblemDetails
+
+func (*AutomationsRevertNotFound) automationsRevertRes() {}
+
+type AutomationsRevertUnauthorized ProblemDetails
+
+func (*AutomationsRevertUnauthorized) automationsRevertRes() {}
+
+type AutomationsRevertUnprocessableEntity ProblemDetails
+
+func (*AutomationsRevertUnprocessableEntity) automationsRevertRes() {}
 
 type AutomationsUnarchiveBadRequest ProblemDetails
 
@@ -1881,7 +1944,9 @@ type BroadcastResource struct {
 	Doc OptNilBroadcastResourceDoc `json:"doc"`
 	// Version of the editor that rendered the document; null with it.
 	EditorVersion OptNilString `json:"editorVersion"`
-	// Segment this broadcast goes to; null means all contacts.
+	// Segment this broadcast goes to; null means all contacts. Once the broadcast leaves draft it holds a
+	// copy of the segment's condition taken then, and this names the segment only as where its audience
+	// came from.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Lifecycle status. Broadcasts created here are always drafts.
 	Status BroadcastStatus `json:"status"`
@@ -5046,7 +5111,7 @@ func (s *CreateApiTokenResponse) SetTokenInfo(val ApiTokenInfo) {
 func (*CreateApiTokenResponse) authTokensBootstrapRes() {}
 func (*CreateApiTokenResponse) authTokensCreateRes()    {}
 
-// Request body for creating an automation (always created as a draft).
+// Request body for creating an automation (always created inactive).
 // Ref: #/components/schemas/CreateAutomationInput
 type CreateAutomationInput struct {
 	Name         string           `json:"name"`
@@ -5402,7 +5467,7 @@ func (s *CreateIntegrationInputParams) init() CreateIntegrationInputParams {
 	return m
 }
 
-// Request body for creating a Rule (always created as a draft).
+// Request body for creating a Rule: it is created inactive, with its definition as the draft.
 // Ref: #/components/schemas/CreateRuleInput
 type CreateRuleInput struct {
 	Name string `json:"name"`
@@ -8533,6 +8598,51 @@ type MaxPerDay int32
 
 type MaxPerSecond int32
 
+// NewNilAutomationVersion returns new NilAutomationVersion with value set to v.
+func NewNilAutomationVersion(v AutomationVersion) NilAutomationVersion {
+	return NilAutomationVersion{
+		Value: v,
+	}
+}
+
+// NilAutomationVersion is nullable AutomationVersion.
+type NilAutomationVersion struct {
+	Value AutomationVersion
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilAutomationVersion) SetTo(v AutomationVersion) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilAutomationVersion) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilAutomationVersion) SetToNull() {
+	o.Null = true
+	var v AutomationVersion
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilAutomationVersion) Get() (v AutomationVersion, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilAutomationVersion) Or(d AutomationVersion) AutomationVersion {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilEntityId returns new NilEntityId with value set to v.
 func NewNilEntityId(v EntityId) NilEntityId {
 	return NilEntityId{
@@ -8662,6 +8772,51 @@ func (o NilInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilRuleVersion returns new NilRuleVersion with value set to v.
+func NewNilRuleVersion(v RuleVersion) NilRuleVersion {
+	return NilRuleVersion{
+		Value: v,
+	}
+}
+
+// NilRuleVersion is nullable RuleVersion.
+type NilRuleVersion struct {
+	Value RuleVersion
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilRuleVersion) SetTo(v RuleVersion) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilRuleVersion) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilRuleVersion) SetToNull() {
+	o.Null = true
+	var v RuleVersion
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilRuleVersion) Get() (v RuleVersion, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilRuleVersion) Or(d RuleVersion) RuleVersion {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -11990,7 +12145,6 @@ func (*ProblemDetailsHeaders) authTokensBootstrapRes()       {}
 func (*ProblemDetailsHeaders) authTokensCreateRes()          {}
 func (*ProblemDetailsHeaders) authTokensDeleteRes()          {}
 func (*ProblemDetailsHeaders) authTokensListRes()            {}
-func (*ProblemDetailsHeaders) automationsActivateRes()       {}
 func (*ProblemDetailsHeaders) automationsArchiveRes()        {}
 func (*ProblemDetailsHeaders) automationsCreateRes()         {}
 func (*ProblemDetailsHeaders) automationsDeactivateRes()     {}
@@ -11998,6 +12152,8 @@ func (*ProblemDetailsHeaders) automationsDeleteRes()         {}
 func (*ProblemDetailsHeaders) automationsDryRunHttpStepRes() {}
 func (*ProblemDetailsHeaders) automationsGetRes()            {}
 func (*ProblemDetailsHeaders) automationsListRes()           {}
+func (*ProblemDetailsHeaders) automationsPublishRes()        {}
+func (*ProblemDetailsHeaders) automationsRevertRes()         {}
 func (*ProblemDetailsHeaders) automationsUnarchiveRes()      {}
 func (*ProblemDetailsHeaders) automationsUpdateRes()         {}
 func (*ProblemDetailsHeaders) brandKitGetRes()               {}
@@ -12043,7 +12199,6 @@ func (*ProblemDetailsHeaders) integrationsUnarchiveRes()     {}
 func (*ProblemDetailsHeaders) integrationsUpdateRes()        {}
 func (*ProblemDetailsHeaders) presetsListRes()               {}
 func (*ProblemDetailsHeaders) ruleFiringsListRes()           {}
-func (*ProblemDetailsHeaders) rulesActivateRes()             {}
 func (*ProblemDetailsHeaders) rulesArchiveRes()              {}
 func (*ProblemDetailsHeaders) rulesCreateRes()               {}
 func (*ProblemDetailsHeaders) rulesDeactivateRes()           {}
@@ -12051,6 +12206,8 @@ func (*ProblemDetailsHeaders) rulesDeleteRes()               {}
 func (*ProblemDetailsHeaders) rulesDryRunRes()               {}
 func (*ProblemDetailsHeaders) rulesGetRes()                  {}
 func (*ProblemDetailsHeaders) rulesListRes()                 {}
+func (*ProblemDetailsHeaders) rulesPublishRes()              {}
+func (*ProblemDetailsHeaders) rulesRevertRes()               {}
 func (*ProblemDetailsHeaders) rulesUnarchiveRes()            {}
 func (*ProblemDetailsHeaders) rulesUpdateRes()               {}
 func (*ProblemDetailsHeaders) segmentsArchiveRes()           {}
@@ -12796,8 +12953,9 @@ type RuleFiringsListUnauthorized ProblemDetails
 func (*RuleFiringsListUnauthorized) ruleFiringsListRes() {}
 
 // A Rule: a stateless reaction to an Event. When any of its Trigger events is recorded for a Contact
-// and its condition holds, its Actions run at once, in order. Created Rules are drafts; activating is
-// a separate, send-class operation.
+// and its condition holds, its Actions run at once, in order. Its definition is versioned (ADR 0065):
+// an edit writes the draft, and publishing, a separate send-class operation, makes it live. Created
+// Rules are inactive.
 // Ref: #/components/schemas/RuleResource
 type RuleResource struct {
 	// Unique identifier.
@@ -12806,13 +12964,11 @@ type RuleResource struct {
 	Name string `json:"name"`
 	// Lifecycle status.
 	Status RuleStatus `json:"status"`
-	// The Event actions that make the Rule fire; any one of them does.
-	TriggerEvents []string `json:"triggerEvents"`
-	// The Contact must match this condition for the Rule to fire; absent or empty means every Contact.
-	Condition OptConditionGroup `json:"condition"`
-	// The Rule's ordered Actions.
-	Actions []RuleAction `json:"actions"`
-	// When the Rule was last activated. It acts only on Events recorded after it.
+	// What the Rule does now; null until it is first published.
+	Live NilRuleVersion `json:"live"`
+	// Unpublished changes, the one version above live; null when there are none.
+	Draft NilRuleVersion `json:"draft"`
+	// When the Rule last became active by Publish. It acts only on Events recorded after it.
 	ActivatedAt OptNilTimestamp `json:"activatedAt"`
 	// When the Rule was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
@@ -12837,19 +12993,14 @@ func (s *RuleResource) GetStatus() RuleStatus {
 	return s.Status
 }
 
-// GetTriggerEvents returns the value of TriggerEvents.
-func (s *RuleResource) GetTriggerEvents() []string {
-	return s.TriggerEvents
+// GetLive returns the value of Live.
+func (s *RuleResource) GetLive() NilRuleVersion {
+	return s.Live
 }
 
-// GetCondition returns the value of Condition.
-func (s *RuleResource) GetCondition() OptConditionGroup {
-	return s.Condition
-}
-
-// GetActions returns the value of Actions.
-func (s *RuleResource) GetActions() []RuleAction {
-	return s.Actions
+// GetDraft returns the value of Draft.
+func (s *RuleResource) GetDraft() NilRuleVersion {
+	return s.Draft
 }
 
 // GetActivatedAt returns the value of ActivatedAt.
@@ -12887,19 +13038,14 @@ func (s *RuleResource) SetStatus(val RuleStatus) {
 	s.Status = val
 }
 
-// SetTriggerEvents sets the value of TriggerEvents.
-func (s *RuleResource) SetTriggerEvents(val []string) {
-	s.TriggerEvents = val
+// SetLive sets the value of Live.
+func (s *RuleResource) SetLive(val NilRuleVersion) {
+	s.Live = val
 }
 
-// SetCondition sets the value of Condition.
-func (s *RuleResource) SetCondition(val OptConditionGroup) {
-	s.Condition = val
-}
-
-// SetActions sets the value of Actions.
-func (s *RuleResource) SetActions(val []RuleAction) {
-	s.Actions = val
+// SetDraft sets the value of Draft.
+func (s *RuleResource) SetDraft(val NilRuleVersion) {
+	s.Draft = val
 }
 
 // SetActivatedAt sets the value of ActivatedAt.
@@ -12922,37 +13068,38 @@ func (s *RuleResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*RuleResource) rulesActivateRes()   {}
 func (*RuleResource) rulesArchiveRes()    {}
 func (*RuleResource) rulesCreateRes()     {}
 func (*RuleResource) rulesDeactivateRes() {}
 func (*RuleResource) rulesGetRes()        {}
+func (*RuleResource) rulesPublishRes()    {}
+func (*RuleResource) rulesRevertRes()     {}
 func (*RuleResource) rulesUnarchiveRes()  {}
 func (*RuleResource) rulesUpdateRes()     {}
 
-// Rule lifecycle status.
+// Rule lifecycle status: active reacts to Events, inactive acts on nothing.
 // Ref: #/components/schemas/RuleStatus
 type RuleStatus string
 
 const (
-	RuleStatusDraft  RuleStatus = "draft"
-	RuleStatusActive RuleStatus = "active"
+	RuleStatusActive   RuleStatus = "active"
+	RuleStatusInactive RuleStatus = "inactive"
 )
 
 // AllValues returns all RuleStatus values.
 func (RuleStatus) AllValues() []RuleStatus {
 	return []RuleStatus{
-		RuleStatusDraft,
 		RuleStatusActive,
+		RuleStatusInactive,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s RuleStatus) MarshalText() ([]byte, error) {
 	switch s {
-	case RuleStatusDraft:
-		return []byte(s), nil
 	case RuleStatusActive:
+		return []byte(s), nil
+	case RuleStatusInactive:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -12962,36 +13109,69 @@ func (s RuleStatus) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *RuleStatus) UnmarshalText(data []byte) error {
 	switch RuleStatus(data) {
-	case RuleStatusDraft:
-		*s = RuleStatusDraft
-		return nil
 	case RuleStatusActive:
 		*s = RuleStatusActive
+		return nil
+	case RuleStatusInactive:
+		*s = RuleStatusInactive
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
 
-type RulesActivateBadRequest ProblemDetails
+// One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions.
+// Ref: #/components/schemas/RuleVersion
+type RuleVersion struct {
+	// 1 for the first version, plus one per version after it.
+	Number int32 `json:"number"`
+	// The Event actions that make the Rule fire; any one of them does.
+	TriggerEvents []string `json:"triggerEvents"`
+	// The Contact must match this condition for the Rule to fire; absent means every Contact.
+	Condition OptConditionGroup `json:"condition"`
+	// The Rule's ordered Actions.
+	Actions []RuleAction `json:"actions"`
+}
 
-func (*RulesActivateBadRequest) rulesActivateRes() {}
+// GetNumber returns the value of Number.
+func (s *RuleVersion) GetNumber() int32 {
+	return s.Number
+}
 
-type RulesActivateForbidden ProblemDetails
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *RuleVersion) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
 
-func (*RulesActivateForbidden) rulesActivateRes() {}
+// GetCondition returns the value of Condition.
+func (s *RuleVersion) GetCondition() OptConditionGroup {
+	return s.Condition
+}
 
-type RulesActivateNotFound ProblemDetails
+// GetActions returns the value of Actions.
+func (s *RuleVersion) GetActions() []RuleAction {
+	return s.Actions
+}
 
-func (*RulesActivateNotFound) rulesActivateRes() {}
+// SetNumber sets the value of Number.
+func (s *RuleVersion) SetNumber(val int32) {
+	s.Number = val
+}
 
-type RulesActivateUnauthorized ProblemDetails
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *RuleVersion) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
 
-func (*RulesActivateUnauthorized) rulesActivateRes() {}
+// SetCondition sets the value of Condition.
+func (s *RuleVersion) SetCondition(val OptConditionGroup) {
+	s.Condition = val
+}
 
-type RulesActivateUnprocessableEntity ProblemDetails
-
-func (*RulesActivateUnprocessableEntity) rulesActivateRes() {}
+// SetActions sets the value of Actions.
+func (s *RuleVersion) SetActions(val []RuleAction) {
+	s.Actions = val
+}
 
 type RulesArchiveBadRequest ProblemDetails
 
@@ -13179,6 +13359,46 @@ func (*RulesListUnauthorized) rulesListRes() {}
 type RulesListUnprocessableEntity ProblemDetails
 
 func (*RulesListUnprocessableEntity) rulesListRes() {}
+
+type RulesPublishBadRequest ProblemDetails
+
+func (*RulesPublishBadRequest) rulesPublishRes() {}
+
+type RulesPublishForbidden ProblemDetails
+
+func (*RulesPublishForbidden) rulesPublishRes() {}
+
+type RulesPublishNotFound ProblemDetails
+
+func (*RulesPublishNotFound) rulesPublishRes() {}
+
+type RulesPublishUnauthorized ProblemDetails
+
+func (*RulesPublishUnauthorized) rulesPublishRes() {}
+
+type RulesPublishUnprocessableEntity ProblemDetails
+
+func (*RulesPublishUnprocessableEntity) rulesPublishRes() {}
+
+type RulesRevertBadRequest ProblemDetails
+
+func (*RulesRevertBadRequest) rulesRevertRes() {}
+
+type RulesRevertForbidden ProblemDetails
+
+func (*RulesRevertForbidden) rulesRevertRes() {}
+
+type RulesRevertNotFound ProblemDetails
+
+func (*RulesRevertNotFound) rulesRevertRes() {}
+
+type RulesRevertUnauthorized ProblemDetails
+
+func (*RulesRevertUnauthorized) rulesRevertRes() {}
+
+type RulesRevertUnprocessableEntity ProblemDetails
+
+func (*RulesRevertUnprocessableEntity) rulesRevertRes() {}
 
 type RulesUnarchiveBadRequest ProblemDetails
 
@@ -15798,7 +16018,9 @@ type UnsubscribesCreateUnprocessableEntity ProblemDetails
 
 func (*UnsubscribesCreateUnprocessableEntity) unsubscribesCreateRes() {}
 
-// Request body for updating an automation.
+// Request body for updating an automation. The name changes at once; the trigger, steps and
+// integration write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
+// and only publishing makes the draft live.
 // Ref: #/components/schemas/UpdateAutomationInput
 type UpdateAutomationInput struct {
 	Name         OptString        `json:"name"`
@@ -16168,7 +16390,8 @@ func (s *UpdateIntegrationInputParams) init() UpdateIntegrationInputParams {
 	return m
 }
 
-// Request body for updating a Rule.
+// Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and
+// Actions write the draft, and the ones left out keep the draft's, else the live version's.
 // Ref: #/components/schemas/UpdateRuleInput
 type UpdateRuleInput struct {
 	Name OptString `json:"name"`

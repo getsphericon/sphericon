@@ -1,0 +1,110 @@
+# The Trigger events of the Rule versions in rule_versions.yml.
+- id: 100
+  version_id: 100
+  action: rule_click
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 101
+  version_id: 101
+  action: rule_vip
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 102
+  version_id: 102
+  action: rule_draft
+  workspace_id: 1
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
+- id: 103
+  version_id: 103
+  action: rule_multi_a
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 104
+  version_id: 103
+  action: rule_multi_b
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 105
+  version_id: 104
+  action: rule_fail
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 106
+  version_id: 105
+  action: rule_later
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 107
+  version_id: 106
+  action: rule_enroll
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 108
+  version_id: 107
+  action: rule_enroll_draft
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 109
+  version_id: 108
+  action: rule_enroll_single
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 110
+  version_id: 109
+  action: rule_enroll_wait
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 111
+  version_id: 110
+  action: rule_url
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 900
+  version_id: 900
+  action: rule_click
+  workspace_id: 2
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 300
+  version_id: 300
+  action: rule_initech
+  workspace_id: 3
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
+- id: 21001
+  version_id: 21001
+  action: viewed_pricing
+  workspace_id: 20
+  created_at: '{{daysAgo 50}}'
+  updated_at: '{{daysAgo 50}}'
+- id: 21002
+  version_id: 21002
+  action: signup
+  workspace_id: 20
+  created_at: '{{daysAgo 50}}'
+  updated_at: '{{daysAgo 50}}'
+- id: 21003
+  version_id: 21003
+  action: purchase
+  workspace_id: 20
+  created_at: '{{daysAgo 6}}'
+  updated_at: '{{daysAgo 6}}'
+# The draft of RuleTagClicked reacts to the same action.
+- id: 120
+  version_id: 120
+  action: rule_click
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'

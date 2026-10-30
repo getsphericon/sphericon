@@ -33,9 +33,9 @@ func idGuardCases() []guardCase {
 		{"AutomationsDelete", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.AutomationsDelete(ctx, externalapi.AutomationsDeleteParams{ID: id})
 		}, &externalapi.AutomationsDeleteForbidden{}, &externalapi.AutomationsDeleteUnauthorized{}, &externalapi.AutomationsDeleteBadRequest{}},
-		{"AutomationsActivate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
-			return c.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: id})
-		}, &externalapi.AutomationsActivateForbidden{}, &externalapi.AutomationsActivateUnauthorized{}, &externalapi.AutomationsActivateBadRequest{}},
+		{"AutomationsPublish", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
+			return c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
+		}, &externalapi.AutomationsPublishForbidden{}, &externalapi.AutomationsPublishUnauthorized{}, &externalapi.AutomationsPublishBadRequest{}},
 		{"AutomationsDeactivate", func(c *externalapi.Client, id externalapi.EntityId) (any, error) {
 			return c.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
 		}, &externalapi.AutomationsDeactivateForbidden{}, &externalapi.AutomationsDeactivateUnauthorized{}, &externalapi.AutomationsDeactivateBadRequest{}},

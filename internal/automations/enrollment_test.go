@@ -49,7 +49,7 @@ func TestEnrollIsOnceEverPerContactAndAutomation(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, again, "a replayed trigger enrolls nothing")
 
-	_, other, err := automations.Enroll(ctx, s, fixtures.AutomationWinBackID, c.ID)
+	_, other, err := automations.Enroll(ctx, s, fixtures.AutomationHoldDemoID, c.ID)
 	require.NoError(t, err)
 	assert.True(t, other, "another Automation is a separate Enrollment")
 }
@@ -190,4 +190,34 @@ func TestIsActiveReadsTheLifecycle(t *testing.T) {
 	ok, err = automations.IsActive(ctx, s, runID)
 	require.NoError(t, err)
 	assert.False(t, ok)
+}
+
+// The trigger consumer picks the Automations before it enrolls, so a Publish that moves the
+// Trigger, or a Deactivate, can land in between: under the lock, an Automation that is no longer
+// active, or whose live version starts on another Event, enrolls nobody.
+func TestEnrollOnTriggerEnrollsOnlyWhileActiveOnThatTrigger(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{TriggerEvent: new("hold_demo_moved")})
+	require.NoError(t, err)
+	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID)
+	require.NoError(t, err)
+
+	_, enrolled, err := automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, "hold_demo")
+	require.NoError(t, err)
+	assert.False(t, enrolled, "the Trigger it was picked by is no longer live")
+
+	_, err = m.Deactivate(ctx, s, fixtures.AutomationHoldDemoID)
+	require.NoError(t, err)
+	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, "hold_demo_moved")
+	require.NoError(t, err)
+	assert.False(t, enrolled, "an inactive Automation enrolls nobody")
+
+	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID)
+	require.NoError(t, err)
+	_, enrolled, err = automations.EnrollOnTrigger(ctx, s, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID, "hold_demo_moved")
+	require.NoError(t, err)
+	assert.True(t, enrolled, "active on that Trigger, it enrolls the Contact the refusals left alone")
 }

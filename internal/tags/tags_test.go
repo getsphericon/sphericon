@@ -27,7 +27,7 @@ func TestListReturnsTheWorkspaceCatalogue(t *testing.T) {
 
 	got, err := m.List(context.Background(), acme)
 	require.NoError(t, err)
-	assert.Equal(t, []string{"newsletter", "unused", fixtures.TagVipName}, names(got))
+	assert.Equal(t, []string{"newsletter", fixtures.TagRenewalDueName, "unused", fixtures.TagVipName}, names(got))
 
 	other, err := m.List(context.Background(), globex)
 	require.NoError(t, err)

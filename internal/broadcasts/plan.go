@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
@@ -164,8 +164,8 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		return nil, failPlan(ctx, s, b.ID, fmt.Errorf("broadcast %d: template does not render: %w", b.ID, verr))
 	}
 
-	// Audience: contacts in the workspace with an email address, narrowed by the
-	// broadcast's segment when set, then filtered to eligible recipients.
+	// Audience: contacts in the workspace with an email address, narrowed by the Condition
+	// copied from the broadcast's segment when it left draft, then filtered to eligible recipients.
 	// Eligibility is derived (ADR 0001): suppressed destinations and ones
 	// unsubscribed from the "broadcasts" source (or from everything) are excluded
 	// at the query level. EmailNotNil keeps un-sendable contacts out so no row is
@@ -174,21 +174,11 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		contact.EmailNotNil(),
 		eligibility.Predicate(eligibility.ChannelEmail, eligibility.SourceBroadcasts),
 	)
-	if b.SegmentID != nil {
-		seg, err := s.Segment().QueryWithDiscarded().Where(segment.IDEQ(*b.SegmentID)).Only(ctx)
-		if err != nil {
-			return nil, failPlan(ctx, s, b.ID, fmt.Errorf("load segment %d: %w", *b.SegmentID, err))
-		}
-		def := ""
-		if seg.Condition != nil {
-			def = *seg.Condition
-		}
-		pred, err := condition.ContactPredicate(ctx, s, def)
-		if err != nil {
-			return nil, failPlan(ctx, s, b.ID, fmt.Errorf("segment %d definition: %w", seg.ID, err))
-		}
-		audience = audience.Where(pred)
+	narrow, err := copiedCondition(ctx, s, b.ID)
+	if err != nil {
+		return nil, err
 	}
+	audience = audience.Where(narrow...)
 
 	contactIDs, err := audience.IDs(ctx)
 	if err != nil {
@@ -228,6 +218,28 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		}
 	}
 	return ids, nil
+}
+
+// copiedCondition narrows the audience to the Condition copied from the Broadcast's Segment when it
+// left draft (ADR 0065); a Broadcast to all contacts is not narrowed. It reads the Broadcast again,
+// after begin has taken the copy of a draft. A Segment Broadcast without a copy, or a copy that no
+// longer compiles, fails the Broadcast.
+func copiedCondition(ctx context.Context, s *ent.Scoped, id int64) ([]predicate.Contact, error) {
+	b, err := s.Broadcast().Get(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
+	}
+	if b.SegmentID == nil {
+		return nil, nil
+	}
+	if b.Condition == nil {
+		return nil, failPlan(ctx, s, id, fmt.Errorf("broadcast %d: the condition of segment %d was not copied", id, *b.SegmentID))
+	}
+	pred, err := condition.ContactPredicate(ctx, s, *b.Condition)
+	if err != nil {
+		return nil, failPlan(ctx, s, id, fmt.Errorf("broadcast %d condition: %w", id, err))
+	}
+	return []predicate.Contact{pred}, nil
 }
 
 // interval is the step between two sends of the Broadcast's Integration (the Workspace's

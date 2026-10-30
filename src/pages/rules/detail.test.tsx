@@ -3,8 +3,9 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteRuleFiringsList,
-  handleSiteRulesActivate,
+  handleSiteRulesPublish,
   handleSiteRulesGet,
+  handleSiteRulesRevert,
   handleSiteRulesUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteRuleFiringResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
@@ -21,10 +22,22 @@ const DETAIL_ROUTE = routeMount(rulesDetailRoute, { workspaceId: 'TestWs01', rul
 const RULE: SiteRuleResource = {
   id: '7',
   name: 'Tag signups',
-  status: 'draft',
-  triggerEvents: ['signed_up'],
-  actions: [{ type: 'apply_tag', tag: 'new' }],
+  status: 'inactive',
+  live: null,
+  draft: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'new' }] },
   ...TIMESTAMPS,
+}
+
+// Published as version 1, with a draft above it that applies another Tag.
+const EDITED: SiteRuleResource = {
+  ...RULE,
+  status: 'active',
+  live: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'new' }] },
+  draft: {
+    number: 2,
+    triggerEvents: ['signed_up'],
+    actions: [{ type: 'apply_tag', tag: 'newer' }],
+  },
 }
 
 const RUNNING: SiteRuleFiringResource = {
@@ -51,7 +64,7 @@ test('shows the rule and each Firing with its Event, Contact and every Action re
   const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
 
   await expect.element(screen.getByRole('heading', { name: 'Tag signups' })).toBeInTheDocument()
-  await expect.element(screen.getByText('signed_up')).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: 'signed_up' })).toBeInTheDocument()
   await expect
     .element(screen.getByRole('link', { name: '33' }))
     .toHaveAttribute('href', '/workspaces/TestWs01/contacts/33')
@@ -81,24 +94,24 @@ test('shows the empty state when the rule has not fired', async () => {
   await expect.element(screen.getByText('This rule has not fired yet')).toBeInTheDocument()
 })
 
-test('activating the rule calls activate and shows it active', async () => {
-  const activated: string[] = []
+test('publishing the rule calls publish and shows it active', async () => {
+  const published: string[] = []
   worker.use(
     handleSiteRulesGet(() =>
-      HttpResponse.json(activated.length > 0 ? { ...RULE, status: 'active' } : RULE),
+      HttpResponse.json(published.length > 0 ? { ...RULE, status: 'active' } : RULE),
     ),
     handleSiteRuleFiringsList({ body: page([], 0) }),
-    handleSiteRulesActivate(({ params }) => {
-      activated.push(params.id)
+    handleSiteRulesPublish(({ params }) => {
+      published.push(params.id)
       return HttpResponse.json({ ...RULE, status: 'active' })
     }),
   )
 
   const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
-  await screen.getByRole('button', { name: 'Activate' }).click()
+  await screen.getByRole('button', { name: 'Publish' }).click()
 
-  await expect.poll(() => activated).toEqual(['7'])
-  await expect.element(screen.getByText('Rule activated')).toBeInTheDocument()
+  await expect.poll(() => published).toEqual(['7'])
+  await expect.element(screen.getByText('Rule published')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Deactivate' })).toBeInTheDocument()
 })
 
@@ -111,7 +124,7 @@ test('shows an error alert when the rule cannot be loaded', async () => {
   await expect.element(screen.getByText('rule not found')).toBeVisible()
 })
 
-test('an archived rule offers Restore instead of Activate and Edit', async () => {
+test('an archived rule offers Restore instead of Publish and Edit', async () => {
   const restored: string[] = []
   worker.use(
     handleSiteRulesGet({ body: { ...RULE, archivedAt: TIMESTAMPS.updatedAt } }),
@@ -123,9 +136,76 @@ test('an archived rule offers Restore instead of Activate and Edit', async () =>
   )
 
   const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
-  await expect.element(screen.getByRole('button', { name: 'Activate' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).not.toBeInTheDocument()
   await screen.getByRole('button', { name: 'Restore' }).click()
 
   await expect.poll(() => restored).toEqual(['7'])
   await expect.element(screen.getByText('Rule restored')).toBeInTheDocument()
+})
+
+test('a rule never published shows no pending changes and offers no Revert', async () => {
+  worker.use(handleSiteRulesGet({ body: RULE }), handleSiteRuleFiringsList({ body: page([], 0) }))
+
+  const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
+  await expect.element(screen.getByText('Unpublished changes')).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
+})
+
+test('a live rule with a draft shows the live version and the pending changes, and publishes them', async () => {
+  const published: string[] = []
+  const afterPublish = { ...EDITED, live: EDITED.draft, draft: null }
+  worker.use(
+    handleSiteRulesGet(() => HttpResponse.json(published.length > 0 ? afterPublish : EDITED)),
+    handleSiteRuleFiringsList({ body: page([], 0) }),
+    handleSiteRulesPublish(({ params }) => {
+      published.push(params.id)
+      return HttpResponse.json(afterPublish)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
+  await expect.element(screen.getByText('Live version 1')).toBeInTheDocument()
+  await expect.element(screen.getByText('Apply tag: new')).toBeInTheDocument()
+  await expect.element(screen.getByText('Unpublished changes')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Publish' }).click()
+
+  await expect.poll(() => published).toEqual(['7'])
+  await expect.element(screen.getByText('Live version 2')).toBeInTheDocument()
+  await expect.element(screen.getByText('Unpublished changes')).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
+})
+
+test('reverting drops the draft', async () => {
+  const reverted: string[] = []
+  const afterRevert = { ...EDITED, draft: null }
+  worker.use(
+    handleSiteRulesGet(() => HttpResponse.json(reverted.length > 0 ? afterRevert : EDITED)),
+    handleSiteRuleFiringsList({ body: page([], 0) }),
+    handleSiteRulesRevert(({ params }) => {
+      reverted.push(params.id)
+      return HttpResponse.json(afterRevert)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
+  await screen.getByRole('button', { name: 'Revert' }).click()
+
+  await expect.poll(() => reverted).toEqual(['7'])
+  await expect.element(screen.getByText('Unpublished changes dropped')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
+})
+
+test('a refused revert shows the reason', async () => {
+  worker.use(
+    handleSiteRulesGet({ body: EDITED }),
+    handleSiteRuleFiringsList({ body: page([], 0) }),
+    handleSiteRulesRevert(() => problem(422, { detail: 'no unpublished changes to revert' })),
+  )
+
+  const { screen } = await renderWithRouter(<RuleDetailPage />, DETAIL_ROUTE)
+  await screen.getByRole('button', { name: 'Revert' }).click()
+
+  await expect.element(screen.getByText('no unpublished changes to revert')).toBeInTheDocument()
 })

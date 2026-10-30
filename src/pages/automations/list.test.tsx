@@ -2,7 +2,7 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import {
-  handleSiteAutomationsActivate,
+  handleSiteAutomationsPublish,
   handleSiteAutomationsArchive,
   handleSiteAutomationsDeactivate,
   handleSiteAutomationsDelete,
@@ -25,8 +25,8 @@ const WELCOME: SiteAutomationResource = {
   id: '1',
   name: 'Welcome flow',
   status: 'active',
-  triggerEvent: 'contact.created',
-  steps: [],
+  live: { number: 1, triggerEvent: 'contact.created', steps: [] },
+  draft: null,
   revenue: { reportingCurrency: 'USD', orders: 2, amount: 9900 },
   createdAt: NOW,
   updatedAt: NOW,
@@ -35,8 +35,9 @@ const NURTURE: SiteAutomationResource = {
   ...WELCOME,
   id: '2',
   name: 'Nurture flow',
-  status: 'draft',
-  triggerEvent: 'email.opened',
+  status: 'inactive',
+  live: null,
+  draft: { number: 1, triggerEvent: 'email.opened', steps: [] },
   revenue: { reportingCurrency: null, orders: 0, amount: 0 },
 }
 
@@ -52,7 +53,7 @@ test('lists automations with their status', async () => {
   await expect.element(screen.getByText('Welcome flow')).toBeInTheDocument()
   await expect.element(screen.getByText('Nurture flow')).toBeInTheDocument()
   await expect.element(screen.getByText('Active', { exact: true })).toBeInTheDocument()
-  await expect.element(screen.getByText('Draft', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Inactive', { exact: true })).toBeInTheDocument()
 })
 
 test('shows the orders and revenue of an automation and none while the currency is unset', async () => {
@@ -102,26 +103,26 @@ test('New automation opens the create modal and Edit links to the edit page', as
     .toHaveAttribute('href', '/workspaces/TestWs01/automations/1/edit')
 })
 
-test('activating a draft automation calls the API and refreshes the list', async () => {
-  const activated: string[] = []
+test('publishing an inactive automation calls the API and refreshes the list', async () => {
+  const published: string[] = []
   let listFetches = 0
   worker.use(
     handleSiteAutomationsList(() => {
       listFetches++
       return HttpResponse.json({ items: [NURTURE], totalItems: 1 })
     }),
-    handleSiteAutomationsActivate(({ params }) => {
-      activated.push(params.id)
+    handleSiteAutomationsPublish(({ params }) => {
+      published.push(params.id)
       return HttpResponse.json({ ...NURTURE, status: 'active' })
     }),
   )
 
   const { screen } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
   await screen.getByRole('button', { name: 'More actions' }).first().click()
-  await screen.getByRole('menuitem', { name: 'Activate' }).click()
+  await screen.getByRole('menuitem', { name: 'Publish' }).click()
 
-  await expect.poll(() => activated).toEqual(['2'])
-  await expect.element(screen.getByText('Automation activated')).toBeInTheDocument()
+  await expect.poll(() => published).toEqual(['2'])
+  await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
 })
 
@@ -131,7 +132,7 @@ test('deactivating an active automation calls the API', async () => {
     handleSiteAutomationsList(() => HttpResponse.json({ items: [WELCOME], totalItems: 1 })),
     handleSiteAutomationsDeactivate(({ params }) => {
       deactivated.push(params.id)
-      return HttpResponse.json({ ...WELCOME, status: 'draft' })
+      return HttpResponse.json({ ...WELCOME, status: 'inactive' })
     }),
   )
 

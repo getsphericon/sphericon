@@ -26,7 +26,7 @@ modelled and stay out.
 - **Contract first.** `/api` today lacks most of what parity needs (its segments and broadcasts
   operations have no handlers). It is extended, additively and without a new version, to: contacts
   (+ batch upsert by alias keys, ADR 0002), tags, segments, broadcasts (drafts, `schedule`,
-  `unschedule`, `test-send`, segment, report), automations (CRUD, `activate`/`deactivate`),
+  `unschedule`, `test-send`, segment, report), automations (CRUD, `publish`/`revert`/`deactivate`),
   templates, events (+ batch), webhooks, and read-only custom fields and the
   complaint/bounce rates (ADR 0011), integrations and sending domains (ADR 0024: credentials and the DKIM
   private key are never returned; `integrations:write` and `sending_domains:write` are the setup scopes, which an OAuth connector gets only behind a box of its own on the consent screen (see "Setup is a third lock");
@@ -38,8 +38,8 @@ modelled and stay out.
   `internal/outbound` does, ADR 0015) that owns the transaction and the event publish and returns
   domain errors; handlers stay thin adapters (scope check, call, map). Starts with contacts.
 - **Send is a second lock.** The agent authors by default (draft / inactive). Send-class
-  operations (`Emails_send`, broadcast `schedule`, automation `activate`) need their own `/api`
-  scope (`emails:send`, `broadcasts:send`, `automations:activate`) **and**, over MCP, the extra
+  operations (`Emails_send`, broadcast `schedule`, automation `publish`) need their own `/api`
+  scope (`emails:send`, `broadcasts:send`, `automations:publish`) **and**, over MCP, the extra
   `mcp:send` scope; without `mcp:send` they are not even listed. This relaxes the backlog's
   "AI is an author, not a sender" from absolute to opt-in per token.
 - **Setup is a third lock.** `sending_domains:write` and `integrations:write` change how the
@@ -83,7 +83,7 @@ Decisions taken while building it, so the contract and code are not the only rec
   scope an `/api` handler checks must be grantable): `contacts`, `events`, `segments`,
   `broadcasts`, `automations`, `templates`, `webhooks` each as `:read` / `:write`;
   `custom_fields:read`, `sending_domains:read`, `integrations:read`; the send class `emails:send`, `broadcasts:send`,
-  `automations:activate`, `mcp:send`; the setup scopes `sending_domains:write`, `integrations:write`; and `tokens:read` / `tokens:write` for `/api` token
+  `automations:publish`, `mcp:send`; the setup scopes `sending_domains:write`, `integrations:write`; and `tokens:read` / `tokens:write` for `/api` token
   management, which is hidden from MCP.
 - **`x-mcp`.** Declared in `typespec/external/mcp.tsp` with three keys: `name` (override of the
   snake_case operation id, e.g. `whoami`, `events_record`), `hidden` (token management is never a

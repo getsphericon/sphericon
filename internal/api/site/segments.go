@@ -82,7 +82,7 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 }
 
 // SiteSegmentsArchive archives a segment (ADR 0049): it leaves the list and new work, and a
-// sent Broadcast's report still names it. A draft or scheduled Broadcast refuses it with 409.
+// sent Broadcast's report still names it. A draft Broadcast refuses it with 409.
 func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteSegmentsArchiveParams) (siteapi.SiteSegmentsArchiveRes, error) {
 	ws := workspaceScope(ctx)
 

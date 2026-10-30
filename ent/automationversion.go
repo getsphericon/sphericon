@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -31,6 +32,10 @@ type AutomationVersion struct {
 	Version int `json:"version,omitempty"`
 	// Steps holds the value of the "steps" field.
 	Steps string `json:"steps,omitempty"`
+	// TriggerEvent holds the value of the "trigger_event" field.
+	TriggerEvent string `json:"trigger_event,omitempty"`
+	// IntegrationID holds the value of the "integration_id" field.
+	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationVersionQuery when eager-loading is set.
 	Edges        AutomationVersionEdges `json:"edges"`
@@ -45,9 +50,11 @@ type AutomationVersionEdges struct {
 	Automation *Automation `json:"automation,omitempty"`
 	// Runs holds the value of the runs edge.
 	Runs []*AutomationRun `json:"runs,omitempty"`
+	// Integration holds the value of the integration edge.
+	Integration *Integration `json:"integration,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -81,14 +88,25 @@ func (e AutomationVersionEdges) RunsOrErr() ([]*AutomationRun, error) {
 	return nil, &NotLoadedError{edge: "runs"}
 }
 
+// IntegrationOrErr returns the Integration value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AutomationVersionEdges) IntegrationOrErr() (*Integration, error) {
+	if e.Integration != nil {
+		return e.Integration, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: integration.Label}
+	}
+	return nil, &NotLoadedError{edge: "integration"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion:
+		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion, automationversion.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
-		case automationversion.FieldSteps:
+		case automationversion.FieldSteps, automationversion.FieldTriggerEvent:
 			values[i] = new(sql.NullString)
 		case automationversion.FieldCreatedAt, automationversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -149,6 +167,19 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				_m.Steps = value.String
 			}
+		case automationversion.FieldTriggerEvent:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field trigger_event", values[i])
+			} else if value.Valid {
+				_m.TriggerEvent = value.String
+			}
+		case automationversion.FieldIntegrationID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field integration_id", values[i])
+			} else if value.Valid {
+				_m.IntegrationID = new(int64)
+				*_m.IntegrationID = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -175,6 +206,11 @@ func (_m *AutomationVersion) QueryAutomation() *AutomationQuery {
 // QueryRuns queries the "runs" edge of the AutomationVersion entity.
 func (_m *AutomationVersion) QueryRuns() *AutomationRunQuery {
 	return NewAutomationVersionClient(_m.config).QueryRuns(_m)
+}
+
+// QueryIntegration queries the "integration" edge of the AutomationVersion entity.
+func (_m *AutomationVersion) QueryIntegration() *IntegrationQuery {
+	return NewAutomationVersionClient(_m.config).QueryIntegration(_m)
 }
 
 // Update returns a builder for updating this AutomationVersion.
@@ -217,6 +253,14 @@ func (_m *AutomationVersion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("steps=")
 	builder.WriteString(_m.Steps)
+	builder.WriteString(", ")
+	builder.WriteString("trigger_event=")
+	builder.WriteString(_m.TriggerEvent)
+	builder.WriteString(", ")
+	if v := _m.IntegrationID; v != nil {
+		builder.WriteString("integration_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

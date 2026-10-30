@@ -20,17 +20,21 @@ import { RuleEditPage } from './resource.tsx'
 const STORED: SiteRuleResource = {
   id: '7',
   name: 'Call Slack',
-  status: 'draft',
-  triggerEvents: ['signed_up'],
-  actions: [
-    {
-      type: 'http',
-      id: '01J00000000000000000000001',
-      body: '{"text":"hi"}',
-      headers: [{ name: 'Authorization' }],
-      hasSecret: true,
-    },
-  ],
+  status: 'inactive',
+  live: null,
+  draft: {
+    number: 1,
+    triggerEvents: ['signed_up'],
+    actions: [
+      {
+        type: 'http',
+        id: '01J00000000000000000000001',
+        body: '{"text":"hi"}',
+        headers: [{ name: 'Authorization' }],
+        hasSecret: true,
+      },
+    ],
+  },
   ...TIMESTAMPS,
 }
 

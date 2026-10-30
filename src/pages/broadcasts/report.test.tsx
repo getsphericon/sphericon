@@ -4,6 +4,7 @@ import { expect, test } from 'vitest'
 import {
   handleSiteBroadcastLinksList,
   handleSiteBroadcastsGet,
+  handleSiteSegmentsGet,
 } from '../../generated/site/msw.gen.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { problem } from '../../test/problem.ts'
@@ -160,4 +161,42 @@ test('shows no orders or revenue until the reporting currency is chosen', async 
   await expect.element(screen.getByText('Big news')).toBeInTheDocument()
   await expect.element(screen.getByText('Orders', { exact: true })).not.toBeInTheDocument()
   await expect.element(screen.getByText('Revenue', { exact: true })).not.toBeInTheDocument()
+})
+
+test('names the segment a scheduled broadcast took its audience from, archived since', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({ ...BROADCAST, status: 'scheduled', segmentId: '7' }),
+    ),
+    handleSiteSegmentsGet(() =>
+      HttpResponse.json({
+        id: '7',
+        name: 'Renewal audience',
+        archivedAt: '2026-10-01T00:00:00Z',
+        createdAt: '2026-09-01T00:00:00Z',
+        updatedAt: '2026-10-01T00:00:00Z',
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Audience: segment Renewal audience')).toBeInTheDocument()
+  await expect.element(screen.getByText('Archived', { exact: true })).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/editing the segment since changes nothing/))
+    .toBeInTheDocument()
+})
+
+test('says a broadcast without a segment goes to all contacts', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() => HttpResponse.json(BROADCAST)),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Audience: all contacts')).toBeInTheDocument()
+  await expect.element(screen.getByText(/editing the segment since/)).not.toBeInTheDocument()
 })

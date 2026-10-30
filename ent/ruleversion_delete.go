@@ -9,29 +9,29 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 )
 
-// RuleTriggerDelete is the builder for deleting a RuleTrigger entity.
-type RuleTriggerDelete struct {
+// RuleVersionDelete is the builder for deleting a RuleVersion entity.
+type RuleVersionDelete struct {
 	config
 	hooks    []Hook
-	mutation *RuleTriggerMutation
+	mutation *RuleVersionMutation
 }
 
-// Where appends a list predicates to the RuleTriggerDelete builder.
-func (_d *RuleTriggerDelete) Where(ps ...predicate.RuleTrigger) *RuleTriggerDelete {
+// Where appends a list predicates to the RuleVersionDelete builder.
+func (_d *RuleVersionDelete) Where(ps ...predicate.RuleVersion) *RuleVersionDelete {
 	_d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *RuleTriggerDelete) Exec(ctx context.Context) (int, error) {
+func (_d *RuleVersionDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *RuleTriggerDelete) ExecX(ctx context.Context) int {
+func (_d *RuleVersionDelete) ExecX(ctx context.Context) int {
 	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -39,8 +39,8 @@ func (_d *RuleTriggerDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (_d *RuleTriggerDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(ruletrigger.Table, sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64))
+func (_d *RuleVersionDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(ruleversion.Table, sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64))
 	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -56,32 +56,32 @@ func (_d *RuleTriggerDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// RuleTriggerDeleteOne is the builder for deleting a single RuleTrigger entity.
-type RuleTriggerDeleteOne struct {
-	_d *RuleTriggerDelete
+// RuleVersionDeleteOne is the builder for deleting a single RuleVersion entity.
+type RuleVersionDeleteOne struct {
+	_d *RuleVersionDelete
 }
 
-// Where appends a list predicates to the RuleTriggerDelete builder.
-func (_d *RuleTriggerDeleteOne) Where(ps ...predicate.RuleTrigger) *RuleTriggerDeleteOne {
+// Where appends a list predicates to the RuleVersionDelete builder.
+func (_d *RuleVersionDeleteOne) Where(ps ...predicate.RuleVersion) *RuleVersionDeleteOne {
 	_d._d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query.
-func (_d *RuleTriggerDeleteOne) Exec(ctx context.Context) error {
+func (_d *RuleVersionDeleteOne) Exec(ctx context.Context) error {
 	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{ruletrigger.Label}
+		return &NotFoundError{ruleversion.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *RuleTriggerDeleteOne) ExecX(ctx context.Context) {
+func (_d *RuleVersionDeleteOne) ExecX(ctx context.Context) {
 	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}

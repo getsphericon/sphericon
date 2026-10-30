@@ -4790,64 +4790,6 @@
         "x-required-permissions": []
       }
     },
-    "/workspaces/{workspaceId}/automations/{id}/activate": {
-      "post": {
-        "operationId": "SiteAutomations_activate",
-        "description": "Activate an automation (starts enrolling contacts)",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
-          },
-          {
-            "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SiteAutomationResource"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Automations"],
-        "x-required-permissions": []
-      }
-    },
     "/workspaces/{workspaceId}/automations/{id}/archive": {
       "post": {
         "operationId": "SiteAutomations_archive",
@@ -4941,6 +4883,122 @@
           },
           "404": {
             "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/automations/{id}/publish": {
+      "post": {
+        "operationId": "SiteAutomations_publish",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts;\nwith no draft, the live version is resumed. 422 with neither.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAutomationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/automations/{id}/revert": {
+      "post": {
+        "operationId": "SiteAutomations_revert",
+        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteAutomationResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteAutomationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5603,7 +5661,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "SiteBroadcasts_schedule",
-        "description": "Schedule a broadcast to send at a future time",
+        "description": "Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -5671,7 +5729,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/send": {
       "post": {
         "operationId": "SiteBroadcasts_send",
-        "description": "Send a broadcast immediately",
+        "description": "Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -8870,68 +8928,10 @@
         "x-required-permissions": []
       }
     },
-    "/workspaces/{workspaceId}/rules/{id}/activate": {
-      "post": {
-        "operationId": "SiteRules_activate",
-        "description": "Activate a Rule: it reacts to Events recorded from now on, never to past ones",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/SiteRuleResourceKey.workspaceId"
-          },
-          {
-            "$ref": "#/components/parameters/SiteRuleResourceKey.id"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SiteRuleResource"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "RFC 7807 bad request response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "RFC 7807 validation response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Rules"],
-        "x-required-permissions": []
-      }
-    },
     "/workspaces/{workspaceId}/rules/{id}/archive": {
       "post": {
         "operationId": "SiteRules_archive",
-        "description": "Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and\nkeeps its Firings. It can be restored, as a draft.",
+        "description": "Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and\nkeeps its Firings. It can be restored, inactive.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteRuleResourceKey.workspaceId"
@@ -9082,10 +9082,126 @@
         "x-required-permissions": []
       }
     },
+    "/workspaces/{workspaceId}/rules/{id}/publish": {
+      "post": {
+        "operationId": "SiteRules_publish",
+        "description": "Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteRuleResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteRuleResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteRuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/rules/{id}/revert": {
+      "post": {
+        "operationId": "SiteRules_revert",
+        "description": "Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteRuleResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteRuleResourceKey.id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteRuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/rules/{id}/unarchive": {
       "post": {
         "operationId": "SiteRules_unarchive",
-        "description": "Restore an archived Rule to the list, as a draft",
+        "description": "Restore an archived Rule to the list, inactive",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteRuleResourceKey.workspaceId"
@@ -12495,7 +12611,7 @@
           "integrations:read",
           "emails:send",
           "broadcasts:send",
-          "automations:activate",
+          "automations:publish",
           "mcp:send",
           "sending_domains:write",
           "integrations:write",
@@ -13527,7 +13643,7 @@
       },
       "SendScope": {
         "type": "string",
-        "enum": ["emails:send", "broadcasts:send", "automations:activate", "mcp:send"],
+        "enum": ["emails:send", "broadcasts:send", "automations:publish", "mcp:send"],
         "description": "Send-class scopes (ADR 0016, \"Send is a second lock\"). An OAuth client gets them\nonly when the user explicitly opts in. mcp:send is the MCP-specific key: send-class\ntools are not listed over /mcp without it, so any send-class grant brings it along.",
         "x-grant-permissions": [
           {
@@ -13537,7 +13653,7 @@
             "scope": "broadcasts:send"
           },
           {
-            "scope": "automations:activate"
+            "scope": "automations:publish"
           },
           {
             "scope": "mcp:send"
@@ -14372,7 +14488,7 @@
       },
       "SiteAutomationResource": {
         "type": "object",
-        "required": ["id", "name", "status", "triggerEvent", "steps", "createdAt", "updatedAt"],
+        "required": ["id", "name", "status", "live", "draft", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -14394,26 +14510,25 @@
             ],
             "description": "Lifecycle status"
           },
-          "triggerEvent": {
-            "type": "string",
-            "description": "Event action that enrolls a contact (e.g. \"contact.created\", \"email.opened\")"
-          },
-          "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SiteAutomationStep"
-            },
-            "description": "The automation's ordered, linear steps"
-          },
-          "integrationId": {
-            "type": "string",
+          "live": {
+            "type": "object",
             "allOf": [
               {
-                "$ref": "#/components/schemas/EntityId"
+                "$ref": "#/components/schemas/SiteAutomationVersion"
               }
             ],
             "nullable": true,
-            "description": "Sending integration of the email steps; null means the workspace default"
+            "description": "What it does now: the version new enrollments begin on; null until first published"
+          },
+          "draft": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteAutomationVersion"
+              }
+            ],
+            "nullable": true,
+            "description": "Unpublished changes, the one version above live; null when there are none"
           },
           "archivedAt": {
             "type": "string",
@@ -14454,8 +14569,8 @@
       },
       "SiteAutomationStatus": {
         "type": "string",
-        "enum": ["draft", "active"],
-        "description": "Automation lifecycle status"
+        "enum": ["active", "inactive"],
+        "description": "Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody"
       },
       "SiteAutomationStep": {
         "type": "object",
@@ -14529,6 +14644,39 @@
         "type": "string",
         "enum": ["email", "wait", "apply_tag", "remove_tag", "http"],
         "description": "Kind of automation step"
+      },
+      "SiteAutomationVersion": {
+        "type": "object",
+        "required": ["number", "triggerEvent", "steps"],
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1 for the first version, plus one per version after it"
+          },
+          "triggerEvent": {
+            "type": "string",
+            "description": "Event action that enrolls a contact (e.g. \"contact.created\", \"email.opened\")"
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Sending integration of the email steps; null means the workspace default"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteAutomationStep"
+            },
+            "description": "The ordered, linear steps"
+          }
+        },
+        "description": "One version of an automation's definition: what publishing makes it do (ADR 0065)"
       },
       "SiteBrandKitResource": {
         "type": "object",
@@ -14709,7 +14857,7 @@
               }
             ],
             "nullable": true,
-            "description": "Target segment; null means all contacts"
+            "description": "Target segment; null means all contacts. Once the broadcast leaves draft it holds a copy of\nthe segment's condition taken then, and this names the segment only as where its audience\ncame from."
           },
           "integrationId": {
             "type": "string",
@@ -15773,7 +15921,7 @@
             "description": "The Actions to run, in order"
           }
         },
-        "description": "Site request body for creating a Rule (always created as a draft)"
+        "description": "Site request body for creating a Rule: it is created inactive, with its definition as the draft"
       },
       "SiteCreateSegmentInput": {
         "type": "object",
@@ -17990,7 +18138,7 @@
       },
       "SiteRuleResource": {
         "type": "object",
-        "required": ["id", "name", "status", "triggerEvents", "actions", "createdAt", "updatedAt"],
+        "required": ["id", "name", "status", "live", "draft", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -18012,27 +18160,25 @@
             ],
             "description": "Lifecycle status"
           },
-          "triggerEvents": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "The Event actions that make the Rule fire; any one of them does"
-          },
-          "condition": {
+          "live": {
+            "type": "object",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteConditionGroup"
+                "$ref": "#/components/schemas/SiteRuleVersion"
               }
             ],
-            "description": "The Contact must match this condition for the Rule to fire; absent or empty means every Contact"
+            "nullable": true,
+            "description": "What the Rule does now; null until it is first published"
           },
-          "actions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SiteRuleAction"
-            },
-            "description": "The Rule's ordered Actions"
+          "draft": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteRuleVersion"
+              }
+            ],
+            "nullable": true,
+            "description": "Unpublished changes, the one version above live; null when there are none"
           },
           "activatedAt": {
             "type": "string",
@@ -18042,7 +18188,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the Rule was last activated. It acts only on Events recorded after it."
+            "description": "When the Rule last became active by Publish. It acts only on Events recorded after it."
           },
           "archivedAt": {
             "type": "string",
@@ -18071,12 +18217,46 @@
             "description": "Last update timestamp"
           }
         },
-        "description": "Rule resource used by the site UI: a stateless reaction to an Event. Created Rules are drafts."
+        "description": "Rule resource used by the site UI: a stateless reaction to an Event. Its definition is versioned (ADR 0065): an edit writes the draft, and Publish makes it live. Created Rules are inactive."
       },
       "SiteRuleStatus": {
         "type": "string",
-        "enum": ["draft", "active"],
-        "description": "Rule lifecycle status"
+        "enum": ["active", "inactive"],
+        "description": "Rule lifecycle status: active reacts to Events, inactive acts on nothing"
+      },
+      "SiteRuleVersion": {
+        "type": "object",
+        "required": ["number", "triggerEvents", "actions"],
+        "properties": {
+          "number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1 for the first version, plus one per version after it"
+          },
+          "triggerEvents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The Event actions that make the Rule fire; any one of them does"
+          },
+          "condition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteConditionGroup"
+              }
+            ],
+            "description": "The Contact must match this condition for the Rule to fire; absent means every Contact"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteRuleAction"
+            },
+            "description": "The Rule's ordered Actions"
+          }
+        },
+        "description": "One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions"
       },
       "SiteSaveBrandKitInput": {
         "type": "object",
@@ -19175,7 +19355,7 @@
             "description": "Sending integration of the email steps; null means the workspace default, omitted keeps it"
           }
         },
-        "description": "Site request body for updating an automation"
+        "description": "Site request body for updating an automation. The name changes at once; the trigger, steps\nand integration write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and publishing makes the draft live."
       },
       "SiteUpdateBroadcastInput": {
         "type": "object",
@@ -19447,7 +19627,7 @@
             "description": "The Actions to run, in order"
           }
         },
-        "description": "Site request body for updating a Rule"
+        "description": "Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's."
       },
       "SiteUpdateSegmentInput": {
         "type": "object",

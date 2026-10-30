@@ -89,7 +89,7 @@ func TestExternalIntegrationArchiveIsRefusedWhileAnAutomationNamesIt(t *testing.
 		require.NoError(t, err)
 		return out
 	}
-	env.DB.Automation.UpdateOneID(fixtures.AutomationJobsGreetingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
+	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
 
 	users := usersOfRefusal(t, archive(fixtures.IntegrationAcmeMailgunID))
 
@@ -108,7 +108,7 @@ func TestExternalDefaultIntegrationIsNotUsedByAnAutomationThatNamesAnother(t *te
 	}
 	require.Len(t, automationUsers(archiveDefault(), fixtures.AutomationJobsGreetingID), 1, "naming none, it uses the default")
 
-	env.DB.Automation.UpdateOneID(fixtures.AutomationJobsGreetingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
+	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
 
 	assert.Empty(t, automationUsers(archiveDefault(), fixtures.AutomationJobsGreetingID))
 }

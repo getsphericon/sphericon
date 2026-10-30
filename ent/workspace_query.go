@@ -40,7 +40,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -83,7 +84,8 @@ type WorkspaceQuery struct {
 	withAutomationVersions  *AutomationVersionQuery
 	withAutomationRuns      *AutomationRunQuery
 	withRules               *RuleQuery
-	withRuleTriggers        *RuleTriggerQuery
+	withRuleVersions        *RuleVersionQuery
+	withRuleVersionTriggers *RuleVersionTriggerQuery
 	withRuleFirings         *RuleFiringQuery
 	withWebhookEndpoints    *WebhookEndpointQuery
 	withSuppressions        *SuppressionQuery
@@ -639,9 +641,9 @@ func (_q *WorkspaceQuery) QueryRules() *RuleQuery {
 	return query
 }
 
-// QueryRuleTriggers chains the current query on the "rule_triggers" edge.
-func (_q *WorkspaceQuery) QueryRuleTriggers() *RuleTriggerQuery {
-	query := (&RuleTriggerClient{config: _q.config}).Query()
+// QueryRuleVersions chains the current query on the "rule_versions" edge.
+func (_q *WorkspaceQuery) QueryRuleVersions() *RuleVersionQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -652,8 +654,30 @@ func (_q *WorkspaceQuery) QueryRuleTriggers() *RuleTriggerQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
-			sqlgraph.To(ruletrigger.Table, ruletrigger.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleTriggersTable, workspace.RuleTriggersColumn),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleVersionsTable, workspace.RuleVersionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRuleVersionTriggers chains the current query on the "rule_version_triggers" edge.
+func (_q *WorkspaceQuery) QueryRuleVersionTriggers() *RuleVersionTriggerQuery {
+	query := (&RuleVersionTriggerClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(ruleversiontrigger.Table, ruleversiontrigger.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleVersionTriggersTable, workspace.RuleVersionTriggersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1140,7 +1164,8 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withAutomationVersions:  _q.withAutomationVersions.Clone(),
 		withAutomationRuns:      _q.withAutomationRuns.Clone(),
 		withRules:               _q.withRules.Clone(),
-		withRuleTriggers:        _q.withRuleTriggers.Clone(),
+		withRuleVersions:        _q.withRuleVersions.Clone(),
+		withRuleVersionTriggers: _q.withRuleVersionTriggers.Clone(),
 		withRuleFirings:         _q.withRuleFirings.Clone(),
 		withWebhookEndpoints:    _q.withWebhookEndpoints.Clone(),
 		withSuppressions:        _q.withSuppressions.Clone(),
@@ -1413,14 +1438,25 @@ func (_q *WorkspaceQuery) WithRules(opts ...func(*RuleQuery)) *WorkspaceQuery {
 	return _q
 }
 
-// WithRuleTriggers tells the query-builder to eager-load the nodes that are connected to
-// the "rule_triggers" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *WorkspaceQuery) WithRuleTriggers(opts ...func(*RuleTriggerQuery)) *WorkspaceQuery {
-	query := (&RuleTriggerClient{config: _q.config}).Query()
+// WithRuleVersions tells the query-builder to eager-load the nodes that are connected to
+// the "rule_versions" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithRuleVersions(opts ...func(*RuleVersionQuery)) *WorkspaceQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withRuleTriggers = query
+	_q.withRuleVersions = query
+	return _q
+}
+
+// WithRuleVersionTriggers tells the query-builder to eager-load the nodes that are connected to
+// the "rule_version_triggers" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithRuleVersionTriggers(opts ...func(*RuleVersionTriggerQuery)) *WorkspaceQuery {
+	query := (&RuleVersionTriggerClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRuleVersionTriggers = query
 	return _q
 }
 
@@ -1634,7 +1670,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [36]bool{
+		loadedTypes = [37]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1658,7 +1694,8 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withAutomationVersions != nil,
 			_q.withAutomationRuns != nil,
 			_q.withRules != nil,
-			_q.withRuleTriggers != nil,
+			_q.withRuleVersions != nil,
+			_q.withRuleVersionTriggers != nil,
 			_q.withRuleFirings != nil,
 			_q.withWebhookEndpoints != nil,
 			_q.withSuppressions != nil,
@@ -1859,10 +1896,19 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			return nil, err
 		}
 	}
-	if query := _q.withRuleTriggers; query != nil {
-		if err := _q.loadRuleTriggers(ctx, query, nodes,
-			func(n *Workspace) { n.Edges.RuleTriggers = []*RuleTrigger{} },
-			func(n *Workspace, e *RuleTrigger) { n.Edges.RuleTriggers = append(n.Edges.RuleTriggers, e) }); err != nil {
+	if query := _q.withRuleVersions; query != nil {
+		if err := _q.loadRuleVersions(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.RuleVersions = []*RuleVersion{} },
+			func(n *Workspace, e *RuleVersion) { n.Edges.RuleVersions = append(n.Edges.RuleVersions, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withRuleVersionTriggers; query != nil {
+		if err := _q.loadRuleVersionTriggers(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.RuleVersionTriggers = []*RuleVersionTrigger{} },
+			func(n *Workspace, e *RuleVersionTrigger) {
+				n.Edges.RuleVersionTriggers = append(n.Edges.RuleVersionTriggers, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -2643,7 +2689,7 @@ func (_q *WorkspaceQuery) loadRules(ctx context.Context, query *RuleQuery, nodes
 	}
 	return nil
 }
-func (_q *WorkspaceQuery) loadRuleTriggers(ctx context.Context, query *RuleTriggerQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *RuleTrigger)) error {
+func (_q *WorkspaceQuery) loadRuleVersions(ctx context.Context, query *RuleVersionQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *RuleVersion)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*Workspace)
 	for i := range nodes {
@@ -2654,10 +2700,40 @@ func (_q *WorkspaceQuery) loadRuleTriggers(ctx context.Context, query *RuleTrigg
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(ruletrigger.FieldWorkspaceID)
+		query.ctx.AppendFieldOnce(ruleversion.FieldWorkspaceID)
 	}
-	query.Where(predicate.RuleTrigger(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(workspace.RuleTriggersColumn), fks...))
+	query.Where(predicate.RuleVersion(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.RuleVersionsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadRuleVersionTriggers(ctx context.Context, query *RuleVersionTriggerQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *RuleVersionTrigger)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(ruleversiontrigger.FieldWorkspaceID)
+	}
+	query.Where(predicate.RuleVersionTrigger(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.RuleVersionTriggersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

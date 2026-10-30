@@ -46,7 +46,7 @@ export const ApiTokenScope = {
   INTEGRATIONS_READ: 'integrations:read',
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
-  AUTOMATIONS_ACTIVATE: 'automations:activate',
+  AUTOMATIONS_PUBLISH: 'automations:publish',
   MCP_SEND: 'mcp:send',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
@@ -205,8 +205,9 @@ export type AutomationHttpHeader = {
 };
 
 /**
- * An Automation: an event-triggered, ordered sequence of steps. Created
- * automations are always draft; activating is a separate, send-class operation.
+ * An Automation: an event-triggered, ordered sequence of steps. Edits write a draft beside the
+ * live version, and only publishing (a send-class operation) changes what it does. Created
+ * automations are always inactive, with the definition as their draft.
  */
 export type AutomationResource = {
   /**
@@ -222,17 +223,13 @@ export type AutomationResource = {
    */
   status: AutomationStatus;
   /**
-   * Event action that enrolls a contact (e.g. "contact.created", "email.opened")
+   * What it does now: the version new enrollments begin on; null until first published
    */
-  triggerEvent: string;
+  live: AutomationVersion | null;
   /**
-   * The automation's ordered, linear steps
+   * Unpublished changes, the one version above live; null when there are none
    */
-  steps: Array<AutomationStep>;
-  /**
-   * Sending integration of the email steps; null means the workspace default
-   */
-  integrationId?: EntityId | null;
+  draft: AutomationVersion | null;
   /**
    * When the automation was archived; null while it is kept
    */
@@ -248,12 +245,12 @@ export type AutomationResource = {
 };
 
 /**
- * Automation lifecycle status
+ * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
-export const AutomationStatus = { DRAFT: 'draft', ACTIVE: 'active' } as const;
+export const AutomationStatus = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
 
 /**
- * Automation lifecycle status
+ * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
 export type AutomationStatus = typeof AutomationStatus[keyof typeof AutomationStatus];
 
@@ -336,6 +333,28 @@ export const AutomationStepType = {
  * Kind of automation step
  */
 export type AutomationStepType = typeof AutomationStepType[keyof typeof AutomationStepType];
+
+/**
+ * One version of an automation's definition: what publishing makes it do (ADR 0065)
+ */
+export type AutomationVersion = {
+  /**
+   * 1 for the first version, plus one per version after it
+   */
+  number: number;
+  /**
+   * Event action that enrolls a contact (e.g. "contact.created", "email.opened")
+   */
+  triggerEvent: string;
+  /**
+   * Sending integration of the email steps; null means the workspace default
+   */
+  integrationId?: EntityId | null;
+  /**
+   * The ordered, linear steps
+   */
+  steps: Array<AutomationStep>;
+};
 
 /**
  * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a
@@ -494,7 +513,7 @@ export type BroadcastResource = {
    */
   editorVersion?: string | null;
   /**
-   * Segment this broadcast goes to; null means all contacts
+   * Segment this broadcast goes to; null means all contacts. Once the broadcast leaves draft it holds a copy of the segment's condition taken then, and this names the segment only as where its audience came from.
    */
   segmentId?: EntityId | null;
   /**
@@ -1310,7 +1329,7 @@ export type CreateApiTokenResponse = {
 };
 
 /**
- * Request body for creating an automation (always created as a draft)
+ * Request body for creating an automation (always created inactive)
  */
 export type CreateAutomationInput = {
   name: string;
@@ -1420,7 +1439,7 @@ export type CreateIntegrationInput = {
 };
 
 /**
- * Request body for creating a Rule (always created as a draft)
+ * Request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export type CreateRuleInput = {
   name: string;
@@ -2946,8 +2965,9 @@ export type RuleFiringResource = {
 
 /**
  * A Rule: a stateless reaction to an Event. When any of its Trigger events is recorded for a
- * Contact and its condition holds, its Actions run at once, in order. Created Rules are drafts;
- * activating is a separate, send-class operation.
+ * Contact and its condition holds, its Actions run at once, in order. Its definition is versioned
+ * (ADR 0065): an edit writes the draft, and publishing, a separate send-class operation, makes it
+ * live. Created Rules are inactive.
  */
 export type RuleResource = {
   /**
@@ -2963,19 +2983,15 @@ export type RuleResource = {
    */
   status: RuleStatus;
   /**
-   * The Event actions that make the Rule fire; any one of them does
+   * What the Rule does now; null until it is first published
    */
-  triggerEvents: Array<string>;
+  live: RuleVersion | null;
   /**
-   * The Contact must match this condition for the Rule to fire; absent or empty means every Contact
+   * Unpublished changes, the one version above live; null when there are none
    */
-  condition?: ConditionGroup;
+  draft: RuleVersion | null;
   /**
-   * The Rule's ordered Actions
-   */
-  actions: Array<RuleAction>;
-  /**
-   * When the Rule was last activated. It acts only on Events recorded after it.
+   * When the Rule last became active by Publish. It acts only on Events recorded after it.
    */
   activatedAt?: Timestamp | null;
   /**
@@ -2993,14 +3009,36 @@ export type RuleResource = {
 };
 
 /**
- * Rule lifecycle status
+ * Rule lifecycle status: active reacts to Events, inactive acts on nothing
  */
-export const RuleStatus = { DRAFT: 'draft', ACTIVE: 'active' } as const;
+export const RuleStatus = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
 
 /**
- * Rule lifecycle status
+ * Rule lifecycle status: active reacts to Events, inactive acts on nothing
  */
 export type RuleStatus = typeof RuleStatus[keyof typeof RuleStatus];
+
+/**
+ * One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions
+ */
+export type RuleVersion = {
+  /**
+   * 1 for the first version, plus one per version after it
+   */
+  number: number;
+  /**
+   * The Event actions that make the Rule fire; any one of them does
+   */
+  triggerEvents: Array<string>;
+  /**
+   * The Contact must match this condition for the Rule to fire; absent means every Contact
+   */
+  condition?: ConditionGroup;
+  /**
+   * The Rule's ordered Actions
+   */
+  actions: Array<RuleAction>;
+};
 
 /**
  * Request body for scheduling a broadcast
@@ -3106,7 +3144,7 @@ export type SendLimitWarning = typeof SendLimitWarning[keyof typeof SendLimitWar
 export const SendScope = {
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
-  AUTOMATIONS_ACTIVATE: 'automations:activate',
+  AUTOMATIONS_PUBLISH: 'automations:publish',
   MCP_SEND: 'mcp:send'
 } as const;
 
@@ -3566,7 +3604,9 @@ export type UnsubscribeResource = {
 };
 
 /**
- * Request body for updating an automation
+ * Request body for updating an automation. The name changes at once; the trigger, steps and
+ * integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and only publishing makes the draft live.
  */
 export type UpdateAutomationInput = {
   name?: string;
@@ -3680,7 +3720,7 @@ export type UpdateIntegrationInput = {
 };
 
 /**
- * Request body for updating a Rule
+ * Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
 export type UpdateRuleInput = {
   name?: string;
@@ -4853,56 +4893,6 @@ export type AutomationsUpdateResponses = {
 
 export type AutomationsUpdateResponse = AutomationsUpdateResponses[keyof AutomationsUpdateResponses];
 
-export type AutomationsActivateData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/automations/{id}/activate';
-};
-
-export type AutomationsActivateErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type AutomationsActivateError = AutomationsActivateErrors[keyof AutomationsActivateErrors];
-
-export type AutomationsActivateResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: AutomationResource;
-};
-
-export type AutomationsActivateResponse = AutomationsActivateResponses[keyof AutomationsActivateResponses];
-
 export type AutomationsArchiveData = {
   body?: never;
   path: {
@@ -5000,6 +4990,106 @@ export type AutomationsDeactivateResponses = {
 };
 
 export type AutomationsDeactivateResponse = AutomationsDeactivateResponses[keyof AutomationsDeactivateResponses];
+
+export type AutomationsPublishData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/automations/{id}/publish';
+};
+
+export type AutomationsPublishErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type AutomationsPublishError = AutomationsPublishErrors[keyof AutomationsPublishErrors];
+
+export type AutomationsPublishResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: AutomationResource;
+};
+
+export type AutomationsPublishResponse = AutomationsPublishResponses[keyof AutomationsPublishResponses];
+
+export type AutomationsRevertData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/automations/{id}/revert';
+};
+
+export type AutomationsRevertErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type AutomationsRevertError = AutomationsRevertErrors[keyof AutomationsRevertErrors];
+
+export type AutomationsRevertResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: AutomationResource;
+};
+
+export type AutomationsRevertResponse = AutomationsRevertResponses[keyof AutomationsRevertResponses];
 
 export type AutomationsUnarchiveData = {
   body?: never;
@@ -7746,56 +7836,6 @@ export type RulesUpdateResponses = {
 
 export type RulesUpdateResponse = RulesUpdateResponses[keyof RulesUpdateResponses];
 
-export type RulesActivateData = {
-  body?: never;
-  path: {
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/rules/{id}/activate';
-};
-
-export type RulesActivateErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 unauthorized response
-   */
-  401: ProblemDetails;
-  /**
-   * RFC 7807 forbidden response
-   */
-  403: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-  /**
-   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
-   */
-  429: ProblemDetails;
-};
-
-export type RulesActivateError = RulesActivateErrors[keyof RulesActivateErrors];
-
-export type RulesActivateResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: RuleResource;
-};
-
-export type RulesActivateResponse = RulesActivateResponses[keyof RulesActivateResponses];
-
 export type RulesArchiveData = {
   body?: never;
   path: {
@@ -7933,6 +7973,106 @@ export type RulesDryRunResponses = {
 };
 
 export type RulesDryRunResponse = RulesDryRunResponses[keyof RulesDryRunResponses];
+
+export type RulesPublishData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/rules/{id}/publish';
+};
+
+export type RulesPublishErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type RulesPublishError = RulesPublishErrors[keyof RulesPublishErrors];
+
+export type RulesPublishResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: RuleResource;
+};
+
+export type RulesPublishResponse = RulesPublishResponses[keyof RulesPublishResponses];
+
+export type RulesRevertData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/rules/{id}/revert';
+};
+
+export type RulesRevertErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type RulesRevertError = RulesRevertErrors[keyof RulesRevertErrors];
+
+export type RulesRevertResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: RuleResource;
+};
+
+export type RulesRevertResponse = RulesRevertResponses[keyof RulesRevertResponses];
 
 export type RulesUnarchiveData = {
   body?: never;

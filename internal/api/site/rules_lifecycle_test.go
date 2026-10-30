@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestSiteRulesArchiveHidesARuleAndUnarchiveBringsItBackAsADraft(t *testing.T) {
+func TestSiteRulesArchiveHidesARuleAndUnarchiveBringsItBackInactive(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
@@ -28,7 +28,7 @@ func TestSiteRulesArchiveHidesARuleAndUnarchiveBringsItBackAsADraft(t *testing.T
 	require.Truef(t, ok, "got %T", archived)
 	_, isArchived := res.ArchivedAt.Get()
 	assert.True(t, isArchived)
-	assert.Equal(t, siteapi.SiteRuleStatusDraft, res.Status)
+	assert.Equal(t, siteapi.SiteRuleStatusInactive, res.Status)
 
 	kept, err := c.SiteRulesList(ctx, siteapi.SiteRulesListParams{WorkspaceId: ws})
 	require.NoError(t, err)
@@ -39,9 +39,9 @@ func TestSiteRulesArchiveHidesARuleAndUnarchiveBringsItBackAsADraft(t *testing.T
 	require.NoError(t, err)
 	require.Len(t, listed.(*siteapi.SiteRulesListOK).Items, 1)
 
-	act, err := c.SiteRulesActivate(ctx, siteapi.SiteRulesActivateParams{WorkspaceId: ws, ID: id})
+	act, err := c.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: id})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.SiteRulesActivateNotFound{}, act, "an archived Rule is restored before it is activated")
+	assert.IsType(t, &siteapi.SiteRulesPublishNotFound{}, act, "an archived Rule is restored before it is published")
 
 	restored, err := c.SiteRulesUnarchive(ctx, siteapi.SiteRulesUnarchiveParams{WorkspaceId: ws, ID: id})
 	require.NoError(t, err)
@@ -49,7 +49,7 @@ func TestSiteRulesArchiveHidesARuleAndUnarchiveBringsItBackAsADraft(t *testing.T
 	require.Truef(t, ok, "got %T", restored)
 	_, isArchived = back.ArchivedAt.Get()
 	assert.False(t, isArchived)
-	assert.Equal(t, siteapi.SiteRuleStatusDraft, back.Status)
+	assert.Equal(t, siteapi.SiteRuleStatusInactive, back.Status)
 }
 
 func TestSiteRulesDeletePurgesARuleWithNoFiringsAndRefusesOneWithFirings(t *testing.T) {
@@ -67,10 +67,10 @@ func TestSiteRulesDeletePurgesARuleWithNoFiringsAndRefusesOneWithFirings(t *test
 	assert.Equal(t, fixtures.RuleTagClickedName, problem.UsedBy[0].Name)
 	assert.EqualValues(t, 2, problem.UsedBy[0].Count.Or(0))
 
-	deleted, err := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: idStr(fixtures.RuleDraftID)})
+	deleted, err := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: idStr(fixtures.RuleInactiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteRulesDeleteNoContent{}, deleted)
-	gone, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: ws, ID: idStr(fixtures.RuleDraftID)})
+	gone, err := c.SiteRulesGet(ctx, siteapi.SiteRulesGetParams{WorkspaceId: ws, ID: idStr(fixtures.RuleInactiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteRulesGetNotFound{}, gone)
 }

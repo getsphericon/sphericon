@@ -6,9 +6,11 @@ import (
 	"fmt"
 
 	"github.com/qmuntal/stateless"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
 
@@ -53,6 +55,9 @@ func machine(s *ent.Scoped, id int64, set update) *stateless.StateMachine {
 			if set != nil {
 				set(u)
 			}
+			if err := copyCondition(ctx, s, id, from, to, u); err != nil {
+				return false, err
+			}
 			n, err := u.Save(ctx)
 			return n > 0, err
 		},
@@ -75,6 +80,40 @@ func machine(s *ent.Scoped, id int64, set update) *stateless.StateMachine {
 	m.Configure(broadcast.StatusSent)
 	m.Configure(broadcast.StatusFailed)
 	return m
+}
+
+// copyCondition writes the copy of the Segment's Condition that a move needs (ADR 0065): leaving
+// draft arms the Broadcast and takes the copy, returning to draft drops it, and every other move
+// (a reschedule included) keeps it. A Broadcast to all contacts copies nothing. An archived
+// Segment takes no part in new work (ADR 0049), so arming a draft that still names one is
+// ErrSegmentNotFound.
+func copyCondition(ctx context.Context, s *ent.Scoped, id int64, from, to broadcast.Status, u *ent.BroadcastScopedUpdate) error {
+	if to == broadcast.StatusDraft {
+		u.ClearCondition()
+		return nil
+	}
+	if from != broadcast.StatusDraft {
+		return nil
+	}
+	b, err := s.Broadcast().Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	// The write also matches the Segment read here, so a draft re-targeted meanwhile loses the race
+	// instead of pairing one Segment's copy with another as provenance.
+	if b.SegmentID == nil {
+		u.Where(broadcast.SegmentIDIsNil()).ClearCondition()
+		return nil
+	}
+	seg, err := s.Segment().Query().Where(segment.ID(*b.SegmentID)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return ErrSegmentNotFound
+	}
+	if err != nil {
+		return err
+	}
+	u.Where(broadcast.SegmentID(*b.SegmentID)).SetCondition(lo.FromPtr(seg.Condition))
+	return nil
 }
 
 // fire makes one move of the Broadcast, writing set with the status. An unpermitted move, or

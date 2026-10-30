@@ -25,7 +25,8 @@ const (
 	Automation Kind = "automation"
 	// Segment is a Segment whose rule names the row.
 	Segment Kind = "segment"
-	// Rule is an active Rule that uses the row: through a Condition leaf or an Action.
+	// Rule is a kept Rule that uses the row in its live version or its draft: through a Condition
+	// leaf or an Action.
 	Rule Kind = "rule"
 	// Enrollment stands for the Enrollments of an Automation: one User naming the
 	// Automation, with their Count.

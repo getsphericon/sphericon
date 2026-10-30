@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -95,22 +94,30 @@ func (_c *AutomationCreate) SetNillableStatus(v *automation.Status) *AutomationC
 	return _c
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_c *AutomationCreate) SetTriggerEvent(v string) *AutomationCreate {
-	_c.mutation.SetTriggerEvent(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (_c *AutomationCreate) SetLiveVersionID(v int64) *AutomationCreate {
+	_c.mutation.SetLiveVersionID(v)
 	return _c
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (_c *AutomationCreate) SetIntegrationID(v int64) *AutomationCreate {
-	_c.mutation.SetIntegrationID(v)
-	return _c
-}
-
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (_c *AutomationCreate) SetNillableIntegrationID(v *int64) *AutomationCreate {
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (_c *AutomationCreate) SetNillableLiveVersionID(v *int64) *AutomationCreate {
 	if v != nil {
-		_c.SetIntegrationID(*v)
+		_c.SetLiveVersionID(*v)
+	}
+	return _c
+}
+
+// SetDraftVersionID sets the "draft_version_id" field.
+func (_c *AutomationCreate) SetDraftVersionID(v int64) *AutomationCreate {
+	_c.mutation.SetDraftVersionID(v)
+	return _c
+}
+
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (_c *AutomationCreate) SetNillableDraftVersionID(v *int64) *AutomationCreate {
+	if v != nil {
+		_c.SetDraftVersionID(*v)
 	}
 	return _c
 }
@@ -171,9 +178,14 @@ func (_c *AutomationCreate) AddOutboundMessages(v ...*OutboundMessage) *Automati
 	return _c.AddOutboundMessageIDs(ids...)
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (_c *AutomationCreate) SetIntegration(v *Integration) *AutomationCreate {
-	return _c.SetIntegrationID(v.ID)
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (_c *AutomationCreate) SetLiveVersion(v *AutomationVersion) *AutomationCreate {
+	return _c.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (_c *AutomationCreate) SetDraftVersion(v *AutomationVersion) *AutomationCreate {
+	return _c.SetDraftVersionID(v.ID)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -252,14 +264,6 @@ func (_c *AutomationCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.TriggerEvent(); !ok {
-		return &ValidationError{Name: "trigger_event", err: errors.New(`ent: missing required field "Automation.trigger_event"`)}
-	}
-	if v, ok := _c.mutation.TriggerEvent(); ok {
-		if err := automation.TriggerEventValidator(v); err != nil {
-			return &ValidationError{Name: "trigger_event", err: fmt.Errorf(`ent: validator failed for field "Automation.trigger_event": %w`, err)}
-		}
-	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Automation.workspace"`)}
 	}
@@ -315,10 +319,6 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(automation.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
-	}
-	if value, ok := _c.mutation.TriggerEvent(); ok {
-		_spec.SetField(automation.FieldTriggerEvent, field.TypeString, value)
-		_node.TriggerEvent = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -385,21 +385,38 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.IntegrationIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.LiveVersionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   automation.IntegrationTable,
-			Columns: []string{automation.IntegrationColumn},
+			Table:   automation.LiveVersionTable,
+			Columns: []string{automation.LiveVersionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.IntegrationID = &nodes[0]
+		_node.LiveVersionID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.DraftVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.DraftVersionTable,
+			Columns: []string{automation.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.DraftVersionID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -520,33 +537,39 @@ func (u *AutomationUpsert) UpdateStatus() *AutomationUpsert {
 	return u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationUpsert) SetTriggerEvent(v string) *AutomationUpsert {
-	u.Set(automation.FieldTriggerEvent, v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (u *AutomationUpsert) SetLiveVersionID(v int64) *AutomationUpsert {
+	u.Set(automation.FieldLiveVersionID, v)
 	return u
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationUpsert) UpdateTriggerEvent() *AutomationUpsert {
-	u.SetExcluded(automation.FieldTriggerEvent)
+// UpdateLiveVersionID sets the "live_version_id" field to the value that was provided on create.
+func (u *AutomationUpsert) UpdateLiveVersionID() *AutomationUpsert {
+	u.SetExcluded(automation.FieldLiveVersionID)
 	return u
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (u *AutomationUpsert) SetIntegrationID(v int64) *AutomationUpsert {
-	u.Set(automation.FieldIntegrationID, v)
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (u *AutomationUpsert) ClearLiveVersionID() *AutomationUpsert {
+	u.SetNull(automation.FieldLiveVersionID)
 	return u
 }
 
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationUpsert) UpdateIntegrationID() *AutomationUpsert {
-	u.SetExcluded(automation.FieldIntegrationID)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (u *AutomationUpsert) SetDraftVersionID(v int64) *AutomationUpsert {
+	u.Set(automation.FieldDraftVersionID, v)
 	return u
 }
 
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationUpsert) ClearIntegrationID() *AutomationUpsert {
-	u.SetNull(automation.FieldIntegrationID)
+// UpdateDraftVersionID sets the "draft_version_id" field to the value that was provided on create.
+func (u *AutomationUpsert) UpdateDraftVersionID() *AutomationUpsert {
+	u.SetExcluded(automation.FieldDraftVersionID)
+	return u
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (u *AutomationUpsert) ClearDraftVersionID() *AutomationUpsert {
+	u.SetNull(automation.FieldDraftVersionID)
 	return u
 }
 
@@ -678,38 +701,45 @@ func (u *AutomationUpsertOne) UpdateStatus() *AutomationUpsertOne {
 	})
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationUpsertOne) SetTriggerEvent(v string) *AutomationUpsertOne {
+// SetLiveVersionID sets the "live_version_id" field.
+func (u *AutomationUpsertOne) SetLiveVersionID(v int64) *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
-		s.SetTriggerEvent(v)
+		s.SetLiveVersionID(v)
 	})
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationUpsertOne) UpdateTriggerEvent() *AutomationUpsertOne {
+// UpdateLiveVersionID sets the "live_version_id" field to the value that was provided on create.
+func (u *AutomationUpsertOne) UpdateLiveVersionID() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateTriggerEvent()
+		s.UpdateLiveVersionID()
 	})
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (u *AutomationUpsertOne) SetIntegrationID(v int64) *AutomationUpsertOne {
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (u *AutomationUpsertOne) ClearLiveVersionID() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
-		s.SetIntegrationID(v)
+		s.ClearLiveVersionID()
 	})
 }
 
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationUpsertOne) UpdateIntegrationID() *AutomationUpsertOne {
+// SetDraftVersionID sets the "draft_version_id" field.
+func (u *AutomationUpsertOne) SetDraftVersionID(v int64) *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateIntegrationID()
+		s.SetDraftVersionID(v)
 	})
 }
 
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationUpsertOne) ClearIntegrationID() *AutomationUpsertOne {
+// UpdateDraftVersionID sets the "draft_version_id" field to the value that was provided on create.
+func (u *AutomationUpsertOne) UpdateDraftVersionID() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
-		s.ClearIntegrationID()
+		s.UpdateDraftVersionID()
+	})
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (u *AutomationUpsertOne) ClearDraftVersionID() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.ClearDraftVersionID()
 	})
 }
 
@@ -1007,38 +1037,45 @@ func (u *AutomationUpsertBulk) UpdateStatus() *AutomationUpsertBulk {
 	})
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationUpsertBulk) SetTriggerEvent(v string) *AutomationUpsertBulk {
+// SetLiveVersionID sets the "live_version_id" field.
+func (u *AutomationUpsertBulk) SetLiveVersionID(v int64) *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
-		s.SetTriggerEvent(v)
+		s.SetLiveVersionID(v)
 	})
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationUpsertBulk) UpdateTriggerEvent() *AutomationUpsertBulk {
+// UpdateLiveVersionID sets the "live_version_id" field to the value that was provided on create.
+func (u *AutomationUpsertBulk) UpdateLiveVersionID() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateTriggerEvent()
+		s.UpdateLiveVersionID()
 	})
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (u *AutomationUpsertBulk) SetIntegrationID(v int64) *AutomationUpsertBulk {
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (u *AutomationUpsertBulk) ClearLiveVersionID() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
-		s.SetIntegrationID(v)
+		s.ClearLiveVersionID()
 	})
 }
 
-// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
-func (u *AutomationUpsertBulk) UpdateIntegrationID() *AutomationUpsertBulk {
+// SetDraftVersionID sets the "draft_version_id" field.
+func (u *AutomationUpsertBulk) SetDraftVersionID(v int64) *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateIntegrationID()
+		s.SetDraftVersionID(v)
 	})
 }
 
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (u *AutomationUpsertBulk) ClearIntegrationID() *AutomationUpsertBulk {
+// UpdateDraftVersionID sets the "draft_version_id" field to the value that was provided on create.
+func (u *AutomationUpsertBulk) UpdateDraftVersionID() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
-		s.ClearIntegrationID()
+		s.UpdateDraftVersionID()
+	})
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (u *AutomationUpsertBulk) ClearDraftVersionID() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.ClearDraftVersionID()
 	})
 }
 

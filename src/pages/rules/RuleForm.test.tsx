@@ -24,9 +24,9 @@ const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId:
 const STORED: SiteRuleResource = {
   id: '7',
   name: 'Tag signups',
-  status: 'draft',
-  triggerEvents: ['signed_up'],
-  actions: [{ type: 'apply_tag', tag: 'new' }],
+  status: 'inactive',
+  live: null,
+  draft: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'new' }] },
   ...TIMESTAMPS,
 }
 
@@ -137,9 +137,13 @@ test('switching an action to a URL call shows its fields and saves the headers k
 test('the add header button disappears at the limit of five headers', async () => {
   serve({
     ...STORED,
-    actions: [
-      { type: 'http', id: HTTP_ID, headers: ['a', 'b', 'c', 'd', 'e'].map((name) => ({ name })) },
-    ],
+    draft: {
+      number: 1,
+      triggerEvents: ['signed_up'],
+      actions: [
+        { type: 'http', id: HTTP_ID, headers: ['a', 'b', 'c', 'd', 'e'].map((name) => ({ name })) },
+      ],
+    },
   })
 
   const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)

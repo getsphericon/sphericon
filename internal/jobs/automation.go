@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -53,7 +54,7 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 }
 
 // EvaluateTrigger enrolls a contact into every active automation in the workspace
-// whose trigger_event matches action: one AutomationRun each (enroll-once-ever via the
+// whose live version's trigger_event matches action (ADR 0065): one AutomationRun each (enroll-once-ever via the
 // unique index), committed together with the job that starts stepping it (stepping.Enroll), one
 // transaction per Automation. A Contact already enrolled keeps its run and its job. An Event
 // from an Automation's own email (sourceAutomationID) never enrolls the Contact into that
@@ -62,7 +63,7 @@ func EvaluateTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, contac
 	autos, err := s.Automation().Query().
 		Where(
 			automation.StatusEQ(automation.StatusActive),
-			automation.TriggerEvent(action),
+			automation.HasLiveVersionWith(automationversion.TriggerEvent(action)),
 		).
 		All(ctx)
 	if err != nil {
@@ -72,7 +73,7 @@ func EvaluateTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, contac
 		if a.ID == sourceAutomationID {
 			continue
 		}
-		if _, err := stepping.Enroll(ctx, bus, s, a.ID, contactID); err != nil {
+		if _, err := stepping.EnrollOnTrigger(ctx, bus, s, a.ID, contactID, action); err != nil {
 			return err
 		}
 	}

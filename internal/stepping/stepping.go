@@ -66,8 +66,25 @@ func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 // was enrolled before or another writer won the race. It is the one way a trigger or a Rule
 // Action starts an Enrollment.
 func Enroll(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64) (enrolled bool, err error) {
+	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
+		return automations.Enroll(ctx, ts, automationID, contactID)
+	})
+}
+
+// EnrollOnTrigger is Enroll for an Event with the action: it enrolls nobody unless, when the
+// Enrollment is made, the Automation is still active and started by that action in its live
+// version (automations.EnrollOnTrigger).
+func EnrollOnTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, action string) (enrolled bool, err error) {
+	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
+		return automations.EnrollOnTrigger(ctx, ts, automationID, contactID, action)
+	})
+}
+
+// start makes the Enrollment enroll makes and queues the job of its first step, in one
+// transaction.
+func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *ent.Scoped) (int64, bool, error)) (enrolled bool, err error) {
 	err = bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
-		runID, ok, err := automations.Enroll(ctx, ts, automationID, contactID)
+		runID, ok, err := enroll(ts)
 		if err != nil || !ok {
 			return err
 		}
@@ -174,7 +191,7 @@ func (m *Module) Step(ctx context.Context, s *ent.Scoped, runID int64, step int)
 		return m.enqueue(ctx, s, RunHTTPStepArgs{RunID: run.ID, Step: step}, nil)
 
 	case automations.StepEmail:
-		return m.email(ctx, s, a, run, step, st)
+		return m.email(ctx, s, a, run, version, step, st)
 
 	default:
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Type))
@@ -194,7 +211,7 @@ func (m *Module) FailHTTPStep(ctx context.Context, s *ent.Scoped, runID int64, f
 	return quiet(automations.Fail(ctx, s, runID, f))
 }
 
-func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, step int, st automations.Step) error {
+func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, st automations.Step) error {
 	c, err := s.Contact().Get(ctx, run.ContactID)
 	if err != nil {
 		return err
@@ -209,7 +226,7 @@ func (m *Module) email(ctx context.Context, s *ent.Scoped, a *ent.Automation, ru
 	var res outbound.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outbound.AutomationStep(a, run, step, c, st.Subject, st.Body))
+		res, sendErr = m.out.Send(ctx, s, outbound.AutomationStep(a, run, v, step, c, st.Subject, st.Body))
 		return sendErr
 	})
 	if automations.Stale(err) {

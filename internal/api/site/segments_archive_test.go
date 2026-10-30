@@ -36,24 +36,44 @@ func unarchiveSegment(c *siteapi.Client, id int64) (siteapi.SiteSegmentsUnarchiv
 	return c.SiteSegmentsUnarchive(context.Background(), siteapi.SiteSegmentsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(id)})
 }
 
-// A Segment that a draft or scheduled Broadcast uses cannot be archived: the 409 names those
-// Broadcasts (ADR 0049), and the Segment stays in the list.
-func TestSiteSegmentArchiveRefusedWhileLiveBroadcastUsesIt(t *testing.T) {
+// A Segment that a draft Broadcast uses cannot be archived: the 409 names that Broadcast
+// (ADR 0049), and the Segment stays in the list.
+func TestSiteSegmentArchiveRefusedWhileADraftBroadcastUsesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, err := archiveSegment(c, fixtures.SegmentRenewalAudienceID)
+	got, err := archiveSegment(c, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
 	refused, ok := got.(*siteapi.InUseProblemDetails)
 	require.Truef(t, ok, "got %T", got)
 
 	names := lo.Map(refused.UsedBy, func(u siteapi.UsedBy, _ int) string { return u.Name })
-	assert.Equal(t, []string{fixtures.BroadcastScheduledRenewalName}, names)
+	assert.Equal(t, []string{fixtures.BroadcastProSegmentName}, names)
 	kinds := lo.Map(refused.UsedBy, func(u siteapi.UsedBy, _ int) siteapi.UsedByKind { return u.Kind })
 	assert.Equal(t, []siteapi.UsedByKind{siteapi.UsedByKindBroadcast}, kinds)
 	assert.EqualValues(t, http.StatusConflict, refused.Status.Or(0))
 
-	assert.Contains(t, listSegments(t, c, false), int64(fixtures.SegmentRenewalAudienceID))
+	assert.Contains(t, listSegments(t, c, false), int64(fixtures.SegmentProPlanID))
+}
+
+// A scheduled Broadcast holds a copy of its Segment's Condition (ADR 0065), so its Segment is
+// archived, and the Broadcast still names it as where its audience came from.
+func TestSiteSegmentOfAScheduledBroadcastIsArchived(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	got, err := archiveSegment(c, fixtures.SegmentRenewalAudienceID)
+	require.NoError(t, err)
+	archived, ok := got.(*siteapi.SiteSegmentResource)
+	require.Truef(t, ok, "got %T", got)
+	assert.True(t, archived.ArchivedAt.IsSet())
+
+	res, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastScheduledRenewalID)})
+	require.NoError(t, err)
+	b, ok := res.(*siteapi.SiteBroadcastResource)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, siteapi.SiteBroadcastStatusScheduled, b.Status)
+	assert.Equal(t, idStr(fixtures.SegmentRenewalAudienceID), b.SegmentId.Value)
 }
 
 // A Segment that only a failed or sent Broadcast used is archived; the Broadcast keeps its

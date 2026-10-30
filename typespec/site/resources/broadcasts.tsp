@@ -135,7 +135,11 @@ model SiteBroadcastResource {
   /** Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks it */
   warnings?: LintFinding[];
 
-  /** Target segment; null means all contacts */
+  /**
+   * Target segment; null means all contacts. Once the broadcast leaves draft it holds a copy of
+   * the segment's condition taken then, and this names the segment only as where its audience
+   * came from.
+   */
   segmentId?: EntityId | null;
 
   /** Sending integration; null means the workspace default */
@@ -299,7 +303,7 @@ interface SiteBroadcasts
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Send a broadcast immediately */
+  /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. */
   @action("send")
   @autoRoute
   @extension("x-required-permissions", #[])
@@ -309,7 +313,7 @@ interface SiteBroadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Schedule a broadcast to send at a future time */
+  /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. */
   @action("schedule")
   @autoRoute
   @extension("x-required-permissions", #[])

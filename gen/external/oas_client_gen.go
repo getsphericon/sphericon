@@ -55,12 +55,6 @@ type Invoker interface {
 	//
 	// GET /auth/tokens
 	AuthTokensList(ctx context.Context) (AuthTokensListRes, error)
-	// AutomationsActivate invokes Automations_activate operation.
-	//
-	// Activate an automation (starts enrolling contacts). Needs the automations:activate scope.
-	//
-	// POST /automations/{id}/activate
-	AutomationsActivate(ctx context.Context, params AutomationsActivateParams) (AutomationsActivateRes, error)
 	// AutomationsArchive invokes Automations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
@@ -76,8 +70,8 @@ type Invoker interface {
 	AutomationsCreate(ctx context.Context, request *CreateAutomationInput) (AutomationsCreateRes, error)
 	// AutomationsDeactivate invokes Automations_deactivate operation.
 	//
-	// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the
-	// automations:activate scope.
+	// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write
+	// scope.
 	//
 	// POST /automations/{id}/deactivate
 	AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error)
@@ -105,6 +99,20 @@ type Invoker interface {
 	//
 	// GET /automations
 	AutomationsList(ctx context.Context, params AutomationsListParams) (AutomationsListRes, error)
+	// AutomationsPublish invokes Automations_publish operation.
+	//
+	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
+	// draft, the live version is resumed. 422 with neither. Needs the automations:publish scope.
+	//
+	// POST /automations/{id}/publish
+	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
+	// AutomationsRevert invokes Automations_revert operation.
+	//
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	// Needs the automations:write scope.
+	//
+	// POST /automations/{id}/revert
+	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error)
 	// AutomationsUnarchive invokes Automations_unarchive operation.
 	//
 	// Restore an archived automation to the list.
@@ -164,8 +172,10 @@ type Invoker interface {
 	BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (BroadcastsReportRes, error)
 	// BroadcastsSchedule invokes Broadcasts_schedule operation.
 	//
-	// Schedule a draft or scheduled broadcast to send to its audience at a future time. Send-class: needs
-	// the broadcasts:send scope, and mcp:send over MCP.
+	// Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its
+	// segment's condition: recipients are resolved at send time from that copy, so a later edit of the
+	// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.
+	// Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/schedule
 	BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)
@@ -189,8 +199,9 @@ type Invoker interface {
 	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error)
 	// BroadcastsUnschedule invokes Broadcasts_unschedule operation.
 	//
-	// Cancel a scheduled broadcast and return it to draft. Send-class: needs the broadcasts:send scope,
-	// and mcp:send over MCP.
+	// Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition:
+	// scheduling again copies the segment's current one. Send-class: needs the broadcasts:send scope, and
+	// mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/unschedule
 	BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (BroadcastsUnscheduleRes, error)
@@ -439,17 +450,10 @@ type Invoker interface {
 	//
 	// GET /rules/{ruleId}/firings
 	RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (RuleFiringsListRes, error)
-	// RulesActivate invokes Rules_activate operation.
-	//
-	// Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the
-	// automations:activate scope.
-	//
-	// POST /rules/{id}/activate
-	RulesActivate(ctx context.Context, params RulesActivateParams) (RulesActivateRes, error)
 	// RulesArchive invokes Rules_archive operation.
 	//
 	// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-	// Firings. It can be restored, as a draft.
+	// Firings. It can be restored, inactive.
 	//
 	// POST /rules/{id}/archive
 	RulesArchive(ctx context.Context, params RulesArchiveParams) (RulesArchiveRes, error)
@@ -461,7 +465,7 @@ type Invoker interface {
 	RulesCreate(ctx context.Context, request *CreateRuleInput) (RulesCreateRes, error)
 	// RulesDeactivate invokes Rules_deactivate operation.
 	//
-	// Deactivate a Rule: it stops firing. Needs the automations:activate scope.
+	// Deactivate a Rule: it stops firing. Needs the automations:write scope.
 	//
 	// POST /rules/{id}/deactivate
 	RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (RulesDeactivateRes, error)
@@ -490,9 +494,24 @@ type Invoker interface {
 	//
 	// GET /rules
 	RulesList(ctx context.Context, params RulesListParams) (RulesListRes, error)
+	// RulesPublish invokes Rules_publish operation.
+	//
+	// Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an
+	// inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with
+	// neither draft nor live version. Needs the automations:publish scope.
+	//
+	// POST /rules/{id}/publish
+	RulesPublish(ctx context.Context, params RulesPublishParams) (RulesPublishRes, error)
+	// RulesRevert invokes Rules_revert operation.
+	//
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	// Needs the automations:write scope.
+	//
+	// POST /rules/{id}/revert
+	RulesRevert(ctx context.Context, params RulesRevertParams) (RulesRevertRes, error)
 	// RulesUnarchive invokes Rules_unarchive operation.
 	//
-	// Restore an archived Rule to the list, as a draft.
+	// Restore an archived Rule to the list, inactive.
 	//
 	// POST /rules/{id}/unarchive
 	RulesUnarchive(ctx context.Context, params RulesUnarchiveParams) (RulesUnarchiveRes, error)
@@ -1633,141 +1652,6 @@ func (c *Client) sendAuthTokensList(ctx context.Context) (res AuthTokensListRes,
 	return result, nil
 }
 
-// AutomationsActivate invokes Automations_activate operation.
-//
-// Activate an automation (starts enrolling contacts). Needs the automations:activate scope.
-//
-// POST /automations/{id}/activate
-func (c *Client) AutomationsActivate(ctx context.Context, params AutomationsActivateParams) (AutomationsActivateRes, error) {
-	res, err := c.sendAutomationsActivate(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendAutomationsActivate(ctx context.Context, params AutomationsActivateParams) (res AutomationsActivateRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("Automations_activate"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/automations/{id}/activate"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, AutomationsActivateOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/automations/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/activate"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, AutomationsActivateOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeAutomationsActivateResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // AutomationsArchive invokes Automations_archive operation.
 //
 // Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
@@ -2022,8 +1906,8 @@ func (c *Client) sendAutomationsCreate(ctx context.Context, request *CreateAutom
 
 // AutomationsDeactivate invokes Automations_deactivate operation.
 //
-// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the
-// automations:activate scope.
+// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write
+// scope.
 //
 // POST /automations/{id}/deactivate
 func (c *Client) AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error) {
@@ -2701,6 +2585,278 @@ func (c *Client) sendAutomationsList(ctx context.Context, params AutomationsList
 
 	stage = "DecodeResponse"
 	result, err := decodeAutomationsListResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// AutomationsPublish invokes Automations_publish operation.
+//
+// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
+// draft, the live version is resumed. 422 with neither. Needs the automations:publish scope.
+//
+// POST /automations/{id}/publish
+func (c *Client) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error) {
+	res, err := c.sendAutomationsPublish(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendAutomationsPublish(ctx context.Context, params AutomationsPublishParams) (res AutomationsPublishRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Automations_publish"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/automations/{id}/publish"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, AutomationsPublishOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/automations/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/publish"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, AutomationsPublishOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeAutomationsPublishResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// AutomationsRevert invokes Automations_revert operation.
+//
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+// Needs the automations:write scope.
+//
+// POST /automations/{id}/revert
+func (c *Client) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error) {
+	res, err := c.sendAutomationsRevert(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendAutomationsRevert(ctx context.Context, params AutomationsRevertParams) (res AutomationsRevertRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Automations_revert"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/automations/{id}/revert"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, AutomationsRevertOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/automations/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/revert"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, AutomationsRevertOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeAutomationsRevertResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -3920,8 +4076,10 @@ func (c *Client) sendBroadcastsReport(ctx context.Context, params BroadcastsRepo
 
 // BroadcastsSchedule invokes Broadcasts_schedule operation.
 //
-// Schedule a draft or scheduled broadcast to send to its audience at a future time. Send-class: needs
-// the broadcasts:send scope, and mcp:send over MCP.
+// Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its
+// segment's condition: recipients are resolved at send time from that copy, so a later edit of the
+// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.
+// Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
 //
 // POST /broadcasts/{id}/schedule
 func (c *Client) BroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error) {
@@ -4470,8 +4628,9 @@ func (c *Client) sendBroadcastsUnarchive(ctx context.Context, params BroadcastsU
 
 // BroadcastsUnschedule invokes Broadcasts_unschedule operation.
 //
-// Cancel a scheduled broadcast and return it to draft. Send-class: needs the broadcasts:send scope,
-// and mcp:send over MCP.
+// Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition:
+// scheduling again copies the segment's current one. Send-class: needs the broadcasts:send scope, and
+// mcp:send over MCP.
 //
 // POST /broadcasts/{id}/unschedule
 func (c *Client) BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (BroadcastsUnscheduleRes, error) {
@@ -9606,146 +9765,10 @@ func (c *Client) sendRuleFiringsList(ctx context.Context, params RuleFiringsList
 	return result, nil
 }
 
-// RulesActivate invokes Rules_activate operation.
-//
-// Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the
-// automations:activate scope.
-//
-// POST /rules/{id}/activate
-func (c *Client) RulesActivate(ctx context.Context, params RulesActivateParams) (RulesActivateRes, error) {
-	res, err := c.sendRulesActivate(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendRulesActivate(ctx context.Context, params RulesActivateParams) (res RulesActivateRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("Rules_activate"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/rules/{id}/activate"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, RulesActivateOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/rules/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := int64(params.ID); true {
-				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/activate"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, RulesActivateOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeRulesActivateResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // RulesArchive invokes Rules_archive operation.
 //
 // Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-// Firings. It can be restored, as a draft.
+// Firings. It can be restored, inactive.
 //
 // POST /rules/{id}/archive
 func (c *Client) RulesArchive(ctx context.Context, params RulesArchiveParams) (RulesArchiveRes, error) {
@@ -9996,7 +10019,7 @@ func (c *Client) sendRulesCreate(ctx context.Context, request *CreateRuleInput) 
 
 // RulesDeactivate invokes Rules_deactivate operation.
 //
-// Deactivate a Rule: it stops firing. Needs the automations:activate scope.
+// Deactivate a Rule: it stops firing. Needs the automations:write scope.
 //
 // POST /rules/{id}/deactivate
 func (c *Client) RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (RulesDeactivateRes, error) {
@@ -10704,9 +10727,282 @@ func (c *Client) sendRulesList(ctx context.Context, params RulesListParams) (res
 	return result, nil
 }
 
+// RulesPublish invokes Rules_publish operation.
+//
+// Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an
+// inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with
+// neither draft nor live version. Needs the automations:publish scope.
+//
+// POST /rules/{id}/publish
+func (c *Client) RulesPublish(ctx context.Context, params RulesPublishParams) (RulesPublishRes, error) {
+	res, err := c.sendRulesPublish(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendRulesPublish(ctx context.Context, params RulesPublishParams) (res RulesPublishRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Rules_publish"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/rules/{id}/publish"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, RulesPublishOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/rules/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/publish"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, RulesPublishOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeRulesPublishResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// RulesRevert invokes Rules_revert operation.
+//
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+// Needs the automations:write scope.
+//
+// POST /rules/{id}/revert
+func (c *Client) RulesRevert(ctx context.Context, params RulesRevertParams) (RulesRevertRes, error) {
+	res, err := c.sendRulesRevert(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendRulesRevert(ctx context.Context, params RulesRevertParams) (res RulesRevertRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Rules_revert"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/rules/{id}/revert"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, RulesRevertOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/rules/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := int64(params.ID); true {
+				return e.EncodeValue(conv.StringInt64ToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/revert"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, RulesRevertOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeRulesRevertResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // RulesUnarchive invokes Rules_unarchive operation.
 //
-// Restore an archived Rule to the list, as a draft.
+// Restore an archived Rule to the list, inactive.
 //
 // POST /rules/{id}/unarchive
 func (c *Client) RulesUnarchive(ctx context.Context, params RulesUnarchiveParams) (RulesUnarchiveRes, error) {

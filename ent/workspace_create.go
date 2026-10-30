@@ -37,7 +37,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -721,19 +722,34 @@ func (_c *WorkspaceCreate) AddRules(v ...*Rule) *WorkspaceCreate {
 	return _c.AddRuleIDs(ids...)
 }
 
-// AddRuleTriggerIDs adds the "rule_triggers" edge to the RuleTrigger entity by IDs.
-func (_c *WorkspaceCreate) AddRuleTriggerIDs(ids ...int64) *WorkspaceCreate {
-	_c.mutation.AddRuleTriggerIDs(ids...)
+// AddRuleVersionIDs adds the "rule_versions" edge to the RuleVersion entity by IDs.
+func (_c *WorkspaceCreate) AddRuleVersionIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddRuleVersionIDs(ids...)
 	return _c
 }
 
-// AddRuleTriggers adds the "rule_triggers" edges to the RuleTrigger entity.
-func (_c *WorkspaceCreate) AddRuleTriggers(v ...*RuleTrigger) *WorkspaceCreate {
+// AddRuleVersions adds the "rule_versions" edges to the RuleVersion entity.
+func (_c *WorkspaceCreate) AddRuleVersions(v ...*RuleVersion) *WorkspaceCreate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _c.AddRuleTriggerIDs(ids...)
+	return _c.AddRuleVersionIDs(ids...)
+}
+
+// AddRuleVersionTriggerIDs adds the "rule_version_triggers" edge to the RuleVersionTrigger entity by IDs.
+func (_c *WorkspaceCreate) AddRuleVersionTriggerIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddRuleVersionTriggerIDs(ids...)
+	return _c
+}
+
+// AddRuleVersionTriggers adds the "rule_version_triggers" edges to the RuleVersionTrigger entity.
+func (_c *WorkspaceCreate) AddRuleVersionTriggers(v ...*RuleVersionTrigger) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRuleVersionTriggerIDs(ids...)
 }
 
 // AddRuleFiringIDs adds the "rule_firings" edge to the RuleFiring entity by IDs.
@@ -1549,15 +1565,31 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.RuleTriggersIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.RuleVersionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.RuleTriggersTable,
-			Columns: []string{workspace.RuleTriggersColumn},
+			Table:   workspace.RuleVersionsTable,
+			Columns: []string{workspace.RuleVersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RuleVersionTriggersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleVersionTriggersTable,
+			Columns: []string{workspace.RuleVersionTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversiontrigger.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

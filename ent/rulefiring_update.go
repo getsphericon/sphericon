@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -108,17 +109,23 @@ func (_u *RuleFiringUpdate) SetNillableSourceID(v *string) *RuleFiringUpdate {
 	return _u
 }
 
-// SetActions sets the "actions" field.
-func (_u *RuleFiringUpdate) SetActions(v string) *RuleFiringUpdate {
-	_u.mutation.SetActions(v)
+// SetVersionID sets the "version_id" field.
+func (_u *RuleFiringUpdate) SetVersionID(v int64) *RuleFiringUpdate {
+	_u.mutation.SetVersionID(v)
 	return _u
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_u *RuleFiringUpdate) SetNillableActions(v *string) *RuleFiringUpdate {
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (_u *RuleFiringUpdate) SetNillableVersionID(v *int64) *RuleFiringUpdate {
 	if v != nil {
-		_u.SetActions(*v)
+		_u.SetVersionID(*v)
 	}
+	return _u
+}
+
+// ClearVersionID clears the value of the "version_id" field.
+func (_u *RuleFiringUpdate) ClearVersionID() *RuleFiringUpdate {
+	_u.mutation.ClearVersionID()
 	return _u
 }
 
@@ -191,6 +198,11 @@ func (_u *RuleFiringUpdate) SetContact(v *Contact) *RuleFiringUpdate {
 	return _u.SetContactID(v.ID)
 }
 
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (_u *RuleFiringUpdate) SetVersion(v *RuleVersion) *RuleFiringUpdate {
+	return _u.SetVersionID(v.ID)
+}
+
 // Mutation returns the RuleFiringMutation object of the builder.
 func (_u *RuleFiringUpdate) Mutation() *RuleFiringMutation {
 	return _u.mutation
@@ -211,6 +223,12 @@ func (_u *RuleFiringUpdate) ClearRule() *RuleFiringUpdate {
 // ClearContact clears the "contact" edge to the Contact entity.
 func (_u *RuleFiringUpdate) ClearContact() *RuleFiringUpdate {
 	_u.mutation.ClearContact()
+	return _u
+}
+
+// ClearVersion clears the "version" edge to the RuleVersion entity.
+func (_u *RuleFiringUpdate) ClearVersion() *RuleFiringUpdate {
+	_u.mutation.ClearVersion()
 	return _u
 }
 
@@ -300,9 +318,6 @@ func (_u *RuleFiringUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.SourceID(); ok {
 		_spec.SetField(rulefiring.FieldSourceID, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Actions(); ok {
-		_spec.SetField(rulefiring.FieldActions, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Properties(); ok {
 		_spec.SetField(rulefiring.FieldProperties, field.TypeString, value)
@@ -399,6 +414,35 @@ func (_u *RuleFiringUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.VersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rulefiring.VersionTable,
+			Columns: []string{rulefiring.VersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.VersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rulefiring.VersionTable,
+			Columns: []string{rulefiring.VersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -504,17 +548,23 @@ func (_u *RuleFiringUpdateOne) SetNillableSourceID(v *string) *RuleFiringUpdateO
 	return _u
 }
 
-// SetActions sets the "actions" field.
-func (_u *RuleFiringUpdateOne) SetActions(v string) *RuleFiringUpdateOne {
-	_u.mutation.SetActions(v)
+// SetVersionID sets the "version_id" field.
+func (_u *RuleFiringUpdateOne) SetVersionID(v int64) *RuleFiringUpdateOne {
+	_u.mutation.SetVersionID(v)
 	return _u
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_u *RuleFiringUpdateOne) SetNillableActions(v *string) *RuleFiringUpdateOne {
+// SetNillableVersionID sets the "version_id" field if the given value is not nil.
+func (_u *RuleFiringUpdateOne) SetNillableVersionID(v *int64) *RuleFiringUpdateOne {
 	if v != nil {
-		_u.SetActions(*v)
+		_u.SetVersionID(*v)
 	}
+	return _u
+}
+
+// ClearVersionID clears the value of the "version_id" field.
+func (_u *RuleFiringUpdateOne) ClearVersionID() *RuleFiringUpdateOne {
+	_u.mutation.ClearVersionID()
 	return _u
 }
 
@@ -587,6 +637,11 @@ func (_u *RuleFiringUpdateOne) SetContact(v *Contact) *RuleFiringUpdateOne {
 	return _u.SetContactID(v.ID)
 }
 
+// SetVersion sets the "version" edge to the RuleVersion entity.
+func (_u *RuleFiringUpdateOne) SetVersion(v *RuleVersion) *RuleFiringUpdateOne {
+	return _u.SetVersionID(v.ID)
+}
+
 // Mutation returns the RuleFiringMutation object of the builder.
 func (_u *RuleFiringUpdateOne) Mutation() *RuleFiringMutation {
 	return _u.mutation
@@ -607,6 +662,12 @@ func (_u *RuleFiringUpdateOne) ClearRule() *RuleFiringUpdateOne {
 // ClearContact clears the "contact" edge to the Contact entity.
 func (_u *RuleFiringUpdateOne) ClearContact() *RuleFiringUpdateOne {
 	_u.mutation.ClearContact()
+	return _u
+}
+
+// ClearVersion clears the "version" edge to the RuleVersion entity.
+func (_u *RuleFiringUpdateOne) ClearVersion() *RuleFiringUpdateOne {
+	_u.mutation.ClearVersion()
 	return _u
 }
 
@@ -727,9 +788,6 @@ func (_u *RuleFiringUpdateOne) sqlSave(ctx context.Context) (_node *RuleFiring, 
 	if value, ok := _u.mutation.SourceID(); ok {
 		_spec.SetField(rulefiring.FieldSourceID, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Actions(); ok {
-		_spec.SetField(rulefiring.FieldActions, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.Properties(); ok {
 		_spec.SetField(rulefiring.FieldProperties, field.TypeString, value)
 	}
@@ -825,6 +883,35 @@ func (_u *RuleFiringUpdateOne) sqlSave(ctx context.Context) (_node *RuleFiring, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.VersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rulefiring.VersionTable,
+			Columns: []string{rulefiring.VersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.VersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   rulefiring.VersionTable,
+			Columns: []string{rulefiring.VersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

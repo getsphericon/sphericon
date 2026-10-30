@@ -112,7 +112,7 @@ stream; the `Event` projection can be rebuilt from it.)
 ## Event taxonomy & envelope
 
 Name: `aggregate.verb` (past tense): `contact.created`, `contact.unsubscribed`,
-`email.opened`, `email.clicked`, `broadcast.sent`, … The automation `trigger_event`
+`email.opened`, `email.clicked`, `broadcast.sent`, … An Automation version's `trigger_event`
 matches this name — so the taxonomy and the trigger vocabulary are the same thing.
 
 Envelope (typed in `internal/events`):

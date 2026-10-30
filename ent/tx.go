@@ -92,8 +92,10 @@ type Tx struct {
 	Rule *RuleClient
 	// RuleFiring is the client for interacting with the RuleFiring builders.
 	RuleFiring *RuleFiringClient
-	// RuleTrigger is the client for interacting with the RuleTrigger builders.
-	RuleTrigger *RuleTriggerClient
+	// RuleVersion is the client for interacting with the RuleVersion builders.
+	RuleVersion *RuleVersionClient
+	// RuleVersionTrigger is the client for interacting with the RuleVersionTrigger builders.
+	RuleVersionTrigger *RuleVersionTriggerClient
 	// SchemaState is the client for interacting with the SchemaState builders.
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
@@ -298,7 +300,8 @@ func (tx *Tx) init() {
 	tx.RiverJob = NewRiverJobClient(tx.config)
 	tx.Rule = NewRuleClient(tx.config)
 	tx.RuleFiring = NewRuleFiringClient(tx.config)
-	tx.RuleTrigger = NewRuleTriggerClient(tx.config)
+	tx.RuleVersion = NewRuleVersionClient(tx.config)
+	tx.RuleVersionTrigger = NewRuleVersionTriggerClient(tx.config)
 	tx.SchemaState = NewSchemaStateClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)
 	tx.SendLimiter = NewSendLimiterClient(tx.config)
