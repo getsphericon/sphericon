@@ -94,7 +94,7 @@ The costliest of these rules, in short:
 
 - Handlers and domain modules take a `*ent.Scoped`, hold no `*ent.Client` and never call
   `client.Scoped(<int64>)`.
-- A migration is written by `mise run db:generate name=<desc>` and is never edited once it is on `main`.
+- A migration is written by `mise run db:generate <desc>` and is never edited once it is on `main`.
 - A resource DTO comes from a goverter `Converter` method, not from a struct literal.
 - The frontend calls the API through the generated client in `src/generated/`, never a hand-written `fetch`.
 

@@ -104,22 +104,27 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   1. site: `accounts.Accounts.Scope`, behind the ogen middleware `Handlers.Access`
      (`internal/api/site/access.go`, ADR 0061), from the user's Membership of the Workspace an
      operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership with
-     `callerMembership(ctx)`). The middleware also applies the Two-factor requirement and the
-     Permissions the operation declares in TypeSpec (`x-required-permissions`, generated into
-     `operationAccess`). Before all of it, on every operation that carries a session, it refuses a
-     User with a required acceptance pending (`consentrecords.Module.Gated`, 403
+     `callerMembership(ctx)`). On every operation that carries a session, the middleware then
+     admits the User (`accounts.Accounts.Admit`, `internal/accounts/admission.go`, the one decision
+     of both surfaces): it refuses first a User with a required acceptance pending (403
      `acceptance_pending`, ADR 0062) unless the operation is marked
      `x-allowed-while-acceptance-pending` in TypeSpec, the one list of what a gated User may call;
      an unmarked operation is refused, the mark lifts only the gate (a Workspace's operation still
      applies the Two-factor requirement and its Permissions), it only declares on an anonymous
-     operation, and a mark that is not `true` fails generation. Two operations name their Workspace elsewhere and call
-     `accounts.Accounts.Scope` themselves: `SiteOAuthDecide` (in its body, through `Handlers.member`)
-     and `SiteWorkspacesCreate` / `SiteWorkspacesRestore` (a Workspace that was not live before);
+     operation, and a mark that is not `true` fails generation. On an operation of a Workspace it
+     then refuses a User the Two-factor requirement withholds (403 `second_factor_required`,
+     ADR 0020) unless the operation is marked `x-allowed-while-withheld` (only lifting the
+     requirement), and last applies the Permissions the operation declares in TypeSpec
+     (`x-required-permissions`, generated into `operationAccess`). Two operations name their
+     Workspace elsewhere and call `accounts.Accounts.Scope` themselves: `SiteOAuthDecide` (in its
+     body, then `accounts.Accounts.Admit` as the middleware does) and `SiteWorkspacesCreate` /
+     `SiteWorkspacesRestore` (a Workspace that was not live before);
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
      in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`. A Connection (an API token
      with a `membership_id`, ADR 0061) is looked up with its Membership: the scope acts as its User,
-     the Two-factor requirement and the acceptance gate apply (`consentrecords.Module.Gated`, 403
-     `acceptance_pending`, ADR 0062), and the Role bounds its scopes on every request; the
+     the acceptance gate and the Two-factor requirement apply (`accounts.Accounts.Admit`, as on
+     /site: 403 `acceptance_pending` or `second_factor_required`), and the Role bounds its scopes
+     on every request (`accounts.MayGrant`, the bound the OAuth consent applies too); the
      Workspace's API token meets neither;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
   4. jobs and event subscribers, right after the row that names the Workspace is loaded

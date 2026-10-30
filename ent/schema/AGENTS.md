@@ -2,7 +2,7 @@
 
 
 - ORM is **ent**; schemas live in `ent/schema/*.go`, generated code in `ent/`.
-- Migrations: **ent diffs, goose applies, Squawk lints, CI guards immutability.** `mise run db:generate name=<desc>`
+- Migrations: **ent diffs, goose applies, Squawk lints, CI guards immutability.** `mise run db:generate <desc>`
   (`cmd/db`, ent's diff engine as a library, no CLI and no checksum file) diffs the ent schema against
   `migrations/` in the scratch `<PGDATABASE>_diff` database (`DIFF_DB_URL`) and writes a goose `.sql` file;
   `mise run db:migrate` (`sphericon migrate`) applies it with goose, the one runner of dev, tests and
