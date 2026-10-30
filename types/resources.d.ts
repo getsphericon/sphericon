@@ -1370,6 +1370,8 @@ export default interface Resources {
         "create": "Connect provider",
         "createError": "Failed to save provider",
         "default": "Default",
+        "defaultChanged": "Default provider changed",
+        "defaultError": "Failed to change the default provider",
         "description": "Connect an email provider so this workspace can send mail.",
         "empty": "No providers connected yet",
         "enabled": "Enabled",

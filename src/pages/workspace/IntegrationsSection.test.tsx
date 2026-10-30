@@ -1,5 +1,6 @@
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
+import { userEvent } from 'vitest/browser'
 
 import {
   handleSiteAuditList,
@@ -405,6 +406,29 @@ test('edits only the limits of an existing provider, and a blank clears one', as
   await dialog.getByRole('button', { name: 'Save limits' }).click()
 
   await expect.poll(() => bodies).toEqual([{ maxPerSecond: 20, maxPerDay: null }])
+})
+
+test('makes another provider the default, and the default offers no such action', async () => {
+  const backup: SiteIntegrationResource = {
+    ...smtp,
+    id: '2',
+    name: 'Backup SMTP',
+    isDefault: false,
+  }
+  const bodies: unknown[] = []
+  worker.use(list([smtp, backup]), update(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Limits' })).toBeInTheDocument()
+  expect(screen.getByRole('menuitem', { name: 'Set as default' }).elements()).toHaveLength(0)
+  await userEvent.keyboard('{Escape}')
+
+  await screen.getByRole('button', { name: 'More actions' }).nth(1).click()
+  await screen.getByRole('menuitem', { name: 'Set as default' }).click()
+
+  await expect.poll(() => bodies).toEqual([{ isDefault: true }])
+  await expect.element(screen.getByText('Default provider changed')).toBeInTheDocument()
 })
 
 test('a member without integrations:manage reads the providers but does not change them', async () => {

@@ -32,6 +32,7 @@ import {
   siteIntegrationsArchiveMutation,
   siteIntegrationsListOptions,
   siteIntegrationsListQueryKey,
+  siteIntegrationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteIntegrationConfigInput,
@@ -168,6 +169,14 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
     errorTitle: t(($) => $.settings.integrations.removeError),
   })
 
+  // Promoting a provider clears the channel's current default on the server.
+  const defaultMutation = useResourceMutation({
+    mutation: siteIntegrationsUpdateMutation(),
+    invalidate: [queryKey],
+    successMessage: t(($) => $.settings.integrations.defaultChanged),
+    errorTitle: t(($) => $.settings.integrations.defaultError),
+  })
+
   const providerLabels = {
     ses: {
       title: 'Amazon SES',
@@ -278,6 +287,18 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                 />
                 {canManageIntegrations ? (
                   <RowActionsMenu>
+                    {record.isDefault ? null : (
+                      <Menu.Item
+                        onClick={() =>
+                          defaultMutation.mutate({
+                            path: { workspaceId, id: record.id },
+                            body: { isDefault: true },
+                          })
+                        }
+                      >
+                        {t(($) => $.settings.integrations.makeDefault)}
+                      </Menu.Item>
+                    )}
                     <Menu.Item onClick={() => setEditing(record)}>
                       {t(($) => $.settings.integrations.limits.edit)}
                     </Menu.Item>
