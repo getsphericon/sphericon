@@ -32,8 +32,8 @@ interface InboundModalProps {
 }
 
 // The inbound side of an Integration (ADR 0037): its hook URL, the Preset its provider
-// callbacks are read with and that Preset's params. Agents are the primary interface; this
-// is for support, so the params are a JSON editor, not a form generated from the schema.
+// callbacks are read with and that Preset's params. The params are still a JSON editor: ADR 0066
+// asks for a form generated from the schema.
 export function InboundModal({ workspaceId, integration, onClose }: InboundModalProps) {
   const { t } = useTranslation()
   return (

@@ -121,3 +121,12 @@ or `AGENTS.md`.
     writes the same mapping again.
     Every access decision is a Permission (ADR 0061): no code, server or client, decides access by
     comparing a Role.
+
+## Surfaces
+
+16. **The app covers every capability a User has, through a form** (ADR 0066). What a Workspace
+    member can do through `/site`, `/api` or MCP, and a Staff member through the Staff console, they
+    can do in the app, in the same change that adds it. A value of known structure is edited in a
+    form (generated from the schema when the schema is dynamic), never in a raw JSON editor; only
+    text or code by nature (a template, an HTTP body, HTML source) may be a text editor. The
+    Instance's configuration (files, environment variables) is outside the rule.

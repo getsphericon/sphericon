@@ -362,8 +362,8 @@ namespace SiteIntegrations {
 
 // A Preset's params are dynamic by nature, so the contract carries the Preset's JSON Schema
 // and an Integration's values as opaque objects, validated server side (ADR 0037): the
-// recorded exception to "type fixed structures in the contract". The console offers a
-// Preset select and a JSON editor for the params, never a form generated from the schema.
+// recorded exception to "type fixed structures in the contract". ADR 0066 asks the app to
+// edit the params in a form generated from that schema.
 
 /** A Preset the Instance offers */
 model SitePresetResource {
