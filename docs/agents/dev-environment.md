@@ -50,6 +50,8 @@ deleted any other way; `--apply` to act, a dry run otherwise. It drops the share
 no live worktree's `DB_NAMES` covers and runs `mise daemons prune --yes` for dead state; it
 refuses to drop anything when it cannot enumerate or read a live worktree, including one on a
 commit from before `DB_NAMES` (rebase it onto main), and never touches the primary's daemon.
+It also empties the Go build cache once it outgrows `GO_CACHE_LIMIT_GB` (40 by default): the
+cache keys carry each worktree's path, so every worktree compiles everything again into it.
 The `testdb_tpl_*` databases are pgtestdb's template and per-test databases (the
 `testhelper.RealDB` family, below), owned by a test that may be running in any checkout: pgtestdb
 drops each instance when its test ends, so gc drops only the leftovers of a killed run: an
