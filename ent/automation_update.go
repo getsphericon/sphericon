@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -102,37 +101,43 @@ func (_u *AutomationUpdate) SetNillableStatus(v *automation.Status) *AutomationU
 	return _u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_u *AutomationUpdate) SetTriggerEvent(v string) *AutomationUpdate {
-	_u.mutation.SetTriggerEvent(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (_u *AutomationUpdate) SetLiveVersionID(v int64) *AutomationUpdate {
+	_u.mutation.SetLiveVersionID(v)
 	return _u
 }
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (_u *AutomationUpdate) SetNillableTriggerEvent(v *string) *AutomationUpdate {
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (_u *AutomationUpdate) SetNillableLiveVersionID(v *int64) *AutomationUpdate {
 	if v != nil {
-		_u.SetTriggerEvent(*v)
+		_u.SetLiveVersionID(*v)
 	}
 	return _u
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (_u *AutomationUpdate) SetIntegrationID(v int64) *AutomationUpdate {
-	_u.mutation.SetIntegrationID(v)
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (_u *AutomationUpdate) ClearLiveVersionID() *AutomationUpdate {
+	_u.mutation.ClearLiveVersionID()
 	return _u
 }
 
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (_u *AutomationUpdate) SetNillableIntegrationID(v *int64) *AutomationUpdate {
+// SetDraftVersionID sets the "draft_version_id" field.
+func (_u *AutomationUpdate) SetDraftVersionID(v int64) *AutomationUpdate {
+	_u.mutation.SetDraftVersionID(v)
+	return _u
+}
+
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (_u *AutomationUpdate) SetNillableDraftVersionID(v *int64) *AutomationUpdate {
 	if v != nil {
-		_u.SetIntegrationID(*v)
+		_u.SetDraftVersionID(*v)
 	}
 	return _u
 }
 
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (_u *AutomationUpdate) ClearIntegrationID() *AutomationUpdate {
-	_u.mutation.ClearIntegrationID()
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (_u *AutomationUpdate) ClearDraftVersionID() *AutomationUpdate {
+	_u.mutation.ClearDraftVersionID()
 	return _u
 }
 
@@ -186,9 +191,14 @@ func (_u *AutomationUpdate) AddOutboundMessages(v ...*OutboundMessage) *Automati
 	return _u.AddOutboundMessageIDs(ids...)
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (_u *AutomationUpdate) SetIntegration(v *Integration) *AutomationUpdate {
-	return _u.SetIntegrationID(v.ID)
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdate) SetLiveVersion(v *AutomationVersion) *AutomationUpdate {
+	return _u.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdate) SetDraftVersion(v *AutomationVersion) *AutomationUpdate {
+	return _u.SetDraftVersionID(v.ID)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -265,9 +275,15 @@ func (_u *AutomationUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *Autom
 	return _u.RemoveOutboundMessageIDs(ids...)
 }
 
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (_u *AutomationUpdate) ClearIntegration() *AutomationUpdate {
-	_u.mutation.ClearIntegration()
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdate) ClearLiveVersion() *AutomationUpdate {
+	_u.mutation.ClearLiveVersion()
+	return _u
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdate) ClearDraftVersion() *AutomationUpdate {
+	_u.mutation.ClearDraftVersion()
 	return _u
 }
 
@@ -319,11 +335,6 @@ func (_u *AutomationUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.TriggerEvent(); ok {
-		if err := automation.TriggerEventValidator(v); err != nil {
-			return &ValidationError{Name: "trigger_event", err: fmt.Errorf(`ent: validator failed for field "Automation.trigger_event": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Automation.workspace"`)
 	}
@@ -362,9 +373,6 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(automation.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.TriggerEvent(); ok {
-		_spec.SetField(automation.FieldTriggerEvent, field.TypeString, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -530,28 +538,57 @@ func (_u *AutomationUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.IntegrationCleared() {
+	if _u.mutation.LiveVersionCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   automation.IntegrationTable,
-			Columns: []string{automation.IntegrationColumn},
+			Table:   automation.LiveVersionTable,
+			Columns: []string{automation.LiveVersionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.LiveVersionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   automation.IntegrationTable,
-			Columns: []string{automation.IntegrationColumn},
+			Table:   automation.LiveVersionTable,
+			Columns: []string{automation.LiveVersionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DraftVersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.DraftVersionTable,
+			Columns: []string{automation.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DraftVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.DraftVersionTable,
+			Columns: []string{automation.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -649,37 +686,43 @@ func (_u *AutomationUpdateOne) SetNillableStatus(v *automation.Status) *Automati
 	return _u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_u *AutomationUpdateOne) SetTriggerEvent(v string) *AutomationUpdateOne {
-	_u.mutation.SetTriggerEvent(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (_u *AutomationUpdateOne) SetLiveVersionID(v int64) *AutomationUpdateOne {
+	_u.mutation.SetLiveVersionID(v)
 	return _u
 }
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (_u *AutomationUpdateOne) SetNillableTriggerEvent(v *string) *AutomationUpdateOne {
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (_u *AutomationUpdateOne) SetNillableLiveVersionID(v *int64) *AutomationUpdateOne {
 	if v != nil {
-		_u.SetTriggerEvent(*v)
+		_u.SetLiveVersionID(*v)
 	}
 	return _u
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (_u *AutomationUpdateOne) SetIntegrationID(v int64) *AutomationUpdateOne {
-	_u.mutation.SetIntegrationID(v)
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (_u *AutomationUpdateOne) ClearLiveVersionID() *AutomationUpdateOne {
+	_u.mutation.ClearLiveVersionID()
 	return _u
 }
 
-// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
-func (_u *AutomationUpdateOne) SetNillableIntegrationID(v *int64) *AutomationUpdateOne {
+// SetDraftVersionID sets the "draft_version_id" field.
+func (_u *AutomationUpdateOne) SetDraftVersionID(v int64) *AutomationUpdateOne {
+	_u.mutation.SetDraftVersionID(v)
+	return _u
+}
+
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (_u *AutomationUpdateOne) SetNillableDraftVersionID(v *int64) *AutomationUpdateOne {
 	if v != nil {
-		_u.SetIntegrationID(*v)
+		_u.SetDraftVersionID(*v)
 	}
 	return _u
 }
 
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (_u *AutomationUpdateOne) ClearIntegrationID() *AutomationUpdateOne {
-	_u.mutation.ClearIntegrationID()
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (_u *AutomationUpdateOne) ClearDraftVersionID() *AutomationUpdateOne {
+	_u.mutation.ClearDraftVersionID()
 	return _u
 }
 
@@ -733,9 +776,14 @@ func (_u *AutomationUpdateOne) AddOutboundMessages(v ...*OutboundMessage) *Autom
 	return _u.AddOutboundMessageIDs(ids...)
 }
 
-// SetIntegration sets the "integration" edge to the Integration entity.
-func (_u *AutomationUpdateOne) SetIntegration(v *Integration) *AutomationUpdateOne {
-	return _u.SetIntegrationID(v.ID)
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) SetLiveVersion(v *AutomationVersion) *AutomationUpdateOne {
+	return _u.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) SetDraftVersion(v *AutomationVersion) *AutomationUpdateOne {
+	return _u.SetDraftVersionID(v.ID)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -812,9 +860,15 @@ func (_u *AutomationUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage) *Au
 	return _u.RemoveOutboundMessageIDs(ids...)
 }
 
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (_u *AutomationUpdateOne) ClearIntegration() *AutomationUpdateOne {
-	_u.mutation.ClearIntegration()
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) ClearLiveVersion() *AutomationUpdateOne {
+	_u.mutation.ClearLiveVersion()
+	return _u
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (_u *AutomationUpdateOne) ClearDraftVersion() *AutomationUpdateOne {
+	_u.mutation.ClearDraftVersion()
 	return _u
 }
 
@@ -879,11 +933,6 @@ func (_u *AutomationUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.TriggerEvent(); ok {
-		if err := automation.TriggerEventValidator(v); err != nil {
-			return &ValidationError{Name: "trigger_event", err: fmt.Errorf(`ent: validator failed for field "Automation.trigger_event": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Automation.workspace"`)
 	}
@@ -939,9 +988,6 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(automation.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := _u.mutation.TriggerEvent(); ok {
-		_spec.SetField(automation.FieldTriggerEvent, field.TypeString, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1107,28 +1153,57 @@ func (_u *AutomationUpdateOne) sqlSave(ctx context.Context) (_node *Automation, 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.IntegrationCleared() {
+	if _u.mutation.LiveVersionCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   automation.IntegrationTable,
-			Columns: []string{automation.IntegrationColumn},
+			Table:   automation.LiveVersionTable,
+			Columns: []string{automation.LiveVersionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.IntegrationIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.LiveVersionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
-			Table:   automation.IntegrationTable,
-			Columns: []string{automation.IntegrationColumn},
+			Table:   automation.LiveVersionTable,
+			Columns: []string{automation.LiveVersionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DraftVersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.DraftVersionTable,
+			Columns: []string{automation.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DraftVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automation.DraftVersionTable,
+			Columns: []string{automation.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

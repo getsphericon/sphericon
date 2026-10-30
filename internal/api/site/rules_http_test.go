@@ -31,7 +31,7 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 	res, ok := created.(*siteapi.SiteRuleResource)
 	require.Truef(t, ok, "got %T", created)
 
-	action := res.Actions[0]
+	action := res.Draft.Value.Actions[0]
 	assert.NotEmpty(t, action.ID.Or(""))
 	assert.True(t, action.HasSecret.Or(false))
 	assert.False(t, action.URL.Set, "the url is never returned")
@@ -47,6 +47,6 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteRuleResource)
 	require.Truef(t, ok, "got %T", updated)
-	assert.True(t, upd.Actions[0].HasSecret.Or(false))
-	assert.Equal(t, action.ID, upd.Actions[0].ID)
+	assert.True(t, upd.Draft.Value.Actions[0].HasSecret.Or(false))
+	assert.Equal(t, action.ID, upd.Draft.Value.Actions[0].ID)
 }

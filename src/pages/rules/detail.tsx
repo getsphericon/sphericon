@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { DraftControls } from '../../components/DraftControls.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteRuleFiringsListOptions,
-  siteRulesActivateMutation,
   siteRulesDeactivateMutation,
   siteRulesGetOptions,
   siteRulesGetQueryKey,
@@ -16,12 +16,14 @@ import {
   siteRulesUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteRuleActionStatus } from '../../generated/site/types.gen.ts'
+import type { SiteRuleVersion } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
 import { formatDateTime } from '../../utils/datetime.ts'
+import { ruleDraftActions } from './draftActions.ts'
 
 const resultColor = {
   [SiteRuleActionStatus.SUCCEEDED]: 'teal',
@@ -30,7 +32,40 @@ const resultColor = {
   [SiteRuleActionStatus.PENDING]: 'blue',
 }
 
-// The Rule with its Firings: each Event that fired it, the Contact and what every Action did.
+// What the live version does: its number, its Trigger events and its Actions in order.
+function RuleVersionSummary({ version }: { version: SiteRuleVersion }) {
+  const { t } = useTranslation()
+  return (
+    <Stack gap="xs">
+      <Title order={5}>{t(($) => $.rules.liveVersion, { number: version.number })}</Title>
+      <Group gap="xs">
+        <Text size="sm" c="dimmed">
+          {t(($) => $.rules.triggerEventsLabel)}
+        </Text>
+        {version.triggerEvents.map((event) => (
+          <Badge key={event} variant="outline" color="gray">
+            {event}
+          </Badge>
+        ))}
+      </Group>
+      <Group gap="xs">
+        <Text size="sm" c="dimmed">
+          {t(($) => $.rules.actionsLabel)}
+        </Text>
+        {version.actions.map((action, index) => (
+          <Badge key={index} variant="light">
+            {action.tag
+              ? `${t(($) => $.rules.actionType[action.type])}: ${action.tag}`
+              : t(($) => $.rules.actionType[action.type])}
+          </Badge>
+        ))}
+      </Group>
+    </Stack>
+  )
+}
+
+// The Rule with its live version and its Firings: each Event that fired it, the Contact and what
+// every Action did. Its draft is published or reverted here (ADR 0065).
 export function RuleDetailPage() {
   const { t } = useTranslation()
   const { workspaceId, ruleId } = rulesDetailRoute.useParams()
@@ -40,12 +75,6 @@ export function RuleDetailPage() {
     siteRulesGetQueryKey({ path: { workspaceId, id: ruleId } }),
     siteRulesListQueryKey({ path: { workspaceId } }),
   ]
-  const activate = useResourceMutation({
-    mutation: siteRulesActivateMutation(),
-    invalidate,
-    successMessage: t(($) => $.notifications.ruleActivated),
-    errorTitle: t(($) => $.alerts.ruleStatusErrorTitle),
-  })
   const deactivate = useResourceMutation({
     mutation: siteRulesDeactivateMutation(),
     invalidate,
@@ -83,7 +112,7 @@ export function RuleDetailPage() {
           <Badge variant="light" color={rule.status === 'active' ? 'teal' : 'gray'}>
             {rule.status === 'active'
               ? t(($) => $.rules.statusActive)
-              : t(($) => $.rules.statusDraft)}
+              : t(($) => $.rules.statusInactive)}
           </Badge>
         </Group>
         <Group gap="xs">
@@ -93,6 +122,11 @@ export function RuleDetailPage() {
             </Button>
           ) : (
             <>
+              <DraftControls
+                workspaceId={workspaceId}
+                resource={rule}
+                {...ruleDraftActions(t, workspaceId, rule.id)}
+              />
               {rule.status === 'active' ? (
                 <Button
                   variant="default"
@@ -101,11 +135,7 @@ export function RuleDetailPage() {
                 >
                   {t(($) => $.rules.deactivate)}
                 </Button>
-              ) : (
-                <Button loading={activate.isPending} onClick={() => activate.mutate({ path })}>
-                  {t(($) => $.rules.activate)}
-                </Button>
-              )}
+              ) : null}
               <ButtonLink variant="default" to={rulesEditRoute.to} params={{ workspaceId, ruleId }}>
                 {t(($) => $.actions.edit)}
               </ButtonLink>
@@ -116,6 +146,8 @@ export function RuleDetailPage() {
           </ButtonLink>
         </Group>
       </Group>
+
+      {rule.live ? <RuleVersionSummary version={rule.live} /> : null}
 
       <Title order={5}>{t(($) => $.rules.firingsTitle)}</Title>
       <PagedTable

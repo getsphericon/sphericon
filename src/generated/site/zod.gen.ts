@@ -29,7 +29,7 @@ export const zApiTokenScope = z.enum([
   'integrations:read',
   'emails:send',
   'broadcasts:send',
-  'automations:activate',
+  'automations:publish',
   'mcp:send',
   'sending_domains:write',
   'integrations:write',
@@ -214,7 +214,7 @@ export const zRetentionDays = z.int().gte(1).lte(3650);
 export const zSendScope = z.enum([
   'emails:send',
   'broadcasts:send',
-  'automations:activate',
+  'automations:publish',
   'mcp:send'
 ]);
 
@@ -448,9 +448,9 @@ export const zSiteAutomationHttpHeader = z.object({
 });
 
 /**
- * Automation lifecycle status
+ * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
-export const zSiteAutomationStatus = z.enum(['draft', 'active']);
+export const zSiteAutomationStatus = z.enum(['active', 'inactive']);
 
 /**
  * Kind of automation step
@@ -481,6 +481,16 @@ export const zSiteAutomationStep = z.object({
   secret: z.exactOptional(z.string()),
   clearSecret: z.exactOptional(z.boolean()),
   hasSecret: z.exactOptional(z.boolean())
+});
+
+/**
+ * One version of an automation's definition: what publishing makes it do (ADR 0065)
+ */
+export const zSiteAutomationVersion = z.object({
+  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  triggerEvent: z.string(),
+  integrationId: z.exactOptional(zEntityId.nullable()),
+  steps: z.array(zSiteAutomationStep)
 });
 
 /**
@@ -1308,9 +1318,9 @@ export const zSiteRuleDryRunResource = z.object({
 });
 
 /**
- * Rule lifecycle status
+ * Rule lifecycle status: active reacts to Events, inactive acts on nothing
  */
-export const zSiteRuleStatus = z.enum(['draft', 'active']);
+export const zSiteRuleStatus = z.enum(['active', 'inactive']);
 
 /**
  * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
@@ -1704,7 +1714,9 @@ export const zSiteTransactionalEmailStatus = z.enum([
 ]);
 
 /**
- * Site request body for updating an automation
+ * Site request body for updating an automation. The name changes at once; the trigger, steps
+ * and integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and publishing makes the draft live.
  */
 export const zSiteUpdateAutomationInput = z.object({
   name: z.exactOptional(z.string()),
@@ -2095,9 +2107,8 @@ export const zSiteAutomationResource = z.object({
   id: zEntityId,
   name: z.string(),
   status: zSiteAutomationStatus,
-  triggerEvent: z.string(),
-  steps: z.array(zSiteAutomationStep),
-  integrationId: z.exactOptional(zEntityId.nullable()),
+  live: zSiteAutomationVersion.nullable(),
+  draft: zSiteAutomationVersion.nullable(),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   revenue: z.exactOptional(zSiteMessageRevenue),
   createdAt: zTimestamp,
@@ -2757,7 +2768,7 @@ export const zSiteConditionNode = z.discriminatedUnion('kind', [
 ]);
 
 /**
- * Site request body for creating a Rule (always created as a draft)
+ * Site request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export const zSiteCreateRuleInput = z.object({
   name: z.string(),
@@ -2782,19 +2793,28 @@ export const zSitePreviewSegmentInput = z.object({
 });
 
 /**
- * Rule resource used by the site UI: a stateless reaction to an Event. Created Rules are drafts.
+ * Rule resource used by the site UI: a stateless reaction to an Event. Its definition is versioned (ADR 0065): an edit writes the draft, and Publish makes it live. Created Rules are inactive.
  */
 export const zSiteRuleResource = z.object({
   id: zEntityId,
   name: z.string(),
   status: zSiteRuleStatus,
-  triggerEvents: z.array(z.string()),
-  condition: z.exactOptional(zSiteConditionGroup),
-  actions: z.array(zSiteRuleAction),
+  live: z.lazy((): any => zSiteRuleVersion).nullable(),
+  draft: z.lazy((): any => zSiteRuleVersion).nullable(),
   activatedAt: z.exactOptional(zTimestamp.nullable()),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions
+ */
+export const zSiteRuleVersion = z.object({
+  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  triggerEvents: z.array(z.string()),
+  condition: z.exactOptional(zSiteConditionGroup),
+  actions: z.array(zSiteRuleAction)
 });
 
 /**
@@ -2810,7 +2830,7 @@ export const zSiteSegmentResource = z.object({
 });
 
 /**
- * Site request body for updating a Rule
+ * Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
 export const zSiteUpdateRuleInput = z.object({
   name: z.exactOptional(z.string()),
@@ -3802,16 +3822,6 @@ export const zSiteAutomationsUpdatePath = z.object({
  */
 export const zSiteAutomationsUpdateResponse = zSiteAutomationResource;
 
-export const zSiteAutomationsActivatePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteAutomationsActivateResponse = zSiteAutomationResource;
-
 export const zSiteAutomationsArchivePath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -3831,6 +3841,26 @@ export const zSiteAutomationsDeactivatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationsDeactivateResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsPublishPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsPublishResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsRevertPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsRevertResponse = zSiteAutomationResource;
 
 export const zSiteAutomationsUnarchivePath = z.object({
   workspaceId: zWorkspaceId,
@@ -5020,16 +5050,6 @@ export const zSiteRulesUpdatePath = z.object({
  */
 export const zSiteRulesUpdateResponse = zSiteRuleResource;
 
-export const zSiteRulesActivatePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteRulesActivateResponse = zSiteRuleResource;
-
 export const zSiteRulesArchivePath = z.object({
   workspaceId: zWorkspaceId,
   id: zEntityId
@@ -5049,6 +5069,26 @@ export const zSiteRulesDeactivatePath = z.object({
  * The request has succeeded.
  */
 export const zSiteRulesDeactivateResponse = zSiteRuleResource;
+
+export const zSiteRulesPublishPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesPublishResponse = zSiteRuleResource;
+
+export const zSiteRulesRevertPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteRulesRevertResponse = zSiteRuleResource;
 
 export const zSiteRulesUnarchivePath = z.object({
   workspaceId: zWorkspaceId,

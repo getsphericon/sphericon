@@ -29,7 +29,7 @@ func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 	require.NoError(t, err)
 	res, ok := created.(*externalapi.AutomationResource)
 	require.Truef(t, ok, "got %T", created)
-	step := res.Steps[0]
+	step := res.Draft.Value.Steps[0]
 	assert.True(t, step.HasSecret.Or(false))
 	assert.False(t, step.URL.Set)
 	assert.False(t, step.Secret.Set)

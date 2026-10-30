@@ -54,7 +54,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -159,8 +160,10 @@ type Client struct {
 	Rule *RuleClient
 	// RuleFiring is the client for interacting with the RuleFiring builders.
 	RuleFiring *RuleFiringClient
-	// RuleTrigger is the client for interacting with the RuleTrigger builders.
-	RuleTrigger *RuleTriggerClient
+	// RuleVersion is the client for interacting with the RuleVersion builders.
+	RuleVersion *RuleVersionClient
+	// RuleVersionTrigger is the client for interacting with the RuleVersionTrigger builders.
+	RuleVersionTrigger *RuleVersionTriggerClient
 	// SchemaState is the client for interacting with the SchemaState builders.
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
@@ -245,7 +248,8 @@ func (c *Client) init() {
 	c.RiverJob = NewRiverJobClient(c.config)
 	c.Rule = NewRuleClient(c.config)
 	c.RuleFiring = NewRuleFiringClient(c.config)
-	c.RuleTrigger = NewRuleTriggerClient(c.config)
+	c.RuleVersion = NewRuleVersionClient(c.config)
+	c.RuleVersionTrigger = NewRuleVersionTriggerClient(c.config)
 	c.SchemaState = NewSchemaStateClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
 	c.SendLimiter = NewSendLimiterClient(c.config)
@@ -394,7 +398,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RiverJob:             NewRiverJobClient(cfg),
 		Rule:                 NewRuleClient(cfg),
 		RuleFiring:           NewRuleFiringClient(cfg),
-		RuleTrigger:          NewRuleTriggerClient(cfg),
+		RuleVersion:          NewRuleVersionClient(cfg),
+		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
 		SchemaState:          NewSchemaStateClient(cfg),
 		Segment:              NewSegmentClient(cfg),
 		SendLimiter:          NewSendLimiterClient(cfg),
@@ -470,7 +475,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RiverJob:             NewRiverJobClient(cfg),
 		Rule:                 NewRuleClient(cfg),
 		RuleFiring:           NewRuleFiringClient(cfg),
-		RuleTrigger:          NewRuleTriggerClient(cfg),
+		RuleVersion:          NewRuleVersionClient(cfg),
+		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
 		SchemaState:          NewSchemaStateClient(cfg),
 		Segment:              NewSegmentClient(cfg),
 		SendLimiter:          NewSendLimiterClient(cfg),
@@ -525,10 +531,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
 		c.OutboxMessage, c.OutboxOffset, c.Passkey, c.PasskeyChallenge,
 		c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
-		c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember, c.Suppression,
-		c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember,
+		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -546,10 +552,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
 		c.OutboxMessage, c.OutboxOffset, c.Passkey, c.PasskeyChallenge,
 		c.PrivateRelayRange, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
-		c.RuleTrigger, c.SchemaState, c.Segment, c.SendLimiter, c.SendingDomain,
-		c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember, c.Suppression,
-		c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendLimiter,
+		c.SendingDomain, c.ServiceCredential, c.SignupSurveyResponse, c.StaffMember,
+		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -636,8 +642,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Rule.mutate(ctx, m)
 	case *RuleFiringMutation:
 		return c.RuleFiring.mutate(ctx, m)
-	case *RuleTriggerMutation:
-		return c.RuleTrigger.mutate(ctx, m)
+	case *RuleVersionMutation:
+		return c.RuleVersion.mutate(ctx, m)
+	case *RuleVersionTriggerMutation:
+		return c.RuleVersionTrigger.mutate(ctx, m)
 	case *SchemaStateMutation:
 		return c.SchemaState.mutate(ctx, m)
 	case *SegmentMutation:
@@ -1296,15 +1304,31 @@ func (c *AutomationClient) QueryOutboundMessages(_m *Automation) *OutboundMessag
 	return query
 }
 
-// QueryIntegration queries the integration edge of a Automation.
-func (c *AutomationClient) QueryIntegration(_m *Automation) *IntegrationQuery {
-	query := (&IntegrationClient{config: c.config}).Query()
+// QueryLiveVersion queries the live_version edge of a Automation.
+func (c *AutomationClient) QueryLiveVersion(_m *Automation) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(automation.Table, automation.FieldID, id),
-			sqlgraph.To(integration.Table, integration.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, automation.IntegrationTable, automation.IntegrationColumn),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automation.LiveVersionTable, automation.LiveVersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDraftVersion queries the draft_version edge of a Automation.
+func (c *AutomationClient) QueryDraftVersion(_m *Automation) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, id),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automation.DraftVersionTable, automation.DraftVersionColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1683,6 +1707,22 @@ func (c *AutomationVersionClient) QueryRuns(_m *AutomationVersion) *AutomationRu
 			sqlgraph.From(automationversion.Table, automationversion.FieldID, id),
 			sqlgraph.To(automationrun.Table, automationrun.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, automationversion.RunsTable, automationversion.RunsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIntegration queries the integration edge of a AutomationVersion.
+func (c *AutomationVersionClient) QueryIntegration(_m *AutomationVersion) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationversion.Table, automationversion.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationversion.IntegrationTable, automationversion.IntegrationColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -6905,15 +6945,47 @@ func (c *RuleClient) QueryWorkspace(_m *Rule) *WorkspaceQuery {
 	return query
 }
 
-// QueryTriggers queries the triggers edge of a Rule.
-func (c *RuleClient) QueryTriggers(_m *Rule) *RuleTriggerQuery {
-	query := (&RuleTriggerClient{config: c.config}).Query()
+// QueryVersions queries the versions edge of a Rule.
+func (c *RuleClient) QueryVersions(_m *Rule) *RuleVersionQuery {
+	query := (&RuleVersionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(rule.Table, rule.FieldID, id),
-			sqlgraph.To(ruletrigger.Table, ruletrigger.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, rule.TriggersTable, rule.TriggersColumn),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, rule.VersionsTable, rule.VersionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLiveVersion queries the live_version edge of a Rule.
+func (c *RuleClient) QueryLiveVersion(_m *Rule) *RuleVersionQuery {
+	query := (&RuleVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, id),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, rule.LiveVersionTable, rule.LiveVersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDraftVersion queries the draft_version edge of a Rule.
+func (c *RuleClient) QueryDraftVersion(_m *Rule) *RuleVersionQuery {
+	query := (&RuleVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rule.Table, rule.FieldID, id),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, rule.DraftVersionTable, rule.DraftVersionColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -7118,6 +7190,22 @@ func (c *RuleFiringClient) QueryContact(_m *RuleFiring) *ContactQuery {
 	return query
 }
 
+// QueryVersion queries the version edge of a RuleFiring.
+func (c *RuleFiringClient) QueryVersion(_m *RuleFiring) *RuleVersionQuery {
+	query := (&RuleVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rulefiring.Table, rulefiring.FieldID, id),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rulefiring.VersionTable, rulefiring.VersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *RuleFiringClient) Hooks() []Hook {
 	return c.hooks.RuleFiring
@@ -7143,107 +7231,107 @@ func (c *RuleFiringClient) mutate(ctx context.Context, m *RuleFiringMutation) (V
 	}
 }
 
-// RuleTriggerClient is a client for the RuleTrigger schema.
-type RuleTriggerClient struct {
+// RuleVersionClient is a client for the RuleVersion schema.
+type RuleVersionClient struct {
 	config
 }
 
-// NewRuleTriggerClient returns a client for the RuleTrigger from the given config.
-func NewRuleTriggerClient(c config) *RuleTriggerClient {
-	return &RuleTriggerClient{config: c}
+// NewRuleVersionClient returns a client for the RuleVersion from the given config.
+func NewRuleVersionClient(c config) *RuleVersionClient {
+	return &RuleVersionClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `ruletrigger.Hooks(f(g(h())))`.
-func (c *RuleTriggerClient) Use(hooks ...Hook) {
-	c.hooks.RuleTrigger = append(c.hooks.RuleTrigger, hooks...)
+// A call to `Use(f, g, h)` equals to `ruleversion.Hooks(f(g(h())))`.
+func (c *RuleVersionClient) Use(hooks ...Hook) {
+	c.hooks.RuleVersion = append(c.hooks.RuleVersion, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `ruletrigger.Intercept(f(g(h())))`.
-func (c *RuleTriggerClient) Intercept(interceptors ...Interceptor) {
-	c.inters.RuleTrigger = append(c.inters.RuleTrigger, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `ruleversion.Intercept(f(g(h())))`.
+func (c *RuleVersionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RuleVersion = append(c.inters.RuleVersion, interceptors...)
 }
 
-// Create returns a builder for creating a RuleTrigger entity.
-func (c *RuleTriggerClient) Create() *RuleTriggerCreate {
-	mutation := newRuleTriggerMutation(c.config, OpCreate)
-	return &RuleTriggerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a RuleVersion entity.
+func (c *RuleVersionClient) Create() *RuleVersionCreate {
+	mutation := newRuleVersionMutation(c.config, OpCreate)
+	return &RuleVersionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of RuleTrigger entities.
-func (c *RuleTriggerClient) CreateBulk(builders ...*RuleTriggerCreate) *RuleTriggerCreateBulk {
-	return &RuleTriggerCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of RuleVersion entities.
+func (c *RuleVersionClient) CreateBulk(builders ...*RuleVersionCreate) *RuleVersionCreateBulk {
+	return &RuleVersionCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *RuleTriggerClient) MapCreateBulk(slice any, setFunc func(*RuleTriggerCreate, int)) *RuleTriggerCreateBulk {
+func (c *RuleVersionClient) MapCreateBulk(slice any, setFunc func(*RuleVersionCreate, int)) *RuleVersionCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &RuleTriggerCreateBulk{err: fmt.Errorf("calling to RuleTriggerClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &RuleVersionCreateBulk{err: fmt.Errorf("calling to RuleVersionClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*RuleTriggerCreate, rv.Len())
+	builders := make([]*RuleVersionCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &RuleTriggerCreateBulk{config: c.config, builders: builders}
+	return &RuleVersionCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for RuleTrigger.
-func (c *RuleTriggerClient) Update() *RuleTriggerUpdate {
-	mutation := newRuleTriggerMutation(c.config, OpUpdate)
-	return &RuleTriggerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for RuleVersion.
+func (c *RuleVersionClient) Update() *RuleVersionUpdate {
+	mutation := newRuleVersionMutation(c.config, OpUpdate)
+	return &RuleVersionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *RuleTriggerClient) UpdateOne(_m *RuleTrigger) *RuleTriggerUpdateOne {
-	mutation := newRuleTriggerMutation(c.config, OpUpdateOne, withRuleTrigger(_m))
-	return &RuleTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *RuleVersionClient) UpdateOne(_m *RuleVersion) *RuleVersionUpdateOne {
+	mutation := newRuleVersionMutation(c.config, OpUpdateOne, withRuleVersion(_m))
+	return &RuleVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *RuleTriggerClient) UpdateOneID(id int64) *RuleTriggerUpdateOne {
-	mutation := newRuleTriggerMutation(c.config, OpUpdateOne, withRuleTriggerID(id))
-	return &RuleTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *RuleVersionClient) UpdateOneID(id int64) *RuleVersionUpdateOne {
+	mutation := newRuleVersionMutation(c.config, OpUpdateOne, withRuleVersionID(id))
+	return &RuleVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for RuleTrigger.
-func (c *RuleTriggerClient) Delete() *RuleTriggerDelete {
-	mutation := newRuleTriggerMutation(c.config, OpDelete)
-	return &RuleTriggerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for RuleVersion.
+func (c *RuleVersionClient) Delete() *RuleVersionDelete {
+	mutation := newRuleVersionMutation(c.config, OpDelete)
+	return &RuleVersionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *RuleTriggerClient) DeleteOne(_m *RuleTrigger) *RuleTriggerDeleteOne {
+func (c *RuleVersionClient) DeleteOne(_m *RuleVersion) *RuleVersionDeleteOne {
 	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RuleTriggerClient) DeleteOneID(id int64) *RuleTriggerDeleteOne {
-	builder := c.Delete().Where(ruletrigger.ID(id))
+func (c *RuleVersionClient) DeleteOneID(id int64) *RuleVersionDeleteOne {
+	builder := c.Delete().Where(ruleversion.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &RuleTriggerDeleteOne{builder}
+	return &RuleVersionDeleteOne{builder}
 }
 
-// Query returns a query builder for RuleTrigger.
-func (c *RuleTriggerClient) Query() *RuleTriggerQuery {
-	return &RuleTriggerQuery{
+// Query returns a query builder for RuleVersion.
+func (c *RuleVersionClient) Query() *RuleVersionQuery {
+	return &RuleVersionQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeRuleTrigger},
+		ctx:    &QueryContext{Type: TypeRuleVersion},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a RuleTrigger entity by its id.
-func (c *RuleTriggerClient) Get(ctx context.Context, id int64) (*RuleTrigger, error) {
-	return c.Query().Where(ruletrigger.ID(id)).Only(ctx)
+// Get returns a RuleVersion entity by its id.
+func (c *RuleVersionClient) Get(ctx context.Context, id int64) (*RuleVersion, error) {
+	return c.Query().Where(ruleversion.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *RuleTriggerClient) GetX(ctx context.Context, id int64) *RuleTrigger {
+func (c *RuleVersionClient) GetX(ctx context.Context, id int64) *RuleVersion {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -7251,15 +7339,15 @@ func (c *RuleTriggerClient) GetX(ctx context.Context, id int64) *RuleTrigger {
 	return obj
 }
 
-// QueryWorkspace queries the workspace edge of a RuleTrigger.
-func (c *RuleTriggerClient) QueryWorkspace(_m *RuleTrigger) *WorkspaceQuery {
+// QueryWorkspace queries the workspace edge of a RuleVersion.
+func (c *RuleVersionClient) QueryWorkspace(_m *RuleVersion) *WorkspaceQuery {
 	query := (&WorkspaceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(ruletrigger.Table, ruletrigger.FieldID, id),
+			sqlgraph.From(ruleversion.Table, ruleversion.FieldID, id),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ruletrigger.WorkspaceTable, ruletrigger.WorkspaceColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruleversion.WorkspaceTable, ruleversion.WorkspaceColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -7267,15 +7355,47 @@ func (c *RuleTriggerClient) QueryWorkspace(_m *RuleTrigger) *WorkspaceQuery {
 	return query
 }
 
-// QueryRule queries the rule edge of a RuleTrigger.
-func (c *RuleTriggerClient) QueryRule(_m *RuleTrigger) *RuleQuery {
+// QueryRule queries the rule edge of a RuleVersion.
+func (c *RuleVersionClient) QueryRule(_m *RuleVersion) *RuleQuery {
 	query := (&RuleClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(ruletrigger.Table, ruletrigger.FieldID, id),
+			sqlgraph.From(ruleversion.Table, ruleversion.FieldID, id),
 			sqlgraph.To(rule.Table, rule.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ruletrigger.RuleTable, ruletrigger.RuleColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruleversion.RuleTable, ruleversion.RuleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTriggers queries the triggers edge of a RuleVersion.
+func (c *RuleVersionClient) QueryTriggers(_m *RuleVersion) *RuleVersionTriggerQuery {
+	query := (&RuleVersionTriggerClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruleversion.Table, ruleversion.FieldID, id),
+			sqlgraph.To(ruleversiontrigger.Table, ruleversiontrigger.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ruleversion.TriggersTable, ruleversion.TriggersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFirings queries the firings edge of a RuleVersion.
+func (c *RuleVersionClient) QueryFirings(_m *RuleVersion) *RuleFiringQuery {
+	query := (&RuleFiringClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruleversion.Table, ruleversion.FieldID, id),
+			sqlgraph.To(rulefiring.Table, rulefiring.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ruleversion.FiringsTable, ruleversion.FiringsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -7284,27 +7404,192 @@ func (c *RuleTriggerClient) QueryRule(_m *RuleTrigger) *RuleQuery {
 }
 
 // Hooks returns the client hooks.
-func (c *RuleTriggerClient) Hooks() []Hook {
-	return c.hooks.RuleTrigger
+func (c *RuleVersionClient) Hooks() []Hook {
+	return c.hooks.RuleVersion
 }
 
 // Interceptors returns the client interceptors.
-func (c *RuleTriggerClient) Interceptors() []Interceptor {
-	return c.inters.RuleTrigger
+func (c *RuleVersionClient) Interceptors() []Interceptor {
+	return c.inters.RuleVersion
 }
 
-func (c *RuleTriggerClient) mutate(ctx context.Context, m *RuleTriggerMutation) (Value, error) {
+func (c *RuleVersionClient) mutate(ctx context.Context, m *RuleVersionMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&RuleTriggerCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&RuleVersionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&RuleTriggerUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&RuleVersionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&RuleTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&RuleVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&RuleTriggerDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&RuleVersionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown RuleTrigger mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown RuleVersion mutation op: %q", m.Op())
+	}
+}
+
+// RuleVersionTriggerClient is a client for the RuleVersionTrigger schema.
+type RuleVersionTriggerClient struct {
+	config
+}
+
+// NewRuleVersionTriggerClient returns a client for the RuleVersionTrigger from the given config.
+func NewRuleVersionTriggerClient(c config) *RuleVersionTriggerClient {
+	return &RuleVersionTriggerClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ruleversiontrigger.Hooks(f(g(h())))`.
+func (c *RuleVersionTriggerClient) Use(hooks ...Hook) {
+	c.hooks.RuleVersionTrigger = append(c.hooks.RuleVersionTrigger, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ruleversiontrigger.Intercept(f(g(h())))`.
+func (c *RuleVersionTriggerClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RuleVersionTrigger = append(c.inters.RuleVersionTrigger, interceptors...)
+}
+
+// Create returns a builder for creating a RuleVersionTrigger entity.
+func (c *RuleVersionTriggerClient) Create() *RuleVersionTriggerCreate {
+	mutation := newRuleVersionTriggerMutation(c.config, OpCreate)
+	return &RuleVersionTriggerCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RuleVersionTrigger entities.
+func (c *RuleVersionTriggerClient) CreateBulk(builders ...*RuleVersionTriggerCreate) *RuleVersionTriggerCreateBulk {
+	return &RuleVersionTriggerCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RuleVersionTriggerClient) MapCreateBulk(slice any, setFunc func(*RuleVersionTriggerCreate, int)) *RuleVersionTriggerCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RuleVersionTriggerCreateBulk{err: fmt.Errorf("calling to RuleVersionTriggerClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RuleVersionTriggerCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RuleVersionTriggerCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RuleVersionTrigger.
+func (c *RuleVersionTriggerClient) Update() *RuleVersionTriggerUpdate {
+	mutation := newRuleVersionTriggerMutation(c.config, OpUpdate)
+	return &RuleVersionTriggerUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RuleVersionTriggerClient) UpdateOne(_m *RuleVersionTrigger) *RuleVersionTriggerUpdateOne {
+	mutation := newRuleVersionTriggerMutation(c.config, OpUpdateOne, withRuleVersionTrigger(_m))
+	return &RuleVersionTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RuleVersionTriggerClient) UpdateOneID(id int64) *RuleVersionTriggerUpdateOne {
+	mutation := newRuleVersionTriggerMutation(c.config, OpUpdateOne, withRuleVersionTriggerID(id))
+	return &RuleVersionTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RuleVersionTrigger.
+func (c *RuleVersionTriggerClient) Delete() *RuleVersionTriggerDelete {
+	mutation := newRuleVersionTriggerMutation(c.config, OpDelete)
+	return &RuleVersionTriggerDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RuleVersionTriggerClient) DeleteOne(_m *RuleVersionTrigger) *RuleVersionTriggerDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RuleVersionTriggerClient) DeleteOneID(id int64) *RuleVersionTriggerDeleteOne {
+	builder := c.Delete().Where(ruleversiontrigger.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RuleVersionTriggerDeleteOne{builder}
+}
+
+// Query returns a query builder for RuleVersionTrigger.
+func (c *RuleVersionTriggerClient) Query() *RuleVersionTriggerQuery {
+	return &RuleVersionTriggerQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRuleVersionTrigger},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RuleVersionTrigger entity by its id.
+func (c *RuleVersionTriggerClient) Get(ctx context.Context, id int64) (*RuleVersionTrigger, error) {
+	return c.Query().Where(ruleversiontrigger.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RuleVersionTriggerClient) GetX(ctx context.Context, id int64) *RuleVersionTrigger {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a RuleVersionTrigger.
+func (c *RuleVersionTriggerClient) QueryWorkspace(_m *RuleVersionTrigger) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruleversiontrigger.Table, ruleversiontrigger.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruleversiontrigger.WorkspaceTable, ruleversiontrigger.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryVersion queries the version edge of a RuleVersionTrigger.
+func (c *RuleVersionTriggerClient) QueryVersion(_m *RuleVersionTrigger) *RuleVersionQuery {
+	query := (&RuleVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruleversiontrigger.Table, ruleversiontrigger.FieldID, id),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruleversiontrigger.VersionTable, ruleversiontrigger.VersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RuleVersionTriggerClient) Hooks() []Hook {
+	return c.hooks.RuleVersionTrigger
+}
+
+// Interceptors returns the client interceptors.
+func (c *RuleVersionTriggerClient) Interceptors() []Interceptor {
+	return c.inters.RuleVersionTrigger
+}
+
+func (c *RuleVersionTriggerClient) mutate(ctx context.Context, m *RuleVersionTriggerMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RuleVersionTriggerCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RuleVersionTriggerUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RuleVersionTriggerUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RuleVersionTriggerDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RuleVersionTrigger mutation op: %q", m.Op())
 	}
 }
 
@@ -10280,15 +10565,31 @@ func (c *WorkspaceClient) QueryRules(_m *Workspace) *RuleQuery {
 	return query
 }
 
-// QueryRuleTriggers queries the rule_triggers edge of a Workspace.
-func (c *WorkspaceClient) QueryRuleTriggers(_m *Workspace) *RuleTriggerQuery {
-	query := (&RuleTriggerClient{config: c.config}).Query()
+// QueryRuleVersions queries the rule_versions edge of a Workspace.
+func (c *WorkspaceClient) QueryRuleVersions(_m *Workspace) *RuleVersionQuery {
+	query := (&RuleVersionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(workspace.Table, workspace.FieldID, id),
-			sqlgraph.To(ruletrigger.Table, ruletrigger.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleTriggersTable, workspace.RuleTriggersColumn),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleVersionsTable, workspace.RuleVersionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRuleVersionTriggers queries the rule_version_triggers edge of a Workspace.
+func (c *WorkspaceClient) QueryRuleVersionTriggers(_m *Workspace) *RuleVersionTriggerQuery {
+	query := (&RuleVersionTriggerClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(ruleversiontrigger.Table, ruleversiontrigger.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.RuleVersionTriggersTable, workspace.RuleVersionTriggersColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -10522,11 +10823,11 @@ type (
 		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
 		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
 		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger,
-		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
-		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingHostChange,
-		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
-		Workspace []ent.Hook
+		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion,
+		RuleVersionTrigger, SchemaState, Segment, SendLimiter, SendingDomain,
+		ServiceCredential, SignupSurveyResponse, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
+		WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
@@ -10535,11 +10836,11 @@ type (
 		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
 		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
 		OutboundMessage, OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge,
-		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleTrigger,
-		SchemaState, Segment, SendLimiter, SendingDomain, ServiceCredential,
-		SignupSurveyResponse, StaffMember, Suppression, Tag, TrackingHostChange,
-		Unsubscribe, Usage, User, UserIdentity, Visitor, WebhookEndpoint,
-		Workspace []ent.Interceptor
+		PrivateRelayRange, RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion,
+		RuleVersionTrigger, SchemaState, Segment, SendLimiter, SendingDomain,
+		ServiceCredential, SignupSurveyResponse, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, Visitor,
+		WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -120,37 +120,43 @@ func (_u *RuleUpdate) ClearActivatedAt() *RuleUpdate {
 	return _u
 }
 
-// SetCondition sets the "condition" field.
-func (_u *RuleUpdate) SetCondition(v string) *RuleUpdate {
-	_u.mutation.SetCondition(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (_u *RuleUpdate) SetLiveVersionID(v int64) *RuleUpdate {
+	_u.mutation.SetLiveVersionID(v)
 	return _u
 }
 
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *RuleUpdate) SetNillableCondition(v *string) *RuleUpdate {
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (_u *RuleUpdate) SetNillableLiveVersionID(v *int64) *RuleUpdate {
 	if v != nil {
-		_u.SetCondition(*v)
+		_u.SetLiveVersionID(*v)
 	}
 	return _u
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (_u *RuleUpdate) ClearCondition() *RuleUpdate {
-	_u.mutation.ClearCondition()
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (_u *RuleUpdate) ClearLiveVersionID() *RuleUpdate {
+	_u.mutation.ClearLiveVersionID()
 	return _u
 }
 
-// SetActions sets the "actions" field.
-func (_u *RuleUpdate) SetActions(v string) *RuleUpdate {
-	_u.mutation.SetActions(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (_u *RuleUpdate) SetDraftVersionID(v int64) *RuleUpdate {
+	_u.mutation.SetDraftVersionID(v)
 	return _u
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_u *RuleUpdate) SetNillableActions(v *string) *RuleUpdate {
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (_u *RuleUpdate) SetNillableDraftVersionID(v *int64) *RuleUpdate {
 	if v != nil {
-		_u.SetActions(*v)
+		_u.SetDraftVersionID(*v)
 	}
+	return _u
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (_u *RuleUpdate) ClearDraftVersionID() *RuleUpdate {
+	_u.mutation.ClearDraftVersionID()
 	return _u
 }
 
@@ -159,19 +165,29 @@ func (_u *RuleUpdate) SetWorkspace(v *Workspace) *RuleUpdate {
 	return _u.SetWorkspaceID(v.ID)
 }
 
-// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
-func (_u *RuleUpdate) AddTriggerIDs(ids ...int64) *RuleUpdate {
-	_u.mutation.AddTriggerIDs(ids...)
+// AddVersionIDs adds the "versions" edge to the RuleVersion entity by IDs.
+func (_u *RuleUpdate) AddVersionIDs(ids ...int64) *RuleUpdate {
+	_u.mutation.AddVersionIDs(ids...)
 	return _u
 }
 
-// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
-func (_u *RuleUpdate) AddTriggers(v ...*RuleTrigger) *RuleUpdate {
+// AddVersions adds the "versions" edges to the RuleVersion entity.
+func (_u *RuleUpdate) AddVersions(v ...*RuleVersion) *RuleUpdate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddTriggerIDs(ids...)
+	return _u.AddVersionIDs(ids...)
+}
+
+// SetLiveVersion sets the "live_version" edge to the RuleVersion entity.
+func (_u *RuleUpdate) SetLiveVersion(v *RuleVersion) *RuleUpdate {
+	return _u.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the RuleVersion entity.
+func (_u *RuleUpdate) SetDraftVersion(v *RuleVersion) *RuleUpdate {
+	return _u.SetDraftVersionID(v.ID)
 }
 
 // AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
@@ -200,25 +216,37 @@ func (_u *RuleUpdate) ClearWorkspace() *RuleUpdate {
 	return _u
 }
 
-// ClearTriggers clears all "triggers" edges to the RuleTrigger entity.
-func (_u *RuleUpdate) ClearTriggers() *RuleUpdate {
-	_u.mutation.ClearTriggers()
+// ClearVersions clears all "versions" edges to the RuleVersion entity.
+func (_u *RuleUpdate) ClearVersions() *RuleUpdate {
+	_u.mutation.ClearVersions()
 	return _u
 }
 
-// RemoveTriggerIDs removes the "triggers" edge to RuleTrigger entities by IDs.
-func (_u *RuleUpdate) RemoveTriggerIDs(ids ...int64) *RuleUpdate {
-	_u.mutation.RemoveTriggerIDs(ids...)
+// RemoveVersionIDs removes the "versions" edge to RuleVersion entities by IDs.
+func (_u *RuleUpdate) RemoveVersionIDs(ids ...int64) *RuleUpdate {
+	_u.mutation.RemoveVersionIDs(ids...)
 	return _u
 }
 
-// RemoveTriggers removes "triggers" edges to RuleTrigger entities.
-func (_u *RuleUpdate) RemoveTriggers(v ...*RuleTrigger) *RuleUpdate {
+// RemoveVersions removes "versions" edges to RuleVersion entities.
+func (_u *RuleUpdate) RemoveVersions(v ...*RuleVersion) *RuleUpdate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveTriggerIDs(ids...)
+	return _u.RemoveVersionIDs(ids...)
+}
+
+// ClearLiveVersion clears the "live_version" edge to the RuleVersion entity.
+func (_u *RuleUpdate) ClearLiveVersion() *RuleUpdate {
+	_u.mutation.ClearLiveVersion()
+	return _u
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the RuleVersion entity.
+func (_u *RuleUpdate) ClearDraftVersion() *RuleUpdate {
+	_u.mutation.ClearDraftVersion()
+	return _u
 }
 
 // ClearFirings clears all "firings" edges to the RuleFiring entity.
@@ -335,15 +363,6 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.ActivatedAtCleared() {
 		_spec.ClearField(rule.FieldActivatedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Condition(); ok {
-		_spec.SetField(rule.FieldCondition, field.TypeString, value)
-	}
-	if _u.mutation.ConditionCleared() {
-		_spec.ClearField(rule.FieldCondition, field.TypeString)
-	}
-	if value, ok := _u.mutation.Actions(); ok {
-		_spec.SetField(rule.FieldActions, field.TypeString, value)
-	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -373,28 +392,28 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.TriggersCleared() {
+	if _u.mutation.VersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   rule.TriggersTable,
-			Columns: []string{rule.TriggersColumn},
+			Table:   rule.VersionsTable,
+			Columns: []string{rule.VersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedTriggersIDs(); len(nodes) > 0 && !_u.mutation.TriggersCleared() {
+	if nodes := _u.mutation.RemovedVersionsIDs(); len(nodes) > 0 && !_u.mutation.VersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   rule.TriggersTable,
-			Columns: []string{rule.TriggersColumn},
+			Table:   rule.VersionsTable,
+			Columns: []string{rule.VersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -402,15 +421,73 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.TriggersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.VersionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   rule.TriggersTable,
-			Columns: []string{rule.TriggersColumn},
+			Table:   rule.VersionsTable,
+			Columns: []string{rule.VersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LiveVersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.LiveVersionTable,
+			Columns: []string{rule.LiveVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LiveVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.LiveVersionTable,
+			Columns: []string{rule.LiveVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DraftVersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.DraftVersionTable,
+			Columns: []string{rule.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DraftVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.DraftVersionTable,
+			Columns: []string{rule.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -573,37 +650,43 @@ func (_u *RuleUpdateOne) ClearActivatedAt() *RuleUpdateOne {
 	return _u
 }
 
-// SetCondition sets the "condition" field.
-func (_u *RuleUpdateOne) SetCondition(v string) *RuleUpdateOne {
-	_u.mutation.SetCondition(v)
+// SetLiveVersionID sets the "live_version_id" field.
+func (_u *RuleUpdateOne) SetLiveVersionID(v int64) *RuleUpdateOne {
+	_u.mutation.SetLiveVersionID(v)
 	return _u
 }
 
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *RuleUpdateOne) SetNillableCondition(v *string) *RuleUpdateOne {
+// SetNillableLiveVersionID sets the "live_version_id" field if the given value is not nil.
+func (_u *RuleUpdateOne) SetNillableLiveVersionID(v *int64) *RuleUpdateOne {
 	if v != nil {
-		_u.SetCondition(*v)
+		_u.SetLiveVersionID(*v)
 	}
 	return _u
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (_u *RuleUpdateOne) ClearCondition() *RuleUpdateOne {
-	_u.mutation.ClearCondition()
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (_u *RuleUpdateOne) ClearLiveVersionID() *RuleUpdateOne {
+	_u.mutation.ClearLiveVersionID()
 	return _u
 }
 
-// SetActions sets the "actions" field.
-func (_u *RuleUpdateOne) SetActions(v string) *RuleUpdateOne {
-	_u.mutation.SetActions(v)
+// SetDraftVersionID sets the "draft_version_id" field.
+func (_u *RuleUpdateOne) SetDraftVersionID(v int64) *RuleUpdateOne {
+	_u.mutation.SetDraftVersionID(v)
 	return _u
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_u *RuleUpdateOne) SetNillableActions(v *string) *RuleUpdateOne {
+// SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
+func (_u *RuleUpdateOne) SetNillableDraftVersionID(v *int64) *RuleUpdateOne {
 	if v != nil {
-		_u.SetActions(*v)
+		_u.SetDraftVersionID(*v)
 	}
+	return _u
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (_u *RuleUpdateOne) ClearDraftVersionID() *RuleUpdateOne {
+	_u.mutation.ClearDraftVersionID()
 	return _u
 }
 
@@ -612,19 +695,29 @@ func (_u *RuleUpdateOne) SetWorkspace(v *Workspace) *RuleUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
 }
 
-// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by IDs.
-func (_u *RuleUpdateOne) AddTriggerIDs(ids ...int64) *RuleUpdateOne {
-	_u.mutation.AddTriggerIDs(ids...)
+// AddVersionIDs adds the "versions" edge to the RuleVersion entity by IDs.
+func (_u *RuleUpdateOne) AddVersionIDs(ids ...int64) *RuleUpdateOne {
+	_u.mutation.AddVersionIDs(ids...)
 	return _u
 }
 
-// AddTriggers adds the "triggers" edges to the RuleTrigger entity.
-func (_u *RuleUpdateOne) AddTriggers(v ...*RuleTrigger) *RuleUpdateOne {
+// AddVersions adds the "versions" edges to the RuleVersion entity.
+func (_u *RuleUpdateOne) AddVersions(v ...*RuleVersion) *RuleUpdateOne {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddTriggerIDs(ids...)
+	return _u.AddVersionIDs(ids...)
+}
+
+// SetLiveVersion sets the "live_version" edge to the RuleVersion entity.
+func (_u *RuleUpdateOne) SetLiveVersion(v *RuleVersion) *RuleUpdateOne {
+	return _u.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the RuleVersion entity.
+func (_u *RuleUpdateOne) SetDraftVersion(v *RuleVersion) *RuleUpdateOne {
+	return _u.SetDraftVersionID(v.ID)
 }
 
 // AddFiringIDs adds the "firings" edge to the RuleFiring entity by IDs.
@@ -653,25 +746,37 @@ func (_u *RuleUpdateOne) ClearWorkspace() *RuleUpdateOne {
 	return _u
 }
 
-// ClearTriggers clears all "triggers" edges to the RuleTrigger entity.
-func (_u *RuleUpdateOne) ClearTriggers() *RuleUpdateOne {
-	_u.mutation.ClearTriggers()
+// ClearVersions clears all "versions" edges to the RuleVersion entity.
+func (_u *RuleUpdateOne) ClearVersions() *RuleUpdateOne {
+	_u.mutation.ClearVersions()
 	return _u
 }
 
-// RemoveTriggerIDs removes the "triggers" edge to RuleTrigger entities by IDs.
-func (_u *RuleUpdateOne) RemoveTriggerIDs(ids ...int64) *RuleUpdateOne {
-	_u.mutation.RemoveTriggerIDs(ids...)
+// RemoveVersionIDs removes the "versions" edge to RuleVersion entities by IDs.
+func (_u *RuleUpdateOne) RemoveVersionIDs(ids ...int64) *RuleUpdateOne {
+	_u.mutation.RemoveVersionIDs(ids...)
 	return _u
 }
 
-// RemoveTriggers removes "triggers" edges to RuleTrigger entities.
-func (_u *RuleUpdateOne) RemoveTriggers(v ...*RuleTrigger) *RuleUpdateOne {
+// RemoveVersions removes "versions" edges to RuleVersion entities.
+func (_u *RuleUpdateOne) RemoveVersions(v ...*RuleVersion) *RuleUpdateOne {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveTriggerIDs(ids...)
+	return _u.RemoveVersionIDs(ids...)
+}
+
+// ClearLiveVersion clears the "live_version" edge to the RuleVersion entity.
+func (_u *RuleUpdateOne) ClearLiveVersion() *RuleUpdateOne {
+	_u.mutation.ClearLiveVersion()
+	return _u
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the RuleVersion entity.
+func (_u *RuleUpdateOne) ClearDraftVersion() *RuleUpdateOne {
+	_u.mutation.ClearDraftVersion()
+	return _u
 }
 
 // ClearFirings clears all "firings" edges to the RuleFiring entity.
@@ -818,15 +923,6 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 	if _u.mutation.ActivatedAtCleared() {
 		_spec.ClearField(rule.FieldActivatedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Condition(); ok {
-		_spec.SetField(rule.FieldCondition, field.TypeString, value)
-	}
-	if _u.mutation.ConditionCleared() {
-		_spec.ClearField(rule.FieldCondition, field.TypeString)
-	}
-	if value, ok := _u.mutation.Actions(); ok {
-		_spec.SetField(rule.FieldActions, field.TypeString, value)
-	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -856,28 +952,28 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.TriggersCleared() {
+	if _u.mutation.VersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   rule.TriggersTable,
-			Columns: []string{rule.TriggersColumn},
+			Table:   rule.VersionsTable,
+			Columns: []string{rule.VersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedTriggersIDs(); len(nodes) > 0 && !_u.mutation.TriggersCleared() {
+	if nodes := _u.mutation.RemovedVersionsIDs(); len(nodes) > 0 && !_u.mutation.VersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   rule.TriggersTable,
-			Columns: []string{rule.TriggersColumn},
+			Table:   rule.VersionsTable,
+			Columns: []string{rule.VersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -885,15 +981,73 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.TriggersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.VersionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   rule.TriggersTable,
-			Columns: []string{rule.TriggersColumn},
+			Table:   rule.VersionsTable,
+			Columns: []string{rule.VersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.LiveVersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.LiveVersionTable,
+			Columns: []string{rule.LiveVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.LiveVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.LiveVersionTable,
+			Columns: []string{rule.LiveVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DraftVersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.DraftVersionTable,
+			Columns: []string{rule.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DraftVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   rule.DraftVersionTable,
+			Columns: []string{rule.DraftVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

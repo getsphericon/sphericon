@@ -222,7 +222,7 @@ func (a *Agent) TrySchedule(id externalapi.EntityId) string {
 // CanSend reports whether the agent is offered any send-class tool.
 func (a *Agent) CanSend() bool {
 	return slices.ContainsFunc(a.Tools(), func(name string) bool {
-		return slices.Contains([]string{"emails_send", "broadcasts_schedule", "broadcasts_unschedule", "automations_activate"}, name)
+		return slices.Contains([]string{"emails_send", "broadcasts_schedule", "broadcasts_unschedule", "automations_publish", "rules_publish"}, name)
 	})
 }
 

@@ -109,11 +109,11 @@ func TestEvaluateTriggerEnrollsOnlyMatchingActiveAutomations(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	// The greeting's trigger is shared by an active and a draft automation; Bob is in neither.
+	// The greeting's trigger is shared by an active and an inactive automation; Bob is in neither.
 	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactBobID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0))
 
 	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID), 1)
-	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingDraftID)).ExistX(ctx), "the draft enrolled nobody")
+	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingInactiveID)).ExistX(ctx), "the inactive one enrolled nobody")
 }
 
 // A failing platform sender surfaces from the owner notifications (the caller logs

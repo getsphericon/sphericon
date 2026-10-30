@@ -23,7 +23,7 @@ func TestExternalRulesArchiveUnarchiveAndDelete(t *testing.T) {
 	require.Truef(t, ok, "got %T", archived)
 	_, isArchived := res.ArchivedAt.Get()
 	assert.True(t, isArchived)
-	assert.Equal(t, externalapi.RuleStatusDraft, res.Status)
+	assert.Equal(t, externalapi.RuleStatusInactive, res.Status)
 
 	list, err := c.RulesList(ctx, externalapi.RulesListParams{Archived: externalapi.NewOptBool(true)})
 	require.NoError(t, err)
@@ -43,7 +43,7 @@ func TestExternalRulesArchiveUnarchiveAndDelete(t *testing.T) {
 	require.Len(t, problem.UsedBy, 1)
 	assert.Equal(t, externalapi.UsedByKindFiring, problem.UsedBy[0].Kind)
 
-	deleted, err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleDraftID)})
+	deleted, err := c.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleInactiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.RulesDeleteNoContent{}, deleted)
 }
@@ -53,10 +53,10 @@ func TestExternalRulesArchiveAndDeleteNeedTheAutomationsWriteScope(t *testing.T)
 	ctx := context.Background()
 	reader := env.ExternalScoped(t, "automations:read")
 
-	archive, err := reader.RulesArchive(ctx, externalapi.RulesArchiveParams{ID: entityIDString(fixtures.RuleDraftID)})
+	archive, err := reader.RulesArchive(ctx, externalapi.RulesArchiveParams{ID: entityIDString(fixtures.RuleInactiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.RulesArchiveForbidden{}, archive)
-	del, err := reader.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleDraftID)})
+	del, err := reader.RulesDelete(ctx, externalapi.RulesDeleteParams{ID: entityIDString(fixtures.RuleInactiveID)})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.RulesDeleteForbidden{}, del)
 }

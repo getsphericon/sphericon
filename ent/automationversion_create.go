@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -85,6 +86,26 @@ func (_c *AutomationVersionCreate) SetNillableSteps(v *string) *AutomationVersio
 	return _c
 }
 
+// SetTriggerEvent sets the "trigger_event" field.
+func (_c *AutomationVersionCreate) SetTriggerEvent(v string) *AutomationVersionCreate {
+	_c.mutation.SetTriggerEvent(v)
+	return _c
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (_c *AutomationVersionCreate) SetIntegrationID(v int64) *AutomationVersionCreate {
+	_c.mutation.SetIntegrationID(v)
+	return _c
+}
+
+// SetNillableIntegrationID sets the "integration_id" field if the given value is not nil.
+func (_c *AutomationVersionCreate) SetNillableIntegrationID(v *int64) *AutomationVersionCreate {
+	if v != nil {
+		_c.SetIntegrationID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationVersionCreate) SetID(v int64) *AutomationVersionCreate {
 	_c.mutation.SetID(v)
@@ -114,6 +135,11 @@ func (_c *AutomationVersionCreate) AddRuns(v ...*AutomationRun) *AutomationVersi
 		ids[i] = v[i].ID
 	}
 	return _c.AddRunIDs(ids...)
+}
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (_c *AutomationVersionCreate) SetIntegration(v *Integration) *AutomationVersionCreate {
+	return _c.SetIntegrationID(v.ID)
 }
 
 // Mutation returns the AutomationVersionMutation object of the builder.
@@ -190,6 +216,9 @@ func (_c *AutomationVersionCreate) check() error {
 	if _, ok := _c.mutation.Steps(); !ok {
 		return &ValidationError{Name: "steps", err: errors.New(`ent: missing required field "AutomationVersion.steps"`)}
 	}
+	if _, ok := _c.mutation.TriggerEvent(); !ok {
+		return &ValidationError{Name: "trigger_event", err: errors.New(`ent: missing required field "AutomationVersion.trigger_event"`)}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "AutomationVersion.workspace"`)}
 	}
@@ -245,6 +274,10 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 		_spec.SetField(automationversion.FieldSteps, field.TypeString, value)
 		_node.Steps = value
 	}
+	if value, ok := _c.mutation.TriggerEvent(); ok {
+		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
+		_node.TriggerEvent = value
+	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -293,6 +326,23 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.IntegrationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationversion.IntegrationTable,
+			Columns: []string{automationversion.IntegrationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.IntegrationID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -392,6 +442,36 @@ func (u *AutomationVersionUpsert) SetSteps(v string) *AutomationVersionUpsert {
 // UpdateSteps sets the "steps" field to the value that was provided on create.
 func (u *AutomationVersionUpsert) UpdateSteps() *AutomationVersionUpsert {
 	u.SetExcluded(automationversion.FieldSteps)
+	return u
+}
+
+// SetTriggerEvent sets the "trigger_event" field.
+func (u *AutomationVersionUpsert) SetTriggerEvent(v string) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldTriggerEvent, v)
+	return u
+}
+
+// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateTriggerEvent() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldTriggerEvent)
+	return u
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (u *AutomationVersionUpsert) SetIntegrationID(v int64) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldIntegrationID, v)
+	return u
+}
+
+// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateIntegrationID() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldIntegrationID)
+	return u
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (u *AutomationVersionUpsert) ClearIntegrationID() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldIntegrationID)
 	return u
 }
 
@@ -502,6 +582,41 @@ func (u *AutomationVersionUpsertOne) SetSteps(v string) *AutomationVersionUpsert
 func (u *AutomationVersionUpsertOne) UpdateSteps() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.UpdateSteps()
+	})
+}
+
+// SetTriggerEvent sets the "trigger_event" field.
+func (u *AutomationVersionUpsertOne) SetTriggerEvent(v string) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetTriggerEvent(v)
+	})
+}
+
+// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateTriggerEvent() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateTriggerEvent()
+	})
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (u *AutomationVersionUpsertOne) SetIntegrationID(v int64) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetIntegrationID(v)
+	})
+}
+
+// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateIntegrationID() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateIntegrationID()
+	})
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (u *AutomationVersionUpsertOne) ClearIntegrationID() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearIntegrationID()
 	})
 }
 
@@ -778,6 +893,41 @@ func (u *AutomationVersionUpsertBulk) SetSteps(v string) *AutomationVersionUpser
 func (u *AutomationVersionUpsertBulk) UpdateSteps() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.UpdateSteps()
+	})
+}
+
+// SetTriggerEvent sets the "trigger_event" field.
+func (u *AutomationVersionUpsertBulk) SetTriggerEvent(v string) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetTriggerEvent(v)
+	})
+}
+
+// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateTriggerEvent() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateTriggerEvent()
+	})
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (u *AutomationVersionUpsertBulk) SetIntegrationID(v int64) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetIntegrationID(v)
+	})
+}
+
+// UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateIntegrationID() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateIntegrationID()
+	})
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (u *AutomationVersionUpsertBulk) ClearIntegrationID() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearIntegrationID()
 	})
 }
 

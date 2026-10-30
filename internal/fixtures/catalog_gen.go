@@ -95,12 +95,12 @@ const (
 	AutomationJobsEditableVersionID = 5564
 	// AutomationJobsEmptyVersionID is from fixtures/automation_versions.
 	AutomationJobsEmptyVersionID = 55633
-	// AutomationJobsGreetingDraftID is from fixtures/automations.
-	AutomationJobsGreetingDraftID = 5566
-	// AutomationJobsGreetingDraftName is from fixtures/automations.
-	AutomationJobsGreetingDraftName = "Jobs greeting draft"
 	// AutomationJobsGreetingID is from fixtures/automations.
 	AutomationJobsGreetingID = 5560
+	// AutomationJobsGreetingInactiveID is from fixtures/automations.
+	AutomationJobsGreetingInactiveID = 5566
+	// AutomationJobsGreetingInactiveName is from fixtures/automations.
+	AutomationJobsGreetingInactiveName = "Jobs greeting inactive"
 	// AutomationJobsGreetingName is from fixtures/automations.
 	AutomationJobsGreetingName = "Jobs greeting"
 	// AutomationJobsGreetingVersionID is from fixtures/automation_versions.
@@ -189,6 +189,8 @@ const (
 	AutomationTagOnEngagementName = "Tag on engagement"
 	// AutomationTagOnEngagementVersionID is from fixtures/automation_versions.
 	AutomationTagOnEngagementVersionID = 104
+	// AutomationWelcomeSeriesDraftVersionID is from fixtures/automation_versions.
+	AutomationWelcomeSeriesDraftVersionID = 1001
 	// AutomationWelcomeSeriesID is from fixtures/automations.
 	AutomationWelcomeSeriesID = 100
 	// AutomationWelcomeSeriesName is from fixtures/automations.
@@ -1518,19 +1520,15 @@ const (
 	// RuleActivatedLaterID is from fixtures/rules.
 	RuleActivatedLaterID = 105
 	// RuleActivatedLaterName is from fixtures/rules.
-	RuleActivatedLaterName = "Activated later"
-	// RuleDraftID is from fixtures/rules.
-	RuleDraftID = 102
-	// RuleDraftName is from fixtures/rules.
-	RuleDraftName = "Draft rule"
-	// RuleEnrollDraftAutomationID is from fixtures/rules.
-	RuleEnrollDraftAutomationID = 107
-	// RuleEnrollDraftAutomationName is from fixtures/rules.
-	RuleEnrollDraftAutomationName = "Enroll in a draft automation"
+	RuleActivatedLaterName = "Published later"
 	// RuleEnrollGreetingID is from fixtures/rules.
 	RuleEnrollGreetingID = 106
 	// RuleEnrollGreetingName is from fixtures/rules.
 	RuleEnrollGreetingName = "Enroll in the greeting"
+	// RuleEnrollInactiveAutomationID is from fixtures/rules.
+	RuleEnrollInactiveAutomationID = 107
+	// RuleEnrollInactiveAutomationName is from fixtures/rules.
+	RuleEnrollInactiveAutomationName = "Enroll in an inactive automation"
 	// RuleEnrollSingleEmailID is from fixtures/rules.
 	RuleEnrollSingleEmailID = 108
 	// RuleEnrollSingleEmailName is from fixtures/rules.
@@ -1571,6 +1569,10 @@ const (
 	RuleGlobexID = 900
 	// RuleGlobexName is from fixtures/rules.
 	RuleGlobexName = "Globex rule"
+	// RuleInactiveID is from fixtures/rules.
+	RuleInactiveID = 102
+	// RuleInactiveName is from fixtures/rules.
+	RuleInactiveName = "Inactive rule"
 	// RuleInitechID is from fixtures/rules.
 	RuleInitechID = 300
 	// RuleInitechName is from fixtures/rules.
@@ -1579,8 +1581,12 @@ const (
 	RuleMultiTriggerID = 103
 	// RuleMultiTriggerName is from fixtures/rules.
 	RuleMultiTriggerName = "Either of two events"
+	// RuleTagClickedDraftVersionID is from fixtures/rule_versions.
+	RuleTagClickedDraftVersionID = 120
 	// RuleTagClickedID is from fixtures/rules.
 	RuleTagClickedID = 100
+	// RuleTagClickedLiveVersionID is from fixtures/rule_versions.
+	RuleTagClickedLiveVersionID = 100
 	// RuleTagClickedName is from fixtures/rules.
 	RuleTagClickedName = "Tag a Contact who clicked"
 	// RuleUrlPricingID is from fixtures/rules.
@@ -1929,6 +1935,10 @@ const (
 	TagNewsletterID = 2
 	// TagNewsletterName is from fixtures/tags.
 	TagNewsletterName = "newsletter"
+	// TagRenewalDueID is from fixtures/tags.
+	TagRenewalDueID = 4
+	// TagRenewalDueName is from fixtures/tags.
+	TagRenewalDueName = "renewal-due"
 	// TagUnusedID is from fixtures/tags.
 	TagUnusedID = 3
 	// TagUnusedName is from fixtures/tags.

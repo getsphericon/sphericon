@@ -114,3 +114,6 @@ mise.local.toml
 !/dev/dns/db.brightpath.localhost
 !/dev/dns/db..
 !/dev/dns/db.brightpath.example
+
+# TypeScript incremental build state
+*.tsbuildinfo

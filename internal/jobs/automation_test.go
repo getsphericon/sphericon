@@ -69,10 +69,17 @@ func stepJob(runID int64, step int) map[string]any {
 	return map[string]any{"run_id": float64(runID), "step": float64(step)}
 }
 
-// triggerOf is the event that enrolls a fixture Automation.
+// triggerOf is the event that enrolls a fixture Automation: its live version's Trigger, or its draft's
+// when it was never published.
 func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string {
 	t.Helper()
-	return env.DB.Automation.GetX(context.Background(), automationID).TriggerEvent
+	ctx := context.Background()
+	a := env.DB.Automation.GetX(ctx, automationID)
+	versionID := a.LiveVersionID
+	if versionID == nil {
+		versionID = a.DraftVersionID
+	}
+	return env.DB.AutomationVersion.GetX(ctx, *versionID).TriggerEvent
 }
 
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
@@ -305,7 +312,7 @@ func TestAutomationHeldStepWaitsAndResumes(t *testing.T) {
 func TestAnAutomationSendsThroughItsOwnIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	env.DB.Automation.UpdateOneID(fixtures.AutomationJobsGreetingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
+	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
 	enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 
 	var through []int64
@@ -356,7 +363,7 @@ func TestAnAutomationStepIsHeldWhenItsIntegrationCannotSend(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := context.Background()
-			env.DB.Automation.UpdateOneID(fixtures.AutomationJobsGreetingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
+			env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsGreetingVersionID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(ctx)
 			makeUnusable(env)
 			runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 
@@ -440,8 +447,8 @@ func TestWaitStepOnAnExitedRunDoesNotSetResumeAt(t *testing.T) {
 	assert.Empty(t, queuedSteps(t, env))
 }
 
-// An Enrollment finishes on the steps it began with, however the Automation is edited after
-// (ADR 0049): the next Enrollment begins on the new steps.
+// An Enrollment finishes on the steps it began with, however the Automation is edited and
+// published after (ADR 0049, ADR 0065): the next Enrollment begins on the new steps.
 func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -461,6 +468,8 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 		{Type: automations.StepWait, Seconds: 2},
 		{Type: automations.StepEmail, Subject: "New steps", Body: "<p>new</p>"},
 	}})
+	require.NoError(t, err)
+	_, err = mod.Publish(ctx, acme, fixtures.AutomationJobsEditableID)
 	require.NoError(t, err)
 
 	late := enrollVia(t, env, fixtures.AutomationJobsEditableID, fixtures.ContactCarolID)

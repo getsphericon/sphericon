@@ -18,7 +18,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/credentials"
@@ -427,9 +427,9 @@ func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inus
 	if row.Channel != integration.ChannelEmail {
 		return users, nil
 	}
-	sendsThrough := automation.IntegrationID(row.ID)
+	sendsThrough := automationversion.IntegrationID(row.ID)
 	if row.IsDefault {
-		sendsThrough = automation.Or(sendsThrough, automation.IntegrationIDIsNil())
+		sendsThrough = automationversion.Or(sendsThrough, automationversion.IntegrationIDIsNil())
 	}
 	sending, err := liveuse.EmailAutomations(ctx, s, sendsThrough)
 	if err != nil {

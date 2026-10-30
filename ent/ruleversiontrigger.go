@@ -9,13 +9,13 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/getsphericon/sphericon/ent/rule"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
-// RuleTrigger is the model entity for the RuleTrigger schema.
-type RuleTrigger struct {
+// RuleVersionTrigger is the model entity for the RuleVersionTrigger schema.
+type RuleVersionTrigger struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int64 `json:"id,omitempty"`
@@ -25,22 +25,22 @@ type RuleTrigger struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
-	// RuleID holds the value of the "rule_id" field.
-	RuleID int64 `json:"rule_id,omitempty"`
+	// VersionID holds the value of the "version_id" field.
+	VersionID int64 `json:"version_id,omitempty"`
 	// Action holds the value of the "action" field.
 	Action string `json:"action,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the RuleTriggerQuery when eager-loading is set.
-	Edges        RuleTriggerEdges `json:"edges"`
+	// The values are being populated by the RuleVersionTriggerQuery when eager-loading is set.
+	Edges        RuleVersionTriggerEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// RuleTriggerEdges holds the relations/edges for other nodes in the graph.
-type RuleTriggerEdges struct {
+// RuleVersionTriggerEdges holds the relations/edges for other nodes in the graph.
+type RuleVersionTriggerEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
-	// Rule holds the value of the rule edge.
-	Rule *Rule `json:"rule,omitempty"`
+	// Version holds the value of the version edge.
+	Version *RuleVersion `json:"version,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -48,7 +48,7 @@ type RuleTriggerEdges struct {
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e RuleTriggerEdges) WorkspaceOrErr() (*Workspace, error) {
+func (e RuleVersionTriggerEdges) WorkspaceOrErr() (*Workspace, error) {
 	if e.Workspace != nil {
 		return e.Workspace, nil
 	} else if e.loadedTypes[0] {
@@ -57,27 +57,27 @@ func (e RuleTriggerEdges) WorkspaceOrErr() (*Workspace, error) {
 	return nil, &NotLoadedError{edge: "workspace"}
 }
 
-// RuleOrErr returns the Rule value or an error if the edge
+// VersionOrErr returns the Version value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e RuleTriggerEdges) RuleOrErr() (*Rule, error) {
-	if e.Rule != nil {
-		return e.Rule, nil
+func (e RuleVersionTriggerEdges) VersionOrErr() (*RuleVersion, error) {
+	if e.Version != nil {
+		return e.Version, nil
 	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: rule.Label}
+		return nil, &NotFoundError{label: ruleversion.Label}
 	}
-	return nil, &NotLoadedError{edge: "rule"}
+	return nil, &NotLoadedError{edge: "version"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*RuleTrigger) scanValues(columns []string) ([]any, error) {
+func (*RuleVersionTrigger) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case ruletrigger.FieldID, ruletrigger.FieldWorkspaceID, ruletrigger.FieldRuleID:
+		case ruleversiontrigger.FieldID, ruleversiontrigger.FieldWorkspaceID, ruleversiontrigger.FieldVersionID:
 			values[i] = new(sql.NullInt64)
-		case ruletrigger.FieldAction:
+		case ruleversiontrigger.FieldAction:
 			values[i] = new(sql.NullString)
-		case ruletrigger.FieldCreatedAt, ruletrigger.FieldUpdatedAt:
+		case ruleversiontrigger.FieldCreatedAt, ruleversiontrigger.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -87,44 +87,44 @@ func (*RuleTrigger) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the RuleTrigger fields.
-func (_m *RuleTrigger) assignValues(columns []string, values []any) error {
+// to the RuleVersionTrigger fields.
+func (_m *RuleVersionTrigger) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case ruletrigger.FieldID:
+		case ruleversiontrigger.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int64(value.Int64)
-		case ruletrigger.FieldCreatedAt:
+		case ruleversiontrigger.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case ruletrigger.FieldUpdatedAt:
+		case ruleversiontrigger.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
-		case ruletrigger.FieldWorkspaceID:
+		case ruleversiontrigger.FieldWorkspaceID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
 			}
-		case ruletrigger.FieldRuleID:
+		case ruleversiontrigger.FieldVersionID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field rule_id", values[i])
+				return fmt.Errorf("unexpected type %T for field version_id", values[i])
 			} else if value.Valid {
-				_m.RuleID = value.Int64
+				_m.VersionID = value.Int64
 			}
-		case ruletrigger.FieldAction:
+		case ruleversiontrigger.FieldAction:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field action", values[i])
 			} else if value.Valid {
@@ -137,44 +137,44 @@ func (_m *RuleTrigger) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the RuleTrigger.
+// Value returns the ent.Value that was dynamically selected and assigned to the RuleVersionTrigger.
 // This includes values selected through modifiers, order, etc.
-func (_m *RuleTrigger) Value(name string) (ent.Value, error) {
+func (_m *RuleVersionTrigger) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryWorkspace queries the "workspace" edge of the RuleTrigger entity.
-func (_m *RuleTrigger) QueryWorkspace() *WorkspaceQuery {
-	return NewRuleTriggerClient(_m.config).QueryWorkspace(_m)
+// QueryWorkspace queries the "workspace" edge of the RuleVersionTrigger entity.
+func (_m *RuleVersionTrigger) QueryWorkspace() *WorkspaceQuery {
+	return NewRuleVersionTriggerClient(_m.config).QueryWorkspace(_m)
 }
 
-// QueryRule queries the "rule" edge of the RuleTrigger entity.
-func (_m *RuleTrigger) QueryRule() *RuleQuery {
-	return NewRuleTriggerClient(_m.config).QueryRule(_m)
+// QueryVersion queries the "version" edge of the RuleVersionTrigger entity.
+func (_m *RuleVersionTrigger) QueryVersion() *RuleVersionQuery {
+	return NewRuleVersionTriggerClient(_m.config).QueryVersion(_m)
 }
 
-// Update returns a builder for updating this RuleTrigger.
-// Note that you need to call RuleTrigger.Unwrap() before calling this method if this RuleTrigger
+// Update returns a builder for updating this RuleVersionTrigger.
+// Note that you need to call RuleVersionTrigger.Unwrap() before calling this method if this RuleVersionTrigger
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *RuleTrigger) Update() *RuleTriggerUpdateOne {
-	return NewRuleTriggerClient(_m.config).UpdateOne(_m)
+func (_m *RuleVersionTrigger) Update() *RuleVersionTriggerUpdateOne {
+	return NewRuleVersionTriggerClient(_m.config).UpdateOne(_m)
 }
 
-// Unwrap unwraps the RuleTrigger entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the RuleVersionTrigger entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *RuleTrigger) Unwrap() *RuleTrigger {
+func (_m *RuleVersionTrigger) Unwrap() *RuleVersionTrigger {
 	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: RuleTrigger is not a transactional entity")
+		panic("ent: RuleVersionTrigger is not a transactional entity")
 	}
 	_m.config.driver = _tx.drv
 	return _m
 }
 
 // String implements the fmt.Stringer.
-func (_m *RuleTrigger) String() string {
+func (_m *RuleVersionTrigger) String() string {
 	var builder strings.Builder
-	builder.WriteString("RuleTrigger(")
+	builder.WriteString("RuleVersionTrigger(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
@@ -185,8 +185,8 @@ func (_m *RuleTrigger) String() string {
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
 	builder.WriteString(", ")
-	builder.WriteString("rule_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.RuleID))
+	builder.WriteString("version_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.VersionID))
 	builder.WriteString(", ")
 	builder.WriteString("action=")
 	builder.WriteString(_m.Action)
@@ -194,5 +194,5 @@ func (_m *RuleTrigger) String() string {
 	return builder.String()
 }
 
-// RuleTriggers is a parsable slice of RuleTrigger.
-type RuleTriggers []*RuleTrigger
+// RuleVersionTriggers is a parsable slice of RuleVersionTrigger.
+type RuleVersionTriggers []*RuleVersionTrigger

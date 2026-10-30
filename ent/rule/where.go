@@ -85,14 +85,14 @@ func ActivatedAt(v time.Time) predicate.Rule {
 	return predicate.Rule(sql.FieldEQ(FieldActivatedAt, v))
 }
 
-// Condition applies equality check predicate on the "condition" field. It's identical to ConditionEQ.
-func Condition(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldEQ(FieldCondition, v))
+// LiveVersionID applies equality check predicate on the "live_version_id" field. It's identical to LiveVersionIDEQ.
+func LiveVersionID(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldLiveVersionID, v))
 }
 
-// Actions applies equality check predicate on the "actions" field. It's identical to ActionsEQ.
-func Actions(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldEQ(FieldActions, v))
+// DraftVersionID applies equality check predicate on the "draft_version_id" field. It's identical to DraftVersionIDEQ.
+func DraftVersionID(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldDraftVersionID, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -380,144 +380,64 @@ func ActivatedAtNotNil() predicate.Rule {
 	return predicate.Rule(sql.FieldNotNull(FieldActivatedAt))
 }
 
-// ConditionEQ applies the EQ predicate on the "condition" field.
-func ConditionEQ(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldEQ(FieldCondition, v))
+// LiveVersionIDEQ applies the EQ predicate on the "live_version_id" field.
+func LiveVersionIDEQ(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldLiveVersionID, v))
 }
 
-// ConditionNEQ applies the NEQ predicate on the "condition" field.
-func ConditionNEQ(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldNEQ(FieldCondition, v))
+// LiveVersionIDNEQ applies the NEQ predicate on the "live_version_id" field.
+func LiveVersionIDNEQ(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldNEQ(FieldLiveVersionID, v))
 }
 
-// ConditionIn applies the In predicate on the "condition" field.
-func ConditionIn(vs ...string) predicate.Rule {
-	return predicate.Rule(sql.FieldIn(FieldCondition, vs...))
+// LiveVersionIDIn applies the In predicate on the "live_version_id" field.
+func LiveVersionIDIn(vs ...int64) predicate.Rule {
+	return predicate.Rule(sql.FieldIn(FieldLiveVersionID, vs...))
 }
 
-// ConditionNotIn applies the NotIn predicate on the "condition" field.
-func ConditionNotIn(vs ...string) predicate.Rule {
-	return predicate.Rule(sql.FieldNotIn(FieldCondition, vs...))
+// LiveVersionIDNotIn applies the NotIn predicate on the "live_version_id" field.
+func LiveVersionIDNotIn(vs ...int64) predicate.Rule {
+	return predicate.Rule(sql.FieldNotIn(FieldLiveVersionID, vs...))
 }
 
-// ConditionGT applies the GT predicate on the "condition" field.
-func ConditionGT(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldGT(FieldCondition, v))
+// LiveVersionIDIsNil applies the IsNil predicate on the "live_version_id" field.
+func LiveVersionIDIsNil() predicate.Rule {
+	return predicate.Rule(sql.FieldIsNull(FieldLiveVersionID))
 }
 
-// ConditionGTE applies the GTE predicate on the "condition" field.
-func ConditionGTE(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldGTE(FieldCondition, v))
+// LiveVersionIDNotNil applies the NotNil predicate on the "live_version_id" field.
+func LiveVersionIDNotNil() predicate.Rule {
+	return predicate.Rule(sql.FieldNotNull(FieldLiveVersionID))
 }
 
-// ConditionLT applies the LT predicate on the "condition" field.
-func ConditionLT(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldLT(FieldCondition, v))
+// DraftVersionIDEQ applies the EQ predicate on the "draft_version_id" field.
+func DraftVersionIDEQ(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldEQ(FieldDraftVersionID, v))
 }
 
-// ConditionLTE applies the LTE predicate on the "condition" field.
-func ConditionLTE(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldLTE(FieldCondition, v))
+// DraftVersionIDNEQ applies the NEQ predicate on the "draft_version_id" field.
+func DraftVersionIDNEQ(v int64) predicate.Rule {
+	return predicate.Rule(sql.FieldNEQ(FieldDraftVersionID, v))
 }
 
-// ConditionContains applies the Contains predicate on the "condition" field.
-func ConditionContains(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldContains(FieldCondition, v))
+// DraftVersionIDIn applies the In predicate on the "draft_version_id" field.
+func DraftVersionIDIn(vs ...int64) predicate.Rule {
+	return predicate.Rule(sql.FieldIn(FieldDraftVersionID, vs...))
 }
 
-// ConditionHasPrefix applies the HasPrefix predicate on the "condition" field.
-func ConditionHasPrefix(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldHasPrefix(FieldCondition, v))
+// DraftVersionIDNotIn applies the NotIn predicate on the "draft_version_id" field.
+func DraftVersionIDNotIn(vs ...int64) predicate.Rule {
+	return predicate.Rule(sql.FieldNotIn(FieldDraftVersionID, vs...))
 }
 
-// ConditionHasSuffix applies the HasSuffix predicate on the "condition" field.
-func ConditionHasSuffix(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldHasSuffix(FieldCondition, v))
+// DraftVersionIDIsNil applies the IsNil predicate on the "draft_version_id" field.
+func DraftVersionIDIsNil() predicate.Rule {
+	return predicate.Rule(sql.FieldIsNull(FieldDraftVersionID))
 }
 
-// ConditionIsNil applies the IsNil predicate on the "condition" field.
-func ConditionIsNil() predicate.Rule {
-	return predicate.Rule(sql.FieldIsNull(FieldCondition))
-}
-
-// ConditionNotNil applies the NotNil predicate on the "condition" field.
-func ConditionNotNil() predicate.Rule {
-	return predicate.Rule(sql.FieldNotNull(FieldCondition))
-}
-
-// ConditionEqualFold applies the EqualFold predicate on the "condition" field.
-func ConditionEqualFold(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldEqualFold(FieldCondition, v))
-}
-
-// ConditionContainsFold applies the ContainsFold predicate on the "condition" field.
-func ConditionContainsFold(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldContainsFold(FieldCondition, v))
-}
-
-// ActionsEQ applies the EQ predicate on the "actions" field.
-func ActionsEQ(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldEQ(FieldActions, v))
-}
-
-// ActionsNEQ applies the NEQ predicate on the "actions" field.
-func ActionsNEQ(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldNEQ(FieldActions, v))
-}
-
-// ActionsIn applies the In predicate on the "actions" field.
-func ActionsIn(vs ...string) predicate.Rule {
-	return predicate.Rule(sql.FieldIn(FieldActions, vs...))
-}
-
-// ActionsNotIn applies the NotIn predicate on the "actions" field.
-func ActionsNotIn(vs ...string) predicate.Rule {
-	return predicate.Rule(sql.FieldNotIn(FieldActions, vs...))
-}
-
-// ActionsGT applies the GT predicate on the "actions" field.
-func ActionsGT(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldGT(FieldActions, v))
-}
-
-// ActionsGTE applies the GTE predicate on the "actions" field.
-func ActionsGTE(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldGTE(FieldActions, v))
-}
-
-// ActionsLT applies the LT predicate on the "actions" field.
-func ActionsLT(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldLT(FieldActions, v))
-}
-
-// ActionsLTE applies the LTE predicate on the "actions" field.
-func ActionsLTE(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldLTE(FieldActions, v))
-}
-
-// ActionsContains applies the Contains predicate on the "actions" field.
-func ActionsContains(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldContains(FieldActions, v))
-}
-
-// ActionsHasPrefix applies the HasPrefix predicate on the "actions" field.
-func ActionsHasPrefix(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldHasPrefix(FieldActions, v))
-}
-
-// ActionsHasSuffix applies the HasSuffix predicate on the "actions" field.
-func ActionsHasSuffix(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldHasSuffix(FieldActions, v))
-}
-
-// ActionsEqualFold applies the EqualFold predicate on the "actions" field.
-func ActionsEqualFold(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldEqualFold(FieldActions, v))
-}
-
-// ActionsContainsFold applies the ContainsFold predicate on the "actions" field.
-func ActionsContainsFold(v string) predicate.Rule {
-	return predicate.Rule(sql.FieldContainsFold(FieldActions, v))
+// DraftVersionIDNotNil applies the NotNil predicate on the "draft_version_id" field.
+func DraftVersionIDNotNil() predicate.Rule {
+	return predicate.Rule(sql.FieldNotNull(FieldDraftVersionID))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
@@ -543,21 +463,67 @@ func HasWorkspaceWith(preds ...predicate.Workspace) predicate.Rule {
 	})
 }
 
-// HasTriggers applies the HasEdge predicate on the "triggers" edge.
-func HasTriggers() predicate.Rule {
+// HasVersions applies the HasEdge predicate on the "versions" edge.
+func HasVersions() predicate.Rule {
 	return predicate.Rule(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, TriggersTable, TriggersColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, VersionsTable, VersionsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasTriggersWith applies the HasEdge predicate on the "triggers" edge with a given conditions (other predicates).
-func HasTriggersWith(preds ...predicate.RuleTrigger) predicate.Rule {
+// HasVersionsWith applies the HasEdge predicate on the "versions" edge with a given conditions (other predicates).
+func HasVersionsWith(preds ...predicate.RuleVersion) predicate.Rule {
 	return predicate.Rule(func(s *sql.Selector) {
-		step := newTriggersStep()
+		step := newVersionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasLiveVersion applies the HasEdge predicate on the "live_version" edge.
+func HasLiveVersion() predicate.Rule {
+	return predicate.Rule(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, LiveVersionTable, LiveVersionColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasLiveVersionWith applies the HasEdge predicate on the "live_version" edge with a given conditions (other predicates).
+func HasLiveVersionWith(preds ...predicate.RuleVersion) predicate.Rule {
+	return predicate.Rule(func(s *sql.Selector) {
+		step := newLiveVersionStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasDraftVersion applies the HasEdge predicate on the "draft_version" edge.
+func HasDraftVersion() predicate.Rule {
+	return predicate.Rule(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, DraftVersionTable, DraftVersionColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDraftVersionWith applies the HasEdge predicate on the "draft_version" edge with a given conditions (other predicates).
+func HasDraftVersionWith(preds ...predicate.RuleVersion) predicate.Rule {
+	return predicate.Rule(func(s *sql.Selector) {
+		step := newDraftVersionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

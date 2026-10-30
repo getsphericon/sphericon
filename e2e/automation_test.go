@@ -13,7 +13,7 @@ func TestRecordedEventTriggersAutomationEmail(t *testing.T) {
 	w := env.NewWorkspace(t).Ready()
 	matching, other := w.NewRecipient(), w.NewRecipient()
 	w.ImportContacts(matching, other)
-	w.ActivateAutomation(Automation{
+	w.PublishAutomation(Automation{
 		TriggerEvent: "e2e.signed_up",
 		Subject:      "Welcome from the automation",
 		Body:         HTML("Glad you signed up"),
@@ -38,7 +38,7 @@ func TestAutomationStepWrittenInTheEditorSendsItsBuiltBody(t *testing.T) {
 	w := env.NewWorkspace(t).Ready()
 	to := w.NewRecipient()
 	w.ImportContacts(to)
-	w.ActivateAuthoredAutomation(AuthoredAutomation{
+	w.PublishAuthoredAutomation(AuthoredAutomation{
 		TriggerEvent: "e2e.authored",
 		Subject:      "Written in the editor",
 		Text:         "Built from a document for {{ email }}",
@@ -57,7 +57,7 @@ func TestAutomationHTTPStepCallsTheHookThenContinues(t *testing.T) {
 	to := w.NewRecipient()
 	w.ImportContacts(to)
 	hook := w.NewHook(true)
-	w.ActivateHTTPAutomation(HTTPAutomation{
+	w.PublishHTTPAutomation(HTTPAutomation{
 		TriggerEvent: "e2e.hooked",
 		Hook:         hook,
 		Body:         `{"email": "{{ email }}"}`,
@@ -80,12 +80,12 @@ func TestOpenedAutomationEmailStartsAnotherAutomation(t *testing.T) {
 	w := env.NewWorkspace(t).Ready()
 	to := w.NewRecipient()
 	w.ImportContacts(to)
-	w.ActivateAutomation(Automation{
+	w.PublishAutomation(Automation{
 		TriggerEvent: "e2e.welcomed",
 		Subject:      "First email",
 		Body:         HTML("Welcome"),
 	})
-	w.ActivateAutomation(Automation{
+	w.PublishAutomation(Automation{
 		TriggerEvent: "email.opened",
 		Subject:      "Second email",
 		Body:         HTML("Thanks for reading"),
@@ -98,7 +98,7 @@ func TestOpenedAutomationEmailStartsAnotherAutomation(t *testing.T) {
 
 	// The second Automation's own email is opened: that Event starts a third Automation, not the
 	// second again.
-	w.ActivateAutomation(Automation{
+	w.PublishAutomation(Automation{
 		TriggerEvent: "email.opened",
 		Subject:      "Third email",
 		Body:         HTML("Still reading"),

@@ -123,8 +123,11 @@ type Rule func(*sql.Selector)
 // RuleFiring is the predicate function for rulefiring builders.
 type RuleFiring func(*sql.Selector)
 
-// RuleTrigger is the predicate function for ruletrigger builders.
-type RuleTrigger func(*sql.Selector)
+// RuleVersion is the predicate function for ruleversion builders.
+type RuleVersion func(*sql.Selector)
+
+// RuleVersionTrigger is the predicate function for ruleversiontrigger builders.
+type RuleVersionTrigger func(*sql.Selector)
 
 // SchemaState is the predicate function for schemastate builders.
 type SchemaState func(*sql.Selector)

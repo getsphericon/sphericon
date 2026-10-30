@@ -171,6 +171,20 @@ func (_c *BroadcastCreate) SetNillableSegmentID(v *int64) *BroadcastCreate {
 	return _c
 }
 
+// SetCondition sets the "condition" field.
+func (_c *BroadcastCreate) SetCondition(v string) *BroadcastCreate {
+	_c.mutation.SetCondition(v)
+	return _c
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableCondition(v *string) *BroadcastCreate {
+	if v != nil {
+		_c.SetCondition(*v)
+	}
+	return _c
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (_c *BroadcastCreate) SetIntegrationID(v int64) *BroadcastCreate {
 	_c.mutation.SetIntegrationID(v)
@@ -456,6 +470,10 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.EditorVersion(); ok {
 		_spec.SetField(broadcast.FieldEditorVersion, field.TypeString, value)
 		_node.EditorVersion = &value
+	}
+	if value, ok := _c.mutation.Condition(); ok {
+		_spec.SetField(broadcast.FieldCondition, field.TypeString, value)
+		_node.Condition = &value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
@@ -761,6 +779,24 @@ func (u *BroadcastUpsert) UpdateSegmentID() *BroadcastUpsert {
 // ClearSegmentID clears the value of the "segment_id" field.
 func (u *BroadcastUpsert) ClearSegmentID() *BroadcastUpsert {
 	u.SetNull(broadcast.FieldSegmentID)
+	return u
+}
+
+// SetCondition sets the "condition" field.
+func (u *BroadcastUpsert) SetCondition(v string) *BroadcastUpsert {
+	u.Set(broadcast.FieldCondition, v)
+	return u
+}
+
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateCondition() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldCondition)
+	return u
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (u *BroadcastUpsert) ClearCondition() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldCondition)
 	return u
 }
 
@@ -1110,6 +1146,27 @@ func (u *BroadcastUpsertOne) UpdateSegmentID() *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) ClearSegmentID() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearSegmentID()
+	})
+}
+
+// SetCondition sets the "condition" field.
+func (u *BroadcastUpsertOne) SetCondition(v string) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetCondition(v)
+	})
+}
+
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateCondition() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateCondition()
+	})
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (u *BroadcastUpsertOne) ClearCondition() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearCondition()
 	})
 }
 
@@ -1642,6 +1699,27 @@ func (u *BroadcastUpsertBulk) UpdateSegmentID() *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) ClearSegmentID() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearSegmentID()
+	})
+}
+
+// SetCondition sets the "condition" field.
+func (u *BroadcastUpsertBulk) SetCondition(v string) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetCondition(v)
+	})
+}
+
+// UpdateCondition sets the "condition" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateCondition() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateCondition()
+	})
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (u *BroadcastUpsertBulk) ClearCondition() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearCondition()
 	})
 }
 

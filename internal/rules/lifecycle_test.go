@@ -40,7 +40,7 @@ func TestArchiveHidesARuleFromTheListAndStopsItFiring(t *testing.T) {
 	archived, err := m.List(ctx, acme(env), pagination.Params{Page: 1, PageSize: 100}, true)
 	require.NoError(t, err)
 	require.Len(t, archived.Items, 1)
-	assert.Equal(t, rule.StatusDraft, archived.Items[0].Status, "an archived Rule is no longer active")
+	assert.Equal(t, rule.StatusInactive, archived.Items[0].Status, "an archived Rule is no longer active")
 	assert.NotNil(t, archived.Items[0].DiscardedAt)
 	assert.Empty(t, evaluate(t, env, fixtures.ContactAliceID, "rule_click", "evt-after-archive"))
 	got, err := m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
@@ -48,7 +48,7 @@ func TestArchiveHidesARuleFromTheListAndStopsItFiring(t *testing.T) {
 	assert.NotNil(t, got.DiscardedAt)
 }
 
-func TestUnarchiveBringsARuleBackAsADraft(t *testing.T) {
+func TestUnarchiveBringsARuleBackInactive(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
@@ -59,7 +59,7 @@ func TestUnarchiveBringsARuleBackAsADraft(t *testing.T) {
 	got, err := m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
 	require.NoError(t, err)
 	assert.Nil(t, got.DiscardedAt)
-	assert.Equal(t, rule.StatusDraft, got.Status)
+	assert.Equal(t, rule.StatusInactive, got.Status)
 }
 
 func TestArchiveOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
@@ -72,18 +72,18 @@ func TestArchivingAnArchivedRuleChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleDraftID))
+	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleInactiveID))
 
-	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleDraftID))
+	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleInactiveID))
 
-	got, err := m.Get(ctx, acme(env), fixtures.RuleDraftID)
+	got, err := m.Get(ctx, acme(env), fixtures.RuleInactiveID)
 	require.NoError(t, err)
 	assert.NotNil(t, got.DiscardedAt)
 }
 
-// Activating and archiving a Rule at the same moment leave it archived and a draft, or active
+// Publishing and archiving a Rule at the same moment leave it archived and inactive, or active
 // and kept; never archived and active (an archived Rule must act on nothing).
-func TestActivatingAndArchivingARuleAtOnceNeverLeaveItArchivedAndActive(t *testing.T) {
+func TestPublishingAndArchivingARuleAtOnceNeverLeaveItArchivedAndActive(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	sqlDB.SetMaxOpenConns(8)
 	client := db.NewEntClient(sqlDB)
@@ -91,15 +91,15 @@ func TestActivatingAndArchivingARuleAtOnceNeverLeaveItArchivedAndActive(t *testi
 	s := client.Scoped(fixtures.AcmeID)
 
 	// Either may be refused because the other won; what matters is the state they leave.
-	var activateErr, archiveErr error
+	var publishErr, archiveErr error
 	var wg sync.WaitGroup
-	wg.Go(func() { _, activateErr = m.Activate(t.Context(), s, fixtures.RuleDraftID) })
-	wg.Go(func() { archiveErr = m.Archive(t.Context(), s, fixtures.RuleDraftID) })
+	wg.Go(func() { _, publishErr = m.Publish(t.Context(), s, fixtures.RuleInactiveID) })
+	wg.Go(func() { archiveErr = m.Archive(t.Context(), s, fixtures.RuleInactiveID) })
 	wg.Wait()
 
-	got, err := m.Get(t.Context(), s, fixtures.RuleDraftID)
+	got, err := m.Get(t.Context(), s, fixtures.RuleInactiveID)
 	require.NoError(t, err)
-	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "archived and active (activate: %v, archive: %v)", activateErr, archiveErr)
+	assert.False(t, got.DiscardedAt != nil && got.Status == rule.StatusActive, "archived and active (publish: %v, archive: %v)", publishErr, archiveErr)
 }
 
 func TestDeletePurgesARuleWithNoFirings(t *testing.T) {
@@ -107,9 +107,9 @@ func TestDeletePurgesARuleWithNoFirings(t *testing.T) {
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
 
-	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleDraftID))
+	require.NoError(t, m.Delete(ctx, acme(env), fixtures.RuleInactiveID))
 
-	_, err := m.Get(ctx, acme(env), fixtures.RuleDraftID)
+	_, err := m.Get(ctx, acme(env), fixtures.RuleInactiveID)
 	assert.ErrorIs(t, err, rules.ErrNotFound)
 }
 
@@ -139,23 +139,23 @@ func tagAction(tag string) []rules.Action {
 	return []rules.Action{{Type: rules.ActionApplyTag, Tag: tag}}
 }
 
-func TestAnActiveRuleThatAppliesATagUsesIt(t *testing.T) {
+// A Rule's draft names its Tag even before it is published (spec #767, "In use").
+func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
 	r, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "uses unused", TriggerEvents: []string{"x"}, Actions: tagAction("unused")})
 	require.NoError(t, err)
 
-	draft, err := rules.UsingTag(ctx, acme(env), "unused")
+	drafted, err := rules.UsingTag(ctx, acme(env), "unused")
 	require.NoError(t, err)
-	assert.Empty(t, draft, "a draft acts on nothing, so it uses nothing")
+	_, err = m.Publish(ctx, acme(env), r.ID)
+	require.NoError(t, err)
+	published, err := rules.UsingTag(ctx, acme(env), "unused")
+	require.NoError(t, err)
 
-	_, err = m.Activate(ctx, acme(env), r.ID)
-	require.NoError(t, err)
-	active, err := rules.UsingTag(ctx, acme(env), "unused")
-	require.NoError(t, err)
-	require.Len(t, active, 1)
-	assert.Equal(t, r.ID, active[0].ID)
+	assert.Equal(t, []int64{r.ID}, lo.Map(drafted, func(r *ent.Rule, _ int) int64 { return r.ID }))
+	assert.Equal(t, []int64{r.ID}, lo.Map(published, func(r *ent.Rule, _ int) int64 { return r.ID }))
 }
 
 func TestAnActiveRuleWhoseConditionNamesATagUsesIt(t *testing.T) {
@@ -232,7 +232,7 @@ func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
 	require.ErrorIs(t, err, rules.ErrInvalid)
 	assert.Contains(t, err.Error(), "Condition")
 
-	_, err = m.Update(ctx, acme(env), fixtures.RuleDraftID, rules.UpdateInput{Condition: &big})
+	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Condition: &big})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 
 	fits := conditionOf(rules.MaxConditionNodes - 1)
@@ -249,7 +249,7 @@ func TestARuleHasNoCapOnTheirNumber(t *testing.T) {
 	}
 }
 
-// Create, update, activate and archive each leave an Audit entry, and the Actions' values
+// Create, update, publish, deactivate and archive each leave an Audit entry, and the Actions' values
 // never reach one (a later Action kind may hold a secret).
 func TestRuleChangesAreAudited(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -263,7 +263,9 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	acts := tagAction("secretish2")
 	_, err = m.Update(ctx, s, r.ID, rules.UpdateInput{Actions: &acts})
 	require.NoError(t, err)
-	_, err = m.Activate(ctx, s, r.ID)
+	_, err = m.Publish(ctx, s, r.ID)
+	require.NoError(t, err)
+	_, err = m.Deactivate(ctx, s, r.ID)
 	require.NoError(t, err)
 	require.NoError(t, m.Archive(ctx, s, r.ID))
 
@@ -279,5 +281,5 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	assert.Equal(t, "rule.create", seen[0])
 	assert.Contains(t, seen, "rule.update")
 	assert.Contains(t, seen, "rule.discard")
-	assert.GreaterOrEqual(t, len(seen), 4, "update, activate and archive each wrote one")
+	assert.GreaterOrEqual(t, len(seen), 5, "update, publish, deactivate and archive each wrote one")
 }

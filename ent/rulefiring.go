@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -34,8 +35,8 @@ type RuleFiring struct {
 	Action string `json:"action,omitempty"`
 	// SourceID holds the value of the "source_id" field.
 	SourceID string `json:"source_id,omitempty"`
-	// Actions holds the value of the "actions" field.
-	Actions string `json:"actions,omitempty"`
+	// VersionID holds the value of the "version_id" field.
+	VersionID int64 `json:"version_id,omitempty"`
 	// Properties holds the value of the "properties" field.
 	Properties *string `json:"properties,omitempty"`
 	// Results holds the value of the "results" field.
@@ -56,9 +57,11 @@ type RuleFiringEdges struct {
 	Rule *Rule `json:"rule,omitempty"`
 	// Contact holds the value of the contact edge.
 	Contact *Contact `json:"contact,omitempty"`
+	// Version holds the value of the version edge.
+	Version *RuleVersion `json:"version,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -94,14 +97,25 @@ func (e RuleFiringEdges) ContactOrErr() (*Contact, error) {
 	return nil, &NotLoadedError{edge: "contact"}
 }
 
+// VersionOrErr returns the Version value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RuleFiringEdges) VersionOrErr() (*RuleVersion, error) {
+	if e.Version != nil {
+		return e.Version, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: ruleversion.Label}
+	}
+	return nil, &NotLoadedError{edge: "version"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*RuleFiring) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case rulefiring.FieldID, rulefiring.FieldWorkspaceID, rulefiring.FieldRuleID, rulefiring.FieldContactID:
+		case rulefiring.FieldID, rulefiring.FieldWorkspaceID, rulefiring.FieldRuleID, rulefiring.FieldContactID, rulefiring.FieldVersionID:
 			values[i] = new(sql.NullInt64)
-		case rulefiring.FieldAction, rulefiring.FieldSourceID, rulefiring.FieldActions, rulefiring.FieldProperties, rulefiring.FieldResults:
+		case rulefiring.FieldAction, rulefiring.FieldSourceID, rulefiring.FieldProperties, rulefiring.FieldResults:
 			values[i] = new(sql.NullString)
 		case rulefiring.FieldCreatedAt, rulefiring.FieldUpdatedAt, rulefiring.FieldCompletedAt:
 			values[i] = new(sql.NullTime)
@@ -168,11 +182,11 @@ func (_m *RuleFiring) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SourceID = value.String
 			}
-		case rulefiring.FieldActions:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field actions", values[i])
+		case rulefiring.FieldVersionID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field version_id", values[i])
 			} else if value.Valid {
-				_m.Actions = value.String
+				_m.VersionID = value.Int64
 			}
 		case rulefiring.FieldProperties:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -222,6 +236,11 @@ func (_m *RuleFiring) QueryContact() *ContactQuery {
 	return NewRuleFiringClient(_m.config).QueryContact(_m)
 }
 
+// QueryVersion queries the "version" edge of the RuleFiring entity.
+func (_m *RuleFiring) QueryVersion() *RuleVersionQuery {
+	return NewRuleFiringClient(_m.config).QueryVersion(_m)
+}
+
 // Update returns a builder for updating this RuleFiring.
 // Note that you need to call RuleFiring.Unwrap() before calling this method if this RuleFiring
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -266,8 +285,8 @@ func (_m *RuleFiring) String() string {
 	builder.WriteString("source_id=")
 	builder.WriteString(_m.SourceID)
 	builder.WriteString(", ")
-	builder.WriteString("actions=")
-	builder.WriteString(_m.Actions)
+	builder.WriteString("version_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.VersionID))
 	builder.WriteString(", ")
 	if v := _m.Properties; v != nil {
 		builder.WriteString("properties=")

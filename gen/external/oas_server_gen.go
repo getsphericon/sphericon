@@ -34,12 +34,6 @@ type Handler interface {
 	//
 	// GET /auth/tokens
 	AuthTokensList(ctx context.Context) (AuthTokensListRes, error)
-	// AutomationsActivate implements Automations_activate operation.
-	//
-	// Activate an automation (starts enrolling contacts). Needs the automations:activate scope.
-	//
-	// POST /automations/{id}/activate
-	AutomationsActivate(ctx context.Context, params AutomationsActivateParams) (AutomationsActivateRes, error)
 	// AutomationsArchive implements Automations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
@@ -55,8 +49,8 @@ type Handler interface {
 	AutomationsCreate(ctx context.Context, req *CreateAutomationInput) (AutomationsCreateRes, error)
 	// AutomationsDeactivate implements Automations_deactivate operation.
 	//
-	// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the
-	// automations:activate scope.
+	// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write
+	// scope.
 	//
 	// POST /automations/{id}/deactivate
 	AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (AutomationsDeactivateRes, error)
@@ -84,6 +78,20 @@ type Handler interface {
 	//
 	// GET /automations
 	AutomationsList(ctx context.Context, params AutomationsListParams) (AutomationsListRes, error)
+	// AutomationsPublish implements Automations_publish operation.
+	//
+	// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
+	// draft, the live version is resumed. 422 with neither. Needs the automations:publish scope.
+	//
+	// POST /automations/{id}/publish
+	AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (AutomationsPublishRes, error)
+	// AutomationsRevert implements Automations_revert operation.
+	//
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	// Needs the automations:write scope.
+	//
+	// POST /automations/{id}/revert
+	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error)
 	// AutomationsUnarchive implements Automations_unarchive operation.
 	//
 	// Restore an archived automation to the list.
@@ -143,8 +151,10 @@ type Handler interface {
 	BroadcastsReport(ctx context.Context, params BroadcastsReportParams) (BroadcastsReportRes, error)
 	// BroadcastsSchedule implements Broadcasts_schedule operation.
 	//
-	// Schedule a draft or scheduled broadcast to send to its audience at a future time. Send-class: needs
-	// the broadcasts:send scope, and mcp:send over MCP.
+	// Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its
+	// segment's condition: recipients are resolved at send time from that copy, so a later edit of the
+	// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.
+	// Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/schedule
 	BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (BroadcastsScheduleRes, error)
@@ -168,8 +178,9 @@ type Handler interface {
 	BroadcastsUnarchive(ctx context.Context, params BroadcastsUnarchiveParams) (BroadcastsUnarchiveRes, error)
 	// BroadcastsUnschedule implements Broadcasts_unschedule operation.
 	//
-	// Cancel a scheduled broadcast and return it to draft. Send-class: needs the broadcasts:send scope,
-	// and mcp:send over MCP.
+	// Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition:
+	// scheduling again copies the segment's current one. Send-class: needs the broadcasts:send scope, and
+	// mcp:send over MCP.
 	//
 	// POST /broadcasts/{id}/unschedule
 	BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (BroadcastsUnscheduleRes, error)
@@ -418,17 +429,10 @@ type Handler interface {
 	//
 	// GET /rules/{ruleId}/firings
 	RuleFiringsList(ctx context.Context, params RuleFiringsListParams) (RuleFiringsListRes, error)
-	// RulesActivate implements Rules_activate operation.
-	//
-	// Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the
-	// automations:activate scope.
-	//
-	// POST /rules/{id}/activate
-	RulesActivate(ctx context.Context, params RulesActivateParams) (RulesActivateRes, error)
 	// RulesArchive implements Rules_archive operation.
 	//
 	// Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-	// Firings. It can be restored, as a draft.
+	// Firings. It can be restored, inactive.
 	//
 	// POST /rules/{id}/archive
 	RulesArchive(ctx context.Context, params RulesArchiveParams) (RulesArchiveRes, error)
@@ -440,7 +444,7 @@ type Handler interface {
 	RulesCreate(ctx context.Context, req *CreateRuleInput) (RulesCreateRes, error)
 	// RulesDeactivate implements Rules_deactivate operation.
 	//
-	// Deactivate a Rule: it stops firing. Needs the automations:activate scope.
+	// Deactivate a Rule: it stops firing. Needs the automations:write scope.
 	//
 	// POST /rules/{id}/deactivate
 	RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (RulesDeactivateRes, error)
@@ -469,9 +473,24 @@ type Handler interface {
 	//
 	// GET /rules
 	RulesList(ctx context.Context, params RulesListParams) (RulesListRes, error)
+	// RulesPublish implements Rules_publish operation.
+	//
+	// Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an
+	// inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with
+	// neither draft nor live version. Needs the automations:publish scope.
+	//
+	// POST /rules/{id}/publish
+	RulesPublish(ctx context.Context, params RulesPublishParams) (RulesPublishRes, error)
+	// RulesRevert implements Rules_revert operation.
+	//
+	// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+	// Needs the automations:write scope.
+	//
+	// POST /rules/{id}/revert
+	RulesRevert(ctx context.Context, params RulesRevertParams) (RulesRevertRes, error)
 	// RulesUnarchive implements Rules_unarchive operation.
 	//
-	// Restore an archived Rule to the list, as a draft.
+	// Restore an archived Rule to the list, inactive.
 	//
 	// POST /rules/{id}/unarchive
 	RulesUnarchive(ctx context.Context, params RulesUnarchiveParams) (RulesUnarchiveRes, error)

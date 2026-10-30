@@ -56,14 +56,23 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.Au
 		externalapiAutomationResource.ID = external.EntityId((*source).ID)
 		externalapiAutomationResource.Name = (*source).Name
 		externalapiAutomationResource.Status = external.AutomationStatus((*source).Status)
-		externalapiAutomationResource.TriggerEvent = (*source).TriggerEvent
-		externalapiAutomationResource.Steps = automationSteps(source)
-		externalapiAutomationResource.IntegrationId = optNilEntityID((*source).IntegrationID)
+		externalapiAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
+		externalapiAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
 		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiAutomationResource
+}
+func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) external.AutomationVersion {
+	var externalapiAutomationVersion external.AutomationVersion
+	if source != nil {
+		externalapiAutomationVersion.Number = count((*source).Version)
+		externalapiAutomationVersion.TriggerEvent = (*source).TriggerEvent
+		externalapiAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
+		externalapiAutomationVersion.Steps = automationSteps(source)
+	}
+	return externalapiAutomationVersion
 }
 func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKitResource {
 	var externalapiBrandKitResource external.BrandKitResource
@@ -364,15 +373,24 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) external.RuleResource {
 		externalapiRuleResource.ID = external.EntityId((*source).ID)
 		externalapiRuleResource.Name = (*source).Name
 		externalapiRuleResource.Status = external.RuleStatus((*source).Status)
-		externalapiRuleResource.TriggerEvents = ruleTriggerEvents(source)
-		externalapiRuleResource.Condition = segmentCondition((*source).Condition)
-		externalapiRuleResource.Actions = ruleActions((*source).Actions)
+		externalapiRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
+		externalapiRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
 		externalapiRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
 		externalapiRuleResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiRuleResource
+}
+func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) external.RuleVersion {
+	var externalapiRuleVersion external.RuleVersion
+	if source != nil {
+		externalapiRuleVersion.Number = count((*source).Version)
+		externalapiRuleVersion.TriggerEvents = ruleTriggerEvents(source)
+		externalapiRuleVersion.Condition = segmentCondition((*source).Condition)
+		externalapiRuleVersion.Actions = ruleActions((*source).Actions)
+	}
+	return externalapiRuleVersion
 }
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentResource {
 	var externalapiSegmentResource external.SegmentResource

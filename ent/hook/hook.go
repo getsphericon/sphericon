@@ -477,16 +477,28 @@ func (f RuleFiringFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleFiringMutation", m)
 }
 
-// The RuleTriggerFunc type is an adapter to allow the use of ordinary
-// function as RuleTrigger mutator.
-type RuleTriggerFunc func(context.Context, *ent.RuleTriggerMutation) (ent.Value, error)
+// The RuleVersionFunc type is an adapter to allow the use of ordinary
+// function as RuleVersion mutator.
+type RuleVersionFunc func(context.Context, *ent.RuleVersionMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f RuleTriggerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.RuleTriggerMutation); ok {
+func (f RuleVersionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RuleVersionMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleTriggerMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleVersionMutation", m)
+}
+
+// The RuleVersionTriggerFunc type is an adapter to allow the use of ordinary
+// function as RuleVersionTrigger mutator.
+type RuleVersionTriggerFunc func(context.Context, *ent.RuleVersionTriggerMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RuleVersionTriggerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RuleVersionTriggerMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RuleVersionTriggerMutation", m)
 }
 
 // The SchemaStateFunc type is an adapter to allow the use of ordinary

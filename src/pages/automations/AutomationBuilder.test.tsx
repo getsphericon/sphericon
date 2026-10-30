@@ -7,6 +7,10 @@ import {
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
+import type {
+  SiteAutomationResource,
+  SiteAutomationVersion,
+} from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -25,12 +29,17 @@ vi.mock(import('./definition.ts'), async (importOriginal) => {
 
 const EDIT_ROUTE = routeMount(automationsEditRoute, { workspaceId: 'TestWs01', automationId: '5' })
 const NOW = '2026-01-01T00:00:00Z'
-const STORED = {
-  id: '5',
-  name: 'Welcome flow',
-  status: 'draft',
+const DRAFT: SiteAutomationVersion = {
+  number: 1,
   triggerEvent: 'email.clicked',
   steps: [{ type: 'wait', seconds: 60 }],
+}
+const STORED: SiteAutomationResource = {
+  id: '5',
+  name: 'Welcome flow',
+  status: 'inactive',
+  live: null,
+  draft: DRAFT,
   createdAt: NOW,
   updatedAt: NOW,
 }

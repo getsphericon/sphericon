@@ -42,10 +42,11 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 	return req
 }
 
-// AutomationStep is the Request for the email at index step of an Automation run. The
-// Contact must have an email address. Each Automation is its own unsubscribe Sending
-// source; the unsubscribe click exits the enrollment (ADR 0001).
-func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, c *ent.Contact, subject, body string) Request {
+// AutomationStep is the Request for the email at index step of an Automation run, sent through the
+// Integration of the version the run stands on (ADR 0065). The Contact must have an email address.
+// Each Automation is its own unsubscribe Sending source; the unsubscribe click exits the
+// enrollment (ADR 0001).
+func AutomationStep(a *ent.Automation, run *ent.AutomationRun, v *ent.AutomationVersion, step int, c *ent.Contact, subject, body string) Request {
 	return Request{
 		Kind:          outboundmessage.KindAutomation,
 		Key:           fmt.Sprintf("automation:%d:%d", run.ID, step),
@@ -56,7 +57,7 @@ func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, c *ent.
 		Body:          body,
 		Track:         true,
 		Ref:           Ref{AutomationID: a.ID, AutomationRunID: run.ID, AutomationStep: &step},
-		IntegrationID: a.IntegrationID,
+		IntegrationID: v.IntegrationID,
 	}
 }
 

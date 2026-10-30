@@ -172,12 +172,12 @@ func TestTokenEndpointIssuesAConnectionOfTheApprovingUser(t *testing.T) {
 
 func TestSendClassScopesNeedAnExplicitOptIn(t *testing.T) {
 	env := testhelper.Setup(t)
-	scope := "contacts:read emails:send broadcasts:send automations:activate"
+	scope := "contacts:read emails:send broadcasts:send automations:publish"
 
 	for allowSend, want := range map[bool][]string{
 		false: {"contacts:read"},
 		// contract-copy: the expected wire scopes of the issued token, an independent source of truth
-		true: {"contacts:read", "emails:send", "broadcasts:send", "automations:activate", "mcp:send"},
+		true: {"contacts:read", "emails:send", "broadcasts:send", "automations:publish", "mcp:send"},
 	} {
 		back := consent(t, env, approval(scope, allowSend))
 		rec := exchange(t, env, tokenForm(back.Query().Get("code")))

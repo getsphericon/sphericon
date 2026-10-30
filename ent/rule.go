@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/rule"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -32,10 +33,10 @@ type Rule struct {
 	Status rule.Status `json:"status,omitempty"`
 	// ActivatedAt holds the value of the "activated_at" field.
 	ActivatedAt *time.Time `json:"activated_at,omitempty"`
-	// Condition holds the value of the "condition" field.
-	Condition *string `json:"condition,omitempty"`
-	// Actions holds the value of the "actions" field.
-	Actions string `json:"actions,omitempty"`
+	// LiveVersionID holds the value of the "live_version_id" field.
+	LiveVersionID *int64 `json:"live_version_id,omitempty"`
+	// DraftVersionID holds the value of the "draft_version_id" field.
+	DraftVersionID *int64 `json:"draft_version_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RuleQuery when eager-loading is set.
 	Edges        RuleEdges `json:"edges"`
@@ -46,13 +47,17 @@ type Rule struct {
 type RuleEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
-	// Triggers holds the value of the triggers edge.
-	Triggers []*RuleTrigger `json:"triggers,omitempty"`
+	// Versions holds the value of the versions edge.
+	Versions []*RuleVersion `json:"versions,omitempty"`
+	// LiveVersion holds the value of the live_version edge.
+	LiveVersion *RuleVersion `json:"live_version,omitempty"`
+	// DraftVersion holds the value of the draft_version edge.
+	DraftVersion *RuleVersion `json:"draft_version,omitempty"`
 	// Firings holds the value of the firings edge.
 	Firings []*RuleFiring `json:"firings,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [5]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -66,19 +71,41 @@ func (e RuleEdges) WorkspaceOrErr() (*Workspace, error) {
 	return nil, &NotLoadedError{edge: "workspace"}
 }
 
-// TriggersOrErr returns the Triggers value or an error if the edge
+// VersionsOrErr returns the Versions value or an error if the edge
 // was not loaded in eager-loading.
-func (e RuleEdges) TriggersOrErr() ([]*RuleTrigger, error) {
+func (e RuleEdges) VersionsOrErr() ([]*RuleVersion, error) {
 	if e.loadedTypes[1] {
-		return e.Triggers, nil
+		return e.Versions, nil
 	}
-	return nil, &NotLoadedError{edge: "triggers"}
+	return nil, &NotLoadedError{edge: "versions"}
+}
+
+// LiveVersionOrErr returns the LiveVersion value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RuleEdges) LiveVersionOrErr() (*RuleVersion, error) {
+	if e.LiveVersion != nil {
+		return e.LiveVersion, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: ruleversion.Label}
+	}
+	return nil, &NotLoadedError{edge: "live_version"}
+}
+
+// DraftVersionOrErr returns the DraftVersion value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RuleEdges) DraftVersionOrErr() (*RuleVersion, error) {
+	if e.DraftVersion != nil {
+		return e.DraftVersion, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: ruleversion.Label}
+	}
+	return nil, &NotLoadedError{edge: "draft_version"}
 }
 
 // FiringsOrErr returns the Firings value or an error if the edge
 // was not loaded in eager-loading.
 func (e RuleEdges) FiringsOrErr() ([]*RuleFiring, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[4] {
 		return e.Firings, nil
 	}
 	return nil, &NotLoadedError{edge: "firings"}
@@ -89,9 +116,9 @@ func (*Rule) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case rule.FieldID, rule.FieldWorkspaceID:
+		case rule.FieldID, rule.FieldWorkspaceID, rule.FieldLiveVersionID, rule.FieldDraftVersionID:
 			values[i] = new(sql.NullInt64)
-		case rule.FieldName, rule.FieldStatus, rule.FieldCondition, rule.FieldActions:
+		case rule.FieldName, rule.FieldStatus:
 			values[i] = new(sql.NullString)
 		case rule.FieldCreatedAt, rule.FieldUpdatedAt, rule.FieldDiscardedAt, rule.FieldActivatedAt:
 			values[i] = new(sql.NullTime)
@@ -160,18 +187,19 @@ func (_m *Rule) assignValues(columns []string, values []any) error {
 				_m.ActivatedAt = new(time.Time)
 				*_m.ActivatedAt = value.Time
 			}
-		case rule.FieldCondition:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field condition", values[i])
+		case rule.FieldLiveVersionID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field live_version_id", values[i])
 			} else if value.Valid {
-				_m.Condition = new(string)
-				*_m.Condition = value.String
+				_m.LiveVersionID = new(int64)
+				*_m.LiveVersionID = value.Int64
 			}
-		case rule.FieldActions:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field actions", values[i])
+		case rule.FieldDraftVersionID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field draft_version_id", values[i])
 			} else if value.Valid {
-				_m.Actions = value.String
+				_m.DraftVersionID = new(int64)
+				*_m.DraftVersionID = value.Int64
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -191,9 +219,19 @@ func (_m *Rule) QueryWorkspace() *WorkspaceQuery {
 	return NewRuleClient(_m.config).QueryWorkspace(_m)
 }
 
-// QueryTriggers queries the "triggers" edge of the Rule entity.
-func (_m *Rule) QueryTriggers() *RuleTriggerQuery {
-	return NewRuleClient(_m.config).QueryTriggers(_m)
+// QueryVersions queries the "versions" edge of the Rule entity.
+func (_m *Rule) QueryVersions() *RuleVersionQuery {
+	return NewRuleClient(_m.config).QueryVersions(_m)
+}
+
+// QueryLiveVersion queries the "live_version" edge of the Rule entity.
+func (_m *Rule) QueryLiveVersion() *RuleVersionQuery {
+	return NewRuleClient(_m.config).QueryLiveVersion(_m)
+}
+
+// QueryDraftVersion queries the "draft_version" edge of the Rule entity.
+func (_m *Rule) QueryDraftVersion() *RuleVersionQuery {
+	return NewRuleClient(_m.config).QueryDraftVersion(_m)
 }
 
 // QueryFirings queries the "firings" edge of the Rule entity.
@@ -249,13 +287,15 @@ func (_m *Rule) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	if v := _m.Condition; v != nil {
-		builder.WriteString("condition=")
-		builder.WriteString(*v)
+	if v := _m.LiveVersionID; v != nil {
+		builder.WriteString("live_version_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	builder.WriteString("actions=")
-	builder.WriteString(_m.Actions)
+	if v := _m.DraftVersionID; v != nil {
+		builder.WriteString("draft_version_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

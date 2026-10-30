@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -14,58 +15,62 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
-// RuleTriggerQuery is the builder for querying RuleTrigger entities.
-type RuleTriggerQuery struct {
+// RuleVersionQuery is the builder for querying RuleVersion entities.
+type RuleVersionQuery struct {
 	config
 	ctx           *QueryContext
-	order         []ruletrigger.OrderOption
+	order         []ruleversion.OrderOption
 	inters        []Interceptor
-	predicates    []predicate.RuleTrigger
+	predicates    []predicate.RuleVersion
 	withWorkspace *WorkspaceQuery
 	withRule      *RuleQuery
+	withTriggers  *RuleVersionTriggerQuery
+	withFirings   *RuleFiringQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the RuleTriggerQuery builder.
-func (_q *RuleTriggerQuery) Where(ps ...predicate.RuleTrigger) *RuleTriggerQuery {
+// Where adds a new predicate for the RuleVersionQuery builder.
+func (_q *RuleVersionQuery) Where(ps ...predicate.RuleVersion) *RuleVersionQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *RuleTriggerQuery) Limit(limit int) *RuleTriggerQuery {
+func (_q *RuleVersionQuery) Limit(limit int) *RuleVersionQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *RuleTriggerQuery) Offset(offset int) *RuleTriggerQuery {
+func (_q *RuleVersionQuery) Offset(offset int) *RuleVersionQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *RuleTriggerQuery) Unique(unique bool) *RuleTriggerQuery {
+func (_q *RuleVersionQuery) Unique(unique bool) *RuleVersionQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *RuleTriggerQuery) Order(o ...ruletrigger.OrderOption) *RuleTriggerQuery {
+func (_q *RuleVersionQuery) Order(o ...ruleversion.OrderOption) *RuleVersionQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
 // QueryWorkspace chains the current query on the "workspace" edge.
-func (_q *RuleTriggerQuery) QueryWorkspace() *WorkspaceQuery {
+func (_q *RuleVersionQuery) QueryWorkspace() *WorkspaceQuery {
 	query := (&WorkspaceClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
@@ -76,9 +81,9 @@ func (_q *RuleTriggerQuery) QueryWorkspace() *WorkspaceQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(ruletrigger.Table, ruletrigger.FieldID, selector),
+			sqlgraph.From(ruleversion.Table, ruleversion.FieldID, selector),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ruletrigger.WorkspaceTable, ruletrigger.WorkspaceColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruleversion.WorkspaceTable, ruleversion.WorkspaceColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -87,7 +92,7 @@ func (_q *RuleTriggerQuery) QueryWorkspace() *WorkspaceQuery {
 }
 
 // QueryRule chains the current query on the "rule" edge.
-func (_q *RuleTriggerQuery) QueryRule() *RuleQuery {
+func (_q *RuleVersionQuery) QueryRule() *RuleQuery {
 	query := (&RuleClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
@@ -98,9 +103,9 @@ func (_q *RuleTriggerQuery) QueryRule() *RuleQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(ruletrigger.Table, ruletrigger.FieldID, selector),
+			sqlgraph.From(ruleversion.Table, ruleversion.FieldID, selector),
 			sqlgraph.To(rule.Table, rule.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ruletrigger.RuleTable, ruletrigger.RuleColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, ruleversion.RuleTable, ruleversion.RuleColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -108,21 +113,65 @@ func (_q *RuleTriggerQuery) QueryRule() *RuleQuery {
 	return query
 }
 
-// First returns the first RuleTrigger entity from the query.
-// Returns a *NotFoundError when no RuleTrigger was found.
-func (_q *RuleTriggerQuery) First(ctx context.Context) (*RuleTrigger, error) {
+// QueryTriggers chains the current query on the "triggers" edge.
+func (_q *RuleVersionQuery) QueryTriggers() *RuleVersionTriggerQuery {
+	query := (&RuleVersionTriggerClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruleversion.Table, ruleversion.FieldID, selector),
+			sqlgraph.To(ruleversiontrigger.Table, ruleversiontrigger.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ruleversion.TriggersTable, ruleversion.TriggersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFirings chains the current query on the "firings" edge.
+func (_q *RuleVersionQuery) QueryFirings() *RuleFiringQuery {
+	query := (&RuleFiringClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ruleversion.Table, ruleversion.FieldID, selector),
+			sqlgraph.To(rulefiring.Table, rulefiring.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ruleversion.FiringsTable, ruleversion.FiringsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// First returns the first RuleVersion entity from the query.
+// Returns a *NotFoundError when no RuleVersion was found.
+func (_q *RuleVersionQuery) First(ctx context.Context) (*RuleVersion, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{ruletrigger.Label}
+		return nil, &NotFoundError{ruleversion.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *RuleTriggerQuery) FirstX(ctx context.Context) *RuleTrigger {
+func (_q *RuleVersionQuery) FirstX(ctx context.Context) *RuleVersion {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -130,22 +179,22 @@ func (_q *RuleTriggerQuery) FirstX(ctx context.Context) *RuleTrigger {
 	return node
 }
 
-// FirstID returns the first RuleTrigger ID from the query.
-// Returns a *NotFoundError when no RuleTrigger ID was found.
-func (_q *RuleTriggerQuery) FirstID(ctx context.Context) (id int64, err error) {
+// FirstID returns the first RuleVersion ID from the query.
+// Returns a *NotFoundError when no RuleVersion ID was found.
+func (_q *RuleVersionQuery) FirstID(ctx context.Context) (id int64, err error) {
 	var ids []int64
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{ruletrigger.Label}
+		err = &NotFoundError{ruleversion.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *RuleTriggerQuery) FirstIDX(ctx context.Context) int64 {
+func (_q *RuleVersionQuery) FirstIDX(ctx context.Context) int64 {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -153,10 +202,10 @@ func (_q *RuleTriggerQuery) FirstIDX(ctx context.Context) int64 {
 	return id
 }
 
-// Only returns a single RuleTrigger entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one RuleTrigger entity is found.
-// Returns a *NotFoundError when no RuleTrigger entities are found.
-func (_q *RuleTriggerQuery) Only(ctx context.Context) (*RuleTrigger, error) {
+// Only returns a single RuleVersion entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one RuleVersion entity is found.
+// Returns a *NotFoundError when no RuleVersion entities are found.
+func (_q *RuleVersionQuery) Only(ctx context.Context) (*RuleVersion, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -165,14 +214,14 @@ func (_q *RuleTriggerQuery) Only(ctx context.Context) (*RuleTrigger, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{ruletrigger.Label}
+		return nil, &NotFoundError{ruleversion.Label}
 	default:
-		return nil, &NotSingularError{ruletrigger.Label}
+		return nil, &NotSingularError{ruleversion.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *RuleTriggerQuery) OnlyX(ctx context.Context) *RuleTrigger {
+func (_q *RuleVersionQuery) OnlyX(ctx context.Context) *RuleVersion {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -180,10 +229,10 @@ func (_q *RuleTriggerQuery) OnlyX(ctx context.Context) *RuleTrigger {
 	return node
 }
 
-// OnlyID is like Only, but returns the only RuleTrigger ID in the query.
-// Returns a *NotSingularError when more than one RuleTrigger ID is found.
+// OnlyID is like Only, but returns the only RuleVersion ID in the query.
+// Returns a *NotSingularError when more than one RuleVersion ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *RuleTriggerQuery) OnlyID(ctx context.Context) (id int64, err error) {
+func (_q *RuleVersionQuery) OnlyID(ctx context.Context) (id int64, err error) {
 	var ids []int64
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -192,15 +241,15 @@ func (_q *RuleTriggerQuery) OnlyID(ctx context.Context) (id int64, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{ruletrigger.Label}
+		err = &NotFoundError{ruleversion.Label}
 	default:
-		err = &NotSingularError{ruletrigger.Label}
+		err = &NotSingularError{ruleversion.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *RuleTriggerQuery) OnlyIDX(ctx context.Context) int64 {
+func (_q *RuleVersionQuery) OnlyIDX(ctx context.Context) int64 {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -208,18 +257,18 @@ func (_q *RuleTriggerQuery) OnlyIDX(ctx context.Context) int64 {
 	return id
 }
 
-// All executes the query and returns a list of RuleTriggers.
-func (_q *RuleTriggerQuery) All(ctx context.Context) ([]*RuleTrigger, error) {
+// All executes the query and returns a list of RuleVersions.
+func (_q *RuleVersionQuery) All(ctx context.Context) ([]*RuleVersion, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*RuleTrigger, *RuleTriggerQuery]()
-	return withInterceptors[[]*RuleTrigger](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*RuleVersion, *RuleVersionQuery]()
+	return withInterceptors[[]*RuleVersion](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *RuleTriggerQuery) AllX(ctx context.Context) []*RuleTrigger {
+func (_q *RuleVersionQuery) AllX(ctx context.Context) []*RuleVersion {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -227,20 +276,20 @@ func (_q *RuleTriggerQuery) AllX(ctx context.Context) []*RuleTrigger {
 	return nodes
 }
 
-// IDs executes the query and returns a list of RuleTrigger IDs.
-func (_q *RuleTriggerQuery) IDs(ctx context.Context) (ids []int64, err error) {
+// IDs executes the query and returns a list of RuleVersion IDs.
+func (_q *RuleVersionQuery) IDs(ctx context.Context) (ids []int64, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(ruletrigger.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(ruleversion.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *RuleTriggerQuery) IDsX(ctx context.Context) []int64 {
+func (_q *RuleVersionQuery) IDsX(ctx context.Context) []int64 {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -249,16 +298,16 @@ func (_q *RuleTriggerQuery) IDsX(ctx context.Context) []int64 {
 }
 
 // Count returns the count of the given query.
-func (_q *RuleTriggerQuery) Count(ctx context.Context) (int, error) {
+func (_q *RuleVersionQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*RuleTriggerQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*RuleVersionQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *RuleTriggerQuery) CountX(ctx context.Context) int {
+func (_q *RuleVersionQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -267,7 +316,7 @@ func (_q *RuleTriggerQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *RuleTriggerQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *RuleVersionQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -280,7 +329,7 @@ func (_q *RuleTriggerQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *RuleTriggerQuery) ExistX(ctx context.Context) bool {
+func (_q *RuleVersionQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -288,20 +337,22 @@ func (_q *RuleTriggerQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the RuleTriggerQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the RuleVersionQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *RuleTriggerQuery) Clone() *RuleTriggerQuery {
+func (_q *RuleVersionQuery) Clone() *RuleVersionQuery {
 	if _q == nil {
 		return nil
 	}
-	return &RuleTriggerQuery{
+	return &RuleVersionQuery{
 		config:        _q.config,
 		ctx:           _q.ctx.Clone(),
-		order:         append([]ruletrigger.OrderOption{}, _q.order...),
+		order:         append([]ruleversion.OrderOption{}, _q.order...),
 		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.RuleTrigger{}, _q.predicates...),
+		predicates:    append([]predicate.RuleVersion{}, _q.predicates...),
 		withWorkspace: _q.withWorkspace.Clone(),
 		withRule:      _q.withRule.Clone(),
+		withTriggers:  _q.withTriggers.Clone(),
+		withFirings:   _q.withFirings.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -311,7 +362,7 @@ func (_q *RuleTriggerQuery) Clone() *RuleTriggerQuery {
 
 // WithWorkspace tells the query-builder to eager-load the nodes that are connected to
 // the "workspace" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RuleTriggerQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *RuleTriggerQuery {
+func (_q *RuleVersionQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *RuleVersionQuery {
 	query := (&WorkspaceClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
@@ -322,12 +373,34 @@ func (_q *RuleTriggerQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *RuleTr
 
 // WithRule tells the query-builder to eager-load the nodes that are connected to
 // the "rule" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RuleTriggerQuery) WithRule(opts ...func(*RuleQuery)) *RuleTriggerQuery {
+func (_q *RuleVersionQuery) WithRule(opts ...func(*RuleQuery)) *RuleVersionQuery {
 	query := (&RuleClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
 	_q.withRule = query
+	return _q
+}
+
+// WithTriggers tells the query-builder to eager-load the nodes that are connected to
+// the "triggers" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RuleVersionQuery) WithTriggers(opts ...func(*RuleVersionTriggerQuery)) *RuleVersionQuery {
+	query := (&RuleVersionTriggerClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withTriggers = query
+	return _q
+}
+
+// WithFirings tells the query-builder to eager-load the nodes that are connected to
+// the "firings" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RuleVersionQuery) WithFirings(opts ...func(*RuleFiringQuery)) *RuleVersionQuery {
+	query := (&RuleFiringClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withFirings = query
 	return _q
 }
 
@@ -341,15 +414,15 @@ func (_q *RuleTriggerQuery) WithRule(opts ...func(*RuleQuery)) *RuleTriggerQuery
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.RuleTrigger.Query().
-//		GroupBy(ruletrigger.FieldCreatedAt).
+//	client.RuleVersion.Query().
+//		GroupBy(ruleversion.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *RuleTriggerQuery) GroupBy(field string, fields ...string) *RuleTriggerGroupBy {
+func (_q *RuleVersionQuery) GroupBy(field string, fields ...string) *RuleVersionGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &RuleTriggerGroupBy{build: _q}
+	grbuild := &RuleVersionGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = ruletrigger.Label
+	grbuild.label = ruleversion.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -363,23 +436,23 @@ func (_q *RuleTriggerQuery) GroupBy(field string, fields ...string) *RuleTrigger
 //		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
-//	client.RuleTrigger.Query().
-//		Select(ruletrigger.FieldCreatedAt).
+//	client.RuleVersion.Query().
+//		Select(ruleversion.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (_q *RuleTriggerQuery) Select(fields ...string) *RuleTriggerSelect {
+func (_q *RuleVersionQuery) Select(fields ...string) *RuleVersionSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &RuleTriggerSelect{RuleTriggerQuery: _q}
-	sbuild.label = ruletrigger.Label
+	sbuild := &RuleVersionSelect{RuleVersionQuery: _q}
+	sbuild.label = ruleversion.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a RuleTriggerSelect configured with the given aggregations.
-func (_q *RuleTriggerQuery) Aggregate(fns ...AggregateFunc) *RuleTriggerSelect {
+// Aggregate returns a RuleVersionSelect configured with the given aggregations.
+func (_q *RuleVersionQuery) Aggregate(fns ...AggregateFunc) *RuleVersionSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *RuleTriggerQuery) prepareQuery(ctx context.Context) error {
+func (_q *RuleVersionQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -391,7 +464,7 @@ func (_q *RuleTriggerQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !ruletrigger.ValidColumn(f) {
+		if !ruleversion.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -405,20 +478,22 @@ func (_q *RuleTriggerQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *RuleTriggerQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*RuleTrigger, error) {
+func (_q *RuleVersionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*RuleVersion, error) {
 	var (
-		nodes       = []*RuleTrigger{}
+		nodes       = []*RuleVersion{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			_q.withWorkspace != nil,
 			_q.withRule != nil,
+			_q.withTriggers != nil,
+			_q.withFirings != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*RuleTrigger).scanValues(nil, columns)
+		return (*RuleVersion).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &RuleTrigger{config: _q.config}
+		node := &RuleVersion{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -437,22 +512,36 @@ func (_q *RuleTriggerQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	}
 	if query := _q.withWorkspace; query != nil {
 		if err := _q.loadWorkspace(ctx, query, nodes, nil,
-			func(n *RuleTrigger, e *Workspace) { n.Edges.Workspace = e }); err != nil {
+			func(n *RuleVersion, e *Workspace) { n.Edges.Workspace = e }); err != nil {
 			return nil, err
 		}
 	}
 	if query := _q.withRule; query != nil {
 		if err := _q.loadRule(ctx, query, nodes, nil,
-			func(n *RuleTrigger, e *Rule) { n.Edges.Rule = e }); err != nil {
+			func(n *RuleVersion, e *Rule) { n.Edges.Rule = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withTriggers; query != nil {
+		if err := _q.loadTriggers(ctx, query, nodes,
+			func(n *RuleVersion) { n.Edges.Triggers = []*RuleVersionTrigger{} },
+			func(n *RuleVersion, e *RuleVersionTrigger) { n.Edges.Triggers = append(n.Edges.Triggers, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withFirings; query != nil {
+		if err := _q.loadFirings(ctx, query, nodes,
+			func(n *RuleVersion) { n.Edges.Firings = []*RuleFiring{} },
+			func(n *RuleVersion, e *RuleFiring) { n.Edges.Firings = append(n.Edges.Firings, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *RuleTriggerQuery) loadWorkspace(ctx context.Context, query *WorkspaceQuery, nodes []*RuleTrigger, init func(*RuleTrigger), assign func(*RuleTrigger, *Workspace)) error {
+func (_q *RuleVersionQuery) loadWorkspace(ctx context.Context, query *WorkspaceQuery, nodes []*RuleVersion, init func(*RuleVersion), assign func(*RuleVersion, *Workspace)) error {
 	ids := make([]int64, 0, len(nodes))
-	nodeids := make(map[int64][]*RuleTrigger)
+	nodeids := make(map[int64][]*RuleVersion)
 	for i := range nodes {
 		fk := nodes[i].WorkspaceID
 		if _, ok := nodeids[fk]; !ok {
@@ -479,9 +568,9 @@ func (_q *RuleTriggerQuery) loadWorkspace(ctx context.Context, query *WorkspaceQ
 	}
 	return nil
 }
-func (_q *RuleTriggerQuery) loadRule(ctx context.Context, query *RuleQuery, nodes []*RuleTrigger, init func(*RuleTrigger), assign func(*RuleTrigger, *Rule)) error {
+func (_q *RuleVersionQuery) loadRule(ctx context.Context, query *RuleQuery, nodes []*RuleVersion, init func(*RuleVersion), assign func(*RuleVersion, *Rule)) error {
 	ids := make([]int64, 0, len(nodes))
-	nodeids := make(map[int64][]*RuleTrigger)
+	nodeids := make(map[int64][]*RuleVersion)
 	for i := range nodes {
 		fk := nodes[i].RuleID
 		if _, ok := nodeids[fk]; !ok {
@@ -508,8 +597,68 @@ func (_q *RuleTriggerQuery) loadRule(ctx context.Context, query *RuleQuery, node
 	}
 	return nil
 }
+func (_q *RuleVersionQuery) loadTriggers(ctx context.Context, query *RuleVersionTriggerQuery, nodes []*RuleVersion, init func(*RuleVersion), assign func(*RuleVersion, *RuleVersionTrigger)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*RuleVersion)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(ruleversiontrigger.FieldVersionID)
+	}
+	query.Where(predicate.RuleVersionTrigger(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(ruleversion.TriggersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.VersionID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "version_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *RuleVersionQuery) loadFirings(ctx context.Context, query *RuleFiringQuery, nodes []*RuleVersion, init func(*RuleVersion), assign func(*RuleVersion, *RuleFiring)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*RuleVersion)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(rulefiring.FieldVersionID)
+	}
+	query.Where(predicate.RuleFiring(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(ruleversion.FiringsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.VersionID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "version_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
-func (_q *RuleTriggerQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *RuleVersionQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	if len(_q.modifiers) > 0 {
 		_spec.Modifiers = _q.modifiers
@@ -521,8 +670,8 @@ func (_q *RuleTriggerQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *RuleTriggerQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(ruletrigger.Table, ruletrigger.Columns, sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64))
+func (_q *RuleVersionQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(ruleversion.Table, ruleversion.Columns, sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -531,17 +680,17 @@ func (_q *RuleTriggerQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, ruletrigger.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, ruleversion.FieldID)
 		for i := range fields {
-			if fields[i] != ruletrigger.FieldID {
+			if fields[i] != ruleversion.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
 		if _q.withWorkspace != nil {
-			_spec.Node.AddColumnOnce(ruletrigger.FieldWorkspaceID)
+			_spec.Node.AddColumnOnce(ruleversion.FieldWorkspaceID)
 		}
 		if _q.withRule != nil {
-			_spec.Node.AddColumnOnce(ruletrigger.FieldRuleID)
+			_spec.Node.AddColumnOnce(ruleversion.FieldRuleID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -567,12 +716,12 @@ func (_q *RuleTriggerQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *RuleTriggerQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *RuleVersionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(ruletrigger.Table)
+	t1 := builder.Table(ruleversion.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = ruletrigger.Columns
+		columns = ruleversion.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -605,7 +754,7 @@ func (_q *RuleTriggerQuery) sqlQuery(ctx context.Context) *sql.Selector {
 // ForUpdate locks the selected rows against concurrent updates, and prevent them from being
 // updated, deleted or "selected ... for update" by other sessions, until the transaction is
 // either committed or rolled-back.
-func (_q *RuleTriggerQuery) ForUpdate(opts ...sql.LockOption) *RuleTriggerQuery {
+func (_q *RuleVersionQuery) ForUpdate(opts ...sql.LockOption) *RuleVersionQuery {
 	if _q.driver.Dialect() == dialect.Postgres {
 		_q.Unique(false)
 	}
@@ -618,7 +767,7 @@ func (_q *RuleTriggerQuery) ForUpdate(opts ...sql.LockOption) *RuleTriggerQuery 
 // ForShare behaves similarly to ForUpdate, except that it acquires a shared mode lock
 // on any rows that are read. Other sessions can read the rows, but cannot modify them
 // until your transaction commits.
-func (_q *RuleTriggerQuery) ForShare(opts ...sql.LockOption) *RuleTriggerQuery {
+func (_q *RuleVersionQuery) ForShare(opts ...sql.LockOption) *RuleVersionQuery {
 	if _q.driver.Dialect() == dialect.Postgres {
 		_q.Unique(false)
 	}
@@ -629,33 +778,33 @@ func (_q *RuleTriggerQuery) ForShare(opts ...sql.LockOption) *RuleTriggerQuery {
 }
 
 // Modify adds a query modifier for attaching custom logic to queries.
-func (_q *RuleTriggerQuery) Modify(modifiers ...func(s *sql.Selector)) *RuleTriggerSelect {
+func (_q *RuleVersionQuery) Modify(modifiers ...func(s *sql.Selector)) *RuleVersionSelect {
 	_q.modifiers = append(_q.modifiers, modifiers...)
 	return _q.Select()
 }
 
-// RuleTriggerGroupBy is the group-by builder for RuleTrigger entities.
-type RuleTriggerGroupBy struct {
+// RuleVersionGroupBy is the group-by builder for RuleVersion entities.
+type RuleVersionGroupBy struct {
 	selector
-	build *RuleTriggerQuery
+	build *RuleVersionQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *RuleTriggerGroupBy) Aggregate(fns ...AggregateFunc) *RuleTriggerGroupBy {
+func (_g *RuleVersionGroupBy) Aggregate(fns ...AggregateFunc) *RuleVersionGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *RuleTriggerGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *RuleVersionGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*RuleTriggerQuery, *RuleTriggerGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*RuleVersionQuery, *RuleVersionGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *RuleTriggerGroupBy) sqlScan(ctx context.Context, root *RuleTriggerQuery, v any) error {
+func (_g *RuleVersionGroupBy) sqlScan(ctx context.Context, root *RuleVersionQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -682,28 +831,28 @@ func (_g *RuleTriggerGroupBy) sqlScan(ctx context.Context, root *RuleTriggerQuer
 	return sql.ScanSlice(rows, v)
 }
 
-// RuleTriggerSelect is the builder for selecting fields of RuleTrigger entities.
-type RuleTriggerSelect struct {
-	*RuleTriggerQuery
+// RuleVersionSelect is the builder for selecting fields of RuleVersion entities.
+type RuleVersionSelect struct {
+	*RuleVersionQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *RuleTriggerSelect) Aggregate(fns ...AggregateFunc) *RuleTriggerSelect {
+func (_s *RuleVersionSelect) Aggregate(fns ...AggregateFunc) *RuleVersionSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *RuleTriggerSelect) Scan(ctx context.Context, v any) error {
+func (_s *RuleVersionSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*RuleTriggerQuery, *RuleTriggerSelect](ctx, _s.RuleTriggerQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*RuleVersionQuery, *RuleVersionSelect](ctx, _s.RuleVersionQuery, _s, _s.inters, v)
 }
 
-func (_s *RuleTriggerSelect) sqlScan(ctx context.Context, root *RuleTriggerQuery, v any) error {
+func (_s *RuleVersionSelect) sqlScan(ctx context.Context, root *RuleVersionQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {
@@ -725,7 +874,7 @@ func (_s *RuleTriggerSelect) sqlScan(ctx context.Context, root *RuleTriggerQuery
 }
 
 // Modify adds a query modifier for attaching custom logic to queries.
-func (_s *RuleTriggerSelect) Modify(modifiers ...func(s *sql.Selector)) *RuleTriggerSelect {
+func (_s *RuleVersionSelect) Modify(modifiers ...func(s *sql.Selector)) *RuleVersionSelect {
 	_s.modifiers = append(_s.modifiers, modifiers...)
 	return _s
 }

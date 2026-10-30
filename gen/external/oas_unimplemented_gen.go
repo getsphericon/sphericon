@@ -57,15 +57,6 @@ func (UnimplementedHandler) AuthTokensList(ctx context.Context) (r AuthTokensLis
 	return r, ht.ErrNotImplemented
 }
 
-// AutomationsActivate implements Automations_activate operation.
-//
-// Activate an automation (starts enrolling contacts). Needs the automations:activate scope.
-//
-// POST /automations/{id}/activate
-func (UnimplementedHandler) AutomationsActivate(ctx context.Context, params AutomationsActivateParams) (r AutomationsActivateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // AutomationsArchive implements Automations_archive operation.
 //
 // Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
@@ -87,8 +78,8 @@ func (UnimplementedHandler) AutomationsCreate(ctx context.Context, req *CreateAu
 
 // AutomationsDeactivate implements Automations_deactivate operation.
 //
-// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the
-// automations:activate scope.
+// Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write
+// scope.
 //
 // POST /automations/{id}/deactivate
 func (UnimplementedHandler) AutomationsDeactivate(ctx context.Context, params AutomationsDeactivateParams) (r AutomationsDeactivateRes, _ error) {
@@ -128,6 +119,26 @@ func (UnimplementedHandler) AutomationsGet(ctx context.Context, params Automatio
 //
 // GET /automations
 func (UnimplementedHandler) AutomationsList(ctx context.Context, params AutomationsListParams) (r AutomationsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// AutomationsPublish implements Automations_publish operation.
+//
+// Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no
+// draft, the live version is resumed. 422 with neither. Needs the automations:publish scope.
+//
+// POST /automations/{id}/publish
+func (UnimplementedHandler) AutomationsPublish(ctx context.Context, params AutomationsPublishParams) (r AutomationsPublishRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// AutomationsRevert implements Automations_revert operation.
+//
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+// Needs the automations:write scope.
+//
+// POST /automations/{id}/revert
+func (UnimplementedHandler) AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (r AutomationsRevertRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -217,8 +228,10 @@ func (UnimplementedHandler) BroadcastsReport(ctx context.Context, params Broadca
 
 // BroadcastsSchedule implements Broadcasts_schedule operation.
 //
-// Schedule a draft or scheduled broadcast to send to its audience at a future time. Send-class: needs
-// the broadcasts:send scope, and mcp:send over MCP.
+// Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its
+// segment's condition: recipients are resolved at send time from that copy, so a later edit of the
+// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused.
+// Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
 //
 // POST /broadcasts/{id}/schedule
 func (UnimplementedHandler) BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (r BroadcastsScheduleRes, _ error) {
@@ -254,8 +267,9 @@ func (UnimplementedHandler) BroadcastsUnarchive(ctx context.Context, params Broa
 
 // BroadcastsUnschedule implements Broadcasts_unschedule operation.
 //
-// Cancel a scheduled broadcast and return it to draft. Send-class: needs the broadcasts:send scope,
-// and mcp:send over MCP.
+// Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition:
+// scheduling again copies the segment's current one. Send-class: needs the broadcasts:send scope, and
+// mcp:send over MCP.
 //
 // POST /broadcasts/{id}/unschedule
 func (UnimplementedHandler) BroadcastsUnschedule(ctx context.Context, params BroadcastsUnscheduleParams) (r BroadcastsUnscheduleRes, _ error) {
@@ -615,20 +629,10 @@ func (UnimplementedHandler) RuleFiringsList(ctx context.Context, params RuleFiri
 	return r, ht.ErrNotImplemented
 }
 
-// RulesActivate implements Rules_activate operation.
-//
-// Activate a Rule: it reacts to Events recorded from now on, never to past ones. Needs the
-// automations:activate scope.
-//
-// POST /rules/{id}/activate
-func (UnimplementedHandler) RulesActivate(ctx context.Context, params RulesActivateParams) (r RulesActivateRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // RulesArchive implements Rules_archive operation.
 //
 // Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its
-// Firings. It can be restored, as a draft.
+// Firings. It can be restored, inactive.
 //
 // POST /rules/{id}/archive
 func (UnimplementedHandler) RulesArchive(ctx context.Context, params RulesArchiveParams) (r RulesArchiveRes, _ error) {
@@ -646,7 +650,7 @@ func (UnimplementedHandler) RulesCreate(ctx context.Context, req *CreateRuleInpu
 
 // RulesDeactivate implements Rules_deactivate operation.
 //
-// Deactivate a Rule: it stops firing. Needs the automations:activate scope.
+// Deactivate a Rule: it stops firing. Needs the automations:write scope.
 //
 // POST /rules/{id}/deactivate
 func (UnimplementedHandler) RulesDeactivate(ctx context.Context, params RulesDeactivateParams) (r RulesDeactivateRes, _ error) {
@@ -690,9 +694,30 @@ func (UnimplementedHandler) RulesList(ctx context.Context, params RulesListParam
 	return r, ht.ErrNotImplemented
 }
 
+// RulesPublish implements Rules_publish operation.
+//
+// Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an
+// inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with
+// neither draft nor live version. Needs the automations:publish scope.
+//
+// POST /rules/{id}/publish
+func (UnimplementedHandler) RulesPublish(ctx context.Context, params RulesPublishParams) (r RulesPublishRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RulesRevert implements Rules_revert operation.
+//
+// Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
+// Needs the automations:write scope.
+//
+// POST /rules/{id}/revert
+func (UnimplementedHandler) RulesRevert(ctx context.Context, params RulesRevertParams) (r RulesRevertRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // RulesUnarchive implements Rules_unarchive operation.
 //
-// Restore an archived Rule to the list, as a draft.
+// Restore an archived Rule to the list, inactive.
 //
 // POST /rules/{id}/unarchive
 func (UnimplementedHandler) RulesUnarchive(ctx context.Context, params RulesUnarchiveParams) (r RulesUnarchiveRes, _ error) {

@@ -141,29 +141,35 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 	return &res, nil
 }
 
-func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.SiteAutomationsActivateParams) (siteapi.SiteAutomationsActivateRes, error) {
-	a, err := h.setAutomationActive(ctx, params.ID, true)
-	if err != nil {
-		return nil, err
-	}
-	res := mapper.AutomationToResource(a)
-	return &res, nil
-}
-
-func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (siteapi.SiteAutomationsDeactivateRes, error) {
-	a, err := h.setAutomationActive(ctx, params.ID, false)
-	if err != nil {
-		return nil, err
-	}
-	res := mapper.AutomationToResource(a)
-	return &res, nil
-}
-
-func (h *Handlers) setAutomationActive(ctx context.Context, id siteapi.EntityId, active bool) (*ent.Automation, error) {
+// SiteAutomationsPublish makes the Automation active: it starts enrolling Contacts.
+func (h *Handlers) SiteAutomationsPublish(ctx context.Context, params siteapi.SiteAutomationsPublishParams) (siteapi.SiteAutomationsPublishRes, error) {
 	ws := workspaceScope(ctx)
-	parsed := int64(id)
-	if active {
-		return h.automations.Activate(ctx, ws, parsed)
+	a, err := h.automations.Publish(ctx, ws, int64(params.ID))
+	if err != nil {
+		return nil, err
 	}
-	return h.automations.Deactivate(ctx, ws, parsed)
+	res := mapper.AutomationToResource(a)
+	return &res, nil
+}
+
+// SiteAutomationsDeactivate makes the Automation inactive: it stops new Enrollments.
+func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (siteapi.SiteAutomationsDeactivateRes, error) {
+	ws := workspaceScope(ctx)
+	a, err := h.automations.Deactivate(ctx, ws, int64(params.ID))
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.AutomationToResource(a)
+	return &res, nil
+}
+
+// SiteAutomationsRevert drops the Automation's draft: the live version is again the latest.
+func (h *Handlers) SiteAutomationsRevert(ctx context.Context, params siteapi.SiteAutomationsRevertParams) (siteapi.SiteAutomationsRevertRes, error) {
+	ws := workspaceScope(ctx)
+	a, err := h.automations.Revert(ctx, ws, int64(params.ID))
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.AutomationToResource(a)
+	return &res, nil
 }

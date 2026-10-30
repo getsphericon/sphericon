@@ -142,9 +142,9 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "active"}, Default: "draft"},
-		{Name: "trigger_event", Type: field.TypeString},
-		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive"}, Default: "inactive"},
+		{Name: "live_version_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "draft_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// AutomationsTable holds the schema information for the "automations" table.
@@ -154,10 +154,16 @@ var (
 		PrimaryKey: []*schema.Column{AutomationsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "automations_integrations_integration",
+				Symbol:     "automations_automation_versions_live_version",
+				Columns:    []*schema.Column{AutomationsColumns[6]},
+				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "automations_automation_versions_draft_version",
 				Columns:    []*schema.Column{AutomationsColumns[7]},
-				RefColumns: []*schema.Column{IntegrationsColumns[0]},
-				OnDelete:   schema.Restrict,
+				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "automations_workspaces_automations",
@@ -168,12 +174,17 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "automation_workspace_id_status_trigger_event",
+				Name:    "automation_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationsColumns[8], AutomationsColumns[5], AutomationsColumns[6]},
+				Columns: []*schema.Column{AutomationsColumns[8]},
 			},
 			{
-				Name:    "automation_integration_id",
+				Name:    "automation_live_version_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationsColumns[6]},
+			},
+			{
+				Name:    "automation_draft_version_id",
 				Unique:  false,
 				Columns: []*schema.Column{AutomationsColumns[7]},
 			},
@@ -256,7 +267,9 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "version", Type: field.TypeInt},
 		{Name: "steps", Type: field.TypeString, Default: "[]"},
+		{Name: "trigger_event", Type: field.TypeString},
 		{Name: "automation_id", Type: field.TypeInt64},
+		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// AutomationVersionsTable holds the schema information for the "automation_versions" table.
@@ -267,13 +280,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_versions_automations_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[5]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[6]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
+				Symbol:     "automation_versions_integrations_integration",
+				Columns:    []*schema.Column{AutomationVersionsColumns[7]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
 				Symbol:     "automation_versions_workspaces_automation_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[6]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[8]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -282,12 +301,22 @@ var (
 			{
 				Name:    "automation_versions_workspace_id_automation_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationVersionsColumns[6], AutomationVersionsColumns[5], AutomationVersionsColumns[3]},
+				Columns: []*schema.Column{AutomationVersionsColumns[8], AutomationVersionsColumns[6], AutomationVersionsColumns[3]},
 			},
 			{
 				Name:    "automationversion_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[5]},
+				Columns: []*schema.Column{AutomationVersionsColumns[6]},
+			},
+			{
+				Name:    "automationversion_workspace_id_trigger_event",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationVersionsColumns[8], AutomationVersionsColumns[5]},
+			},
+			{
+				Name:    "automationversion_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationVersionsColumns[7]},
 			},
 		},
 	}
@@ -341,6 +370,7 @@ var (
 		{Name: "body", Type: field.TypeString, Default: ""},
 		{Name: "doc", Type: field.TypeJSON, Nullable: true},
 		{Name: "editor_version", Type: field.TypeString, Nullable: true},
+		{Name: "condition", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "scheduled", "sending", "sent", "failed"}, Default: "draft"},
 		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
@@ -358,19 +388,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_segments_segment",
-				Columns:    []*schema.Column{BroadcastsColumns[16]},
+				Columns:    []*schema.Column{BroadcastsColumns[17]},
 				RefColumns: []*schema.Column{SegmentsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_integrations_integration",
-				Columns:    []*schema.Column{BroadcastsColumns[17]},
+				Columns:    []*schema.Column{BroadcastsColumns[18]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[18]},
+				Columns:    []*schema.Column{BroadcastsColumns[19]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -379,17 +409,17 @@ var (
 			{
 				Name:    "broadcast_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[18]},
+				Columns: []*schema.Column{BroadcastsColumns[19]},
 			},
 			{
 				Name:    "broadcast_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[16]},
+				Columns: []*schema.Column{BroadcastsColumns[17]},
 			},
 			{
 				Name:    "broadcast_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[17]},
+				Columns: []*schema.Column{BroadcastsColumns[18]},
 			},
 		},
 	}
@@ -1624,10 +1654,10 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "discarded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "name", Type: field.TypeString},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "active"}, Default: "draft"},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "inactive"}, Default: "inactive"},
 		{Name: "activated_at", Type: field.TypeTime, Nullable: true},
-		{Name: "condition", Type: field.TypeString, Nullable: true},
-		{Name: "actions", Type: field.TypeString, Default: "[]"},
+		{Name: "live_version_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "draft_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// RulesTable holds the schema information for the "rules" table.
@@ -1636,6 +1666,18 @@ var (
 		Columns:    RulesColumns,
 		PrimaryKey: []*schema.Column{RulesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rules_rule_versions_live_version",
+				Columns:    []*schema.Column{RulesColumns[7]},
+				RefColumns: []*schema.Column{RuleVersionsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "rules_rule_versions_draft_version",
+				Columns:    []*schema.Column{RulesColumns[8]},
+				RefColumns: []*schema.Column{RuleVersionsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 			{
 				Symbol:     "rules_workspaces_rules",
 				Columns:    []*schema.Column{RulesColumns[9]},
@@ -1649,6 +1691,16 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{RulesColumns[9]},
 			},
+			{
+				Name:    "rule_live_version_id",
+				Unique:  false,
+				Columns: []*schema.Column{RulesColumns[7]},
+			},
+			{
+				Name:    "rule_draft_version_id",
+				Unique:  false,
+				Columns: []*schema.Column{RulesColumns[8]},
+			},
 		},
 	}
 	// RuleFiringsColumns holds the columns for the "rule_firings" table.
@@ -1658,12 +1710,12 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "action", Type: field.TypeString},
 		{Name: "source_id", Type: field.TypeString},
-		{Name: "actions", Type: field.TypeString, Default: "[]"},
 		{Name: "properties", Type: field.TypeString, Nullable: true},
 		{Name: "results", Type: field.TypeString, Default: "[]"},
 		{Name: "completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "rule_id", Type: field.TypeInt64},
 		{Name: "contact_id", Type: field.TypeInt64},
+		{Name: "version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// RuleFiringsTable holds the schema information for the "rule_firings" table.
@@ -1674,15 +1726,21 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "rule_firings_rules_firings",
-				Columns:    []*schema.Column{RuleFiringsColumns[9]},
+				Columns:    []*schema.Column{RuleFiringsColumns[8]},
 				RefColumns: []*schema.Column{RulesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "rule_firings_contacts_contact",
-				Columns:    []*schema.Column{RuleFiringsColumns[10]},
+				Columns:    []*schema.Column{RuleFiringsColumns[9]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "rule_firings_rule_versions_firings",
+				Columns:    []*schema.Column{RuleFiringsColumns[10]},
+				RefColumns: []*schema.Column{RuleVersionsColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "rule_firings_workspaces_rule_firings",
@@ -1695,7 +1753,7 @@ var (
 			{
 				Name:    "rulefiring_rule_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{RuleFiringsColumns[9], RuleFiringsColumns[4]},
+				Columns: []*schema.Column{RuleFiringsColumns[8], RuleFiringsColumns[4]},
 			},
 			{
 				Name:    "rulefiring_workspace_id",
@@ -1705,53 +1763,101 @@ var (
 			{
 				Name:    "rule_firings_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{RuleFiringsColumns[10]},
+				Columns: []*schema.Column{RuleFiringsColumns[9]},
 			},
 			{
 				Name:    "rulefiring_created_at",
 				Unique:  false,
 				Columns: []*schema.Column{RuleFiringsColumns[1]},
 			},
+			{
+				Name:    "rulefiring_version_id",
+				Unique:  false,
+				Columns: []*schema.Column{RuleFiringsColumns[10]},
+			},
 		},
 	}
-	// RuleTriggersColumns holds the columns for the "rule_triggers" table.
-	RuleTriggersColumns = []*schema.Column{
+	// RuleVersionsColumns holds the columns for the "rule_versions" table.
+	RuleVersionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "action", Type: field.TypeString},
+		{Name: "version", Type: field.TypeInt},
+		{Name: "condition", Type: field.TypeString, Nullable: true},
+		{Name: "actions", Type: field.TypeString, Default: "[]"},
 		{Name: "rule_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
-	// RuleTriggersTable holds the schema information for the "rule_triggers" table.
-	RuleTriggersTable = &schema.Table{
-		Name:       "rule_triggers",
-		Columns:    RuleTriggersColumns,
-		PrimaryKey: []*schema.Column{RuleTriggersColumns[0]},
+	// RuleVersionsTable holds the schema information for the "rule_versions" table.
+	RuleVersionsTable = &schema.Table{
+		Name:       "rule_versions",
+		Columns:    RuleVersionsColumns,
+		PrimaryKey: []*schema.Column{RuleVersionsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "rule_triggers_rules_triggers",
-				Columns:    []*schema.Column{RuleTriggersColumns[4]},
+				Symbol:     "rule_versions_rules_versions",
+				Columns:    []*schema.Column{RuleVersionsColumns[6]},
 				RefColumns: []*schema.Column{RulesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "rule_triggers_workspaces_rule_triggers",
-				Columns:    []*schema.Column{RuleTriggersColumns[5]},
+				Symbol:     "rule_versions_workspaces_rule_versions",
+				Columns:    []*schema.Column{RuleVersionsColumns[7]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "ruletrigger_workspace_id_action",
-				Unique:  false,
-				Columns: []*schema.Column{RuleTriggersColumns[5], RuleTriggersColumns[3]},
+				Name:    "rule_versions_workspace_id_rule_id_version",
+				Unique:  true,
+				Columns: []*schema.Column{RuleVersionsColumns[7], RuleVersionsColumns[6], RuleVersionsColumns[3]},
 			},
 			{
-				Name:    "ruletrigger_rule_id_action",
+				Name:    "ruleversion_rule_id",
+				Unique:  false,
+				Columns: []*schema.Column{RuleVersionsColumns[6]},
+			},
+		},
+	}
+	// RuleVersionTriggersColumns holds the columns for the "rule_version_triggers" table.
+	RuleVersionTriggersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "action", Type: field.TypeString},
+		{Name: "version_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// RuleVersionTriggersTable holds the schema information for the "rule_version_triggers" table.
+	RuleVersionTriggersTable = &schema.Table{
+		Name:       "rule_version_triggers",
+		Columns:    RuleVersionTriggersColumns,
+		PrimaryKey: []*schema.Column{RuleVersionTriggersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "rule_version_triggers_rule_versions_triggers",
+				Columns:    []*schema.Column{RuleVersionTriggersColumns[4]},
+				RefColumns: []*schema.Column{RuleVersionsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "rule_version_triggers_workspaces_rule_version_triggers",
+				Columns:    []*schema.Column{RuleVersionTriggersColumns[5]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "ruleversiontrigger_workspace_id_action",
+				Unique:  false,
+				Columns: []*schema.Column{RuleVersionTriggersColumns[5], RuleVersionTriggersColumns[3]},
+			},
+			{
+				Name:    "ruleversiontrigger_version_id_action",
 				Unique:  true,
-				Columns: []*schema.Column{RuleTriggersColumns[4], RuleTriggersColumns[3]},
+				Columns: []*schema.Column{RuleVersionTriggersColumns[4], RuleVersionTriggersColumns[3]},
 			},
 		},
 	}
@@ -2365,7 +2471,8 @@ var (
 		RecoveryCodesTable,
 		RulesTable,
 		RuleFiringsTable,
-		RuleTriggersTable,
+		RuleVersionsTable,
+		RuleVersionTriggersTable,
 		SchemaStateTable,
 		SegmentsTable,
 		SendLimitersTable,
@@ -2402,13 +2509,14 @@ func init() {
 	AuthAttemptsTable.Annotation.Checks = map[string]string{
 		"auth_attempts_kind_check": "kind IN ('login', 'staff_login', 'password_reset', 'sign_up', 'email_change', 'test_send_user', 'test_send_workspace')",
 	}
-	AutomationsTable.ForeignKeys[0].RefTable = IntegrationsTable
-	AutomationsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	AutomationsTable.ForeignKeys[0].RefTable = AutomationVersionsTable
+	AutomationsTable.ForeignKeys[1].RefTable = AutomationVersionsTable
+	AutomationsTable.ForeignKeys[2].RefTable = WorkspacesTable
 	AutomationsTable.Annotation = &entsql.Annotation{
 		Table: "automations",
 	}
 	AutomationsTable.Annotation.Checks = map[string]string{
-		"automations_status_check": "status IN ('draft', 'active')",
+		"automations_status_check": "status IN ('active', 'inactive')",
 	}
 	AutomationRunsTable.ForeignKeys[0].RefTable = AutomationsTable
 	AutomationRunsTable.ForeignKeys[1].RefTable = ContactsTable
@@ -2422,7 +2530,8 @@ func init() {
 		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited')",
 	}
 	AutomationVersionsTable.ForeignKeys[0].RefTable = AutomationsTable
-	AutomationVersionsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	AutomationVersionsTable.ForeignKeys[1].RefTable = IntegrationsTable
+	AutomationVersionsTable.ForeignKeys[2].RefTable = WorkspacesTable
 	AutomationVersionsTable.Annotation = &entsql.Annotation{
 		Table: "automation_versions",
 	}
@@ -2600,23 +2709,31 @@ func init() {
 	RecoveryCodesTable.Annotation = &entsql.Annotation{
 		Table: "recovery_codes",
 	}
-	RulesTable.ForeignKeys[0].RefTable = WorkspacesTable
+	RulesTable.ForeignKeys[0].RefTable = RuleVersionsTable
+	RulesTable.ForeignKeys[1].RefTable = RuleVersionsTable
+	RulesTable.ForeignKeys[2].RefTable = WorkspacesTable
 	RulesTable.Annotation = &entsql.Annotation{
 		Table: "rules",
 	}
 	RulesTable.Annotation.Checks = map[string]string{
-		"rules_status_check": "status IN ('draft', 'active')",
+		"rules_status_check": "status IN ('active', 'inactive')",
 	}
 	RuleFiringsTable.ForeignKeys[0].RefTable = RulesTable
 	RuleFiringsTable.ForeignKeys[1].RefTable = ContactsTable
-	RuleFiringsTable.ForeignKeys[2].RefTable = WorkspacesTable
+	RuleFiringsTable.ForeignKeys[2].RefTable = RuleVersionsTable
+	RuleFiringsTable.ForeignKeys[3].RefTable = WorkspacesTable
 	RuleFiringsTable.Annotation = &entsql.Annotation{
 		Table: "rule_firings",
 	}
-	RuleTriggersTable.ForeignKeys[0].RefTable = RulesTable
-	RuleTriggersTable.ForeignKeys[1].RefTable = WorkspacesTable
-	RuleTriggersTable.Annotation = &entsql.Annotation{
-		Table: "rule_triggers",
+	RuleVersionsTable.ForeignKeys[0].RefTable = RulesTable
+	RuleVersionsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	RuleVersionsTable.Annotation = &entsql.Annotation{
+		Table: "rule_versions",
+	}
+	RuleVersionTriggersTable.ForeignKeys[0].RefTable = RuleVersionsTable
+	RuleVersionTriggersTable.ForeignKeys[1].RefTable = WorkspacesTable
+	RuleVersionTriggersTable.Annotation = &entsql.Annotation{
+		Table: "rule_version_triggers",
 	}
 	SchemaStateTable.Annotation = &entsql.Annotation{
 		Table: "schema_state",

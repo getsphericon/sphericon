@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -29,6 +30,7 @@ type RuleFiringQuery struct {
 	withWorkspace *WorkspaceQuery
 	withRule      *RuleQuery
 	withContact   *ContactQuery
+	withVersion   *RuleVersionQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -125,6 +127,28 @@ func (_q *RuleFiringQuery) QueryContact() *ContactQuery {
 			sqlgraph.From(rulefiring.Table, rulefiring.FieldID, selector),
 			sqlgraph.To(contact.Table, contact.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, rulefiring.ContactTable, rulefiring.ContactColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryVersion chains the current query on the "version" edge.
+func (_q *RuleFiringQuery) QueryVersion() *RuleVersionQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(rulefiring.Table, rulefiring.FieldID, selector),
+			sqlgraph.To(ruleversion.Table, ruleversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, rulefiring.VersionTable, rulefiring.VersionColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -327,6 +351,7 @@ func (_q *RuleFiringQuery) Clone() *RuleFiringQuery {
 		withWorkspace: _q.withWorkspace.Clone(),
 		withRule:      _q.withRule.Clone(),
 		withContact:   _q.withContact.Clone(),
+		withVersion:   _q.withVersion.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -364,6 +389,17 @@ func (_q *RuleFiringQuery) WithContact(opts ...func(*ContactQuery)) *RuleFiringQ
 		opt(query)
 	}
 	_q.withContact = query
+	return _q
+}
+
+// WithVersion tells the query-builder to eager-load the nodes that are connected to
+// the "version" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *RuleFiringQuery) WithVersion(opts ...func(*RuleVersionQuery)) *RuleFiringQuery {
+	query := (&RuleVersionClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withVersion = query
 	return _q
 }
 
@@ -445,10 +481,11 @@ func (_q *RuleFiringQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*R
 	var (
 		nodes       = []*RuleFiring{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withWorkspace != nil,
 			_q.withRule != nil,
 			_q.withContact != nil,
+			_q.withVersion != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -487,6 +524,12 @@ func (_q *RuleFiringQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*R
 	if query := _q.withContact; query != nil {
 		if err := _q.loadContact(ctx, query, nodes, nil,
 			func(n *RuleFiring, e *Contact) { n.Edges.Contact = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withVersion; query != nil {
+		if err := _q.loadVersion(ctx, query, nodes, nil,
+			func(n *RuleFiring, e *RuleVersion) { n.Edges.Version = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -580,6 +623,35 @@ func (_q *RuleFiringQuery) loadContact(ctx context.Context, query *ContactQuery,
 	}
 	return nil
 }
+func (_q *RuleFiringQuery) loadVersion(ctx context.Context, query *RuleVersionQuery, nodes []*RuleFiring, init func(*RuleFiring), assign func(*RuleFiring, *RuleVersion)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*RuleFiring)
+	for i := range nodes {
+		fk := nodes[i].VersionID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(ruleversion.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "version_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *RuleFiringQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -617,6 +689,9 @@ func (_q *RuleFiringQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withContact != nil {
 			_spec.Node.AddColumnOnce(rulefiring.FieldContactID)
+		}
+		if _q.withVersion != nil {
+			_spec.Node.AddColumnOnce(rulefiring.FieldVersionID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

@@ -1,11 +1,12 @@
 # Workspace acme (id 1). Rules react to custom Event actions (rule_*) that no Automation
-# fixture uses. The Trigger events are in rule_triggers.yml, the Firings in rule_firings.yml.
-# Actions are stored JSON: ent writes the same text.
+# fixture uses. The definitions (Trigger events, Condition, Actions) are the Rule versions in
+# rule_versions.yml, the Firings in rule_firings.yml.
 - id: 100 # fixture: RuleTagClicked
   name: Tag a Contact who clicked
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"apply_tag","tag":"rule-clicked"}]'
+  live_version_id: 100
+  draft_version_id: 120
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
@@ -14,15 +15,14 @@
   name: Tag a vip who did it
   status: active
   activated_at: '{{daysAgo 30}}'
-  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}'
-  actions: '[{"type":"apply_tag","tag":"rule-vip-seen"}]'
+  live_version_id: 101
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
-- id: 102 # fixture: RuleDraft
-  name: Draft rule
-  status: draft
-  actions: '[{"type":"apply_tag","tag":"rule-draft"}]'
+- id: 102 # fixture: RuleInactive
+  name: Inactive rule
+  status: inactive
+  draft_version_id: 102
   workspace_id: 1
   created_at: '{{daysAgo 20}}'
   updated_at: '{{daysAgo 20}}'
@@ -31,7 +31,7 @@
   name: Either of two events
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"apply_tag","tag":"rule-multi"},{"type":"remove_tag","tag":"vip"}]'
+  live_version_id: 103
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
@@ -41,16 +41,16 @@
   name: A failing action then a tag
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"apply_tag","tag":""},{"type":"apply_tag","tag":"rule-after-failure"}]'
+  live_version_id: 104
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
-# Active, but activated in the future of every fixture Event: it acts on nothing yet.
+# Active, but published in the future of every fixture Event: it acts on nothing yet.
 - id: 105 # fixture: RuleActivatedLater
-  name: Activated later
+  name: Published later
   status: active
   activated_at: '{{hoursAhead 1}}'
-  actions: '[{"type":"apply_tag","tag":"rule-later"}]'
+  live_version_id: 105
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
@@ -59,26 +59,25 @@
   name: Tag a pricing visit
   status: active
   activated_at: '{{daysAgo 30}}'
-  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"pricing"}]}'
-  actions: '[{"type":"apply_tag","tag":"rule-pricing"}]'
+  live_version_id: 110
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
 
-# The enroll Action: into an active Automation (Contact 3 is already enrolled in it), a draft one, one the test archives.
+# The enroll Action: into an active Automation (Contact 3 is already enrolled in it), an inactive one, one the test archives.
 - id: 106 # fixture: RuleEnrollGreeting
   name: Enroll in the greeting
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"enroll_automation","automation_id":5560}]'
+  live_version_id: 106
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
-- id: 107 # fixture: RuleEnrollDraftAutomation
-  name: Enroll in a draft automation
+- id: 107 # fixture: RuleEnrollInactiveAutomation
+  name: Enroll in an inactive automation
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"enroll_automation","automation_id":5566}]'
+  live_version_id: 107
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
@@ -86,7 +85,7 @@
   name: Enroll in the single-email automation
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"enroll_automation","automation_id":5561}]'
+  live_version_id: 108
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
@@ -95,7 +94,7 @@
   name: Enroll in the wait-first automation
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"enroll_automation","automation_id":5562}]'
+  live_version_id: 109
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
@@ -105,7 +104,7 @@
   name: Globex rule
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"apply_tag","tag":"globex-rule"}]'
+  live_version_id: 900
   workspace_id: 2
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
@@ -115,7 +114,7 @@
   name: Initech rule
   status: active
   activated_at: '{{daysAgo 30}}'
-  actions: '[{"type":"apply_tag","tag":"initech-rule"}]'
+  live_version_id: 300
   workspace_id: 3
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
@@ -125,7 +124,7 @@
   name: 'Tag who looks at pricing'
   status: active
   activated_at: '{{daysAgo 40}}'
-  actions: '[{"type":"apply_tag","tag":"pricing-interest"}]'
+  live_version_id: 21001
   workspace_id: 20
   created_at: '{{daysAgo 50}}'
   updated_at: '{{daysAgo 40}}'
@@ -133,14 +132,14 @@
   name: 'Welcome series after sign-up'
   status: active
   activated_at: '{{daysAgo 40}}'
-  actions: '[{"type":"enroll_automation","automation_id":20001}]'
+  live_version_id: 21002
   workspace_id: 20
   created_at: '{{daysAgo 50}}'
   updated_at: '{{daysAgo 40}}'
 - id: 21003
   name: 'Tag a buyer, drop the trial tag'
-  status: draft
-  actions: '[{"type":"apply_tag","tag":"customer"},{"type":"remove_tag","tag":"trial"}]'
+  status: inactive
+  draft_version_id: 21003
   workspace_id: 20
   created_at: '{{daysAgo 6}}'
   updated_at: '{{daysAgo 6}}'

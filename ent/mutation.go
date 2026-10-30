@@ -52,7 +52,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -121,7 +122,8 @@ const (
 	TypeRiverJob             = "RiverJob"
 	TypeRule                 = "Rule"
 	TypeRuleFiring           = "RuleFiring"
-	TypeRuleTrigger          = "RuleTrigger"
+	TypeRuleVersion          = "RuleVersion"
+	TypeRuleVersionTrigger   = "RuleVersionTrigger"
 	TypeSchemaState          = "SchemaState"
 	TypeSegment              = "Segment"
 	TypeSendLimiter          = "SendLimiter"
@@ -3214,7 +3216,6 @@ type AutomationMutation struct {
 	discarded_at             *time.Time
 	name                     *string
 	status                   *automation.Status
-	trigger_event            *string
 	clearedFields            map[string]struct{}
 	workspace                *int64
 	clearedworkspace         bool
@@ -3227,8 +3228,10 @@ type AutomationMutation struct {
 	outbound_messages        map[int64]struct{}
 	removedoutbound_messages map[int64]struct{}
 	clearedoutbound_messages bool
-	integration              *int64
-	clearedintegration       bool
+	live_version             *int64
+	clearedlive_version      bool
+	draft_version            *int64
+	cleareddraft_version     bool
 	done                     bool
 	oldValue                 func(context.Context) (*Automation, error)
 	predicates               []predicate.Automation
@@ -3567,89 +3570,102 @@ func (m *AutomationMutation) ResetStatus() {
 	m.status = nil
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (m *AutomationMutation) SetTriggerEvent(s string) {
-	m.trigger_event = &s
+// SetLiveVersionID sets the "live_version_id" field.
+func (m *AutomationMutation) SetLiveVersionID(i int64) {
+	m.live_version = &i
 }
 
-// TriggerEvent returns the value of the "trigger_event" field in the mutation.
-func (m *AutomationMutation) TriggerEvent() (r string, exists bool) {
-	v := m.trigger_event
+// LiveVersionID returns the value of the "live_version_id" field in the mutation.
+func (m *AutomationMutation) LiveVersionID() (r int64, exists bool) {
+	v := m.live_version
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldTriggerEvent returns the old "trigger_event" field's value of the Automation entity.
+// OldLiveVersionID returns the old "live_version_id" field's value of the Automation entity.
 // If the Automation object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationMutation) OldTriggerEvent(ctx context.Context) (v string, err error) {
+func (m *AutomationMutation) OldLiveVersionID(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTriggerEvent is only allowed on UpdateOne operations")
+		return v, errors.New("OldLiveVersionID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTriggerEvent requires an ID field in the mutation")
+		return v, errors.New("OldLiveVersionID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTriggerEvent: %w", err)
+		return v, fmt.Errorf("querying old value for OldLiveVersionID: %w", err)
 	}
-	return oldValue.TriggerEvent, nil
+	return oldValue.LiveVersionID, nil
 }
 
-// ResetTriggerEvent resets all changes to the "trigger_event" field.
-func (m *AutomationMutation) ResetTriggerEvent() {
-	m.trigger_event = nil
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (m *AutomationMutation) ClearLiveVersionID() {
+	m.live_version = nil
+	m.clearedFields[automation.FieldLiveVersionID] = struct{}{}
 }
 
-// SetIntegrationID sets the "integration_id" field.
-func (m *AutomationMutation) SetIntegrationID(i int64) {
-	m.integration = &i
-}
-
-// IntegrationID returns the value of the "integration_id" field in the mutation.
-func (m *AutomationMutation) IntegrationID() (r int64, exists bool) {
-	v := m.integration
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIntegrationID returns the old "integration_id" field's value of the Automation entity.
-// If the Automation object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationMutation) OldIntegrationID(ctx context.Context) (v *int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldIntegrationID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldIntegrationID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIntegrationID: %w", err)
-	}
-	return oldValue.IntegrationID, nil
-}
-
-// ClearIntegrationID clears the value of the "integration_id" field.
-func (m *AutomationMutation) ClearIntegrationID() {
-	m.integration = nil
-	m.clearedFields[automation.FieldIntegrationID] = struct{}{}
-}
-
-// IntegrationIDCleared returns if the "integration_id" field was cleared in this mutation.
-func (m *AutomationMutation) IntegrationIDCleared() bool {
-	_, ok := m.clearedFields[automation.FieldIntegrationID]
+// LiveVersionIDCleared returns if the "live_version_id" field was cleared in this mutation.
+func (m *AutomationMutation) LiveVersionIDCleared() bool {
+	_, ok := m.clearedFields[automation.FieldLiveVersionID]
 	return ok
 }
 
-// ResetIntegrationID resets all changes to the "integration_id" field.
-func (m *AutomationMutation) ResetIntegrationID() {
-	m.integration = nil
-	delete(m.clearedFields, automation.FieldIntegrationID)
+// ResetLiveVersionID resets all changes to the "live_version_id" field.
+func (m *AutomationMutation) ResetLiveVersionID() {
+	m.live_version = nil
+	delete(m.clearedFields, automation.FieldLiveVersionID)
+}
+
+// SetDraftVersionID sets the "draft_version_id" field.
+func (m *AutomationMutation) SetDraftVersionID(i int64) {
+	m.draft_version = &i
+}
+
+// DraftVersionID returns the value of the "draft_version_id" field in the mutation.
+func (m *AutomationMutation) DraftVersionID() (r int64, exists bool) {
+	v := m.draft_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDraftVersionID returns the old "draft_version_id" field's value of the Automation entity.
+// If the Automation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationMutation) OldDraftVersionID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDraftVersionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDraftVersionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDraftVersionID: %w", err)
+	}
+	return oldValue.DraftVersionID, nil
+}
+
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (m *AutomationMutation) ClearDraftVersionID() {
+	m.draft_version = nil
+	m.clearedFields[automation.FieldDraftVersionID] = struct{}{}
+}
+
+// DraftVersionIDCleared returns if the "draft_version_id" field was cleared in this mutation.
+func (m *AutomationMutation) DraftVersionIDCleared() bool {
+	_, ok := m.clearedFields[automation.FieldDraftVersionID]
+	return ok
+}
+
+// ResetDraftVersionID resets all changes to the "draft_version_id" field.
+func (m *AutomationMutation) ResetDraftVersionID() {
+	m.draft_version = nil
+	delete(m.clearedFields, automation.FieldDraftVersionID)
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
@@ -3841,31 +3857,58 @@ func (m *AutomationMutation) ResetOutboundMessages() {
 	m.removedoutbound_messages = nil
 }
 
-// ClearIntegration clears the "integration" edge to the Integration entity.
-func (m *AutomationMutation) ClearIntegration() {
-	m.clearedintegration = true
-	m.clearedFields[automation.FieldIntegrationID] = struct{}{}
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (m *AutomationMutation) ClearLiveVersion() {
+	m.clearedlive_version = true
+	m.clearedFields[automation.FieldLiveVersionID] = struct{}{}
 }
 
-// IntegrationCleared reports if the "integration" edge to the Integration entity was cleared.
-func (m *AutomationMutation) IntegrationCleared() bool {
-	return m.IntegrationIDCleared() || m.clearedintegration
+// LiveVersionCleared reports if the "live_version" edge to the AutomationVersion entity was cleared.
+func (m *AutomationMutation) LiveVersionCleared() bool {
+	return m.LiveVersionIDCleared() || m.clearedlive_version
 }
 
-// IntegrationIDs returns the "integration" edge IDs in the mutation.
+// LiveVersionIDs returns the "live_version" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// IntegrationID instead. It exists only for internal usage by the builders.
-func (m *AutomationMutation) IntegrationIDs() (ids []int64) {
-	if id := m.integration; id != nil {
+// LiveVersionID instead. It exists only for internal usage by the builders.
+func (m *AutomationMutation) LiveVersionIDs() (ids []int64) {
+	if id := m.live_version; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetIntegration resets all changes to the "integration" edge.
-func (m *AutomationMutation) ResetIntegration() {
-	m.integration = nil
-	m.clearedintegration = false
+// ResetLiveVersion resets all changes to the "live_version" edge.
+func (m *AutomationMutation) ResetLiveVersion() {
+	m.live_version = nil
+	m.clearedlive_version = false
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (m *AutomationMutation) ClearDraftVersion() {
+	m.cleareddraft_version = true
+	m.clearedFields[automation.FieldDraftVersionID] = struct{}{}
+}
+
+// DraftVersionCleared reports if the "draft_version" edge to the AutomationVersion entity was cleared.
+func (m *AutomationMutation) DraftVersionCleared() bool {
+	return m.DraftVersionIDCleared() || m.cleareddraft_version
+}
+
+// DraftVersionIDs returns the "draft_version" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DraftVersionID instead. It exists only for internal usage by the builders.
+func (m *AutomationMutation) DraftVersionIDs() (ids []int64) {
+	if id := m.draft_version; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDraftVersion resets all changes to the "draft_version" edge.
+func (m *AutomationMutation) ResetDraftVersion() {
+	m.draft_version = nil
+	m.cleareddraft_version = false
 }
 
 // Where appends a list predicates to the AutomationMutation builder.
@@ -3921,11 +3964,11 @@ func (m *AutomationMutation) Fields() []string {
 	if m.status != nil {
 		fields = append(fields, automation.FieldStatus)
 	}
-	if m.trigger_event != nil {
-		fields = append(fields, automation.FieldTriggerEvent)
+	if m.live_version != nil {
+		fields = append(fields, automation.FieldLiveVersionID)
 	}
-	if m.integration != nil {
-		fields = append(fields, automation.FieldIntegrationID)
+	if m.draft_version != nil {
+		fields = append(fields, automation.FieldDraftVersionID)
 	}
 	return fields
 }
@@ -3947,10 +3990,10 @@ func (m *AutomationMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case automation.FieldStatus:
 		return m.Status()
-	case automation.FieldTriggerEvent:
-		return m.TriggerEvent()
-	case automation.FieldIntegrationID:
-		return m.IntegrationID()
+	case automation.FieldLiveVersionID:
+		return m.LiveVersionID()
+	case automation.FieldDraftVersionID:
+		return m.DraftVersionID()
 	}
 	return nil, false
 }
@@ -3972,10 +4015,10 @@ func (m *AutomationMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldName(ctx)
 	case automation.FieldStatus:
 		return m.OldStatus(ctx)
-	case automation.FieldTriggerEvent:
-		return m.OldTriggerEvent(ctx)
-	case automation.FieldIntegrationID:
-		return m.OldIntegrationID(ctx)
+	case automation.FieldLiveVersionID:
+		return m.OldLiveVersionID(ctx)
+	case automation.FieldDraftVersionID:
+		return m.OldDraftVersionID(ctx)
 	}
 	return nil, fmt.Errorf("unknown Automation field %s", name)
 }
@@ -4027,19 +4070,19 @@ func (m *AutomationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStatus(v)
 		return nil
-	case automation.FieldTriggerEvent:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTriggerEvent(v)
-		return nil
-	case automation.FieldIntegrationID:
+	case automation.FieldLiveVersionID:
 		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetIntegrationID(v)
+		m.SetLiveVersionID(v)
+		return nil
+	case automation.FieldDraftVersionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDraftVersionID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Automation field %s", name)
@@ -4077,8 +4120,11 @@ func (m *AutomationMutation) ClearedFields() []string {
 	if m.FieldCleared(automation.FieldDiscardedAt) {
 		fields = append(fields, automation.FieldDiscardedAt)
 	}
-	if m.FieldCleared(automation.FieldIntegrationID) {
-		fields = append(fields, automation.FieldIntegrationID)
+	if m.FieldCleared(automation.FieldLiveVersionID) {
+		fields = append(fields, automation.FieldLiveVersionID)
+	}
+	if m.FieldCleared(automation.FieldDraftVersionID) {
+		fields = append(fields, automation.FieldDraftVersionID)
 	}
 	return fields
 }
@@ -4097,8 +4143,11 @@ func (m *AutomationMutation) ClearField(name string) error {
 	case automation.FieldDiscardedAt:
 		m.ClearDiscardedAt()
 		return nil
-	case automation.FieldIntegrationID:
-		m.ClearIntegrationID()
+	case automation.FieldLiveVersionID:
+		m.ClearLiveVersionID()
+		return nil
+	case automation.FieldDraftVersionID:
+		m.ClearDraftVersionID()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation nullable field %s", name)
@@ -4126,11 +4175,11 @@ func (m *AutomationMutation) ResetField(name string) error {
 	case automation.FieldStatus:
 		m.ResetStatus()
 		return nil
-	case automation.FieldTriggerEvent:
-		m.ResetTriggerEvent()
+	case automation.FieldLiveVersionID:
+		m.ResetLiveVersionID()
 		return nil
-	case automation.FieldIntegrationID:
-		m.ResetIntegrationID()
+	case automation.FieldDraftVersionID:
+		m.ResetDraftVersionID()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation field %s", name)
@@ -4138,7 +4187,7 @@ func (m *AutomationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AutomationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.workspace != nil {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
@@ -4151,8 +4200,11 @@ func (m *AutomationMutation) AddedEdges() []string {
 	if m.outbound_messages != nil {
 		edges = append(edges, automation.EdgeOutboundMessages)
 	}
-	if m.integration != nil {
-		edges = append(edges, automation.EdgeIntegration)
+	if m.live_version != nil {
+		edges = append(edges, automation.EdgeLiveVersion)
+	}
+	if m.draft_version != nil {
+		edges = append(edges, automation.EdgeDraftVersion)
 	}
 	return edges
 }
@@ -4183,8 +4235,12 @@ func (m *AutomationMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case automation.EdgeIntegration:
-		if id := m.integration; id != nil {
+	case automation.EdgeLiveVersion:
+		if id := m.live_version; id != nil {
+			return []ent.Value{*id}
+		}
+	case automation.EdgeDraftVersion:
+		if id := m.draft_version; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -4193,7 +4249,7 @@ func (m *AutomationMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedruns != nil {
 		edges = append(edges, automation.EdgeRuns)
 	}
@@ -4234,7 +4290,7 @@ func (m *AutomationMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AutomationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedworkspace {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
@@ -4247,8 +4303,11 @@ func (m *AutomationMutation) ClearedEdges() []string {
 	if m.clearedoutbound_messages {
 		edges = append(edges, automation.EdgeOutboundMessages)
 	}
-	if m.clearedintegration {
-		edges = append(edges, automation.EdgeIntegration)
+	if m.clearedlive_version {
+		edges = append(edges, automation.EdgeLiveVersion)
+	}
+	if m.cleareddraft_version {
+		edges = append(edges, automation.EdgeDraftVersion)
 	}
 	return edges
 }
@@ -4265,8 +4324,10 @@ func (m *AutomationMutation) EdgeCleared(name string) bool {
 		return m.clearedversions
 	case automation.EdgeOutboundMessages:
 		return m.clearedoutbound_messages
-	case automation.EdgeIntegration:
-		return m.clearedintegration
+	case automation.EdgeLiveVersion:
+		return m.clearedlive_version
+	case automation.EdgeDraftVersion:
+		return m.cleareddraft_version
 	}
 	return false
 }
@@ -4278,8 +4339,11 @@ func (m *AutomationMutation) ClearEdge(name string) error {
 	case automation.EdgeWorkspace:
 		m.ClearWorkspace()
 		return nil
-	case automation.EdgeIntegration:
-		m.ClearIntegration()
+	case automation.EdgeLiveVersion:
+		m.ClearLiveVersion()
+		return nil
+	case automation.EdgeDraftVersion:
+		m.ClearDraftVersion()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation unique edge %s", name)
@@ -4301,8 +4365,11 @@ func (m *AutomationMutation) ResetEdge(name string) error {
 	case automation.EdgeOutboundMessages:
 		m.ResetOutboundMessages()
 		return nil
-	case automation.EdgeIntegration:
-		m.ResetIntegration()
+	case automation.EdgeLiveVersion:
+		m.ResetLiveVersion()
+		return nil
+	case automation.EdgeDraftVersion:
+		m.ResetDraftVersion()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation edge %s", name)
@@ -5578,25 +5645,28 @@ func (m *AutomationRunMutation) ResetEdge(name string) error {
 // AutomationVersionMutation represents an operation that mutates the AutomationVersion nodes in the graph.
 type AutomationVersionMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	created_at        *time.Time
-	updated_at        *time.Time
-	version           *int
-	addversion        *int
-	steps             *string
-	clearedFields     map[string]struct{}
-	workspace         *int64
-	clearedworkspace  bool
-	automation        *int64
-	clearedautomation bool
-	runs              map[int64]struct{}
-	removedruns       map[int64]struct{}
-	clearedruns       bool
-	done              bool
-	oldValue          func(context.Context) (*AutomationVersion, error)
-	predicates        []predicate.AutomationVersion
+	op                 Op
+	typ                string
+	id                 *int64
+	created_at         *time.Time
+	updated_at         *time.Time
+	version            *int
+	addversion         *int
+	steps              *string
+	trigger_event      *string
+	clearedFields      map[string]struct{}
+	workspace          *int64
+	clearedworkspace   bool
+	automation         *int64
+	clearedautomation  bool
+	runs               map[int64]struct{}
+	removedruns        map[int64]struct{}
+	clearedruns        bool
+	integration        *int64
+	clearedintegration bool
+	done               bool
+	oldValue           func(context.Context) (*AutomationVersion, error)
+	predicates         []predicate.AutomationVersion
 }
 
 var _ ent.Mutation = (*AutomationVersionMutation)(nil)
@@ -5939,6 +6009,91 @@ func (m *AutomationVersionMutation) ResetSteps() {
 	m.steps = nil
 }
 
+// SetTriggerEvent sets the "trigger_event" field.
+func (m *AutomationVersionMutation) SetTriggerEvent(s string) {
+	m.trigger_event = &s
+}
+
+// TriggerEvent returns the value of the "trigger_event" field in the mutation.
+func (m *AutomationVersionMutation) TriggerEvent() (r string, exists bool) {
+	v := m.trigger_event
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTriggerEvent returns the old "trigger_event" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldTriggerEvent(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTriggerEvent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTriggerEvent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTriggerEvent: %w", err)
+	}
+	return oldValue.TriggerEvent, nil
+}
+
+// ResetTriggerEvent resets all changes to the "trigger_event" field.
+func (m *AutomationVersionMutation) ResetTriggerEvent() {
+	m.trigger_event = nil
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (m *AutomationVersionMutation) SetIntegrationID(i int64) {
+	m.integration = &i
+}
+
+// IntegrationID returns the value of the "integration_id" field in the mutation.
+func (m *AutomationVersionMutation) IntegrationID() (r int64, exists bool) {
+	v := m.integration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIntegrationID returns the old "integration_id" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldIntegrationID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIntegrationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIntegrationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIntegrationID: %w", err)
+	}
+	return oldValue.IntegrationID, nil
+}
+
+// ClearIntegrationID clears the value of the "integration_id" field.
+func (m *AutomationVersionMutation) ClearIntegrationID() {
+	m.integration = nil
+	m.clearedFields[automationversion.FieldIntegrationID] = struct{}{}
+}
+
+// IntegrationIDCleared returns if the "integration_id" field was cleared in this mutation.
+func (m *AutomationVersionMutation) IntegrationIDCleared() bool {
+	_, ok := m.clearedFields[automationversion.FieldIntegrationID]
+	return ok
+}
+
+// ResetIntegrationID resets all changes to the "integration_id" field.
+func (m *AutomationVersionMutation) ResetIntegrationID() {
+	m.integration = nil
+	delete(m.clearedFields, automationversion.FieldIntegrationID)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationVersionMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -6047,6 +6202,33 @@ func (m *AutomationVersionMutation) ResetRuns() {
 	m.removedruns = nil
 }
 
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (m *AutomationVersionMutation) ClearIntegration() {
+	m.clearedintegration = true
+	m.clearedFields[automationversion.FieldIntegrationID] = struct{}{}
+}
+
+// IntegrationCleared reports if the "integration" edge to the Integration entity was cleared.
+func (m *AutomationVersionMutation) IntegrationCleared() bool {
+	return m.IntegrationIDCleared() || m.clearedintegration
+}
+
+// IntegrationIDs returns the "integration" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// IntegrationID instead. It exists only for internal usage by the builders.
+func (m *AutomationVersionMutation) IntegrationIDs() (ids []int64) {
+	if id := m.integration; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetIntegration resets all changes to the "integration" edge.
+func (m *AutomationVersionMutation) ResetIntegration() {
+	m.integration = nil
+	m.clearedintegration = false
+}
+
 // Where appends a list predicates to the AutomationVersionMutation builder.
 func (m *AutomationVersionMutation) Where(ps ...predicate.AutomationVersion) {
 	m.predicates = append(m.predicates, ps...)
@@ -6081,7 +6263,7 @@ func (m *AutomationVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationVersionMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, automationversion.FieldCreatedAt)
 	}
@@ -6099,6 +6281,12 @@ func (m *AutomationVersionMutation) Fields() []string {
 	}
 	if m.steps != nil {
 		fields = append(fields, automationversion.FieldSteps)
+	}
+	if m.trigger_event != nil {
+		fields = append(fields, automationversion.FieldTriggerEvent)
+	}
+	if m.integration != nil {
+		fields = append(fields, automationversion.FieldIntegrationID)
 	}
 	return fields
 }
@@ -6120,6 +6308,10 @@ func (m *AutomationVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.Version()
 	case automationversion.FieldSteps:
 		return m.Steps()
+	case automationversion.FieldTriggerEvent:
+		return m.TriggerEvent()
+	case automationversion.FieldIntegrationID:
+		return m.IntegrationID()
 	}
 	return nil, false
 }
@@ -6141,6 +6333,10 @@ func (m *AutomationVersionMutation) OldField(ctx context.Context, name string) (
 		return m.OldVersion(ctx)
 	case automationversion.FieldSteps:
 		return m.OldSteps(ctx)
+	case automationversion.FieldTriggerEvent:
+		return m.OldTriggerEvent(ctx)
+	case automationversion.FieldIntegrationID:
+		return m.OldIntegrationID(ctx)
 	}
 	return nil, fmt.Errorf("unknown AutomationVersion field %s", name)
 }
@@ -6192,6 +6388,20 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetSteps(v)
 		return nil
+	case automationversion.FieldTriggerEvent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTriggerEvent(v)
+		return nil
+	case automationversion.FieldIntegrationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIntegrationID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion field %s", name)
 }
@@ -6236,7 +6446,11 @@ func (m *AutomationVersionMutation) AddField(name string, value ent.Value) error
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *AutomationVersionMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(automationversion.FieldIntegrationID) {
+		fields = append(fields, automationversion.FieldIntegrationID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -6249,6 +6463,11 @@ func (m *AutomationVersionMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *AutomationVersionMutation) ClearField(name string) error {
+	switch name {
+	case automationversion.FieldIntegrationID:
+		m.ClearIntegrationID()
+		return nil
+	}
 	return fmt.Errorf("unknown AutomationVersion nullable field %s", name)
 }
 
@@ -6274,13 +6493,19 @@ func (m *AutomationVersionMutation) ResetField(name string) error {
 	case automationversion.FieldSteps:
 		m.ResetSteps()
 		return nil
+	case automationversion.FieldTriggerEvent:
+		m.ResetTriggerEvent()
+		return nil
+	case automationversion.FieldIntegrationID:
+		m.ResetIntegrationID()
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AutomationVersionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.workspace != nil {
 		edges = append(edges, automationversion.EdgeWorkspace)
 	}
@@ -6289,6 +6514,9 @@ func (m *AutomationVersionMutation) AddedEdges() []string {
 	}
 	if m.runs != nil {
 		edges = append(edges, automationversion.EdgeRuns)
+	}
+	if m.integration != nil {
+		edges = append(edges, automationversion.EdgeIntegration)
 	}
 	return edges
 }
@@ -6311,13 +6539,17 @@ func (m *AutomationVersionMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case automationversion.EdgeIntegration:
+		if id := m.integration; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationVersionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedruns != nil {
 		edges = append(edges, automationversion.EdgeRuns)
 	}
@@ -6340,7 +6572,7 @@ func (m *AutomationVersionMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AutomationVersionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedworkspace {
 		edges = append(edges, automationversion.EdgeWorkspace)
 	}
@@ -6349,6 +6581,9 @@ func (m *AutomationVersionMutation) ClearedEdges() []string {
 	}
 	if m.clearedruns {
 		edges = append(edges, automationversion.EdgeRuns)
+	}
+	if m.clearedintegration {
+		edges = append(edges, automationversion.EdgeIntegration)
 	}
 	return edges
 }
@@ -6363,6 +6598,8 @@ func (m *AutomationVersionMutation) EdgeCleared(name string) bool {
 		return m.clearedautomation
 	case automationversion.EdgeRuns:
 		return m.clearedruns
+	case automationversion.EdgeIntegration:
+		return m.clearedintegration
 	}
 	return false
 }
@@ -6376,6 +6613,9 @@ func (m *AutomationVersionMutation) ClearEdge(name string) error {
 		return nil
 	case automationversion.EdgeAutomation:
 		m.ClearAutomation()
+		return nil
+	case automationversion.EdgeIntegration:
+		m.ClearIntegration()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion unique edge %s", name)
@@ -6393,6 +6633,9 @@ func (m *AutomationVersionMutation) ResetEdge(name string) error {
 		return nil
 	case automationversion.EdgeRuns:
 		m.ResetRuns()
+		return nil
+	case automationversion.EdgeIntegration:
+		m.ResetIntegration()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion edge %s", name)
@@ -7431,6 +7674,7 @@ type BroadcastMutation struct {
 	doc                *jsontext.Value
 	appenddoc          jsontext.Value
 	editor_version     *string
+	condition          *string
 	status             *broadcast.Status
 	scheduled_at       *time.Time
 	sent_at            *time.Time
@@ -8081,6 +8325,55 @@ func (m *BroadcastMutation) ResetSegmentID() {
 	delete(m.clearedFields, broadcast.FieldSegmentID)
 }
 
+// SetCondition sets the "condition" field.
+func (m *BroadcastMutation) SetCondition(s string) {
+	m.condition = &s
+}
+
+// Condition returns the value of the "condition" field in the mutation.
+func (m *BroadcastMutation) Condition() (r string, exists bool) {
+	v := m.condition
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCondition returns the old "condition" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldCondition(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCondition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCondition: %w", err)
+	}
+	return oldValue.Condition, nil
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (m *BroadcastMutation) ClearCondition() {
+	m.condition = nil
+	m.clearedFields[broadcast.FieldCondition] = struct{}{}
+}
+
+// ConditionCleared returns if the "condition" field was cleared in this mutation.
+func (m *BroadcastMutation) ConditionCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldCondition]
+	return ok
+}
+
+// ResetCondition resets all changes to the "condition" field.
+func (m *BroadcastMutation) ResetCondition() {
+	m.condition = nil
+	delete(m.clearedFields, broadcast.FieldCondition)
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (m *BroadcastMutation) SetIntegrationID(i int64) {
 	m.integration = &i
@@ -8531,7 +8824,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -8567,6 +8860,9 @@ func (m *BroadcastMutation) Fields() []string {
 	}
 	if m.segment != nil {
 		fields = append(fields, broadcast.FieldSegmentID)
+	}
+	if m.condition != nil {
+		fields = append(fields, broadcast.FieldCondition)
 	}
 	if m.integration != nil {
 		fields = append(fields, broadcast.FieldIntegrationID)
@@ -8618,6 +8914,8 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.EditorVersion()
 	case broadcast.FieldSegmentID:
 		return m.SegmentID()
+	case broadcast.FieldCondition:
+		return m.Condition()
 	case broadcast.FieldIntegrationID:
 		return m.IntegrationID()
 	case broadcast.FieldStatus:
@@ -8663,6 +8961,8 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldEditorVersion(ctx)
 	case broadcast.FieldSegmentID:
 		return m.OldSegmentID(ctx)
+	case broadcast.FieldCondition:
+		return m.OldCondition(ctx)
 	case broadcast.FieldIntegrationID:
 		return m.OldIntegrationID(ctx)
 	case broadcast.FieldStatus:
@@ -8768,6 +9068,13 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSegmentID(v)
 		return nil
+	case broadcast.FieldCondition:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCondition(v)
+		return nil
 	case broadcast.FieldIntegrationID:
 		v, ok := value.(int64)
 		if !ok {
@@ -8861,6 +9168,9 @@ func (m *BroadcastMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcast.FieldSegmentID) {
 		fields = append(fields, broadcast.FieldSegmentID)
 	}
+	if m.FieldCleared(broadcast.FieldCondition) {
+		fields = append(fields, broadcast.FieldCondition)
+	}
 	if m.FieldCleared(broadcast.FieldIntegrationID) {
 		fields = append(fields, broadcast.FieldIntegrationID)
 	}
@@ -8907,6 +9217,9 @@ func (m *BroadcastMutation) ClearField(name string) error {
 		return nil
 	case broadcast.FieldSegmentID:
 		m.ClearSegmentID()
+		return nil
+	case broadcast.FieldCondition:
+		m.ClearCondition()
 		return nil
 	case broadcast.FieldIntegrationID:
 		m.ClearIntegrationID()
@@ -8966,6 +9279,9 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldSegmentID:
 		m.ResetSegmentID()
+		return nil
+	case broadcast.FieldCondition:
+		m.ResetCondition()
 		return nil
 	case broadcast.FieldIntegrationID:
 		m.ResetIntegrationID()
@@ -36140,29 +36456,31 @@ func (m *RiverJobMutation) ResetEdge(name string) error {
 // RuleMutation represents an operation that mutates the Rule nodes in the graph.
 type RuleMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int64
-	created_at       *time.Time
-	updated_at       *time.Time
-	discarded_at     *time.Time
-	name             *string
-	status           *rule.Status
-	activated_at     *time.Time
-	condition        *string
-	actions          *string
-	clearedFields    map[string]struct{}
-	workspace        *int64
-	clearedworkspace bool
-	triggers         map[int64]struct{}
-	removedtriggers  map[int64]struct{}
-	clearedtriggers  bool
-	firings          map[int64]struct{}
-	removedfirings   map[int64]struct{}
-	clearedfirings   bool
-	done             bool
-	oldValue         func(context.Context) (*Rule, error)
-	predicates       []predicate.Rule
+	op                   Op
+	typ                  string
+	id                   *int64
+	created_at           *time.Time
+	updated_at           *time.Time
+	discarded_at         *time.Time
+	name                 *string
+	status               *rule.Status
+	activated_at         *time.Time
+	clearedFields        map[string]struct{}
+	workspace            *int64
+	clearedworkspace     bool
+	versions             map[int64]struct{}
+	removedversions      map[int64]struct{}
+	clearedversions      bool
+	live_version         *int64
+	clearedlive_version  bool
+	draft_version        *int64
+	cleareddraft_version bool
+	firings              map[int64]struct{}
+	removedfirings       map[int64]struct{}
+	clearedfirings       bool
+	done                 bool
+	oldValue             func(context.Context) (*Rule, error)
+	predicates           []predicate.Rule
 }
 
 var _ ent.Mutation = (*RuleMutation)(nil)
@@ -36547,89 +36865,102 @@ func (m *RuleMutation) ResetActivatedAt() {
 	delete(m.clearedFields, rule.FieldActivatedAt)
 }
 
-// SetCondition sets the "condition" field.
-func (m *RuleMutation) SetCondition(s string) {
-	m.condition = &s
+// SetLiveVersionID sets the "live_version_id" field.
+func (m *RuleMutation) SetLiveVersionID(i int64) {
+	m.live_version = &i
 }
 
-// Condition returns the value of the "condition" field in the mutation.
-func (m *RuleMutation) Condition() (r string, exists bool) {
-	v := m.condition
+// LiveVersionID returns the value of the "live_version_id" field in the mutation.
+func (m *RuleMutation) LiveVersionID() (r int64, exists bool) {
+	v := m.live_version
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCondition returns the old "condition" field's value of the Rule entity.
+// OldLiveVersionID returns the old "live_version_id" field's value of the Rule entity.
 // If the Rule object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleMutation) OldCondition(ctx context.Context) (v *string, err error) {
+func (m *RuleMutation) OldLiveVersionID(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
+		return v, errors.New("OldLiveVersionID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCondition requires an ID field in the mutation")
+		return v, errors.New("OldLiveVersionID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCondition: %w", err)
+		return v, fmt.Errorf("querying old value for OldLiveVersionID: %w", err)
 	}
-	return oldValue.Condition, nil
+	return oldValue.LiveVersionID, nil
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (m *RuleMutation) ClearCondition() {
-	m.condition = nil
-	m.clearedFields[rule.FieldCondition] = struct{}{}
+// ClearLiveVersionID clears the value of the "live_version_id" field.
+func (m *RuleMutation) ClearLiveVersionID() {
+	m.live_version = nil
+	m.clearedFields[rule.FieldLiveVersionID] = struct{}{}
 }
 
-// ConditionCleared returns if the "condition" field was cleared in this mutation.
-func (m *RuleMutation) ConditionCleared() bool {
-	_, ok := m.clearedFields[rule.FieldCondition]
+// LiveVersionIDCleared returns if the "live_version_id" field was cleared in this mutation.
+func (m *RuleMutation) LiveVersionIDCleared() bool {
+	_, ok := m.clearedFields[rule.FieldLiveVersionID]
 	return ok
 }
 
-// ResetCondition resets all changes to the "condition" field.
-func (m *RuleMutation) ResetCondition() {
-	m.condition = nil
-	delete(m.clearedFields, rule.FieldCondition)
+// ResetLiveVersionID resets all changes to the "live_version_id" field.
+func (m *RuleMutation) ResetLiveVersionID() {
+	m.live_version = nil
+	delete(m.clearedFields, rule.FieldLiveVersionID)
 }
 
-// SetActions sets the "actions" field.
-func (m *RuleMutation) SetActions(s string) {
-	m.actions = &s
+// SetDraftVersionID sets the "draft_version_id" field.
+func (m *RuleMutation) SetDraftVersionID(i int64) {
+	m.draft_version = &i
 }
 
-// Actions returns the value of the "actions" field in the mutation.
-func (m *RuleMutation) Actions() (r string, exists bool) {
-	v := m.actions
+// DraftVersionID returns the value of the "draft_version_id" field in the mutation.
+func (m *RuleMutation) DraftVersionID() (r int64, exists bool) {
+	v := m.draft_version
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldActions returns the old "actions" field's value of the Rule entity.
+// OldDraftVersionID returns the old "draft_version_id" field's value of the Rule entity.
 // If the Rule object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleMutation) OldActions(ctx context.Context) (v string, err error) {
+func (m *RuleMutation) OldDraftVersionID(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldActions is only allowed on UpdateOne operations")
+		return v, errors.New("OldDraftVersionID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldActions requires an ID field in the mutation")
+		return v, errors.New("OldDraftVersionID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldActions: %w", err)
+		return v, fmt.Errorf("querying old value for OldDraftVersionID: %w", err)
 	}
-	return oldValue.Actions, nil
+	return oldValue.DraftVersionID, nil
 }
 
-// ResetActions resets all changes to the "actions" field.
-func (m *RuleMutation) ResetActions() {
-	m.actions = nil
+// ClearDraftVersionID clears the value of the "draft_version_id" field.
+func (m *RuleMutation) ClearDraftVersionID() {
+	m.draft_version = nil
+	m.clearedFields[rule.FieldDraftVersionID] = struct{}{}
+}
+
+// DraftVersionIDCleared returns if the "draft_version_id" field was cleared in this mutation.
+func (m *RuleMutation) DraftVersionIDCleared() bool {
+	_, ok := m.clearedFields[rule.FieldDraftVersionID]
+	return ok
+}
+
+// ResetDraftVersionID resets all changes to the "draft_version_id" field.
+func (m *RuleMutation) ResetDraftVersionID() {
+	m.draft_version = nil
+	delete(m.clearedFields, rule.FieldDraftVersionID)
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
@@ -36659,58 +36990,112 @@ func (m *RuleMutation) ResetWorkspace() {
 	m.clearedworkspace = false
 }
 
-// AddTriggerIDs adds the "triggers" edge to the RuleTrigger entity by ids.
-func (m *RuleMutation) AddTriggerIDs(ids ...int64) {
-	if m.triggers == nil {
-		m.triggers = make(map[int64]struct{})
+// AddVersionIDs adds the "versions" edge to the RuleVersion entity by ids.
+func (m *RuleMutation) AddVersionIDs(ids ...int64) {
+	if m.versions == nil {
+		m.versions = make(map[int64]struct{})
 	}
 	for i := range ids {
-		m.triggers[ids[i]] = struct{}{}
+		m.versions[ids[i]] = struct{}{}
 	}
 }
 
-// ClearTriggers clears the "triggers" edge to the RuleTrigger entity.
-func (m *RuleMutation) ClearTriggers() {
-	m.clearedtriggers = true
+// ClearVersions clears the "versions" edge to the RuleVersion entity.
+func (m *RuleMutation) ClearVersions() {
+	m.clearedversions = true
 }
 
-// TriggersCleared reports if the "triggers" edge to the RuleTrigger entity was cleared.
-func (m *RuleMutation) TriggersCleared() bool {
-	return m.clearedtriggers
+// VersionsCleared reports if the "versions" edge to the RuleVersion entity was cleared.
+func (m *RuleMutation) VersionsCleared() bool {
+	return m.clearedversions
 }
 
-// RemoveTriggerIDs removes the "triggers" edge to the RuleTrigger entity by IDs.
-func (m *RuleMutation) RemoveTriggerIDs(ids ...int64) {
-	if m.removedtriggers == nil {
-		m.removedtriggers = make(map[int64]struct{})
+// RemoveVersionIDs removes the "versions" edge to the RuleVersion entity by IDs.
+func (m *RuleMutation) RemoveVersionIDs(ids ...int64) {
+	if m.removedversions == nil {
+		m.removedversions = make(map[int64]struct{})
 	}
 	for i := range ids {
-		delete(m.triggers, ids[i])
-		m.removedtriggers[ids[i]] = struct{}{}
+		delete(m.versions, ids[i])
+		m.removedversions[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedTriggers returns the removed IDs of the "triggers" edge to the RuleTrigger entity.
-func (m *RuleMutation) RemovedTriggersIDs() (ids []int64) {
-	for id := range m.removedtriggers {
+// RemovedVersions returns the removed IDs of the "versions" edge to the RuleVersion entity.
+func (m *RuleMutation) RemovedVersionsIDs() (ids []int64) {
+	for id := range m.removedversions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// TriggersIDs returns the "triggers" edge IDs in the mutation.
-func (m *RuleMutation) TriggersIDs() (ids []int64) {
-	for id := range m.triggers {
+// VersionsIDs returns the "versions" edge IDs in the mutation.
+func (m *RuleMutation) VersionsIDs() (ids []int64) {
+	for id := range m.versions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetTriggers resets all changes to the "triggers" edge.
-func (m *RuleMutation) ResetTriggers() {
-	m.triggers = nil
-	m.clearedtriggers = false
-	m.removedtriggers = nil
+// ResetVersions resets all changes to the "versions" edge.
+func (m *RuleMutation) ResetVersions() {
+	m.versions = nil
+	m.clearedversions = false
+	m.removedversions = nil
+}
+
+// ClearLiveVersion clears the "live_version" edge to the RuleVersion entity.
+func (m *RuleMutation) ClearLiveVersion() {
+	m.clearedlive_version = true
+	m.clearedFields[rule.FieldLiveVersionID] = struct{}{}
+}
+
+// LiveVersionCleared reports if the "live_version" edge to the RuleVersion entity was cleared.
+func (m *RuleMutation) LiveVersionCleared() bool {
+	return m.LiveVersionIDCleared() || m.clearedlive_version
+}
+
+// LiveVersionIDs returns the "live_version" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// LiveVersionID instead. It exists only for internal usage by the builders.
+func (m *RuleMutation) LiveVersionIDs() (ids []int64) {
+	if id := m.live_version; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetLiveVersion resets all changes to the "live_version" edge.
+func (m *RuleMutation) ResetLiveVersion() {
+	m.live_version = nil
+	m.clearedlive_version = false
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the RuleVersion entity.
+func (m *RuleMutation) ClearDraftVersion() {
+	m.cleareddraft_version = true
+	m.clearedFields[rule.FieldDraftVersionID] = struct{}{}
+}
+
+// DraftVersionCleared reports if the "draft_version" edge to the RuleVersion entity was cleared.
+func (m *RuleMutation) DraftVersionCleared() bool {
+	return m.DraftVersionIDCleared() || m.cleareddraft_version
+}
+
+// DraftVersionIDs returns the "draft_version" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DraftVersionID instead. It exists only for internal usage by the builders.
+func (m *RuleMutation) DraftVersionIDs() (ids []int64) {
+	if id := m.draft_version; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDraftVersion resets all changes to the "draft_version" edge.
+func (m *RuleMutation) ResetDraftVersion() {
+	m.draft_version = nil
+	m.cleareddraft_version = false
 }
 
 // AddFiringIDs adds the "firings" edge to the RuleFiring entity by ids.
@@ -36823,11 +37208,11 @@ func (m *RuleMutation) Fields() []string {
 	if m.activated_at != nil {
 		fields = append(fields, rule.FieldActivatedAt)
 	}
-	if m.condition != nil {
-		fields = append(fields, rule.FieldCondition)
+	if m.live_version != nil {
+		fields = append(fields, rule.FieldLiveVersionID)
 	}
-	if m.actions != nil {
-		fields = append(fields, rule.FieldActions)
+	if m.draft_version != nil {
+		fields = append(fields, rule.FieldDraftVersionID)
 	}
 	return fields
 }
@@ -36851,10 +37236,10 @@ func (m *RuleMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case rule.FieldActivatedAt:
 		return m.ActivatedAt()
-	case rule.FieldCondition:
-		return m.Condition()
-	case rule.FieldActions:
-		return m.Actions()
+	case rule.FieldLiveVersionID:
+		return m.LiveVersionID()
+	case rule.FieldDraftVersionID:
+		return m.DraftVersionID()
 	}
 	return nil, false
 }
@@ -36878,10 +37263,10 @@ func (m *RuleMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldStatus(ctx)
 	case rule.FieldActivatedAt:
 		return m.OldActivatedAt(ctx)
-	case rule.FieldCondition:
-		return m.OldCondition(ctx)
-	case rule.FieldActions:
-		return m.OldActions(ctx)
+	case rule.FieldLiveVersionID:
+		return m.OldLiveVersionID(ctx)
+	case rule.FieldDraftVersionID:
+		return m.OldDraftVersionID(ctx)
 	}
 	return nil, fmt.Errorf("unknown Rule field %s", name)
 }
@@ -36940,19 +37325,19 @@ func (m *RuleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetActivatedAt(v)
 		return nil
-	case rule.FieldCondition:
-		v, ok := value.(string)
+	case rule.FieldLiveVersionID:
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetCondition(v)
+		m.SetLiveVersionID(v)
 		return nil
-	case rule.FieldActions:
-		v, ok := value.(string)
+	case rule.FieldDraftVersionID:
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetActions(v)
+		m.SetDraftVersionID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)
@@ -36993,8 +37378,11 @@ func (m *RuleMutation) ClearedFields() []string {
 	if m.FieldCleared(rule.FieldActivatedAt) {
 		fields = append(fields, rule.FieldActivatedAt)
 	}
-	if m.FieldCleared(rule.FieldCondition) {
-		fields = append(fields, rule.FieldCondition)
+	if m.FieldCleared(rule.FieldLiveVersionID) {
+		fields = append(fields, rule.FieldLiveVersionID)
+	}
+	if m.FieldCleared(rule.FieldDraftVersionID) {
+		fields = append(fields, rule.FieldDraftVersionID)
 	}
 	return fields
 }
@@ -37016,8 +37404,11 @@ func (m *RuleMutation) ClearField(name string) error {
 	case rule.FieldActivatedAt:
 		m.ClearActivatedAt()
 		return nil
-	case rule.FieldCondition:
-		m.ClearCondition()
+	case rule.FieldLiveVersionID:
+		m.ClearLiveVersionID()
+		return nil
+	case rule.FieldDraftVersionID:
+		m.ClearDraftVersionID()
 		return nil
 	}
 	return fmt.Errorf("unknown Rule nullable field %s", name)
@@ -37048,11 +37439,11 @@ func (m *RuleMutation) ResetField(name string) error {
 	case rule.FieldActivatedAt:
 		m.ResetActivatedAt()
 		return nil
-	case rule.FieldCondition:
-		m.ResetCondition()
+	case rule.FieldLiveVersionID:
+		m.ResetLiveVersionID()
 		return nil
-	case rule.FieldActions:
-		m.ResetActions()
+	case rule.FieldDraftVersionID:
+		m.ResetDraftVersionID()
 		return nil
 	}
 	return fmt.Errorf("unknown Rule field %s", name)
@@ -37060,12 +37451,18 @@ func (m *RuleMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RuleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 5)
 	if m.workspace != nil {
 		edges = append(edges, rule.EdgeWorkspace)
 	}
-	if m.triggers != nil {
-		edges = append(edges, rule.EdgeTriggers)
+	if m.versions != nil {
+		edges = append(edges, rule.EdgeVersions)
+	}
+	if m.live_version != nil {
+		edges = append(edges, rule.EdgeLiveVersion)
+	}
+	if m.draft_version != nil {
+		edges = append(edges, rule.EdgeDraftVersion)
 	}
 	if m.firings != nil {
 		edges = append(edges, rule.EdgeFirings)
@@ -37081,12 +37478,20 @@ func (m *RuleMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
-	case rule.EdgeTriggers:
-		ids := make([]ent.Value, 0, len(m.triggers))
-		for id := range m.triggers {
+	case rule.EdgeVersions:
+		ids := make([]ent.Value, 0, len(m.versions))
+		for id := range m.versions {
 			ids = append(ids, id)
 		}
 		return ids
+	case rule.EdgeLiveVersion:
+		if id := m.live_version; id != nil {
+			return []ent.Value{*id}
+		}
+	case rule.EdgeDraftVersion:
+		if id := m.draft_version; id != nil {
+			return []ent.Value{*id}
+		}
 	case rule.EdgeFirings:
 		ids := make([]ent.Value, 0, len(m.firings))
 		for id := range m.firings {
@@ -37099,9 +37504,9 @@ func (m *RuleMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RuleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.removedtriggers != nil {
-		edges = append(edges, rule.EdgeTriggers)
+	edges := make([]string, 0, 5)
+	if m.removedversions != nil {
+		edges = append(edges, rule.EdgeVersions)
 	}
 	if m.removedfirings != nil {
 		edges = append(edges, rule.EdgeFirings)
@@ -37113,9 +37518,9 @@ func (m *RuleMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *RuleMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case rule.EdgeTriggers:
-		ids := make([]ent.Value, 0, len(m.removedtriggers))
-		for id := range m.removedtriggers {
+	case rule.EdgeVersions:
+		ids := make([]ent.Value, 0, len(m.removedversions))
+		for id := range m.removedversions {
 			ids = append(ids, id)
 		}
 		return ids
@@ -37131,12 +37536,18 @@ func (m *RuleMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RuleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 5)
 	if m.clearedworkspace {
 		edges = append(edges, rule.EdgeWorkspace)
 	}
-	if m.clearedtriggers {
-		edges = append(edges, rule.EdgeTriggers)
+	if m.clearedversions {
+		edges = append(edges, rule.EdgeVersions)
+	}
+	if m.clearedlive_version {
+		edges = append(edges, rule.EdgeLiveVersion)
+	}
+	if m.cleareddraft_version {
+		edges = append(edges, rule.EdgeDraftVersion)
 	}
 	if m.clearedfirings {
 		edges = append(edges, rule.EdgeFirings)
@@ -37150,8 +37561,12 @@ func (m *RuleMutation) EdgeCleared(name string) bool {
 	switch name {
 	case rule.EdgeWorkspace:
 		return m.clearedworkspace
-	case rule.EdgeTriggers:
-		return m.clearedtriggers
+	case rule.EdgeVersions:
+		return m.clearedversions
+	case rule.EdgeLiveVersion:
+		return m.clearedlive_version
+	case rule.EdgeDraftVersion:
+		return m.cleareddraft_version
 	case rule.EdgeFirings:
 		return m.clearedfirings
 	}
@@ -37165,6 +37580,12 @@ func (m *RuleMutation) ClearEdge(name string) error {
 	case rule.EdgeWorkspace:
 		m.ClearWorkspace()
 		return nil
+	case rule.EdgeLiveVersion:
+		m.ClearLiveVersion()
+		return nil
+	case rule.EdgeDraftVersion:
+		m.ClearDraftVersion()
+		return nil
 	}
 	return fmt.Errorf("unknown Rule unique edge %s", name)
 }
@@ -37176,8 +37597,14 @@ func (m *RuleMutation) ResetEdge(name string) error {
 	case rule.EdgeWorkspace:
 		m.ResetWorkspace()
 		return nil
-	case rule.EdgeTriggers:
-		m.ResetTriggers()
+	case rule.EdgeVersions:
+		m.ResetVersions()
+		return nil
+	case rule.EdgeLiveVersion:
+		m.ResetLiveVersion()
+		return nil
+	case rule.EdgeDraftVersion:
+		m.ResetDraftVersion()
 		return nil
 	case rule.EdgeFirings:
 		m.ResetFirings()
@@ -37196,7 +37623,6 @@ type RuleFiringMutation struct {
 	updated_at       *time.Time
 	action           *string
 	source_id        *string
-	actions          *string
 	properties       *string
 	results          *string
 	completed_at     *time.Time
@@ -37207,6 +37633,8 @@ type RuleFiringMutation struct {
 	clearedrule      bool
 	contact          *int64
 	clearedcontact   bool
+	version          *int64
+	clearedversion   bool
 	done             bool
 	oldValue         func(context.Context) (*RuleFiring, error)
 	predicates       []predicate.RuleFiring
@@ -37568,40 +37996,53 @@ func (m *RuleFiringMutation) ResetSourceID() {
 	m.source_id = nil
 }
 
-// SetActions sets the "actions" field.
-func (m *RuleFiringMutation) SetActions(s string) {
-	m.actions = &s
+// SetVersionID sets the "version_id" field.
+func (m *RuleFiringMutation) SetVersionID(i int64) {
+	m.version = &i
 }
 
-// Actions returns the value of the "actions" field in the mutation.
-func (m *RuleFiringMutation) Actions() (r string, exists bool) {
-	v := m.actions
+// VersionID returns the value of the "version_id" field in the mutation.
+func (m *RuleFiringMutation) VersionID() (r int64, exists bool) {
+	v := m.version
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldActions returns the old "actions" field's value of the RuleFiring entity.
+// OldVersionID returns the old "version_id" field's value of the RuleFiring entity.
 // If the RuleFiring object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleFiringMutation) OldActions(ctx context.Context) (v string, err error) {
+func (m *RuleFiringMutation) OldVersionID(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldActions is only allowed on UpdateOne operations")
+		return v, errors.New("OldVersionID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldActions requires an ID field in the mutation")
+		return v, errors.New("OldVersionID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldActions: %w", err)
+		return v, fmt.Errorf("querying old value for OldVersionID: %w", err)
 	}
-	return oldValue.Actions, nil
+	return oldValue.VersionID, nil
 }
 
-// ResetActions resets all changes to the "actions" field.
-func (m *RuleFiringMutation) ResetActions() {
-	m.actions = nil
+// ClearVersionID clears the value of the "version_id" field.
+func (m *RuleFiringMutation) ClearVersionID() {
+	m.version = nil
+	m.clearedFields[rulefiring.FieldVersionID] = struct{}{}
+}
+
+// VersionIDCleared returns if the "version_id" field was cleared in this mutation.
+func (m *RuleFiringMutation) VersionIDCleared() bool {
+	_, ok := m.clearedFields[rulefiring.FieldVersionID]
+	return ok
+}
+
+// ResetVersionID resets all changes to the "version_id" field.
+func (m *RuleFiringMutation) ResetVersionID() {
+	m.version = nil
+	delete(m.clearedFields, rulefiring.FieldVersionID)
 }
 
 // SetProperties sets the "properties" field.
@@ -37819,6 +38260,33 @@ func (m *RuleFiringMutation) ResetContact() {
 	m.clearedcontact = false
 }
 
+// ClearVersion clears the "version" edge to the RuleVersion entity.
+func (m *RuleFiringMutation) ClearVersion() {
+	m.clearedversion = true
+	m.clearedFields[rulefiring.FieldVersionID] = struct{}{}
+}
+
+// VersionCleared reports if the "version" edge to the RuleVersion entity was cleared.
+func (m *RuleFiringMutation) VersionCleared() bool {
+	return m.VersionIDCleared() || m.clearedversion
+}
+
+// VersionIDs returns the "version" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// VersionID instead. It exists only for internal usage by the builders.
+func (m *RuleFiringMutation) VersionIDs() (ids []int64) {
+	if id := m.version; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetVersion resets all changes to the "version" edge.
+func (m *RuleFiringMutation) ResetVersion() {
+	m.version = nil
+	m.clearedversion = false
+}
+
 // Where appends a list predicates to the RuleFiringMutation builder.
 func (m *RuleFiringMutation) Where(ps ...predicate.RuleFiring) {
 	m.predicates = append(m.predicates, ps...)
@@ -37875,8 +38343,8 @@ func (m *RuleFiringMutation) Fields() []string {
 	if m.source_id != nil {
 		fields = append(fields, rulefiring.FieldSourceID)
 	}
-	if m.actions != nil {
-		fields = append(fields, rulefiring.FieldActions)
+	if m.version != nil {
+		fields = append(fields, rulefiring.FieldVersionID)
 	}
 	if m.properties != nil {
 		fields = append(fields, rulefiring.FieldProperties)
@@ -37909,8 +38377,8 @@ func (m *RuleFiringMutation) Field(name string) (ent.Value, bool) {
 		return m.Action()
 	case rulefiring.FieldSourceID:
 		return m.SourceID()
-	case rulefiring.FieldActions:
-		return m.Actions()
+	case rulefiring.FieldVersionID:
+		return m.VersionID()
 	case rulefiring.FieldProperties:
 		return m.Properties()
 	case rulefiring.FieldResults:
@@ -37940,8 +38408,8 @@ func (m *RuleFiringMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldAction(ctx)
 	case rulefiring.FieldSourceID:
 		return m.OldSourceID(ctx)
-	case rulefiring.FieldActions:
-		return m.OldActions(ctx)
+	case rulefiring.FieldVersionID:
+		return m.OldVersionID(ctx)
 	case rulefiring.FieldProperties:
 		return m.OldProperties(ctx)
 	case rulefiring.FieldResults:
@@ -38006,12 +38474,12 @@ func (m *RuleFiringMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSourceID(v)
 		return nil
-	case rulefiring.FieldActions:
-		v, ok := value.(string)
+	case rulefiring.FieldVersionID:
+		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetActions(v)
+		m.SetVersionID(v)
 		return nil
 	case rulefiring.FieldProperties:
 		v, ok := value.(string)
@@ -38067,6 +38535,9 @@ func (m *RuleFiringMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *RuleFiringMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(rulefiring.FieldVersionID) {
+		fields = append(fields, rulefiring.FieldVersionID)
+	}
 	if m.FieldCleared(rulefiring.FieldProperties) {
 		fields = append(fields, rulefiring.FieldProperties)
 	}
@@ -38087,6 +38558,9 @@ func (m *RuleFiringMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *RuleFiringMutation) ClearField(name string) error {
 	switch name {
+	case rulefiring.FieldVersionID:
+		m.ClearVersionID()
+		return nil
 	case rulefiring.FieldProperties:
 		m.ClearProperties()
 		return nil
@@ -38122,8 +38596,8 @@ func (m *RuleFiringMutation) ResetField(name string) error {
 	case rulefiring.FieldSourceID:
 		m.ResetSourceID()
 		return nil
-	case rulefiring.FieldActions:
-		m.ResetActions()
+	case rulefiring.FieldVersionID:
+		m.ResetVersionID()
 		return nil
 	case rulefiring.FieldProperties:
 		m.ResetProperties()
@@ -38140,7 +38614,7 @@ func (m *RuleFiringMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *RuleFiringMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.workspace != nil {
 		edges = append(edges, rulefiring.EdgeWorkspace)
 	}
@@ -38149,6 +38623,9 @@ func (m *RuleFiringMutation) AddedEdges() []string {
 	}
 	if m.contact != nil {
 		edges = append(edges, rulefiring.EdgeContact)
+	}
+	if m.version != nil {
+		edges = append(edges, rulefiring.EdgeVersion)
 	}
 	return edges
 }
@@ -38169,13 +38646,17 @@ func (m *RuleFiringMutation) AddedIDs(name string) []ent.Value {
 		if id := m.contact; id != nil {
 			return []ent.Value{*id}
 		}
+	case rulefiring.EdgeVersion:
+		if id := m.version; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RuleFiringMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	return edges
 }
 
@@ -38187,7 +38668,7 @@ func (m *RuleFiringMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *RuleFiringMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedworkspace {
 		edges = append(edges, rulefiring.EdgeWorkspace)
 	}
@@ -38196,6 +38677,9 @@ func (m *RuleFiringMutation) ClearedEdges() []string {
 	}
 	if m.clearedcontact {
 		edges = append(edges, rulefiring.EdgeContact)
+	}
+	if m.clearedversion {
+		edges = append(edges, rulefiring.EdgeVersion)
 	}
 	return edges
 }
@@ -38210,6 +38694,8 @@ func (m *RuleFiringMutation) EdgeCleared(name string) bool {
 		return m.clearedrule
 	case rulefiring.EdgeContact:
 		return m.clearedcontact
+	case rulefiring.EdgeVersion:
+		return m.clearedversion
 	}
 	return false
 }
@@ -38226,6 +38712,9 @@ func (m *RuleFiringMutation) ClearEdge(name string) error {
 		return nil
 	case rulefiring.EdgeContact:
 		m.ClearContact()
+		return nil
+	case rulefiring.EdgeVersion:
+		m.ClearVersion()
 		return nil
 	}
 	return fmt.Errorf("unknown RuleFiring unique edge %s", name)
@@ -38244,40 +38733,52 @@ func (m *RuleFiringMutation) ResetEdge(name string) error {
 	case rulefiring.EdgeContact:
 		m.ResetContact()
 		return nil
+	case rulefiring.EdgeVersion:
+		m.ResetVersion()
+		return nil
 	}
 	return fmt.Errorf("unknown RuleFiring edge %s", name)
 }
 
-// RuleTriggerMutation represents an operation that mutates the RuleTrigger nodes in the graph.
-type RuleTriggerMutation struct {
+// RuleVersionMutation represents an operation that mutates the RuleVersion nodes in the graph.
+type RuleVersionMutation struct {
 	config
 	op               Op
 	typ              string
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
-	action           *string
+	version          *int
+	addversion       *int
+	condition        *string
+	actions          *string
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
 	rule             *int64
 	clearedrule      bool
+	triggers         map[int64]struct{}
+	removedtriggers  map[int64]struct{}
+	clearedtriggers  bool
+	firings          map[int64]struct{}
+	removedfirings   map[int64]struct{}
+	clearedfirings   bool
 	done             bool
-	oldValue         func(context.Context) (*RuleTrigger, error)
-	predicates       []predicate.RuleTrigger
+	oldValue         func(context.Context) (*RuleVersion, error)
+	predicates       []predicate.RuleVersion
 }
 
-var _ ent.Mutation = (*RuleTriggerMutation)(nil)
+var _ ent.Mutation = (*RuleVersionMutation)(nil)
 
-// ruletriggerOption allows management of the mutation configuration using functional options.
-type ruletriggerOption func(*RuleTriggerMutation)
+// ruleversionOption allows management of the mutation configuration using functional options.
+type ruleversionOption func(*RuleVersionMutation)
 
-// newRuleTriggerMutation creates new mutation for the RuleTrigger entity.
-func newRuleTriggerMutation(c config, op Op, opts ...ruletriggerOption) *RuleTriggerMutation {
-	m := &RuleTriggerMutation{
+// newRuleVersionMutation creates new mutation for the RuleVersion entity.
+func newRuleVersionMutation(c config, op Op, opts ...ruleversionOption) *RuleVersionMutation {
+	m := &RuleVersionMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeRuleTrigger,
+		typ:           TypeRuleVersion,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -38286,20 +38787,20 @@ func newRuleTriggerMutation(c config, op Op, opts ...ruletriggerOption) *RuleTri
 	return m
 }
 
-// withRuleTriggerID sets the ID field of the mutation.
-func withRuleTriggerID(id int64) ruletriggerOption {
-	return func(m *RuleTriggerMutation) {
+// withRuleVersionID sets the ID field of the mutation.
+func withRuleVersionID(id int64) ruleversionOption {
+	return func(m *RuleVersionMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *RuleTrigger
+			value *RuleVersion
 		)
-		m.oldValue = func(ctx context.Context) (*RuleTrigger, error) {
+		m.oldValue = func(ctx context.Context) (*RuleVersion, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().RuleTrigger.Get(ctx, id)
+					value, err = m.Client().RuleVersion.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -38308,10 +38809,10 @@ func withRuleTriggerID(id int64) ruletriggerOption {
 	}
 }
 
-// withRuleTrigger sets the old RuleTrigger of the mutation.
-func withRuleTrigger(node *RuleTrigger) ruletriggerOption {
-	return func(m *RuleTriggerMutation) {
-		m.oldValue = func(context.Context) (*RuleTrigger, error) {
+// withRuleVersion sets the old RuleVersion of the mutation.
+func withRuleVersion(node *RuleVersion) ruleversionOption {
+	return func(m *RuleVersionMutation) {
+		m.oldValue = func(context.Context) (*RuleVersion, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -38320,7 +38821,7 @@ func withRuleTrigger(node *RuleTrigger) ruletriggerOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m RuleTriggerMutation) Client() *Client {
+func (m RuleVersionMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -38328,7 +38829,7 @@ func (m RuleTriggerMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m RuleTriggerMutation) Tx() (*Tx, error) {
+func (m RuleVersionMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -38338,14 +38839,14 @@ func (m RuleTriggerMutation) Tx() (*Tx, error) {
 }
 
 // SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of RuleTrigger entities.
-func (m *RuleTriggerMutation) SetID(id int64) {
+// operation is only accepted on creation of RuleVersion entities.
+func (m *RuleVersionMutation) SetID(id int64) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *RuleTriggerMutation) ID() (id int64, exists bool) {
+func (m *RuleVersionMutation) ID() (id int64, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -38356,7 +38857,7 @@ func (m *RuleTriggerMutation) ID() (id int64, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *RuleTriggerMutation) IDs(ctx context.Context) ([]int64, error) {
+func (m *RuleVersionMutation) IDs(ctx context.Context) ([]int64, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -38365,19 +38866,19 @@ func (m *RuleTriggerMutation) IDs(ctx context.Context) ([]int64, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().RuleTrigger.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().RuleVersion.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (m *RuleTriggerMutation) SetCreatedAt(t time.Time) {
+func (m *RuleVersionMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
 }
 
 // CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *RuleTriggerMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *RuleVersionMutation) CreatedAt() (r time.Time, exists bool) {
 	v := m.created_at
 	if v == nil {
 		return
@@ -38385,10 +38886,10 @@ func (m *RuleTriggerMutation) CreatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the RuleTrigger entity.
-// If the RuleTrigger object wasn't provided to the builder, the object is fetched from the database.
+// OldCreatedAt returns the old "created_at" field's value of the RuleVersion entity.
+// If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleTriggerMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *RuleVersionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
@@ -38403,17 +38904,17 @@ func (m *RuleTriggerMutation) OldCreatedAt(ctx context.Context) (v time.Time, er
 }
 
 // ResetCreatedAt resets all changes to the "created_at" field.
-func (m *RuleTriggerMutation) ResetCreatedAt() {
+func (m *RuleVersionMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (m *RuleTriggerMutation) SetUpdatedAt(t time.Time) {
+func (m *RuleVersionMutation) SetUpdatedAt(t time.Time) {
 	m.updated_at = &t
 }
 
 // UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *RuleTriggerMutation) UpdatedAt() (r time.Time, exists bool) {
+func (m *RuleVersionMutation) UpdatedAt() (r time.Time, exists bool) {
 	v := m.updated_at
 	if v == nil {
 		return
@@ -38421,10 +38922,10 @@ func (m *RuleTriggerMutation) UpdatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldUpdatedAt returns the old "updated_at" field's value of the RuleTrigger entity.
-// If the RuleTrigger object wasn't provided to the builder, the object is fetched from the database.
+// OldUpdatedAt returns the old "updated_at" field's value of the RuleVersion entity.
+// If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleTriggerMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *RuleVersionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
 	}
@@ -38439,17 +38940,17 @@ func (m *RuleTriggerMutation) OldUpdatedAt(ctx context.Context) (v time.Time, er
 }
 
 // ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *RuleTriggerMutation) ResetUpdatedAt() {
+func (m *RuleVersionMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
 // SetWorkspaceID sets the "workspace_id" field.
-func (m *RuleTriggerMutation) SetWorkspaceID(i int64) {
+func (m *RuleVersionMutation) SetWorkspaceID(i int64) {
 	m.workspace = &i
 }
 
 // WorkspaceID returns the value of the "workspace_id" field in the mutation.
-func (m *RuleTriggerMutation) WorkspaceID() (r int64, exists bool) {
+func (m *RuleVersionMutation) WorkspaceID() (r int64, exists bool) {
 	v := m.workspace
 	if v == nil {
 		return
@@ -38457,10 +38958,10 @@ func (m *RuleTriggerMutation) WorkspaceID() (r int64, exists bool) {
 	return *v, true
 }
 
-// OldWorkspaceID returns the old "workspace_id" field's value of the RuleTrigger entity.
-// If the RuleTrigger object wasn't provided to the builder, the object is fetched from the database.
+// OldWorkspaceID returns the old "workspace_id" field's value of the RuleVersion entity.
+// If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleTriggerMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+func (m *RuleVersionMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
 	}
@@ -38475,17 +38976,17 @@ func (m *RuleTriggerMutation) OldWorkspaceID(ctx context.Context) (v int64, err 
 }
 
 // ResetWorkspaceID resets all changes to the "workspace_id" field.
-func (m *RuleTriggerMutation) ResetWorkspaceID() {
+func (m *RuleVersionMutation) ResetWorkspaceID() {
 	m.workspace = nil
 }
 
 // SetRuleID sets the "rule_id" field.
-func (m *RuleTriggerMutation) SetRuleID(i int64) {
+func (m *RuleVersionMutation) SetRuleID(i int64) {
 	m.rule = &i
 }
 
 // RuleID returns the value of the "rule_id" field in the mutation.
-func (m *RuleTriggerMutation) RuleID() (r int64, exists bool) {
+func (m *RuleVersionMutation) RuleID() (r int64, exists bool) {
 	v := m.rule
 	if v == nil {
 		return
@@ -38493,10 +38994,10 @@ func (m *RuleTriggerMutation) RuleID() (r int64, exists bool) {
 	return *v, true
 }
 
-// OldRuleID returns the old "rule_id" field's value of the RuleTrigger entity.
-// If the RuleTrigger object wasn't provided to the builder, the object is fetched from the database.
+// OldRuleID returns the old "rule_id" field's value of the RuleVersion entity.
+// If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleTriggerMutation) OldRuleID(ctx context.Context) (v int64, err error) {
+func (m *RuleVersionMutation) OldRuleID(ctx context.Context) (v int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRuleID is only allowed on UpdateOne operations")
 	}
@@ -38511,17 +39012,990 @@ func (m *RuleTriggerMutation) OldRuleID(ctx context.Context) (v int64, err error
 }
 
 // ResetRuleID resets all changes to the "rule_id" field.
-func (m *RuleTriggerMutation) ResetRuleID() {
+func (m *RuleVersionMutation) ResetRuleID() {
 	m.rule = nil
 }
 
+// SetVersion sets the "version" field.
+func (m *RuleVersionMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the value of the "version" field in the mutation.
+func (m *RuleVersionMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old "version" field's value of the RuleVersion entity.
+// If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleVersionMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to the "version" field.
+func (m *RuleVersionMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the "version" field in this mutation.
+func (m *RuleVersionMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion resets all changes to the "version" field.
+func (m *RuleVersionMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
+}
+
+// SetCondition sets the "condition" field.
+func (m *RuleVersionMutation) SetCondition(s string) {
+	m.condition = &s
+}
+
+// Condition returns the value of the "condition" field in the mutation.
+func (m *RuleVersionMutation) Condition() (r string, exists bool) {
+	v := m.condition
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCondition returns the old "condition" field's value of the RuleVersion entity.
+// If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleVersionMutation) OldCondition(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCondition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCondition: %w", err)
+	}
+	return oldValue.Condition, nil
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (m *RuleVersionMutation) ClearCondition() {
+	m.condition = nil
+	m.clearedFields[ruleversion.FieldCondition] = struct{}{}
+}
+
+// ConditionCleared returns if the "condition" field was cleared in this mutation.
+func (m *RuleVersionMutation) ConditionCleared() bool {
+	_, ok := m.clearedFields[ruleversion.FieldCondition]
+	return ok
+}
+
+// ResetCondition resets all changes to the "condition" field.
+func (m *RuleVersionMutation) ResetCondition() {
+	m.condition = nil
+	delete(m.clearedFields, ruleversion.FieldCondition)
+}
+
+// SetActions sets the "actions" field.
+func (m *RuleVersionMutation) SetActions(s string) {
+	m.actions = &s
+}
+
+// Actions returns the value of the "actions" field in the mutation.
+func (m *RuleVersionMutation) Actions() (r string, exists bool) {
+	v := m.actions
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActions returns the old "actions" field's value of the RuleVersion entity.
+// If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleVersionMutation) OldActions(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActions is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActions requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActions: %w", err)
+	}
+	return oldValue.Actions, nil
+}
+
+// ResetActions resets all changes to the "actions" field.
+func (m *RuleVersionMutation) ResetActions() {
+	m.actions = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *RuleVersionMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[ruleversion.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *RuleVersionMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *RuleVersionMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *RuleVersionMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearRule clears the "rule" edge to the Rule entity.
+func (m *RuleVersionMutation) ClearRule() {
+	m.clearedrule = true
+	m.clearedFields[ruleversion.FieldRuleID] = struct{}{}
+}
+
+// RuleCleared reports if the "rule" edge to the Rule entity was cleared.
+func (m *RuleVersionMutation) RuleCleared() bool {
+	return m.clearedrule
+}
+
+// RuleIDs returns the "rule" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RuleID instead. It exists only for internal usage by the builders.
+func (m *RuleVersionMutation) RuleIDs() (ids []int64) {
+	if id := m.rule; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRule resets all changes to the "rule" edge.
+func (m *RuleVersionMutation) ResetRule() {
+	m.rule = nil
+	m.clearedrule = false
+}
+
+// AddTriggerIDs adds the "triggers" edge to the RuleVersionTrigger entity by ids.
+func (m *RuleVersionMutation) AddTriggerIDs(ids ...int64) {
+	if m.triggers == nil {
+		m.triggers = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.triggers[ids[i]] = struct{}{}
+	}
+}
+
+// ClearTriggers clears the "triggers" edge to the RuleVersionTrigger entity.
+func (m *RuleVersionMutation) ClearTriggers() {
+	m.clearedtriggers = true
+}
+
+// TriggersCleared reports if the "triggers" edge to the RuleVersionTrigger entity was cleared.
+func (m *RuleVersionMutation) TriggersCleared() bool {
+	return m.clearedtriggers
+}
+
+// RemoveTriggerIDs removes the "triggers" edge to the RuleVersionTrigger entity by IDs.
+func (m *RuleVersionMutation) RemoveTriggerIDs(ids ...int64) {
+	if m.removedtriggers == nil {
+		m.removedtriggers = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.triggers, ids[i])
+		m.removedtriggers[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedTriggers returns the removed IDs of the "triggers" edge to the RuleVersionTrigger entity.
+func (m *RuleVersionMutation) RemovedTriggersIDs() (ids []int64) {
+	for id := range m.removedtriggers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// TriggersIDs returns the "triggers" edge IDs in the mutation.
+func (m *RuleVersionMutation) TriggersIDs() (ids []int64) {
+	for id := range m.triggers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetTriggers resets all changes to the "triggers" edge.
+func (m *RuleVersionMutation) ResetTriggers() {
+	m.triggers = nil
+	m.clearedtriggers = false
+	m.removedtriggers = nil
+}
+
+// AddFiringIDs adds the "firings" edge to the RuleFiring entity by ids.
+func (m *RuleVersionMutation) AddFiringIDs(ids ...int64) {
+	if m.firings == nil {
+		m.firings = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.firings[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFirings clears the "firings" edge to the RuleFiring entity.
+func (m *RuleVersionMutation) ClearFirings() {
+	m.clearedfirings = true
+}
+
+// FiringsCleared reports if the "firings" edge to the RuleFiring entity was cleared.
+func (m *RuleVersionMutation) FiringsCleared() bool {
+	return m.clearedfirings
+}
+
+// RemoveFiringIDs removes the "firings" edge to the RuleFiring entity by IDs.
+func (m *RuleVersionMutation) RemoveFiringIDs(ids ...int64) {
+	if m.removedfirings == nil {
+		m.removedfirings = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.firings, ids[i])
+		m.removedfirings[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFirings returns the removed IDs of the "firings" edge to the RuleFiring entity.
+func (m *RuleVersionMutation) RemovedFiringsIDs() (ids []int64) {
+	for id := range m.removedfirings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FiringsIDs returns the "firings" edge IDs in the mutation.
+func (m *RuleVersionMutation) FiringsIDs() (ids []int64) {
+	for id := range m.firings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFirings resets all changes to the "firings" edge.
+func (m *RuleVersionMutation) ResetFirings() {
+	m.firings = nil
+	m.clearedfirings = false
+	m.removedfirings = nil
+}
+
+// Where appends a list predicates to the RuleVersionMutation builder.
+func (m *RuleVersionMutation) Where(ps ...predicate.RuleVersion) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RuleVersionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RuleVersionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RuleVersion, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RuleVersionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RuleVersionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (RuleVersion).
+func (m *RuleVersionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RuleVersionMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, ruleversion.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, ruleversion.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, ruleversion.FieldWorkspaceID)
+	}
+	if m.rule != nil {
+		fields = append(fields, ruleversion.FieldRuleID)
+	}
+	if m.version != nil {
+		fields = append(fields, ruleversion.FieldVersion)
+	}
+	if m.condition != nil {
+		fields = append(fields, ruleversion.FieldCondition)
+	}
+	if m.actions != nil {
+		fields = append(fields, ruleversion.FieldActions)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RuleVersionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case ruleversion.FieldCreatedAt:
+		return m.CreatedAt()
+	case ruleversion.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case ruleversion.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case ruleversion.FieldRuleID:
+		return m.RuleID()
+	case ruleversion.FieldVersion:
+		return m.Version()
+	case ruleversion.FieldCondition:
+		return m.Condition()
+	case ruleversion.FieldActions:
+		return m.Actions()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RuleVersionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case ruleversion.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case ruleversion.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case ruleversion.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case ruleversion.FieldRuleID:
+		return m.OldRuleID(ctx)
+	case ruleversion.FieldVersion:
+		return m.OldVersion(ctx)
+	case ruleversion.FieldCondition:
+		return m.OldCondition(ctx)
+	case ruleversion.FieldActions:
+		return m.OldActions(ctx)
+	}
+	return nil, fmt.Errorf("unknown RuleVersion field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RuleVersionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case ruleversion.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case ruleversion.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case ruleversion.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case ruleversion.FieldRuleID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRuleID(v)
+		return nil
+	case ruleversion.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	case ruleversion.FieldCondition:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCondition(v)
+		return nil
+	case ruleversion.FieldActions:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActions(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RuleVersion field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RuleVersionMutation) AddedFields() []string {
+	var fields []string
+	if m.addversion != nil {
+		fields = append(fields, ruleversion.FieldVersion)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RuleVersionMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case ruleversion.FieldVersion:
+		return m.AddedVersion()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RuleVersionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case ruleversion.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RuleVersion numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RuleVersionMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(ruleversion.FieldCondition) {
+		fields = append(fields, ruleversion.FieldCondition)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RuleVersionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RuleVersionMutation) ClearField(name string) error {
+	switch name {
+	case ruleversion.FieldCondition:
+		m.ClearCondition()
+		return nil
+	}
+	return fmt.Errorf("unknown RuleVersion nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RuleVersionMutation) ResetField(name string) error {
+	switch name {
+	case ruleversion.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case ruleversion.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case ruleversion.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case ruleversion.FieldRuleID:
+		m.ResetRuleID()
+		return nil
+	case ruleversion.FieldVersion:
+		m.ResetVersion()
+		return nil
+	case ruleversion.FieldCondition:
+		m.ResetCondition()
+		return nil
+	case ruleversion.FieldActions:
+		m.ResetActions()
+		return nil
+	}
+	return fmt.Errorf("unknown RuleVersion field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RuleVersionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.workspace != nil {
+		edges = append(edges, ruleversion.EdgeWorkspace)
+	}
+	if m.rule != nil {
+		edges = append(edges, ruleversion.EdgeRule)
+	}
+	if m.triggers != nil {
+		edges = append(edges, ruleversion.EdgeTriggers)
+	}
+	if m.firings != nil {
+		edges = append(edges, ruleversion.EdgeFirings)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RuleVersionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case ruleversion.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case ruleversion.EdgeRule:
+		if id := m.rule; id != nil {
+			return []ent.Value{*id}
+		}
+	case ruleversion.EdgeTriggers:
+		ids := make([]ent.Value, 0, len(m.triggers))
+		for id := range m.triggers {
+			ids = append(ids, id)
+		}
+		return ids
+	case ruleversion.EdgeFirings:
+		ids := make([]ent.Value, 0, len(m.firings))
+		for id := range m.firings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RuleVersionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.removedtriggers != nil {
+		edges = append(edges, ruleversion.EdgeTriggers)
+	}
+	if m.removedfirings != nil {
+		edges = append(edges, ruleversion.EdgeFirings)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RuleVersionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case ruleversion.EdgeTriggers:
+		ids := make([]ent.Value, 0, len(m.removedtriggers))
+		for id := range m.removedtriggers {
+			ids = append(ids, id)
+		}
+		return ids
+	case ruleversion.EdgeFirings:
+		ids := make([]ent.Value, 0, len(m.removedfirings))
+		for id := range m.removedfirings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RuleVersionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.clearedworkspace {
+		edges = append(edges, ruleversion.EdgeWorkspace)
+	}
+	if m.clearedrule {
+		edges = append(edges, ruleversion.EdgeRule)
+	}
+	if m.clearedtriggers {
+		edges = append(edges, ruleversion.EdgeTriggers)
+	}
+	if m.clearedfirings {
+		edges = append(edges, ruleversion.EdgeFirings)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RuleVersionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case ruleversion.EdgeWorkspace:
+		return m.clearedworkspace
+	case ruleversion.EdgeRule:
+		return m.clearedrule
+	case ruleversion.EdgeTriggers:
+		return m.clearedtriggers
+	case ruleversion.EdgeFirings:
+		return m.clearedfirings
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RuleVersionMutation) ClearEdge(name string) error {
+	switch name {
+	case ruleversion.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case ruleversion.EdgeRule:
+		m.ClearRule()
+		return nil
+	}
+	return fmt.Errorf("unknown RuleVersion unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RuleVersionMutation) ResetEdge(name string) error {
+	switch name {
+	case ruleversion.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case ruleversion.EdgeRule:
+		m.ResetRule()
+		return nil
+	case ruleversion.EdgeTriggers:
+		m.ResetTriggers()
+		return nil
+	case ruleversion.EdgeFirings:
+		m.ResetFirings()
+		return nil
+	}
+	return fmt.Errorf("unknown RuleVersion edge %s", name)
+}
+
+// RuleVersionTriggerMutation represents an operation that mutates the RuleVersionTrigger nodes in the graph.
+type RuleVersionTriggerMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	action           *string
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	version          *int64
+	clearedversion   bool
+	done             bool
+	oldValue         func(context.Context) (*RuleVersionTrigger, error)
+	predicates       []predicate.RuleVersionTrigger
+}
+
+var _ ent.Mutation = (*RuleVersionTriggerMutation)(nil)
+
+// ruleversiontriggerOption allows management of the mutation configuration using functional options.
+type ruleversiontriggerOption func(*RuleVersionTriggerMutation)
+
+// newRuleVersionTriggerMutation creates new mutation for the RuleVersionTrigger entity.
+func newRuleVersionTriggerMutation(c config, op Op, opts ...ruleversiontriggerOption) *RuleVersionTriggerMutation {
+	m := &RuleVersionTriggerMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRuleVersionTrigger,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRuleVersionTriggerID sets the ID field of the mutation.
+func withRuleVersionTriggerID(id int64) ruleversiontriggerOption {
+	return func(m *RuleVersionTriggerMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RuleVersionTrigger
+		)
+		m.oldValue = func(ctx context.Context) (*RuleVersionTrigger, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RuleVersionTrigger.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRuleVersionTrigger sets the old RuleVersionTrigger of the mutation.
+func withRuleVersionTrigger(node *RuleVersionTrigger) ruleversiontriggerOption {
+	return func(m *RuleVersionTriggerMutation) {
+		m.oldValue = func(context.Context) (*RuleVersionTrigger, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RuleVersionTriggerMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RuleVersionTriggerMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of RuleVersionTrigger entities.
+func (m *RuleVersionTriggerMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RuleVersionTriggerMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RuleVersionTriggerMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().RuleVersionTrigger.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RuleVersionTriggerMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RuleVersionTriggerMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the RuleVersionTrigger entity.
+// If the RuleVersionTrigger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleVersionTriggerMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RuleVersionTriggerMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *RuleVersionTriggerMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *RuleVersionTriggerMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the RuleVersionTrigger entity.
+// If the RuleVersionTrigger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleVersionTriggerMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *RuleVersionTriggerMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *RuleVersionTriggerMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *RuleVersionTriggerMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the RuleVersionTrigger entity.
+// If the RuleVersionTrigger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleVersionTriggerMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *RuleVersionTriggerMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetVersionID sets the "version_id" field.
+func (m *RuleVersionTriggerMutation) SetVersionID(i int64) {
+	m.version = &i
+}
+
+// VersionID returns the value of the "version_id" field in the mutation.
+func (m *RuleVersionTriggerMutation) VersionID() (r int64, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersionID returns the old "version_id" field's value of the RuleVersionTrigger entity.
+// If the RuleVersionTrigger object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RuleVersionTriggerMutation) OldVersionID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVersionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVersionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersionID: %w", err)
+	}
+	return oldValue.VersionID, nil
+}
+
+// ResetVersionID resets all changes to the "version_id" field.
+func (m *RuleVersionTriggerMutation) ResetVersionID() {
+	m.version = nil
+}
+
 // SetAction sets the "action" field.
-func (m *RuleTriggerMutation) SetAction(s string) {
+func (m *RuleVersionTriggerMutation) SetAction(s string) {
 	m.action = &s
 }
 
 // Action returns the value of the "action" field in the mutation.
-func (m *RuleTriggerMutation) Action() (r string, exists bool) {
+func (m *RuleVersionTriggerMutation) Action() (r string, exists bool) {
 	v := m.action
 	if v == nil {
 		return
@@ -38529,10 +40003,10 @@ func (m *RuleTriggerMutation) Action() (r string, exists bool) {
 	return *v, true
 }
 
-// OldAction returns the old "action" field's value of the RuleTrigger entity.
-// If the RuleTrigger object wasn't provided to the builder, the object is fetched from the database.
+// OldAction returns the old "action" field's value of the RuleVersionTrigger entity.
+// If the RuleVersionTrigger object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleTriggerMutation) OldAction(ctx context.Context) (v string, err error) {
+func (m *RuleVersionTriggerMutation) OldAction(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAction is only allowed on UpdateOne operations")
 	}
@@ -38547,25 +40021,25 @@ func (m *RuleTriggerMutation) OldAction(ctx context.Context) (v string, err erro
 }
 
 // ResetAction resets all changes to the "action" field.
-func (m *RuleTriggerMutation) ResetAction() {
+func (m *RuleVersionTriggerMutation) ResetAction() {
 	m.action = nil
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
-func (m *RuleTriggerMutation) ClearWorkspace() {
+func (m *RuleVersionTriggerMutation) ClearWorkspace() {
 	m.clearedworkspace = true
-	m.clearedFields[ruletrigger.FieldWorkspaceID] = struct{}{}
+	m.clearedFields[ruleversiontrigger.FieldWorkspaceID] = struct{}{}
 }
 
 // WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
-func (m *RuleTriggerMutation) WorkspaceCleared() bool {
+func (m *RuleVersionTriggerMutation) WorkspaceCleared() bool {
 	return m.clearedworkspace
 }
 
 // WorkspaceIDs returns the "workspace" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // WorkspaceID instead. It exists only for internal usage by the builders.
-func (m *RuleTriggerMutation) WorkspaceIDs() (ids []int64) {
+func (m *RuleVersionTriggerMutation) WorkspaceIDs() (ids []int64) {
 	if id := m.workspace; id != nil {
 		ids = append(ids, *id)
 	}
@@ -38573,47 +40047,47 @@ func (m *RuleTriggerMutation) WorkspaceIDs() (ids []int64) {
 }
 
 // ResetWorkspace resets all changes to the "workspace" edge.
-func (m *RuleTriggerMutation) ResetWorkspace() {
+func (m *RuleVersionTriggerMutation) ResetWorkspace() {
 	m.workspace = nil
 	m.clearedworkspace = false
 }
 
-// ClearRule clears the "rule" edge to the Rule entity.
-func (m *RuleTriggerMutation) ClearRule() {
-	m.clearedrule = true
-	m.clearedFields[ruletrigger.FieldRuleID] = struct{}{}
+// ClearVersion clears the "version" edge to the RuleVersion entity.
+func (m *RuleVersionTriggerMutation) ClearVersion() {
+	m.clearedversion = true
+	m.clearedFields[ruleversiontrigger.FieldVersionID] = struct{}{}
 }
 
-// RuleCleared reports if the "rule" edge to the Rule entity was cleared.
-func (m *RuleTriggerMutation) RuleCleared() bool {
-	return m.clearedrule
+// VersionCleared reports if the "version" edge to the RuleVersion entity was cleared.
+func (m *RuleVersionTriggerMutation) VersionCleared() bool {
+	return m.clearedversion
 }
 
-// RuleIDs returns the "rule" edge IDs in the mutation.
+// VersionIDs returns the "version" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// RuleID instead. It exists only for internal usage by the builders.
-func (m *RuleTriggerMutation) RuleIDs() (ids []int64) {
-	if id := m.rule; id != nil {
+// VersionID instead. It exists only for internal usage by the builders.
+func (m *RuleVersionTriggerMutation) VersionIDs() (ids []int64) {
+	if id := m.version; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetRule resets all changes to the "rule" edge.
-func (m *RuleTriggerMutation) ResetRule() {
-	m.rule = nil
-	m.clearedrule = false
+// ResetVersion resets all changes to the "version" edge.
+func (m *RuleVersionTriggerMutation) ResetVersion() {
+	m.version = nil
+	m.clearedversion = false
 }
 
-// Where appends a list predicates to the RuleTriggerMutation builder.
-func (m *RuleTriggerMutation) Where(ps ...predicate.RuleTrigger) {
+// Where appends a list predicates to the RuleVersionTriggerMutation builder.
+func (m *RuleVersionTriggerMutation) Where(ps ...predicate.RuleVersionTrigger) {
 	m.predicates = append(m.predicates, ps...)
 }
 
-// WhereP appends storage-level predicates to the RuleTriggerMutation builder. Using this method,
+// WhereP appends storage-level predicates to the RuleVersionTriggerMutation builder. Using this method,
 // users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *RuleTriggerMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.RuleTrigger, len(ps))
+func (m *RuleVersionTriggerMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.RuleVersionTrigger, len(ps))
 	for i := range ps {
 		p[i] = ps[i]
 	}
@@ -38621,39 +40095,39 @@ func (m *RuleTriggerMutation) WhereP(ps ...func(*sql.Selector)) {
 }
 
 // Op returns the operation name.
-func (m *RuleTriggerMutation) Op() Op {
+func (m *RuleVersionTriggerMutation) Op() Op {
 	return m.op
 }
 
 // SetOp allows setting the mutation operation.
-func (m *RuleTriggerMutation) SetOp(op Op) {
+func (m *RuleVersionTriggerMutation) SetOp(op Op) {
 	m.op = op
 }
 
-// Type returns the node type of this mutation (RuleTrigger).
-func (m *RuleTriggerMutation) Type() string {
+// Type returns the node type of this mutation (RuleVersionTrigger).
+func (m *RuleVersionTriggerMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *RuleTriggerMutation) Fields() []string {
+func (m *RuleVersionTriggerMutation) Fields() []string {
 	fields := make([]string, 0, 5)
 	if m.created_at != nil {
-		fields = append(fields, ruletrigger.FieldCreatedAt)
+		fields = append(fields, ruleversiontrigger.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
-		fields = append(fields, ruletrigger.FieldUpdatedAt)
+		fields = append(fields, ruleversiontrigger.FieldUpdatedAt)
 	}
 	if m.workspace != nil {
-		fields = append(fields, ruletrigger.FieldWorkspaceID)
+		fields = append(fields, ruleversiontrigger.FieldWorkspaceID)
 	}
-	if m.rule != nil {
-		fields = append(fields, ruletrigger.FieldRuleID)
+	if m.version != nil {
+		fields = append(fields, ruleversiontrigger.FieldVersionID)
 	}
 	if m.action != nil {
-		fields = append(fields, ruletrigger.FieldAction)
+		fields = append(fields, ruleversiontrigger.FieldAction)
 	}
 	return fields
 }
@@ -38661,17 +40135,17 @@ func (m *RuleTriggerMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *RuleTriggerMutation) Field(name string) (ent.Value, bool) {
+func (m *RuleVersionTriggerMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case ruletrigger.FieldCreatedAt:
+	case ruleversiontrigger.FieldCreatedAt:
 		return m.CreatedAt()
-	case ruletrigger.FieldUpdatedAt:
+	case ruleversiontrigger.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case ruletrigger.FieldWorkspaceID:
+	case ruleversiontrigger.FieldWorkspaceID:
 		return m.WorkspaceID()
-	case ruletrigger.FieldRuleID:
-		return m.RuleID()
-	case ruletrigger.FieldAction:
+	case ruleversiontrigger.FieldVersionID:
+		return m.VersionID()
+	case ruleversiontrigger.FieldAction:
 		return m.Action()
 	}
 	return nil, false
@@ -38680,56 +40154,56 @@ func (m *RuleTriggerMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *RuleTriggerMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *RuleVersionTriggerMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case ruletrigger.FieldCreatedAt:
+	case ruleversiontrigger.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case ruletrigger.FieldUpdatedAt:
+	case ruleversiontrigger.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case ruletrigger.FieldWorkspaceID:
+	case ruleversiontrigger.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
-	case ruletrigger.FieldRuleID:
-		return m.OldRuleID(ctx)
-	case ruletrigger.FieldAction:
+	case ruleversiontrigger.FieldVersionID:
+		return m.OldVersionID(ctx)
+	case ruleversiontrigger.FieldAction:
 		return m.OldAction(ctx)
 	}
-	return nil, fmt.Errorf("unknown RuleTrigger field %s", name)
+	return nil, fmt.Errorf("unknown RuleVersionTrigger field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *RuleTriggerMutation) SetField(name string, value ent.Value) error {
+func (m *RuleVersionTriggerMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case ruletrigger.FieldCreatedAt:
+	case ruleversiontrigger.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
 		return nil
-	case ruletrigger.FieldUpdatedAt:
+	case ruleversiontrigger.FieldUpdatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case ruletrigger.FieldWorkspaceID:
+	case ruleversiontrigger.FieldWorkspaceID:
 		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetWorkspaceID(v)
 		return nil
-	case ruletrigger.FieldRuleID:
+	case ruleversiontrigger.FieldVersionID:
 		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetRuleID(v)
+		m.SetVersionID(v)
 		return nil
-	case ruletrigger.FieldAction:
+	case ruleversiontrigger.FieldAction:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
@@ -38737,12 +40211,12 @@ func (m *RuleTriggerMutation) SetField(name string, value ent.Value) error {
 		m.SetAction(v)
 		return nil
 	}
-	return fmt.Errorf("unknown RuleTrigger field %s", name)
+	return fmt.Errorf("unknown RuleVersionTrigger field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *RuleTriggerMutation) AddedFields() []string {
+func (m *RuleVersionTriggerMutation) AddedFields() []string {
 	var fields []string
 	return fields
 }
@@ -38750,7 +40224,7 @@ func (m *RuleTriggerMutation) AddedFields() []string {
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *RuleTriggerMutation) AddedField(name string) (ent.Value, bool) {
+func (m *RuleVersionTriggerMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	}
 	return nil, false
@@ -38759,76 +40233,76 @@ func (m *RuleTriggerMutation) AddedField(name string) (ent.Value, bool) {
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *RuleTriggerMutation) AddField(name string, value ent.Value) error {
+func (m *RuleVersionTriggerMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown RuleTrigger numeric field %s", name)
+	return fmt.Errorf("unknown RuleVersionTrigger numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *RuleTriggerMutation) ClearedFields() []string {
+func (m *RuleVersionTriggerMutation) ClearedFields() []string {
 	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *RuleTriggerMutation) FieldCleared(name string) bool {
+func (m *RuleVersionTriggerMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *RuleTriggerMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown RuleTrigger nullable field %s", name)
+func (m *RuleVersionTriggerMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown RuleVersionTrigger nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *RuleTriggerMutation) ResetField(name string) error {
+func (m *RuleVersionTriggerMutation) ResetField(name string) error {
 	switch name {
-	case ruletrigger.FieldCreatedAt:
+	case ruleversiontrigger.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
-	case ruletrigger.FieldUpdatedAt:
+	case ruleversiontrigger.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case ruletrigger.FieldWorkspaceID:
+	case ruleversiontrigger.FieldWorkspaceID:
 		m.ResetWorkspaceID()
 		return nil
-	case ruletrigger.FieldRuleID:
-		m.ResetRuleID()
+	case ruleversiontrigger.FieldVersionID:
+		m.ResetVersionID()
 		return nil
-	case ruletrigger.FieldAction:
+	case ruleversiontrigger.FieldAction:
 		m.ResetAction()
 		return nil
 	}
-	return fmt.Errorf("unknown RuleTrigger field %s", name)
+	return fmt.Errorf("unknown RuleVersionTrigger field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *RuleTriggerMutation) AddedEdges() []string {
+func (m *RuleVersionTriggerMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.workspace != nil {
-		edges = append(edges, ruletrigger.EdgeWorkspace)
+		edges = append(edges, ruleversiontrigger.EdgeWorkspace)
 	}
-	if m.rule != nil {
-		edges = append(edges, ruletrigger.EdgeRule)
+	if m.version != nil {
+		edges = append(edges, ruleversiontrigger.EdgeVersion)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *RuleTriggerMutation) AddedIDs(name string) []ent.Value {
+func (m *RuleVersionTriggerMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case ruletrigger.EdgeWorkspace:
+	case ruleversiontrigger.EdgeWorkspace:
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
-	case ruletrigger.EdgeRule:
-		if id := m.rule; id != nil {
+	case ruleversiontrigger.EdgeVersion:
+		if id := m.version; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -38836,67 +40310,67 @@ func (m *RuleTriggerMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *RuleTriggerMutation) RemovedEdges() []string {
+func (m *RuleVersionTriggerMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *RuleTriggerMutation) RemovedIDs(name string) []ent.Value {
+func (m *RuleVersionTriggerMutation) RemovedIDs(name string) []ent.Value {
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *RuleTriggerMutation) ClearedEdges() []string {
+func (m *RuleVersionTriggerMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.clearedworkspace {
-		edges = append(edges, ruletrigger.EdgeWorkspace)
+		edges = append(edges, ruleversiontrigger.EdgeWorkspace)
 	}
-	if m.clearedrule {
-		edges = append(edges, ruletrigger.EdgeRule)
+	if m.clearedversion {
+		edges = append(edges, ruleversiontrigger.EdgeVersion)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *RuleTriggerMutation) EdgeCleared(name string) bool {
+func (m *RuleVersionTriggerMutation) EdgeCleared(name string) bool {
 	switch name {
-	case ruletrigger.EdgeWorkspace:
+	case ruleversiontrigger.EdgeWorkspace:
 		return m.clearedworkspace
-	case ruletrigger.EdgeRule:
-		return m.clearedrule
+	case ruleversiontrigger.EdgeVersion:
+		return m.clearedversion
 	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *RuleTriggerMutation) ClearEdge(name string) error {
+func (m *RuleVersionTriggerMutation) ClearEdge(name string) error {
 	switch name {
-	case ruletrigger.EdgeWorkspace:
+	case ruleversiontrigger.EdgeWorkspace:
 		m.ClearWorkspace()
 		return nil
-	case ruletrigger.EdgeRule:
-		m.ClearRule()
+	case ruleversiontrigger.EdgeVersion:
+		m.ClearVersion()
 		return nil
 	}
-	return fmt.Errorf("unknown RuleTrigger unique edge %s", name)
+	return fmt.Errorf("unknown RuleVersionTrigger unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *RuleTriggerMutation) ResetEdge(name string) error {
+func (m *RuleVersionTriggerMutation) ResetEdge(name string) error {
 	switch name {
-	case ruletrigger.EdgeWorkspace:
+	case ruleversiontrigger.EdgeWorkspace:
 		m.ResetWorkspace()
 		return nil
-	case ruletrigger.EdgeRule:
-		m.ResetRule()
+	case ruleversiontrigger.EdgeVersion:
+		m.ResetVersion()
 		return nil
 	}
-	return fmt.Errorf("unknown RuleTrigger edge %s", name)
+	return fmt.Errorf("unknown RuleVersionTrigger edge %s", name)
 }
 
 // SchemaStateMutation represents an operation that mutates the SchemaState nodes in the graph.
@@ -52807,148 +54281,151 @@ func (m *WebhookEndpointMutation) ResetEdge(name string) error {
 // WorkspaceMutation represents an operation that mutates the Workspace nodes in the graph.
 type WorkspaceMutation struct {
 	config
-	op                          Op
-	typ                         string
-	id                          *int64
-	created_at                  *time.Time
-	updated_at                  *time.Time
-	discarded_at                *time.Time
-	name                        *string
-	public_id                   *string
-	collect_key                 *string
-	require_confirmed_opt_in    *bool
-	postal_address              *string
-	retention_days              *int
-	addretention_days           *int
-	timezone                    *string
-	reporting_currency          *string
-	attribution_window_days     *int
-	addattribution_window_days  *int
-	domain_join_enabled         *bool
-	second_factor_required_at   *time.Time
-	feed_position               *int64
-	addfeed_position            *int64
-	erased_at                   *time.Time
-	suspended_at                *time.Time
-	suspended_by_kind           *workspace.SuspendedByKind
-	suspended_by_id             *string
-	suspension_reason           *string
-	cleared_at                  *time.Time
-	abuse_exempt                *bool
-	abuse_warning_notified_at   *time.Time
-	abuse_freeze_notified_at    *time.Time
-	clearedFields               map[string]struct{}
-	contacts                    map[int64]struct{}
-	removedcontacts             map[int64]struct{}
-	clearedcontacts             bool
-	custom_fields               map[int64]struct{}
-	removedcustom_fields        map[int64]struct{}
-	clearedcustom_fields        bool
-	tags                        map[int64]struct{}
-	removedtags                 map[int64]struct{}
-	clearedtags                 bool
-	segments                    map[int64]struct{}
-	removedsegments             map[int64]struct{}
-	clearedsegments             bool
-	events                      map[int64]struct{}
-	removedevents               map[int64]struct{}
-	clearedevents               bool
-	orders                      map[int64]struct{}
-	removedorders               map[int64]struct{}
-	clearedorders               bool
-	order_movements             map[int64]struct{}
-	removedorder_movements      map[int64]struct{}
-	clearedorder_movements      bool
-	held_order_events           map[int64]struct{}
-	removedheld_order_events    map[int64]struct{}
-	clearedheld_order_events    bool
-	visitors                    map[int64]struct{}
-	removedvisitors             map[int64]struct{}
-	clearedvisitors             bool
-	api_tokens                  map[int64]struct{}
-	removedapi_tokens           map[int64]struct{}
-	clearedapi_tokens           bool
-	integrations                map[int64]struct{}
-	removedintegrations         map[int64]struct{}
-	clearedintegrations         bool
-	sending_domains             map[int64]struct{}
-	removedsending_domains      map[int64]struct{}
-	clearedsending_domains      bool
-	join_domains                map[int64]struct{}
-	removedjoin_domains         map[int64]struct{}
-	clearedjoin_domains         bool
-	send_limiters               map[int64]struct{}
-	removedsend_limiters        map[int64]struct{}
-	clearedsend_limiters        bool
-	holds                       map[int64]struct{}
-	removedholds                map[int64]struct{}
-	clearedholds                bool
-	broadcasts                  map[int64]struct{}
-	removedbroadcasts           map[int64]struct{}
-	clearedbroadcasts           bool
-	broadcast_recipients        map[int64]struct{}
-	removedbroadcast_recipients map[int64]struct{}
-	clearedbroadcast_recipients bool
-	email_templates             map[int64]struct{}
-	removedemail_templates      map[int64]struct{}
-	clearedemail_templates      bool
-	brand_kits                  map[int64]struct{}
-	removedbrand_kits           map[int64]struct{}
-	clearedbrand_kits           bool
-	automations                 map[int64]struct{}
-	removedautomations          map[int64]struct{}
-	clearedautomations          bool
-	automation_versions         map[int64]struct{}
-	removedautomation_versions  map[int64]struct{}
-	clearedautomation_versions  bool
-	automation_runs             map[int64]struct{}
-	removedautomation_runs      map[int64]struct{}
-	clearedautomation_runs      bool
-	rules                       map[int64]struct{}
-	removedrules                map[int64]struct{}
-	clearedrules                bool
-	rule_triggers               map[int64]struct{}
-	removedrule_triggers        map[int64]struct{}
-	clearedrule_triggers        bool
-	rule_firings                map[int64]struct{}
-	removedrule_firings         map[int64]struct{}
-	clearedrule_firings         bool
-	webhook_endpoints           map[int64]struct{}
-	removedwebhook_endpoints    map[int64]struct{}
-	clearedwebhook_endpoints    bool
-	suppressions                map[int64]struct{}
-	removedsuppressions         map[int64]struct{}
-	clearedsuppressions         bool
-	unsubscribes                map[int64]struct{}
-	removedunsubscribes         map[int64]struct{}
-	clearedunsubscribes         bool
-	confirmations               map[int64]struct{}
-	removedconfirmations        map[int64]struct{}
-	clearedconfirmations        bool
-	outbound_messages           map[int64]struct{}
-	removedoutbound_messages    map[int64]struct{}
-	clearedoutbound_messages    bool
-	captured_messages           map[int64]struct{}
-	removedcaptured_messages    map[int64]struct{}
-	clearedcaptured_messages    bool
-	memberships                 map[int64]struct{}
-	removedmemberships          map[int64]struct{}
-	clearedmemberships          bool
-	invitations                 map[int64]struct{}
-	removedinvitations          map[int64]struct{}
-	clearedinvitations          bool
-	audit_entries               map[int64]struct{}
-	removedaudit_entries        map[int64]struct{}
-	clearedaudit_entries        bool
-	erasures                    map[int64]struct{}
-	removederasures             map[int64]struct{}
-	clearederasures             bool
-	usages                      map[int64]struct{}
-	removedusages               map[int64]struct{}
-	clearedusages               bool
-	done                        bool
-	oldValue                    func(context.Context) (*Workspace, error)
-	predicates                  []predicate.Workspace
+	op                           Op
+	typ                          string
+	id                           *int64
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	discarded_at                 *time.Time
+	name                         *string
+	public_id                    *string
+	collect_key                  *string
+	require_confirmed_opt_in     *bool
+	postal_address               *string
+	retention_days               *int
+	addretention_days            *int
+	timezone                     *string
+	reporting_currency           *string
+	attribution_window_days      *int
+	addattribution_window_days   *int
+	domain_join_enabled          *bool
+	second_factor_required_at    *time.Time
+	feed_position                *int64
+	addfeed_position             *int64
+	erased_at                    *time.Time
+	suspended_at                 *time.Time
+	suspended_by_kind            *workspace.SuspendedByKind
+	suspended_by_id              *string
+	suspension_reason            *string
+	cleared_at                   *time.Time
+	abuse_exempt                 *bool
+	abuse_warning_notified_at    *time.Time
+	abuse_freeze_notified_at     *time.Time
+	clearedFields                map[string]struct{}
+	contacts                     map[int64]struct{}
+	removedcontacts              map[int64]struct{}
+	clearedcontacts              bool
+	custom_fields                map[int64]struct{}
+	removedcustom_fields         map[int64]struct{}
+	clearedcustom_fields         bool
+	tags                         map[int64]struct{}
+	removedtags                  map[int64]struct{}
+	clearedtags                  bool
+	segments                     map[int64]struct{}
+	removedsegments              map[int64]struct{}
+	clearedsegments              bool
+	events                       map[int64]struct{}
+	removedevents                map[int64]struct{}
+	clearedevents                bool
+	orders                       map[int64]struct{}
+	removedorders                map[int64]struct{}
+	clearedorders                bool
+	order_movements              map[int64]struct{}
+	removedorder_movements       map[int64]struct{}
+	clearedorder_movements       bool
+	held_order_events            map[int64]struct{}
+	removedheld_order_events     map[int64]struct{}
+	clearedheld_order_events     bool
+	visitors                     map[int64]struct{}
+	removedvisitors              map[int64]struct{}
+	clearedvisitors              bool
+	api_tokens                   map[int64]struct{}
+	removedapi_tokens            map[int64]struct{}
+	clearedapi_tokens            bool
+	integrations                 map[int64]struct{}
+	removedintegrations          map[int64]struct{}
+	clearedintegrations          bool
+	sending_domains              map[int64]struct{}
+	removedsending_domains       map[int64]struct{}
+	clearedsending_domains       bool
+	join_domains                 map[int64]struct{}
+	removedjoin_domains          map[int64]struct{}
+	clearedjoin_domains          bool
+	send_limiters                map[int64]struct{}
+	removedsend_limiters         map[int64]struct{}
+	clearedsend_limiters         bool
+	holds                        map[int64]struct{}
+	removedholds                 map[int64]struct{}
+	clearedholds                 bool
+	broadcasts                   map[int64]struct{}
+	removedbroadcasts            map[int64]struct{}
+	clearedbroadcasts            bool
+	broadcast_recipients         map[int64]struct{}
+	removedbroadcast_recipients  map[int64]struct{}
+	clearedbroadcast_recipients  bool
+	email_templates              map[int64]struct{}
+	removedemail_templates       map[int64]struct{}
+	clearedemail_templates       bool
+	brand_kits                   map[int64]struct{}
+	removedbrand_kits            map[int64]struct{}
+	clearedbrand_kits            bool
+	automations                  map[int64]struct{}
+	removedautomations           map[int64]struct{}
+	clearedautomations           bool
+	automation_versions          map[int64]struct{}
+	removedautomation_versions   map[int64]struct{}
+	clearedautomation_versions   bool
+	automation_runs              map[int64]struct{}
+	removedautomation_runs       map[int64]struct{}
+	clearedautomation_runs       bool
+	rules                        map[int64]struct{}
+	removedrules                 map[int64]struct{}
+	clearedrules                 bool
+	rule_versions                map[int64]struct{}
+	removedrule_versions         map[int64]struct{}
+	clearedrule_versions         bool
+	rule_version_triggers        map[int64]struct{}
+	removedrule_version_triggers map[int64]struct{}
+	clearedrule_version_triggers bool
+	rule_firings                 map[int64]struct{}
+	removedrule_firings          map[int64]struct{}
+	clearedrule_firings          bool
+	webhook_endpoints            map[int64]struct{}
+	removedwebhook_endpoints     map[int64]struct{}
+	clearedwebhook_endpoints     bool
+	suppressions                 map[int64]struct{}
+	removedsuppressions          map[int64]struct{}
+	clearedsuppressions          bool
+	unsubscribes                 map[int64]struct{}
+	removedunsubscribes          map[int64]struct{}
+	clearedunsubscribes          bool
+	confirmations                map[int64]struct{}
+	removedconfirmations         map[int64]struct{}
+	clearedconfirmations         bool
+	outbound_messages            map[int64]struct{}
+	removedoutbound_messages     map[int64]struct{}
+	clearedoutbound_messages     bool
+	captured_messages            map[int64]struct{}
+	removedcaptured_messages     map[int64]struct{}
+	clearedcaptured_messages     bool
+	memberships                  map[int64]struct{}
+	removedmemberships           map[int64]struct{}
+	clearedmemberships           bool
+	invitations                  map[int64]struct{}
+	removedinvitations           map[int64]struct{}
+	clearedinvitations           bool
+	audit_entries                map[int64]struct{}
+	removedaudit_entries         map[int64]struct{}
+	clearedaudit_entries         bool
+	erasures                     map[int64]struct{}
+	removederasures              map[int64]struct{}
+	clearederasures              bool
+	usages                       map[int64]struct{}
+	removedusages                map[int64]struct{}
+	clearedusages                bool
+	done                         bool
+	oldValue                     func(context.Context) (*Workspace, error)
+	predicates                   []predicate.Workspace
 }
 
 var _ ent.Mutation = (*WorkspaceMutation)(nil)
@@ -55404,58 +56881,112 @@ func (m *WorkspaceMutation) ResetRules() {
 	m.removedrules = nil
 }
 
-// AddRuleTriggerIDs adds the "rule_triggers" edge to the RuleTrigger entity by ids.
-func (m *WorkspaceMutation) AddRuleTriggerIDs(ids ...int64) {
-	if m.rule_triggers == nil {
-		m.rule_triggers = make(map[int64]struct{})
+// AddRuleVersionIDs adds the "rule_versions" edge to the RuleVersion entity by ids.
+func (m *WorkspaceMutation) AddRuleVersionIDs(ids ...int64) {
+	if m.rule_versions == nil {
+		m.rule_versions = make(map[int64]struct{})
 	}
 	for i := range ids {
-		m.rule_triggers[ids[i]] = struct{}{}
+		m.rule_versions[ids[i]] = struct{}{}
 	}
 }
 
-// ClearRuleTriggers clears the "rule_triggers" edge to the RuleTrigger entity.
-func (m *WorkspaceMutation) ClearRuleTriggers() {
-	m.clearedrule_triggers = true
+// ClearRuleVersions clears the "rule_versions" edge to the RuleVersion entity.
+func (m *WorkspaceMutation) ClearRuleVersions() {
+	m.clearedrule_versions = true
 }
 
-// RuleTriggersCleared reports if the "rule_triggers" edge to the RuleTrigger entity was cleared.
-func (m *WorkspaceMutation) RuleTriggersCleared() bool {
-	return m.clearedrule_triggers
+// RuleVersionsCleared reports if the "rule_versions" edge to the RuleVersion entity was cleared.
+func (m *WorkspaceMutation) RuleVersionsCleared() bool {
+	return m.clearedrule_versions
 }
 
-// RemoveRuleTriggerIDs removes the "rule_triggers" edge to the RuleTrigger entity by IDs.
-func (m *WorkspaceMutation) RemoveRuleTriggerIDs(ids ...int64) {
-	if m.removedrule_triggers == nil {
-		m.removedrule_triggers = make(map[int64]struct{})
+// RemoveRuleVersionIDs removes the "rule_versions" edge to the RuleVersion entity by IDs.
+func (m *WorkspaceMutation) RemoveRuleVersionIDs(ids ...int64) {
+	if m.removedrule_versions == nil {
+		m.removedrule_versions = make(map[int64]struct{})
 	}
 	for i := range ids {
-		delete(m.rule_triggers, ids[i])
-		m.removedrule_triggers[ids[i]] = struct{}{}
+		delete(m.rule_versions, ids[i])
+		m.removedrule_versions[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedRuleTriggers returns the removed IDs of the "rule_triggers" edge to the RuleTrigger entity.
-func (m *WorkspaceMutation) RemovedRuleTriggersIDs() (ids []int64) {
-	for id := range m.removedrule_triggers {
+// RemovedRuleVersions returns the removed IDs of the "rule_versions" edge to the RuleVersion entity.
+func (m *WorkspaceMutation) RemovedRuleVersionsIDs() (ids []int64) {
+	for id := range m.removedrule_versions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// RuleTriggersIDs returns the "rule_triggers" edge IDs in the mutation.
-func (m *WorkspaceMutation) RuleTriggersIDs() (ids []int64) {
-	for id := range m.rule_triggers {
+// RuleVersionsIDs returns the "rule_versions" edge IDs in the mutation.
+func (m *WorkspaceMutation) RuleVersionsIDs() (ids []int64) {
+	for id := range m.rule_versions {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetRuleTriggers resets all changes to the "rule_triggers" edge.
-func (m *WorkspaceMutation) ResetRuleTriggers() {
-	m.rule_triggers = nil
-	m.clearedrule_triggers = false
-	m.removedrule_triggers = nil
+// ResetRuleVersions resets all changes to the "rule_versions" edge.
+func (m *WorkspaceMutation) ResetRuleVersions() {
+	m.rule_versions = nil
+	m.clearedrule_versions = false
+	m.removedrule_versions = nil
+}
+
+// AddRuleVersionTriggerIDs adds the "rule_version_triggers" edge to the RuleVersionTrigger entity by ids.
+func (m *WorkspaceMutation) AddRuleVersionTriggerIDs(ids ...int64) {
+	if m.rule_version_triggers == nil {
+		m.rule_version_triggers = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.rule_version_triggers[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRuleVersionTriggers clears the "rule_version_triggers" edge to the RuleVersionTrigger entity.
+func (m *WorkspaceMutation) ClearRuleVersionTriggers() {
+	m.clearedrule_version_triggers = true
+}
+
+// RuleVersionTriggersCleared reports if the "rule_version_triggers" edge to the RuleVersionTrigger entity was cleared.
+func (m *WorkspaceMutation) RuleVersionTriggersCleared() bool {
+	return m.clearedrule_version_triggers
+}
+
+// RemoveRuleVersionTriggerIDs removes the "rule_version_triggers" edge to the RuleVersionTrigger entity by IDs.
+func (m *WorkspaceMutation) RemoveRuleVersionTriggerIDs(ids ...int64) {
+	if m.removedrule_version_triggers == nil {
+		m.removedrule_version_triggers = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.rule_version_triggers, ids[i])
+		m.removedrule_version_triggers[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRuleVersionTriggers returns the removed IDs of the "rule_version_triggers" edge to the RuleVersionTrigger entity.
+func (m *WorkspaceMutation) RemovedRuleVersionTriggersIDs() (ids []int64) {
+	for id := range m.removedrule_version_triggers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RuleVersionTriggersIDs returns the "rule_version_triggers" edge IDs in the mutation.
+func (m *WorkspaceMutation) RuleVersionTriggersIDs() (ids []int64) {
+	for id := range m.rule_version_triggers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRuleVersionTriggers resets all changes to the "rule_version_triggers" edge.
+func (m *WorkspaceMutation) ResetRuleVersionTriggers() {
+	m.rule_version_triggers = nil
+	m.clearedrule_version_triggers = false
+	m.removedrule_version_triggers = nil
 }
 
 // AddRuleFiringIDs adds the "rule_firings" edge to the RuleFiring entity by ids.
@@ -56756,7 +58287,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 36)
+	edges := make([]string, 0, 37)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -56826,8 +58357,11 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	if m.rules != nil {
 		edges = append(edges, workspace.EdgeRules)
 	}
-	if m.rule_triggers != nil {
-		edges = append(edges, workspace.EdgeRuleTriggers)
+	if m.rule_versions != nil {
+		edges = append(edges, workspace.EdgeRuleVersions)
+	}
+	if m.rule_version_triggers != nil {
+		edges = append(edges, workspace.EdgeRuleVersionTriggers)
 	}
 	if m.rule_firings != nil {
 		edges = append(edges, workspace.EdgeRuleFirings)
@@ -57010,9 +58544,15 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case workspace.EdgeRuleTriggers:
-		ids := make([]ent.Value, 0, len(m.rule_triggers))
-		for id := range m.rule_triggers {
+	case workspace.EdgeRuleVersions:
+		ids := make([]ent.Value, 0, len(m.rule_versions))
+		for id := range m.rule_versions {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeRuleVersionTriggers:
+		ids := make([]ent.Value, 0, len(m.rule_version_triggers))
+		for id := range m.rule_version_triggers {
 			ids = append(ids, id)
 		}
 		return ids
@@ -57094,7 +58634,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 36)
+	edges := make([]string, 0, 37)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -57164,8 +58704,11 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	if m.removedrules != nil {
 		edges = append(edges, workspace.EdgeRules)
 	}
-	if m.removedrule_triggers != nil {
-		edges = append(edges, workspace.EdgeRuleTriggers)
+	if m.removedrule_versions != nil {
+		edges = append(edges, workspace.EdgeRuleVersions)
+	}
+	if m.removedrule_version_triggers != nil {
+		edges = append(edges, workspace.EdgeRuleVersionTriggers)
 	}
 	if m.removedrule_firings != nil {
 		edges = append(edges, workspace.EdgeRuleFirings)
@@ -57348,9 +58891,15 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case workspace.EdgeRuleTriggers:
-		ids := make([]ent.Value, 0, len(m.removedrule_triggers))
-		for id := range m.removedrule_triggers {
+	case workspace.EdgeRuleVersions:
+		ids := make([]ent.Value, 0, len(m.removedrule_versions))
+		for id := range m.removedrule_versions {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeRuleVersionTriggers:
+		ids := make([]ent.Value, 0, len(m.removedrule_version_triggers))
+		for id := range m.removedrule_version_triggers {
 			ids = append(ids, id)
 		}
 		return ids
@@ -57432,7 +58981,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 36)
+	edges := make([]string, 0, 37)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -57502,8 +59051,11 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedrules {
 		edges = append(edges, workspace.EdgeRules)
 	}
-	if m.clearedrule_triggers {
-		edges = append(edges, workspace.EdgeRuleTriggers)
+	if m.clearedrule_versions {
+		edges = append(edges, workspace.EdgeRuleVersions)
+	}
+	if m.clearedrule_version_triggers {
+		edges = append(edges, workspace.EdgeRuleVersionTriggers)
 	}
 	if m.clearedrule_firings {
 		edges = append(edges, workspace.EdgeRuleFirings)
@@ -57594,8 +59146,10 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedautomation_runs
 	case workspace.EdgeRules:
 		return m.clearedrules
-	case workspace.EdgeRuleTriggers:
-		return m.clearedrule_triggers
+	case workspace.EdgeRuleVersions:
+		return m.clearedrule_versions
+	case workspace.EdgeRuleVersionTriggers:
+		return m.clearedrule_version_triggers
 	case workspace.EdgeRuleFirings:
 		return m.clearedrule_firings
 	case workspace.EdgeWebhookEndpoints:
@@ -57705,8 +59259,11 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 	case workspace.EdgeRules:
 		m.ResetRules()
 		return nil
-	case workspace.EdgeRuleTriggers:
-		m.ResetRuleTriggers()
+	case workspace.EdgeRuleVersions:
+		m.ResetRuleVersions()
+		return nil
+	case workspace.EdgeRuleVersionTriggers:
+		m.ResetRuleVersionTriggers()
 		return nil
 	case workspace.EdgeRuleFirings:
 		m.ResetRuleFirings()

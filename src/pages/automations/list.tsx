@@ -8,7 +8,7 @@ import { PagedTable } from '../../components/PagedTable.tsx'
 import { MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
-  siteAutomationsActivateMutation,
+  siteAutomationsPublishMutation,
   siteAutomationsArchiveMutation,
   siteAutomationsDeactivateMutation,
   siteAutomationsDeleteMutation,
@@ -39,10 +39,10 @@ export function AutomationsListPage() {
     errorTitle: t(($) => $.alerts.automationDeleteErrorTitle),
   })
 
-  const activateMutation = useResourceMutation({
-    mutation: siteAutomationsActivateMutation(),
+  const publishMutation = useResourceMutation({
+    mutation: siteAutomationsPublishMutation(),
     invalidate: [listQueryKey],
-    successMessage: t(($) => $.notifications.automationActivated),
+    successMessage: t(($) => $.notifications.automationPublished),
     errorTitle: t(($) => $.alerts.automationStatusErrorTitle),
   })
 
@@ -106,7 +106,12 @@ export function AutomationsListPage() {
         }
         columns={[
           { accessor: 'name', title: t(($) => $.automations.nameLabel) },
-          { accessor: 'triggerEvent', title: t(($) => $.automations.triggerColumn) },
+          {
+            accessor: 'triggerEvent',
+            title: t(($) => $.automations.triggerColumn),
+            // What enrolls Contacts: the live version's Trigger, or the draft's before publishing.
+            render: (record) => (record.live ?? record.draft)?.triggerEvent,
+          },
           {
             accessor: 'status',
             title: t(($) => $.automations.statusLabel),
@@ -114,7 +119,7 @@ export function AutomationsListPage() {
               <Badge variant="light" color={record.status === 'active' ? 'teal' : 'gray'}>
                 {record.status === 'active'
                   ? t(($) => $.automations.statusActive)
-                  : t(($) => $.automations.statusDraft)}
+                  : t(($) => $.automations.statusInactive)}
               </Badge>
             ),
           },
@@ -164,10 +169,10 @@ export function AutomationsListPage() {
                         <Menu.Item
                           key="toggle"
                           onClick={() =>
-                            activateMutation.mutate({ path: { workspaceId, id: record.id } })
+                            publishMutation.mutate({ path: { workspaceId, id: record.id } })
                           }
                         >
-                          {t(($) => $.automations.activate)}
+                          {t(($) => $.automations.publish)}
                         </Menu.Item>
                       ),
                       <MenuItemLink

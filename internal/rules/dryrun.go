@@ -1,11 +1,12 @@
 package rules
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/internal/events"
 )
 
@@ -59,10 +60,10 @@ func (a Action) Summary() string {
 	}
 }
 
-// DryRun evaluates a stored Event against one Rule exactly as Evaluate does (the same Trigger
-// event match and the same Condition evaluation, against the Contact's data now) and reports
-// what would happen. It writes nothing and runs nothing: no Firing, no job, no Action. Unlike a
-// real firing it ignores the Rule's status and activation time, so a draft can be tried.
+// DryRun evaluates a stored Event against one Rule's draft, or its live version when it has no
+// draft, as Evaluate does (the same Trigger event match and the same Condition evaluation, against
+// the Contact's data now) and reports what would happen. It writes nothing and runs nothing: no Firing, no job, no Action. Unlike a
+// real firing it ignores the Rule's status and activation time, so an inactive Rule can be tried.
 func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int64) (DryRun, error) {
 	r, err := m.Get(ctx, s, ruleID)
 	if err != nil {
@@ -86,21 +87,22 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int6
 	}
 	ev := Event{ContactID: *stored.ContactID, Action: stored.Action, Properties: events.RuleProperties(stored.Properties)}
 
-	triggered, err := s.Rule().Query().Where(rule.ID(r.ID), triggeredBy(ev.Action)).Exist(ctx)
-	if err != nil {
-		return DryRun{}, err
-	}
+	// The draft is what the author is editing, so it is what a dry run tries; with none, the live
+	// version (ADR 0065).
+	live, draft := LiveAndDraft(r)
+	v := cmp.Or(draft, live)
+	triggered := v != nil && slices.Contains(Triggers(v), ev.Action)
 	if !triggered {
 		return DryRun{Outcome: NotTriggered}, nil
 	}
-	holds, err := m.holds(ctx, s, r, ev)
+	holds, err := m.holds(ctx, s, v.Condition, ev)
 	if err != nil {
 		return DryRun{}, err
 	}
 	if !holds {
 		return DryRun{Outcome: ConditionNotMet}, nil
 	}
-	actions, err := DecodeActions(r.Actions)
+	actions, err := DecodeActions(v.Actions)
 	if err != nil {
 		return DryRun{}, err
 	}

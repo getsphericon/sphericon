@@ -51,7 +51,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
@@ -168,7 +169,8 @@ func checkColumn(t, c string) error {
 			riverjob.Table:             riverjob.ValidColumn,
 			rule.Table:                 rule.ValidColumn,
 			rulefiring.Table:           rulefiring.ValidColumn,
-			ruletrigger.Table:          ruletrigger.ValidColumn,
+			ruleversion.Table:          ruleversion.ValidColumn,
+			ruleversiontrigger.Table:   ruleversiontrigger.ValidColumn,
 			schemastate.Table:          schemastate.ValidColumn,
 			segment.Table:              segment.ValidColumn,
 			sendlimiter.Table:          sendlimiter.ValidColumn,

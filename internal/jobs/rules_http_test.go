@@ -48,7 +48,7 @@ type httpRuleHarness struct {
 	clock  time.Time
 }
 
-// fireHTTPRule creates and activates the Rule, fires it for Bob with the Event's properties and
+// fireHTTPRule creates and publishes the Rule, fires it for Bob with the Event's properties and
 // runs its Actions job, which leaves the call Pending on a job of its own.
 func fireHTTPRule(t *testing.T, env *testhelper.TestEnv, body string, props map[string]any) *httpRuleHarness {
 	t.Helper()
@@ -68,7 +68,7 @@ func fireHTTPRule(t *testing.T, env *testhelper.TestEnv, body string, props map[
 		},
 	})
 	require.NoError(t, err)
-	_, err = m.Activate(ctx, s, r.ID)
+	_, err = m.Publish(ctx, s, r.ID)
 	require.NoError(t, err)
 	fired, err := m.Evaluate(ctx, s, rules.Event{
 		ContactID: fixtures.ContactBobID, Action: "rule_http", SourceID: "evt-http",

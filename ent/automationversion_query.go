@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -23,14 +24,15 @@ import (
 // AutomationVersionQuery is the builder for querying AutomationVersion entities.
 type AutomationVersionQuery struct {
 	config
-	ctx            *QueryContext
-	order          []automationversion.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.AutomationVersion
-	withWorkspace  *WorkspaceQuery
-	withAutomation *AutomationQuery
-	withRuns       *AutomationRunQuery
-	modifiers      []func(*sql.Selector)
+	ctx             *QueryContext
+	order           []automationversion.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.AutomationVersion
+	withWorkspace   *WorkspaceQuery
+	withAutomation  *AutomationQuery
+	withRuns        *AutomationRunQuery
+	withIntegration *IntegrationQuery
+	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -126,6 +128,28 @@ func (_q *AutomationVersionQuery) QueryRuns() *AutomationRunQuery {
 			sqlgraph.From(automationversion.Table, automationversion.FieldID, selector),
 			sqlgraph.To(automationrun.Table, automationrun.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, automationversion.RunsTable, automationversion.RunsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryIntegration chains the current query on the "integration" edge.
+func (_q *AutomationVersionQuery) QueryIntegration() *IntegrationQuery {
+	query := (&IntegrationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationversion.Table, automationversion.FieldID, selector),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationversion.IntegrationTable, automationversion.IntegrationColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -320,14 +344,15 @@ func (_q *AutomationVersionQuery) Clone() *AutomationVersionQuery {
 		return nil
 	}
 	return &AutomationVersionQuery{
-		config:         _q.config,
-		ctx:            _q.ctx.Clone(),
-		order:          append([]automationversion.OrderOption{}, _q.order...),
-		inters:         append([]Interceptor{}, _q.inters...),
-		predicates:     append([]predicate.AutomationVersion{}, _q.predicates...),
-		withWorkspace:  _q.withWorkspace.Clone(),
-		withAutomation: _q.withAutomation.Clone(),
-		withRuns:       _q.withRuns.Clone(),
+		config:          _q.config,
+		ctx:             _q.ctx.Clone(),
+		order:           append([]automationversion.OrderOption{}, _q.order...),
+		inters:          append([]Interceptor{}, _q.inters...),
+		predicates:      append([]predicate.AutomationVersion{}, _q.predicates...),
+		withWorkspace:   _q.withWorkspace.Clone(),
+		withAutomation:  _q.withAutomation.Clone(),
+		withRuns:        _q.withRuns.Clone(),
+		withIntegration: _q.withIntegration.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -365,6 +390,17 @@ func (_q *AutomationVersionQuery) WithRuns(opts ...func(*AutomationRunQuery)) *A
 		opt(query)
 	}
 	_q.withRuns = query
+	return _q
+}
+
+// WithIntegration tells the query-builder to eager-load the nodes that are connected to
+// the "integration" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AutomationVersionQuery) WithIntegration(opts ...func(*IntegrationQuery)) *AutomationVersionQuery {
+	query := (&IntegrationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withIntegration = query
 	return _q
 }
 
@@ -446,10 +482,11 @@ func (_q *AutomationVersionQuery) sqlAll(ctx context.Context, hooks ...queryHook
 	var (
 		nodes       = []*AutomationVersion{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withWorkspace != nil,
 			_q.withAutomation != nil,
 			_q.withRuns != nil,
+			_q.withIntegration != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -489,6 +526,12 @@ func (_q *AutomationVersionQuery) sqlAll(ctx context.Context, hooks ...queryHook
 		if err := _q.loadRuns(ctx, query, nodes,
 			func(n *AutomationVersion) { n.Edges.Runs = []*AutomationRun{} },
 			func(n *AutomationVersion, e *AutomationRun) { n.Edges.Runs = append(n.Edges.Runs, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withIntegration; query != nil {
+		if err := _q.loadIntegration(ctx, query, nodes, nil,
+			func(n *AutomationVersion, e *Integration) { n.Edges.Integration = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -583,6 +626,38 @@ func (_q *AutomationVersionQuery) loadRuns(ctx context.Context, query *Automatio
 	}
 	return nil
 }
+func (_q *AutomationVersionQuery) loadIntegration(ctx context.Context, query *IntegrationQuery, nodes []*AutomationVersion, init func(*AutomationVersion), assign func(*AutomationVersion, *Integration)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*AutomationVersion)
+	for i := range nodes {
+		if nodes[i].IntegrationID == nil {
+			continue
+		}
+		fk := *nodes[i].IntegrationID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(integration.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "integration_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *AutomationVersionQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -617,6 +692,9 @@ func (_q *AutomationVersionQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withAutomation != nil {
 			_spec.Node.AddColumnOnce(automationversion.FieldAutomationID)
+		}
+		if _q.withIntegration != nil {
+			_spec.Node.AddColumnOnce(automationversion.FieldIntegrationID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

@@ -73,7 +73,7 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 		return err
 	}
 	s := w.ent.Scoped(f.WorkspaceID)
-	action, pending, err := pendingHTTPAction(f, job.Args.Index)
+	action, pending, err := rules.PendingHTTP(ctx, s, f, job.Args.Index)
 	if err != nil || !pending {
 		return err // an attempt of this job already recorded the call
 	}
@@ -139,23 +139,6 @@ func (w *RunRuleHTTPWorker) NextRetry(job *river.Job[RunRuleHTTPArgs]) time.Time
 		return time.Time{} // river falls back to its default
 	}
 	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt)
-}
-
-// pendingHTTPAction is the http Action at index of the Firing, and whether it still waits for its
-// call: a result already recorded, or an Action that is not an http one, leaves nothing to do.
-func pendingHTTPAction(f *ent.RuleFiring, index int) (rules.Action, bool, error) {
-	actions, err := rules.DecodeActions(f.Actions)
-	if err != nil {
-		return rules.Action{}, false, fmt.Errorf("firing %d actions: %w", f.ID, err)
-	}
-	results, err := rules.DecodeResults(f.Results)
-	if err != nil {
-		return rules.Action{}, false, fmt.Errorf("firing %d results: %w", f.ID, err)
-	}
-	if index >= len(actions) || index >= len(results) || results[index].Status != rules.Pending || actions[index].Type != rules.ActionHTTP {
-		return rules.Action{}, false, nil
-	}
-	return actions[index], true, nil
 }
 
 // failureDetail is what the Firing records of a failed call: the closed kind, the status and the

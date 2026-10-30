@@ -25,10 +25,6 @@ type AuthTokensListRes interface {
 	authTokensListRes()
 }
 
-type AutomationsActivateRes interface {
-	automationsActivateRes()
-}
-
 type AutomationsArchiveRes interface {
 	automationsArchiveRes()
 }
@@ -55,6 +51,14 @@ type AutomationsGetRes interface {
 
 type AutomationsListRes interface {
 	automationsListRes()
+}
+
+type AutomationsPublishRes interface {
+	automationsPublishRes()
+}
+
+type AutomationsRevertRes interface {
+	automationsRevertRes()
 }
 
 type AutomationsUnarchiveRes interface {
@@ -257,10 +261,6 @@ type RuleFiringsListRes interface {
 	ruleFiringsListRes()
 }
 
-type RulesActivateRes interface {
-	rulesActivateRes()
-}
-
 type RulesArchiveRes interface {
 	rulesArchiveRes()
 }
@@ -287,6 +287,14 @@ type RulesGetRes interface {
 
 type RulesListRes interface {
 	rulesListRes()
+}
+
+type RulesPublishRes interface {
+	rulesPublishRes()
+}
+
+type RulesRevertRes interface {
+	rulesRevertRes()
 }
 
 type RulesUnarchiveRes interface {

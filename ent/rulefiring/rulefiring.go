@@ -28,8 +28,8 @@ const (
 	FieldAction = "action"
 	// FieldSourceID holds the string denoting the source_id field in the database.
 	FieldSourceID = "source_id"
-	// FieldActions holds the string denoting the actions field in the database.
-	FieldActions = "actions"
+	// FieldVersionID holds the string denoting the version_id field in the database.
+	FieldVersionID = "version_id"
 	// FieldProperties holds the string denoting the properties field in the database.
 	FieldProperties = "properties"
 	// FieldResults holds the string denoting the results field in the database.
@@ -42,6 +42,8 @@ const (
 	EdgeRule = "rule"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
 	EdgeContact = "contact"
+	// EdgeVersion holds the string denoting the version edge name in mutations.
+	EdgeVersion = "version"
 	// Table holds the table name of the rulefiring in the database.
 	Table = "rule_firings"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -65,6 +67,13 @@ const (
 	ContactInverseTable = "contacts"
 	// ContactColumn is the table column denoting the contact relation/edge.
 	ContactColumn = "contact_id"
+	// VersionTable is the table that holds the version relation/edge.
+	VersionTable = "rule_firings"
+	// VersionInverseTable is the table name for the RuleVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "ruleversion" package.
+	VersionInverseTable = "rule_versions"
+	// VersionColumn is the table column denoting the version relation/edge.
+	VersionColumn = "version_id"
 )
 
 // Columns holds all SQL columns for rulefiring fields.
@@ -77,7 +86,7 @@ var Columns = []string{
 	FieldContactID,
 	FieldAction,
 	FieldSourceID,
-	FieldActions,
+	FieldVersionID,
 	FieldProperties,
 	FieldResults,
 	FieldCompletedAt,
@@ -104,8 +113,6 @@ var (
 	ActionValidator func(string) error
 	// SourceIDValidator is a validator for the "source_id" field. It is called by the builders before save.
 	SourceIDValidator func(string) error
-	// DefaultActions holds the default value on creation for the "actions" field.
-	DefaultActions string
 	// DefaultResults holds the default value on creation for the "results" field.
 	DefaultResults string
 )
@@ -153,9 +160,9 @@ func BySourceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSourceID, opts...).ToFunc()
 }
 
-// ByActions orders the results by the actions field.
-func ByActions(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldActions, opts...).ToFunc()
+// ByVersionID orders the results by the version_id field.
+func ByVersionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVersionID, opts...).ToFunc()
 }
 
 // ByProperties orders the results by the properties field.
@@ -193,6 +200,13 @@ func ByContactField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newContactStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByVersionField orders the results by version field.
+func ByVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newVersionStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -212,5 +226,12 @@ func newContactStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ContactInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
+	)
+}
+func newVersionStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(VersionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, VersionTable, VersionColumn),
 	)
 }

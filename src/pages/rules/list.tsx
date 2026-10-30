@@ -7,7 +7,7 @@ import { PagedTable } from '../../components/PagedTable.tsx'
 import { ButtonLink, MenuItemLink } from '../../components/RouterLink.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
-  siteRulesActivateMutation,
+  siteRulesPublishMutation,
   siteRulesArchiveMutation,
   siteRulesDeactivateMutation,
   siteRulesDeleteMutation,
@@ -28,10 +28,10 @@ export function RulesListPage() {
   const navigate = useNavigate()
 
   const listQueryKey = siteRulesListQueryKey({ path: { workspaceId } })
-  const activate = useResourceMutation({
-    mutation: siteRulesActivateMutation(),
+  const publish = useResourceMutation({
+    mutation: siteRulesPublishMutation(),
     invalidate: [listQueryKey],
-    successMessage: t(($) => $.notifications.ruleActivated),
+    successMessage: t(($) => $.notifications.rulePublished),
     errorTitle: t(($) => $.alerts.ruleStatusErrorTitle),
   })
   const deactivate = useResourceMutation({
@@ -97,9 +97,10 @@ export function RulesListPage() {
         columns={[
           { accessor: 'name', title: t(($) => $.rules.nameLabel) },
           {
-            accessor: 'triggerEvents',
+            // What the Rule reacts to: its live version, else the draft of one never published.
+            accessor: 'live',
             title: t(($) => $.rules.triggerColumn),
-            render: (record) => record.triggerEvents.join(', '),
+            render: (record) => (record.live ?? record.draft)?.triggerEvents.join(', '),
           },
           {
             accessor: 'status',
@@ -108,7 +109,7 @@ export function RulesListPage() {
               <Badge variant="light" color={record.status === 'active' ? 'teal' : 'gray'}>
                 {record.status === 'active'
                   ? t(($) => $.rules.statusActive)
-                  : t(($) => $.rules.statusDraft)}
+                  : t(($) => $.rules.statusInactive)}
               </Badge>
             ),
           },
@@ -145,9 +146,9 @@ export function RulesListPage() {
                       ) : (
                         <Menu.Item
                           key="toggle"
-                          onClick={() => activate.mutate({ path: { workspaceId, id: record.id } })}
+                          onClick={() => publish.mutate({ path: { workspaceId, id: record.id } })}
                         >
-                          {t(($) => $.rules.activate)}
+                          {t(($) => $.rules.publish)}
                         </Menu.Item>
                       ),
                       <MenuItemLink

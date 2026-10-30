@@ -109,7 +109,7 @@ func TestEvaluateLeavesNothingWhenTheConditionIsFalse(t *testing.T) {
 	assert.Empty(t, bobs)
 }
 
-func TestEvaluateIgnoresADraftAndAnEventNoRuleTriggersOn(t *testing.T) {
+func TestEvaluateIgnoresAnInactiveRuleAndAnEventNoRuleTriggersOn(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	draft := evaluate(t, env, fixtures.ContactAliceID, "rule_draft", "evt-draft")
@@ -122,7 +122,7 @@ func TestEvaluateIgnoresADraftAndAnEventNoRuleTriggersOn(t *testing.T) {
 func TestEvaluateNeverReplaysAnEventRecordedBeforeActivation(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	// RuleActivatedLater was activated an hour from now: an Event recorded now predates it.
+	// RuleActivatedLater was published an hour from now: an Event recorded now predates it.
 	before := evaluate(t, env, fixtures.ContactAliceID, "rule_later", "evt-before")
 
 	m := rules.New(env.Cipher, env.Bus)
@@ -160,7 +160,7 @@ func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 		Actions: []rules.Action{{Type: rules.ActionApplyTag, Tag: "pricing"}},
 	})
 	require.NoError(t, err, "any property key is valid on save")
-	_, err = m.Activate(ctx, s, r.ID)
+	_, err = m.Publish(ctx, s, r.ID)
 	require.NoError(t, err)
 
 	fire := func(sourceID string, props map[string]any) int {

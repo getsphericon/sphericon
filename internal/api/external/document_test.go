@@ -211,7 +211,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	require.NoError(t, err)
 	res, ok := created.(*externalapi.AutomationResource)
 	require.Truef(t, ok, "got %T", created)
-	step := res.Steps[0]
+	step := res.Draft.Value.Steps[0]
 	assert.Contains(t, step.Body.Value, "Hello {{ first_name }}")
 	assert.True(t, step.Doc.Set, "the step carries its document")
 	assert.Equal(t, emaildoc.EditorVersion(), step.EditorVersion.Value)
@@ -225,11 +225,11 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	require.NoError(t, err)
 	upd, ok := updated.(*externalapi.AutomationResource)
 	require.Truef(t, ok, "got %T", updated)
-	assert.Contains(t, upd.Steps[0].Body.Value, "Second")
-	assert.True(t, upd.Steps[0].Doc.Set)
+	assert.Contains(t, upd.Draft.Value.Steps[0].Body.Value, "Second")
+	assert.True(t, upd.Draft.Value.Steps[0].Doc.Set)
 
 	// Writing the body with the document is refused, naming the step.
-	both, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{upd.Steps[0]}},
+	both, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{upd.Draft.Value.Steps[0]}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	refused, ok := both.(*externalapi.AutomationsUpdateUnprocessableEntity)
@@ -237,7 +237,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	assert.Contains(t, refused.Detail.Or(""), "step 1")
 
 	// An invalid document refuses the save; the stored step is unchanged.
-	bad := upd.Steps[0]
+	bad := upd.Draft.Value.Steps[0]
 	bad.Body = externalapi.OptString{}
 	bad.Doc = externalapi.NewOptAutomationStepDoc(badHeadingDoc())
 	invalid, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{bad}},

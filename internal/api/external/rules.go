@@ -17,8 +17,8 @@ import (
 )
 
 // Rules reuse the Automation scopes: a Rule is the light form of an Automation, so reading
-// and authoring take automations:read and automations:write, and activating takes the
-// send-class automations:activate (ADR 0016).
+// and authoring (Deactivate included) take automations:read and automations:write, and
+// publishing takes the send-class automations:publish (ADR 0016, ADR 0065).
 
 func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListParams) (externalapi.RulesListRes, error) {
 	page, err := h.rules.List(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
@@ -34,7 +34,7 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 	}, nil
 }
 
-// RulesCreate always stores a draft: activating is the send-class operation.
+// RulesCreate always stores an inactive Rule: publishing is the send-class operation.
 func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleInput) (externalapi.RulesCreateRes, error) {
 	in := rules.CreateInput{
 		Name:          req.Name,
@@ -126,10 +126,10 @@ func (h *Handlers) RulesUnarchive(ctx context.Context, params externalapi.RulesU
 	return &res, nil
 }
 
-// RulesActivate and RulesDeactivate need automations:activate, which authoring scopes never
-// imply (ADR 0016). Over MCP, activate additionally needs mcp:send (the x-mcp send flag).
-func (h *Handlers) RulesActivate(ctx context.Context, params externalapi.RulesActivateParams) (externalapi.RulesActivateRes, error) {
-	r, err := h.rules.Activate(ctx, auth.TokenScoped(ctx), int64(params.ID))
+// RulesPublish needs automations:publish, which authoring scopes never imply (ADR 0016, ADR 0065).
+// Over MCP, it additionally needs mcp:send (the x-mcp send flag).
+func (h *Handlers) RulesPublish(ctx context.Context, params externalapi.RulesPublishParams) (externalapi.RulesPublishRes, error) {
+	r, err := h.rules.Publish(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +137,17 @@ func (h *Handlers) RulesActivate(ctx context.Context, params externalapi.RulesAc
 	return &res, nil
 }
 
+// RulesRevert drops the Rule's draft, which changes nothing the Rule does: automations:write.
+func (h *Handlers) RulesRevert(ctx context.Context, params externalapi.RulesRevertParams) (externalapi.RulesRevertRes, error) {
+	r, err := h.rules.Revert(ctx, auth.TokenScoped(ctx), int64(params.ID))
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.RuleToResource(r)
+	return &res, nil
+}
+
+// RulesDeactivate only stops the Rule firing, so it is authoring: automations:write.
 func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.RulesDeactivateParams) (externalapi.RulesDeactivateRes, error) {
 	r, err := h.rules.Deactivate(ctx, auth.TokenScoped(ctx), int64(params.ID))
 	if err != nil {

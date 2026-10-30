@@ -38,7 +38,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/ent/ruletrigger"
+	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
@@ -815,19 +816,34 @@ func (_u *WorkspaceUpdate) AddRules(v ...*Rule) *WorkspaceUpdate {
 	return _u.AddRuleIDs(ids...)
 }
 
-// AddRuleTriggerIDs adds the "rule_triggers" edge to the RuleTrigger entity by IDs.
-func (_u *WorkspaceUpdate) AddRuleTriggerIDs(ids ...int64) *WorkspaceUpdate {
-	_u.mutation.AddRuleTriggerIDs(ids...)
+// AddRuleVersionIDs adds the "rule_versions" edge to the RuleVersion entity by IDs.
+func (_u *WorkspaceUpdate) AddRuleVersionIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddRuleVersionIDs(ids...)
 	return _u
 }
 
-// AddRuleTriggers adds the "rule_triggers" edges to the RuleTrigger entity.
-func (_u *WorkspaceUpdate) AddRuleTriggers(v ...*RuleTrigger) *WorkspaceUpdate {
+// AddRuleVersions adds the "rule_versions" edges to the RuleVersion entity.
+func (_u *WorkspaceUpdate) AddRuleVersions(v ...*RuleVersion) *WorkspaceUpdate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddRuleTriggerIDs(ids...)
+	return _u.AddRuleVersionIDs(ids...)
+}
+
+// AddRuleVersionTriggerIDs adds the "rule_version_triggers" edge to the RuleVersionTrigger entity by IDs.
+func (_u *WorkspaceUpdate) AddRuleVersionTriggerIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddRuleVersionTriggerIDs(ids...)
+	return _u
+}
+
+// AddRuleVersionTriggers adds the "rule_version_triggers" edges to the RuleVersionTrigger entity.
+func (_u *WorkspaceUpdate) AddRuleVersionTriggers(v ...*RuleVersionTrigger) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleVersionTriggerIDs(ids...)
 }
 
 // AddRuleFiringIDs adds the "rule_firings" edge to the RuleFiring entity by IDs.
@@ -1498,25 +1514,46 @@ func (_u *WorkspaceUpdate) RemoveRules(v ...*Rule) *WorkspaceUpdate {
 	return _u.RemoveRuleIDs(ids...)
 }
 
-// ClearRuleTriggers clears all "rule_triggers" edges to the RuleTrigger entity.
-func (_u *WorkspaceUpdate) ClearRuleTriggers() *WorkspaceUpdate {
-	_u.mutation.ClearRuleTriggers()
+// ClearRuleVersions clears all "rule_versions" edges to the RuleVersion entity.
+func (_u *WorkspaceUpdate) ClearRuleVersions() *WorkspaceUpdate {
+	_u.mutation.ClearRuleVersions()
 	return _u
 }
 
-// RemoveRuleTriggerIDs removes the "rule_triggers" edge to RuleTrigger entities by IDs.
-func (_u *WorkspaceUpdate) RemoveRuleTriggerIDs(ids ...int64) *WorkspaceUpdate {
-	_u.mutation.RemoveRuleTriggerIDs(ids...)
+// RemoveRuleVersionIDs removes the "rule_versions" edge to RuleVersion entities by IDs.
+func (_u *WorkspaceUpdate) RemoveRuleVersionIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveRuleVersionIDs(ids...)
 	return _u
 }
 
-// RemoveRuleTriggers removes "rule_triggers" edges to RuleTrigger entities.
-func (_u *WorkspaceUpdate) RemoveRuleTriggers(v ...*RuleTrigger) *WorkspaceUpdate {
+// RemoveRuleVersions removes "rule_versions" edges to RuleVersion entities.
+func (_u *WorkspaceUpdate) RemoveRuleVersions(v ...*RuleVersion) *WorkspaceUpdate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveRuleTriggerIDs(ids...)
+	return _u.RemoveRuleVersionIDs(ids...)
+}
+
+// ClearRuleVersionTriggers clears all "rule_version_triggers" edges to the RuleVersionTrigger entity.
+func (_u *WorkspaceUpdate) ClearRuleVersionTriggers() *WorkspaceUpdate {
+	_u.mutation.ClearRuleVersionTriggers()
+	return _u
+}
+
+// RemoveRuleVersionTriggerIDs removes the "rule_version_triggers" edge to RuleVersionTrigger entities by IDs.
+func (_u *WorkspaceUpdate) RemoveRuleVersionTriggerIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveRuleVersionTriggerIDs(ids...)
+	return _u
+}
+
+// RemoveRuleVersionTriggers removes "rule_version_triggers" edges to RuleVersionTrigger entities.
+func (_u *WorkspaceUpdate) RemoveRuleVersionTriggers(v ...*RuleVersionTrigger) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleVersionTriggerIDs(ids...)
 }
 
 // ClearRuleFirings clears all "rule_firings" edges to the RuleFiring entity.
@@ -3012,28 +3049,28 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.RuleTriggersCleared() {
+	if _u.mutation.RuleVersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.RuleTriggersTable,
-			Columns: []string{workspace.RuleTriggersColumn},
+			Table:   workspace.RuleVersionsTable,
+			Columns: []string{workspace.RuleVersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedRuleTriggersIDs(); len(nodes) > 0 && !_u.mutation.RuleTriggersCleared() {
+	if nodes := _u.mutation.RemovedRuleVersionsIDs(); len(nodes) > 0 && !_u.mutation.RuleVersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.RuleTriggersTable,
-			Columns: []string{workspace.RuleTriggersColumn},
+			Table:   workspace.RuleVersionsTable,
+			Columns: []string{workspace.RuleVersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -3041,15 +3078,60 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RuleTriggersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RuleVersionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.RuleTriggersTable,
-			Columns: []string{workspace.RuleTriggersColumn},
+			Table:   workspace.RuleVersionsTable,
+			Columns: []string{workspace.RuleVersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RuleVersionTriggersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleVersionTriggersTable,
+			Columns: []string{workspace.RuleVersionTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversiontrigger.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRuleVersionTriggersIDs(); len(nodes) > 0 && !_u.mutation.RuleVersionTriggersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleVersionTriggersTable,
+			Columns: []string{workspace.RuleVersionTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversiontrigger.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RuleVersionTriggersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleVersionTriggersTable,
+			Columns: []string{workspace.RuleVersionTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversiontrigger.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -4369,19 +4451,34 @@ func (_u *WorkspaceUpdateOne) AddRules(v ...*Rule) *WorkspaceUpdateOne {
 	return _u.AddRuleIDs(ids...)
 }
 
-// AddRuleTriggerIDs adds the "rule_triggers" edge to the RuleTrigger entity by IDs.
-func (_u *WorkspaceUpdateOne) AddRuleTriggerIDs(ids ...int64) *WorkspaceUpdateOne {
-	_u.mutation.AddRuleTriggerIDs(ids...)
+// AddRuleVersionIDs adds the "rule_versions" edge to the RuleVersion entity by IDs.
+func (_u *WorkspaceUpdateOne) AddRuleVersionIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddRuleVersionIDs(ids...)
 	return _u
 }
 
-// AddRuleTriggers adds the "rule_triggers" edges to the RuleTrigger entity.
-func (_u *WorkspaceUpdateOne) AddRuleTriggers(v ...*RuleTrigger) *WorkspaceUpdateOne {
+// AddRuleVersions adds the "rule_versions" edges to the RuleVersion entity.
+func (_u *WorkspaceUpdateOne) AddRuleVersions(v ...*RuleVersion) *WorkspaceUpdateOne {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddRuleTriggerIDs(ids...)
+	return _u.AddRuleVersionIDs(ids...)
+}
+
+// AddRuleVersionTriggerIDs adds the "rule_version_triggers" edge to the RuleVersionTrigger entity by IDs.
+func (_u *WorkspaceUpdateOne) AddRuleVersionTriggerIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddRuleVersionTriggerIDs(ids...)
+	return _u
+}
+
+// AddRuleVersionTriggers adds the "rule_version_triggers" edges to the RuleVersionTrigger entity.
+func (_u *WorkspaceUpdateOne) AddRuleVersionTriggers(v ...*RuleVersionTrigger) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRuleVersionTriggerIDs(ids...)
 }
 
 // AddRuleFiringIDs adds the "rule_firings" edge to the RuleFiring entity by IDs.
@@ -5052,25 +5149,46 @@ func (_u *WorkspaceUpdateOne) RemoveRules(v ...*Rule) *WorkspaceUpdateOne {
 	return _u.RemoveRuleIDs(ids...)
 }
 
-// ClearRuleTriggers clears all "rule_triggers" edges to the RuleTrigger entity.
-func (_u *WorkspaceUpdateOne) ClearRuleTriggers() *WorkspaceUpdateOne {
-	_u.mutation.ClearRuleTriggers()
+// ClearRuleVersions clears all "rule_versions" edges to the RuleVersion entity.
+func (_u *WorkspaceUpdateOne) ClearRuleVersions() *WorkspaceUpdateOne {
+	_u.mutation.ClearRuleVersions()
 	return _u
 }
 
-// RemoveRuleTriggerIDs removes the "rule_triggers" edge to RuleTrigger entities by IDs.
-func (_u *WorkspaceUpdateOne) RemoveRuleTriggerIDs(ids ...int64) *WorkspaceUpdateOne {
-	_u.mutation.RemoveRuleTriggerIDs(ids...)
+// RemoveRuleVersionIDs removes the "rule_versions" edge to RuleVersion entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveRuleVersionIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveRuleVersionIDs(ids...)
 	return _u
 }
 
-// RemoveRuleTriggers removes "rule_triggers" edges to RuleTrigger entities.
-func (_u *WorkspaceUpdateOne) RemoveRuleTriggers(v ...*RuleTrigger) *WorkspaceUpdateOne {
+// RemoveRuleVersions removes "rule_versions" edges to RuleVersion entities.
+func (_u *WorkspaceUpdateOne) RemoveRuleVersions(v ...*RuleVersion) *WorkspaceUpdateOne {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveRuleTriggerIDs(ids...)
+	return _u.RemoveRuleVersionIDs(ids...)
+}
+
+// ClearRuleVersionTriggers clears all "rule_version_triggers" edges to the RuleVersionTrigger entity.
+func (_u *WorkspaceUpdateOne) ClearRuleVersionTriggers() *WorkspaceUpdateOne {
+	_u.mutation.ClearRuleVersionTriggers()
+	return _u
+}
+
+// RemoveRuleVersionTriggerIDs removes the "rule_version_triggers" edge to RuleVersionTrigger entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveRuleVersionTriggerIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveRuleVersionTriggerIDs(ids...)
+	return _u
+}
+
+// RemoveRuleVersionTriggers removes "rule_version_triggers" edges to RuleVersionTrigger entities.
+func (_u *WorkspaceUpdateOne) RemoveRuleVersionTriggers(v ...*RuleVersionTrigger) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRuleVersionTriggerIDs(ids...)
 }
 
 // ClearRuleFirings clears all "rule_firings" edges to the RuleFiring entity.
@@ -6596,28 +6714,28 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.RuleTriggersCleared() {
+	if _u.mutation.RuleVersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.RuleTriggersTable,
-			Columns: []string{workspace.RuleTriggersColumn},
+			Table:   workspace.RuleVersionsTable,
+			Columns: []string{workspace.RuleVersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedRuleTriggersIDs(); len(nodes) > 0 && !_u.mutation.RuleTriggersCleared() {
+	if nodes := _u.mutation.RemovedRuleVersionsIDs(); len(nodes) > 0 && !_u.mutation.RuleVersionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.RuleTriggersTable,
-			Columns: []string{workspace.RuleTriggersColumn},
+			Table:   workspace.RuleVersionsTable,
+			Columns: []string{workspace.RuleVersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -6625,15 +6743,60 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RuleTriggersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RuleVersionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.RuleTriggersTable,
-			Columns: []string{workspace.RuleTriggersColumn},
+			Table:   workspace.RuleVersionsTable,
+			Columns: []string{workspace.RuleVersionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(ruletrigger.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(ruleversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RuleVersionTriggersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleVersionTriggersTable,
+			Columns: []string{workspace.RuleVersionTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversiontrigger.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRuleVersionTriggersIDs(); len(nodes) > 0 && !_u.mutation.RuleVersionTriggersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleVersionTriggersTable,
+			Columns: []string{workspace.RuleVersionTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversiontrigger.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RuleVersionTriggersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.RuleVersionTriggersTable,
+			Columns: []string{workspace.RuleVersionTriggersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(ruleversiontrigger.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

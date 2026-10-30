@@ -75,7 +75,7 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 	return &res, nil
 }
 
-// SegmentsArchive archives a segment (ADR 0049); a draft or scheduled Broadcast refuses it with 409.
+// SegmentsArchive archives a segment (ADR 0049); a draft Broadcast refuses it with 409.
 func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.SegmentsArchiveParams) (externalapi.SegmentsArchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)

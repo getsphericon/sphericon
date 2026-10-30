@@ -28,7 +28,7 @@ var tokenScopes = scopeStrings(
 	externalapi.ApiTokenScopeSendingDomainsRead, externalapi.ApiTokenScopeSendingDomainsWrite,
 	externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeContactsWrite,
 	externalapi.ApiTokenScopeBroadcastsRead, externalapi.ApiTokenScopeBroadcastsWrite, externalapi.ApiTokenScopeBroadcastsSend,
-	externalapi.ApiTokenScopeAutomationsRead, externalapi.ApiTokenScopeAutomationsWrite, externalapi.ApiTokenScopeAutomationsActivate,
+	externalapi.ApiTokenScopeAutomationsRead, externalapi.ApiTokenScopeAutomationsWrite, externalapi.ApiTokenScopeAutomationsPublish,
 	externalapi.ApiTokenScopeEventsWrite,
 )
 

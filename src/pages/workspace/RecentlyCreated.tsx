@@ -58,7 +58,7 @@ export function RecentlyCreated({ workspaceId }: { workspaceId: string }) {
       status:
         a.status === 'active'
           ? t(($) => $.automations.statusActive)
-          : t(($) => $.automations.statusDraft),
+          : t(($) => $.automations.statusInactive),
       createdAt: a.createdAt,
     })),
   ]

@@ -215,6 +215,26 @@ func (_u *BroadcastUpdate) ClearSegmentID() *BroadcastUpdate {
 	return _u
 }
 
+// SetCondition sets the "condition" field.
+func (_u *BroadcastUpdate) SetCondition(v string) *BroadcastUpdate {
+	_u.mutation.SetCondition(v)
+	return _u
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableCondition(v *string) *BroadcastUpdate {
+	if v != nil {
+		_u.SetCondition(*v)
+	}
+	return _u
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (_u *BroadcastUpdate) ClearCondition() *BroadcastUpdate {
+	_u.mutation.ClearCondition()
+	return _u
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (_u *BroadcastUpdate) SetIntegrationID(v int64) *BroadcastUpdate {
 	_u.mutation.SetIntegrationID(v)
@@ -521,6 +541,12 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.EditorVersionCleared() {
 		_spec.ClearField(broadcast.FieldEditorVersion, field.TypeString)
+	}
+	if value, ok := _u.mutation.Condition(); ok {
+		_spec.SetField(broadcast.FieldCondition, field.TypeString, value)
+	}
+	if _u.mutation.ConditionCleared() {
+		_spec.ClearField(broadcast.FieldCondition, field.TypeString)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
@@ -883,6 +909,26 @@ func (_u *BroadcastUpdateOne) ClearSegmentID() *BroadcastUpdateOne {
 	return _u
 }
 
+// SetCondition sets the "condition" field.
+func (_u *BroadcastUpdateOne) SetCondition(v string) *BroadcastUpdateOne {
+	_u.mutation.SetCondition(v)
+	return _u
+}
+
+// SetNillableCondition sets the "condition" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableCondition(v *string) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetCondition(*v)
+	}
+	return _u
+}
+
+// ClearCondition clears the value of the "condition" field.
+func (_u *BroadcastUpdateOne) ClearCondition() *BroadcastUpdateOne {
+	_u.mutation.ClearCondition()
+	return _u
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (_u *BroadcastUpdateOne) SetIntegrationID(v int64) *BroadcastUpdateOne {
 	_u.mutation.SetIntegrationID(v)
@@ -1219,6 +1265,12 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if _u.mutation.EditorVersionCleared() {
 		_spec.ClearField(broadcast.FieldEditorVersion, field.TypeString)
+	}
+	if value, ok := _u.mutation.Condition(); ok {
+		_spec.SetField(broadcast.FieldCondition, field.TypeString, value)
+	}
+	if _u.mutation.ConditionCleared() {
+		_spec.ClearField(broadcast.FieldCondition, field.TypeString)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)

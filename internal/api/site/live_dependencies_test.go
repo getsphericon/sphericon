@@ -92,7 +92,7 @@ func TestSiteDefaultIntegrationArchiveRefusedWhileLiveWorkUsesIt(t *testing.T) {
 	// Only history uses it now: finished Broadcasts, and no active Automation.
 	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
-	_, err = acme.Automation().Update().SetStatus(automation.StatusDraft).Save(ctx)
+	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
 	require.NoError(t, err)
 
 	assert.IsType(t, &siteapi.SiteIntegrationResource{}, del())
@@ -162,7 +162,7 @@ func TestSiteSendingDomainArchiveRefusedThroughTheConfiguredFrom(t *testing.T) {
 
 	_, err := acme.Broadcast().Update().Where(broadcast.StatusIn(broadcast.StatusScheduled, broadcast.StatusSending)).SetStatus(broadcast.StatusSent).SetSentAt(time.Now()).Save(ctx)
 	require.NoError(t, err)
-	_, err = acme.Automation().Update().SetStatus(automation.StatusDraft).Save(ctx)
+	_, err = acme.Automation().Update().SetStatus(automation.StatusInactive).Save(ctx)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainResource{}, del())
 }

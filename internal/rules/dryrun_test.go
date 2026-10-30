@@ -22,12 +22,12 @@ func dryRun(t *testing.T, env *testhelper.TestEnv, ruleID, eventID int64) rules.
 func TestDryRunReportsTheActionsAStoredEventWouldRun(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	res := dryRun(t, env, fixtures.RuleTagClickedID, fixtures.EventRuleClickLiamID)
+	res := dryRun(t, env, fixtures.RuleUrlPricingID, fixtures.EventRuleUrlPricingID)
 
 	assert.Equal(t, rules.WouldFire, res.Outcome)
 	require.Len(t, res.Actions, 1)
 	assert.Equal(t, rules.ActionApplyTag, res.Actions[0].Type)
-	assert.Contains(t, res.Actions[0].Summary, "rule-clicked")
+	assert.Contains(t, res.Actions[0].Summary, "rule-pricing")
 }
 
 func TestDryRunWritesAndRunsNothing(t *testing.T) {
@@ -92,13 +92,13 @@ func TestDryRunSeesAnOversizedEventsPropertiesAsAbsent(t *testing.T) {
 	assert.Equal(t, rules.ConditionNotMet, dryRun(t, env, fixtures.RuleUrlPricingID, fixtures.EventRuleUrlOversizedID).Outcome)
 }
 
-func TestDryRunTestsADraftWithoutLookingAtActivation(t *testing.T) {
+func TestDryRunTestsAnInactiveRuleWithoutLookingAtActivation(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	// RuleDraft is a draft: dry-running it shows what activating it would do.
-	res := dryRun(t, env, fixtures.RuleDraftID, fixtures.EventRuleClickLiamID)
+	// RuleInactive is inactive: dry-running it shows what publishing it would do.
+	res := dryRun(t, env, fixtures.RuleInactiveID, fixtures.EventRuleClickLiamID)
 
-	assert.Equal(t, rules.NotTriggered, res.Outcome, "rule_click is not the draft's Trigger event")
+	assert.Equal(t, rules.NotTriggered, res.Outcome, "rule_click is not the inactive Rule's Trigger event")
 }
 
 func TestDryRunRefusesAnotherWorkspacesEventOrRule(t *testing.T) {

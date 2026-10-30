@@ -27,14 +27,14 @@ func TestSiteAutomationsNameTheirIntegration(t *testing.T) {
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", created)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, res.IntegrationId.Or(0))
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, res.Draft.Value.IntegrationId.Or(0))
 
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID}
 	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Name: siteapi.NewOptString("Renamed")}, params)
 	require.NoError(t, err)
 	kept, ok := renamed.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", renamed)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, kept.IntegrationId.Or(0), "an absent key keeps it")
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, kept.Draft.Value.IntegrationId.Or(0), "an absent key keeps it")
 
 	var null siteapi.OptNilEntityId
 	null.SetToNull()
@@ -42,7 +42,7 @@ func TestSiteAutomationsNameTheirIntegration(t *testing.T) {
 	require.NoError(t, err)
 	got, ok := cleared.(*siteapi.SiteAutomationResource)
 	require.Truef(t, ok, "got %T", cleared)
-	assert.Empty(t, got.IntegrationId.Or(0), "an explicit null goes back to the default")
+	assert.Empty(t, got.Draft.Value.IntegrationId.Or(0), "an explicit null goes back to the default")
 }
 
 // An Integration that does not exist in the Workspace is a 422 and stores nothing.
@@ -64,5 +64,5 @@ func TestSiteAutomationsRefuseAnUnknownIntegration(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteAutomationsUpdateUnprocessableEntity{}, update)
 
 	assert.False(t, env.DB.Automation.Query().Where(automation.Name("x")).ExistX(ctx), "a refused create stores nothing")
-	assert.Nil(t, env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID).IntegrationID, "a refused update changes nothing")
+	assert.Nil(t, env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).IntegrationID, "a refused update changes nothing")
 }

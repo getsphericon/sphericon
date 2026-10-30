@@ -26,11 +26,12 @@ func TestRequestConstructorsDeduplicateTheSameLogicalSend(t *testing.T) {
 	contact := env.DB.Contact.GetX(ctx, rec.ContactID)
 	automation := env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID)
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunWelcomeCompletedID)
+	version := env.DB.AutomationVersion.GetX(ctx, run.VersionID)
 
 	builders := map[string]func() outbound.Request{
 		"broadcast recipient": func() outbound.Request { return outbound.BroadcastRecipient(bc, rec, contact) },
 		"automation step": func() outbound.Request {
-			return outbound.AutomationStep(automation, run, 0, contact, "Hi", "<p>Hi</p>")
+			return outbound.AutomationStep(automation, run, version, 0, contact, "Hi", "<p>Hi</p>")
 		},
 		"transactional with a client key": func() outbound.Request {
 			return outbound.Transactional(outbound.TransactionalMessage{
@@ -83,10 +84,11 @@ func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 	contact := env.DB.Contact.GetX(ctx, rec.ContactID)
 	automation := env.DB.Automation.GetX(ctx, fixtures.AutomationWelcomeSeriesID)
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunWelcomeCompletedID)
+	version := env.DB.AutomationVersion.GetX(ctx, run.VersionID)
 
 	for want, req := range map[string]outbound.Request{
 		fmt.Sprintf("broadcast:%d", rec.ID): outbound.BroadcastRecipient(bc, rec, contact),
-		"automation:1000:2":                 outbound.AutomationStep(automation, run, 2, contact, "Hi", "<p>Hi</p>"),
+		"automation:1000:2":                 outbound.AutomationStep(automation, run, version, 2, contact, "Hi", "<p>Hi</p>"),
 		"transactional:k1":                  outbound.Transactional(outbound.TransactionalMessage{ClientKey: "k1", Destination: "a@example.com"}),
 	} {
 		res, err := newModule(env).Send(ctx, s, req)

@@ -2,7 +2,7 @@ import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
 import {
-  handleSiteRulesActivate,
+  handleSiteRulesPublish,
   handleSiteRulesArchive,
   handleSiteRulesDeactivate,
   handleSiteRulesDelete,
@@ -24,12 +24,23 @@ const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?
 const WELCOME: SiteRuleResource = {
   id: '1',
   name: 'Tag signups',
-  status: 'draft',
-  triggerEvents: ['signed_up', 'trial_started'],
-  actions: [{ type: 'apply_tag', tag: 'new' }],
+  status: 'inactive',
+  live: null,
+  draft: {
+    number: 1,
+    triggerEvents: ['signed_up', 'trial_started'],
+    actions: [{ type: 'apply_tag', tag: 'new' }],
+  },
   ...TIMESTAMPS,
 }
-const LIVE: SiteRuleResource = { ...WELCOME, id: '2', name: 'Untag churned', status: 'active' }
+const LIVE: SiteRuleResource = {
+  ...WELCOME,
+  id: '2',
+  name: 'Untag churned',
+  status: 'active',
+  live: WELCOME.draft,
+  draft: null,
+}
 
 test('lists the workspace rules with their trigger events and status', async () => {
   worker.use(handleSiteRulesList({ body: page([WELCOME, LIVE], 2) }))
@@ -39,7 +50,7 @@ test('lists the workspace rules with their trigger events and status', async () 
   await expect.element(screen.getByText('Tag signups')).toBeInTheDocument()
   await expect.element(screen.getByText('Untag churned')).toBeInTheDocument()
   await expect.element(screen.getByText('signed_up, trial_started').first()).toBeInTheDocument()
-  await expect.element(screen.getByText('Draft')).toBeInTheDocument()
+  await expect.element(screen.getByText('Inactive')).toBeInTheDocument()
   await expect.element(screen.getByText('Active')).toBeInTheDocument()
 })
 
@@ -84,30 +95,30 @@ test('the row menu links to the firings and the editor', async () => {
     .toHaveAttribute('href', '/workspaces/TestWs01/rules/1/edit')
 })
 
-test('activating a draft rule calls activate and refreshes the list', async () => {
-  const activated: string[] = []
+test('publishing an inactive rule calls publish and refreshes the list', async () => {
+  const published: string[] = []
   let listFetches = 0
   worker.use(
     handleSiteRulesList(() => {
       listFetches++
       return HttpResponse.json(
-        page(activated.length > 0 ? [{ ...WELCOME, status: 'active' }] : [WELCOME]),
+        page(published.length > 0 ? [{ ...WELCOME, status: 'active' }] : [WELCOME]),
       )
     }),
-    handleSiteRulesActivate(({ params }) => {
-      activated.push(params.id)
+    handleSiteRulesPublish(({ params }) => {
+      published.push(params.id)
       return HttpResponse.json({ ...WELCOME, status: 'active' })
     }),
   )
 
   const { screen } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
-  await expect.element(screen.getByText('Draft')).toBeInTheDocument()
+  await expect.element(screen.getByText('Inactive')).toBeInTheDocument()
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
-  await screen.getByRole('menuitem', { name: 'Activate' }).click()
+  await screen.getByRole('menuitem', { name: 'Publish' }).click()
 
-  await expect.poll(() => activated).toEqual(['1'])
-  await expect.element(screen.getByText('Rule activated')).toBeInTheDocument()
+  await expect.poll(() => published).toEqual(['1'])
+  await expect.element(screen.getByText('Rule published')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('Active')).toBeInTheDocument()
 })
@@ -118,7 +129,7 @@ test('deactivating an active rule calls deactivate', async () => {
     handleSiteRulesList({ body: page([LIVE], 1) }),
     handleSiteRulesDeactivate(({ params }) => {
       deactivated.push(params.id)
-      return HttpResponse.json({ ...LIVE, status: 'draft' })
+      return HttpResponse.json({ ...LIVE, status: 'inactive' })
     }),
   )
 
@@ -132,17 +143,17 @@ test('deactivating an active rule calls deactivate', async () => {
   await expect.element(screen.getByText('Rule deactivated')).toBeInTheDocument()
 })
 
-test('a failed activation shows the problem', async () => {
+test('a failed publish shows the problem', async () => {
   worker.use(
     handleSiteRulesList({ body: page([WELCOME], 1) }),
-    handleSiteRulesActivate(() => problem(422, { detail: 'a Rule needs an Action' })),
+    handleSiteRulesPublish(() => problem(422, { detail: 'a Rule needs an Action' })),
   )
 
   const { screen } = await renderWithRouter(<RulesListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Tag signups')).toBeInTheDocument()
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
-  await screen.getByRole('menuitem', { name: 'Activate' }).click()
+  await screen.getByRole('menuitem', { name: 'Publish' }).click()
 
   await expect.element(screen.getByText('Failed to change rule status')).toBeInTheDocument()
   await expect.element(screen.getByText('a Rule needs an Action')).toBeInTheDocument()

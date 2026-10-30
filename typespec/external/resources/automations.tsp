@@ -5,10 +5,10 @@ using TypeSpec.Rest.Resource;
 
 namespace Sphericon;
 
-/** Automation lifecycle status */
+/** Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody */
 enum AutomationStatus {
-  draft,
   active,
+  inactive,
 }
 
 /** Kind of automation step */
@@ -101,8 +101,24 @@ model AutomationStep {
   hasSecret?: boolean;
 }
 
-/** An Automation: an event-triggered, ordered sequence of steps. Created
- * automations are always draft; activating is a separate, send-class operation. */
+/** One version of an automation's definition: what publishing makes it do (ADR 0065) */
+model AutomationVersion {
+  /** 1 for the first version, plus one per version after it */
+  number: int32;
+
+  /** Event action that enrolls a contact (e.g. "contact.created", "email.opened") */
+  triggerEvent: string;
+
+  /** Sending integration of the email steps; null means the workspace default */
+  integrationId?: EntityId | null;
+
+  /** The ordered, linear steps */
+  steps: AutomationStep[];
+}
+
+/** An Automation: an event-triggered, ordered sequence of steps. Edits write a draft beside the
+ * live version, and only publishing (a send-class operation) changes what it does. Created
+ * automations are always inactive, with the definition as their draft. */
 @resource("automations")
 @segment("automations")
 model AutomationResource {
@@ -116,14 +132,11 @@ model AutomationResource {
   /** Lifecycle status */
   status: AutomationStatus;
 
-  /** Event action that enrolls a contact (e.g. "contact.created", "email.opened") */
-  triggerEvent: string;
+  /** What it does now: the version new enrollments begin on; null until first published */
+  live: AutomationVersion | null;
 
-  /** The automation's ordered, linear steps */
-  steps: AutomationStep[];
-
-  /** Sending integration of the email steps; null means the workspace default */
-  integrationId?: EntityId | null;
+  /** Unpublished changes, the one version above live; null when there are none */
+  draft: AutomationVersion | null;
 
   /** When the automation was archived; null while it is kept */
   archivedAt?: Timestamp | null;
@@ -135,7 +148,7 @@ model AutomationResource {
   updatedAt: Timestamp;
 }
 
-/** Request body for creating an automation (always created as a draft) */
+/** Request body for creating an automation (always created inactive) */
 model CreateAutomationInput {
   name: string;
   triggerEvent: string;
@@ -145,7 +158,9 @@ model CreateAutomationInput {
   integrationId?: EntityId | null;
 }
 
-/** Request body for updating an automation */
+/** Request body for updating an automation. The name changes at once; the trigger, steps and
+ * integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and only publishing makes the draft live. */
 model UpdateAutomationInput {
   name?: string;
   triggerEvent?: string;
@@ -204,11 +219,11 @@ interface Automations
     | TooManyRequestsProblem
     | NotFoundProblem;
 
-  /** Activate an automation (starts enrolling contacts). Needs the automations:activate scope. */
-  @action("activate")
+  /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. Needs the automations:publish scope. */
+  @action("publish")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsActivate])
-  activate(...ResourceParameters<AutomationResource>):
+  @extension("x-required-scopes", #[ApiTokenScope.automationsPublish])
+  publish(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
     | UnauthorizedProblem
@@ -217,10 +232,23 @@ interface Automations
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:activate scope. */
+  /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope. */
+  @action("revert")
+  @autoRoute
+  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  revert(...ResourceParameters<AutomationResource>):
+    | AutomationResource
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | ForbiddenProblem
+    | TooManyRequestsProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write scope. */
   @action("deactivate")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsActivate])
+  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
   deactivate(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem

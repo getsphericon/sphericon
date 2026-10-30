@@ -53,10 +53,10 @@ namespace Sphericon;
 );
 
 // Send is a second lock (ADR 0016): send-class tools are listed over MCP, and
-// callable, only for tokens that also carry the `mcp:send` scope. Deactivating an
-// automation only stops new enrollments, so it stays an authoring tool.
-@@extension(Automations.activate, "x-mcp", #{ send: true });
-@@extension(Rules.activate, "x-mcp", #{ send: true });
+// callable, only for tokens that also carry the `mcp:send` scope (ADR 0065). Deactivating
+// an Automation or a Rule only stops new Enrollments or Firings, so it stays an authoring tool.
+@@extension(Automations.publish, "x-mcp", #{ send: true });
+@@extension(Rules.publish, "x-mcp", #{ send: true });
 @@extension(Emails.send, "x-mcp", #{ send: true });
 @@extension(Broadcasts.schedule, "x-mcp", #{ send: true });
 @@extension(Broadcasts.unschedule, "x-mcp", #{ send: true });

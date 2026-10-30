@@ -20,7 +20,7 @@ const missingAutomation = externalapi.EntityId(999999)
 func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:activate")
+	c := env.ExternalScoped(t, "automations:read", "automations:write", "automations:publish")
 
 	foreign := env.DB.Automation.GetX(ctx, fixtures.AutomationGlobexID)
 
@@ -37,9 +37,9 @@ func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 			require.NoError(t, err)
 			assert.IsType(t, &externalapi.AutomationsUpdateNotFound{}, upd)
 
-			act, err := c.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: id})
+			act, err := c.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: id})
 			require.NoError(t, err)
-			assert.IsType(t, &externalapi.AutomationsActivateNotFound{}, act)
+			assert.IsType(t, &externalapi.AutomationsPublishNotFound{}, act)
 
 			deact, err := c.AutomationsDeactivate(ctx, externalapi.AutomationsDeactivateParams{ID: id})
 			require.NoError(t, err)
@@ -54,5 +54,5 @@ func TestExternalAutomationsAreWorkspaceScoped(t *testing.T) {
 	stored, err := env.DB.Automation.Get(ctx, foreign.ID)
 	require.NoError(t, err, "the foreign automation survives")
 	assert.Equal(t, fixtures.AutomationGlobexName, stored.Name)
-	assert.Equal(t, automation.StatusDraft, stored.Status, "never activated across tenants")
+	assert.Equal(t, automation.StatusInactive, stored.Status, "never published across tenants")
 }

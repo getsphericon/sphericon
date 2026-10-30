@@ -170,10 +170,10 @@ func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, 
 		})
 }
 
-// Archive discards a Segment (ADR 0049), unless a draft or scheduled Broadcast uses it: then it
-// returns an *inuse.Error naming those Broadcasts. A sent or failed Broadcast keeps its stored
-// reference as history and does not block. A missing Segment is ErrNotFound; archiving an
-// archived one changes nothing.
+// Archive discards a Segment (ADR 0049), unless a draft Broadcast uses it: then it returns an
+// *inuse.Error naming those Broadcasts. A Broadcast past draft holds a copy of the Segment's
+// Condition (ADR 0065) and keeps its reference only as provenance, so it does not block. A missing
+// Segment is ErrNotFound; archiving an archived one changes nothing.
 func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) error {
 	return s.bus.WithinScopedTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
 		seg, err := ts.Segment().Get(ctx, id)
@@ -187,7 +187,7 @@ func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) error {
 			return nil
 		}
 		live, err := ts.Broadcast().Query().
-			Where(broadcast.SegmentID(id), broadcast.StatusIn(broadcast.StatusDraft, broadcast.StatusScheduled)).
+			Where(broadcast.SegmentID(id), broadcast.StatusEQ(broadcast.StatusDraft)).
 			Order(ent.Asc(broadcast.FieldID)).
 			All(ctx)
 		if err != nil {

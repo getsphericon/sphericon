@@ -230,7 +230,6 @@
     "websiteUrl": "https://getsphericon.com"
   },
   "automations": {
-    "activate": "Activate",
     "addAutomation": "New automation",
     "applyTagNodeDescription": "Add a tag to the contact.",
     "bounced": "Bounced",
@@ -283,19 +282,22 @@
     "leaveMessage": "Your changes to this automation are not saved.",
     "leaveStay": "Keep editing",
     "leaveTitle": "Leave without saving?",
+    "liveVersion": "Live version {{number}}",
     "messageDone": "Done",
     "nameLabel": "Name",
     "noEnrollments": "No contacts enrolled yet",
     "noRecords": "No automations yet",
     "opens": "Opens",
+    "publish": "Publish",
     "removeTagNodeDescription": "Take a tag off the contact.",
     "statusActive": "Active",
-    "statusDraft": "Draft",
+    "statusInactive": "Inactive",
     "statusLabel": "Status",
     "stepApplyTag": "Apply tag",
     "stepEmail": "Send email",
     "stepHttp": "Call a URL",
     "stepRemoveTag": "Remove tag",
+    "stepsLabel": "Steps",
     "stepTrigger": "Trigger",
     "stepWait": "Wait",
     "tagNameLabel": "Tag",
@@ -337,6 +339,11 @@
   },
   "broadcasts": {
     "addBroadcast": "New broadcast",
+    "audience": {
+      "all": "Audience: all contacts",
+      "copied": "Its audience is the segment's conditions as they were when it was scheduled or sent: editing the segment since changes nothing for it.",
+      "segment": "Audience: segment {{name}}"
+    },
     "createTitle": "New broadcast",
     "deliveryHint": "Send now, or schedule it for a future time. Only draft broadcasts can be sent.",
     "deliveryLabel": "Delivery",
@@ -670,6 +677,11 @@
       "string": "Text"
     }
   },
+  "draft": {
+    "pending": "Unpublished changes",
+    "publish": "Publish",
+    "revert": "Revert"
+  },
   "forgotPassword": {
     "backToLogin": "Back to sign in",
     "description": "Enter your email and we'll send you a reset link.",
@@ -835,12 +847,13 @@
     "title": "Page not found"
   },
   "notifications": {
-    "automationActivated": "Automation activated",
     "automationArchived": "Automation archived",
     "automationCreated": "Automation created",
     "automationDeactivated": "Automation deactivated",
     "automationDeleted": "Automation deleted",
+    "automationPublished": "Automation published",
     "automationRestored": "Automation restored",
+    "automationReverted": "Unpublished changes reverted",
     "automationUpdated": "Automation updated",
     "broadcastArchived": "Broadcast archived",
     "broadcastCreated": "Broadcast created",
@@ -861,12 +874,13 @@
     "rateLimitedSeconds": "Too many attempts. Try again in {{count}} seconds.",
     "rateLimitedSeconds_one": "Too many attempts. Try again in {{count}} second.",
     "rateLimitedSeconds_other": "Too many attempts. Try again in {{count}} seconds.",
-    "ruleActivated": "Rule activated",
     "ruleArchived": "Rule archived",
     "ruleCreated": "Rule created",
     "ruleDeactivated": "Rule deactivated",
     "ruleDeleted": "Rule deleted",
+    "rulePublished": "Rule published",
     "ruleRestored": "Rule restored",
+    "ruleReverted": "Unpublished changes dropped",
     "ruleUpdated": "Rule updated",
     "segmentArchived": "Segment archived",
     "segmentCreated": "Segment created",
@@ -1009,7 +1023,6 @@
       "remove_tag": "Remove tag"
     },
     "actionTypeLabel": "Action",
-    "activate": "Activate",
     "addAction": "Add action",
     "addRule": "New rule",
     "conditionHint": "Leave empty to fire for every contact.",
@@ -1055,11 +1068,13 @@
       "secretLabel": "Signing secret",
       "urlLabel": "URL"
     },
+    "liveVersion": "Live version {{number}}",
     "nameLabel": "Name",
     "noFirings": "This rule has not fired yet",
     "noRecords": "No rules yet",
+    "publish": "Publish",
     "statusActive": "Active",
-    "statusDraft": "Draft",
+    "statusInactive": "Inactive",
     "statusLabel": "Status",
     "triggerColumn": "Trigger events",
     "triggerEventsHint": "The rule fires when any of these events is recorded for a contact.",

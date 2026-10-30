@@ -6,6 +6,7 @@ import { PageSkeleton } from '../../components/Skeletons.tsx'
 import { siteAutomationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { AutomationBuilder } from './AutomationBuilder.tsx'
+import { editedVersionKey } from './editedVersion.ts'
 
 export function AutomationEditPage() {
   const { t } = useTranslation()
@@ -17,7 +18,10 @@ export function AutomationEditPage() {
     return <PageSkeleton />
   }
 
-  if (getQuery.isError || !getQuery.data) {
+  // A new Automation is created with a draft and Publish only moves it to live, so one of the two
+  // is always there.
+  const edited = getQuery.data?.draft ?? getQuery.data?.live
+  if (getQuery.isError || !getQuery.data || !edited) {
     return (
       <ApiErrorAlert
         error={getQuery.error}
@@ -27,5 +31,12 @@ export function AutomationEditPage() {
     )
   }
 
-  return <AutomationBuilder workspaceId={workspaceId} automation={getQuery.data} />
+  return (
+    <AutomationBuilder
+      key={editedVersionKey(getQuery.data)}
+      workspaceId={workspaceId}
+      automation={getQuery.data}
+      edited={edited}
+    />
+  )
 }

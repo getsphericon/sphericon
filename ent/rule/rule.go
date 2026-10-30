@@ -29,14 +29,18 @@ const (
 	FieldStatus = "status"
 	// FieldActivatedAt holds the string denoting the activated_at field in the database.
 	FieldActivatedAt = "activated_at"
-	// FieldCondition holds the string denoting the condition field in the database.
-	FieldCondition = "condition"
-	// FieldActions holds the string denoting the actions field in the database.
-	FieldActions = "actions"
+	// FieldLiveVersionID holds the string denoting the live_version_id field in the database.
+	FieldLiveVersionID = "live_version_id"
+	// FieldDraftVersionID holds the string denoting the draft_version_id field in the database.
+	FieldDraftVersionID = "draft_version_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
-	// EdgeTriggers holds the string denoting the triggers edge name in mutations.
-	EdgeTriggers = "triggers"
+	// EdgeVersions holds the string denoting the versions edge name in mutations.
+	EdgeVersions = "versions"
+	// EdgeLiveVersion holds the string denoting the live_version edge name in mutations.
+	EdgeLiveVersion = "live_version"
+	// EdgeDraftVersion holds the string denoting the draft_version edge name in mutations.
+	EdgeDraftVersion = "draft_version"
 	// EdgeFirings holds the string denoting the firings edge name in mutations.
 	EdgeFirings = "firings"
 	// Table holds the table name of the rule in the database.
@@ -48,13 +52,27 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
-	// TriggersTable is the table that holds the triggers relation/edge.
-	TriggersTable = "rule_triggers"
-	// TriggersInverseTable is the table name for the RuleTrigger entity.
-	// It exists in this package in order to avoid circular dependency with the "ruletrigger" package.
-	TriggersInverseTable = "rule_triggers"
-	// TriggersColumn is the table column denoting the triggers relation/edge.
-	TriggersColumn = "rule_id"
+	// VersionsTable is the table that holds the versions relation/edge.
+	VersionsTable = "rule_versions"
+	// VersionsInverseTable is the table name for the RuleVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "ruleversion" package.
+	VersionsInverseTable = "rule_versions"
+	// VersionsColumn is the table column denoting the versions relation/edge.
+	VersionsColumn = "rule_id"
+	// LiveVersionTable is the table that holds the live_version relation/edge.
+	LiveVersionTable = "rules"
+	// LiveVersionInverseTable is the table name for the RuleVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "ruleversion" package.
+	LiveVersionInverseTable = "rule_versions"
+	// LiveVersionColumn is the table column denoting the live_version relation/edge.
+	LiveVersionColumn = "live_version_id"
+	// DraftVersionTable is the table that holds the draft_version relation/edge.
+	DraftVersionTable = "rules"
+	// DraftVersionInverseTable is the table name for the RuleVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "ruleversion" package.
+	DraftVersionInverseTable = "rule_versions"
+	// DraftVersionColumn is the table column denoting the draft_version relation/edge.
+	DraftVersionColumn = "draft_version_id"
 	// FiringsTable is the table that holds the firings relation/edge.
 	FiringsTable = "rule_firings"
 	// FiringsInverseTable is the table name for the RuleFiring entity.
@@ -74,8 +92,8 @@ var Columns = []string{
 	FieldName,
 	FieldStatus,
 	FieldActivatedAt,
-	FieldCondition,
-	FieldActions,
+	FieldLiveVersionID,
+	FieldDraftVersionID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -97,20 +115,18 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
-	// DefaultActions holds the default value on creation for the "actions" field.
-	DefaultActions string
 )
 
 // Status defines the type for the "status" enum field.
 type Status string
 
-// StatusDraft is the default value of the Status enum.
-const DefaultStatus = StatusDraft
+// StatusInactive is the default value of the Status enum.
+const DefaultStatus = StatusInactive
 
 // Status values.
 const (
-	StatusDraft  Status = "draft"
-	StatusActive Status = "active"
+	StatusActive   Status = "active"
+	StatusInactive Status = "inactive"
 )
 
 func (s Status) String() string {
@@ -120,7 +136,7 @@ func (s Status) String() string {
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s Status) error {
 	switch s {
-	case StatusDraft, StatusActive:
+	case StatusActive, StatusInactive:
 		return nil
 	default:
 		return fmt.Errorf("rule: invalid enum value for status field: %q", s)
@@ -170,14 +186,14 @@ func ByActivatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldActivatedAt, opts...).ToFunc()
 }
 
-// ByCondition orders the results by the condition field.
-func ByCondition(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCondition, opts...).ToFunc()
+// ByLiveVersionID orders the results by the live_version_id field.
+func ByLiveVersionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLiveVersionID, opts...).ToFunc()
 }
 
-// ByActions orders the results by the actions field.
-func ByActions(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldActions, opts...).ToFunc()
+// ByDraftVersionID orders the results by the draft_version_id field.
+func ByDraftVersionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDraftVersionID, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.
@@ -187,17 +203,31 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// ByTriggersCount orders the results by triggers count.
-func ByTriggersCount(opts ...sql.OrderTermOption) OrderOption {
+// ByVersionsCount orders the results by versions count.
+func ByVersionsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newTriggersStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newVersionsStep(), opts...)
 	}
 }
 
-// ByTriggers orders the results by triggers terms.
-func ByTriggers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByVersions orders the results by versions terms.
+func ByVersions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newTriggersStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newVersionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByLiveVersionField orders the results by live_version field.
+func ByLiveVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newLiveVersionStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByDraftVersionField orders the results by draft_version field.
+func ByDraftVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDraftVersionStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -221,11 +251,25 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
 	)
 }
-func newTriggersStep() *sqlgraph.Step {
+func newVersionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(TriggersInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, TriggersTable, TriggersColumn),
+		sqlgraph.To(VersionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, VersionsTable, VersionsColumn),
+	)
+}
+func newLiveVersionStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(LiveVersionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, LiveVersionTable, LiveVersionColumn),
+	)
+}
+func newDraftVersionStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DraftVersionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, DraftVersionTable, DraftVersionColumn),
 	)
 }
 func newFiringsStep() *sqlgraph.Step {

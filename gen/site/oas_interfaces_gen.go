@@ -89,10 +89,6 @@ type SiteAutomationReportsGetRes interface {
 	siteAutomationReportsGetRes()
 }
 
-type SiteAutomationsActivateRes interface {
-	siteAutomationsActivateRes()
-}
-
 type SiteAutomationsArchiveRes interface {
 	siteAutomationsArchiveRes()
 }
@@ -119,6 +115,14 @@ type SiteAutomationsGetRes interface {
 
 type SiteAutomationsListRes interface {
 	siteAutomationsListRes()
+}
+
+type SiteAutomationsPublishRes interface {
+	siteAutomationsPublishRes()
+}
+
+type SiteAutomationsRevertRes interface {
+	siteAutomationsRevertRes()
 }
 
 type SiteAutomationsUnarchiveRes interface {
@@ -425,10 +429,6 @@ type SiteRuleFiringsListRes interface {
 	siteRuleFiringsListRes()
 }
 
-type SiteRulesActivateRes interface {
-	siteRulesActivateRes()
-}
-
 type SiteRulesArchiveRes interface {
 	siteRulesArchiveRes()
 }
@@ -455,6 +455,14 @@ type SiteRulesGetRes interface {
 
 type SiteRulesListRes interface {
 	siteRulesListRes()
+}
+
+type SiteRulesPublishRes interface {
+	siteRulesPublishRes()
+}
+
+type SiteRulesRevertRes interface {
+	siteRulesRevertRes()
 }
 
 type SiteRulesUnarchiveRes interface {

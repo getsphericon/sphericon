@@ -5,10 +5,10 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** Automation lifecycle status */
+/** Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody */
 enum SiteAutomationStatus {
-  draft,
   active,
+  inactive,
 }
 
 /** Kind of automation step */
@@ -101,6 +101,21 @@ model SiteAutomationStep {
   hasSecret?: boolean;
 }
 
+/** One version of an automation's definition: what publishing makes it do (ADR 0065) */
+model SiteAutomationVersion {
+  /** 1 for the first version, plus one per version after it */
+  number: int32;
+
+  /** Event action that enrolls a contact (e.g. "contact.created", "email.opened") */
+  triggerEvent: string;
+
+  /** Sending integration of the email steps; null means the workspace default */
+  integrationId?: EntityId | null;
+
+  /** The ordered, linear steps */
+  steps: SiteAutomationStep[];
+}
+
 /** Automation resource used by the site UI */
 @resource("automations")
 @segment("automations")
@@ -116,14 +131,11 @@ model SiteAutomationResource {
   /** Lifecycle status */
   status: SiteAutomationStatus;
 
-  /** Event action that enrolls a contact (e.g. "contact.created", "email.opened") */
-  triggerEvent: string;
+  /** What it does now: the version new enrollments begin on; null until first published */
+  live: SiteAutomationVersion | null;
 
-  /** The automation's ordered, linear steps */
-  steps: SiteAutomationStep[];
-
-  /** Sending integration of the email steps; null means the workspace default */
-  integrationId?: EntityId | null;
+  /** Unpublished changes, the one version above live; null when there are none */
+  draft: SiteAutomationVersion | null;
 
   /** When the automation was archived; null while it is kept */
   archivedAt?: Timestamp | null;
@@ -149,7 +161,9 @@ model SiteCreateAutomationInput {
   integrationId?: EntityId | null;
 }
 
-/** Site request body for updating an automation */
+/** Site request body for updating an automation. The name changes at once; the trigger, steps
+ * and integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and publishing makes the draft live. */
 model SiteUpdateAutomationInput {
   name?: string;
   triggerEvent?: string;
@@ -202,11 +216,24 @@ interface SiteAutomations
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Activate an automation (starts enrolling contacts) */
-  @action("activate")
+  /**
+   * Publish an automation: the draft becomes live and the automation active, enrolling contacts;
+   * with no draft, the live version is resumed. 422 with neither.
+   */
+  @action("publish")
   @autoRoute
   @extension("x-required-permissions", #[])
-  activate(...ResourceParameters<SiteAutomationResource>):
+  publish(...ResourceParameters<SiteAutomationResource>):
+    | SiteAutomationResource
+    | BadRequestProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. */
+  @action("revert")
+  @autoRoute
+  @extension("x-required-permissions", #[])
+  revert(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
     | NotFoundProblem

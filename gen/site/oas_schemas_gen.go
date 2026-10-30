@@ -62,7 +62,7 @@ const (
 	ApiTokenScopeIntegrationsRead      ApiTokenScope = "integrations:read"
 	ApiTokenScopeEmailsSend            ApiTokenScope = "emails:send"
 	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
-	ApiTokenScopeAutomationsActivate   ApiTokenScope = "automations:activate"
+	ApiTokenScopeAutomationsPublish    ApiTokenScope = "automations:publish"
 	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
@@ -100,7 +100,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeIntegrationsRead,
 		ApiTokenScopeEmailsSend,
 		ApiTokenScopeBroadcastsSend,
-		ApiTokenScopeAutomationsActivate,
+		ApiTokenScopeAutomationsPublish,
 		ApiTokenScopeMcpSend,
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
@@ -161,7 +161,7 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeBroadcastsSend:
 		return []byte(s), nil
-	case ApiTokenScopeAutomationsActivate:
+	case ApiTokenScopeAutomationsPublish:
 		return []byte(s), nil
 	case ApiTokenScopeMcpSend:
 		return []byte(s), nil
@@ -257,8 +257,8 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeBroadcastsSend:
 		*s = ApiTokenScopeBroadcastsSend
 		return nil
-	case ApiTokenScopeAutomationsActivate:
-		*s = ApiTokenScopeAutomationsActivate
+	case ApiTokenScopeAutomationsPublish:
+		*s = ApiTokenScopeAutomationsPublish
 		return nil
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
@@ -2056,6 +2056,96 @@ func (o NilRetentionDays) Get() (v RetentionDays, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilRetentionDays) Or(d RetentionDays) RetentionDays {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilSiteAutomationVersion returns new NilSiteAutomationVersion with value set to v.
+func NewNilSiteAutomationVersion(v SiteAutomationVersion) NilSiteAutomationVersion {
+	return NilSiteAutomationVersion{
+		Value: v,
+	}
+}
+
+// NilSiteAutomationVersion is nullable SiteAutomationVersion.
+type NilSiteAutomationVersion struct {
+	Value SiteAutomationVersion
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilSiteAutomationVersion) SetTo(v SiteAutomationVersion) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilSiteAutomationVersion) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilSiteAutomationVersion) SetToNull() {
+	o.Null = true
+	var v SiteAutomationVersion
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilSiteAutomationVersion) Get() (v SiteAutomationVersion, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilSiteAutomationVersion) Or(d SiteAutomationVersion) SiteAutomationVersion {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilSiteRuleVersion returns new NilSiteRuleVersion with value set to v.
+func NewNilSiteRuleVersion(v SiteRuleVersion) NilSiteRuleVersion {
+	return NilSiteRuleVersion{
+		Value: v,
+	}
+}
+
+// NilSiteRuleVersion is nullable SiteRuleVersion.
+type NilSiteRuleVersion struct {
+	Value SiteRuleVersion
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilSiteRuleVersion) SetTo(v SiteRuleVersion) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilSiteRuleVersion) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilSiteRuleVersion) SetToNull() {
+	o.Null = true
+	var v SiteRuleVersion
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilSiteRuleVersion) Get() (v SiteRuleVersion, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilSiteRuleVersion) Or(d SiteRuleVersion) SiteRuleVersion {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6195,10 +6285,10 @@ type RetentionDays int32
 type SendScope string
 
 const (
-	SendScopeEmailsSend          SendScope = "emails:send"
-	SendScopeBroadcastsSend      SendScope = "broadcasts:send"
-	SendScopeAutomationsActivate SendScope = "automations:activate"
-	SendScopeMcpSend             SendScope = "mcp:send"
+	SendScopeEmailsSend         SendScope = "emails:send"
+	SendScopeBroadcastsSend     SendScope = "broadcasts:send"
+	SendScopeAutomationsPublish SendScope = "automations:publish"
+	SendScopeMcpSend            SendScope = "mcp:send"
 )
 
 // AllValues returns all SendScope values.
@@ -6206,7 +6296,7 @@ func (SendScope) AllValues() []SendScope {
 	return []SendScope{
 		SendScopeEmailsSend,
 		SendScopeBroadcastsSend,
-		SendScopeAutomationsActivate,
+		SendScopeAutomationsPublish,
 		SendScopeMcpSend,
 	}
 }
@@ -6218,7 +6308,7 @@ func (s SendScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case SendScopeBroadcastsSend:
 		return []byte(s), nil
-	case SendScopeAutomationsActivate:
+	case SendScopeAutomationsPublish:
 		return []byte(s), nil
 	case SendScopeMcpSend:
 		return []byte(s), nil
@@ -6236,8 +6326,8 @@ func (s *SendScope) UnmarshalText(data []byte) error {
 	case SendScopeBroadcastsSend:
 		*s = SendScopeBroadcastsSend
 		return nil
-	case SendScopeAutomationsActivate:
-		*s = SendScopeAutomationsActivate
+	case SendScopeAutomationsPublish:
+		*s = SendScopeAutomationsPublish
 		return nil
 	case SendScopeMcpSend:
 		*s = SendScopeMcpSend
@@ -8251,12 +8341,10 @@ type SiteAutomationResource struct {
 	Name string `json:"name"`
 	// Lifecycle status.
 	Status SiteAutomationStatus `json:"status"`
-	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
-	TriggerEvent string `json:"triggerEvent"`
-	// The automation's ordered, linear steps.
-	Steps []SiteAutomationStep `json:"steps"`
-	// Sending integration of the email steps; null means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
+	// What it does now: the version new enrollments begin on; null until first published.
+	Live NilSiteAutomationVersion `json:"live"`
+	// Unpublished changes, the one version above live; null when there are none.
+	Draft NilSiteAutomationVersion `json:"draft"`
 	// When the automation was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Orders credited to the automation and their net revenue (ADR 0064); set on the list and on the
@@ -8283,19 +8371,14 @@ func (s *SiteAutomationResource) GetStatus() SiteAutomationStatus {
 	return s.Status
 }
 
-// GetTriggerEvent returns the value of TriggerEvent.
-func (s *SiteAutomationResource) GetTriggerEvent() string {
-	return s.TriggerEvent
+// GetLive returns the value of Live.
+func (s *SiteAutomationResource) GetLive() NilSiteAutomationVersion {
+	return s.Live
 }
 
-// GetSteps returns the value of Steps.
-func (s *SiteAutomationResource) GetSteps() []SiteAutomationStep {
-	return s.Steps
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *SiteAutomationResource) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
+// GetDraft returns the value of Draft.
+func (s *SiteAutomationResource) GetDraft() NilSiteAutomationVersion {
+	return s.Draft
 }
 
 // GetArchivedAt returns the value of ArchivedAt.
@@ -8333,19 +8416,14 @@ func (s *SiteAutomationResource) SetStatus(val SiteAutomationStatus) {
 	s.Status = val
 }
 
-// SetTriggerEvent sets the value of TriggerEvent.
-func (s *SiteAutomationResource) SetTriggerEvent(val string) {
-	s.TriggerEvent = val
+// SetLive sets the value of Live.
+func (s *SiteAutomationResource) SetLive(val NilSiteAutomationVersion) {
+	s.Live = val
 }
 
-// SetSteps sets the value of Steps.
-func (s *SiteAutomationResource) SetSteps(val []SiteAutomationStep) {
-	s.Steps = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *SiteAutomationResource) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
+// SetDraft sets the value of Draft.
+func (s *SiteAutomationResource) SetDraft(val NilSiteAutomationVersion) {
+	s.Draft = val
 }
 
 // SetArchivedAt sets the value of ArchivedAt.
@@ -8368,37 +8446,38 @@ func (s *SiteAutomationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteAutomationResource) siteAutomationsActivateRes()   {}
 func (*SiteAutomationResource) siteAutomationsArchiveRes()    {}
 func (*SiteAutomationResource) siteAutomationsCreateRes()     {}
 func (*SiteAutomationResource) siteAutomationsDeactivateRes() {}
 func (*SiteAutomationResource) siteAutomationsGetRes()        {}
+func (*SiteAutomationResource) siteAutomationsPublishRes()    {}
+func (*SiteAutomationResource) siteAutomationsRevertRes()     {}
 func (*SiteAutomationResource) siteAutomationsUnarchiveRes()  {}
 func (*SiteAutomationResource) siteAutomationsUpdateRes()     {}
 
-// Automation lifecycle status.
+// Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
 // Ref: #/components/schemas/SiteAutomationStatus
 type SiteAutomationStatus string
 
 const (
-	SiteAutomationStatusDraft  SiteAutomationStatus = "draft"
-	SiteAutomationStatusActive SiteAutomationStatus = "active"
+	SiteAutomationStatusActive   SiteAutomationStatus = "active"
+	SiteAutomationStatusInactive SiteAutomationStatus = "inactive"
 )
 
 // AllValues returns all SiteAutomationStatus values.
 func (SiteAutomationStatus) AllValues() []SiteAutomationStatus {
 	return []SiteAutomationStatus{
-		SiteAutomationStatusDraft,
 		SiteAutomationStatusActive,
+		SiteAutomationStatusInactive,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s SiteAutomationStatus) MarshalText() ([]byte, error) {
 	switch s {
-	case SiteAutomationStatusDraft:
-		return []byte(s), nil
 	case SiteAutomationStatusActive:
+		return []byte(s), nil
+	case SiteAutomationStatusInactive:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -8408,11 +8487,11 @@ func (s SiteAutomationStatus) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *SiteAutomationStatus) UnmarshalText(data []byte) error {
 	switch SiteAutomationStatus(data) {
-	case SiteAutomationStatusDraft:
-		*s = SiteAutomationStatusDraft
-		return nil
 	case SiteAutomationStatusActive:
 		*s = SiteAutomationStatusActive
+		return nil
+	case SiteAutomationStatusInactive:
+		*s = SiteAutomationStatusInactive
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -8666,17 +8745,58 @@ func (s *SiteAutomationStepType) UnmarshalText(data []byte) error {
 	}
 }
 
-type SiteAutomationsActivateBadRequest ProblemDetails
+// One version of an automation's definition: what publishing makes it do (ADR 0065).
+// Ref: #/components/schemas/SiteAutomationVersion
+type SiteAutomationVersion struct {
+	// 1 for the first version, plus one per version after it.
+	Number int32 `json:"number"`
+	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
+	TriggerEvent string `json:"triggerEvent"`
+	// Sending integration of the email steps; null means the workspace default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The ordered, linear steps.
+	Steps []SiteAutomationStep `json:"steps"`
+}
 
-func (*SiteAutomationsActivateBadRequest) siteAutomationsActivateRes() {}
+// GetNumber returns the value of Number.
+func (s *SiteAutomationVersion) GetNumber() int32 {
+	return s.Number
+}
 
-type SiteAutomationsActivateNotFound ProblemDetails
+// GetTriggerEvent returns the value of TriggerEvent.
+func (s *SiteAutomationVersion) GetTriggerEvent() string {
+	return s.TriggerEvent
+}
 
-func (*SiteAutomationsActivateNotFound) siteAutomationsActivateRes() {}
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SiteAutomationVersion) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
 
-type SiteAutomationsActivateUnprocessableEntity ProblemDetails
+// GetSteps returns the value of Steps.
+func (s *SiteAutomationVersion) GetSteps() []SiteAutomationStep {
+	return s.Steps
+}
 
-func (*SiteAutomationsActivateUnprocessableEntity) siteAutomationsActivateRes() {}
+// SetNumber sets the value of Number.
+func (s *SiteAutomationVersion) SetNumber(val int32) {
+	s.Number = val
+}
+
+// SetTriggerEvent sets the value of TriggerEvent.
+func (s *SiteAutomationVersion) SetTriggerEvent(val string) {
+	s.TriggerEvent = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SiteAutomationVersion) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *SiteAutomationVersion) SetSteps(val []SiteAutomationStep) {
+	s.Steps = val
+}
 
 type SiteAutomationsArchiveBadRequest ProblemDetails
 
@@ -8812,6 +8932,30 @@ func (*SiteAutomationsListOK) siteAutomationsListRes() {}
 type SiteAutomationsListUnprocessableEntity ProblemDetails
 
 func (*SiteAutomationsListUnprocessableEntity) siteAutomationsListRes() {}
+
+type SiteAutomationsPublishBadRequest ProblemDetails
+
+func (*SiteAutomationsPublishBadRequest) siteAutomationsPublishRes() {}
+
+type SiteAutomationsPublishNotFound ProblemDetails
+
+func (*SiteAutomationsPublishNotFound) siteAutomationsPublishRes() {}
+
+type SiteAutomationsPublishUnprocessableEntity ProblemDetails
+
+func (*SiteAutomationsPublishUnprocessableEntity) siteAutomationsPublishRes() {}
+
+type SiteAutomationsRevertBadRequest ProblemDetails
+
+func (*SiteAutomationsRevertBadRequest) siteAutomationsRevertRes() {}
+
+type SiteAutomationsRevertNotFound ProblemDetails
+
+func (*SiteAutomationsRevertNotFound) siteAutomationsRevertRes() {}
+
+type SiteAutomationsRevertUnprocessableEntity ProblemDetails
+
+func (*SiteAutomationsRevertUnprocessableEntity) siteAutomationsRevertRes() {}
 
 type SiteAutomationsUnarchiveBadRequest ProblemDetails
 
@@ -9099,7 +9243,8 @@ type SiteBroadcastResource struct {
 	// Warnings of the lint over the stored content (ADR 0040); set on the response of a save, never blocks
 	// it.
 	Warnings []LintFinding `json:"warnings"`
-	// Target segment; null means all contacts.
+	// Target segment; null means all contacts. Once the broadcast leaves draft it holds a copy of the
+	// segment's condition taken then, and this names the segment only as where its audience came from.
 	SegmentId OptNilEntityId `json:"segmentId"`
 	// Sending integration; null means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`
@@ -11793,7 +11938,7 @@ func (s *SiteCreateInvitationResponse) SetResource(val SiteInvitationResource) {
 
 func (*SiteCreateInvitationResponse) siteInvitationsCreateRes() {}
 
-// Site request body for creating a Rule (always created as a draft).
+// Site request body for creating a Rule: it is created inactive, with its definition as the draft.
 // Ref: #/components/schemas/SiteCreateRuleInput
 type SiteCreateRuleInput struct {
 	Name string `json:"name"`
@@ -17878,7 +18023,8 @@ func (s *SiteRuleFiringsListOK) SetTotalPages(val int32) {
 
 func (*SiteRuleFiringsListOK) siteRuleFiringsListRes() {}
 
-// Rule resource used by the site UI: a stateless reaction to an Event. Created Rules are drafts.
+// Rule resource used by the site UI: a stateless reaction to an Event. Its definition is versioned
+// (ADR 0065): an edit writes the draft, and Publish makes it live. Created Rules are inactive.
 // Ref: #/components/schemas/SiteRuleResource
 type SiteRuleResource struct {
 	// Unique identifier.
@@ -17887,13 +18033,11 @@ type SiteRuleResource struct {
 	Name string `json:"name"`
 	// Lifecycle status.
 	Status SiteRuleStatus `json:"status"`
-	// The Event actions that make the Rule fire; any one of them does.
-	TriggerEvents []string `json:"triggerEvents"`
-	// The Contact must match this condition for the Rule to fire; absent or empty means every Contact.
-	Condition OptSiteConditionGroup `json:"condition"`
-	// The Rule's ordered Actions.
-	Actions []SiteRuleAction `json:"actions"`
-	// When the Rule was last activated. It acts only on Events recorded after it.
+	// What the Rule does now; null until it is first published.
+	Live NilSiteRuleVersion `json:"live"`
+	// Unpublished changes, the one version above live; null when there are none.
+	Draft NilSiteRuleVersion `json:"draft"`
+	// When the Rule last became active by Publish. It acts only on Events recorded after it.
 	ActivatedAt OptNilTimestamp `json:"activatedAt"`
 	// When the Rule was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
@@ -17918,19 +18062,14 @@ func (s *SiteRuleResource) GetStatus() SiteRuleStatus {
 	return s.Status
 }
 
-// GetTriggerEvents returns the value of TriggerEvents.
-func (s *SiteRuleResource) GetTriggerEvents() []string {
-	return s.TriggerEvents
+// GetLive returns the value of Live.
+func (s *SiteRuleResource) GetLive() NilSiteRuleVersion {
+	return s.Live
 }
 
-// GetCondition returns the value of Condition.
-func (s *SiteRuleResource) GetCondition() OptSiteConditionGroup {
-	return s.Condition
-}
-
-// GetActions returns the value of Actions.
-func (s *SiteRuleResource) GetActions() []SiteRuleAction {
-	return s.Actions
+// GetDraft returns the value of Draft.
+func (s *SiteRuleResource) GetDraft() NilSiteRuleVersion {
+	return s.Draft
 }
 
 // GetActivatedAt returns the value of ActivatedAt.
@@ -17968,19 +18107,14 @@ func (s *SiteRuleResource) SetStatus(val SiteRuleStatus) {
 	s.Status = val
 }
 
-// SetTriggerEvents sets the value of TriggerEvents.
-func (s *SiteRuleResource) SetTriggerEvents(val []string) {
-	s.TriggerEvents = val
+// SetLive sets the value of Live.
+func (s *SiteRuleResource) SetLive(val NilSiteRuleVersion) {
+	s.Live = val
 }
 
-// SetCondition sets the value of Condition.
-func (s *SiteRuleResource) SetCondition(val OptSiteConditionGroup) {
-	s.Condition = val
-}
-
-// SetActions sets the value of Actions.
-func (s *SiteRuleResource) SetActions(val []SiteRuleAction) {
-	s.Actions = val
+// SetDraft sets the value of Draft.
+func (s *SiteRuleResource) SetDraft(val NilSiteRuleVersion) {
+	s.Draft = val
 }
 
 // SetActivatedAt sets the value of ActivatedAt.
@@ -18003,37 +18137,38 @@ func (s *SiteRuleResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-func (*SiteRuleResource) siteRulesActivateRes()   {}
 func (*SiteRuleResource) siteRulesArchiveRes()    {}
 func (*SiteRuleResource) siteRulesCreateRes()     {}
 func (*SiteRuleResource) siteRulesDeactivateRes() {}
 func (*SiteRuleResource) siteRulesGetRes()        {}
+func (*SiteRuleResource) siteRulesPublishRes()    {}
+func (*SiteRuleResource) siteRulesRevertRes()     {}
 func (*SiteRuleResource) siteRulesUnarchiveRes()  {}
 func (*SiteRuleResource) siteRulesUpdateRes()     {}
 
-// Rule lifecycle status.
+// Rule lifecycle status: active reacts to Events, inactive acts on nothing.
 // Ref: #/components/schemas/SiteRuleStatus
 type SiteRuleStatus string
 
 const (
-	SiteRuleStatusDraft  SiteRuleStatus = "draft"
-	SiteRuleStatusActive SiteRuleStatus = "active"
+	SiteRuleStatusActive   SiteRuleStatus = "active"
+	SiteRuleStatusInactive SiteRuleStatus = "inactive"
 )
 
 // AllValues returns all SiteRuleStatus values.
 func (SiteRuleStatus) AllValues() []SiteRuleStatus {
 	return []SiteRuleStatus{
-		SiteRuleStatusDraft,
 		SiteRuleStatusActive,
+		SiteRuleStatusInactive,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s SiteRuleStatus) MarshalText() ([]byte, error) {
 	switch s {
-	case SiteRuleStatusDraft:
-		return []byte(s), nil
 	case SiteRuleStatusActive:
+		return []byte(s), nil
+	case SiteRuleStatusInactive:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -18043,28 +18178,69 @@ func (s SiteRuleStatus) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *SiteRuleStatus) UnmarshalText(data []byte) error {
 	switch SiteRuleStatus(data) {
-	case SiteRuleStatusDraft:
-		*s = SiteRuleStatusDraft
-		return nil
 	case SiteRuleStatusActive:
 		*s = SiteRuleStatusActive
+		return nil
+	case SiteRuleStatusInactive:
+		*s = SiteRuleStatusInactive
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
 
-type SiteRulesActivateBadRequest ProblemDetails
+// One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions.
+// Ref: #/components/schemas/SiteRuleVersion
+type SiteRuleVersion struct {
+	// 1 for the first version, plus one per version after it.
+	Number int32 `json:"number"`
+	// The Event actions that make the Rule fire; any one of them does.
+	TriggerEvents []string `json:"triggerEvents"`
+	// The Contact must match this condition for the Rule to fire; absent means every Contact.
+	Condition OptSiteConditionGroup `json:"condition"`
+	// The Rule's ordered Actions.
+	Actions []SiteRuleAction `json:"actions"`
+}
 
-func (*SiteRulesActivateBadRequest) siteRulesActivateRes() {}
+// GetNumber returns the value of Number.
+func (s *SiteRuleVersion) GetNumber() int32 {
+	return s.Number
+}
 
-type SiteRulesActivateNotFound ProblemDetails
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *SiteRuleVersion) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
 
-func (*SiteRulesActivateNotFound) siteRulesActivateRes() {}
+// GetCondition returns the value of Condition.
+func (s *SiteRuleVersion) GetCondition() OptSiteConditionGroup {
+	return s.Condition
+}
 
-type SiteRulesActivateUnprocessableEntity ProblemDetails
+// GetActions returns the value of Actions.
+func (s *SiteRuleVersion) GetActions() []SiteRuleAction {
+	return s.Actions
+}
 
-func (*SiteRulesActivateUnprocessableEntity) siteRulesActivateRes() {}
+// SetNumber sets the value of Number.
+func (s *SiteRuleVersion) SetNumber(val int32) {
+	s.Number = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *SiteRuleVersion) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *SiteRuleVersion) SetCondition(val OptSiteConditionGroup) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *SiteRuleVersion) SetActions(val []SiteRuleAction) {
+	s.Actions = val
+}
 
 type SiteRulesArchiveBadRequest ProblemDetails
 
@@ -18196,6 +18372,30 @@ func (*SiteRulesListOK) siteRulesListRes() {}
 type SiteRulesListUnprocessableEntity ProblemDetails
 
 func (*SiteRulesListUnprocessableEntity) siteRulesListRes() {}
+
+type SiteRulesPublishBadRequest ProblemDetails
+
+func (*SiteRulesPublishBadRequest) siteRulesPublishRes() {}
+
+type SiteRulesPublishNotFound ProblemDetails
+
+func (*SiteRulesPublishNotFound) siteRulesPublishRes() {}
+
+type SiteRulesPublishUnprocessableEntity ProblemDetails
+
+func (*SiteRulesPublishUnprocessableEntity) siteRulesPublishRes() {}
+
+type SiteRulesRevertBadRequest ProblemDetails
+
+func (*SiteRulesRevertBadRequest) siteRulesRevertRes() {}
+
+type SiteRulesRevertNotFound ProblemDetails
+
+func (*SiteRulesRevertNotFound) siteRulesRevertRes() {}
+
+type SiteRulesRevertUnprocessableEntity ProblemDetails
+
+func (*SiteRulesRevertUnprocessableEntity) siteRulesRevertRes() {}
 
 type SiteRulesUnarchiveBadRequest ProblemDetails
 
@@ -21755,7 +21955,9 @@ type SiteTransactionalEmailsListUnprocessableEntity ProblemDetails
 
 func (*SiteTransactionalEmailsListUnprocessableEntity) siteTransactionalEmailsListRes() {}
 
-// Site request body for updating an automation.
+// Site request body for updating an automation. The name changes at once; the trigger, steps and
+// integration write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
+// and publishing makes the draft live.
 // Ref: #/components/schemas/SiteUpdateAutomationInput
 type SiteUpdateAutomationInput struct {
 	Name         OptString            `json:"name"`
@@ -22312,7 +22514,8 @@ func (s *SiteUpdateRevenueSettingsInput) SetAttributionWindowDays(val OptAttribu
 	s.AttributionWindowDays = val
 }
 
-// Site request body for updating a Rule.
+// Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and
+// Actions write the draft, and the ones left out keep the draft's, else the live version's.
 // Ref: #/components/schemas/SiteUpdateRuleInput
 type SiteUpdateRuleInput struct {
 	Name OptString `json:"name"`

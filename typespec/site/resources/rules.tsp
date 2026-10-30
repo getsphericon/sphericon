@@ -5,10 +5,10 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** Rule lifecycle status */
+/** Rule lifecycle status: active reacts to Events, inactive acts on nothing */
 enum SiteRuleStatus {
-  draft,
   active,
+  inactive,
 }
 
 /** Kind of Rule action */
@@ -52,6 +52,21 @@ model SiteRuleAction {
   hasSecret?: boolean;
 }
 
+/** One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions */
+model SiteRuleVersion {
+  /** 1 for the first version, plus one per version after it */
+  number: int32;
+
+  /** The Event actions that make the Rule fire; any one of them does */
+  triggerEvents: string[];
+
+  /** The Contact must match this condition for the Rule to fire; absent means every Contact */
+  condition?: SiteConditionGroup;
+
+  /** The Rule's ordered Actions */
+  actions: SiteRuleAction[];
+}
+
 /** How one Action of a Firing ended */
 enum SiteRuleActionStatus {
   succeeded,
@@ -72,7 +87,7 @@ model SiteRuleActionResult {
   detail?: string;
 }
 
-/** Rule resource used by the site UI: a stateless reaction to an Event. Created Rules are drafts. */
+/** Rule resource used by the site UI: a stateless reaction to an Event. Its definition is versioned (ADR 0065): an edit writes the draft, and Publish makes it live. Created Rules are inactive. */
 @resource("rules")
 @segment("rules")
 @parentResource(SiteWorkspaceResource)
@@ -87,16 +102,13 @@ model SiteRuleResource {
   /** Lifecycle status */
   status: SiteRuleStatus;
 
-  /** The Event actions that make the Rule fire; any one of them does */
-  triggerEvents: string[];
+  /** What the Rule does now; null until it is first published */
+  live: SiteRuleVersion | null;
 
-  /** The Contact must match this condition for the Rule to fire; absent or empty means every Contact */
-  condition?: SiteConditionGroup;
+  /** Unpublished changes, the one version above live; null when there are none */
+  draft: SiteRuleVersion | null;
 
-  /** The Rule's ordered Actions */
-  actions: SiteRuleAction[];
-
-  /** When the Rule was last activated. It acts only on Events recorded after it. */
+  /** When the Rule last became active by Publish. It acts only on Events recorded after it. */
   activatedAt?: Timestamp | null;
 
   /** When the Rule was archived; null while it is kept */
@@ -109,7 +121,7 @@ model SiteRuleResource {
   updatedAt: Timestamp;
 }
 
-/** Site request body for creating a Rule (always created as a draft) */
+/** Site request body for creating a Rule: it is created inactive, with its definition as the draft */
 model SiteCreateRuleInput {
   name: string;
 
@@ -123,7 +135,7 @@ model SiteCreateRuleInput {
   actions?: SiteRuleAction[];
 }
 
-/** Site request body for updating a Rule */
+/** Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's. */
 model SiteUpdateRuleInput {
   name?: string;
 
@@ -183,7 +195,7 @@ interface SiteRules
     > {
   /**
    * Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and
-   * keeps its Firings. It can be restored, as a draft.
+   * keeps its Firings. It can be restored, inactive.
    */
   @action("archive")
   @autoRoute
@@ -193,7 +205,7 @@ interface SiteRules
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Restore an archived Rule to the list, as a draft */
+  /** Restore an archived Rule to the list, inactive */
   @action("unarchive")
   @autoRoute
   @extension("x-required-permissions", #[])
@@ -202,11 +214,21 @@ interface SiteRules
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Activate a Rule: it reacts to Events recorded from now on, never to past ones */
-  @action("activate")
+  /** Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version. */
+  @action("publish")
   @autoRoute
   @extension("x-required-permissions", #[])
-  activate(...ResourceParameters<SiteRuleResource>):
+  publish(...ResourceParameters<SiteRuleResource>):
+    | SiteRuleResource
+    | BadRequestProblem
+    | NotFoundProblem
+    | UnprocessableEntityProblem;
+
+  /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. */
+  @action("revert")
+  @autoRoute
+  @extension("x-required-permissions", #[])
+  revert(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
     | NotFoundProblem

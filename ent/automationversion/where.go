@@ -85,6 +85,16 @@ func Steps(v string) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldSteps, v))
 }
 
+// TriggerEvent applies equality check predicate on the "trigger_event" field. It's identical to TriggerEventEQ.
+func TriggerEvent(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerEvent, v))
+}
+
+// IntegrationID applies equality check predicate on the "integration_id" field. It's identical to IntegrationIDEQ.
+func IntegrationID(v int64) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldIntegrationID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldCreatedAt, v))
@@ -310,6 +320,101 @@ func StepsContainsFold(v string) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldContainsFold(FieldSteps, v))
 }
 
+// TriggerEventEQ applies the EQ predicate on the "trigger_event" field.
+func TriggerEventEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerEvent, v))
+}
+
+// TriggerEventNEQ applies the NEQ predicate on the "trigger_event" field.
+func TriggerEventNEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldTriggerEvent, v))
+}
+
+// TriggerEventIn applies the In predicate on the "trigger_event" field.
+func TriggerEventIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldTriggerEvent, vs...))
+}
+
+// TriggerEventNotIn applies the NotIn predicate on the "trigger_event" field.
+func TriggerEventNotIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldTriggerEvent, vs...))
+}
+
+// TriggerEventGT applies the GT predicate on the "trigger_event" field.
+func TriggerEventGT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGT(FieldTriggerEvent, v))
+}
+
+// TriggerEventGTE applies the GTE predicate on the "trigger_event" field.
+func TriggerEventGTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGTE(FieldTriggerEvent, v))
+}
+
+// TriggerEventLT applies the LT predicate on the "trigger_event" field.
+func TriggerEventLT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLT(FieldTriggerEvent, v))
+}
+
+// TriggerEventLTE applies the LTE predicate on the "trigger_event" field.
+func TriggerEventLTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLTE(FieldTriggerEvent, v))
+}
+
+// TriggerEventContains applies the Contains predicate on the "trigger_event" field.
+func TriggerEventContains(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContains(FieldTriggerEvent, v))
+}
+
+// TriggerEventHasPrefix applies the HasPrefix predicate on the "trigger_event" field.
+func TriggerEventHasPrefix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasPrefix(FieldTriggerEvent, v))
+}
+
+// TriggerEventHasSuffix applies the HasSuffix predicate on the "trigger_event" field.
+func TriggerEventHasSuffix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasSuffix(FieldTriggerEvent, v))
+}
+
+// TriggerEventEqualFold applies the EqualFold predicate on the "trigger_event" field.
+func TriggerEventEqualFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEqualFold(FieldTriggerEvent, v))
+}
+
+// TriggerEventContainsFold applies the ContainsFold predicate on the "trigger_event" field.
+func TriggerEventContainsFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContainsFold(FieldTriggerEvent, v))
+}
+
+// IntegrationIDEQ applies the EQ predicate on the "integration_id" field.
+func IntegrationIDEQ(v int64) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldIntegrationID, v))
+}
+
+// IntegrationIDNEQ applies the NEQ predicate on the "integration_id" field.
+func IntegrationIDNEQ(v int64) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldIntegrationID, v))
+}
+
+// IntegrationIDIn applies the In predicate on the "integration_id" field.
+func IntegrationIDIn(vs ...int64) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldIntegrationID, vs...))
+}
+
+// IntegrationIDNotIn applies the NotIn predicate on the "integration_id" field.
+func IntegrationIDNotIn(vs ...int64) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldIntegrationID, vs...))
+}
+
+// IntegrationIDIsNil applies the IsNil predicate on the "integration_id" field.
+func IntegrationIDIsNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIsNull(FieldIntegrationID))
+}
+
+// IntegrationIDNotNil applies the NotNil predicate on the "integration_id" field.
+func IntegrationIDNotNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotNull(FieldIntegrationID))
+}
+
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.AutomationVersion {
 	return predicate.AutomationVersion(func(s *sql.Selector) {
@@ -371,6 +476,29 @@ func HasRuns() predicate.AutomationVersion {
 func HasRunsWith(preds ...predicate.AutomationRun) predicate.AutomationVersion {
 	return predicate.AutomationVersion(func(s *sql.Selector) {
 		step := newRunsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasIntegration applies the HasEdge predicate on the "integration" edge.
+func HasIntegration() predicate.AutomationVersion {
+	return predicate.AutomationVersion(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, IntegrationTable, IntegrationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasIntegrationWith applies the HasEdge predicate on the "integration" edge with a given conditions (other predicates).
+func HasIntegrationWith(preds ...predicate.Integration) predicate.AutomationVersion {
+	return predicate.AutomationVersion(func(s *sql.Selector) {
+		step := newIntegrationStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

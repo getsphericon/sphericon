@@ -31,7 +31,7 @@ export const ApiTokenScope = {
   INTEGRATIONS_READ: 'integrations:read',
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
-  AUTOMATIONS_ACTIVATE: 'automations:activate',
+  AUTOMATIONS_PUBLISH: 'automations:publish',
   MCP_SEND: 'mcp:send',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
@@ -757,7 +757,7 @@ export type RetentionDays = number;
 export const SendScope = {
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
-  AUTOMATIONS_ACTIVATE: 'automations:activate',
+  AUTOMATIONS_PUBLISH: 'automations:publish',
   MCP_SEND: 'mcp:send'
 } as const;
 
@@ -1434,17 +1434,13 @@ export type SiteAutomationResource = {
    */
   status: SiteAutomationStatus;
   /**
-   * Event action that enrolls a contact (e.g. "contact.created", "email.opened")
+   * What it does now: the version new enrollments begin on; null until first published
    */
-  triggerEvent: string;
+  live: SiteAutomationVersion | null;
   /**
-   * The automation's ordered, linear steps
+   * Unpublished changes, the one version above live; null when there are none
    */
-  steps: Array<SiteAutomationStep>;
-  /**
-   * Sending integration of the email steps; null means the workspace default
-   */
-  integrationId?: EntityId | null;
+  draft: SiteAutomationVersion | null;
   /**
    * When the automation was archived; null while it is kept
    */
@@ -1465,12 +1461,12 @@ export type SiteAutomationResource = {
 };
 
 /**
- * Automation lifecycle status
+ * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
-export const SiteAutomationStatus = { DRAFT: 'draft', ACTIVE: 'active' } as const;
+export const SiteAutomationStatus = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
 
 /**
- * Automation lifecycle status
+ * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
 export type SiteAutomationStatus = typeof SiteAutomationStatus[keyof typeof SiteAutomationStatus];
 
@@ -1553,6 +1549,28 @@ export const SiteAutomationStepType = {
  * Kind of automation step
  */
 export type SiteAutomationStepType = typeof SiteAutomationStepType[keyof typeof SiteAutomationStepType];
+
+/**
+ * One version of an automation's definition: what publishing makes it do (ADR 0065)
+ */
+export type SiteAutomationVersion = {
+  /**
+   * 1 for the first version, plus one per version after it
+   */
+  number: number;
+  /**
+   * Event action that enrolls a contact (e.g. "contact.created", "email.opened")
+   */
+  triggerEvent: string;
+  /**
+   * Sending integration of the email steps; null means the workspace default
+   */
+  integrationId?: EntityId | null;
+  /**
+   * The ordered, linear steps
+   */
+  steps: Array<SiteAutomationStep>;
+};
 
 /**
  * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
@@ -1681,7 +1699,9 @@ export type SiteBroadcastResource = {
    */
   warnings?: Array<LintFinding>;
   /**
-   * Target segment; null means all contacts
+   * Target segment; null means all contacts. Once the broadcast leaves draft it holds a copy of
+   * the segment's condition taken then, and this names the segment only as where its audience
+   * came from.
    */
   segmentId?: EntityId | null;
   /**
@@ -2375,7 +2395,7 @@ export type SiteCreateInvitationResponse = {
 };
 
 /**
- * Site request body for creating a Rule (always created as a draft)
+ * Site request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export type SiteCreateRuleInput = {
   name: string;
@@ -4064,7 +4084,7 @@ export type SiteRuleFiringResource = {
 };
 
 /**
- * Rule resource used by the site UI: a stateless reaction to an Event. Created Rules are drafts.
+ * Rule resource used by the site UI: a stateless reaction to an Event. Its definition is versioned (ADR 0065): an edit writes the draft, and Publish makes it live. Created Rules are inactive.
  */
 export type SiteRuleResource = {
   /**
@@ -4080,19 +4100,15 @@ export type SiteRuleResource = {
    */
   status: SiteRuleStatus;
   /**
-   * The Event actions that make the Rule fire; any one of them does
+   * What the Rule does now; null until it is first published
    */
-  triggerEvents: Array<string>;
+  live: SiteRuleVersion | null;
   /**
-   * The Contact must match this condition for the Rule to fire; absent or empty means every Contact
+   * Unpublished changes, the one version above live; null when there are none
    */
-  condition?: SiteConditionGroup;
+  draft: SiteRuleVersion | null;
   /**
-   * The Rule's ordered Actions
-   */
-  actions: Array<SiteRuleAction>;
-  /**
-   * When the Rule was last activated. It acts only on Events recorded after it.
+   * When the Rule last became active by Publish. It acts only on Events recorded after it.
    */
   activatedAt?: Timestamp | null;
   /**
@@ -4110,14 +4126,36 @@ export type SiteRuleResource = {
 };
 
 /**
- * Rule lifecycle status
+ * Rule lifecycle status: active reacts to Events, inactive acts on nothing
  */
-export const SiteRuleStatus = { DRAFT: 'draft', ACTIVE: 'active' } as const;
+export const SiteRuleStatus = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
 
 /**
- * Rule lifecycle status
+ * Rule lifecycle status: active reacts to Events, inactive acts on nothing
  */
 export type SiteRuleStatus = typeof SiteRuleStatus[keyof typeof SiteRuleStatus];
+
+/**
+ * One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions
+ */
+export type SiteRuleVersion = {
+  /**
+   * 1 for the first version, plus one per version after it
+   */
+  number: number;
+  /**
+   * The Event actions that make the Rule fire; any one of them does
+   */
+  triggerEvents: Array<string>;
+  /**
+   * The Contact must match this condition for the Rule to fire; absent means every Contact
+   */
+  condition?: SiteConditionGroup;
+  /**
+   * The Rule's ordered Actions
+   */
+  actions: Array<SiteRuleAction>;
+};
 
 /**
  * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
@@ -4956,7 +4994,9 @@ export const SiteTransactionalEmailStatus = {
 export type SiteTransactionalEmailStatus = typeof SiteTransactionalEmailStatus[keyof typeof SiteTransactionalEmailStatus];
 
 /**
- * Site request body for updating an automation
+ * Site request body for updating an automation. The name changes at once; the trigger, steps
+ * and integration write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and publishing makes the draft live.
  */
 export type SiteUpdateAutomationInput = {
   name?: string;
@@ -5141,7 +5181,7 @@ export type SiteUpdateRevenueSettingsInput = {
 };
 
 /**
- * Site request body for updating a Rule
+ * Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
 export type SiteUpdateRuleInput = {
   name?: string;
@@ -8295,49 +8335,6 @@ export type SiteAutomationsUpdateResponses = {
 
 export type SiteAutomationsUpdateResponse = SiteAutomationsUpdateResponses[keyof SiteAutomationsUpdateResponses];
 
-export type SiteAutomationsActivateData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/automations/{id}/activate';
-};
-
-export type SiteAutomationsActivateErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-};
-
-export type SiteAutomationsActivateError = SiteAutomationsActivateErrors[keyof SiteAutomationsActivateErrors];
-
-export type SiteAutomationsActivateResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteAutomationResource;
-};
-
-export type SiteAutomationsActivateResponse = SiteAutomationsActivateResponses[keyof SiteAutomationsActivateResponses];
-
 export type SiteAutomationsArchiveData = {
   body?: never;
   path: {
@@ -8421,6 +8418,92 @@ export type SiteAutomationsDeactivateResponses = {
 };
 
 export type SiteAutomationsDeactivateResponse = SiteAutomationsDeactivateResponses[keyof SiteAutomationsDeactivateResponses];
+
+export type SiteAutomationsPublishData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/automations/{id}/publish';
+};
+
+export type SiteAutomationsPublishErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteAutomationsPublishError = SiteAutomationsPublishErrors[keyof SiteAutomationsPublishErrors];
+
+export type SiteAutomationsPublishResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAutomationResource;
+};
+
+export type SiteAutomationsPublishResponse = SiteAutomationsPublishResponses[keyof SiteAutomationsPublishResponses];
+
+export type SiteAutomationsRevertData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/automations/{id}/revert';
+};
+
+export type SiteAutomationsRevertErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteAutomationsRevertError = SiteAutomationsRevertErrors[keyof SiteAutomationsRevertErrors];
+
+export type SiteAutomationsRevertResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteAutomationResource;
+};
+
+export type SiteAutomationsRevertResponse = SiteAutomationsRevertResponses[keyof SiteAutomationsRevertResponses];
 
 export type SiteAutomationsUnarchiveData = {
   body?: never;
@@ -11106,49 +11189,6 @@ export type SiteRulesUpdateResponses = {
 
 export type SiteRulesUpdateResponse = SiteRulesUpdateResponses[keyof SiteRulesUpdateResponses];
 
-export type SiteRulesActivateData = {
-  body?: never;
-  path: {
-    /**
-     * The Workspace id: its short opaque public address and the route key for nested
-     * workspace resources (ADR 0043)
-     */
-    workspaceId: WorkspaceId;
-    /**
-     * Unique identifier
-     */
-    id: EntityId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/rules/{id}/activate';
-};
-
-export type SiteRulesActivateErrors = {
-  /**
-   * RFC 7807 bad request response
-   */
-  400: ProblemDetails;
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 validation response
-   */
-  422: ProblemDetails;
-};
-
-export type SiteRulesActivateError = SiteRulesActivateErrors[keyof SiteRulesActivateErrors];
-
-export type SiteRulesActivateResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteRuleResource;
-};
-
-export type SiteRulesActivateResponse = SiteRulesActivateResponses[keyof SiteRulesActivateResponses];
-
 export type SiteRulesArchiveData = {
   body?: never;
   path: {
@@ -11265,6 +11305,92 @@ export type SiteRulesDryRunResponses = {
 };
 
 export type SiteRulesDryRunResponse = SiteRulesDryRunResponses[keyof SiteRulesDryRunResponses];
+
+export type SiteRulesPublishData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/rules/{id}/publish';
+};
+
+export type SiteRulesPublishErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteRulesPublishError = SiteRulesPublishErrors[keyof SiteRulesPublishErrors];
+
+export type SiteRulesPublishResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRuleResource;
+};
+
+export type SiteRulesPublishResponse = SiteRulesPublishResponses[keyof SiteRulesPublishResponses];
+
+export type SiteRulesRevertData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/rules/{id}/revert';
+};
+
+export type SiteRulesRevertErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SiteRulesRevertError = SiteRulesRevertErrors[keyof SiteRulesRevertErrors];
+
+export type SiteRulesRevertResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteRuleResource;
+};
+
+export type SiteRulesRevertResponse = SiteRulesRevertResponses[keyof SiteRulesRevertResponses];
 
 export type SiteRulesUnarchiveData = {
   body?: never;

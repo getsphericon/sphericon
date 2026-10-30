@@ -22,10 +22,10 @@ type Automation struct {
 	Body string
 }
 
-// ActivateAutomation creates an Automation with a single email step (no wait steps, so
-// the email goes out as soon as a Contact is enrolled) and activates it. Creation
-// always stores a draft; activating is a separate step. It returns the Automation's id.
-func (w *Workspace) ActivateAutomation(a Automation) int64 {
+// PublishAutomation creates an Automation with a single email step (no wait steps, so
+// the email goes out as soon as a Contact is enrolled) and publishes it. Creation
+// always stores an inactive Automation; publishing is a separate step. It returns the Automation's id.
+func (w *Workspace) PublishAutomation(a Automation) int64 {
 	w.t.Helper()
 	ctx := w.t.Context()
 	if a.Name == "" {
@@ -42,8 +42,8 @@ func (w *Workspace) ActivateAutomation(a Automation) int64 {
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create automation", res, err)
 
-	act, err := w.api.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: created.ID})
-	got := ok[externalapi.AutomationResource](w.t, "activate automation", act, err)
+	published, err := w.api.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: created.ID})
+	got := ok[externalapi.AutomationResource](w.t, "publish automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 	return int64(got.ID)
 }
@@ -57,9 +57,9 @@ type AuthoredAutomation struct {
 	Text string
 }
 
-// ActivateAuthoredAutomation saves an Automation with a single email step that holds an editor
-// document through the external API and activates it.
-func (w *Workspace) ActivateAuthoredAutomation(a AuthoredAutomation) {
+// PublishAuthoredAutomation saves an Automation with a single email step that holds an editor
+// document through the external API and publishes it.
+func (w *Workspace) PublishAuthoredAutomation(a AuthoredAutomation) {
 	w.t.Helper()
 	ctx := w.t.Context()
 	doc, err := json.Marshal(map[string]any{
@@ -81,8 +81,8 @@ func (w *Workspace) ActivateAuthoredAutomation(a AuthoredAutomation) {
 		}},
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create authored automation", res, err)
-	act, err := w.api.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: created.ID})
-	got := ok[externalapi.AutomationResource](w.t, "activate authored automation", act, err)
+	published, err := w.api.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: created.ID})
+	got := ok[externalapi.AutomationResource](w.t, "publish authored automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 }
 
@@ -98,9 +98,9 @@ type HTTPAutomation struct {
 	EmailBody string
 }
 
-// ActivateHTTPAutomation creates an Automation whose first step POSTs to the Hook (signed
-// when the Hook has a secret) and whose second step is an email, and activates it.
-func (w *Workspace) ActivateHTTPAutomation(a HTTPAutomation) {
+// PublishHTTPAutomation creates an Automation whose first step POSTs to the Hook (signed
+// when the Hook has a secret) and whose second step is an email, and publishes it.
+func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 	w.t.Helper()
 	ctx := w.t.Context()
 	httpStep := externalapi.AutomationStep{
@@ -122,8 +122,8 @@ func (w *Workspace) ActivateHTTPAutomation(a HTTPAutomation) {
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create automation", res, err)
 
-	act, err := w.api.AutomationsActivate(ctx, externalapi.AutomationsActivateParams{ID: created.ID})
-	got := ok[externalapi.AutomationResource](w.t, "activate automation", act, err)
+	published, err := w.api.AutomationsPublish(ctx, externalapi.AutomationsPublishParams{ID: created.ID})
+	got := ok[externalapi.AutomationResource](w.t, "publish automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 }
 

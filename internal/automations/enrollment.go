@@ -7,7 +7,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 )
 
@@ -21,6 +20,23 @@ import (
 // id. enrolled is false when the Contact has been enrolled before (the common
 // trigger-replay path) or another request won the race; nothing is created then.
 func Enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (runID int64, enrolled bool, err error) {
+	return enroll(ctx, s, automationID, contactID, func(*ent.Automation) bool { return true })
+}
+
+// EnrollOnTrigger enrolls the Contact as Enroll does, for an Event with the action. The trigger
+// consumer picks the Automations before it enrolls, so a Publish that moved the Trigger, a
+// Deactivate or an Archive may have landed since: under the lock it enrolls nobody (enrolled
+// false) unless the Automation is still kept, active and started by the action in its live version.
+func EnrollOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, action string) (runID int64, enrolled bool, err error) {
+	return enroll(ctx, s, automationID, contactID, func(a *ent.Automation) bool {
+		live := a.Edges.LiveVersion
+		return a.DiscardedAt == nil && a.Status == automation.StatusActive && live != nil && live.TriggerEvent == action
+	})
+}
+
+// enroll starts the Enrollment when admits, called under the share lock with the Automation and
+// its live version, accepts it.
+func enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64, admits func(*ent.Automation) bool) (runID int64, enrolled bool, err error) {
 	// Check first so the common "already enrolled" path does not trip the unique
 	// index (a violation would poison a surrounding transaction); the index stays
 	// as the race safety net.
@@ -30,32 +46,28 @@ func Enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (
 	if err != nil || exists {
 		return 0, false, err
 	}
-	// Share-lock the Automation row so a steps save in this transaction's company (it locks the
-	// row exclusively) is either finished before the version is read or waits for this
-	// Enrollment: the Enrollment never begins on a version the save is about to rewrite or
-	// supersede.
-	if _, err := s.Automation().Query().Where(automation.ID(automationID)).ForShare().IDs(ctx); err != nil {
-		return 0, false, err
-	}
-	// The Enrollment begins on the Automation's latest version and stays on it (ADR 0049).
-	versionID, err := s.AutomationVersion().Query().
-		Where(automationversion.AutomationID(automationID)).
-		Order(ent.Desc(automationversion.FieldVersion)).
-		FirstID(ctx)
+	// Share-lock the Automation row and read its live version under the lock, so a Publish (it
+	// locks the row exclusively) is either finished before the version is read or waits for this
+	// Enrollment: the Enrollment never begins on a version that is no longer live.
+	a, err := s.Automation().QueryWithDiscarded().Where(automation.ID(automationID)).WithLiveVersion().ForShare().Only(ctx)
 	if ent.IsNotFound(err) {
-		// Another Workspace's Automation has no version in this one: the reference check
-		// the Create below would make says so, so keep that answer.
-		if _, getErr := s.Automation().Get(ctx, automationID); ent.IsNotFound(getErr) {
-			return 0, false, ent.ErrNotInWorkspace
-		}
-		return 0, false, ErrNoVersion
+		// Another Workspace's Automation is not in this one: the reference check the Create
+		// below would make says so, so keep that answer.
+		return 0, false, ent.ErrNotInWorkspace
 	}
 	if err != nil {
 		return 0, false, err
 	}
+	// The Enrollment begins on the Automation's live version and stays on it (ADR 0049, ADR 0065).
+	if a.LiveVersionID == nil {
+		return 0, false, ErrNoVersion
+	}
+	if !admits(a) {
+		return 0, false, nil
+	}
 	run, err := s.AutomationRun().Create().
 		SetAutomationID(automationID).
-		SetVersionID(versionID).
+		SetVersionID(*a.LiveVersionID).
 		SetContactID(contactID).
 		Save(ctx)
 	if ent.IsConstraintError(err) {

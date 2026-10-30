@@ -198,11 +198,11 @@ var AutomationAuditSensitive = map[string]bool{}
 // auditFields maps every audited field of the Automation to its value.
 func (e *Automation) auditFields() map[string]any {
 	return map[string]any{
-		"discarded_at":   derefAudit(e.DiscardedAt),
-		"name":           e.Name,
-		"status":         e.Status,
-		"trigger_event":  e.TriggerEvent,
-		"integration_id": derefAudit(e.IntegrationID),
+		"discarded_at":     derefAudit(e.DiscardedAt),
+		"name":             e.Name,
+		"status":           e.Status,
+		"live_version_id":  derefAudit(e.LiveVersionID),
+		"draft_version_id": derefAudit(e.DraftVersionID),
 	}
 }
 
@@ -310,6 +310,7 @@ func (e *Broadcast) auditFields() map[string]any {
 		"doc":               e.Doc,
 		"editor_version":    derefAudit(e.EditorVersion),
 		"segment_id":        derefAudit(e.SegmentID),
+		"condition":         derefAudit(e.Condition),
 		"integration_id":    derefAudit(e.IntegrationID),
 		"status":            e.Status,
 		"scheduled_at":      derefAudit(e.ScheduledAt),
@@ -689,19 +690,17 @@ func (b *JoinDomainCreateBulk) auditRebind(c *Client) {
 }
 
 // RuleAuditSensitive lists the Rule fields whose values never reach the Audit log.
-var RuleAuditSensitive = map[string]bool{
-	"actions": true,
-}
+var RuleAuditSensitive = map[string]bool{}
 
 // auditFields maps every audited field of the Rule to its value.
 func (e *Rule) auditFields() map[string]any {
 	return map[string]any{
-		"discarded_at": derefAudit(e.DiscardedAt),
-		"name":         e.Name,
-		"status":       e.Status,
-		"activated_at": derefAudit(e.ActivatedAt),
-		"condition":    derefAudit(e.Condition),
-		"actions":      e.Actions,
+		"discarded_at":     derefAudit(e.DiscardedAt),
+		"name":             e.Name,
+		"status":           e.Status,
+		"activated_at":     derefAudit(e.ActivatedAt),
+		"live_version_id":  derefAudit(e.LiveVersionID),
+		"draft_version_id": derefAudit(e.DraftVersionID),
 	}
 }
 

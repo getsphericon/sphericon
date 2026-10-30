@@ -20,14 +20,14 @@ type Rule struct {
 	TriggerEvent string
 	// Tag is applied to the Contact the Event is for.
 	Tag string
-	// EnrollIn is the id of an Automation (from ActivateAutomation) the Contact is enrolled in;
+	// EnrollIn is the id of an Automation (from PublishAutomation) the Contact is enrolled in;
 	// zero adds no enroll Action.
 	EnrollIn int64
 }
 
-// ActivateRule creates a Rule through the site API (the external API offers no enroll Action)
-// and activates it. Creation always stores a draft; activating is a separate step.
-func (w *Workspace) ActivateRule(r Rule) {
+// PublishRule creates a Rule through the site API (the external API offers no enroll Action)
+// and publishes it. Creation always stores an inactive Rule; publishing is a separate step.
+func (w *Workspace) PublishRule(r Rule) {
 	w.t.Helper()
 	ctx := w.t.Context()
 	ws := siteapi.WorkspaceId(w.publicID)
@@ -45,8 +45,8 @@ func (w *Workspace) ActivateRule(r Rule) {
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 	created := ok[siteapi.SiteRuleResource](w.t, "create rule", res, err)
 
-	act, err := w.site.SiteRulesActivate(ctx, siteapi.SiteRulesActivateParams{WorkspaceId: ws, ID: created.ID})
-	got := ok[siteapi.SiteRuleResource](w.t, "activate rule", act, err)
+	published, err := w.site.SiteRulesPublish(ctx, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: created.ID})
+	got := ok[siteapi.SiteRuleResource](w.t, "publish rule", published, err)
 	require.Equal(w.t, siteapi.SiteRuleStatusActive, got.Status)
 }
 

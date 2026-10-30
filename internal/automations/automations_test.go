@@ -63,7 +63,7 @@ func TestEncodeSanitizesAnEmailStepBody(t *testing.T) {
 	assert.JSONEq(t, `[{"type":"email","subject":"Hi","body":"<p>Hi {{ first_name }}</p>"}]`, def)
 }
 
-func TestCreateStoresADraftWithEncodedSteps(t *testing.T) {
+func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
@@ -73,17 +73,16 @@ func TestCreateStoresADraftWithEncodedSteps(t *testing.T) {
 		Steps: []automations.Step{{Type: automations.StepApplyTag, Tag: " new "}, {Type: automations.StepWait, Seconds: 5}},
 	})
 	require.NoError(t, err)
-	assert.Equal(t, automation.StatusDraft, a.Status)
+	assert.Equal(t, automation.StatusInactive, a.Status)
 	assert.EqualValues(t, fixtures.AcmeID, a.WorkspaceID)
-	steps, err := automations.CurrentSteps(a)
-	require.NoError(t, err)
-	assert.Equal(t, []automations.Step{{Type: automations.StepApplyTag, Tag: "new"}, {Type: automations.StepWait, Seconds: 5}}, steps)
+	assert.Equal(t, []automations.Step{{Type: automations.StepApplyTag, Tag: "new"}, {Type: automations.StepWait, Seconds: 5}}, draftSteps(t, a))
+	live, draft := automations.LiveAndDraft(a)
+	assert.Nil(t, live, "nothing is live until it is published")
+	assert.Equal(t, "signup", draft.TriggerEvent)
 
 	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "No steps", TriggerEvent: "x"})
 	require.NoError(t, err)
-	none, err := automations.CurrentSteps(bare)
-	require.NoError(t, err)
-	assert.Empty(t, none)
+	assert.Empty(t, draftSteps(t, bare))
 }
 
 // automationNames are the names of Acme's Automations.
@@ -116,9 +115,7 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 	assert.ElementsMatch(t, before, automationNames(t, env), "nothing was stored")
 	welcome, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
-	stored, err := automations.CurrentSteps(welcome)
-	require.NoError(t, err)
-	assert.Len(t, stored, 3, "a refused update leaves the steps as they were")
+	assert.Len(t, draftSteps(t, welcome), 3, "a refused update leaves the steps as they were")
 }
 
 func TestListIsNewestFirstWithinTheWorkspace(t *testing.T) {
@@ -143,30 +140,25 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	renamed, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Name: new("Renamed"), TriggerEvent: new("new.trigger")})
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", renamed.Name)
-	assert.Equal(t, "new.trigger", renamed.TriggerEvent)
-	beforeSteps, err := automations.CurrentSteps(before)
-	require.NoError(t, err)
-	renamedSteps, err := automations.CurrentSteps(renamed)
-	require.NoError(t, err)
-	assert.Equal(t, beforeSteps, renamedSteps, "steps untouched when not given")
+	_, draft := automations.LiveAndDraft(renamed)
+	assert.Equal(t, "new.trigger", draft.TriggerEvent)
+	assert.Equal(t, draftSteps(t, before), draftSteps(t, renamed), "steps untouched when not given")
 	assert.Equal(t, before.Status, renamed.Status)
 
 	resteps, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Steps: &[]automations.Step{{Type: automations.StepWait, Seconds: 1}}})
 	require.NoError(t, err)
-	steps, err := automations.CurrentSteps(resteps)
-	require.NoError(t, err)
-	assert.Equal(t, []automations.Step{{Type: automations.StepWait, Seconds: 1}}, steps)
+	assert.Equal(t, []automations.Step{{Type: automations.StepWait, Seconds: 1}}, draftSteps(t, resteps))
 }
 
-func TestActivateAndDeactivateFlipTheStatus(t *testing.T) {
+func TestPublishAndDeactivateFlipTheStatus(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 
 	off, err := m.Deactivate(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
-	assert.Equal(t, automation.StatusDraft, off.Status)
-	on, err := m.Activate(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
+	assert.Equal(t, automation.StatusInactive, off.Status)
+	on, err := m.Publish(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
 	assert.Equal(t, automation.StatusActive, on.Status)
 
@@ -198,9 +190,11 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID, automations.UpdateInput{Name: new("hijacked")})
 	require.ErrorIs(t, err, automations.ErrNotFound)
-	_, err = m.Activate(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
+	_, err = m.Publish(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Deactivate(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
+	require.ErrorIs(t, err, automations.ErrNotFound)
+	_, err = m.Revert(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	require.ErrorIs(t, m.Delete(ctx, env.DB.Scoped(fixtures.AcmeID), foreign.ID), automations.ErrNotFound)
 
@@ -210,10 +204,10 @@ func TestOperationsNeverReachAnotherWorkspacesAutomation(t *testing.T) {
 	stored, err := env.DB.Automation.Get(ctx, foreign.ID)
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.AutomationGlobexName, stored.Name)
-	assert.Equal(t, automation.StatusDraft, stored.Status)
+	assert.Equal(t, automation.StatusInactive, stored.Status)
 }
 
-// An archived Automation enrolls nobody, so it is neither activated nor deactivated: both are
+// An archived Automation enrolls nobody, so it is neither published nor deactivated: both are
 // "not found" until it is restored, and its status stays as it was.
 func TestAnArchivedAutomationKeepsItsStatus(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -224,7 +218,7 @@ func TestAnArchivedAutomationKeepsItsStatus(t *testing.T) {
 	before, err := m.Get(ctx, acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
 
-	_, err = m.Activate(ctx, acme, fixtures.AutomationNotifySlackID)
+	_, err = m.Publish(ctx, acme, fixtures.AutomationNotifySlackID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
 	_, err = m.Deactivate(ctx, acme, fixtures.AutomationNotifySlackID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
@@ -234,18 +228,32 @@ func TestAnArchivedAutomationKeepsItsStatus(t *testing.T) {
 	assert.Equal(t, before.Status, after.Status)
 }
 
-// UsingTag names the Automations whose steps apply or remove the Tag, archived ones too:
-// restoring one must not leave it naming a missing Tag.
-func TestUsingTagIncludesArchivedAutomations(t *testing.T) {
+// UsingTag names the kept Automations whose live version or draft applies or removes the Tag
+// (spec #767, "In use"): a draft that names it keeps it, an archived Automation does not.
+func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) {
 	env := testhelper.Setup(t)
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, acme.Automation().Discard(ctx, fixtures.AutomationTagOnEngagementID))
+	using := func() []string {
+		t.Helper()
+		got, err := automations.UsingTag(ctx, acme, fixtures.TagVipName)
+		require.NoError(t, err)
+		return lo.Map(got, func(a *ent.Automation, _ int) string { return a.Name })
+	}
 
-	using, err := automations.UsingTag(ctx, acme, fixtures.TagVipName)
+	live := using()
+	assert.Equal(t, []string{fixtures.AutomationTagOnEngagementName}, live, "its live version removes the Tag")
+
+	tagging := []automations.Step{{Type: automations.StepApplyTag, Tag: fixtures.TagVipName}}
+	_, err := m.Update(ctx, acme, fixtures.AutomationWinBackID, automations.UpdateInput{Steps: &tagging})
 	require.NoError(t, err)
-	names := lo.Map(using, func(a *ent.Automation, _ int) string { return a.Name })
-	assert.Equal(t, []string{fixtures.AutomationTagOnEngagementName}, names)
+	drafted := using()
+	assert.ElementsMatch(t, []string{fixtures.AutomationWinBackName, fixtures.AutomationTagOnEngagementName}, drafted, "a draft names it too")
+
+	require.NoError(t, acme.Automation().Discard(ctx, fixtures.AutomationTagOnEngagementID))
+	archived := using()
+	assert.Equal(t, []string{fixtures.AutomationWinBackName}, archived, "an archived Automation uses nothing")
 }
 
 func TestAnAutomationSavesAndClearsTheIntegrationItSendsThrough(t *testing.T) {
@@ -258,21 +266,19 @@ func TestAnAutomationSavesAndClearsTheIntegrationItSendsThrough(t *testing.T) {
 		Name: "Onboarding", TriggerEvent: "signup", IntegrationID: new(int64(fixtures.IntegrationAcmeMailgunID)),
 	})
 	require.NoError(t, err)
-	require.NotNil(t, a.IntegrationID)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, *a.IntegrationID)
+	assert.Equal(t, new(int64(fixtures.IntegrationAcmeMailgunID)), draftIntegration(t, a))
 
 	renamed, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Name: new("Renamed")})
 	require.NoError(t, err)
-	require.NotNil(t, renamed.IntegrationID, "an update that does not name an Integration keeps it")
+	assert.Equal(t, new(int64(fixtures.IntegrationAcmeMailgunID)), draftIntegration(t, renamed), "an update that does not name an Integration keeps it")
 
 	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{IntegrationID: new(int64(fixtures.IntegrationAcmeDefaultID))})
 	require.NoError(t, err)
-	require.NotNil(t, moved.IntegrationID)
-	assert.EqualValues(t, fixtures.IntegrationAcmeDefaultID, *moved.IntegrationID)
+	assert.Equal(t, new(int64(fixtures.IntegrationAcmeDefaultID)), draftIntegration(t, moved))
 
 	cleared, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{ClearIntegration: true})
 	require.NoError(t, err)
-	assert.Nil(t, cleared.IntegrationID, "cleared, the Automation sends through the default")
+	assert.Nil(t, draftIntegration(t, cleared), "cleared, the Automation sends through the default")
 }
 
 func TestAnAutomationRefusesAnIntegrationThatIsMissingOrArchived(t *testing.T) {
@@ -291,4 +297,12 @@ func TestAnAutomationRefusesAnIntegrationThatIsMissingOrArchived(t *testing.T) {
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 	}
 	assert.Equal(t, before, automationNames(t, env), "a refused save stores nothing")
+}
+
+// draftIntegration is the Integration the Automation's draft sends through; nil is the default.
+func draftIntegration(t *testing.T, a *ent.Automation) *int64 {
+	t.Helper()
+	_, draft := automations.LiveAndDraft(a)
+	require.NotNil(t, draft)
+	return draft.IntegrationID
 }

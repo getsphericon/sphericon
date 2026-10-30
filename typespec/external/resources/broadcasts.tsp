@@ -43,7 +43,7 @@ model BroadcastResource {
   /** Version of the editor that rendered the document; null with it */
   editorVersion?: string | null;
 
-  /** Segment this broadcast goes to; null means all contacts */
+  /** Segment this broadcast goes to; null means all contacts. Once the broadcast leaves draft it holds a copy of the segment's condition taken then, and this names the segment only as where its audience came from. */
   segmentId?: EntityId | null;
 
   /** Lifecycle status. Broadcasts created here are always drafts. */
@@ -255,7 +255,7 @@ interface Broadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Schedule a draft or scheduled broadcast to send to its audience at a future time. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
+  /** Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("schedule")
   @autoRoute
   @extension("x-required-scopes", #[ApiTokenScope.broadcastsSend])
@@ -271,7 +271,7 @@ interface Broadcasts
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Cancel a scheduled broadcast and return it to draft. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
+  /** Cancel a scheduled broadcast and return it to draft, dropping the copy of its segment's condition: scheduling again copies the segment's current one. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("unschedule")
   @autoRoute
   @extension("x-required-scopes", #[ApiTokenScope.broadcastsSend])

@@ -106,7 +106,12 @@ func newHTTPStepHarness(t *testing.T, body string, signed bool) *httpStepHarness
 		Headers: []automations.Header{{Name: "Authorization"}}, ClearSecret: !signed,
 	}
 	steps := []automations.Step{step, {Type: automations.StepApplyTag, Tag: "notified"}}
-	_, err := automations.New(e.cipher, e.Bus, testhelper.Renderer()).Update(context.Background(), e.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
+	mod := automations.New(e.cipher, e.Bus, testhelper.Renderer())
+	acme := e.DB.Scoped(fixtures.AcmeID)
+	_, err := mod.Update(context.Background(), acme, fixtures.AutomationNotifySlackID, automations.UpdateInput{Steps: &steps})
+	require.NoError(t, err)
+	// The edit is a draft until it is published (ADR 0065); Enrollments begin on the live version.
+	_, err = mod.Publish(context.Background(), acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
 	return h
 }

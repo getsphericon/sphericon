@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -134,9 +135,11 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, contactID int64, nam
 }
 
 // Delete removes a Tag from the catalogue, and from every Contact that has it, unless a Segment
-// rule or an Automation step names it, an archived Automation's too: then it returns an *inuse.Error naming those Segments and
-// Automations (ADR 0049), because both name the Tag and would silently stop matching or applying.
-// A missing Tag is ErrNotFound.
+// rule or a step of a kept Automation's live version or draft names it: then it returns an
+// *inuse.Error naming those Segments and Automations (ADR 0049, ADR 0065), because both name the
+// Tag and would silently stop matching or applying.
+// The Condition an armed Broadcast copied from its Segment counts too (ADR 0065). A missing Tag is
+// ErrNotFound.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	t, err := s.Tag().Get(ctx, id)
 	if ent.IsNotFound(err) {
@@ -165,6 +168,11 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 		return err
 	}
 	users = append(users, inuse.Rules(live)...)
+	armed, err := broadcasts.UsingTag(ctx, s, t.Name)
+	if err != nil {
+		return err
+	}
+	users = append(users, inuse.Broadcasts(armed)...)
 	if len(users) > 0 {
 		return &inuse.Error{What: inuse.SubjectTag, Users: users}
 	}

@@ -122,8 +122,7 @@ func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 
 	a, err := m.Get(context.Background(), acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
-	steps, err := automations.CurrentSteps(a)
-	require.NoError(t, err)
+	steps := liveSteps(t, a)
 	opened, err := automations.OpenHTTP(env.Cipher, steps[0])
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T000/B000/XXXX", opened.URL)
@@ -148,11 +147,10 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	})
 	require.NoError(t, err)
 	for _, secret := range []string{"SECRETPATH", "hunter2", "whsec_topsecret"} {
-		assert.NotContains(t, created.Edges.Versions[0].Steps, secret)
+		assert.NotContains(t, created.Edges.DraftVersion.Steps, secret)
 	}
 
-	stored, err := automations.CurrentSteps(created)
-	require.NoError(t, err)
+	stored := draftSteps(t, created)
 	require.NotEmpty(t, stored[1].ID, "a new HTTP step gets an id")
 
 	// An edit that resends only the id, with a new body, keeps URL, headers and secret.
@@ -162,8 +160,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	}
 	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automations.Step{edit}})
 	require.NoError(t, err)
-	after, err := automations.CurrentSteps(updated)
-	require.NoError(t, err)
+	after := draftSteps(t, updated)
 	assert.Equal(t, stored[1].URL, after[0].URL, "the stored ciphertext is copied, not re-sealed")
 	assert.Equal(t, stored[1].Secret, after[0].Secret)
 	assert.Equal(t, stored[1].Headers, after[0].Headers)
@@ -182,8 +179,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	}
 	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Steps: &[]automations.Step{replace}})
 	require.NoError(t, err)
-	after, err = automations.CurrentSteps(updated)
-	require.NoError(t, err)
+	after = draftSteps(t, updated)
 	opened, err = automations.OpenHTTP(env.Cipher, after[0])
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.zapier.com/a", opened.URL)
