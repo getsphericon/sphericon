@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/samber/lo"
@@ -11,7 +10,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/i18n"
 )
 
 const errBrandKitForbidden = "only owners can change the Brand kit"
@@ -73,12 +71,7 @@ func (h *Handlers) SiteBrandKitRecreateStarterTemplates(ctx context.Context, par
 	}
 
 	made, err := h.brandKit.RecreateStarterTemplates(ctx, s)
-	switch {
-	case errors.Is(err, brandkit.ErrNotSaved):
-		v := siteapi.SiteBrandKitRecreateStarterTemplatesUnprocessableEntity(
-			problem(http.StatusUnprocessableEntity, i18n.T("errors.brandkit_not_saved", nil)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := siteapi.SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON(

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // SiteInvitationsList returns the workspace's pending (unaccepted) invitations.
@@ -54,13 +55,8 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 
 	// An empty address is the accounts operation's refusal (ErrEmailEmpty); one that is sent
 	// must be an address the invitee can receive mail at.
-	fieldErrors, err := checkFields(inviteForm{Email: strings.TrimSpace(string(req.Email))})
-	if err != nil {
+	if err := validation.Form(inviteForm{Email: strings.TrimSpace(string(req.Email))}); err != nil {
 		return nil, err
-	}
-	if fieldErrors != nil {
-		v := siteapi.SiteInvitationsCreateUnprocessableEntity(fieldsProblem(fieldErrors))
-		return &v, nil
 	}
 
 	a := auth.GetSiteAuth(ctx)
@@ -74,9 +70,6 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 		v := siteapi.SiteInvitationsCreateUnprocessableEntity(problemWithErrors(
 			http.StatusUnprocessableEntity, i18n.T("errors.email_empty", nil),
 			map[string][]string{fieldEmail: {i18n.T("errors.email_empty", nil)}}))
-		return &v, nil
-	case errors.Is(err, accounts.ErrAlreadyMember):
-		v := siteapi.SiteInvitationsCreateConflict(problem(http.StatusConflict, i18n.T("errors.already_member", nil)))
 		return &v, nil
 	case err != nil:
 		return nil, err
@@ -185,13 +178,8 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	password, _ := req.Password.Get()
 	// Whether a name and a password are needed at all is the transaction's to say (a Verified
 	// User's address needs neither); one that is sent must pass the password rule.
-	fieldErrors, err := checkFields(acceptForm{Password: password})
-	if err != nil {
+	if err := validation.Form(acceptForm{Password: password}); err != nil {
 		return nil, err
-	}
-	if fieldErrors != nil {
-		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(fieldsProblem(fieldErrors))
-		return &v, nil
 	}
 
 	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)

@@ -2,7 +2,6 @@ package brandkit
 
 import (
 	"context"
-	"errors"
 	"net/url"
 	"regexp"
 	"strings"
@@ -18,7 +17,7 @@ import (
 
 // ErrNotSaved means the Workspace has no saved Brand kit, so there is nothing to make starter
 // Templates from.
-var ErrNotSaved = errors.New("brandkit: the Brand kit is not saved yet")
+var ErrNotSaved = validation.Refuse("brandkit: the Brand kit is not saved yet", "errors.brandkit_not_saved")
 
 // Module reads and saves the Brand kit and makes the starter Templates from it. It holds no
 // Workspace: every call receives the Workspace-scoped client (ADR 0017).

@@ -58,10 +58,6 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 		change.Name = &name
 	}
 	changed, err := h.accounts.ChangeProfile(ctx, u, change, h.proveCurrentPassword)
-	if fields, ok := errors.AsType[*validation.FieldsError](err); ok {
-		v := siteapi.SiteUserUpdateMeUnprocessableEntity(fieldsProblem(fields.Fields))
-		return &v, nil
-	}
 	if errors.Is(err, accounts.ErrCurrentPasswordIncorrect) {
 		v := siteapi.SiteUserUpdateMeForbidden(problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil)))
 		return &v, nil
@@ -101,13 +97,8 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	}
 
 	newEmail := strings.TrimSpace(string(req.NewEmail))
-	fieldErrors, err := checkFields(emailChangeForm{NewEmail: newEmail})
-	if err != nil {
+	if err := validation.Form(emailChangeForm{NewEmail: newEmail}); err != nil {
 		return nil, err
-	}
-	if fieldErrors != nil {
-		v := siteapi.SiteUserEmailChangeUnprocessableEntity(fieldsProblem(fieldErrors))
-		return &v, nil
 	}
 	if strings.EqualFold(newEmail, u.Email) {
 		v := siteapi.SiteUserEmailChangeUnprocessableEntity(problemWithErrors(

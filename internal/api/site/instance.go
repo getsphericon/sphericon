@@ -3,7 +3,6 @@ package site
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -66,10 +65,6 @@ func (h *Handlers) SiteInstanceSetTelemetry(ctx context.Context, req *siteapi.Si
 		return &v, nil
 	}
 	s, err := h.instance.SetTelemetry(ctx, req.Enabled)
-	if errors.Is(err, instance.ErrTelemetryLocked) {
-		v := siteapi.SiteInstanceSetTelemetryConflict(problem(http.StatusConflict, i18n.T("errors.telemetry_locked", nil)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

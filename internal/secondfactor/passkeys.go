@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/useridentity"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // CeremonyTTL is how long a Passkey ceremony cookie lives: the time to touch the authenticator.
@@ -40,7 +41,7 @@ var (
 	ErrChallengeSpent = errors.New("secondfactor: passkey challenge already spent")
 	// ErrPasskeysUnavailable: the Instance's public URL has no host name a Passkey can be bound
 	// to (an IP address), so no Passkey can be registered or used on it.
-	ErrPasskeysUnavailable = errors.New("secondfactor: passkeys need a host name, not an IP address")
+	ErrPasskeysUnavailable = validation.NotFound("secondfactor: passkeys need a host name, not an IP address", "errors.passkeys_unavailable")
 	// ErrPasskeyRefused: the authenticator's response is not acceptable: malformed, not
 	// signed for this challenge or origin, made without user verification, or for a
 	// credential that is already registered.
@@ -50,7 +51,7 @@ var (
 	ErrPasskeyNotFound = errors.New("secondfactor: passkey not found")
 	// ErrLastSignIn: the Passkey is the last way the User can sign in: no password, no Linked
 	// identity and no other Passkey.
-	ErrLastSignIn = errors.New("secondfactor: the passkey is the last way to sign in")
+	ErrLastSignIn = validation.Conflict("secondfactor: the passkey is the last way to sign in", "errors.passkey_last_sign_in")
 )
 
 type ceremonyPurpose string

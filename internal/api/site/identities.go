@@ -68,14 +68,7 @@ func (h *Handlers) SiteIdentitiesUnlink(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 	u, err := h.accounts.UnlinkIdentity(ctx, userID, int64(params.ID))
-	switch {
-	case errors.Is(err, accounts.ErrIdentityNotFound):
-		v := siteapi.SiteIdentitiesUnlinkNotFound(problem(http.StatusNotFound, i18n.T("errors.linked_identity_not_found", nil)))
-		return &v, nil
-	case errors.Is(err, accounts.ErrLastSignIn):
-		v := siteapi.SiteIdentitiesUnlinkConflict(problem(http.StatusConflict, i18n.T("errors.linked_identity_last_sign_in", nil)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	cookie, err := h.sessions.Issue(u, currentSession(ctx))

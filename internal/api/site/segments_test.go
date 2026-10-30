@@ -7,12 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // Site segments require a valid JWT cookie, like every other site resource.

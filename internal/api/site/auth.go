@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signup"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // SiteAuthSignUp is the Sign-up (ADR 0030): the signup module decides, and the answer
@@ -24,10 +23,6 @@ import (
 // follow the proof.
 func (h *Handlers) SiteAuthSignUp(ctx context.Context, req *siteapi.SiteSignUpInput) (siteapi.SiteAuthSignUpRes, error) {
 	res, err := h.signup.SignUp(ctx, signup.Input{Name: req.Name, Email: string(req.Email), Password: req.Password.Or("")})
-	if fields, ok := errors.AsType[*validation.FieldsError](err); ok {
-		v := siteapi.SiteAuthSignUpUnprocessableEntity(fieldsProblem(fields.Fields))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"time"
+
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // InviteTokenTTL is how long an invitation link stays valid.
@@ -19,7 +21,7 @@ var (
 	// ErrEmailEmpty means the invited email is blank.
 	ErrEmailEmpty = errors.New("accounts: invitation email is empty")
 	// ErrAlreadyMember means the invited address already has a Membership in the Workspace.
-	ErrAlreadyMember = errors.New("accounts: invited email is already a member")
+	ErrAlreadyMember = validation.Conflict("accounts: invited email is already a member", "errors.already_member")
 	// ErrCredentialsRequired means the invited address has no Verified User, so the
 	// invitee must give a name and a password to accept.
 	ErrCredentialsRequired = errors.New("accounts: invitation needs a name and a password")

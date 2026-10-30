@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/samber/lo"
@@ -11,7 +10,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/joindomains"
 )
 
 // SiteJoinDomainsList lists the Workspace's Join domains. Owners only.
@@ -46,11 +44,7 @@ func (h *Handlers) SiteJoinDomainsAdd(ctx context.Context, req *siteapi.SiteAddJ
 	}
 
 	d, err := h.joinDomains.Add(ctx, s, req.Domain)
-	switch {
-	case errors.Is(err, joindomains.ErrAlreadyExists):
-		v := siteapi.SiteJoinDomainsAddConflict(problem(http.StatusConflict, i18n.T("errors.join_domain_exists", nil)))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 	res := mapper.JoinDomainToResource(d)
@@ -72,12 +66,6 @@ func (h *Handlers) SiteJoinDomainsVerify(ctx context.Context, params siteapi.Sit
 	switch {
 	case ent.IsNotFound(err):
 		v := siteapi.SiteJoinDomainsVerifyNotFound(problem(http.StatusNotFound, "join domain not found"))
-		return &v, nil
-	case errors.Is(err, joindomains.ErrRecordNotFound):
-		v := siteapi.SiteJoinDomainsVerifyUnprocessableEntity(problem(http.StatusUnprocessableEntity, i18n.T("errors.join_domain_record_missing", nil)))
-		return &v, nil
-	case errors.Is(err, joindomains.ErrHeldElsewhere):
-		v := siteapi.SiteJoinDomainsVerifyConflict(problem(http.StatusConflict, i18n.T("errors.join_domain_held", nil)))
 		return &v, nil
 	case err != nil:
 		return nil, err

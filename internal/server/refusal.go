@@ -54,6 +54,11 @@ func refusalProblem(err error) (refusal, bool) {
 	if used, ok := errors.AsType[*inuse.Error](err); ok {
 		return refusal{status: http.StatusConflict, body: inUseBody(used)}, true
 	}
+	if form, ok := errors.AsType[*validation.FieldsError](err); ok {
+		p := problemBody(http.StatusUnprocessableEntity, form.Detail())
+		p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors(form.Fields))
+		return refusal{status: http.StatusUnprocessableEntity, body: p}, true
+	}
 	if invalid, ok := errors.AsType[*validation.Error](err); ok {
 		return refusal{status: http.StatusUnprocessableEntity, body: fieldBody(http.StatusUnprocessableEntity, invalid.Field, invalid.Message)}, true
 	}
