@@ -11,9 +11,9 @@ permissions:
   contents: read
 
 env:
-  # The scip indexers are editor tooling no job runs. On a mise cache miss, `go install` of scip-go
-  # fills the Go module cache with read-only files before go-cache restores it, tar cannot overwrite
-  # them and the module cache restore is dropped.
+  # The scip indexers serve easement alone (the arch job). On a mise cache miss, `go install` of
+  # scip-go fills the Go module cache with read-only files before go-cache restores it, tar cannot
+  # overwrite them and the module cache restore is dropped.
   MISE_DISABLE_TOOLS: go:github.com/scip-code/scip-go/cmd/scip-go,npm:@sourcegraph/scip-typescript
 
 concurrency:
@@ -94,6 +94,9 @@ jobs:
   arch:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # easement needs scip-go on PATH even when every index is cached.
+    env:
+      MISE_DISABLE_TOOLS: ''
 
     steps:
       - name: Checkout repository
