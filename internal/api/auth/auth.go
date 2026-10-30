@@ -18,12 +18,9 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/apitokens"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/samber/lo"
@@ -83,7 +80,7 @@ func TokenScoped(ctx context.Context) *ent.Scoped {
 type ExternalSecurityHandler struct {
 	ent      *ent.Client
 	bus      *events.Bus
-	consents *consentrecords.Module
+	accounts *accounts.Accounts
 	now      func() time.Time
 }
 
@@ -93,8 +90,8 @@ type ExternalSecurityDeps struct {
 	Ent *ent.Client
 	// Bus opens the transactions of audited writes made under the token (ADR 0022).
 	Bus *events.Bus
-	// ConsentRecords is the acceptance gate a Connection's User meets (ADR 0062).
-	ConsentRecords *consentrecords.Module
+	// Accounts admits a Connection's User as it admits their own session (Admit).
+	Accounts *accounts.Accounts
 	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
 	// time.Now).
 	Clock func() time.Time
@@ -106,7 +103,7 @@ func NewExternalSecurityHandler(d ExternalSecurityDeps) *ExternalSecurityHandler
 	if now == nil {
 		now = time.Now
 	}
-	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, consents: d.ConsentRecords, now: now}
+	return &ExternalSecurityHandler{ent: d.Ent, bus: d.Bus, accounts: d.Accounts, now: now}
 }
 
 var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
@@ -114,7 +111,7 @@ var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
 // HandleBearerAuth authenticates the Bearer token (Authenticate) and then lets it call op only
 // when it carries every scope the contract declares for op (ExternalOperationScopes, ADR 0061)
 // and, for a Connection, when its User's current Role holds the Permission granting each of
-// those scopes needs (accounts.GrantPermissions) and each Permission op itself declares
+// those scopes needs (accounts.MayGrant) and each Permission op itself declares
 // (ExternalOperationPermissions). An operation absent from the scope table is refused to every
 // token. A token that is missing, invalid, revoked or expired is ErrUnauthorized (401);
 // a valid token without a scope of op is refused with 403, and a Connection whose User's Role
@@ -168,11 +165,10 @@ func permitted(op externalapi.OperationName, auth *TokenAuth) error {
 	if auth.Membership == nil {
 		return nil
 	}
-	needed := lo.FilterMap(required, func(s apitokens.Scope, _ int) (accounts.Permission, bool) {
-		p, ok := accounts.GrantPermissions[string(s)]
-		return p, ok
-	})
-	for _, p := range append(needed, ExternalOperationPermissions[op]...) {
+	if err := accounts.MayGrant(auth.Membership.Role, lo.Map(required, func(s apitokens.Scope, _ int) string { return string(s) })); err != nil {
+		return err
+	}
+	for _, p := range ExternalOperationPermissions[op] {
 		if err := accounts.Require(auth.Membership.Role, p); err != nil {
 			return err
 		}
@@ -261,20 +257,11 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 	actor := events.Actor{Kind: events.ActorAPIToken, ID: strconv.FormatInt(token.ID, 10), Name: token.Name}
 	m := token.Edges.Membership
 	if m != nil {
-		// A Connection acts as its User, through its client, under the Workspace's Two-factor
-		// requirement and the acceptance gate like the User's own session (ADR 0061, ADR 0020,
-		// ADR 0062); a token carries no Second factor step. The Workspace's API token is no
-		// User's and meets neither. The gate comes first, as on /site, so a User both gated and
-		// withheld is refused alike on every surface.
-		gated, err := h.consents.Gated(ctx, m.UserID)
-		if err != nil {
+		// A Connection acts as its User, through its client, and is admitted as the User's own
+		// session is (ADR 0061); a token carries no Second factor step. The Workspace's API token
+		// is no User's and is not admitted.
+		if err := h.accounts.Admit(ctx, accounts.Admission{UserID: m.UserID, Membership: m, At: h.now()}); err != nil {
 			return ctx, err
-		}
-		if gated {
-			return ctx, AcceptancePendingError{}
-		}
-		if secondfactor.Withheld(m, h.now(), false) {
-			return ctx, SecondFactorRequiredError{}
 		}
 		actor = events.ConnectionActor(m.UserID, m.Edges.User.Name, token.Name)
 	}
@@ -288,32 +275,6 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 		Scoped:      h.bus.Act(h.ent.Scoped(token.WorkspaceID), actor),
 	}
 	return WithTokenAuth(ctx, auth), nil
-}
-
-// SecondFactorRequiredError is secondfactor.ErrRequired as the problem every surface answers it
-// with: a site session or a Connection of a User the Workspace's Two-factor requirement withholds
-// (ADR 0020). Returned as an error, it is rendered by the server's error handler, which reads it
-// through its Problem method.
-type SecondFactorRequiredError struct{}
-
-func (SecondFactorRequiredError) Error() string { return secondfactor.ErrRequired.Error() }
-func (SecondFactorRequiredError) Unwrap() error { return secondfactor.ErrRequired }
-
-// Problem is the 403 second_factor_required answer.
-func (SecondFactorRequiredError) Problem() (status int, code, detail string) {
-	return http.StatusForbidden, string(siteapi.ProblemCodeSecondFactorRequired), i18n.T("errors.second_factor_required", nil)
-}
-
-// AcceptancePendingError refuses, alike on every surface, a request on the own credential of a
-// User with a required acceptance pending (consentrecords.Module.Gated, ADR 0062). Returned as an
-// error, it is rendered by the server's error handler, which reads it through its Problem method.
-type AcceptancePendingError struct{}
-
-func (AcceptancePendingError) Error() string { return "auth: a required acceptance is pending" }
-
-// Problem is the 403 acceptance_pending answer.
-func (AcceptancePendingError) Problem() (status int, code, detail string) {
-	return http.StatusForbidden, string(siteapi.ProblemCodeAcceptancePending), i18n.T("errors.acceptance_pending", nil)
 }
 
 // CollectAuth holds the workspace resolved from the per-workspace collect key.

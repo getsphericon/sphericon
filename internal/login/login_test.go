@@ -17,7 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/login"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -32,7 +31,7 @@ func (s store) Lookup(ctx context.Context, address string) (login.Account[*ent.U
 	if err != nil {
 		return login.Account[*ent.User]{}, false, err
 	}
-	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: secondfactor.Active(u)}, true, nil
+	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: accounts.HasSecondFactor(u)}, true, nil
 }
 
 // resetFailing is a throttle whose success reset is broken.

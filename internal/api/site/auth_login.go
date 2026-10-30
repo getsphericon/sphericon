@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
 // SiteAuthLogin is the one route that starts a session (ADR 0020). It consults the
@@ -66,7 +65,7 @@ func (s loginStore) Lookup(ctx context.Context, address string) (login.Account[*
 	if err != nil {
 		return login.Account[*ent.User]{}, false, err
 	}
-	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: secondfactor.Active(u)}, true, nil
+	return login.Account[*ent.User]{Principal: u, PasswordHash: u.PasswordHash, SecondFactor: accounts.HasSecondFactor(u)}, true, nil
 }
 
 // newLogin builds the login module over the site's adapter (ADR 0020, 0030).

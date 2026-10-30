@@ -104,7 +104,7 @@ func (s *Service) Describe(ctx context.Context, clientID, redirectURI, scope str
 	return &Request{
 		ClientName: client.Name, ClientHost: ClientHost(clientID), LocalRedirect: isLoopback(redirectURI),
 		RedirectURI: redirectURI, Scopes: granted, SendScopes: send, SetupScopes: setup,
-		RequiredPermissions: requiredPermissions(slices.Concat(granted, send, setup)),
+		RequiredPermissions: accounts.GrantRequires(slices.Concat(granted, send, setup)),
 	}, nil
 }
 
@@ -133,10 +133,8 @@ func (s *Service) Decide(ctx context.Context, d Decision) (string, error) {
 	}
 	// Any member may approve, but only the scopes their Role may grant (ADR 0061): the consent
 	// screen offers no other, and the first one beyond the Role refuses the whole decision.
-	for _, p := range requiredPermissions(granted) {
-		if err := accounts.Require(d.Membership.Role, p); err != nil {
-			return "", err
-		}
+	if err := accounts.MayGrant(d.Membership.Role, granted); err != nil {
+		return "", err
 	}
 
 	code := rand.Text()

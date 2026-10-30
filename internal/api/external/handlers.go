@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/capturedmessages"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/erasure"
 	"github.com/getsphericon/sphericon/internal/eventlog"
@@ -108,9 +107,6 @@ type Deps struct {
 	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
 	// time.Now); the security handler reads it.
 	Clock func() time.Time
-	// ConsentRecords is the acceptance gate a Connection's User meets (ADR 0062); the security
-	// handler reads it.
-	ConsentRecords *consentrecords.Module
 }
 
 func NewHandlers(d Deps) *Handlers {

@@ -1731,7 +1731,6 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 	captured := invoke[*capturedmessages.Module](r)
 	sd := invoke[*sendingdomains.Module](r)
 	edition := invoke[*ee.Edition](r)
-	consents := invoke[*consentrecords.Module](r)
 	if r.err != nil {
 		return apiexternal.Deps{}, r.err
 	}
@@ -1739,7 +1738,6 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Accounts: acc, Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
 		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Transactional: transactional.New(tpl, sender.Module), BrandKit: bk, Automations: auto, Rules: rl,
 		Broadcasts: bc, Reputation: rep, Integrations: integ, CapturedMessages: captured, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
-		ConsentRecords: consents,
 	}, nil
 }
 

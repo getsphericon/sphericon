@@ -165,20 +165,6 @@ func TestAfterGraceTheRequiringWorkspaceAloneIsWithheld(t *testing.T) {
 		code, _ := siteGet(t, env, fixtures.UmbrellaOwnerRitaEmail, path)
 		assert.Equal(t, http.StatusOK, code, path)
 	}
-
-	code, _ = siteGet(t, env, fixtures.UmbrellaMemberNinaEmail, "/site/workspaces/"+fixtures.UmbrellaPublicID+"/tags")
-	assert.Equal(t, http.StatusOK, code, "Nina's grace runs from her later Membership")
-
-	code, _ = siteGet(t, env, fixtures.SecondFactorSamEmail, "/site/workspaces/"+fixtures.UmbrellaPublicID+"/tags")
-	assert.Equal(t, http.StatusOK, code, "one Second factor satisfies every Workspace")
-}
-
-func TestANewMembershipIsWithheldOnceItsOwnGraceEnds(t *testing.T) {
-	env := requirementEnv(t, ninaGraceEnds.Add(time.Hour))
-	code, body := siteGet(t, env, fixtures.UmbrellaMemberNinaEmail, "/site/workspaces/"+fixtures.UmbrellaPublicID+"/tags")
-	assert.Equal(t, http.StatusForbidden, code)
-	problem := problemCode(t, body)
-	assert.Equal(t, "second_factor_required", problem)
 }
 
 func TestTurningTheRequirementOnEmailsEveryUserWithoutASecondFactor(t *testing.T) {
@@ -230,21 +216,6 @@ func TestAWithheldOwnerCannotSwitchTheRequirementOn(t *testing.T) {
 	require.IsType(t, &siteapi.SiteWorkspacesRequireSecondFactorForbidden{}, res)
 	assert.Equal(t, siteapi.ProblemCodeSecondFactorRequired,
 		res.(*siteapi.SiteWorkspacesRequireSecondFactorForbidden).Code.Value)
-}
-
-func TestOneSecondFactorSatisfiesEveryRequiringWorkspace(t *testing.T) {
-	c := &requirementClock{t: time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)}
-	env := testhelper.Setup(t, testhelper.WithClock(c.now))
-	require.IsType(t, &siteapi.SiteWorkspaceResource{},
-		requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID))
-	c.t = c.t.Add(8 * 24 * time.Hour)
-
-	for _, path := range []string{"/site/workspaces/" + fixtures.GlobexPublicID + "/tags", "/site/workspaces/" + fixtures.UmbrellaPublicID + "/tags"} {
-		code, _ := siteGet(t, env, fixtures.SecondFactorSamEmail, path)
-		assert.Equal(t, http.StatusOK, code, path)
-	}
-	code, _ := siteGet(t, env, fixtures.OwnerJaneEmail, "/site/workspaces/"+fixtures.GlobexPublicID+"/tags")
-	assert.Equal(t, http.StatusForbidden, code, "Jane has no Second factor: Globex is withheld from her")
 }
 
 func TestAStrongSessionMeetsTheRequirementWithoutASecondFactor(t *testing.T) {

@@ -53,9 +53,11 @@ type Accounts struct {
 }
 
 // Consents answers a form's answers against the Sign-up items in effect: the Consent records they
-// make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check).
+// make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check), and says
+// whether a User has a required acceptance pending (consentrecords.Module.Gated).
 type Consents interface {
 	Check(ctx context.Context, answers []consentrecords.Answer, source consentrecord.Source) (consentrecords.Consents, error)
+	Gated(ctx context.Context, userID int64) (bool, error)
 }
 
 // Option tunes Accounts.

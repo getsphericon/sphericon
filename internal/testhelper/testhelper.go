@@ -507,7 +507,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Clock: st.now, Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
 		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
 		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, CapturedMessages: capturedModule, SendingDomains: sendingDomainsModule,
-		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export, ConsentRecords: consentRecords,
+		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
 	}
 	external, mcpHandler := externalSurfaces(t, client, externalDeps, cfg.MCPOrigin())
 	oauthFetcher := st.oauthFetcher

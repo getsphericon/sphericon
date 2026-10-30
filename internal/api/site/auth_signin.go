@@ -11,7 +11,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/signin"
 )
 
@@ -126,7 +125,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 	if signedIn.LinkedIdentityID != 0 {
 		h.noticeIdentityLinked(ctx, signedIn.User, params.Provider, signedIn.LinkedIdentityID)
 	}
-	if secondfactor.Active(signedIn.User) {
+	if accounts.HasSecondFactor(signedIn.User) {
 		// A provider sign-in replaces only the password step: an enrolled Second factor still
 		// gets the challenge of ADR 0020, finished on the login page through the same second
 		// step (and the same Login throttle) as after a password.

@@ -585,7 +585,9 @@ _Avoid_: PAT, personal API key, API token (that is the Workspace's)
 **Connection**:
 The access a User gave an application (an MCP client such as Claude) to one Workspace by
 consenting to it. It belongs to that User's Membership, can do no more than the User's Role
-allows at the moment of each request, and ends with the Membership.
+allows at the moment of each request, and ends with the Membership. Like the User's own session,
+it is refused while the User has a required acceptance pending or the Workspace's Two-factor
+requirement withholds them.
 _Avoid_: OAuth grant, authorized application, API token (that is the Workspace's)
 
 **Key** (collect key / ingest key):

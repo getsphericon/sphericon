@@ -40,6 +40,12 @@ const (
 	// read: a pending sign-up that is gone, a cursor the feed never handed out. A mailed link
 	// that does not stand is KindLinkInvalid.
 	KindUnknownReference
+	// KindAcceptancePending is a User with a required acceptance pending (ADR 0062): nothing but
+	// the acceptance itself is served on their own credential until it is given.
+	KindAcceptancePending
+	// KindSecondFactorRequired is a User the Workspace's Two-factor requirement withholds (ADR
+	// 0020): the grace ended without a Second factor.
+	KindSecondFactorRequired
 )
 
 // RefusalError is a sentinel domain error that carries its kind and the text to show a user.
@@ -114,6 +120,18 @@ func Incomplete(text, key string) *RefusalError {
 // module can read (KindUnknownReference).
 func UnknownReference(text, key string) *RefusalError {
 	return &RefusalError{kind: KindUnknownReference, text: text, key: key}
+}
+
+// AcceptancePending makes the sentinel for a User with a required acceptance pending
+// (KindAcceptancePending).
+func AcceptancePending(text, key string) *RefusalError {
+	return &RefusalError{kind: KindAcceptancePending, text: text, key: key}
+}
+
+// SecondFactorRequired makes the sentinel for a User the Two-factor requirement withholds
+// (KindSecondFactorRequired).
+func SecondFactorRequired(text, key string) *RefusalError {
+	return &RefusalError{kind: KindSecondFactorRequired, text: text, key: key}
 }
 
 func (r *RefusalError) Error() string { return r.text }
