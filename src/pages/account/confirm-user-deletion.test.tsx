@@ -51,7 +51,6 @@ test('the link token and the typed email finish the deletion', async () => {
 
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
   await screen.getByRole('button', { name: 'Delete my user' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete my user' }).click()
 
   await expect.poll(() => bodies).toEqual([{ email: 'info@getsphericon.com', token: 'link-token' }])
   await expect.poll(() => navigate).toHaveBeenCalledWith({ to: loginRoute.to })
@@ -65,7 +64,6 @@ test('a user with a second factor also sends a code', async () => {
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
   await screen.getByLabelText(/^Second factor code/).fill('123456')
   await screen.getByRole('button', { name: 'Delete my user' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Delete my user' }).click()
 
   await expect
     .poll(() => bodies)

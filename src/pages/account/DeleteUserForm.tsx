@@ -1,6 +1,16 @@
-import { Alert, Button, Divider, Group, PasswordInput, Stack, Text, TextInput } from '@mantine/core'
+import {
+  Alert,
+  Button,
+  Divider,
+  Group,
+  Modal,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { modals } from '@mantine/modals'
+import { useDisclosure } from '@mantine/hooks'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -53,13 +63,16 @@ export function SoleOwnedWindowAlert() {
 
 // DeleteUserForm finishes the deletion of the signed-in User: the typed email, the proof (the
 // password, or the `token` of the mailed link of a User with no password) and, with a Second
-// factor, a code, then a confirmation. It lands on the login screen once the User is gone.
+// factor, a code, under the warning that nothing comes back. It lands on the login screen once
+// the User is gone. onCancel, when given, adds a Cancel button.
 export function DeleteUserForm({
   token,
   onSoleOwned,
+  onCancel,
 }: {
   token?: string
   onSoleOwned?: OnSoleOwned | undefined
+  onCancel?: () => void
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -92,29 +105,21 @@ export function DeleteUserForm({
     if (status.enabled) {
       body.code = values.code.trim()
     }
-    modals.openConfirmModal({
-      title: t(($) => $.profile.deleteUserTitle),
-      children: <Text>{t(($) => $.profile.deleteUserConfirm)}</Text>,
-      labels: {
-        cancel: t(($) => $.actions.cancel),
-        confirm: t(($) => $.profile.deleteUserButton),
-      },
-      confirmProps: { color: 'red' },
-      onConfirm: () => deleteUser.mutate({ body }),
-    })
+    deleteUser.mutate({ body })
   }
 
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
       <Stack>
-        <Text size="sm" c="dimmed">
-          {t(($) => $.profile.deleteUserDescription)}
-        </Text>
+        <Alert color="red" variant="light">
+          {t(($) => $.profile.deleteUserConfirm)}
+        </Alert>
         <SoleOwnedWindowAlert />
         <TextInput
           label={t(($) => $.profile.deleteUserEmailLabel)}
           type="email"
           required
+          data-autofocus
           {...form.getInputProps('email')}
         />
         {token === undefined ? (
@@ -132,6 +137,11 @@ export function DeleteUserForm({
           />
         ) : null}
         <Group justify="flex-end">
+          {onCancel ? (
+            <Button variant="default" onClick={onCancel}>
+              {t(($) => $.actions.cancel)}
+            </Button>
+          ) : null}
           <Button type="submit" color="red" loading={deleteUser.isPending}>
             {t(($) => $.profile.deleteUserButton)}
           </Button>
@@ -141,21 +151,32 @@ export function DeleteUserForm({
   )
 }
 
-// DeleteUserSection erases the User at once (User deletion, ADR 0050): the typed email, the
-// password and, with a Second factor, a code. A Workspace waiting for erasure that the User
-// solely owns is named, since it can no longer be restored afterwards. A User with no password
-// asks for a one-time link to their Verified email instead of typing a password; the link
-// lands on the confirm page. onSoleOwned gets the Workspaces a refused deletion names.
+// DeleteUserSection erases the User at once (User deletion, ADR 0050): a button that opens the
+// form in a modal, the typed email, the password and, with a Second factor, a code. A Workspace
+// waiting for erasure that the User solely owns is named, since it can no longer be restored
+// afterwards. A User with no password asks there for a one-time link to their Verified email
+// instead of typing a password; the link lands on the confirm page. onSoleOwned gets the
+// Workspaces a refused deletion names, and the modal closes so the page can offer them.
 export function DeleteUserSection({ onSoleOwned }: { onSoleOwned?: OnSoleOwned }) {
   const { t } = useTranslation()
   const statusQuery = useQuery(siteSecondFactorGetStatusOptions())
+  const [opened, { open, close }] = useDisclosure(false)
   const linkForm = useForm({ initialValues: { email: '' } })
+
+  const closeOnSoleOwned = (workspaces: SiteSoleOwnedWorkspace[]) => {
+    close()
+    onSoleOwned?.(workspaces)
+  }
 
   const requestLink = useResourceMutation({
     mutation: siteUserDeleteUserLinkMutation(),
     errorTitle: t(($) => $.profile.deleteUserLinkErrorTitle),
-    handleError: soleOwnedHandler(onSoleOwned),
+    handleError: soleOwnedHandler(closeOnSoleOwned),
     successMessage: t(($) => $.profile.deleteUserLinkSent),
+    onDone: () => {
+      linkForm.reset()
+      close()
+    },
   })
 
   const status = statusQuery.data
@@ -166,33 +187,46 @@ export function DeleteUserSection({ onSoleOwned }: { onSoleOwned?: OnSoleOwned }
   return (
     <Stack maw={420}>
       <Divider label={t(($) => $.profile.deleteUserSectionTitle)} />
-      {status.passwordSet ? (
-        <DeleteUserForm onSoleOwned={onSoleOwned} />
-      ) : (
-        <form
-          onSubmit={linkForm.onSubmit((values) =>
-            requestLink.mutate({ body: { email: values.email.trim() } }),
-          )}
-        >
-          <Stack>
-            <Text size="sm" c="dimmed">
-              {t(($) => $.profile.deleteUserLinkDescription)}
-            </Text>
-            <SoleOwnedWindowAlert />
-            <TextInput
-              label={t(($) => $.profile.deleteUserEmailLabel)}
-              type="email"
-              required
-              {...linkForm.getInputProps('email')}
-            />
-            <Group justify="flex-end">
-              <Button type="submit" color="red" variant="light" loading={requestLink.isPending}>
-                {t(($) => $.profile.deleteUserLinkButton)}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      )}
+      <Text size="sm" c="dimmed">
+        {status.passwordSet
+          ? t(($) => $.profile.deleteUserDescription)
+          : t(($) => $.profile.deleteUserLinkDescription)}
+      </Text>
+      <Group justify="flex-end">
+        <Button color="red" variant="light" onClick={open}>
+          {t(($) => $.profile.deleteUserButton)}
+        </Button>
+      </Group>
+      <Modal opened={opened} onClose={close} title={t(($) => $.profile.deleteUserTitle)}>
+        {status.passwordSet ? (
+          <DeleteUserForm onSoleOwned={closeOnSoleOwned} onCancel={close} />
+        ) : (
+          <form
+            onSubmit={linkForm.onSubmit((values) =>
+              requestLink.mutate({ body: { email: values.email.trim() } }),
+            )}
+          >
+            <Stack>
+              <SoleOwnedWindowAlert />
+              <TextInput
+                label={t(($) => $.profile.deleteUserEmailLabel)}
+                type="email"
+                required
+                data-autofocus
+                {...linkForm.getInputProps('email')}
+              />
+              <Group justify="flex-end">
+                <Button variant="default" onClick={close}>
+                  {t(($) => $.actions.cancel)}
+                </Button>
+                <Button type="submit" color="red" loading={requestLink.isPending}>
+                  {t(($) => $.profile.deleteUserLinkButton)}
+                </Button>
+              </Group>
+            </Stack>
+          </form>
+        )}
+      </Modal>
     </Stack>
   )
 }

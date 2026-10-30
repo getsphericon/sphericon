@@ -131,9 +131,9 @@ test('a gated user deletes their account from the screen', async () => {
   )
   const { screen, navigate } = await renderWithRouter(<AcceptancePage />, mount)
 
+  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
   await screen.getByLabelText(/^Password to confirm/).fill('secret-pass')
-  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete my user' }).click()
 
   await expect
@@ -164,13 +164,15 @@ test('a gated sole owner deletes the workspace the refused deletion names, then 
     }),
   )
   const { screen, navigate } = await renderWithRouter(<AcceptancePage />, mount)
+  // The modal opens with an empty form each time: a refusal closes it so the page offers the
+  // Workspaces it names.
   const deleteAccount = async () => {
     await screen.getByRole('button', { name: 'Delete my user' }).click()
+    await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
+    await screen.getByLabelText(/^Password to confirm/).fill('secret-pass')
     await screen.getByRole('dialog').getByRole('button', { name: 'Delete my user' }).click()
   }
 
-  await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
-  await screen.getByLabelText(/^Password to confirm/).fill('secret-pass')
   await deleteAccount()
   await screen.getByRole('button', { name: 'Delete Pied Piper' }).click()
   await screen.getByLabelText(/^Type Pied Piper to confirm/).fill('Pied Piper')

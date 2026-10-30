@@ -80,9 +80,9 @@ test('deleting the user sends the typed email and password, then lands on the lo
   serve(bodies)(noContent)
   const { screen, navigate } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
   await screen.getByLabelText(/^Password to confirm/).fill('secret-pass')
-  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete my user' }).click()
 
   await expect
@@ -96,10 +96,10 @@ test('a user with a second factor also sends a code', async () => {
   serve(bodies, { enabled: true })(noContent)
   const { screen, navigate } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
   await screen.getByLabelText(/^Password to confirm/).fill('secret-pass')
   await screen.getByLabelText(/^Second factor code/).fill('123456')
-  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete my user' }).click()
 
   await expect
@@ -114,6 +114,7 @@ test('a workspace waiting for erasure is named with the no-restore warning', asy
   serve([], {}, [waiting])(noContent)
   const { screen } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await expect
     .element(screen.getByText(/can no longer be restored once you are gone: Bluth/))
     .toBeInTheDocument()
@@ -123,6 +124,7 @@ test('a waiting workspace with another owner is not named in the warning', async
   serve([], {}, [waiting, shared])(noContent)
   const { screen } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await expect.element(screen.getByText(/once you are gone: Bluth\./)).toBeInTheDocument()
   await expect.element(screen.getByText(/Dunder/)).not.toBeInTheDocument()
 })
@@ -131,6 +133,7 @@ test('a user with no password sees the no-restore warning before asking for the 
   serve([], { passwordSet: false }, [waiting])(noContent)
   const { screen } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await expect
     .element(screen.getByText(/can no longer be restored once you are gone: Bluth/))
     .toBeInTheDocument()
@@ -145,9 +148,9 @@ test('a refusal for a sole owned workspace names the workspaces and stays put', 
   )
   const { screen, navigate } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
   await screen.getByLabelText(/^Password to confirm/).fill('secret-pass')
-  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete my user' }).click()
 
   await expect.element(screen.getByText(/only owner of: Pied Piper/)).toBeInTheDocument()
@@ -165,9 +168,11 @@ test('a user with no password asks for the mailed link with their typed email', 
   )
   const { screen } = await renderWithRouter(<ProfilePage />)
 
+  await screen.getByRole('button', { name: 'Delete my user' }).click()
   await expect.element(screen.getByLabelText(/^Password to confirm/)).not.toBeInTheDocument()
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
-  await screen.getByRole('button', { name: 'Email me a link' }).click()
+  await screen.getByRole('dialog').getByRole('button', { name: 'Email me a link' }).click()
 
   await expect.poll(() => bodies).toEqual([{ email: 'info@getsphericon.com' }])
+  await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
 })

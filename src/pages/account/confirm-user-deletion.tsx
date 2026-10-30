@@ -1,4 +1,4 @@
-import { Divider, Stack, Title } from '@mantine/core'
+import { Divider, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
@@ -17,6 +17,9 @@ export function ConfirmUserDeletionPage() {
       <Stack>
         <Title order={2}>{t(($) => $.profile.deleteUserSectionTitle)}</Title>
         <Divider />
+        <Text size="sm" c="dimmed">
+          {t(($) => $.profile.deleteUserDescription)}
+        </Text>
         <DeleteUserForm token={token} />
       </Stack>
     </CenteredLayout>
