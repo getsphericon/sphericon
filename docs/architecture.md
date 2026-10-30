@@ -97,7 +97,9 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      `accounts.Accounts.Scope` themselves: `SiteOAuthDecide` (in its body, through `Handlers.member`)
      and `SiteWorkspacesCreate` / `SiteWorkspacesRestore` (a Workspace that was not live before);
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
-     in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`;
+     in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`. A Connection (an API token
+     with a `membership_id`, ADR 0061) is looked up with its Membership: the scope acts as its User,
+     the Two-factor requirement applies, and the Role bounds its scopes on every request;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
   4. jobs and event subscribers, right after the row that names the Workspace is loaded
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the

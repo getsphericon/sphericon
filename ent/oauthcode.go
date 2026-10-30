@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/workspace"
@@ -40,6 +41,8 @@ type OAuthCode struct {
 	ClientID int64 `json:"client_id,omitempty"`
 	// WorkspaceID holds the value of the "workspace_id" field.
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
+	// MembershipID holds the value of the "membership_id" field.
+	MembershipID int64 `json:"membership_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OAuthCodeQuery when eager-loading is set.
 	Edges        OAuthCodeEdges `json:"edges"`
@@ -52,9 +55,11 @@ type OAuthCodeEdges struct {
 	Client *OAuthClient `json:"client,omitempty"`
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Membership holds the value of the membership edge.
+	Membership *Membership `json:"membership,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // ClientOrErr returns the Client value or an error if the edge
@@ -79,6 +84,17 @@ func (e OAuthCodeEdges) WorkspaceOrErr() (*Workspace, error) {
 	return nil, &NotLoadedError{edge: "workspace"}
 }
 
+// MembershipOrErr returns the Membership value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OAuthCodeEdges) MembershipOrErr() (*Membership, error) {
+	if e.Membership != nil {
+		return e.Membership, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: membership.Label}
+	}
+	return nil, &NotLoadedError{edge: "membership"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*OAuthCode) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -86,7 +102,7 @@ func (*OAuthCode) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case oauthcode.FieldScopes:
 			values[i] = new([]byte)
-		case oauthcode.FieldID, oauthcode.FieldClientID, oauthcode.FieldWorkspaceID:
+		case oauthcode.FieldID, oauthcode.FieldClientID, oauthcode.FieldWorkspaceID, oauthcode.FieldMembershipID:
 			values[i] = new(sql.NullInt64)
 		case oauthcode.FieldCodeHash, oauthcode.FieldRedirectURI, oauthcode.FieldCodeChallenge:
 			values[i] = new(sql.NullString)
@@ -176,6 +192,12 @@ func (_m *OAuthCode) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
 			}
+		case oauthcode.FieldMembershipID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field membership_id", values[i])
+			} else if value.Valid {
+				_m.MembershipID = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -197,6 +219,11 @@ func (_m *OAuthCode) QueryClient() *OAuthClientQuery {
 // QueryWorkspace queries the "workspace" edge of the OAuthCode entity.
 func (_m *OAuthCode) QueryWorkspace() *WorkspaceQuery {
 	return NewOAuthCodeClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryMembership queries the "membership" edge of the OAuthCode entity.
+func (_m *OAuthCode) QueryMembership() *MembershipQuery {
+	return NewOAuthCodeClient(_m.config).QueryMembership(_m)
 }
 
 // Update returns a builder for updating this OAuthCode.
@@ -252,6 +279,9 @@ func (_m *OAuthCode) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("workspace_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.WorkspaceID))
+	builder.WriteString(", ")
+	builder.WriteString("membership_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MembershipID))
 	builder.WriteByte(')')
 	return builder.String()
 }

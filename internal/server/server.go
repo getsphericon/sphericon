@@ -170,7 +170,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, error) {
 	return externalapi.NewServer(
 		apiexternal.NewHandlers(deps),
-		apiauth.NewExternalSecurityHandler(client, deps.Bus),
+		apiauth.NewExternalSecurityHandler(client, deps.Bus, deps.Clock),
 		externalapi.WithPathPrefix("/api"),
 		externalapi.WithErrorHandler(problemErrorHandler),
 	)

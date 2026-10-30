@@ -100,6 +100,11 @@ func WorkspaceID(v int64) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldEQ(FieldWorkspaceID, v))
 }
 
+// MembershipID applies equality check predicate on the "membership_id" field. It's identical to MembershipIDEQ.
+func MembershipID(v int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldEQ(FieldMembershipID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldEQ(FieldCreatedAt, v))
@@ -505,6 +510,26 @@ func WorkspaceIDNotIn(vs ...int64) predicate.OAuthCode {
 	return predicate.OAuthCode(sql.FieldNotIn(FieldWorkspaceID, vs...))
 }
 
+// MembershipIDEQ applies the EQ predicate on the "membership_id" field.
+func MembershipIDEQ(v int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldEQ(FieldMembershipID, v))
+}
+
+// MembershipIDNEQ applies the NEQ predicate on the "membership_id" field.
+func MembershipIDNEQ(v int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldNEQ(FieldMembershipID, v))
+}
+
+// MembershipIDIn applies the In predicate on the "membership_id" field.
+func MembershipIDIn(vs ...int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldIn(FieldMembershipID, vs...))
+}
+
+// MembershipIDNotIn applies the NotIn predicate on the "membership_id" field.
+func MembershipIDNotIn(vs ...int64) predicate.OAuthCode {
+	return predicate.OAuthCode(sql.FieldNotIn(FieldMembershipID, vs...))
+}
+
 // HasClient applies the HasEdge predicate on the "client" edge.
 func HasClient() predicate.OAuthCode {
 	return predicate.OAuthCode(func(s *sql.Selector) {
@@ -543,6 +568,29 @@ func HasWorkspace() predicate.OAuthCode {
 func HasWorkspaceWith(preds ...predicate.Workspace) predicate.OAuthCode {
 	return predicate.OAuthCode(func(s *sql.Selector) {
 		step := newWorkspaceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasMembership applies the HasEdge predicate on the "membership" edge.
+func HasMembership() predicate.OAuthCode {
+	return predicate.OAuthCode(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, MembershipTable, MembershipColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasMembershipWith applies the HasEdge predicate on the "membership" edge with a given conditions (other predicates).
+func HasMembershipWith(preds ...predicate.Membership) predicate.OAuthCode {
+	return predicate.OAuthCode(func(s *sql.Selector) {
+		step := newMembershipStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

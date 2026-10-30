@@ -2098,6 +2098,43 @@ export type SiteConfirmEmailChangeInput = {
 };
 
 /**
+ * A Connection: the access a User gave an application (an MCP client) to the Workspace by
+ * consenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the
+ * User's Role allows and ends with the Membership. Connections are not API tokens and are not
+ * listed with them.
+ */
+export type SiteConnectionResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The application's name, as it registered itself (untrusted: show as text)
+   */
+  name: string;
+  /**
+   * Granted scopes
+   */
+  scopes: Array<ApiTokenScope>;
+  /**
+   * The User the Connection belongs to
+   */
+  userId: EntityId;
+  /**
+   * That User's display name
+   */
+  userName: string;
+  /**
+   * That User's email
+   */
+  userEmail: EmailAddress;
+  /**
+   * When the User approved the application
+   */
+  createdAt: Timestamp;
+};
+
+/**
  * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
  */
 export type SiteContactHoldings = {
@@ -3433,6 +3470,12 @@ export type SiteOAuthAuthorizationRequest = {
    * Requested setup scopes (Sending domains, Integrations): granted only when the user opts in explicitly, apart from the send class
    */
   setupScopes: Array<SetupScope>;
+  /**
+   * The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what the User may grant, and the server refuses the rest.
+   */
+  requiredPermissions: {
+    [key: string]: Permission;
+  };
 };
 
 /**
@@ -3454,7 +3497,7 @@ export type SiteOAuthDecisionInput = {
    */
   scope?: string;
   /**
-   * Id of the Workspace the token will belong to
+   * Id of the Workspace the Connection will belong to (the signed-in User must be a member)
    */
   workspaceId: WorkspaceId;
   /**
@@ -5683,6 +5726,23 @@ export type SiteCapturedMessageResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteCapturedMessageResourceParentKey = WorkspaceId;
+
+/**
+ * Unique identifier
+ */
+export type SiteConnectionResourceKeyId = EntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteConnectionResourceKeyWorkspaceId = WorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SiteConnectionResourceParentKey = WorkspaceId;
 
 /**
  * Unique identifier
@@ -9155,6 +9215,72 @@ export type SiteCapturedMessagesGetResponses = {
 };
 
 export type SiteCapturedMessagesGetResponse = SiteCapturedMessagesGetResponses[keyof SiteCapturedMessagesGetResponses];
+
+export type SiteConnectionsListData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/connections';
+};
+
+export type SiteConnectionsListErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteConnectionsListError = SiteConnectionsListErrors[keyof SiteConnectionsListErrors];
+
+export type SiteConnectionsListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SiteConnectionResource>;
+};
+
+export type SiteConnectionsListResponse = SiteConnectionsListResponses[keyof SiteConnectionsListResponses];
+
+export type SiteConnectionsDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/connections/{id}';
+};
+
+export type SiteConnectionsDeleteErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteConnectionsDeleteError = SiteConnectionsDeleteErrors[keyof SiteConnectionsDeleteErrors];
+
+export type SiteConnectionsDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteConnectionsDeleteResponse = SiteConnectionsDeleteResponses[keyof SiteConnectionsDeleteResponses];
 
 export type SiteContactsListData = {
   body?: never;

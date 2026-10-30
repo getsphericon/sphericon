@@ -178,6 +178,7 @@
   "errors.preset_params_invalid": "the params do not match the preset's schema: {{.Detail}}",
   "errors.preset_params_without_preset": "params need a preset",
   "errors.token_scope_unknown": "unknown scope {{.Scope}}",
+  "errors.connection_not_found": "connection not found",
   "brandkit.logo_alt": "Logo",
   "brandkit.welcome.name": "Welcome",
   "brandkit.welcome.subject": "Welcome aboard",

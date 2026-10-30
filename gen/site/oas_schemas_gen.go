@@ -6061,6 +6061,8 @@ func (*ProblemDetails) siteAuthSigninNotMeRes()                {}
 func (*ProblemDetails) siteAuthSigninStartRes()                {}
 func (*ProblemDetails) siteBrandKitGetRes()                    {}
 func (*ProblemDetails) siteCapturedMessagesDeleteAllRes()      {}
+func (*ProblemDetails) siteConnectionsDeleteRes()              {}
+func (*ProblemDetails) siteConnectionsListRes()                {}
 func (*ProblemDetails) siteEventsActionsRes()                  {}
 func (*ProblemDetails) siteEventsListRes()                     {}
 func (*ProblemDetails) siteIdentitiesLinkRes()                 {}
@@ -10731,6 +10733,106 @@ func (s *SiteConfirmEmailChangeInput) GetToken() string {
 func (s *SiteConfirmEmailChangeInput) SetToken(val string) {
 	s.Token = val
 }
+
+// A Connection: the access a User gave an application (an MCP client) to the Workspace by consenting
+// to it (ADR 0061). It belongs to that User's Membership, can do no more than the User's Role allows
+// and ends with the Membership. Connections are not API tokens and are not listed with them.
+// Ref: #/components/schemas/SiteConnectionResource
+type SiteConnectionResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The application's name, as it registered itself (untrusted: show as text).
+	Name string `json:"name"`
+	// Granted scopes.
+	Scopes []ApiTokenScope `json:"scopes"`
+	// The User the Connection belongs to.
+	UserId EntityId `json:"userId"`
+	// That User's display name.
+	UserName string `json:"userName"`
+	// That User's email.
+	UserEmail EmailAddress `json:"userEmail"`
+	// When the User approved the application.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SiteConnectionResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SiteConnectionResource) GetName() string {
+	return s.Name
+}
+
+// GetScopes returns the value of Scopes.
+func (s *SiteConnectionResource) GetScopes() []ApiTokenScope {
+	return s.Scopes
+}
+
+// GetUserId returns the value of UserId.
+func (s *SiteConnectionResource) GetUserId() EntityId {
+	return s.UserId
+}
+
+// GetUserName returns the value of UserName.
+func (s *SiteConnectionResource) GetUserName() string {
+	return s.UserName
+}
+
+// GetUserEmail returns the value of UserEmail.
+func (s *SiteConnectionResource) GetUserEmail() EmailAddress {
+	return s.UserEmail
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SiteConnectionResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SiteConnectionResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SiteConnectionResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetScopes sets the value of Scopes.
+func (s *SiteConnectionResource) SetScopes(val []ApiTokenScope) {
+	s.Scopes = val
+}
+
+// SetUserId sets the value of UserId.
+func (s *SiteConnectionResource) SetUserId(val EntityId) {
+	s.UserId = val
+}
+
+// SetUserName sets the value of UserName.
+func (s *SiteConnectionResource) SetUserName(val string) {
+	s.UserName = val
+}
+
+// SetUserEmail sets the value of UserEmail.
+func (s *SiteConnectionResource) SetUserEmail(val EmailAddress) {
+	s.UserEmail = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SiteConnectionResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SiteConnectionsDeleteNoContent is response for SiteConnectionsDelete operation.
+type SiteConnectionsDeleteNoContent struct{}
+
+func (*SiteConnectionsDeleteNoContent) siteConnectionsDeleteRes() {}
+
+type SiteConnectionsListOKApplicationJSON []SiteConnectionResource
+
+func (*SiteConnectionsListOKApplicationJSON) siteConnectionsListRes() {}
 
 // What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing
 // held is all zeros and `contactHeld: false`.
@@ -15416,6 +15518,10 @@ type SiteOAuthAuthorizationRequest struct {
 	// Requested setup scopes (Sending domains, Integrations): granted only when the user opts in
 	// explicitly, apart from the send class.
 	SetupScopes []SetupScope `json:"setupScopes"`
+	// The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the
+	// scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what
+	// the User may grant, and the server refuses the rest.
+	RequiredPermissions SiteOAuthAuthorizationRequestRequiredPermissions `json:"requiredPermissions"`
 }
 
 // GetClientName returns the value of ClientName.
@@ -15453,6 +15559,11 @@ func (s *SiteOAuthAuthorizationRequest) GetSetupScopes() []SetupScope {
 	return s.SetupScopes
 }
 
+// GetRequiredPermissions returns the value of RequiredPermissions.
+func (s *SiteOAuthAuthorizationRequest) GetRequiredPermissions() SiteOAuthAuthorizationRequestRequiredPermissions {
+	return s.RequiredPermissions
+}
+
 // SetClientName sets the value of ClientName.
 func (s *SiteOAuthAuthorizationRequest) SetClientName(val string) {
 	s.ClientName = val
@@ -15488,7 +15599,26 @@ func (s *SiteOAuthAuthorizationRequest) SetSetupScopes(val []SetupScope) {
 	s.SetupScopes = val
 }
 
+// SetRequiredPermissions sets the value of RequiredPermissions.
+func (s *SiteOAuthAuthorizationRequest) SetRequiredPermissions(val SiteOAuthAuthorizationRequestRequiredPermissions) {
+	s.RequiredPermissions = val
+}
+
 func (*SiteOAuthAuthorizationRequest) siteOAuthDescribeRes() {}
+
+// The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the
+// scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what
+// the User may grant, and the server refuses the rest.
+type SiteOAuthAuthorizationRequestRequiredPermissions map[string]Permission
+
+func (s *SiteOAuthAuthorizationRequestRequiredPermissions) init() SiteOAuthAuthorizationRequestRequiredPermissions {
+	m := *s
+	if m == nil {
+		m = map[string]Permission{}
+		*s = m
+	}
+	return m
+}
 
 type SiteOAuthDecideBadRequest ProblemDetails
 
@@ -15513,7 +15643,7 @@ type SiteOAuthDecisionInput struct {
 	CodeChallenge string `json:"codeChallenge"`
 	// Space-delimited scopes from the authorization request.
 	Scope OptString `json:"scope"`
-	// Id of the Workspace the token will belong to.
+	// Id of the Workspace the Connection will belong to (the signed-in User must be a member).
 	WorkspaceId WorkspaceId `json:"workspaceId"`
 	// True to approve, false to deny.
 	Approve bool `json:"approve"`

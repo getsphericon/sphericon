@@ -33,6 +33,10 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
+	// EdgeConnections holds the string denoting the connections edge name in mutations.
+	EdgeConnections = "connections"
+	// EdgeOauthCodes holds the string denoting the oauth_codes edge name in mutations.
+	EdgeOauthCodes = "oauth_codes"
 	// Table holds the table name of the membership in the database.
 	Table = "memberships"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -49,6 +53,20 @@ const (
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
 	UserColumn = "user_id"
+	// ConnectionsTable is the table that holds the connections relation/edge.
+	ConnectionsTable = "api_tokens"
+	// ConnectionsInverseTable is the table name for the ApiToken entity.
+	// It exists in this package in order to avoid circular dependency with the "apitoken" package.
+	ConnectionsInverseTable = "api_tokens"
+	// ConnectionsColumn is the table column denoting the connections relation/edge.
+	ConnectionsColumn = "membership_id"
+	// OauthCodesTable is the table that holds the oauth_codes relation/edge.
+	OauthCodesTable = "oauth_codes"
+	// OauthCodesInverseTable is the table name for the OAuthCode entity.
+	// It exists in this package in order to avoid circular dependency with the "oauthcode" package.
+	OauthCodesInverseTable = "oauth_codes"
+	// OauthCodesColumn is the table column denoting the oauth_codes relation/edge.
+	OauthCodesColumn = "membership_id"
 )
 
 // Columns holds all SQL columns for membership fields.
@@ -186,6 +204,34 @@ func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByConnectionsCount orders the results by connections count.
+func ByConnectionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConnectionsStep(), opts...)
+	}
+}
+
+// ByConnections orders the results by connections terms.
+func ByConnections(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConnectionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOauthCodesCount orders the results by oauth_codes count.
+func ByOauthCodesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOauthCodesStep(), opts...)
+	}
+}
+
+// ByOauthCodes orders the results by oauth_codes terms.
+func ByOauthCodes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOauthCodesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -198,5 +244,19 @@ func newUserStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+	)
+}
+func newConnectionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConnectionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConnectionsTable, ConnectionsColumn),
+	)
+}
+func newOauthCodesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OauthCodesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OauthCodesTable, OauthCodesColumn),
 	)
 }

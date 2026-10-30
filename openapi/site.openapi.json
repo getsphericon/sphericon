@@ -49,6 +49,9 @@
       "name": "Site Tokens"
     },
     {
+      "name": "Site Connections"
+    },
+    {
       "name": "Site Integrations"
     },
     {
@@ -3097,7 +3100,7 @@
       },
       "post": {
         "operationId": "SiteOAuth_decide",
-        "description": "Approve or deny an OAuth authorization request as the signed-in user. Approving mints an API token, so it needs the same role as creating one (owner or admin).",
+        "description": "Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role lacks is refused (403 permission_required).",
         "parameters": [],
         "responses": {
           "200": {
@@ -6087,6 +6090,75 @@
           }
         },
         "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/connections": {
+      "get": {
+        "operationId": "SiteConnections_list",
+        "description": "List the Connections the caller may see: their own, or every member's with members:manage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteConnectionResourceParentKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SiteConnectionResource"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Connections"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/connections/{id}": {
+      "delete": {
+        "operationId": "SiteConnections_delete",
+        "description": "Revoke a Connection: the caller's own, or anyone's with members:manage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteConnectionResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SiteConnectionResourceKey.id"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Connections"],
         "x-required-permissions": []
       }
     },
@@ -12032,6 +12104,33 @@
           "$ref": "#/components/schemas/WorkspaceId"
         }
       },
+      "SiteConnectionResourceKey.id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Unique identifier",
+        "schema": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
+      "SiteConnectionResourceKey.workspaceId": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
+      "SiteConnectionResourceParentKey": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
       "SiteContactResourceKey.id": {
         "name": "id",
         "in": "path",
@@ -15223,6 +15322,60 @@
         },
         "description": "Confirm a requested email change using the token sent to the new address"
       },
+      "SiteConnectionResource": {
+        "type": "object",
+        "required": ["id", "name", "scopes", "userId", "userName", "userEmail", "createdAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "The application's name, as it registered itself (untrusted: show as text)"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiTokenScope"
+            },
+            "description": "Granted scopes"
+          },
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The User the Connection belongs to"
+          },
+          "userName": {
+            "type": "string",
+            "description": "That User's display name"
+          },
+          "userEmail": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "That User's email"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the User approved the application"
+          }
+        },
+        "description": "A Connection: the access a User gave an application (an MCP client) to the Workspace by\nconsenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the\nUser's Role allows and ends with the Membership. Connections are not API tokens and are not\nlisted with them."
+      },
       "SiteContactHoldings": {
         "type": "object",
         "required": [
@@ -17027,7 +17180,8 @@
           "localRedirect",
           "scopes",
           "sendScopes",
-          "setupScopes"
+          "setupScopes",
+          "requiredPermissions"
         ],
         "properties": {
           "clientName": {
@@ -17066,6 +17220,13 @@
               "$ref": "#/components/schemas/SetupScope"
             },
             "description": "Requested setup scopes (Sending domains, Integrations): granted only when the user opts in explicitly, apart from the send class"
+          },
+          "requiredPermissions": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "description": "The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what the User may grant, and the server refuses the rest."
           }
         },
         "description": "What an MCP client (dynamically registered) is asking permission for, as\nvalidated by the authorization server. Rendered on the consent screen."
@@ -17098,7 +17259,7 @@
                 "$ref": "#/components/schemas/WorkspaceId"
               }
             ],
-            "description": "Id of the Workspace the token will belong to"
+            "description": "Id of the Workspace the Connection will belong to (the signed-in User must be a member)"
           },
           "approve": {
             "type": "boolean",

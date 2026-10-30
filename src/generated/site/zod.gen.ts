@@ -974,7 +974,8 @@ export const zSiteOAuthAuthorizationRequest = z.object({
   localRedirect: z.boolean(),
   scopes: z.array(zGrantableScope),
   sendScopes: z.array(zSendScope),
-  setupScopes: z.array(zSetupScope)
+  setupScopes: z.array(zSetupScope),
+  requiredPermissions: z.record(z.string(), zPermission)
 });
 
 /**
@@ -2215,6 +2216,22 @@ export const zSiteCapturedMessageSummary = z.object({
 });
 
 /**
+ * A Connection: the access a User gave an application (an MCP client) to the Workspace by
+ * consenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the
+ * User's Role allows and ends with the Membership. Connections are not API tokens and are not
+ * listed with them.
+ */
+export const zSiteConnectionResource = z.object({
+  id: zEntityId,
+  name: z.string(),
+  scopes: z.array(zApiTokenScope),
+  userId: zEntityId,
+  userName: z.string(),
+  userEmail: zEmailAddress,
+  createdAt: zTimestamp
+});
+
+/**
  * Contact resource used by the site UI
  */
 export const zSiteContactResource = z.object({
@@ -2947,6 +2964,23 @@ export const zSiteCapturedMessageResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteCapturedMessageResourceParentKey = zWorkspaceId;
+
+/**
+ * Unique identifier
+ */
+export const zSiteConnectionResourceKeyId = zEntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteConnectionResourceKeyWorkspaceId = zWorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSiteConnectionResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -4013,6 +4047,25 @@ export const zSiteCapturedMessagesGetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteCapturedMessagesGetResponse = zSiteCapturedMessageResource;
+
+export const zSiteConnectionsListPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteConnectionsListResponse = z.array(zSiteConnectionResource);
+
+export const zSiteConnectionsDeletePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteConnectionsDeleteResponse = z.void();
 
 export const zSiteContactsListPath = z.object({
   workspaceId: zWorkspaceId

@@ -146,13 +146,14 @@ var ApiTokenAuditSensitive = map[string]bool{
 // auditFields maps every audited field of the ApiToken to its value.
 func (e *ApiToken) auditFields() map[string]any {
 	return map[string]any{
-		"name":         e.Name,
-		"prefix":       e.Prefix,
-		"secret_hash":  e.SecretHash,
-		"scopes":       e.Scopes,
-		"expires_at":   derefAudit(e.ExpiresAt),
-		"revoked_at":   derefAudit(e.RevokedAt),
-		"last_used_at": derefAudit(e.LastUsedAt),
+		"name":          e.Name,
+		"prefix":        e.Prefix,
+		"secret_hash":   e.SecretHash,
+		"scopes":        e.Scopes,
+		"expires_at":    derefAudit(e.ExpiresAt),
+		"revoked_at":    derefAudit(e.RevokedAt),
+		"last_used_at":  derefAudit(e.LastUsedAt),
+		"membership_id": derefAudit(e.MembershipID),
 	}
 }
 

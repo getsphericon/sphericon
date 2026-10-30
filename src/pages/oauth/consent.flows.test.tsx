@@ -48,6 +48,7 @@ function serve(
         scopes: ['contacts:read'],
         sendScopes: [],
         setupScopes: [],
+        requiredPermissions: {},
       },
     }),
     handleSiteOAuthDecide(decide),

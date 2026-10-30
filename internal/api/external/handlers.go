@@ -5,6 +5,7 @@ package external
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -103,6 +104,9 @@ type Deps struct {
 	BootstrapToken   string
 	Audit            AuditLog
 	Export           ExportStreams
+	// Clock is the time a Connection's Two-factor requirement is checked against (nil means
+	// time.Now); the security handler reads it.
+	Clock func() time.Time
 }
 
 func NewHandlers(d Deps) *Handlers {

@@ -29,6 +29,7 @@ import "./resources/passkeys.tsp";
 import "./resources/passkey-login.tsp";
 import "./resources/events.tsp";
 import "./resources/tokens.tsp";
+import "./resources/connections.tsp";
 import "./resources/integrations.tsp";
 import "./resources/link-clicks.tsp";
 import "./resources/broadcasts.tsp";

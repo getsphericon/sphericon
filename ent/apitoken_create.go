@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/apitoken"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -123,6 +124,20 @@ func (_c *ApiTokenCreate) SetNillableLastUsedAt(v *time.Time) *ApiTokenCreate {
 	return _c
 }
 
+// SetMembershipID sets the "membership_id" field.
+func (_c *ApiTokenCreate) SetMembershipID(v int64) *ApiTokenCreate {
+	_c.mutation.SetMembershipID(v)
+	return _c
+}
+
+// SetNillableMembershipID sets the "membership_id" field if the given value is not nil.
+func (_c *ApiTokenCreate) SetNillableMembershipID(v *int64) *ApiTokenCreate {
+	if v != nil {
+		_c.SetMembershipID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ApiTokenCreate) SetID(v int64) *ApiTokenCreate {
 	_c.mutation.SetID(v)
@@ -132,6 +147,11 @@ func (_c *ApiTokenCreate) SetID(v int64) *ApiTokenCreate {
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_c *ApiTokenCreate) SetWorkspace(v *Workspace) *ApiTokenCreate {
 	return _c.SetWorkspaceID(v.ID)
+}
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (_c *ApiTokenCreate) SetMembership(v *Membership) *ApiTokenCreate {
+	return _c.SetMembershipID(v.ID)
 }
 
 // Mutation returns the ApiTokenMutation object of the builder.
@@ -308,6 +328,23 @@ func (_c *ApiTokenCreate) createSpec() (*ApiToken, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.WorkspaceID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.MembershipIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   apitoken.MembershipTable,
+			Columns: []string{apitoken.MembershipColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(membership.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.MembershipID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -498,6 +535,9 @@ func (u *ApiTokenUpsertOne) UpdateNewValues() *ApiTokenUpsertOne {
 		}
 		if _, exists := u.create.mutation.Prefix(); exists {
 			s.SetIgnore(apitoken.FieldPrefix)
+		}
+		if _, exists := u.create.mutation.MembershipID(); exists {
+			s.SetIgnore(apitoken.FieldMembershipID)
 		}
 	}))
 	return u
@@ -850,6 +890,9 @@ func (u *ApiTokenUpsertBulk) UpdateNewValues() *ApiTokenUpsertBulk {
 			}
 			if _, exists := b.mutation.Prefix(); exists {
 				s.SetIgnore(apitoken.FieldPrefix)
+			}
+			if _, exists := b.mutation.MembershipID(); exists {
+				s.SetIgnore(apitoken.FieldMembershipID)
 			}
 		}
 	}))

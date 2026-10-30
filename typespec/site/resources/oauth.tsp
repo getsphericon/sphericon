@@ -25,6 +25,9 @@ model SiteOAuthAuthorizationRequest {
 
   /** Requested setup scopes (Sending domains, Integrations): granted only when the user opts in explicitly, apart from the send class */
   setupScopes: SetupScope[];
+
+  /** The Permission a User must hold in the chosen Workspace to grant a requested scope, keyed by the scope; a scope absent here is any member's to grant (ADR 0061). The consent screen offers only what the User may grant, and the server refuses the rest. */
+  requiredPermissions: Record<Permission>;
 }
 
 /** The user's decision on an authorization request */
@@ -41,7 +44,7 @@ model SiteOAuthDecisionInput {
   /** Space-delimited scopes from the authorization request */
   scope?: string;
 
-  /** Id of the Workspace the token will belong to */
+  /** Id of the Workspace the Connection will belong to (the signed-in User must be a member) */
   workspaceId: WorkspaceId;
 
   /** true to approve, false to deny */
@@ -76,7 +79,7 @@ namespace SiteOAuth {
     | BadRequestProblem
     | NotFoundProblem;
 
-  /** Approve or deny an OAuth authorization request as the signed-in user. Approving mints an API token, so it needs the same role as creating one (owner or admin). */
+  /** Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role lacks is refused (403 permission_required). */
   @post
   op decide(@body body: SiteOAuthDecisionInput):
     | {

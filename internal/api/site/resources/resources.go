@@ -95,6 +95,12 @@ type Converter interface {
 	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) siteapi.SiteSegmentResource
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource
+	// A Connection is an API token read with its Membership and that Membership's User loaded
+	// (apitokens.Connections); the User is who it belongs to.
+	// goverter:map Edges.Membership.UserID UserId
+	// goverter:map Edges.Membership.Edges.User.Name UserName
+	// goverter:map Edges.Membership.Edges.User.Email UserEmail
+	ConnectionToResource(source *ent.ApiToken) siteapi.SiteConnectionResource
 
 	// Verification is derived: a non-nil email_verified_at means verified.
 	// The Sign-up survey is due only while the Instance still asks it, which the mapper cannot

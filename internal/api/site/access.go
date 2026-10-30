@@ -62,7 +62,7 @@ func (h *Handlers) Access(req middleware.Request, next middleware.Next) (middlew
 // member is the signed-in User's Membership of the Workspace publicID names (its User and
 // Workspace loaded) and the Workspace's scoped client acting as that User. Once the User's grace
 // under the Workspace's Two-factor requirement has ended without a Second factor it is
-// secondFactorRequiredError (403 second_factor_required), unless whileWithheld; other
+// auth.SecondFactorRequiredError (403 second_factor_required), unless whileWithheld; other
 // Workspaces and the /me endpoints are unaffected.
 func (h *Handlers) member(ctx context.Context, publicID string, whileWithheld bool) (*ent.Scoped, *ent.Membership, error) {
 	a := auth.GetSiteAuth(ctx)
@@ -74,7 +74,7 @@ func (h *Handlers) member(ctx context.Context, publicID string, whileWithheld bo
 		return nil, nil, err
 	}
 	if !whileWithheld && secondfactor.Withheld(m, h.now(), currentSession(ctx).Method.Strong()) {
-		return nil, nil, secondFactorRequiredError{}
+		return nil, nil, auth.SecondFactorRequiredError{}
 	}
 	return s, m, nil
 }

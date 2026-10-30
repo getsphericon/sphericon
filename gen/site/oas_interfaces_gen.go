@@ -201,6 +201,14 @@ type SiteCapturedMessagesListRes interface {
 	siteCapturedMessagesListRes()
 }
 
+type SiteConnectionsDeleteRes interface {
+	siteConnectionsDeleteRes()
+}
+
+type SiteConnectionsListRes interface {
+	siteConnectionsListRes()
+}
+
 type SiteContactsCreateRes interface {
 	siteContactsCreateRes()
 }

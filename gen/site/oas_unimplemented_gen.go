@@ -552,6 +552,24 @@ func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params
 	return r, ht.ErrNotImplemented
 }
 
+// SiteConnectionsDelete implements SiteConnections_delete operation.
+//
+// Revoke a Connection: the caller's own, or anyone's with members:manage.
+//
+// DELETE /workspaces/{workspaceId}/connections/{id}
+func (UnimplementedHandler) SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (r SiteConnectionsDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteConnectionsList implements SiteConnections_list operation.
+//
+// List the Connections the caller may see: their own, or every member's with members:manage.
+//
+// GET /workspaces/{workspaceId}/connections
+func (UnimplementedHandler) SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (r SiteConnectionsListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteContactsCreate implements SiteContacts_create operation.
 //
 // Create a resource from the site UI.
@@ -939,8 +957,9 @@ func (UnimplementedHandler) SiteMembershipsUpdate(ctx context.Context, req *Site
 
 // SiteOAuthDecide implements SiteOAuth_decide operation.
 //
-// Approve or deny an OAuth authorization request as the signed-in user. Approving mints an API token,
-// so it needs the same role as creating one (owner or admin).
+// Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection
+// tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role
+// lacks is refused (403 permission_required).
 //
 // POST /oauth/authorization
 func (UnimplementedHandler) SiteOAuthDecide(ctx context.Context, req *SiteOAuthDecisionInput) (r SiteOAuthDecideRes, _ error) {

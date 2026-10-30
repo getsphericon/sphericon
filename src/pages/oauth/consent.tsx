@@ -24,6 +24,7 @@ import {
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as oauthConsentRoute } from '../../routes/oauth/consent.tsx'
 import { getApiErrorMessage, isForbiddenError } from '../../utils/apiErrors.ts'
+import { can } from '../../utils/permissions.ts'
 
 // The authorization request exactly as the OAuth client sent it (the backend's
 // /oauth/authorize hands the browser here with the same query string).
@@ -52,7 +53,9 @@ export function OAuthConsentPage() {
 
 // OAuthConsent asks the signed-in user whether an MCP client (claude.ai
 // connector, ...) may act on one of their workspaces. Approving makes the backend
-// mint a one-time code; the browser is then sent back to the client.
+// mint a one-time code; the browser is then sent back to the client. Any member may
+// approve, but only the scopes their Role may grant in the chosen workspace (ADR 0061):
+// the screen offers no other and sends only those, and the server refuses the rest.
 export function OAuthConsent({ request }: { request: ConsentRequest }) {
   const { t } = useTranslation()
   const notify = useNotify()
@@ -113,6 +116,17 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
   const info = describe.data
   const options = (workspaces.data ?? []).map((w) => ({ value: w.id, label: w.name }))
   const selected = workspaceId ?? options[0]?.value ?? null
+  const workspace = workspaces.data?.find((w) => w.id === selected)
+  // A scope whose Permission the User's Role lacks in the chosen workspace is not offered.
+  const grantable = <S extends string>(scopes: S[]) =>
+    scopes.filter((scope) => {
+      const needed = info.requiredPermissions[scope]
+      return needed === undefined || can(workspace, needed)
+    })
+  const scopes = grantable(info.scopes)
+  const sendScopes = grantable(info.sendScopes)
+  const setupScopes = grantable(info.setupScopes)
+  const offered = [...scopes, ...sendScopes, ...setupScopes]
 
   const submit = (approve: boolean) => {
     if (!selected) {
@@ -124,7 +138,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
         redirectUri: request.redirectUri,
         codeChallenge: request.codeChallenge,
         state: request.state,
-        scope: request.scope,
+        scope: offered.join(' '),
         workspaceId: selected,
         approve,
         allowSend: approve && allowSend,
@@ -161,7 +175,7 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
         <Stack gap="xs">
           <Text fw={500}>{t(($) => $.oauthConsent.scopesTitle)}</Text>
           <Group gap="xs">
-            {info.scopes.map((scope) => (
+            {scopes.map((scope) => (
               <Badge key={scope} variant="light">
                 {scope}
               </Badge>
@@ -170,20 +184,20 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
         </Stack>
       </Paper>
 
-      {info.sendScopes.length > 0 ? (
+      {sendScopes.length > 0 ? (
         <Alert color="yellow" title={t(($) => $.oauthConsent.sendTitle)}>
           <Stack gap="xs">
             <Text size="sm">{t(($) => $.oauthConsent.sendDescription)}</Text>
             <Checkbox
               checked={allowSend}
               onChange={(event) => setAllowSend(event.currentTarget.checked)}
-              label={t(($) => $.oauthConsent.sendCheckbox, { scopes: info.sendScopes.join(', ') })}
+              label={t(($) => $.oauthConsent.sendCheckbox, { scopes: sendScopes.join(', ') })}
             />
           </Stack>
         </Alert>
       ) : null}
 
-      {info.setupScopes.length > 0 ? (
+      {setupScopes.length > 0 ? (
         <Alert color="yellow" title={t(($) => $.oauthConsent.setupTitle)}>
           <Stack gap="xs">
             <Text size="sm">{t(($) => $.oauthConsent.setupDescription)}</Text>
@@ -191,11 +205,15 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
               checked={allowSetup}
               onChange={(event) => setAllowSetup(event.currentTarget.checked)}
               label={t(($) => $.oauthConsent.setupCheckbox, {
-                scopes: info.setupScopes.join(', '),
+                scopes: setupScopes.join(', '),
               })}
             />
           </Stack>
         </Alert>
+      ) : null}
+
+      {workspace && offered.length === 0 ? (
+        <Alert color="yellow">{t(($) => $.oauthConsent.nothingToGrant)}</Alert>
       ) : null}
 
       {decide.isError && isForbiddenError(decide.error) ? (
@@ -208,7 +226,11 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
         <Button variant="default" onClick={() => submit(false)} disabled={decide.isPending}>
           {t(($) => $.oauthConsent.deny)}
         </Button>
-        <Button onClick={() => submit(true)} loading={decide.isPending} disabled={!selected}>
+        <Button
+          onClick={() => submit(true)}
+          loading={decide.isPending}
+          disabled={!selected || offered.length === 0}
+        >
           {t(($) => $.oauthConsent.allow)}
         </Button>
       </Group>

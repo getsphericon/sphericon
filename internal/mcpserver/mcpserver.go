@@ -165,6 +165,13 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 				writeProblem(w, http.StatusUnauthorized, "invalid bearer token")
 				return
 			}
+			// A valid credential refused for a reason of its own: a Connection whose User the
+			// Workspace's Two-factor requirement withholds (403 second_factor_required).
+			if refused, ok := errors.AsType[problemError](err); ok {
+				status, code, detail := refused.Problem()
+				writeCodedProblem(w, status, code, detail)
+				return
+			}
 			writeProblem(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
@@ -191,13 +198,29 @@ func boundToRequest(ctx context.Context) (context.Context, context.CancelFunc) {
 	}
 }
 
+// problemError is a refusal that carries the problem it is answered with (the status, the
+// machine-readable code and the localized detail), as the server's error handler reads it.
+type problemError interface {
+	error
+	Problem() (status int, code, detail string)
+}
+
 func writeProblem(w http.ResponseWriter, code int, detail string) {
+	writeCodedProblem(w, code, "", detail)
+}
+
+// writeCodedProblem renders an RFC 7807 problem; problemCode, when set, is its machine-readable
+// code.
+func writeCodedProblem(w http.ResponseWriter, code int, problemCode, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(code)
 	problem := map[string]any{
 		"status": code,
 		"title":  http.StatusText(code),
 		"detail": detail,
+	}
+	if problemCode != "" {
+		problem["code"] = problemCode
 	}
 	if err := json.NewEncoder(w).Encode(problem); err != nil {
 		slog.Warn("write problem response", "error", err)

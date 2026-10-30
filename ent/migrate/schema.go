@@ -21,6 +21,7 @@ var (
 		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
+		{Name: "membership_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// APITokensTable holds the schema information for the "api_tokens" table.
@@ -30,8 +31,14 @@ var (
 		PrimaryKey: []*schema.Column{APITokensColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "api_tokens_workspaces_api_tokens",
+				Symbol:     "api_tokens_memberships_connections",
 				Columns:    []*schema.Column{APITokensColumns[10]},
+				RefColumns: []*schema.Column{MembershipsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "api_tokens_workspaces_api_tokens",
+				Columns:    []*schema.Column{APITokensColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -39,6 +46,11 @@ var (
 		Indexes: []*schema.Index{
 			{
 				Name:    "apitoken_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{APITokensColumns[11]},
+			},
+			{
+				Name:    "apitoken_membership_id",
 				Unique:  false,
 				Columns: []*schema.Column{APITokensColumns[10]},
 			},
@@ -1126,6 +1138,7 @@ var (
 		{Name: "scopes", Type: field.TypeJSON},
 		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "used_at", Type: field.TypeTime, Nullable: true},
+		{Name: "membership_id", Type: field.TypeInt64},
 		{Name: "client_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -1136,14 +1149,20 @@ var (
 		PrimaryKey: []*schema.Column{OauthCodesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "oauth_codes_oauth_clients_codes",
+				Symbol:     "oauth_codes_memberships_oauth_codes",
 				Columns:    []*schema.Column{OauthCodesColumns[9]},
+				RefColumns: []*schema.Column{MembershipsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "oauth_codes_oauth_clients_codes",
+				Columns:    []*schema.Column{OauthCodesColumns[10]},
 				RefColumns: []*schema.Column{OauthClientsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "oauth_codes_workspaces_workspace",
-				Columns:    []*schema.Column{OauthCodesColumns[10]},
+				Columns:    []*schema.Column{OauthCodesColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -1152,12 +1171,17 @@ var (
 			{
 				Name:    "oauthcode_client_id",
 				Unique:  false,
-				Columns: []*schema.Column{OauthCodesColumns[9]},
+				Columns: []*schema.Column{OauthCodesColumns[10]},
 			},
 			{
 				Name:    "oauthcode_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{OauthCodesColumns[10]},
+				Columns: []*schema.Column{OauthCodesColumns[11]},
+			},
+			{
+				Name:    "oauthcode_membership_id",
+				Unique:  false,
+				Columns: []*schema.Column{OauthCodesColumns[9]},
 			},
 		},
 	}
@@ -2363,7 +2387,8 @@ var (
 )
 
 func init() {
-	APITokensTable.ForeignKeys[0].RefTable = WorkspacesTable
+	APITokensTable.ForeignKeys[0].RefTable = MembershipsTable
+	APITokensTable.ForeignKeys[1].RefTable = WorkspacesTable
 	APITokensTable.Annotation = &entsql.Annotation{
 		Table: "api_tokens",
 	}
@@ -2519,8 +2544,9 @@ func init() {
 	OauthClientsTable.Annotation = &entsql.Annotation{
 		Table: "oauth_clients",
 	}
-	OauthCodesTable.ForeignKeys[0].RefTable = OauthClientsTable
-	OauthCodesTable.ForeignKeys[1].RefTable = WorkspacesTable
+	OauthCodesTable.ForeignKeys[0].RefTable = MembershipsTable
+	OauthCodesTable.ForeignKeys[1].RefTable = OauthClientsTable
+	OauthCodesTable.ForeignKeys[2].RefTable = WorkspacesTable
 	OauthCodesTable.Annotation = &entsql.Annotation{
 		Table: "oauth_codes",
 	}

@@ -7,9 +7,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
-
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 )
 
@@ -34,6 +33,8 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 		Scopes:        lo.Map(req.Scopes, func(s string, _ int) siteapi.GrantableScope { return siteapi.GrantableScope(s) }),
 		SendScopes:    lo.Map(req.SendScopes, func(s string, _ int) siteapi.SendScope { return siteapi.SendScope(s) }),
 		SetupScopes:   lo.Map(req.SetupScopes, func(s string, _ int) siteapi.SetupScope { return siteapi.SetupScope(s) }),
+		RequiredPermissions: siteapi.SiteOAuthAuthorizationRequestRequiredPermissions(
+			lo.MapValues(req.RequiredPermissions, func(p accounts.Permission, _ string) siteapi.Permission { return siteapi.Permission(p) })),
 	}
 	if req.ClientHost != "" {
 		out.ClientHost = siteapi.NewOptString(req.ClientHost)
@@ -41,17 +42,15 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 	return out, nil
 }
 
-// SiteOAuthDecide records the signed-in user's consent decision. The token the
-// client later receives belongs to the chosen workspace, which the user must be
-// a member of with a role that may manage API tokens: consent mints one. The Workspace
-// is named in the body, not the path, so Access does not resolve it: the handler loads
-// the Membership itself, under the Two-factor requirement like any operation of a Workspace.
+// SiteOAuthDecide records the signed-in user's consent decision. Approving creates a Connection
+// tied to the User's Membership of the chosen Workspace (ADR 0061), so any member may approve,
+// but only scopes their Role may grant: oauthserver.Decide refuses the rest with the Permission's
+// refusal (403 permission_required). The Workspace is named in the body, not the path, so Access
+// does not resolve it: the handler loads the Membership itself, under the Two-factor requirement
+// like any operation of a Workspace.
 func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDecisionInput) (siteapi.SiteOAuthDecideRes, error) {
-	s, m, err := h.member(ctx, string(req.WorkspaceId), false)
+	_, m, err := h.member(ctx, string(req.WorkspaceId), false)
 	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(m.Role, accounts.PermTokensManage); err != nil {
 		return nil, err
 	}
 
@@ -61,7 +60,7 @@ func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDe
 		State:         req.State.Or(""),
 		CodeChallenge: req.CodeChallenge,
 		Scope:         req.Scope.Or(""),
-		WorkspaceID:   s.WorkspaceID(),
+		Membership:    m,
 		Approve:       req.Approve,
 		AllowSend:     req.AllowSend.Or(false),
 		AllowSetup:    req.AllowSetup.Or(false),

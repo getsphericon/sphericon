@@ -388,6 +388,18 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/captured-messages
 	SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (SiteCapturedMessagesListRes, error)
+	// SiteConnectionsDelete implements SiteConnections_delete operation.
+	//
+	// Revoke a Connection: the caller's own, or anyone's with members:manage.
+	//
+	// DELETE /workspaces/{workspaceId}/connections/{id}
+	SiteConnectionsDelete(ctx context.Context, params SiteConnectionsDeleteParams) (SiteConnectionsDeleteRes, error)
+	// SiteConnectionsList implements SiteConnections_list operation.
+	//
+	// List the Connections the caller may see: their own, or every member's with members:manage.
+	//
+	// GET /workspaces/{workspaceId}/connections
+	SiteConnectionsList(ctx context.Context, params SiteConnectionsListParams) (SiteConnectionsListRes, error)
 	// SiteContactsCreate implements SiteContacts_create operation.
 	//
 	// Create a resource from the site UI.
@@ -655,8 +667,9 @@ type Handler interface {
 	SiteMembershipsUpdate(ctx context.Context, req *SiteUpdateMembershipInput, params SiteMembershipsUpdateParams) (SiteMembershipsUpdateRes, error)
 	// SiteOAuthDecide implements SiteOAuth_decide operation.
 	//
-	// Approve or deny an OAuth authorization request as the signed-in user. Approving mints an API token,
-	// so it needs the same role as creating one (owner or admin).
+	// Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection
+	// tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role
+	// lacks is refused (403 permission_required).
 	//
 	// POST /oauth/authorization
 	SiteOAuthDecide(ctx context.Context, req *SiteOAuthDecisionInput) (SiteOAuthDecideRes, error)

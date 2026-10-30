@@ -6,7 +6,6 @@ import (
 	"context"
 	"io"
 	"log/slog"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -29,7 +28,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/holds"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -281,19 +279,6 @@ func (h *Handlers) actor(ctx context.Context) events.Actor {
 		actor.Name = u.Name
 	}
 	return actor
-}
-
-// secondFactorRequiredError is secondfactor.ErrRequired as the problem the site
-// answers it with. Returned as an error, it is rendered by the server's error
-// handler, which reads it through its Problem method.
-type secondFactorRequiredError struct{}
-
-func (secondFactorRequiredError) Error() string { return secondfactor.ErrRequired.Error() }
-func (secondFactorRequiredError) Unwrap() error { return secondfactor.ErrRequired }
-
-// Problem is the 403 second_factor_required answer.
-func (secondFactorRequiredError) Problem() (status int, code, detail string) {
-	return http.StatusForbidden, string(siteapi.ProblemCodeSecondFactorRequired), i18n.T("errors.second_factor_required", nil)
 }
 
 // mailNotQueued logs a notice mail that could not be queued. The response never depends on it (a

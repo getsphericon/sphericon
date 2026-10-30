@@ -883,11 +883,12 @@ export default interface Resources {
       "deny": "Deny",
       "errorMessage": "We couldn't complete the authorization. Please try again.",
       "errorTitle": "Authorization failed",
-      "forbidden": "Only workspace owners and admins can connect an application. Ask an owner or admin to approve it, or choose another workspace.",
-      "intro": "{{client}} is asking to act on a workspace of yours through the Sphericon API. It gets an API token limited to the permissions below, which you can revoke at any time in the workspace API keys.",
+      "forbidden": "Your role in this workspace does not allow granting some of these permissions. Choose another workspace, or ask an owner or admin to connect the application.",
+      "intro": "{{client}} is asking to act on a workspace of yours through the Sphericon API. It acts as you, limited to the permissions below and to what your role allows. You can revoke it at any time in the workspace's MCP settings.",
       "invalid": "This authorization request is invalid. Return to the app that sent you here and start again.",
       "localhostDescription": "After you allow access, the token is sent to a program listening on this computer (localhost). Continue only if you started this connection yourself.",
       "localhostTitle": "This app connects through localhost",
+      "nothingToGrant": "Your role in this workspace does not allow granting any of the permissions this application asked for.",
       "scopesTitle": "Permissions granted",
       "sendCheckbox": "Also allow sending ({{scopes}})",
       "sendDescription": "This app also asked to send email. That is off unless you allow it here.",
@@ -1193,6 +1194,23 @@ export default interface Resources {
       },
       "backToWorkspace": "Back to workspace",
       "browserSdkLink": "Browser SDK (@sphericon/analytics)",
+      "connections": {
+        "application": "Application",
+        "created": "Approved",
+        "description": "The applications you approved to act as you in this workspace. Each can do no more than your role allows.",
+        "descriptionManager": "The applications members approved to act as them in this workspace. Each can do no more than its member's role allows.",
+        "empty": "No connected applications",
+        "loadError": "Failed to load connections",
+        "revoke": "Revoke",
+        "revokeConfirmDescription": "The application loses access at once and has to be approved again to reconnect.",
+        "revokeConfirmTitle": "Revoke this connection?",
+        "revokeError": "Failed to revoke the connection",
+        "revokeLabel": "Revoke {{name}}",
+        "scopes": "Permissions",
+        "scopesCount": "{{count}} scope" | "{{count}} scopes",
+        "title": "Connected applications",
+        "user": "Member"
+      },
       "copied": "Copied",
       "copy": "Copy",
       "danger": {
@@ -1310,12 +1328,9 @@ export default interface Resources {
       "loadErrorTitle": "Failed to load workspace",
       "mcp": {
         "addressLabel": "Connector address",
-        "apiKeysLink": "API keys",
-        "approveNote": "Only an owner or admin can approve the connection.",
+        "approveNote": "Any member can approve the connection. It acts as you, can do no more than your role allows, and ends when you leave the workspace. You can revoke it below.",
         "description": "MCP lets an AI agent work in this workspace for you: read contacts, draft broadcasts, build segments and author automations. Add this address as a connector in any AI client that speaks MCP.",
-        "guideLink": "Other ways to connect",
-        "memberNote": "You are a member: ask an owner or admin to connect the agent.",
-        "tokenNote": "Approving creates an ordinary API token named “<client> (MCP)”. You can see it and revoke it under"
+        "guideLink": "Other ways to connect"
       },
       "members": {
         "created": "Created",

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/apitoken"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -20,12 +21,13 @@ import (
 // ApiTokenQuery is the builder for querying ApiToken entities.
 type ApiTokenQuery struct {
 	config
-	ctx           *QueryContext
-	order         []apitoken.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.ApiToken
-	withWorkspace *WorkspaceQuery
-	modifiers     []func(*sql.Selector)
+	ctx            *QueryContext
+	order          []apitoken.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.ApiToken
+	withWorkspace  *WorkspaceQuery
+	withMembership *MembershipQuery
+	modifiers      []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -77,6 +79,28 @@ func (_q *ApiTokenQuery) QueryWorkspace() *WorkspaceQuery {
 			sqlgraph.From(apitoken.Table, apitoken.FieldID, selector),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, apitoken.WorkspaceTable, apitoken.WorkspaceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryMembership chains the current query on the "membership" edge.
+func (_q *ApiTokenQuery) QueryMembership() *MembershipQuery {
+	query := (&MembershipClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apitoken.Table, apitoken.FieldID, selector),
+			sqlgraph.To(membership.Table, membership.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, apitoken.MembershipTable, apitoken.MembershipColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -271,12 +295,13 @@ func (_q *ApiTokenQuery) Clone() *ApiTokenQuery {
 		return nil
 	}
 	return &ApiTokenQuery{
-		config:        _q.config,
-		ctx:           _q.ctx.Clone(),
-		order:         append([]apitoken.OrderOption{}, _q.order...),
-		inters:        append([]Interceptor{}, _q.inters...),
-		predicates:    append([]predicate.ApiToken{}, _q.predicates...),
-		withWorkspace: _q.withWorkspace.Clone(),
+		config:         _q.config,
+		ctx:            _q.ctx.Clone(),
+		order:          append([]apitoken.OrderOption{}, _q.order...),
+		inters:         append([]Interceptor{}, _q.inters...),
+		predicates:     append([]predicate.ApiToken{}, _q.predicates...),
+		withWorkspace:  _q.withWorkspace.Clone(),
+		withMembership: _q.withMembership.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -292,6 +317,17 @@ func (_q *ApiTokenQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *ApiTokenQ
 		opt(query)
 	}
 	_q.withWorkspace = query
+	return _q
+}
+
+// WithMembership tells the query-builder to eager-load the nodes that are connected to
+// the "membership" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ApiTokenQuery) WithMembership(opts ...func(*MembershipQuery)) *ApiTokenQuery {
+	query := (&MembershipClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withMembership = query
 	return _q
 }
 
@@ -373,8 +409,9 @@ func (_q *ApiTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Api
 	var (
 		nodes       = []*ApiToken{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withWorkspace != nil,
+			_q.withMembership != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -404,6 +441,12 @@ func (_q *ApiTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Api
 			return nil, err
 		}
 	}
+	if query := _q.withMembership; query != nil {
+		if err := _q.loadMembership(ctx, query, nodes, nil,
+			func(n *ApiToken, e *Membership) { n.Edges.Membership = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -429,6 +472,38 @@ func (_q *ApiTokenQuery) loadWorkspace(ctx context.Context, query *WorkspaceQuer
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "workspace_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *ApiTokenQuery) loadMembership(ctx context.Context, query *MembershipQuery, nodes []*ApiToken, init func(*ApiToken), assign func(*ApiToken, *Membership)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*ApiToken)
+	for i := range nodes {
+		if nodes[i].MembershipID == nil {
+			continue
+		}
+		fk := *nodes[i].MembershipID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(membership.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "membership_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -467,6 +542,9 @@ func (_q *ApiTokenQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withWorkspace != nil {
 			_spec.Node.AddColumnOnce(apitoken.FieldWorkspaceID)
+		}
+		if _q.withMembership != nil {
+			_spec.Node.AddColumnOnce(apitoken.FieldMembershipID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

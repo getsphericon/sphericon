@@ -74,6 +74,8 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteCapturedMessagesDeleteAllOperation:             []string{},
 	SiteCapturedMessagesGetOperation:                   []string{},
 	SiteCapturedMessagesListOperation:                  []string{},
+	SiteConnectionsDeleteOperation:                     []string{},
+	SiteConnectionsListOperation:                       []string{},
 	SiteContactsCreateOperation:                        []string{},
 	SiteContactsDeleteOperation:                        []string{},
 	SiteContactsEraseOperation:                         []string{},

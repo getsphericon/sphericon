@@ -164,6 +164,42 @@ func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.Cont
 	}
 	return siteapiContactExportConfirmation
 }
+func (c *ConverterImpl) ConnectionToResource(source *ent.ApiToken) site.SiteConnectionResource {
+	var siteapiSiteConnectionResource site.SiteConnectionResource
+	if source != nil {
+		siteapiSiteConnectionResource.ID = site.EntityId((*source).ID)
+		siteapiSiteConnectionResource.Name = (*source).Name
+		if (*source).Scopes != nil {
+			siteapiSiteConnectionResource.Scopes = make([]site.ApiTokenScope, len((*source).Scopes))
+			for i := 0; i < len((*source).Scopes); i++ {
+				siteapiSiteConnectionResource.Scopes[i] = site.ApiTokenScope((*source).Scopes[i])
+			}
+		}
+		var pInt64 *int64
+		if (*source).Edges.Membership != nil {
+			pInt64 = &(*source).Edges.Membership.UserID
+		}
+		if pInt64 != nil {
+			siteapiSiteConnectionResource.UserId = site.EntityId(*pInt64)
+		}
+		var pString *string
+		if (*source).Edges.Membership != nil && (*source).Edges.Membership.Edges.User != nil {
+			pString = &(*source).Edges.Membership.Edges.User.Name
+		}
+		if pString != nil {
+			siteapiSiteConnectionResource.UserName = *pString
+		}
+		var pString2 *string
+		if (*source).Edges.Membership != nil && (*source).Edges.Membership.Edges.User != nil {
+			pString2 = &(*source).Edges.Membership.Edges.User.Email
+		}
+		if pString2 != nil {
+			siteapiSiteConnectionResource.UserEmail = site.EmailAddress(*pString2)
+		}
+		siteapiSiteConnectionResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSiteConnectionResource
+}
 func (c *ConverterImpl) ContactToExport(source *ent.Contact) site.ContactExportContact {
 	var siteapiContactExportContact site.ContactExportContact
 	if source != nil {

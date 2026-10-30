@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/apitokens"
 )
 
-// SiteTokensList returns the workspace's API tokens; a revoked one stays listed, marked by
-// its revoked_at, so an owner sees a connector that was revoked (by hand or by reuse detection).
+// SiteTokensList returns the workspace's API tokens (Connections are listed apart, ADR 0061); a
+// revoked one stays listed, marked by its revoked_at.
 func (h *Handlers) SiteTokensList(ctx context.Context, _ siteapi.SiteTokensListParams) (siteapi.SiteTokensListRes, error) {
 	scoped := workspaceScope(ctx)
 

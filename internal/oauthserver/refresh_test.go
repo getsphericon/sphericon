@@ -44,10 +44,10 @@ func connect(t *testing.T, env *testhelper.TestEnv, scope string) tokenResponse 
 	return decodeToken(t, rec)
 }
 
-// connector is the API token the fixture client's grant lives in.
+// connector is the Connection the fixture client's grant lives in.
 func connector(t *testing.T, env *testhelper.TestEnv) *ent.ApiToken {
 	t.Helper()
-	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector (MCP)")).Only(t.Context())
+	row, err := env.DB.ApiToken.Query().Where(apitoken.Name("Fixture Connector"), apitoken.MembershipIDNotNil()).Only(t.Context())
 	require.NoError(t, err)
 	return row
 }
@@ -63,11 +63,17 @@ func refreshForm(refreshToken string) url.Values {
 // mcpStatus calls /mcp with a bearer and returns the HTTP status.
 func mcpStatus(t *testing.T, env *testhelper.TestEnv, bearer string) int {
 	t.Helper()
+	return serve(env, mcpRequest(t, bearer)).Code
+}
+
+// mcpRequest is a call of /mcp with a bearer.
+func mcpRequest(t *testing.T, bearer string) *http.Request {
+	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, testhelper.MCPEndpoint, strings.NewReader(`{}`))
 	req.Header.Set("Authorization", "Bearer "+bearer)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json, text/event-stream")
-	return serve(env, req).Code
+	return req
 }
 
 func TestCodeExchangeIssuesAnExpiringTokenAndARefreshToken(t *testing.T) {
@@ -112,7 +118,7 @@ func TestRefreshRotatesTheTokenInPlace(t *testing.T) {
 	assert.NotEqual(t, first.AccessToken, second.AccessToken)
 	assert.NotEqual(t, first.RefreshToken, second.RefreshToken)
 
-	// The connector keeps its row in Settings; the old secret is dead and the new one works.
+	// The Connection keeps its row; the old secret is dead and the new one works.
 	assert.True(t, strings.HasPrefix(second.AccessToken, "omtk_"+before.Prefix+"_"), "the prefix stays")
 	after := connector(t, env)
 	assert.Equal(t, before.ID, after.ID)
@@ -161,17 +167,17 @@ func TestReusingARotatedRefreshTokenRevokesTheGrant(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, exchange(t, env, refreshForm(rotated.RefreshToken)).Code, "the newest refresh token died with the grant")
 }
 
-func TestRevokingTheConnectorInSettingsKillsItsRefreshToken(t *testing.T) {
+func TestRevokingTheConnectionKillsItsRefreshToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	tok := connect(t, env, "contacts:read")
 	row := connector(t, env)
 
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTokensDelete(t.Context(), siteapi.SiteTokensDeleteParams{
+	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{
 		WorkspaceId: fixtures.AcmePublicID,
 		ID:          siteapi.EntityId(row.ID),
 	})
 	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteTokensDeleteNoContent{}, res)
+	require.IsType(t, &siteapi.SiteConnectionsDeleteNoContent{}, res)
 
 	assert.Equal(t, http.StatusUnauthorized, mcpStatus(t, env, tok.AccessToken))
 	rec := exchange(t, env, refreshForm(tok.RefreshToken))

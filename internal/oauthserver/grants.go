@@ -56,8 +56,8 @@ type issued struct {
 	scopes       []string
 }
 
-// token serves the token endpoint: the authorization_code grant mints the connector's API token,
-// the refresh_token grant rotates it.
+// token serves the token endpoint: the authorization_code grant mints the Connection, the
+// refresh_token grant rotates it.
 func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		writeOAuthError(w, http.StatusBadRequest, "invalid_request", "body must be form encoded")
@@ -99,8 +99,8 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// exchangeCode trades an authorization code (with its PKCE verifier) for an API token that
-// expires, plus the first refresh token of the grant.
+// exchangeCode trades an authorization code (with its PKCE verifier) for a Connection, an API
+// token of the approving User's Membership that expires, plus the first refresh token of the grant.
 func (s *Server) exchangeCode(ctx context.Context, code, clientID, redirectURI, verifier string) (*issued, error) {
 	grant, err := s.ent.OAuthCode.Query().
 		Where(oauthcode.CodeHash(hashSecret(code))).
@@ -146,12 +146,14 @@ func (s *Server) exchangeCode(ctx context.Context, code, clientID, redirectURI, 
 			return invalidGrant("unknown or expired code")
 		}
 
+		// The Connection: the approving User's Membership is its own, so it ends with it.
 		token, err := tx.ApiToken.Create().
-			SetName(grant.Edges.Client.Name + " (MCP)").
+			SetName(grant.Edges.Client.Name).
 			SetPrefix(prefix).
 			SetSecretHash(hash).
 			SetScopes(grant.Scopes).
 			SetWorkspaceID(grant.WorkspaceID).
+			SetMembershipID(grant.MembershipID).
 			SetExpiresAt(now.Add(accessTokenTTL)).
 			Save(ctx)
 		if err != nil {
@@ -166,8 +168,8 @@ func (s *Server) exchangeCode(ctx context.Context, code, clientID, redirectURI, 
 	return &issued{accessToken: credentials.TokenValue(prefix, secret), refreshToken: refresh, scopes: grant.Scopes}, nil
 }
 
-// refresh trades a refresh token for a new access token and the next refresh token. The grant's
-// API token keeps its row (and prefix) in Settings → API keys; only its secret and expiry rotate.
+// refresh trades a refresh token for a new access token and the next refresh token. The
+// Connection keeps its row (and prefix); only its secret and expiry rotate.
 // A refresh token is single use: presenting a used one revokes the grant.
 func (s *Server) refresh(ctx context.Context, presented, clientID, scope string) (*issued, error) {
 	row, err := s.ent.OAuthRefreshToken.Query().
