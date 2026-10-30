@@ -46,6 +46,9 @@ import { can } from '../../utils/permissions.ts'
 const MEMBER_ROLES = zSiteMembershipRole.options
 const INVITABLE_ROLES = zSiteInvitableRole.options
 
+// MembersSection lists the members and pending invitations to everyone; inviting, revoking an
+// invitation, changing a Role and removing a member are offered only with members:manage, and
+// resetting a Second factor only with second_factor:manage (the API refuses everyone else).
 export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const workspaceId = workspace.id
   const { t } = useTranslation()
@@ -57,6 +60,7 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
     setInviteUrl(null)
   }
   const me = useQuery(siteUserGetMeOptions())
+  const canManage = can(workspace, 'members:manage')
   const canResetSecondFactor = can(workspace, 'second_factor:manage')
 
   const membersKey = siteMembershipsListQueryKey({ path: { workspaceId } })
@@ -128,9 +132,11 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
     <Box>
       <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.members.title)}</Title>
-        <Button size="xs" onClick={openInvite}>
-          {t(($) => $.settings.members.invite)}
-        </Button>
+        {canManage ? (
+          <Button size="xs" onClick={openInvite}>
+            {t(($) => $.settings.members.invite)}
+          </Button>
+        ) : null}
       </Group>
 
       {membersQuery.isError ? (
@@ -166,23 +172,26 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
               {
                 accessor: 'role',
                 title: t(($) => $.settings.members.roleLabel),
-                render: (record) => (
-                  <Select
-                    size="xs"
-                    w={130}
-                    allowDeselect={false}
-                    data={MEMBER_ROLES}
-                    value={record.role}
-                    onChange={(value) => {
-                      if (value && value !== record.role) {
-                        roleMutation.mutate({
-                          path: { workspaceId, id: record.id },
-                          body: { role: value },
-                        })
-                      }
-                    }}
-                  />
-                ),
+                render: (record) =>
+                  canManage ? (
+                    <Select
+                      size="xs"
+                      w={130}
+                      allowDeselect={false}
+                      data={MEMBER_ROLES}
+                      value={record.role}
+                      onChange={(value) => {
+                        if (value && value !== record.role) {
+                          roleMutation.mutate({
+                            path: { workspaceId, id: record.id },
+                            body: { role: value },
+                          })
+                        }
+                      }}
+                    />
+                  ) : (
+                    record.role
+                  ),
               },
               {
                 accessor: 'source',
@@ -193,20 +202,25 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
               {
                 accessor: 'actions',
                 title: '',
-                render: (record) => (
-                  <Group justify="flex-end">
-                    <RowActionsMenu>
-                      {canResetSecondFactor && record.userId !== me.data?.id ? (
-                        <Menu.Item color="orange" onClick={() => onResetSecondFactor(record.id)}>
-                          {t(($) => $.settings.members.resetSecondFactor)}
-                        </Menu.Item>
-                      ) : null}
-                      <Menu.Item color="red" onClick={() => onRemove(record.id)}>
-                        {t(($) => $.settings.members.remove)}
-                      </Menu.Item>
-                    </RowActionsMenu>
-                  </Group>
-                ),
+                render: (record) => {
+                  const canReset = canResetSecondFactor && record.userId !== me.data?.id
+                  return canManage || canReset ? (
+                    <Group justify="flex-end">
+                      <RowActionsMenu>
+                        {canReset ? (
+                          <Menu.Item color="orange" onClick={() => onResetSecondFactor(record.id)}>
+                            {t(($) => $.settings.members.resetSecondFactor)}
+                          </Menu.Item>
+                        ) : null}
+                        {canManage ? (
+                          <Menu.Item color="red" onClick={() => onRemove(record.id)}>
+                            {t(($) => $.settings.members.remove)}
+                          </Menu.Item>
+                        ) : null}
+                      </RowActionsMenu>
+                    </Group>
+                  ) : null
+                },
               },
             ]}
             emptyState={<EmptyState title={t(($) => $.settings.members.membersEmpty)} />}
@@ -230,15 +244,16 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
               {
                 accessor: 'actions',
                 title: '',
-                render: (record) => (
-                  <Group justify="flex-end">
-                    <RowActionsMenu>
-                      <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
-                        {t(($) => $.settings.members.revoke)}
-                      </Menu.Item>
-                    </RowActionsMenu>
-                  </Group>
-                ),
+                render: (record) =>
+                  canManage ? (
+                    <Group justify="flex-end">
+                      <RowActionsMenu>
+                        <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
+                          {t(($) => $.settings.members.revoke)}
+                        </Menu.Item>
+                      </RowActionsMenu>
+                    </Group>
+                  ) : null,
               },
             ]}
             emptyState={<EmptyState title={t(($) => $.settings.members.invitationsEmpty)} />}

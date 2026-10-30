@@ -40,7 +40,15 @@ import { ScopePicker } from './ScopePicker.tsx'
 // Scopes offered in the UI: the contract's ApiTokenScope vocabulary.
 const SCOPE_OPTIONS = zApiTokenScope.options
 
-export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
+// ApiKeysSection lists the API tokens to every member; creating, renaming and revoking one is
+// offered only with `canManage` (tokens:manage), as the API refuses everyone else.
+export function ApiKeysSection({
+  workspaceId,
+  canManage,
+}: {
+  workspaceId: string
+  canManage: boolean
+}) {
   const { t } = useTranslation()
   const confirmRevoke = useConfirmation()
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)
@@ -104,9 +112,11 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
     <Box>
       <Group justify="space-between" mb="sm">
         <Title order={4}>{t(($) => $.settings.apiKeysTitle)}</Title>
-        <Button size="xs" onClick={openCreate}>
-          {t(($) => $.settings.tokens.create)}
-        </Button>
+        {canManage ? (
+          <Button size="xs" onClick={openCreate}>
+            {t(($) => $.settings.tokens.create)}
+          </Button>
+        ) : null}
       </Group>
 
       {tokensQuery.isError ? (
@@ -154,7 +164,7 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
                 <Badge color="red" variant="light">
                   {t(($) => $.settings.tokens.revoked)}
                 </Badge>
-              ) : (
+              ) : canManage ? (
                 <Group justify="flex-end">
                   <RowActionsMenu>
                     <Menu.Item onClick={() => openRename(record)}>
@@ -165,7 +175,7 @@ export function ApiKeysSection({ workspaceId }: { workspaceId: string }) {
                     </Menu.Item>
                   </RowActionsMenu>
                 </Group>
-              ),
+              ) : null,
           },
         ]}
         emptyState={<EmptyState title={t(($) => $.settings.tokens.empty)} />}

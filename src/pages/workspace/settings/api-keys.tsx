@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { Route as apiKeysRoute } from '../../../routes/workspaces/$workspaceId/settings/api-keys.tsx'
+import { can } from '../../../utils/permissions.ts'
 import { ApiKeysSection } from '../ApiKeysSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
@@ -10,7 +11,9 @@ export function ApiKeysPage() {
 
   return (
     <SettingsFrame workspaceId={workspaceId} title={t(($) => $.settings.nav.apiKeys)}>
-      {(workspace) => <ApiKeysSection workspaceId={workspace.id} />}
+      {(workspace) => (
+        <ApiKeysSection workspaceId={workspace.id} canManage={can(workspace, 'tokens:manage')} />
+      )}
     </SettingsFrame>
   )
 }

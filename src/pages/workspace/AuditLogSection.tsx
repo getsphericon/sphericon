@@ -332,8 +332,8 @@ function RetentionForm({ workspaceId, days }: { workspaceId: string; days: numbe
   )
 }
 
-// RetentionControl is the Enterprise advanced-retention window for the log. It renders
-// nothing where the setting is not offered (a plain member, or no license).
+// RetentionControl is the Enterprise advanced-retention window for the log. It is mounted
+// only with audit:configure and renders nothing without the license.
 function RetentionControl({ workspaceId }: { workspaceId: string }) {
   const query = useQuery(siteAuditGetRetentionOptions({ path: { workspaceId } }))
   if (!query.isSuccess) {
@@ -503,16 +503,19 @@ export function ChangeHistoryLink({
 const NO_FILTER: AuditFilter = {}
 
 // AuditLogSection is the Enterprise Audit log of the workspace: who changed what and
-// when, newest first, narrowed by `filter`. It renders nothing for a plain member or
-// without a license.
+// when, newest first, narrowed by `filter`. It renders nothing without a license or when
+// the API refuses the log; the retention control is offered only with `canConfigureRetention`
+// (audit:configure).
 export function AuditLogSection({
   workspaceId,
   filter = NO_FILTER,
   onFilterChange,
+  canConfigureRetention,
 }: {
   workspaceId: string
   filter?: AuditFilter
   onFilterChange: (filter: AuditFilter) => void
+  canConfigureRetention: boolean
 }) {
   const { t } = useTranslation()
   const probe = useQuery(siteAuditListOptions({ path: { workspaceId }, query: { limit: 1 } }))
@@ -528,7 +531,7 @@ export function AuditLogSection({
           <Title order={4}>{t(($) => $.settings.auditLog.title)}</Title>
           <ExportButton workspaceId={workspaceId} filter={filter} />
         </Group>
-        <RetentionControl workspaceId={workspaceId} />
+        {canConfigureRetention ? <RetentionControl workspaceId={workspaceId} /> : null}
         <FilterForm key={filterKey} filter={filter} onChange={onFilterChange} />
         <AuditPage key={filterKey} workspaceId={workspaceId} filter={filter} first />
       </Stack>

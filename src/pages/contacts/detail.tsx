@@ -66,12 +66,11 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
   const navigate = useNavigate()
   const confirm = useConfirmation()
   const workspaces = useQuery(siteWorkspacesListOptions())
-  // Erasure is irreversible, so it is offered only with contacts:erase (the API refuses
-  // everyone else with 403).
-  const canErase = can(
-    workspaces.data?.find((w) => w.id === workspaceId),
-    'contacts:erase',
-  )
+  const workspace = workspaces.data?.find((w) => w.id === workspaceId)
+  // Erasure is irreversible, so it is offered only with contacts:erase, and exporting only
+  // with contacts:export (the API refuses everyone else with 403).
+  const canErase = can(workspace, 'contacts:erase')
+  const canExport = can(workspace, 'contacts:export')
 
   const eraseMutation = useResourceMutation({
     mutation: siteContactsDeleteMutation(),
@@ -89,13 +88,15 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
       <ButtonLink variant="default" to={contactsEditRoute.to} params={{ workspaceId, contactId }}>
         {t(($) => $.actions.edit)}
       </ButtonLink>
-      <Button
-        variant="default"
-        loading={exportMutation.isPending}
-        onClick={() => exportMutation.mutate({ id: contactId })}
-      >
-        {t(($) => $.contacts.export)}
-      </Button>
+      {canExport ? (
+        <Button
+          variant="default"
+          loading={exportMutation.isPending}
+          onClick={() => exportMutation.mutate({ id: contactId })}
+        >
+          {t(($) => $.contacts.export)}
+        </Button>
+      ) : null}
       {canErase ? (
         <Button
           color="red"

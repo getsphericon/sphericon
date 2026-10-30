@@ -22,8 +22,8 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { MembersSection } from './MembersSection.tsx'
 
-// The Workspace as the signed-in User sees it: resetting a Second factor needs
-// second_factor:manage.
+// The Workspace as the signed-in User sees it: managing the members needs members:manage and
+// resetting a Second factor second_factor:manage.
 const workspaceWith = (permissions: Permission[]): SiteWorkspaceResource => ({
   id: 'TestWs01',
   name: 'Acme',
@@ -38,7 +38,7 @@ const workspaceWith = (permissions: Permission[]): SiteWorkspaceResource => ({
   role: 'member',
   createdAt: '2026-01-01T00:00:00Z',
 })
-const workspace = workspaceWith([])
+const workspace = workspaceWith(['members:manage'])
 
 const member: SiteMembershipResource = {
   id: '1',

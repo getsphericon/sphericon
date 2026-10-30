@@ -1,10 +1,11 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleSiteSuppressionsCreate,
   handleSiteSuppressionsDelete,
   handleSiteSuppressionsList,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSuppressionResource } from '../../generated/site/types.gen.ts'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
@@ -15,6 +16,30 @@ import { worker } from '../../test/worker.ts'
 import { SuppressionsListPage } from './list.tsx'
 
 const LIST_ROUTE = routeMount(suppressionsRoute, { workspaceId: 'TestWs01' })
+
+// The signed-in User holds suppressions:manage, so adding and lifting are offered.
+beforeEach(() => {
+  worker.use(
+    handleSiteWorkspacesList({
+      body: [
+        {
+          id: 'TestWs01',
+          name: 'Acme',
+          collectKey: 'omck_test_key',
+          postalAddress: '',
+          timezone: 'UTC',
+          accountLinkAvailable: false,
+          permissions: ['suppressions:manage'],
+          mcpUrl: 'https://sphericon.test',
+          trackerUrl: 'https://t.sphericon.test',
+          holds: [],
+          role: 'member',
+          createdAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    }),
+  )
+})
 
 function suppression(over: Partial<SiteSuppressionResource> = {}): SiteSuppressionResource {
   return {

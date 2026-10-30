@@ -49,12 +49,18 @@ export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
       icon: <IconUsers size={18} />,
       exact: false,
     },
-    {
-      route: auditLogRoute,
-      label: t(($) => $.settings.nav.auditLog),
-      icon: <IconHistory size={18} />,
-      exact: false,
-    },
+    // The Audit log, Webhooks and Privacy requests are offered only to a member who holds
+    // their Permission; the API refuses everyone else.
+    ...(can(workspace, 'audit:read')
+      ? [
+          {
+            route: auditLogRoute,
+            label: t(($) => $.settings.nav.auditLog),
+            icon: <IconHistory size={18} />,
+            exact: false,
+          },
+        ]
+      : []),
     {
       route: trackingRoute,
       label: t(($) => $.settings.nav.tracking),
@@ -73,8 +79,6 @@ export function SettingsNavbar({ workspaceId }: { workspaceId: string }) {
       icon: <IconKey size={18} />,
       exact: false,
     },
-    // Webhooks and Privacy requests are offered only to a member who holds their Permission;
-    // the API refuses everyone else.
     ...(can(workspace, 'webhooks:manage')
       ? [
           {

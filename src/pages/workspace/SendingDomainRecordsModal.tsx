@@ -209,14 +209,18 @@ function agentPrompt(record: SiteSendingDomainResource): string {
   ].join('\n')
 }
 
+// SendingDomainRecordsModal shows a Sending domain's DNS records to every member; the check is
+// offered only with `canVerify` (sending_domains:manage), as the API refuses everyone else.
 export function SendingDomainRecordsModal({
   workspaceId,
   record,
   onClose,
+  canVerify,
 }: {
   workspaceId: string
   record: SiteSendingDomainResource | undefined
   onClose: () => void
+  canVerify: boolean
 }) {
   const { t } = useTranslation()
 
@@ -260,14 +264,16 @@ export function SendingDomainRecordsModal({
               </Stack>
             </Tabs.Panel>
           </Tabs>
-          <Group justify="flex-end">
-            <Button
-              loading={verifyMutation.isPending}
-              onClick={() => verifyMutation.mutate({ path: { workspaceId, id: record.id } })}
-            >
-              {t(($) => $.settings.sendingDomains.verifyNow)}
-            </Button>
-          </Group>
+          {canVerify ? (
+            <Group justify="flex-end">
+              <Button
+                loading={verifyMutation.isPending}
+                onClick={() => verifyMutation.mutate({ path: { workspaceId, id: record.id } })}
+              >
+                {t(($) => $.settings.sendingDomains.verifyNow)}
+              </Button>
+            </Group>
+          ) : null}
         </Stack>
       ) : null}
     </Modal>

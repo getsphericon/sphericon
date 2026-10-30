@@ -216,6 +216,7 @@ export function SendingDomainsSection({
         workspaceId={workspaceId}
         record={recordsDomain}
         onClose={() => setRecordsId(null)}
+        canVerify={canEdit}
       />
     </Box>
   )

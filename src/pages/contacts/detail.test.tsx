@@ -226,8 +226,8 @@ function holding(permissions: Permission[]) {
   })
 }
 
-test('without contacts:erase a contact can be exported but Erase is not offered', async () => {
-  worker.use(handleSiteContactsGet({ body: ADA }), NO_EVENTS, holding([]))
+test('contacts:export without contacts:erase offers Export data but not Erase', async () => {
+  worker.use(handleSiteContactsGet({ body: ADA }), NO_EVENTS, holding(['contacts:export']))
 
   const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
 
@@ -265,6 +265,7 @@ test('exporting a contact saves the document under the filename the server sugge
   worker.use(
     handleSiteContactsGet({ body: ADA }),
     NO_EVENTS,
+    holding(['contacts:export']),
     handleSiteContactsExport(() =>
       HttpResponse.json(
         { id: '9' },
