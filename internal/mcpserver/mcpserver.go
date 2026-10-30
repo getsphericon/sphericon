@@ -74,7 +74,7 @@ func New(spec []byte, api http.Handler, auth Authenticator, opts ...Option) (htt
 	srv.AddReceivingMiddleware(sendLock(sendTools, auth))
 	streamable := mcp.NewStreamableHTTPHandler(
 		func(*http.Request) *mcp.Server { return srv },
-		&mcp.StreamableHTTPOptions{Stateless: true, JSONResponse: true},
+		&mcp.StreamableHTTPOptions{Stateless: true, JSONResponse: true, PropagateRequestCancellation: true},
 	)
 	return requireToken(auth, cfg.resourceMetadataURL, streamable), nil
 }
@@ -167,8 +167,27 @@ func requireToken(auth Authenticator, metadataURL string, next http.Handler) htt
 			writeProblem(w, http.StatusInternalServerError, "internal server error")
 			return
 		}
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), mcpRequestKey{}, r.Context())))
 	})
+}
+
+// mcpRequestKey carries the /mcp request's own context to the tool call it runs.
+type mcpRequestKey struct{}
+
+// boundToRequest ends ctx when the /mcp request that runs the call ends (a request timeout, a
+// client that hung up). The SDK runs a tool on a context that keeps the request's values but
+// not its end, so without this the /api call would run on after nobody can read its answer.
+func boundToRequest(ctx context.Context) (context.Context, context.CancelFunc) {
+	request, ok := ctx.Value(mcpRequestKey{}).(context.Context)
+	if !ok {
+		return context.WithCancel(ctx)
+	}
+	ctx, cancel := context.WithCancelCause(ctx)
+	stop := context.AfterFunc(request, func() { cancel(context.Cause(request)) })
+	return ctx, func() {
+		stop()
+		cancel(nil)
+	}
 }
 
 func writeProblem(w http.ResponseWriter, code int, detail string) {
@@ -187,6 +206,8 @@ func writeProblem(w http.ResponseWriter, code int, detail string) {
 // handler dispatches a tool call to the /api handler as the caller.
 func (op *operation) handler(api http.Handler) mcp.ToolHandler {
 	return func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		ctx, cancel := boundToRequest(ctx)
+		defer cancel()
 		args := map[string]any{}
 		if len(req.Params.Arguments) > 0 {
 			if err := json.Unmarshal(req.Params.Arguments, &args); err != nil {
