@@ -86,6 +86,7 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
   const revokeMutation = useResourceMutation({
     mutation: siteInvitationsDeleteMutation(),
     invalidate: [invitesKey],
+    successMessage: t(($) => $.settings.members.revoked),
     errorTitle: t(($) => $.settings.members.revokeError),
   })
 
@@ -99,12 +100,14 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
   const removeMutation = useResourceMutation({
     mutation: siteMembershipsDeleteMutation(),
     invalidate: [membersKey],
+    successMessage: t(($) => $.settings.members.removed),
     errorTitle: t(($) => $.settings.members.removeError),
   })
 
   const resetMutation = useResourceMutation({
     mutation: siteMembershipsResetSecondFactorMutation(),
     invalidate: [membersKey],
+    successMessage: t(($) => $.settings.members.secondFactorReset),
     errorTitle: t(($) => $.settings.members.resetSecondFactorError),
   })
 

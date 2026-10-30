@@ -143,6 +143,7 @@ test('revokes an invitation after confirmation', async () => {
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => revoked).toBe(true)
+  await expect.element(screen.getByText('Invitation revoked')).toBeInTheDocument()
 })
 
 test('removes a member after confirmation', async () => {
@@ -162,6 +163,7 @@ test('removes a member after confirmation', async () => {
   await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   await expect.poll(() => removed).toBe(true)
+  await expect.element(screen.getByText('Member removed')).toBeInTheDocument()
 })
 
 test('changes a member role', async () => {
@@ -245,6 +247,7 @@ test('a member with second_factor:manage resets another member Second factor', a
   await screen.getByRole('dialog').getByRole('button', { name: 'Reset' }).click()
 
   await expect.poll(() => reset).toBe(true)
+  await expect.element(screen.getByText('Two-factor authentication reset')).toBeInTheDocument()
 })
 
 test('a member without second_factor:manage is not offered a Second factor reset', async () => {
