@@ -162,9 +162,6 @@ var (
 	rn145AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn212AllowedHeaders = map[string]string{
-		"PUT": "Content-Type",
-	}
 	rn158AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -186,7 +183,7 @@ var (
 	rn185AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn213AllowedHeaders = map[string]string{
+	rn214AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn186AllowedHeaders = map[string]string{
@@ -1739,7 +1736,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						}
 
 						if len(elem) == 0 {
-							// Leaf node.
 							switch r.Method {
 							case "GET":
 								s.handleSiteWorkspacesListDeletedRequest([0]string{}, elemIsEscaped, w, r)
@@ -1753,6 +1749,58 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							}
 
 							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "id"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[0] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/restore"
+
+								if l := len("/restore"); len(elem) >= l && elem[0:l] == "/restore" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleSiteWorkspacesRestoreRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
 						}
 
 						elem = origElem
@@ -3882,76 +3930,35 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								break
 							}
 							switch elem[0] {
-							case 'e': // Prefix: "e"
+							case 'e': // Prefix: "evenue-settings"
 
-								if l := len("e"); len(elem) >= l && elem[0:l] == "e" {
+								if l := len("evenue-settings"); len(elem) >= l && elem[0:l] == "evenue-settings" {
 									elem = elem[l:]
 								} else {
 									break
 								}
 
 								if len(elem) == 0 {
-									break
-								}
-								switch elem[0] {
-								case 's': // Prefix: "store"
-
-									if l := len("store"); len(elem) >= l && elem[0:l] == "store" {
-										elem = elem[l:]
-									} else {
-										break
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleSiteWorkspacesGetRevenueSettingsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSiteWorkspacesUpdateRevenueSettingsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn207AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
 									}
 
-									if len(elem) == 0 {
-										// Leaf node.
-										switch r.Method {
-										case "POST":
-											s.handleSiteWorkspacesRestoreRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										default:
-											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "POST",
-												allowedHeaders: nil,
-												acceptPost:     "",
-												acceptPatch:    "",
-											})
-										}
-
-										return
-									}
-
-								case 'v': // Prefix: "venue-settings"
-
-									if l := len("venue-settings"); len(elem) >= l && elem[0:l] == "venue-settings" {
-										elem = elem[l:]
-									} else {
-										break
-									}
-
-									if len(elem) == 0 {
-										// Leaf node.
-										switch r.Method {
-										case "GET":
-											s.handleSiteWorkspacesGetRevenueSettingsRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										case "PUT":
-											s.handleSiteWorkspacesUpdateRevenueSettingsRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										default:
-											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "GET,PUT",
-												allowedHeaders: rn207AllowedHeaders,
-												acceptPost:     "",
-												acceptPatch:    "",
-											})
-										}
-
-										return
-									}
-
+									return
 								}
 
 							case 'u': // Prefix: "ules"
@@ -4281,14 +4288,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									if len(elem) == 0 {
 										// Leaf node.
 										switch r.Method {
+										case "DELETE":
+											s.handleSiteWorkspacesLiftSecondFactorRequirementRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
 										case "PUT":
-											s.handleSiteWorkspacesSetSecondFactorRequirementRequest([1]string{
+											s.handleSiteWorkspacesRequireSecondFactorRequest([1]string{
 												args[0],
 											}, elemIsEscaped, w, r)
 										default:
 											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "PUT",
-												allowedHeaders: rn212AllowedHeaders,
+												allowedMethods: "DELETE,PUT",
+												allowedHeaders: nil,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -4945,7 +4956,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "PUT",
-											allowedHeaders: rn213AllowedHeaders,
+											allowedHeaders: rn214AllowedHeaders,
 											acceptPost:     "",
 											acceptPatch:    "",
 										})
@@ -6803,7 +6814,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						}
 
 						if len(elem) == 0 {
-							// Leaf node.
 							switch method {
 							case "GET":
 								r.name = SiteWorkspacesListDeletedOperation
@@ -6817,6 +6827,56 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							default:
 								return
 							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "id"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[0] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/restore"
+
+								if l := len("/restore"); len(elem) >= l && elem[0:l] == "/restore" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = SiteWorkspacesRestoreOperation
+										r.summary = ""
+										r.operationID = "SiteWorkspaces_restore"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/deleted/{id}/restore"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
 						}
 
 						elem = origElem
@@ -8879,77 +8939,38 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								break
 							}
 							switch elem[0] {
-							case 'e': // Prefix: "e"
+							case 'e': // Prefix: "evenue-settings"
 
-								if l := len("e"); len(elem) >= l && elem[0:l] == "e" {
+								if l := len("evenue-settings"); len(elem) >= l && elem[0:l] == "evenue-settings" {
 									elem = elem[l:]
 								} else {
 									break
 								}
 
 								if len(elem) == 0 {
-									break
-								}
-								switch elem[0] {
-								case 's': // Prefix: "store"
-
-									if l := len("store"); len(elem) >= l && elem[0:l] == "store" {
-										elem = elem[l:]
-									} else {
-										break
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = SiteWorkspacesGetRevenueSettingsOperation
+										r.summary = ""
+										r.operationID = "SiteWorkspaces_getRevenueSettings"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/revenue-settings"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SiteWorkspacesUpdateRevenueSettingsOperation
+										r.summary = ""
+										r.operationID = "SiteWorkspaces_updateRevenueSettings"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/revenue-settings"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
 									}
-
-									if len(elem) == 0 {
-										// Leaf node.
-										switch method {
-										case "POST":
-											r.name = SiteWorkspacesRestoreOperation
-											r.summary = ""
-											r.operationID = "SiteWorkspaces_restore"
-											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{workspaceId}/restore"
-											r.args = args
-											r.count = 1
-											return r, true
-										default:
-											return
-										}
-									}
-
-								case 'v': // Prefix: "venue-settings"
-
-									if l := len("venue-settings"); len(elem) >= l && elem[0:l] == "venue-settings" {
-										elem = elem[l:]
-									} else {
-										break
-									}
-
-									if len(elem) == 0 {
-										// Leaf node.
-										switch method {
-										case "GET":
-											r.name = SiteWorkspacesGetRevenueSettingsOperation
-											r.summary = ""
-											r.operationID = "SiteWorkspaces_getRevenueSettings"
-											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{workspaceId}/revenue-settings"
-											r.args = args
-											r.count = 1
-											return r, true
-										case "PUT":
-											r.name = SiteWorkspacesUpdateRevenueSettingsOperation
-											r.summary = ""
-											r.operationID = "SiteWorkspaces_updateRevenueSettings"
-											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{workspaceId}/revenue-settings"
-											r.args = args
-											r.count = 1
-											return r, true
-										default:
-											return
-										}
-									}
-
 								}
 
 							case 'u': // Prefix: "ules"
@@ -9269,10 +9290,19 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									if len(elem) == 0 {
 										// Leaf node.
 										switch method {
-										case "PUT":
-											r.name = SiteWorkspacesSetSecondFactorRequirementOperation
+										case "DELETE":
+											r.name = SiteWorkspacesLiftSecondFactorRequirementOperation
 											r.summary = ""
-											r.operationID = "SiteWorkspaces_setSecondFactorRequirement"
+											r.operationID = "SiteWorkspaces_liftSecondFactorRequirement"
+											r.operationGroup = ""
+											r.pathPattern = "/workspaces/{workspaceId}/second-factor-requirement"
+											r.args = args
+											r.count = 1
+											return r, true
+										case "PUT":
+											r.name = SiteWorkspacesRequireSecondFactorOperation
+											r.summary = ""
+											r.operationID = "SiteWorkspaces_requireSecondFactor"
 											r.operationGroup = ""
 											r.pathPattern = "/workspaces/{workspaceId}/second-factor-requirement"
 											r.args = args

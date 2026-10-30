@@ -1353,13 +1353,6 @@ export const zSiteSecondFactorEnrollment = z.object({
 });
 
 /**
- * Switch the Two-factor requirement on or off
- */
-export const zSiteSecondFactorRequirementInput = z.object({
-  required: z.boolean()
-});
-
-/**
  * Proof of the User's password (or a fresh provider login or Passkey check), for starting an enrollment
  */
 export const zSiteSecondFactorStartInput = z.object({
@@ -3473,6 +3466,15 @@ export const zSiteWorkspacesCreateResponse = zSiteWorkspaceResource;
  */
 export const zSiteWorkspacesListDeletedResponse = z.array(zSiteDeletedWorkspaceResource);
 
+export const zSiteWorkspacesRestorePath = z.object({
+  id: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
+
 export const zSiteWorkspacesUpdateBody = zSiteUpdateWorkspaceInput;
 
 export const zSiteWorkspacesUpdatePath = z.object({
@@ -4435,15 +4437,6 @@ export const zSiteMembershipsResetSecondFactorPath = z.object({
  */
 export const zSiteMembershipsResetSecondFactorResponse = z.void();
 
-export const zSiteWorkspacesRestorePath = z.object({
-  workspaceId: zWorkspaceId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteWorkspacesRestoreResponse = zSiteWorkspaceResource;
-
 export const zSiteWorkspacesGetRevenueSettingsPath = z.object({
   workspaceId: zWorkspaceId
 });
@@ -4507,16 +4500,23 @@ export const zSiteRuleFiringsListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteWorkspacesSetSecondFactorRequirementBody = zSiteSecondFactorRequirementInput;
-
-export const zSiteWorkspacesSetSecondFactorRequirementPath = z.object({
+export const zSiteWorkspacesLiftSecondFactorRequirementPath = z.object({
   workspaceId: zWorkspaceId
 });
 
 /**
  * The request has succeeded.
  */
-export const zSiteWorkspacesSetSecondFactorRequirementResponse = zSiteWorkspaceResource;
+export const zSiteWorkspacesLiftSecondFactorRequirementResponse = zSiteWorkspaceResource;
+
+export const zSiteWorkspacesRequireSecondFactorPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesRequireSecondFactorResponse = zSiteWorkspaceResource;
 
 export const zSiteSegmentContactsListPath = z.object({
   workspaceId: zWorkspaceId,

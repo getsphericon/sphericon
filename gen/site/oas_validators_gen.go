@@ -2928,6 +2928,14 @@ func (s *SiteContactsExportBadRequest) Validate() error {
 	return nil
 }
 
+func (s *SiteContactsExportForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteContactsExportNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -8389,6 +8397,14 @@ func (s *SiteSuppressionResource) Validate() error {
 	return nil
 }
 
+func (s *SiteSuppressionsCreateForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteSuppressionsCreateNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -8406,6 +8422,14 @@ func (s *SiteSuppressionsCreateUnprocessableEntity) Validate() error {
 }
 
 func (s *SiteSuppressionsDeleteBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteSuppressionsDeleteForbidden) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -10114,6 +10138,38 @@ func (s *SiteWorkspacesLeaveUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *SiteWorkspacesLiftSecondFactorRequirementForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesLiftSecondFactorRequirementNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesRequireSecondFactorForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SiteWorkspacesRequireSecondFactorNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *SiteWorkspacesRestoreConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -10123,22 +10179,6 @@ func (s *SiteWorkspacesRestoreConflict) Validate() error {
 }
 
 func (s *SiteWorkspacesRestoreNotFound) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteWorkspacesSetSecondFactorRequirementForbidden) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteWorkspacesSetSecondFactorRequirementNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

@@ -11015,6 +11015,10 @@ type SiteContactsExportBadRequest ProblemDetails
 
 func (*SiteContactsExportBadRequest) siteContactsExportRes() {}
 
+type SiteContactsExportForbidden ProblemDetails
+
+func (*SiteContactsExportForbidden) siteContactsExportRes() {}
+
 type SiteContactsExportNotFound ProblemDetails
 
 func (*SiteContactsExportNotFound) siteContactsExportRes() {}
@@ -18370,23 +18374,6 @@ type SiteSecondFactorRegenerateRecoveryCodesForbidden ProblemDetails
 func (*SiteSecondFactorRegenerateRecoveryCodesForbidden) siteSecondFactorRegenerateRecoveryCodesRes() {
 }
 
-// Switch the Two-factor requirement on or off.
-// Ref: #/components/schemas/SiteSecondFactorRequirementInput
-type SiteSecondFactorRequirementInput struct {
-	// Whether every User with a Membership must have a Second factor.
-	Required bool `json:"required"`
-}
-
-// GetRequired returns the value of Required.
-func (s *SiteSecondFactorRequirementInput) GetRequired() bool {
-	return s.Required
-}
-
-// SetRequired sets the value of Required.
-func (s *SiteSecondFactorRequirementInput) SetRequired(val bool) {
-	s.Required = val
-}
-
 type SiteSecondFactorStartEnrollmentConflict ProblemDetails
 
 func (*SiteSecondFactorStartEnrollmentConflict) siteSecondFactorStartEnrollmentRes() {}
@@ -20565,6 +20552,10 @@ func (s *SiteSuppressionResource) SetUpdatedAt(val Timestamp) {
 
 func (*SiteSuppressionResource) siteSuppressionsCreateRes() {}
 
+type SiteSuppressionsCreateForbidden ProblemDetails
+
+func (*SiteSuppressionsCreateForbidden) siteSuppressionsCreateRes() {}
+
 type SiteSuppressionsCreateNotFound ProblemDetails
 
 func (*SiteSuppressionsCreateNotFound) siteSuppressionsCreateRes() {}
@@ -20576,6 +20567,10 @@ func (*SiteSuppressionsCreateUnprocessableEntity) siteSuppressionsCreateRes() {}
 type SiteSuppressionsDeleteBadRequest ProblemDetails
 
 func (*SiteSuppressionsDeleteBadRequest) siteSuppressionsDeleteRes() {}
+
+type SiteSuppressionsDeleteForbidden ProblemDetails
+
+func (*SiteSuppressionsDeleteForbidden) siteSuppressionsDeleteRes() {}
 
 // SiteSuppressionsDeleteNoContent is response for SiteSuppressionsDelete operation.
 type SiteSuppressionsDeleteNoContent struct{}
@@ -23409,11 +23404,12 @@ func (s *SiteWorkspaceResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
-func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                     {}
-func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                    {}
-func (*SiteWorkspaceResource) siteWorkspacesSetSecondFactorRequirementRes() {}
-func (*SiteWorkspaceResource) siteWorkspacesSetTimezoneRes()                {}
-func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                     {}
+func (*SiteWorkspaceResource) siteWorkspacesCreateRes()                      {}
+func (*SiteWorkspaceResource) siteWorkspacesLiftSecondFactorRequirementRes() {}
+func (*SiteWorkspaceResource) siteWorkspacesRequireSecondFactorRes()         {}
+func (*SiteWorkspaceResource) siteWorkspacesRestoreRes()                     {}
+func (*SiteWorkspaceResource) siteWorkspacesSetTimezoneRes()                 {}
+func (*SiteWorkspaceResource) siteWorkspacesUpdateRes()                      {}
 
 // Set the Workspace time zone.
 // Ref: #/components/schemas/SiteWorkspaceTimezoneInput
@@ -23473,6 +23469,24 @@ type SiteWorkspacesLeaveUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesLeaveUnprocessableEntity) siteWorkspacesLeaveRes() {}
 
+type SiteWorkspacesLiftSecondFactorRequirementForbidden ProblemDetails
+
+func (*SiteWorkspacesLiftSecondFactorRequirementForbidden) siteWorkspacesLiftSecondFactorRequirementRes() {
+}
+
+type SiteWorkspacesLiftSecondFactorRequirementNotFound ProblemDetails
+
+func (*SiteWorkspacesLiftSecondFactorRequirementNotFound) siteWorkspacesLiftSecondFactorRequirementRes() {
+}
+
+type SiteWorkspacesRequireSecondFactorForbidden ProblemDetails
+
+func (*SiteWorkspacesRequireSecondFactorForbidden) siteWorkspacesRequireSecondFactorRes() {}
+
+type SiteWorkspacesRequireSecondFactorNotFound ProblemDetails
+
+func (*SiteWorkspacesRequireSecondFactorNotFound) siteWorkspacesRequireSecondFactorRes() {}
+
 type SiteWorkspacesRestoreConflict ProblemDetails
 
 func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}
@@ -23480,16 +23494,6 @@ func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}
 type SiteWorkspacesRestoreNotFound ProblemDetails
 
 func (*SiteWorkspacesRestoreNotFound) siteWorkspacesRestoreRes() {}
-
-type SiteWorkspacesSetSecondFactorRequirementForbidden ProblemDetails
-
-func (*SiteWorkspacesSetSecondFactorRequirementForbidden) siteWorkspacesSetSecondFactorRequirementRes() {
-}
-
-type SiteWorkspacesSetSecondFactorRequirementNotFound ProblemDetails
-
-func (*SiteWorkspacesSetSecondFactorRequirementNotFound) siteWorkspacesSetSecondFactorRequirementRes() {
-}
 
 type SiteWorkspacesSetTimezoneForbidden ProblemDetails
 

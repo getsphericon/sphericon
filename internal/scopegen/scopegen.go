@@ -1,7 +1,9 @@
-// Package scopegen writes the Service operation-to-scopes map (ee/staff/service_scopes_gen.go)
-// from the `x-required-scopes` extension each operation of openapi/service.openapi.json
-// declares in TypeSpec. Every operation must declare it: an empty list is an operation any
-// valid credential may call, and a missing declaration fails generation.
+// Package scopegen writes the access tables of the API surfaces (ADR 0026, ADR 0061) from what
+// the TypeSpec contract declares on each operation of an OpenAPI document. A Table is one
+// generated Go file holding one map; Tables lists every file `cmd/scopegen` writes. Every
+// operation of a table's document must carry the declaration the table reads, and a missing or
+// misplaced one fails generation, so an operation is never open by omission: a surface refuses an
+// operation its table has no entry for.
 package scopegen
 
 import (
@@ -15,83 +17,179 @@ import (
 	"unicode"
 )
 
-const extension = "x-required-scopes"
-
-type document struct {
-	Paths map[string]map[string]json.RawMessage `json:"paths"`
+// Document is an OpenAPI document as the tables read it: its operations, sorted by id, and the
+// raw document for a table that reads more than the operations.
+type Document struct {
+	Operations []Operation
+	Raw        []byte
 }
 
-type operation struct {
-	ID     string    `json:"operationId"`
-	Scopes *[]string `json:"x-required-scopes"`
+// Operation is one operation of a Document with the extensions it declares.
+type Operation struct {
+	ID     string
+	Method string
+	Path   string
+	// Extensions are the operation's `x-` members, undecoded.
+	Extensions map[string]json.RawMessage
 }
 
-// Write reads the OpenAPI document at specPath and writes the generated Go file to outPath.
-func Write(specPath, outPath string) error {
-	spec, err := os.ReadFile(specPath)
-	if err != nil {
-		return err
-	}
-	src, err := Generate(spec)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(outPath, src, 0o600)
+// Name is ogen's name of the operation: `ServiceHolds_set` is `ServiceHoldsSet`.
+func (o Operation) Name() string {
+	return Pascal(o.ID, func(r rune) bool { return r == '_' })
 }
 
-// Generate renders the Go source for an OpenAPI document.
-func Generate(spec []byte) ([]byte, error) {
-	var doc document
-	if err := json.Unmarshal(spec, &doc); err != nil {
-		return nil, fmt.Errorf("scopegen: %w", err)
+// String names the operation in a generation error: its method, path and id.
+func (o Operation) String() string {
+	return fmt.Sprintf("%s %s (%s)", strings.ToUpper(o.Method), o.Path, o.ID)
+}
+
+// HasPathParam reports whether the operation's path template has the parameter name.
+func (o Operation) HasPathParam(name string) bool {
+	return strings.Contains(o.Path, "{"+name+"}")
+}
+
+// Strings is the list of strings the operation declares under the extension ext, and whether it
+// declares it at all (an empty list is a declaration).
+func (o Operation) Strings(ext string) (vals []string, declared bool, err error) {
+	raw, ok := o.Extensions[ext]
+	if !ok {
+		return nil, false, nil
 	}
-	var rows []string
-	for path, item := range doc.Paths {
-		for method, raw := range item {
-			var op operation
-			if err := json.Unmarshal(raw, &op); err != nil || op.ID == "" {
-				continue
+	if err := json.Unmarshal(raw, &vals); err != nil {
+		return nil, true, fmt.Errorf("%s: %s is not a list of strings: %w", o, ext, err)
+	}
+	return vals, true, nil
+}
+
+// Flag is the boolean the operation declares under the extension ext, false when it declares none.
+func (o Operation) Flag(ext string) (bool, error) {
+	raw, ok := o.Extensions[ext]
+	if !ok {
+		return false, nil
+	}
+	var v bool
+	if err := json.Unmarshal(raw, &v); err != nil {
+		return false, fmt.Errorf("%s: %s is not a boolean: %w", o, ext, err)
+	}
+	return v, nil
+}
+
+// Table is one generated Go file: a map literal named by Var whose entries Rows derives from the
+// Document at Spec. Paths are relative to the repository root, where `mise run generate` runs.
+type Table struct {
+	// Spec is the OpenAPI document read, Out the Go file written.
+	Spec, Out string
+	// Package is the package clause of Out; Imports are its import specs (`alias "path"`).
+	Package string
+	Imports []string
+	// Doc is the comment over the map, without the comment markers, one line per element.
+	Doc []string
+	// Var is the map's name, Type its type (`map[K]V`).
+	Var, Type string
+	// Rows are the map's entries, each `key: value`. An error fails generation.
+	Rows func(Document) ([]string, error)
+}
+
+// PerOperation is the Rows of a table with one entry per operation: row renders it.
+func PerOperation(row func(Operation) (string, error)) func(Document) ([]string, error) {
+	return func(doc Document) ([]string, error) {
+		rows := make([]string, 0, len(doc.Operations))
+		for _, op := range doc.Operations {
+			r, err := row(op)
+			if err != nil {
+				return nil, err
 			}
-			if op.Scopes == nil {
-				return nil, fmt.Errorf("scopegen: %s %s (%s) declares no %s: declare its scopes in TypeSpec, an empty list for none", strings.ToUpper(method), path, op.ID, extension)
-			}
-			rows = append(rows, fmt.Sprintf("\tserviceapi.%sOperation: %s,\n", operationName(op.ID), scopeList(*op.Scopes)))
+			rows = append(rows, r)
 		}
+		return rows, nil
+	}
+}
+
+// Tables are the files `cmd/scopegen` writes.
+var Tables = []Table{ServiceScopes, SitePermissions}
+
+// Write reads the table's document and writes its Go file.
+func (t Table) Write() error {
+	spec, err := os.ReadFile(t.Spec)
+	if err != nil {
+		return err
+	}
+	src, err := t.Generate(spec)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(t.Out, src, 0o600)
+}
+
+// Generate renders the table's Go source for an OpenAPI document.
+func (t Table) Generate(spec []byte) ([]byte, error) {
+	doc, err := Parse(spec)
+	if err != nil {
+		return nil, fmt.Errorf("scopegen: %s: %w", t.Spec, err)
+	}
+	rows, err := t.Rows(doc)
+	if err != nil {
+		return nil, fmt.Errorf("scopegen: %s: %w", t.Spec, err)
 	}
 	slices.Sort(rows)
 
 	var b bytes.Buffer
-	b.WriteString("// Code generated by cmd/scopegen from openapi/service.openapi.json. DO NOT EDIT.\n\npackage staff\n\n")
-	b.WriteString("import serviceapi \"github.com/getsphericon/sphericon/gen/service\"\n\n")
-	b.WriteString("// ServiceOperationScopes names the scopes each operation of the service endpoints needs,\n")
-	b.WriteString("// as the contract declares them: a credential must carry all of them. An operation with no\n")
-	b.WriteString("// entry is refused to every credential; an entry with no scopes is open to any valid credential.\n")
-	b.WriteString("var ServiceOperationScopes = map[serviceapi.OperationName][]serviceapi.ServiceScope{\n")
+	fmt.Fprintf(&b, "// Code generated by cmd/scopegen from %s. DO NOT EDIT.\n\npackage %s\n\n", t.Spec, t.Package)
+	if len(t.Imports) == 1 {
+		fmt.Fprintf(&b, "import %s\n\n", t.Imports[0])
+	} else {
+		b.WriteString("import (\n")
+		for _, imp := range t.Imports {
+			fmt.Fprintf(&b, "\t%s\n", imp)
+		}
+		b.WriteString(")\n\n")
+	}
+	for _, line := range t.Doc {
+		fmt.Fprintf(&b, "// %s\n", line)
+	}
+	fmt.Fprintf(&b, "var %s = %s{\n", t.Var, t.Type)
 	for _, r := range rows {
-		b.WriteString(r)
+		fmt.Fprintf(&b, "\t%s,\n", r)
 	}
 	b.WriteString("}\n")
 	return format.Source(b.Bytes())
 }
 
-// operationName is ogen's name of an operationId: `ServiceHolds_set` is `ServiceHoldsSet`.
-func operationName(id string) string {
-	return pascal(id, func(r rune) bool { return r == '_' })
+// Parse reads the operations of an OpenAPI document.
+func Parse(spec []byte) (Document, error) {
+	var raw struct {
+		Paths map[string]map[string]json.RawMessage `json:"paths"`
+	}
+	if err := json.Unmarshal(spec, &raw); err != nil {
+		return Document{}, err
+	}
+	doc := Document{Raw: spec}
+	for path, item := range raw.Paths {
+		for method, body := range item {
+			var fields map[string]json.RawMessage
+			if err := json.Unmarshal(body, &fields); err != nil {
+				continue // a path-level member that is not an operation (parameters, $ref)
+			}
+			var id string
+			if err := json.Unmarshal(fields["operationId"], &id); err != nil || id == "" {
+				continue
+			}
+			op := Operation{ID: id, Method: method, Path: path, Extensions: map[string]json.RawMessage{}}
+			for k, v := range fields {
+				if strings.HasPrefix(k, "x-") {
+					op.Extensions[k] = v
+				}
+			}
+			doc.Operations = append(doc.Operations, op)
+		}
+	}
+	slices.SortFunc(doc.Operations, func(a, b Operation) int { return strings.Compare(a.ID, b.ID) })
+	return doc, nil
 }
 
-func scopeList(scopes []string) string {
-	if len(scopes) == 0 {
-		return "nil"
-	}
-	names := make([]string, len(scopes))
-	for i, s := range scopes {
-		names[i] = "serviceapi.ServiceScope" + pascal(s, func(r rune) bool { return r == ':' || r == '_' })
-	}
-	return "{" + strings.Join(names, ", ") + "}"
-}
-
-// pascal upper-cases the first letter of each part split at separators and keeps the rest.
-func pascal(s string, sep func(rune) bool) string {
+// Pascal upper-cases the first letter of each part split at separators and keeps the rest:
+// `sending_domains:manage` is `SendingDomainsManage`.
+func Pascal(s string, sep func(rune) bool) string {
 	var b strings.Builder
 	for part := range strings.FieldsFuncSeq(s, sep) {
 		r := []rune(part)
@@ -99,4 +197,21 @@ func pascal(s string, sep func(rune) bool) string {
 		b.WriteString(string(r[1:]))
 	}
 	return b.String()
+}
+
+// valueName is the Go name of an enum value written `resource:verb` (a scope, a Permission).
+func valueName(v string) string {
+	return Pascal(v, func(r rune) bool { return r == ':' || r == '_' })
+}
+
+// names renders values as a Go slice literal of the identifiers prefix+valueName, or nil.
+func names(prefix string, values []string) string {
+	if len(values) == 0 {
+		return "nil"
+	}
+	out := make([]string, len(values))
+	for i, v := range values {
+		out[i] = prefix + valueName(v)
+	}
+	return "{" + strings.Join(out, ", ") + "}"
 }

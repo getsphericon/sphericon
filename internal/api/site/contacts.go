@@ -8,8 +8,6 @@ import (
 
 	"net/http"
 
-	"github.com/getsphericon/sphericon/internal/accounts"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -22,10 +20,7 @@ import (
 )
 
 func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	page, err := h.contacts.List(ctx, scoped, pagination.ParamsOf(params.Page, params.PageSize), contacts.Filter{EmailContains: params.Email.Or("")})
 	if err != nil {
@@ -43,11 +38,8 @@ func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteCont
 	}, nil
 }
 
-func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCreateContactInput, params siteapi.SiteContactsCreateParams) (siteapi.SiteContactsCreateRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCreateContactInput, _ siteapi.SiteContactsCreateParams) (siteapi.SiteContactsCreateRes, error) {
+	scoped := workspaceScope(ctx)
 
 	c, err := h.contacts.Create(ctx, scoped, contact.SourceManual, createContactAttributes(req))
 	if conflict, ok := errors.AsType[*contacts.ConflictError](err); ok {
@@ -65,10 +57,7 @@ func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCrea
 }
 
 func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteContactsGetParams) (siteapi.SiteContactsGetRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	res, err := h.contactResource(ctx, scoped, int64(params.ID), nil)
 	if errors.Is(err, contacts.ErrNotFound) {
@@ -82,10 +71,7 @@ func (h *Handlers) SiteContactsGet(ctx context.Context, params siteapi.SiteConta
 }
 
 func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpdateContactInput, params siteapi.SiteContactsUpdateParams) (siteapi.SiteContactsUpdateRes, error) {
-	scoped, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	c, err := h.contacts.Update(ctx, scoped, id, updateContactAttributes(req))
@@ -109,16 +95,10 @@ func (h *Handlers) SiteContactsUpdate(ctx context.Context, req *siteapi.SiteUpda
 
 // SiteContactsDelete is Erasure (ADR 0021): irreversible, so owner or admin only.
 func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteContactsDeleteParams) (siteapi.SiteContactsDeleteRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermContactsErase); err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.erasure.Erase(ctx, scoped, erasure.ByContactID(id),
+	err := h.erasure.Erase(ctx, scoped, erasure.ByContactID(id),
 		erasure.Requester{Kind: erasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if errors.Is(err, erasure.ErrNotFound) {
 		v := siteapi.SiteContactsDeleteNotFound(problem(http.StatusNotFound, "contact not found"))

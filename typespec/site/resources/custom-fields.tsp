@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -45,6 +46,7 @@ namespace SiteCustomFields {
   @listsResource(SiteCustomFieldResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(...ResourceCollectionParameters<SiteCustomFieldResource>):
     | Page<SiteCustomFieldResource>
     | BadRequestProblem

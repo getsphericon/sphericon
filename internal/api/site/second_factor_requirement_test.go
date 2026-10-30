@@ -37,11 +37,18 @@ func requirementEnv(t *testing.T, at time.Time) *testhelper.TestEnv {
 	return testhelper.Setup(t, testhelper.WithClock(c.now))
 }
 
-func setRequirement(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, on bool) siteapi.SiteWorkspacesSetSecondFactorRequirementRes {
+// requireSecondFactor switches the Workspace's Two-factor requirement on as c.
+func requireSecondFactor(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) siteapi.SiteWorkspacesRequireSecondFactorRes {
 	t.Helper()
-	res, err := c.SiteWorkspacesSetSecondFactorRequirement(t.Context(),
-		&siteapi.SiteSecondFactorRequirementInput{Required: on},
-		siteapi.SiteWorkspacesSetSecondFactorRequirementParams{WorkspaceId: workspaceID})
+	res, err := c.SiteWorkspacesRequireSecondFactor(t.Context(), siteapi.SiteWorkspacesRequireSecondFactorParams{WorkspaceId: workspaceID})
+	require.NoError(t, err)
+	return res
+}
+
+// liftRequirement switches the Workspace's Two-factor requirement off as c.
+func liftRequirement(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) siteapi.SiteWorkspacesLiftSecondFactorRequirementRes {
+	t.Helper()
+	res, err := c.SiteWorkspacesLiftSecondFactorRequirement(t.Context(), siteapi.SiteWorkspacesLiftSecondFactorRequirementParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res
 }
@@ -86,7 +93,7 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(c.now))
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res := setRequirement(t, john, fixtures.AcmePublicID, true)
+	res := requireSecondFactor(t, john, fixtures.AcmePublicID)
 	require.IsType(t, &siteapi.SiteWorkspaceResource{}, res)
 	w := res.(*siteapi.SiteWorkspaceResource)
 	assert.True(t, time.Time(w.SecondFactorRequiredAt.Value).Equal(at))
@@ -101,17 +108,17 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 
 	// Switching it on again keeps the start, so no one's grace restarts.
 	c.t = at.Add(48 * time.Hour)
-	again := setRequirement(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID, true).(*siteapi.SiteWorkspaceResource)
+	again := requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).(*siteapi.SiteWorkspaceResource)
 	assert.True(t, time.Time(again.SecondFactorRequiredAt.Value).Equal(at))
 	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 1)
 
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
-	assert.IsType(t, &siteapi.SiteWorkspacesSetSecondFactorRequirementForbidden{}, setRequirement(t, mary, fixtures.AcmePublicID, false))
+	assert.IsType(t, &siteapi.SiteWorkspacesLiftSecondFactorRequirementForbidden{}, liftRequirement(t, mary, fixtures.AcmePublicID))
 	oscar := env.SiteActor(t, fixtures.OutsiderOscarEmail)
-	assert.IsType(t, &siteapi.SiteWorkspacesSetSecondFactorRequirementNotFound{}, setRequirement(t, oscar, fixtures.AcmePublicID, false))
+	assert.IsType(t, &siteapi.SiteWorkspacesLiftSecondFactorRequirementNotFound{}, liftRequirement(t, oscar, fixtures.AcmePublicID))
 
 	sam := env.SiteActor(t, fixtures.SecondFactorSamEmail)
-	cleared := setRequirement(t, sam, fixtures.UmbrellaPublicID, false)
+	cleared := liftRequirement(t, sam, fixtures.UmbrellaPublicID)
 	require.IsType(t, &siteapi.SiteWorkspaceResource{}, cleared, "an admin may clear it")
 	assert.False(t, cleared.(*siteapi.SiteWorkspaceResource).SecondFactorRequiredAt.Set)
 	assert.Len(t, env.OutboxEvents(t, events.NameAuditEntry), 2)
@@ -178,10 +185,10 @@ func TestTurningTheRequirementOnEmailsEveryUserWithoutASecondFactor(t *testing.T
 	env := requirementEnv(t, time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC))
 	sam := env.SiteActor(t, fixtures.SecondFactorSamEmail)
 
-	setRequirement(t, sam, fixtures.UmbrellaPublicID, false)
+	liftRequirement(t, sam, fixtures.UmbrellaPublicID)
 	assert.Empty(t, env.SystemMail.Messages(), "switching it off mails no one")
 
-	setRequirement(t, sam, fixtures.UmbrellaPublicID, true)
+	requireSecondFactor(t, sam, fixtures.UmbrellaPublicID)
 	msgs := env.SystemMail.Messages()
 	to := make([]string, 0, len(msgs))
 	for _, m := range msgs {
@@ -193,7 +200,7 @@ func TestTurningTheRequirementOnEmailsEveryUserWithoutASecondFactor(t *testing.T
 	assert.ElementsMatch(t, []string{fixtures.UmbrellaOwnerRitaEmail, fixtures.UmbrellaMemberNinaEmail}, to,
 		"Users without a Second factor; Sam has one")
 
-	setRequirement(t, sam, fixtures.UmbrellaPublicID, true)
+	requireSecondFactor(t, sam, fixtures.UmbrellaPublicID)
 	assert.Len(t, env.SystemMail.Messages(), 2, "switching it on while it is on mails no one")
 }
 
@@ -202,13 +209,13 @@ func TestTurningTheRequirementOnEmailsEveryUserWithoutASecondFactor(t *testing.T
 func TestAWithheldOwnerCanStillTurnTheRequirementOff(t *testing.T) {
 	env := requirementEnv(t, ninaGraceEnds.Add(time.Hour))
 
-	nina := setRequirement(t, env.SiteActor(t, fixtures.UmbrellaMemberNinaEmail), fixtures.UmbrellaPublicID, false)
-	assert.IsType(t, &siteapi.SiteWorkspacesSetSecondFactorRequirementForbidden{}, nina, "a withheld member still may not")
+	nina := liftRequirement(t, env.SiteActor(t, fixtures.UmbrellaMemberNinaEmail), fixtures.UmbrellaPublicID)
+	assert.IsType(t, &siteapi.SiteWorkspacesLiftSecondFactorRequirementForbidden{}, nina, "a withheld member still may not")
 
 	code, _ := siteGet(t, env, fixtures.UmbrellaOwnerRitaEmail, "/site/workspaces/"+fixtures.UmbrellaPublicID+"/tags")
 	require.Equal(t, http.StatusForbidden, code, "Rita is withheld")
 
-	res := setRequirement(t, env.SiteActor(t, fixtures.UmbrellaOwnerRitaEmail), fixtures.UmbrellaPublicID, false)
+	res := liftRequirement(t, env.SiteActor(t, fixtures.UmbrellaOwnerRitaEmail), fixtures.UmbrellaPublicID)
 	require.IsType(t, &siteapi.SiteWorkspaceResource{}, res)
 	assert.False(t, res.(*siteapi.SiteWorkspaceResource).SecondFactorRequiredAt.Set)
 
@@ -219,17 +226,17 @@ func TestAWithheldOwnerCanStillTurnTheRequirementOff(t *testing.T) {
 // The exemption is for turning the requirement off only.
 func TestAWithheldOwnerCannotSwitchTheRequirementOn(t *testing.T) {
 	env := requirementEnv(t, ritaGraceEnds.Add(time.Hour))
-	res := setRequirement(t, env.SiteActor(t, fixtures.UmbrellaOwnerRitaEmail), fixtures.UmbrellaPublicID, true)
-	require.IsType(t, &siteapi.SiteWorkspacesSetSecondFactorRequirementForbidden{}, res)
+	res := requireSecondFactor(t, env.SiteActor(t, fixtures.UmbrellaOwnerRitaEmail), fixtures.UmbrellaPublicID)
+	require.IsType(t, &siteapi.SiteWorkspacesRequireSecondFactorForbidden{}, res)
 	assert.Equal(t, siteapi.ProblemCodeSecondFactorRequired,
-		res.(*siteapi.SiteWorkspacesSetSecondFactorRequirementForbidden).Code.Value)
+		res.(*siteapi.SiteWorkspacesRequireSecondFactorForbidden).Code.Value)
 }
 
 func TestOneSecondFactorSatisfiesEveryRequiringWorkspace(t *testing.T) {
 	c := &requirementClock{t: time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)}
 	env := testhelper.Setup(t, testhelper.WithClock(c.now))
 	require.IsType(t, &siteapi.SiteWorkspaceResource{},
-		setRequirement(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID, true))
+		requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID))
 	c.t = c.t.Add(8 * 24 * time.Hour)
 
 	for _, path := range []string{"/site/workspaces/" + fixtures.GlobexPublicID + "/tags", "/site/workspaces/" + fixtures.UmbrellaPublicID + "/tags"} {
@@ -266,7 +273,7 @@ func TestTheGraceEndFollowsTheStrengthOfTheSession(t *testing.T) {
 	c := &requirementClock{t: time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)}
 	env := testhelper.Setup(t, testhelper.WithClock(c.now))
 	require.IsType(t, &siteapi.SiteWorkspaceResource{},
-		setRequirement(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID, true))
+		requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID))
 	graceEnds := func(method apiauth.Method) any {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/site/workspaces", nil)

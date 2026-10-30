@@ -15,7 +15,7 @@ import (
 // deleting a Contact. Not-found means neither a Contact nor delivery records hold the
 // address.
 func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteContactsEraseParams) (siteapi.SiteContactsEraseRes, error) {
-	scoped, refusal, err := h.privacyScope(ctx, params.WorkspaceId, params.Email)
+	refusal, err := privacyAddress(params.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (h *Handlers) SiteContactsErase(ctx context.Context, params siteapi.SiteCon
 		return &v, nil
 	}
 
-	err = h.erasure.Erase(ctx, scoped, erasure.ByEmail(params.Email),
+	err = h.erasure.Erase(ctx, workspaceScope(ctx), erasure.ByEmail(params.Email),
 		erasure.Requester{Kind: erasure.RequesterUser, ID: auth.GetSiteAuth(ctx).UserID})
 	if errors.Is(err, erasure.ErrNotFound) {
 		v := siteapi.SiteContactsEraseNotFound(problem(http.StatusNotFound, "nothing found for the address"))

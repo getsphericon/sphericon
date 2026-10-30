@@ -434,7 +434,7 @@ type Invoker interface {
 	// SiteContactsExport invokes SiteContacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download. Identify the contact by
-	// exactly one of `id` or `email`. Available to any Workspace member (contact read access).
+	// exactly one of `id` or `email`. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/contacts/export
 	SiteContactsExport(ctx context.Context, params SiteContactsExportParams) (SiteContactsExportRes, error)
@@ -1022,20 +1022,20 @@ type Invoker interface {
 	SiteSignupSurveySubmit(ctx context.Context, request *SiteSignupSurveyInput) (SiteSignupSurveySubmitRes, error)
 	// SiteSuppressionsCreate invokes SiteSuppressions_create operation.
 	//
-	// Manually suppress an address (reason = manual; idempotent per address).
+	// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/suppressions
 	SiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (SiteSuppressionsCreateRes, error)
 	// SiteSuppressionsDelete invokes SiteSuppressions_delete operation.
 	//
 	// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
-	// one that is already lifted is a 404.
+	// one that is already lifted is a 404. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/suppressions/{id}
 	SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error)
 	// SiteSuppressionsList invokes SiteSuppressions_list operation.
 	//
-	// List suppressed addresses.
+	// List suppressed addresses (every member).
 	//
 	// GET /workspaces/{workspaceId}/suppressions
 	SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (SiteSuppressionsListRes, error)
@@ -1264,6 +1264,14 @@ type Invoker interface {
 	//
 	// POST /workspaces/{workspaceId}/leave
 	SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (SiteWorkspacesLeaveRes, error)
+	// SiteWorkspacesLiftSecondFactorRequirement invokes SiteWorkspaces_liftSecondFactorRequirement operation.
+	//
+	// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
+	// withheld by the requirement may still perform in the Workspace, so an Owner or Admin without a
+	// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
+	//
+	// DELETE /workspaces/{workspaceId}/second-factor-requirement
+	SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (SiteWorkspacesLiftSecondFactorRequirementRes, error)
 	// SiteWorkspacesList invokes SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.
@@ -1277,6 +1285,14 @@ type Invoker interface {
 	//
 	// GET /workspaces/deleted
 	SiteWorkspacesListDeleted(ctx context.Context) ([]SiteDeletedWorkspaceResource, error)
+	// SiteWorkspacesRequireSecondFactor invokes SiteWorkspaces_requireSecondFactor operation.
+	//
+	// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then
+	// have a Second factor. Switching it on while it is already on keeps the original start, so no one's
+	// grace restarts. A change is recorded as an Audit entry.
+	//
+	// PUT /workspaces/{workspaceId}/second-factor-requirement
+	SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (SiteWorkspacesRequireSecondFactorRes, error)
 	// SiteWorkspacesRestore invokes SiteWorkspaces_restore operation.
 	//
 	// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -1285,16 +1301,8 @@ type Invoker interface {
 	// window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
 	// 404. Recorded as an Audit entry.
 	//
-	// POST /workspaces/{workspaceId}/restore
+	// POST /workspaces/deleted/{id}/restore
 	SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error)
-	// SiteWorkspacesSetSecondFactorRequirement invokes SiteWorkspaces_setSecondFactorRequirement operation.
-	//
-	// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is
-	// already on keeps the original start, so no one's grace restarts. A change is recorded as an Audit
-	// entry.
-	//
-	// PUT /workspaces/{workspaceId}/second-factor-requirement
-	SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, request *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (SiteWorkspacesSetSecondFactorRequirementRes, error)
 	// SiteWorkspacesSetTimezone invokes SiteWorkspaces_setTimezone operation.
 	//
 	// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
@@ -9658,7 +9666,7 @@ func (c *Client) sendSiteContactsErase(ctx context.Context, params SiteContactsE
 // SiteContactsExport invokes SiteContacts_export operation.
 //
 // Export everything held about one contact as a streamed JSON download. Identify the contact by
-// exactly one of `id` or `email`. Available to any Workspace member (contact read access).
+// exactly one of `id` or `email`. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/contacts/export
 func (c *Client) SiteContactsExport(ctx context.Context, params SiteContactsExportParams) (SiteContactsExportRes, error) {
@@ -22048,7 +22056,7 @@ func (c *Client) sendSiteSignupSurveySubmit(ctx context.Context, request *SiteSi
 
 // SiteSuppressionsCreate invokes SiteSuppressions_create operation.
 //
-// Manually suppress an address (reason = manual; idempotent per address).
+// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/suppressions
 func (c *Client) SiteSuppressionsCreate(ctx context.Context, request *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (SiteSuppressionsCreateRes, error) {
@@ -22187,7 +22195,7 @@ func (c *Client) sendSiteSuppressionsCreate(ctx context.Context, request *SiteCr
 // SiteSuppressionsDelete invokes SiteSuppressions_delete operation.
 //
 // Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
-// one that is already lifted is a 404.
+// one that is already lifted is a 404. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
 func (c *Client) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error) {
@@ -22343,7 +22351,7 @@ func (c *Client) sendSiteSuppressionsDelete(ctx context.Context, params SiteSupp
 
 // SiteSuppressionsList invokes SiteSuppressions_list operation.
 //
-// List suppressed addresses.
+// List suppressed addresses (every member).
 //
 // GET /workspaces/{workspaceId}/suppressions
 func (c *Client) SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (SiteSuppressionsListRes, error) {
@@ -27408,6 +27416,143 @@ func (c *Client) sendSiteWorkspacesLeave(ctx context.Context, params SiteWorkspa
 	return result, nil
 }
 
+// SiteWorkspacesLiftSecondFactorRequirement invokes SiteWorkspaces_liftSecondFactorRequirement operation.
+//
+// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
+// withheld by the requirement may still perform in the Workspace, so an Owner or Admin without a
+// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
+//
+// DELETE /workspaces/{workspaceId}/second-factor-requirement
+func (c *Client) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (SiteWorkspacesLiftSecondFactorRequirementRes, error) {
+	res, err := c.sendSiteWorkspacesLiftSecondFactorRequirement(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (res SiteWorkspacesLiftSecondFactorRequirementRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_liftSecondFactorRequirement"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteWorkspacesLiftSecondFactorRequirementOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/second-factor-requirement"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteWorkspacesLiftSecondFactorRequirementOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteWorkspacesLiftSecondFactorRequirementResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteWorkspacesList invokes SiteWorkspaces_list operation.
 //
 // List workspaces owned by the authenticated user.
@@ -27635,6 +27780,143 @@ func (c *Client) sendSiteWorkspacesListDeleted(ctx context.Context) (res []SiteD
 	return result, nil
 }
 
+// SiteWorkspacesRequireSecondFactor invokes SiteWorkspaces_requireSecondFactor operation.
+//
+// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then
+// have a Second factor. Switching it on while it is already on keeps the original start, so no one's
+// grace restarts. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/second-factor-requirement
+func (c *Client) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (SiteWorkspacesRequireSecondFactorRes, error) {
+	res, err := c.sendSiteWorkspacesRequireSecondFactor(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (res SiteWorkspacesRequireSecondFactorRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_requireSecondFactor"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteWorkspacesRequireSecondFactorOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/second-factor-requirement"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteWorkspacesRequireSecondFactorOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteWorkspacesRequireSecondFactorResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SiteWorkspacesRestore invokes SiteWorkspaces_restore operation.
 //
 // Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -27643,7 +27925,7 @@ func (c *Client) sendSiteWorkspacesListDeleted(ctx context.Context) (res []SiteD
 // window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
 // 404. Recorded as an Audit entry.
 //
-// POST /workspaces/{workspaceId}/restore
+// POST /workspaces/deleted/{id}/restore
 func (c *Client) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error) {
 	res, err := c.sendSiteWorkspacesRestore(ctx, params)
 	return res, err
@@ -27653,7 +27935,7 @@ func (c *Client) sendSiteWorkspacesRestore(ctx context.Context, params SiteWorks
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_restore"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/restore"),
+		semconv.URLTemplateKey.String("/workspaces/deleted/{id}/restore"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -27687,16 +27969,16 @@ func (c *Client) sendSiteWorkspacesRestore(ctx context.Context, params SiteWorks
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [3]string
-	pathParts[0] = "/workspaces/"
+	pathParts[0] = "/workspaces/deleted/"
 	{
-		// Encode "workspaceId" parameter.
+		// Encode "id" parameter.
 		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
+			Param:   "id",
 			Style:   uri.PathStyleSimple,
 			Explode: false,
 		})
 		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
+			if unwrapped := string(params.ID); true {
 				return e.EncodeValue(conv.StringToString(unwrapped))
 			}
 			return nil
@@ -27767,146 +28049,6 @@ func (c *Client) sendSiteWorkspacesRestore(ctx context.Context, params SiteWorks
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteWorkspacesRestoreResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// SiteWorkspacesSetSecondFactorRequirement invokes SiteWorkspaces_setSecondFactorRequirement operation.
-//
-// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is
-// already on keeps the original start, so no one's grace restarts. A change is recorded as an Audit
-// entry.
-//
-// PUT /workspaces/{workspaceId}/second-factor-requirement
-func (c *Client) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, request *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (SiteWorkspacesSetSecondFactorRequirementRes, error) {
-	res, err := c.sendSiteWorkspacesSetSecondFactorRequirement(ctx, request, params)
-	return res, err
-}
-
-func (c *Client) sendSiteWorkspacesSetSecondFactorRequirement(ctx context.Context, request *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (res SiteWorkspacesSetSecondFactorRequirementRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteWorkspaces_setSecondFactorRequirement"),
-		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SiteWorkspacesSetSecondFactorRequirementOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/workspaces/"
-	{
-		// Encode "workspaceId" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "workspaceId",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			if unwrapped := string(params.WorkspaceId); true {
-				return e.EncodeValue(conv.StringToString(unwrapped))
-			}
-			return nil
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/second-factor-requirement"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "PUT", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeSiteWorkspacesSetSecondFactorRequirementRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:ApiKeyAuth"
-			switch err := c.securityApiKeyAuth(ctx, SiteWorkspacesSetSecondFactorRequirementOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer func() {
-		// Drain the body to EOF before closing, so the underlying
-		// connection can be reused by the Transport regardless of the
-		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
-		_, _ = io.Copy(io.Discard, body)
-		_ = body.Close()
-	}()
-
-	stage = "DecodeResponse"
-	result, err := decodeSiteWorkspacesSetSecondFactorRequirementResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

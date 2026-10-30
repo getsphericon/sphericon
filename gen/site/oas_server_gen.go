@@ -413,7 +413,7 @@ type Handler interface {
 	// SiteContactsExport implements SiteContacts_export operation.
 	//
 	// Export everything held about one contact as a streamed JSON download. Identify the contact by
-	// exactly one of `id` or `email`. Available to any Workspace member (contact read access).
+	// exactly one of `id` or `email`. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/contacts/export
 	SiteContactsExport(ctx context.Context, params SiteContactsExportParams) (SiteContactsExportRes, error)
@@ -1001,20 +1001,20 @@ type Handler interface {
 	SiteSignupSurveySubmit(ctx context.Context, req *SiteSignupSurveyInput) (SiteSignupSurveySubmitRes, error)
 	// SiteSuppressionsCreate implements SiteSuppressions_create operation.
 	//
-	// Manually suppress an address (reason = manual; idempotent per address).
+	// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/suppressions
 	SiteSuppressionsCreate(ctx context.Context, req *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (SiteSuppressionsCreateRes, error)
 	// SiteSuppressionsDelete implements SiteSuppressions_delete operation.
 	//
 	// Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
-	// one that is already lifted is a 404.
+	// one that is already lifted is a 404. Owners and admins only.
 	//
 	// DELETE /workspaces/{workspaceId}/suppressions/{id}
 	SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (SiteSuppressionsDeleteRes, error)
 	// SiteSuppressionsList implements SiteSuppressions_list operation.
 	//
-	// List suppressed addresses.
+	// List suppressed addresses (every member).
 	//
 	// GET /workspaces/{workspaceId}/suppressions
 	SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (SiteSuppressionsListRes, error)
@@ -1243,6 +1243,14 @@ type Handler interface {
 	//
 	// POST /workspaces/{workspaceId}/leave
 	SiteWorkspacesLeave(ctx context.Context, params SiteWorkspacesLeaveParams) (SiteWorkspacesLeaveRes, error)
+	// SiteWorkspacesLiftSecondFactorRequirement implements SiteWorkspaces_liftSecondFactorRequirement operation.
+	//
+	// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
+	// withheld by the requirement may still perform in the Workspace, so an Owner or Admin without a
+	// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
+	//
+	// DELETE /workspaces/{workspaceId}/second-factor-requirement
+	SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (SiteWorkspacesLiftSecondFactorRequirementRes, error)
 	// SiteWorkspacesList implements SiteWorkspaces_list operation.
 	//
 	// List workspaces owned by the authenticated user.
@@ -1256,6 +1264,14 @@ type Handler interface {
 	//
 	// GET /workspaces/deleted
 	SiteWorkspacesListDeleted(ctx context.Context) ([]SiteDeletedWorkspaceResource, error)
+	// SiteWorkspacesRequireSecondFactor implements SiteWorkspaces_requireSecondFactor operation.
+	//
+	// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then
+	// have a Second factor. Switching it on while it is already on keeps the original start, so no one's
+	// grace restarts. A change is recorded as an Audit entry.
+	//
+	// PUT /workspaces/{workspaceId}/second-factor-requirement
+	SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (SiteWorkspacesRequireSecondFactorRes, error)
 	// SiteWorkspacesRestore implements SiteWorkspaces_restore operation.
 	//
 	// Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -1264,16 +1280,8 @@ type Handler interface {
 	// window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
 	// 404. Recorded as an Audit entry.
 	//
-	// POST /workspaces/{workspaceId}/restore
+	// POST /workspaces/deleted/{id}/restore
 	SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (SiteWorkspacesRestoreRes, error)
-	// SiteWorkspacesSetSecondFactorRequirement implements SiteWorkspaces_setSecondFactorRequirement operation.
-	//
-	// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is
-	// already on keeps the original start, so no one's grace restarts. A change is recorded as an Audit
-	// entry.
-	//
-	// PUT /workspaces/{workspaceId}/second-factor-requirement
-	SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, req *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (SiteWorkspacesSetSecondFactorRequirementRes, error)
 	// SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 	//
 	// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for

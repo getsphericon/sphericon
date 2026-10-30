@@ -65,10 +65,14 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 
 	// Site API — /site (JWT cookie via generated SecurityHandler; sign up, login
 	// and logout are public per the spec).
+	// Access (ADR 0061) resolves the Workspace of every operation that names one and checks the
+	// Permissions the contract declares for it before the handler runs.
+	siteHandlers := apisite.NewHandlers(site)
 	siteSrv, err := siteapi.NewServer(
-		apisite.NewHandlers(site),
+		siteHandlers,
 		apiauth.NewSiteSecurityHandler(cfg.JWTSecret, client, site.Clock, cfg.JWTVerifySecrets()...),
 		siteapi.WithPathPrefix("/site"),
+		siteapi.WithMiddleware(siteHandlers.Access),
 		siteapi.WithErrorHandler(problemErrorHandler),
 	)
 	if err != nil {

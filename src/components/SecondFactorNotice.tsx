@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
 import { canManage } from '../hooks/useCurrentRole.ts'
-import { useSetSecondFactorRequirement } from '../hooks/useSetSecondFactorRequirement.ts'
+import { useLiftSecondFactorRequirement } from '../hooks/useSecondFactorRequirement.ts'
 import { Route as securityRoute } from '../routes/account/security.tsx'
 import { formatDate } from '../utils/datetime.ts'
 import { ButtonLink } from './RouterLink.tsx'
@@ -54,7 +54,7 @@ export function SecondFactorBlocked({
 
 function TurnRequirementOff({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const mutation = useSetSecondFactorRequirement()
+  const mutation = useLiftSecondFactorRequirement()
   return (
     <>
       <Divider />
@@ -64,7 +64,7 @@ function TurnRequirementOff({ workspaceId }: { workspaceId: string }) {
           variant="light"
           color="red"
           loading={mutation.isPending}
-          onClick={() => mutation.mutate({ path: { workspaceId }, body: { required: false } })}
+          onClick={() => mutation.mutate({ path: { workspaceId } })}
         >
           {t(($) => $.secondFactorRequirement.turnOff)}
         </Button>

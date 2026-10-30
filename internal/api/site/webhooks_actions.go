@@ -4,20 +4,13 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
 )
 
 // SiteWebhooksRegenerateSecret replaces the endpoint's signing secret and returns the
 // endpoint with the new one.
 func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params siteapi.SiteWebhooksRegenerateSecretParams) (siteapi.SiteWebhooksRegenerateSecretRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 	e, err := h.webhooks.RegenerateSecret(ctx, scoped, int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -29,13 +22,7 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 // SiteWebhooksTest sends a sample event to the endpoint and returns what the receiver
 // answered, at once.
 func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.SiteTestWebhookInput, params siteapi.SiteWebhooksTestParams) (siteapi.SiteWebhooksTestRes, error) {
-	scoped, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermWebhooksManage); err != nil {
-		return nil, err
-	}
+	scoped := workspaceScope(ctx)
 	res, err := h.webhooks.TestSend(ctx, scoped, int64(params.ID), req.EventType)
 	if err != nil {
 		return nil, err

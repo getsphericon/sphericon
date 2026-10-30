@@ -15,10 +15,7 @@ import (
 )
 
 func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegmentsListParams) (siteapi.SiteSegmentsListRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	page, err := h.segments.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
@@ -36,11 +33,8 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 	}, nil
 }
 
-func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCreateSegmentInput, params siteapi.SiteSegmentsCreateParams) (siteapi.SiteSegmentsCreateRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCreateSegmentInput, _ siteapi.SiteSegmentsCreateParams) (siteapi.SiteSegmentsCreateRes, error) {
+	ws := workspaceScope(ctx)
 
 	def, err := condition.Encode(&req.Condition)
 	if err != nil {
@@ -58,10 +52,7 @@ func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCrea
 }
 
 func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegmentsGetParams) (siteapi.SiteSegmentsGetRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	s, err := h.segments.Get(ctx, ws, id)
@@ -73,13 +64,11 @@ func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegme
 }
 
 func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpdateSegmentInput, params siteapi.SiteSegmentsUpdateParams) (siteapi.SiteSegmentsUpdateRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
+	var err error
 	in.Condition, err = condition.EncodeOptional(req.Condition)
 	if err != nil {
 		return nil, err
@@ -95,13 +84,10 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 // SiteSegmentsArchive archives a segment (ADR 0049): it leaves the list and new work, and a
 // sent Broadcast's report still names it. A draft or scheduled Broadcast refuses it with 409.
 func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteSegmentsArchiveParams) (siteapi.SiteSegmentsArchiveRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.segments.Archive(ctx, ws, id)
+	err := h.segments.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -115,13 +101,10 @@ func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteS
 
 // SiteSegmentsUnarchive restores an archived segment to the list.
 func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.SiteSegmentsUnarchiveParams) (siteapi.SiteSegmentsUnarchiveRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.segments.Unarchive(ctx, ws, id)
+	err := h.segments.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -136,11 +119,8 @@ func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.Sit
 // SiteSegmentsPreview reports how many *deliverable* (active) contacts match a
 // rule definition. It applies the same active filter the broadcast send path
 // uses, so the previewed number matches what a broadcast to this segment ships.
-func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePreviewSegmentInput, params siteapi.SiteSegmentsPreviewParams) (siteapi.SiteSegmentsPreviewRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePreviewSegmentInput, _ siteapi.SiteSegmentsPreviewParams) (siteapi.SiteSegmentsPreviewRes, error) {
+	ws := workspaceScope(ctx)
 
 	def, err := condition.EncodeOptional(req.Condition)
 	if err != nil {
@@ -156,10 +136,7 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 // SiteSegmentContactsList lists the Contacts a Segment matches right now: its rule alone,
 // like the Segment's count; Send-eligibility is subtracted only at send (ADR 0001).
 func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.SiteSegmentContactsListParams) (siteapi.SiteSegmentContactsListRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	page, err := h.segments.Contacts(ctx, ws, int64(params.SegmentId), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {

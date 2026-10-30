@@ -586,7 +586,7 @@ func (UnimplementedHandler) SiteContactsErase(ctx context.Context, params SiteCo
 // SiteContactsExport implements SiteContacts_export operation.
 //
 // Export everything held about one contact as a streamed JSON download. Identify the contact by
-// exactly one of `id` or `email`. Available to any Workspace member (contact read access).
+// exactly one of `id` or `email`. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/contacts/export
 func (UnimplementedHandler) SiteContactsExport(ctx context.Context, params SiteContactsExportParams) (r SiteContactsExportRes, _ error) {
@@ -1429,7 +1429,7 @@ func (UnimplementedHandler) SiteSignupSurveySubmit(ctx context.Context, req *Sit
 
 // SiteSuppressionsCreate implements SiteSuppressions_create operation.
 //
-// Manually suppress an address (reason = manual; idempotent per address).
+// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/suppressions
 func (UnimplementedHandler) SiteSuppressionsCreate(ctx context.Context, req *SiteCreateSuppressionInput, params SiteSuppressionsCreateParams) (r SiteSuppressionsCreateRes, _ error) {
@@ -1439,7 +1439,7 @@ func (UnimplementedHandler) SiteSuppressionsCreate(ctx context.Context, req *Sit
 // SiteSuppressionsDelete implements SiteSuppressions_delete operation.
 //
 // Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
-// one that is already lifted is a 404.
+// one that is already lifted is a 404. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
 func (UnimplementedHandler) SiteSuppressionsDelete(ctx context.Context, params SiteSuppressionsDeleteParams) (r SiteSuppressionsDeleteRes, _ error) {
@@ -1448,7 +1448,7 @@ func (UnimplementedHandler) SiteSuppressionsDelete(ctx context.Context, params S
 
 // SiteSuppressionsList implements SiteSuppressions_list operation.
 //
-// List suppressed addresses.
+// List suppressed addresses (every member).
 //
 // GET /workspaces/{workspaceId}/suppressions
 func (UnimplementedHandler) SiteSuppressionsList(ctx context.Context, params SiteSuppressionsListParams) (r SiteSuppressionsListRes, _ error) {
@@ -1779,6 +1779,17 @@ func (UnimplementedHandler) SiteWorkspacesLeave(ctx context.Context, params Site
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesLiftSecondFactorRequirement implements SiteWorkspaces_liftSecondFactorRequirement operation.
+//
+// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
+// withheld by the requirement may still perform in the Workspace, so an Owner or Admin without a
+// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
+//
+// DELETE /workspaces/{workspaceId}/second-factor-requirement
+func (UnimplementedHandler) SiteWorkspacesLiftSecondFactorRequirement(ctx context.Context, params SiteWorkspacesLiftSecondFactorRequirementParams) (r SiteWorkspacesLiftSecondFactorRequirementRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesList implements SiteWorkspaces_list operation.
 //
 // List workspaces owned by the authenticated user.
@@ -1798,6 +1809,17 @@ func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesRequireSecondFactor implements SiteWorkspaces_requireSecondFactor operation.
+//
+// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then
+// have a Second factor. Switching it on while it is already on keeps the original start, so no one's
+// grace restarts. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/second-factor-requirement
+func (UnimplementedHandler) SiteWorkspacesRequireSecondFactor(ctx context.Context, params SiteWorkspacesRequireSecondFactorParams) (r SiteWorkspacesRequireSecondFactorRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesRestore implements SiteWorkspaces_restore operation.
 //
 // Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -1806,19 +1828,8 @@ func (UnimplementedHandler) SiteWorkspacesListDeleted(ctx context.Context) (r []
 // window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
 // 404. Recorded as an Audit entry.
 //
-// POST /workspaces/{workspaceId}/restore
+// POST /workspaces/deleted/{id}/restore
 func (UnimplementedHandler) SiteWorkspacesRestore(ctx context.Context, params SiteWorkspacesRestoreParams) (r SiteWorkspacesRestoreRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SiteWorkspacesSetSecondFactorRequirement implements SiteWorkspaces_setSecondFactorRequirement operation.
-//
-// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is
-// already on keeps the original start, so no one's grace restarts. A change is recorded as an Audit
-// entry.
-//
-// PUT /workspaces/{workspaceId}/second-factor-requirement
-func (UnimplementedHandler) SiteWorkspacesSetSecondFactorRequirement(ctx context.Context, req *SiteSecondFactorRequirementInput, params SiteWorkspacesSetSecondFactorRequirementParams) (r SiteWorkspacesSetSecondFactorRequirementRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

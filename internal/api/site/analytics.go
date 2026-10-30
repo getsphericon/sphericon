@@ -25,21 +25,16 @@ func analyticsWindow(r siteapi.OptSiteAnalyticsRange) analytics.Window {
 	return analytics.Window7Days
 }
 
-// analyticsReport is the shell every report handler shares: it scopes to the Workspace of the
-// path (an unknown or foreign one answers 404), reads the selected window and hands both to build,
-// which maps the module's report onto the operation's response.
-func analyticsReport[Res any](ctx context.Context, h *Handlers, workspaceID siteapi.WorkspaceId, rng siteapi.OptSiteAnalyticsRange, build func(*ent.Scoped, analytics.Window) (Res, error)) (Res, error) {
-	var none Res
-	s, err := h.scopedFor(ctx, workspaceID)
-	if err != nil {
-		return none, err
-	}
-	return build(s, analyticsWindow(rng))
+// analyticsReport is the shell every report handler shares: it reads the selected window and hands
+// it, with the scope of the Workspace of the path, to build, which maps the module's report onto
+// the operation's response.
+func analyticsReport[Res any](ctx context.Context, rng siteapi.OptSiteAnalyticsRange, build func(*ent.Scoped, analytics.Window) (Res, error)) (Res, error) {
+	return build(workspaceScope(ctx), analyticsWindow(rng))
 }
 
 // SiteAnalyticsOverview maps the analytics module's Overview onto the DTO.
 func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.SiteAnalyticsOverviewParams) (siteapi.SiteAnalyticsOverviewRes, error) {
-	return analyticsReport(ctx, h, params.WorkspaceId, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsOverviewRes, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsOverviewRes, error) {
 		ov, err := h.analytics.Overview(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -73,7 +68,7 @@ func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.Sit
 
 // SiteAnalyticsEvents maps the analytics module's Events report onto the DTO.
 func (h *Handlers) SiteAnalyticsEvents(ctx context.Context, params siteapi.SiteAnalyticsEventsParams) (siteapi.SiteAnalyticsEventsRes, error) {
-	return analyticsReport(ctx, h, params.WorkspaceId, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsEventsRes, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsEventsRes, error) {
 		rows, err := h.analytics.Events(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -105,7 +100,7 @@ func (h *Handlers) abuseWarning(ctx context.Context, s *ent.Scoped) (siteapi.Opt
 
 // SiteAnalyticsSubscribedPeople maps the Subscribed people report onto the DTO.
 func (h *Handlers) SiteAnalyticsSubscribedPeople(ctx context.Context, params siteapi.SiteAnalyticsSubscribedPeopleParams) (siteapi.SiteAnalyticsSubscribedPeopleRes, error) {
-	return analyticsReport(ctx, h, params.WorkspaceId, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsSubscribedPeopleRes, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsSubscribedPeopleRes, error) {
 		report, err := h.analytics.SubscribedPeople(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -122,7 +117,7 @@ func (h *Handlers) SiteAnalyticsSubscribedPeople(ctx context.Context, params sit
 
 // SiteAnalyticsClicksByLink maps the analytics module's Clicks by link report onto the DTO.
 func (h *Handlers) SiteAnalyticsClicksByLink(ctx context.Context, params siteapi.SiteAnalyticsClicksByLinkParams) (siteapi.SiteAnalyticsClicksByLinkRes, error) {
-	return analyticsReport(ctx, h, params.WorkspaceId, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsClicksByLinkRes, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsClicksByLinkRes, error) {
 		links, err := h.analytics.ClicksByLink(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -143,7 +138,7 @@ func (h *Handlers) SiteAnalyticsClicksByLink(ctx context.Context, params siteapi
 
 // SiteAnalyticsOpensByHour maps the analytics module's Opens by hour report onto the DTO.
 func (h *Handlers) SiteAnalyticsOpensByHour(ctx context.Context, params siteapi.SiteAnalyticsOpensByHourParams) (siteapi.SiteAnalyticsOpensByHourRes, error) {
-	return analyticsReport(ctx, h, params.WorkspaceId, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsOpensByHourRes, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsOpensByHourRes, error) {
 		report, err := h.analytics.OpensByHour(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -158,7 +153,7 @@ func (h *Handlers) SiteAnalyticsOpensByHour(ctx context.Context, params siteapi.
 
 // SiteAnalyticsNewPeople maps the New people report onto the DTO.
 func (h *Handlers) SiteAnalyticsNewPeople(ctx context.Context, params siteapi.SiteAnalyticsNewPeopleParams) (siteapi.SiteAnalyticsNewPeopleRes, error) {
-	return analyticsReport(ctx, h, params.WorkspaceId, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsNewPeopleRes, error) {
+	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsNewPeopleRes, error) {
 		report, err := h.analytics.NewPeople(ctx, s, w)
 		if err != nil {
 			return nil, err
@@ -177,10 +172,7 @@ func (h *Handlers) SiteAnalyticsNewPeople(ctx context.Context, params siteapi.Si
 // SiteAnalyticsRevenue maps the analytics module's Revenue onto the DTO (ADR 0064). The
 // operation's default range is 30 days, declared in the contract.
 func (h *Handlers) SiteAnalyticsRevenue(ctx context.Context, params siteapi.SiteAnalyticsRevenueParams) (siteapi.SiteAnalyticsRevenueRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 	report, err := h.analytics.Revenue(ctx, s, revenueWindow(params.Range))
 	if err != nil {
 		return nil, err

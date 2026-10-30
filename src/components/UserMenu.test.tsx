@@ -137,7 +137,7 @@ test('lists the deleted workspaces with their erase date and restores one', asyn
   worker.use(
     handleSiteWorkspacesListDeleted({ body: [deletedInitech] }),
     handleSiteWorkspacesRestore(({ params }) => {
-      restored.push(params.workspaceId)
+      restored.push(params.id)
       return HttpResponse.json({
         id: 'InitcWs3',
         name: 'Initech',

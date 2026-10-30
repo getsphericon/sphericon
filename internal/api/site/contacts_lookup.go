@@ -12,7 +12,7 @@ import (
 // Workspace holds for an email address, as counts. It sits beside Erasure, so owner
 // or admin only; an address nothing holds answers with zeros.
 func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteContactsLookupParams) (siteapi.SiteContactsLookupRes, error) {
-	scoped, refusal, err := h.privacyScope(ctx, params.WorkspaceId, params.Email)
+	refusal, err := privacyAddress(params.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +21,7 @@ func (h *Handlers) SiteContactsLookup(ctx context.Context, params siteapi.SiteCo
 		return &v, nil
 	}
 
-	held, err := erasure.Lookup(ctx, scoped, params.Email)
+	held, err := erasure.Lookup(ctx, workspaceScope(ctx), params.Email)
 	if err != nil {
 		return nil, err
 	}

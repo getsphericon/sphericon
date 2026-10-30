@@ -82,8 +82,14 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
   They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and never call
   `client.Scoped(<int64>)`. Tests use `env.DB.Scoped(fixtures.AcmeID)`.
 - **`*ent.Scoped` is built only in a closed list of places:**
-  1. site: `accounts.Accounts.Scope`, behind `Handlers.scopedFor` / `scopedWithRoleFor`
-     (`internal/api/site/handlers.go`), from the user's Membership on `/w/{id}`;
+  1. site: `accounts.Accounts.Scope`, behind the ogen middleware `Handlers.Access`
+     (`internal/api/site/access.go`, ADR 0061), from the user's Membership of the Workspace an
+     operation's `workspaceId` names, read with `workspaceScope(ctx)` (the Membership with
+     `callerMembership(ctx)`). The middleware also applies the Two-factor requirement and the
+     Permissions the operation declares in TypeSpec (`x-required-permissions`, generated into
+     `operationAccess`). Two operations name their Workspace elsewhere and call
+     `accounts.Accounts.Scope` themselves: `SiteOAuthDecide` (in its body, through `Handlers.member`)
+     and `SiteWorkspacesCreate` / `SiteWorkspacesRestore` (a Workspace that was not live before);
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
      in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;

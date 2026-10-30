@@ -673,12 +673,16 @@ type SiteWorkspacesLeaveRes interface {
 	siteWorkspacesLeaveRes()
 }
 
-type SiteWorkspacesRestoreRes interface {
-	siteWorkspacesRestoreRes()
+type SiteWorkspacesLiftSecondFactorRequirementRes interface {
+	siteWorkspacesLiftSecondFactorRequirementRes()
 }
 
-type SiteWorkspacesSetSecondFactorRequirementRes interface {
-	siteWorkspacesSetSecondFactorRequirementRes()
+type SiteWorkspacesRequireSecondFactorRes interface {
+	siteWorkspacesRequireSecondFactorRes()
+}
+
+type SiteWorkspacesRestoreRes interface {
+	siteWorkspacesRestoreRes()
 }
 
 type SiteWorkspacesSetTimezoneRes interface {

@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -186,6 +187,7 @@ interface SiteRules
    */
   @action("archive")
   @autoRoute
+  @extension("x-required-permissions", #[])
   archive(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -194,6 +196,7 @@ interface SiteRules
   /** Restore an archived Rule to the list, as a draft */
   @action("unarchive")
   @autoRoute
+  @extension("x-required-permissions", #[])
   unarchive(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -202,6 +205,7 @@ interface SiteRules
   /** Activate a Rule: it reacts to Events recorded from now on, never to past ones */
   @action("activate")
   @autoRoute
+  @extension("x-required-permissions", #[])
   activate(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -211,6 +215,7 @@ interface SiteRules
   /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. */
   @action("dry-run")
   @autoRoute
+  @extension("x-required-permissions", #[])
   dryRun(
     ...ResourceParameters<SiteRuleResource>,
     @body body: SiteDryRunRuleInput,
@@ -219,6 +224,7 @@ interface SiteRules
   /** Deactivate a Rule: it stops firing */
   @action("deactivate")
   @autoRoute
+  @extension("x-required-permissions", #[])
   deactivate(...ResourceParameters<SiteRuleResource>):
     | SiteRuleResource
     | BadRequestProblem
@@ -257,9 +263,16 @@ model SiteRuleFiringResource {
 namespace SiteRuleFirings {
   /** List a Rule's Firings, newest first */
   @get
+  @extension("x-required-permissions", #[])
   op list(
     @path workspaceId: WorkspaceId,
     @path ruleId: EntityId,
     ...PageQuery,
   ): Page<SiteRuleFiringResource> | BadRequestProblem | NotFoundProblem;
 }
+
+@@extension(SiteRules.create, "x-required-permissions", #[]);
+@@extension(SiteRules.delete, "x-required-permissions", #[]);
+@@extension(SiteRules.get, "x-required-permissions", #[]);
+@@extension(SiteRules.list, "x-required-permissions", #[]);
+@@extension(SiteRules.update, "x-required-permissions", #[]);

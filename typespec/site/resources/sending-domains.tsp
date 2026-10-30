@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -127,6 +128,7 @@ interface SiteSendingDomains {
   @listsResource(SiteSendingDomainResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   list(
     ...ResourceCollectionParameters<SiteSendingDomainResource>,
     ...PageQuery,
@@ -141,6 +143,7 @@ interface SiteSendingDomains {
   @createsResource(SiteSendingDomainResource)
   @post
   @autoRoute
+  @extension("x-required-permissions", #[Permission.sendingDomainsManage])
   create(
     ...ResourceCollectionParameters<SiteSendingDomainResource>,
     @body body: SiteCreateSendingDomainInput,
@@ -158,6 +161,7 @@ interface SiteSendingDomains {
   @readsResource(SiteSendingDomainResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   get(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem
@@ -170,6 +174,7 @@ interface SiteSendingDomains {
    */
   @action("archive")
   @autoRoute
+  @extension("x-required-permissions", #[Permission.sendingDomainsManage])
   archive(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem
@@ -184,6 +189,7 @@ interface SiteSendingDomains {
    */
   @action("unarchive")
   @autoRoute
+  @extension("x-required-permissions", #[Permission.sendingDomainsManage])
   unarchive(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem
@@ -197,6 +203,7 @@ interface SiteSendingDomains {
    */
   @action("verify")
   @autoRoute
+  @extension("x-required-permissions", #[Permission.sendingDomainsManage])
   verify(...ResourceParameters<SiteSendingDomainResource>):
     | SiteSendingDomainResource
     | BadRequestProblem

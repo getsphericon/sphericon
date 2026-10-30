@@ -270,7 +270,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = owner.SiteWorkspacesDelete(ctx, &siteapi.SiteDeleteWorkspaceInput{Name: "Acme Two"}, // workspace.delete
 		siteapi.SiteWorkspacesDeleteParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	_, err = owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{WorkspaceId: fixtures.AcmePublicID}) // workspace.restore
+	_, err = owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.AcmePublicID}) // workspace.restore
 	require.NoError(t, err)
 	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse") // workspace.suspend
 	require.NoError(t, err)

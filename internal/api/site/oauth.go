@@ -43,13 +43,15 @@ func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAu
 
 // SiteOAuthDecide records the signed-in user's consent decision. The token the
 // client later receives belongs to the chosen workspace, which the user must be
-// a member of with a role that may manage API tokens: consent mints one.
+// a member of with a role that may manage API tokens: consent mints one. The Workspace
+// is named in the body, not the path, so Access does not resolve it: the handler loads
+// the Membership itself, under the Two-factor requirement like any operation of a Workspace.
 func (h *Handlers) SiteOAuthDecide(ctx context.Context, req *siteapi.SiteOAuthDecisionInput) (siteapi.SiteOAuthDecideRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, req.WorkspaceId)
+	s, m, err := h.member(ctx, string(req.WorkspaceId), false)
 	if err != nil {
 		return nil, err
 	}
-	if err := accounts.Require(role, accounts.PermTokensManage); err != nil {
+	if err := accounts.Require(m.Role, accounts.PermTokensManage); err != nil {
 		return nil, err
 	}
 

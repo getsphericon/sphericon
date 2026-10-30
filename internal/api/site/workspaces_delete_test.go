@@ -133,7 +133,7 @@ func TestOwnerRestoresADeletedWorkspaceWithItsMembers(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
 	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, owner, fixtures.InitechPublicID, "Initech"))
 
-	res, err := owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{WorkspaceId: fixtures.InitechPublicID})
+	res, err := owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.InitechPublicID})
 	require.NoError(t, err)
 	restored, ok := res.(*siteapi.SiteWorkspaceResource)
 	require.Truef(t, ok, "got %T", res)
@@ -155,7 +155,7 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 	ctx := context.Background()
 	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{},
 		deleteWorkspace(t, env.SiteActor(t, fixtures.InitechOwnerOlgaEmail), fixtures.InitechPublicID, "Initech"))
-	params := siteapi.SiteWorkspacesRestoreParams{WorkspaceId: fixtures.InitechPublicID}
+	params := siteapi.SiteWorkspacesRestoreParams{ID: fixtures.InitechPublicID}
 
 	res, err := env.SiteActor(t, fixtures.InitechAdminAdaEmail).SiteWorkspacesRestore(ctx, params)
 	require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestRestoreKeepsASuspensionInPlace(t *testing.T) {
 	sally := env.SiteActor(t, fixtures.OwnerSallyEmail) // Owner of Hooli, suspended by a Staff member
 	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, sally, fixtures.HooliPublicID, "Hooli"))
 
-	res, err := sally.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{WorkspaceId: fixtures.HooliPublicID})
+	res, err := sally.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.HooliPublicID})
 	require.NoError(t, err)
 	restored, ok := res.(*siteapi.SiteWorkspaceResource)
 	require.Truef(t, ok, "got %T", res)
@@ -205,7 +205,7 @@ func TestDeleteAndRestoreAreAuditEntries(t *testing.T) {
 	ctx := context.Background()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	require.IsType(t, &siteapi.SiteDeletedWorkspaceResource{}, deleteWorkspace(t, c, fixtures.AcmePublicID, "Acme"))
-	_, err := c.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{WorkspaceId: fixtures.AcmePublicID})
+	_, err := c.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
 	for _, action := range []string{events.ActionWorkspaceDelete, events.ActionWorkspaceRestore} {

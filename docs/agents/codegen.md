@@ -17,6 +17,7 @@ ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, 
 ent + gen/{site,external,staff,service}  ──goverter──▶ internal/api/{site,external}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 openapi/service (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
+openapi/site (`x-required-permissions`, `x-allowed-while-withheld` per operation) ──cmd/scopegen──▶ internal/api/site/access_gen.go (`operationAccess`); the tables are `scopegen.Tables`
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
@@ -36,4 +37,4 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
 frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
 diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
+only generated files being the two `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.

@@ -1,5 +1,5 @@
-// Command scopegen writes the Service operation-to-scopes map (ee/staff/service_scopes_gen.go)
-// from the scopes the TypeSpec contract declares on each operation.
+// Command scopegen writes the access tables of the API surfaces (scopegen.Tables) from what the
+// TypeSpec contract declares on each operation.
 package main
 
 import (
@@ -9,7 +9,9 @@ import (
 )
 
 func main() {
-	if err := scopegen.Write("openapi/service.openapi.json", "ee/staff/service_scopes_gen.go"); err != nil {
-		log.Fatal(err)
+	for i := range scopegen.Tables {
+		if err := scopegen.Tables[i].Write(); err != nil {
+			log.Fatal(err)
+		}
 	}
 }

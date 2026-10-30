@@ -10411,7 +10411,7 @@ func (s *Server) handleSiteContactsEraseRequest(args [1]string, argsEscaped bool
 // handleSiteContactsExportRequest handles SiteContacts_export operation.
 //
 // Export everything held about one contact as a streamed JSON download. Identify the contact by
-// exactly one of `id` or `email`. Available to any Workspace member (contact read access).
+// exactly one of `id` or `email`. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/contacts/export
 func (s *Server) handleSiteContactsExportRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26575,7 +26575,7 @@ func (s *Server) handleSiteSignupSurveySubmitRequest(args [0]string, argsEscaped
 
 // handleSiteSuppressionsCreateRequest handles SiteSuppressions_create operation.
 //
-// Manually suppress an address (reason = manual; idempotent per address).
+// Manually suppress an address (reason = manual; idempotent per address). Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/suppressions
 func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26778,7 +26778,7 @@ func (s *Server) handleSiteSuppressionsCreateRequest(args [1]string, argsEscaped
 // handleSiteSuppressionsDeleteRequest handles SiteSuppressions_delete operation.
 //
 // Lift a suppression: the row stays with its lift time and the address can receive mail again. Lifting
-// one that is already lifted is a 404.
+// one that is already lifted is a 404. Owners and admins only.
 //
 // DELETE /workspaces/{workspaceId}/suppressions/{id}
 func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -26969,7 +26969,7 @@ func (s *Server) handleSiteSuppressionsDeleteRequest(args [2]string, argsEscaped
 
 // handleSiteSuppressionsListRequest handles SiteSuppressions_list operation.
 //
-// List suppressed addresses.
+// List suppressed addresses (every member).
 //
 // GET /workspaces/{workspaceId}/suppressions
 func (s *Server) handleSiteSuppressionsListRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -33569,6 +33569,195 @@ func (s *Server) handleSiteWorkspacesLeaveRequest(args [1]string, argsEscaped bo
 	}
 }
 
+// handleSiteWorkspacesLiftSecondFactorRequirementRequest handles SiteWorkspaces_liftSecondFactorRequirement operation.
+//
+// Switch the Two-factor requirement off (owner and admin only). It is the one operation a User
+// withheld by the requirement may still perform in the Workspace, so an Owner or Admin without a
+// Second factor is never locked out of lifting it (ADR 0020). A change is recorded as an Audit entry.
+//
+// DELETE /workspaces/{workspaceId}/second-factor-requirement
+func (s *Server) handleSiteWorkspacesLiftSecondFactorRequirementRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_liftSecondFactorRequirement"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteWorkspacesLiftSecondFactorRequirementOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteWorkspacesLiftSecondFactorRequirementOperation,
+			ID:   "SiteWorkspaces_liftSecondFactorRequirement",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteWorkspacesLiftSecondFactorRequirementOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeSiteWorkspacesLiftSecondFactorRequirementParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response SiteWorkspacesLiftSecondFactorRequirementRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteWorkspacesLiftSecondFactorRequirementOperation,
+			OperationSummary: "",
+			OperationID:      "SiteWorkspaces_liftSecondFactorRequirement",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "workspaceId",
+					In:   "path",
+				}: params.WorkspaceId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = SiteWorkspacesLiftSecondFactorRequirementParams
+			Response = SiteWorkspacesLiftSecondFactorRequirementRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackSiteWorkspacesLiftSecondFactorRequirementParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteWorkspacesLiftSecondFactorRequirement(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteWorkspacesLiftSecondFactorRequirement(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteWorkspacesLiftSecondFactorRequirementResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleSiteWorkspacesListRequest handles SiteWorkspaces_list operation.
 //
 // List workspaces owned by the authenticated user.
@@ -33914,6 +34103,195 @@ func (s *Server) handleSiteWorkspacesListDeletedRequest(args [0]string, argsEsca
 	}
 }
 
+// handleSiteWorkspacesRequireSecondFactorRequest handles SiteWorkspaces_requireSecondFactor operation.
+//
+// Switch the Two-factor requirement on (owner and admin only): every User with a Membership must then
+// have a Second factor. Switching it on while it is already on keeps the original start, so no one's
+// grace restarts. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/second-factor-requirement
+func (s *Server) handleSiteWorkspacesRequireSecondFactorRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_requireSecondFactor"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteWorkspacesRequireSecondFactorOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(attrs...)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: SiteWorkspacesRequireSecondFactorOperation,
+			ID:   "SiteWorkspaces_requireSecondFactor",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteWorkspacesRequireSecondFactorOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "ApiKeyAuth",
+					Err:              err,
+				}
+				defer recordError("Security:ApiKeyAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeSiteWorkspacesRequireSecondFactorParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response SiteWorkspacesRequireSecondFactorRes
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    SiteWorkspacesRequireSecondFactorOperation,
+			OperationSummary: "",
+			OperationID:      "SiteWorkspaces_requireSecondFactor",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "workspaceId",
+					In:   "path",
+				}: params.WorkspaceId,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = SiteWorkspacesRequireSecondFactorParams
+			Response = SiteWorkspacesRequireSecondFactorRes
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackSiteWorkspacesRequireSecondFactorParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.SiteWorkspacesRequireSecondFactor(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.SiteWorkspacesRequireSecondFactor(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeSiteWorkspacesRequireSecondFactorResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleSiteWorkspacesRestoreRequest handles SiteWorkspaces_restore operation.
 //
 // Restore a Workspace in its deletion window (Owner only). It removes only the pending-deletion
@@ -33922,14 +34300,14 @@ func (s *Server) handleSiteWorkspacesListDeletedRequest(args [0]string, argsEsca
 // window, or already being erased, answers 409; an erased one has no Owner left to ask, so it answers
 // 404. Recorded as an Audit entry.
 //
-// POST /workspaces/{workspaceId}/restore
+// POST /workspaces/deleted/{id}/restore
 func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWorkspaces_restore"),
 		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/restore"),
+		semconv.HTTPRouteKey.String("/workspaces/deleted/{id}/restore"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
@@ -34062,9 +34440,9 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 			RawBody:          rawBody,
 			Params: middleware.Parameters{
 				{
-					Name: "workspaceId",
+					Name: "id",
 					In:   "path",
-				}: params.WorkspaceId,
+				}: params.ID,
 			},
 			Raw: r,
 		}
@@ -34097,210 +34475,6 @@ func (s *Server) handleSiteWorkspacesRestoreRequest(args [1]string, argsEscaped 
 	}
 
 	if err := encodeSiteWorkspacesRestoreResponse(response, w, span); err != nil {
-		defer recordError("EncodeResponse", err)
-		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
-			s.cfg.ErrorHandler(ctx, w, r, err)
-		}
-		return
-	}
-}
-
-// handleSiteWorkspacesSetSecondFactorRequirementRequest handles SiteWorkspaces_setSecondFactorRequirement operation.
-//
-// Switch the Two-factor requirement on or off (owner and admin only). Switching it on while it is
-// already on keeps the original start, so no one's grace restarts. A change is recorded as an Audit
-// entry.
-//
-// PUT /workspaces/{workspaceId}/second-factor-requirement
-func (s *Server) handleSiteWorkspacesSetSecondFactorRequirementRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
-	statusWriter := &codeRecorder{ResponseWriter: w}
-	w = statusWriter
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("SiteWorkspaces_setSecondFactorRequirement"),
-		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.HTTPRouteKey.String("/workspaces/{workspaceId}/second-factor-requirement"),
-	}
-	// Add attributes from config.
-	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
-
-	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), SiteWorkspacesSetSecondFactorRequirementOperation,
-		trace.WithAttributes(otelAttrs...),
-		serverSpanKind,
-	)
-	defer span.End()
-
-	// Add Labeler to context.
-	labeler := &Labeler{attrs: otelAttrs}
-	ctx = contextWithLabeler(ctx, labeler)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		elapsedDuration := time.Since(startTime)
-
-		attrSet := labeler.AttributeSet()
-		attrs := attrSet.ToSlice()
-		code := statusWriter.status
-		if code != 0 {
-			codeAttr := semconv.HTTPResponseStatusCode(code)
-			attrs = append(attrs, codeAttr)
-			span.SetAttributes(attrs...)
-		}
-		attrOpt := metric.WithAttributes(attrs...)
-
-		// Increment request counter.
-		s.requests.Add(ctx, 1, attrOpt)
-
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
-	}()
-
-	var (
-		recordError = func(stage string, err error) {
-			span.RecordError(err)
-
-			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
-			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
-			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
-			// max redirects exceeded), in which case status MUST be set to Error.
-			code := statusWriter.status
-			if code < 100 || code >= 500 {
-				span.SetStatus(codes.Error, stage)
-			}
-
-			attrSet := labeler.AttributeSet()
-			attrs := attrSet.ToSlice()
-			if code != 0 {
-				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
-			}
-
-			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-		}
-		err          error
-		opErrContext = ogenerrors.OperationContext{
-			Name: SiteWorkspacesSetSecondFactorRequirementOperation,
-			ID:   "SiteWorkspaces_setSecondFactorRequirement",
-		}
-	)
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			sctx, ok, err := s.securityApiKeyAuth(ctx, SiteWorkspacesSetSecondFactorRequirementOperation, r)
-			if err != nil {
-				err = &ogenerrors.SecurityError{
-					OperationContext: opErrContext,
-					Security:         "ApiKeyAuth",
-					Err:              err,
-				}
-				defer recordError("Security:ApiKeyAuth", err)
-				s.cfg.ErrorHandler(ctx, w, r, err)
-				return
-			}
-			if ok {
-				satisfied[0] |= 1 << 0
-				ctx = sctx
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			err = &ogenerrors.SecurityError{
-				OperationContext: opErrContext,
-				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
-			}
-			defer recordError("Security", err)
-			s.cfg.ErrorHandler(ctx, w, r, err)
-			return
-		}
-	}
-	params, err := decodeSiteWorkspacesSetSecondFactorRequirementParams(args, argsEscaped, r)
-	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeParams", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	var rawBody []byte
-	request, rawBody, close, err := s.decodeSiteWorkspacesSetSecondFactorRequirementRequest(r)
-	if err != nil {
-		err = &ogenerrors.DecodeRequestError{
-			OperationContext: opErrContext,
-			Err:              err,
-		}
-		defer recordError("DecodeRequest", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-	defer func() {
-		if err := close(); err != nil {
-			recordError("CloseRequest", err)
-		}
-	}()
-
-	var response SiteWorkspacesSetSecondFactorRequirementRes
-	if m := s.cfg.Middleware; m != nil {
-		mreq := middleware.Request{
-			Context:          ctx,
-			OperationName:    SiteWorkspacesSetSecondFactorRequirementOperation,
-			OperationSummary: "",
-			OperationID:      "SiteWorkspaces_setSecondFactorRequirement",
-			Body:             request,
-			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "workspaceId",
-					In:   "path",
-				}: params.WorkspaceId,
-			},
-			Raw: r,
-		}
-
-		type (
-			Request  = *SiteSecondFactorRequirementInput
-			Params   = SiteWorkspacesSetSecondFactorRequirementParams
-			Response = SiteWorkspacesSetSecondFactorRequirementRes
-		)
-		response, err = middleware.HookMiddleware[
-			Request,
-			Params,
-			Response,
-		](
-			m,
-			mreq,
-			unpackSiteWorkspacesSetSecondFactorRequirementParams,
-			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteWorkspacesSetSecondFactorRequirement(ctx, request, params)
-				return response, err
-			},
-		)
-	} else {
-		response, err = s.h.SiteWorkspacesSetSecondFactorRequirement(ctx, request, params)
-	}
-	if err != nil {
-		defer recordError("Internal", err)
-		s.cfg.ErrorHandler(ctx, w, r, err)
-		return
-	}
-
-	if err := encodeSiteWorkspacesSetSecondFactorRequirementResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)

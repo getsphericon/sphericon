@@ -15,11 +15,8 @@ import (
 )
 
 // SiteMembershipsList returns the workspace's members. Any member may view them.
-func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteMembershipsListParams) (siteapi.SiteMembershipsListRes, error) {
-	s, _, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMembershipsListParams) (siteapi.SiteMembershipsListRes, error) {
+	s := workspaceScope(ctx)
 
 	members, err := accounts.Members(ctx, s)
 	if err != nil {
@@ -36,17 +33,11 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, params siteapi.SiteM
 // SiteMembershipsUpdate changes a member's role. Owner/admin only; only an owner
 // may grant the owner role, and the last owner can never be demoted.
 func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteUpdateMembershipInput, params siteapi.SiteMembershipsUpdateParams) (siteapi.SiteMembershipsUpdateRes, error) {
-	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(callerRole, accounts.PermMembersManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
-	updated, err := h.accounts.ChangeMembershipRole(ctx, s, h.actor(ctx), callerRole, id, membership.Role(req.Role))
+	updated, err := h.accounts.ChangeMembershipRole(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id, membership.Role(req.Role))
 	switch {
 	case ent.IsNotFound(err):
 		v := siteapi.SiteMembershipsUpdateNotFound(problem(http.StatusNotFound, "member not found"))
@@ -71,17 +62,11 @@ func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteU
 // SiteMembershipsDelete removes a member. Owner/admin only; the last owner cannot
 // be removed.
 func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.SiteMembershipsDeleteParams) (siteapi.SiteMembershipsDeleteRes, error) {
-	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(callerRole, accounts.PermMembersManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
-	err = h.accounts.RemoveMembership(ctx, s, h.actor(ctx), callerRole, id)
+	err := h.accounts.RemoveMembership(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id)
 	switch {
 	case ent.IsNotFound(err):
 		v := siteapi.SiteMembershipsDeleteNotFound(problem(http.StatusNotFound, "member not found"))
@@ -108,16 +93,10 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 // someone else's, so nothing is reissued. A member resets nobody, and nobody resets
 // their own here (disabling takes a password and a code).
 func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params siteapi.SiteMembershipsResetSecondFactorParams) (siteapi.SiteMembershipsResetSecondFactorRes, error) {
-	s, callerRole, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(callerRole, accounts.PermSecondFactorManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	target, err := accounts.SecondFactorResetTarget(ctx, s, callerRole, id)
+	target, err := accounts.SecondFactorResetTarget(ctx, s, callerMembership(ctx).Role, id)
 	switch {
 	case ent.IsNotFound(err):
 		v := siteapi.SiteMembershipsResetSecondFactorNotFound(problem(http.StatusNotFound, "member not found"))

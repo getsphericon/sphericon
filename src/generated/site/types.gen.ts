@@ -4178,16 +4178,6 @@ export type SiteSecondFactorEnrollment = {
 };
 
 /**
- * Switch the Two-factor requirement on or off
- */
-export type SiteSecondFactorRequirementInput = {
-  /**
-   * Whether every User with a Membership must have a Second factor
-   */
-  required: boolean;
-};
-
-/**
  * Proof of the User's password (or a fresh provider login or Passkey check), for starting an enrollment
  */
 export type SiteSecondFactorStartInput = {
@@ -7289,6 +7279,37 @@ export type SiteWorkspacesListDeletedResponses = {
 
 export type SiteWorkspacesListDeletedResponse = SiteWorkspacesListDeletedResponses[keyof SiteWorkspacesListDeletedResponses];
 
+export type SiteWorkspacesRestoreData = {
+  body?: never;
+  path: {
+    id: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/deleted/{id}/restore';
+};
+
+export type SiteWorkspacesRestoreErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+};
+
+export type SiteWorkspacesRestoreError = SiteWorkspacesRestoreErrors[keyof SiteWorkspacesRestoreErrors];
+
+export type SiteWorkspacesRestoreResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesRestoreResponse = SiteWorkspacesRestoreResponses[keyof SiteWorkspacesRestoreResponses];
+
 export type SiteWorkspacesUpdateData = {
   body: SiteUpdateWorkspaceInput;
   path: {
@@ -9319,6 +9340,10 @@ export type SiteContactsExportErrors = {
    */
   400: ProblemDetails;
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10658,37 +10683,6 @@ export type SiteMembershipsResetSecondFactorResponses = {
 
 export type SiteMembershipsResetSecondFactorResponse = SiteMembershipsResetSecondFactorResponses[keyof SiteMembershipsResetSecondFactorResponses];
 
-export type SiteWorkspacesRestoreData = {
-  body?: never;
-  path: {
-    workspaceId: WorkspaceId;
-  };
-  query?: never;
-  url: '/workspaces/{workspaceId}/restore';
-};
-
-export type SiteWorkspacesRestoreErrors = {
-  /**
-   * RFC 7807 not found response
-   */
-  404: ProblemDetails;
-  /**
-   * RFC 7807 conflict response
-   */
-  409: ProblemDetails;
-};
-
-export type SiteWorkspacesRestoreError = SiteWorkspacesRestoreErrors[keyof SiteWorkspacesRestoreErrors];
-
-export type SiteWorkspacesRestoreResponses = {
-  /**
-   * The request has succeeded.
-   */
-  200: SiteWorkspaceResource;
-};
-
-export type SiteWorkspacesRestoreResponse = SiteWorkspacesRestoreResponses[keyof SiteWorkspacesRestoreResponses];
-
 export type SiteWorkspacesGetRevenueSettingsData = {
   body?: never;
   path: {
@@ -11247,8 +11241,8 @@ export type SiteRuleFiringsListResponses = {
 
 export type SiteRuleFiringsListResponse = SiteRuleFiringsListResponses[keyof SiteRuleFiringsListResponses];
 
-export type SiteWorkspacesSetSecondFactorRequirementData = {
-  body: SiteSecondFactorRequirementInput;
+export type SiteWorkspacesLiftSecondFactorRequirementData = {
+  body?: never;
   path: {
     workspaceId: WorkspaceId;
   };
@@ -11256,7 +11250,7 @@ export type SiteWorkspacesSetSecondFactorRequirementData = {
   url: '/workspaces/{workspaceId}/second-factor-requirement';
 };
 
-export type SiteWorkspacesSetSecondFactorRequirementErrors = {
+export type SiteWorkspacesLiftSecondFactorRequirementErrors = {
   /**
    * RFC 7807 forbidden response
    */
@@ -11267,16 +11261,47 @@ export type SiteWorkspacesSetSecondFactorRequirementErrors = {
   404: ProblemDetails;
 };
 
-export type SiteWorkspacesSetSecondFactorRequirementError = SiteWorkspacesSetSecondFactorRequirementErrors[keyof SiteWorkspacesSetSecondFactorRequirementErrors];
+export type SiteWorkspacesLiftSecondFactorRequirementError = SiteWorkspacesLiftSecondFactorRequirementErrors[keyof SiteWorkspacesLiftSecondFactorRequirementErrors];
 
-export type SiteWorkspacesSetSecondFactorRequirementResponses = {
+export type SiteWorkspacesLiftSecondFactorRequirementResponses = {
   /**
    * The request has succeeded.
    */
   200: SiteWorkspaceResource;
 };
 
-export type SiteWorkspacesSetSecondFactorRequirementResponse = SiteWorkspacesSetSecondFactorRequirementResponses[keyof SiteWorkspacesSetSecondFactorRequirementResponses];
+export type SiteWorkspacesLiftSecondFactorRequirementResponse = SiteWorkspacesLiftSecondFactorRequirementResponses[keyof SiteWorkspacesLiftSecondFactorRequirementResponses];
+
+export type SiteWorkspacesRequireSecondFactorData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/second-factor-requirement';
+};
+
+export type SiteWorkspacesRequireSecondFactorErrors = {
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteWorkspacesRequireSecondFactorError = SiteWorkspacesRequireSecondFactorErrors[keyof SiteWorkspacesRequireSecondFactorErrors];
+
+export type SiteWorkspacesRequireSecondFactorResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesRequireSecondFactorResponse = SiteWorkspacesRequireSecondFactorResponses[keyof SiteWorkspacesRequireSecondFactorResponses];
 
 export type SiteSegmentsListData = {
   body?: never;
@@ -12066,6 +12091,10 @@ export type SiteSuppressionsCreateData = {
 
 export type SiteSuppressionsCreateErrors = {
   /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -12108,6 +12137,10 @@ export type SiteSuppressionsDeleteErrors = {
    * RFC 7807 bad request response
    */
   400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
   /**
    * RFC 7807 not found response
    */

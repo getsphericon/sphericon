@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -65,6 +66,7 @@ namespace SiteTransactionalEmails {
   @listsResource(SiteTransactionalEmailResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(
     ...ResourceCollectionParameters<SiteTransactionalEmailResource>,
     ...PageQuery,

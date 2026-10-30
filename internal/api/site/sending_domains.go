@@ -9,7 +9,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -30,10 +29,7 @@ func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendi
 }
 
 func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.SiteSendingDomainsListParams) (siteapi.SiteSendingDomainsListRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	page, err := h.sendingDomains.List(ctx, s, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
@@ -51,14 +47,8 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 	}, nil
 }
 
-func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.SiteCreateSendingDomainInput, params siteapi.SiteSendingDomainsCreateParams) (siteapi.SiteSendingDomainsCreateRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermSendingDomainsManage); err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.SiteCreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (siteapi.SiteSendingDomainsCreateRes, error) {
+	s := workspaceScope(ctx)
 
 	d, err := h.sendingDomains.Create(ctx, s, sendingdomains.CreateInput{Domain: req.Domain, Selector: req.DkimSelector.Or("")})
 	switch {
@@ -73,10 +63,7 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Si
 }
 
 func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.SiteSendingDomainsGetParams) (siteapi.SiteSendingDomainsGetRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	d, err := h.sendingDomains.Get(ctx, s, id)
@@ -94,16 +81,10 @@ func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.Sit
 // SiteSendingDomainsArchive archives a sending domain (ADR 0049): it leaves the list and serves
 // no Tracking domain host. Live sends from it refuse it with 409.
 func (h *Handlers) SiteSendingDomainsArchive(ctx context.Context, params siteapi.SiteSendingDomainsArchiveParams) (siteapi.SiteSendingDomainsArchiveRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermSendingDomainsManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.sendingDomains.Archive(ctx, s, id)
+	err := h.sendingDomains.Archive(ctx, s, id)
 	if ent.IsNotFound(err) {
 		v := siteapi.SiteSendingDomainsArchiveNotFound(problem(http.StatusNotFound, "sending domain not found"))
 		return &v, nil
@@ -121,16 +102,10 @@ func (h *Handlers) SiteSendingDomainsArchive(ctx context.Context, params siteapi
 
 // SiteSendingDomainsUnarchive restores an archived sending domain and starts a DNS check.
 func (h *Handlers) SiteSendingDomainsUnarchive(ctx context.Context, params siteapi.SiteSendingDomainsUnarchiveParams) (siteapi.SiteSendingDomainsUnarchiveRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermSendingDomainsManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.sendingDomains.Unarchive(ctx, s, id)
+	err := h.sendingDomains.Unarchive(ctx, s, id)
 	switch {
 	case errors.Is(err, sendingdomains.ErrAlreadyExists):
 		v := siteapi.SiteSendingDomainsUnarchiveConflict(problem(http.StatusConflict, "this domain was added again; archive that one first"))
@@ -150,13 +125,7 @@ func (h *Handlers) SiteSendingDomainsUnarchive(ctx context.Context, params sitea
 }
 
 func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.SiteSendingDomainsVerifyParams) (siteapi.SiteSendingDomainsVerifyRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermSendingDomainsManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	d, err := h.sendingDomains.Verify(ctx, s, id)

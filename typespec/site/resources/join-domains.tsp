@@ -43,6 +43,7 @@ model SiteAddJoinDomainInput {
 namespace SiteJoinDomains {
   /** List the Workspace's Join domains (owner and admin only), pending and verified. */
   @get
+  @extension("x-required-permissions", #[Permission.joinDomainsManage])
   op list(@path workspaceId: WorkspaceId):
     | SiteJoinDomainResource[]
     | ForbiddenProblem
@@ -52,6 +53,7 @@ namespace SiteJoinDomains {
    * `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid
    * hostname is 422, a domain the Workspace already has is 409. */
   @post
+  @extension("x-required-permissions", #[Permission.joinDomainsManage])
   op add(@path workspaceId: WorkspaceId, @body body: SiteAddJoinDomainInput):
     | {
         @statusCode statusCode: 201;
@@ -68,6 +70,7 @@ namespace SiteJoinDomains {
    * not found. */
   @post
   @route("/{id}/verify")
+  @extension("x-required-permissions", #[Permission.joinDomainsManage])
   op verify(@path workspaceId: WorkspaceId, @path id: EntityId):
     | SiteJoinDomainResource
     | ForbiddenProblem
@@ -78,6 +81,7 @@ namespace SiteJoinDomains {
   /** Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched. */
   @delete
   @route("/{id}")
+  @extension("x-required-permissions", #[Permission.joinDomainsManage])
   op remove(@path workspaceId: WorkspaceId, @path id: EntityId):
     | NoContentResponse
     | ForbiddenProblem
@@ -102,6 +106,7 @@ model SiteSetDomainJoinInput {
 namespace SiteDomainJoin {
   /** Read the domain join switch (owner and admin only). */
   @get
+  @extension("x-required-permissions", #[Permission.joinDomainsManage])
   op get(@path workspaceId: WorkspaceId):
     | SiteDomainJoinResource
     | ForbiddenProblem
@@ -110,6 +115,7 @@ namespace SiteDomainJoin {
   /** Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already
    * a User: only an address proven afterwards joins. Recorded as an Audit entry. */
   @put
+  @extension("x-required-permissions", #[Permission.joinDomainsManage])
   op set(@path workspaceId: WorkspaceId, @body body: SiteSetDomainJoinInput):
     | SiteDomainJoinResource
     | ForbiddenProblem

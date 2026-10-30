@@ -244,11 +244,7 @@ func TestTheWorkspacesTwoFactorRequirementAppliesToAJoinerWithTheUsualGrace(t *t
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	enableAcmeJoin(t, env)
-	required, err := owner.SiteWorkspacesSetSecondFactorRequirement(context.Background(),
-		&siteapi.SiteSecondFactorRequirementInput{Required: true},
-		siteapi.SiteWorkspacesSetSecondFactorRequirementParams{WorkspaceId: fixtures.AcmePublicID})
-	require.NoError(t, err)
-	require.IsType(t, &siteapi.SiteWorkspaceResource{}, required)
+	require.IsType(t, &siteapi.SiteWorkspaceResource{}, requireSecondFactor(t, owner, fixtures.AcmePublicID))
 
 	joiner := signUp(t, env, "newbie@acme.com")
 

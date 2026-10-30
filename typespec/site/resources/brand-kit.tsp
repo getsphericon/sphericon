@@ -86,6 +86,7 @@ model SiteSaveBrandKitInput {
 namespace SiteBrandKit {
   /** Read the Brand kit. Every member may read it. */
   @get
+  @extension("x-required-permissions", #[])
   op get(@path workspaceId: WorkspaceId):
     | SiteBrandKitResource
     | NotFoundProblem;
@@ -95,6 +96,7 @@ namespace SiteBrandKit {
    * save creates none and changes no message already written. A change is recorded as an Audit
    * entry. */
   @put
+  @extension("x-required-permissions", #[Permission.brandKitManage])
   op save(@path workspaceId: WorkspaceId, @body body: SiteSaveBrandKitInput):
     | SiteBrandKitResource
     | ForbiddenProblem
@@ -106,6 +108,7 @@ namespace SiteBrandKit {
    * until the Brand kit has been saved. */
   @post
   @route("/starter-templates")
+  @extension("x-required-permissions", #[Permission.brandKitManage])
   op recreateStarterTemplates(@path workspaceId: WorkspaceId):
     | {
         @statusCode statusCode: 201;

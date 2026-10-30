@@ -1,5 +1,6 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -156,12 +157,6 @@ model SiteDeletedWorkspaceResource {
   onlyOwner: boolean;
 }
 
-/** Switch the Two-factor requirement on or off */
-model SiteSecondFactorRequirementInput {
-  /** Whether every User with a Membership must have a Second factor */
-  required: boolean;
-}
-
 /** Set the Workspace time zone */
 model SiteWorkspaceTimezoneInput {
   /** An IANA time zone name such as `Europe/Berlin`; the zone database decides what is valid */
@@ -236,6 +231,7 @@ namespace SiteWorkspaces {
    * Audit entry. */
   @post
   @route("/{workspaceId}/delete")
+  @extension("x-required-permissions", #[Permission.workspaceDelete])
   op delete(
     @path workspaceId: WorkspaceId,
     @body body: SiteDeleteWorkspaceInput,
@@ -252,8 +248,8 @@ namespace SiteWorkspaces {
    * erased, answers 409; an erased one has no Owner left to ask, so it answers 404.
    * Recorded as an Audit entry. */
   @post
-  @route("/{workspaceId}/restore")
-  op restore(@path workspaceId: WorkspaceId):
+  @route("/deleted/{id}/restore")
+  op restore(@path id: WorkspaceId):
     | SiteWorkspaceResource
     | NotFoundProblem
     | ConflictProblem;
@@ -264,6 +260,7 @@ namespace SiteWorkspaces {
    * entry with the caller as actor. */
   @post
   @route("/{workspaceId}/leave")
+  @extension("x-required-permissions", #[])
   op leave(@path workspaceId: WorkspaceId):
     | NoContentResponse
     | NotFoundProblem
@@ -273,6 +270,7 @@ namespace SiteWorkspaces {
    * never changes. */
   @put
   @route("/{workspaceId}")
+  @extension("x-required-permissions", #[Permission.workspaceUpdate])
   op update(
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateWorkspaceInput,
@@ -282,21 +280,36 @@ namespace SiteWorkspaces {
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
-  /** Switch the Two-factor requirement on or off (owner and admin only). Switching
-   * it on while it is already on keeps the original start, so no one's grace
-   * restarts. A change is recorded as an Audit entry. */
+  /** Switch the Two-factor requirement on (owner and admin only): every User with a
+   * Membership must then have a Second factor. Switching it on while it is already on keeps
+   * the original start, so no one's grace restarts. A change is recorded as an Audit entry. */
   @put
   @route("/{workspaceId}/second-factor-requirement")
-  op setSecondFactorRequirement(
-    @path workspaceId: WorkspaceId,
-    @body body: SiteSecondFactorRequirementInput,
-  ): SiteWorkspaceResource | ForbiddenProblem | NotFoundProblem;
+  @extension("x-required-permissions", #[Permission.secondFactorManage])
+  op requireSecondFactor(@path workspaceId: WorkspaceId):
+    | SiteWorkspaceResource
+    | ForbiddenProblem
+    | NotFoundProblem;
+
+  /** Switch the Two-factor requirement off (owner and admin only). It is the one operation a
+   * User withheld by the requirement may still perform in the Workspace, so an Owner or Admin
+   * without a Second factor is never locked out of lifting it (ADR 0020). A change is recorded
+   * as an Audit entry. */
+  @delete
+  @route("/{workspaceId}/second-factor-requirement")
+  @extension("x-allowed-while-withheld", true)
+  @extension("x-required-permissions", #[Permission.secondFactorManage])
+  op liftSecondFactorRequirement(@path workspaceId: WorkspaceId):
+    | SiteWorkspaceResource
+    | ForbiddenProblem
+    | NotFoundProblem;
 
   /** Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
    * a name the zone database does not know. A change is recorded as an Audit entry and applies
    * to all history at once. */
   @put
   @route("/{workspaceId}/timezone")
+  @extension("x-required-permissions", #[Permission.workspaceTimezone])
   op setTimezone(
     @path workspaceId: WorkspaceId,
     @body body: SiteWorkspaceTimezoneInput,
@@ -310,6 +323,7 @@ namespace SiteWorkspaces {
    * Account link configured. */
   @post
   @route("/{workspaceId}/account-link")
+  @extension("x-required-permissions", #[Permission.accountLinkOpen])
   op accountLink(@path workspaceId: WorkspaceId):
     | SiteAccountLinkResource
     | ForbiddenProblem
@@ -319,6 +333,7 @@ namespace SiteWorkspaces {
    * Attribution window. Open to every member. */
   @get
   @route("/{workspaceId}/revenue-settings")
+  @extension("x-required-permissions", #[])
   op getRevenueSettings(@path workspaceId: WorkspaceId):
     | SiteRevenueSettingsResource
     | NotFoundProblem;
@@ -328,6 +343,7 @@ namespace SiteWorkspaces {
    * outside its bounds. Every change is recorded as an Audit entry naming who changed what. */
   @put
   @route("/{workspaceId}/revenue-settings")
+  @extension("x-required-permissions", #[Permission.revenueConfigure])
   op updateRevenueSettings(
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateRevenueSettingsInput,

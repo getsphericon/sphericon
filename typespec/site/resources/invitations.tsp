@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -56,6 +57,7 @@ namespace SiteInvitations {
   @listsResource(SiteInvitationResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(...ResourceCollectionParameters<SiteInvitationResource>):
     | {
         @statusCode statusCode: 200;
@@ -67,6 +69,7 @@ namespace SiteInvitations {
   @createsResource(SiteInvitationResource)
   @post
   @autoRoute
+  @extension("x-required-permissions", #[Permission.membersManage])
   op create(
     ...ResourceCollectionParameters<SiteInvitationResource>,
     @body body: SiteCreateInvitationInput,
@@ -84,6 +87,7 @@ namespace SiteInvitations {
   @deletesResource(SiteInvitationResource)
   @delete
   @autoRoute
+  @extension("x-required-permissions", #[Permission.membersManage])
   op delete(...ResourceParameters<SiteInvitationResource>):
     | NoContentResponse
     | NotFoundProblem

@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/sendlimit"
@@ -16,10 +15,7 @@ import (
 // SiteIntegrationsList returns the workspace's sending-provider integrations
 // with secrets redacted.
 func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.SiteIntegrationsListParams) (siteapi.SiteIntegrationsListRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	rows, err := h.integrations.All(ctx, s, params.Archived.Or(false))
 	if err != nil {
@@ -43,14 +39,8 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.Site
 
 // SiteIntegrationsCreate stores a new provider integration; credentials are
 // encrypted at rest and never returned. Owners and admins only.
-func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.SiteCreateIntegrationInput, params siteapi.SiteIntegrationsCreateParams) (siteapi.SiteIntegrationsCreateRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.SiteCreateIntegrationInput, _ siteapi.SiteIntegrationsCreateParams) (siteapi.SiteIntegrationsCreateRes, error) {
+	s := workspaceScope(ctx)
 
 	cfg, err := configInput(req.Config)
 	if err != nil {
@@ -82,10 +72,7 @@ func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.Site
 
 // SiteIntegrationsGet returns one integration with secrets redacted.
 func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteIntegrationsGetParams) (siteapi.SiteIntegrationsGetRes, error) {
-	s, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	row, err := h.integrations.Get(ctx, s, id)
@@ -105,13 +92,7 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 // keep the stored secret rather than clearing it, since secrets are never echoed
 // back on read — so a partial edit cannot accidentally wipe a credential.
 func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.SiteUpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (siteapi.SiteIntegrationsUpdateRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
@@ -150,13 +131,7 @@ func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.Site
 // SiteIntegrationsRegenerateKey gives the integration a new hook key; the old hook URL
 // stops working at once. Owners and admins only.
 func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params siteapi.SiteIntegrationsRegenerateKeyParams) (siteapi.SiteIntegrationsRegenerateKeyRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 	row, err := h.integrations.RegenerateKey(ctx, s, int64(params.ID))
 	if err != nil {
 		return nil, err
@@ -185,16 +160,10 @@ func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResou
 // SiteIntegrationsArchive archives an integration (ADR 0049): it leaves the list and gives up the
 // default, unless live work uses it (409). Owners and admins only.
 func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.SiteIntegrationsArchiveParams) (siteapi.SiteIntegrationsArchiveRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.integrations.Archive(ctx, s, id)
+	err := h.integrations.Archive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -212,16 +181,10 @@ func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.S
 // SiteIntegrationsUnarchive restores an archived integration to the list. It is not the default.
 // Owners and admins only.
 func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi.SiteIntegrationsUnarchiveParams) (siteapi.SiteIntegrationsUnarchiveRes, error) {
-	s, role, err := h.scopedWithRoleFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
-	if err := accounts.Require(role, accounts.PermIntegrationsManage); err != nil {
-		return nil, err
-	}
+	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.integrations.Unarchive(ctx, s, id)
+	err := h.integrations.Unarchive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

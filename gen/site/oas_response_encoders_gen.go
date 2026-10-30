@@ -3069,6 +3069,18 @@ func encodeSiteContactsExportResponse(response SiteContactsExportRes, w http.Res
 
 		return nil
 
+	case *SiteContactsExportForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteContactsExportNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -7739,6 +7751,18 @@ func encodeSiteSuppressionsCreateResponse(response SiteSuppressionsCreateRes, w 
 
 		return nil
 
+	case *SiteSuppressionsCreateForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteSuppressionsCreateNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -7778,6 +7802,18 @@ func encodeSiteSuppressionsDeleteResponse(response SiteSuppressionsDeleteRes, w 
 	case *SiteSuppressionsDeleteBadRequest:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteSuppressionsDeleteForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -9625,6 +9661,49 @@ func encodeSiteWorkspacesLeaveResponse(response SiteWorkspacesLeaveRes, w http.R
 	}
 }
 
+func encodeSiteWorkspacesLiftSecondFactorRequirementResponse(response SiteWorkspacesLiftSecondFactorRequirementRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteWorkspaceResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesLiftSecondFactorRequirementForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesLiftSecondFactorRequirementNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteWorkspacesListResponse(response []SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
@@ -9659,6 +9738,49 @@ func encodeSiteWorkspacesListDeletedResponse(response []SiteDeletedWorkspaceReso
 	return nil
 }
 
+func encodeSiteWorkspacesRequireSecondFactorResponse(response SiteWorkspacesRequireSecondFactorRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteWorkspaceResource:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesRequireSecondFactorForbidden:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(403)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesRequireSecondFactorNotFound:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(404)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeSiteWorkspacesRestoreResponse(response SiteWorkspacesRestoreRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *SiteWorkspaceResource:
@@ -9688,49 +9810,6 @@ func encodeSiteWorkspacesRestoreResponse(response SiteWorkspacesRestoreRes, w ht
 	case *SiteWorkspacesRestoreConflict:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(409)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteWorkspacesSetSecondFactorRequirementResponse(response SiteWorkspacesSetSecondFactorRequirementRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteWorkspaceResource:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesSetSecondFactorRequirementForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteWorkspacesSetSecondFactorRequirementNotFound:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(404)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

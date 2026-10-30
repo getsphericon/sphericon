@@ -1,6 +1,7 @@
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.Rest.Resource;
+using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -268,6 +269,7 @@ namespace SiteIntegrations {
   @listsResource(SiteIntegrationResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op list(
     ...ResourceCollectionParameters<SiteIntegrationResource>,
     ...SiteIntegrationsListFilter,
@@ -282,6 +284,7 @@ namespace SiteIntegrations {
   @createsResource(SiteIntegrationResource)
   @post
   @autoRoute
+  @extension("x-required-permissions", #[Permission.integrationsManage])
   op create(
     ...ResourceCollectionParameters<SiteIntegrationResource>,
     @body body: SiteCreateIntegrationInput,
@@ -299,6 +302,7 @@ namespace SiteIntegrations {
   @readsResource(SiteIntegrationResource)
   @get
   @autoRoute
+  @extension("x-required-permissions", #[])
   op get(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
     | BadRequestProblem
@@ -308,6 +312,7 @@ namespace SiteIntegrations {
   @updatesResource(SiteIntegrationResource)
   @put
   @autoRoute
+  @extension("x-required-permissions", #[Permission.integrationsManage])
   op update(
     ...ResourceParameters<SiteIntegrationResource>,
     @body body: SiteUpdateIntegrationInput,
@@ -323,6 +328,7 @@ namespace SiteIntegrations {
   @action("regenerate-key")
   @post
   @autoRoute
+  @extension("x-required-permissions", #[Permission.integrationsManage])
   op regenerateKey(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
     | BadRequestProblem
@@ -333,6 +339,7 @@ namespace SiteIntegrations {
   @action("archive")
   @post
   @autoRoute
+  @extension("x-required-permissions", #[Permission.integrationsManage])
   op archive(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
     | BadRequestProblem
@@ -344,6 +351,7 @@ namespace SiteIntegrations {
   @action("unarchive")
   @post
   @autoRoute
+  @extension("x-required-permissions", #[Permission.integrationsManage])
   op unarchive(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
     | BadRequestProblem

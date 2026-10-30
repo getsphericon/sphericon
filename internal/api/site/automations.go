@@ -16,10 +16,7 @@ import (
 )
 
 func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteAutomationsListParams) (siteapi.SiteAutomationsListRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	page, err := h.automations.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), params.Archived.Or(false))
 	if err != nil {
@@ -43,11 +40,8 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 	}, nil
 }
 
-func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, params siteapi.SiteAutomationsCreateParams) (siteapi.SiteAutomationsCreateRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (siteapi.SiteAutomationsCreateRes, error) {
+	ws := workspaceScope(ctx)
 
 	in := automations.CreateInput{Name: req.Name, TriggerEvent: req.TriggerEvent, IntegrationID: convert.Int64Ptr(req.IntegrationId)}
 	if req.Steps != nil {
@@ -62,10 +56,7 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 }
 
 func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAutomationsGetParams) (siteapi.SiteAutomationsGetRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	a, err := h.automations.Get(ctx, ws, id)
@@ -82,10 +73,7 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 }
 
 func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteUpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (siteapi.SiteAutomationsUpdateRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 	in := automations.UpdateInput{
@@ -108,13 +96,10 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 }
 
 func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.SiteAutomationsDeleteParams) (siteapi.SiteAutomationsDeleteRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.automations.Delete(ctx, ws, id)
+	err := h.automations.Delete(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -124,13 +109,10 @@ func (h *Handlers) SiteAutomationsDelete(ctx context.Context, params siteapi.Sit
 // SiteAutomationsArchive archives an automation (ADR 0049): it leaves the list and enrolls
 // nobody, and keeps its enrollments. Active enrollments refuse it with 409.
 func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.SiteAutomationsArchiveParams) (siteapi.SiteAutomationsArchiveRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.automations.Archive(ctx, ws, id)
+	err := h.automations.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -144,13 +126,10 @@ func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.Si
 
 // SiteAutomationsUnarchive restores an archived automation to the list.
 func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.SiteAutomationsUnarchiveParams) (siteapi.SiteAutomationsUnarchiveRes, error) {
-	ws, err := h.scopedFor(ctx, params.WorkspaceId)
-	if err != nil {
-		return nil, err
-	}
+	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err = h.automations.Unarchive(ctx, ws, id)
+	err := h.automations.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +142,7 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 }
 
 func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.SiteAutomationsActivateParams) (siteapi.SiteAutomationsActivateRes, error) {
-	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, true)
+	a, err := h.setAutomationActive(ctx, params.ID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +151,7 @@ func (h *Handlers) SiteAutomationsActivate(ctx context.Context, params siteapi.S
 }
 
 func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi.SiteAutomationsDeactivateParams) (siteapi.SiteAutomationsDeactivateRes, error) {
-	a, err := h.setAutomationActive(ctx, params.WorkspaceId, params.ID, false)
+	a, err := h.setAutomationActive(ctx, params.ID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -180,11 +159,8 @@ func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi
 	return &res, nil
 }
 
-func (h *Handlers) setAutomationActive(ctx context.Context, workspaceID siteapi.WorkspaceId, id siteapi.EntityId, active bool) (*ent.Automation, error) {
-	ws, err := h.scopedFor(ctx, workspaceID)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handlers) setAutomationActive(ctx context.Context, id siteapi.EntityId, active bool) (*ent.Automation, error) {
+	ws := workspaceScope(ctx)
 	parsed := int64(id)
 	if active {
 		return h.automations.Activate(ctx, ws, parsed)

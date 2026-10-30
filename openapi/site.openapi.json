@@ -3304,6 +3304,55 @@
         "tags": ["Site Workspaces"]
       }
     },
+    "/workspaces/deleted/{id}/restore": {
+      "post": {
+        "operationId": "SiteWorkspaces_restore",
+        "description": "Restore a Workspace in its deletion window (Owner only). It removes only the\npending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted\nWorkspace is not exposed to anyone but its Owners, so a caller who is not an Owner\ngets 404 as for an unknown one. A Workspace past its window, or already being\nerased, answers 409; an erased one has no Owner left to ask, so it answers 404.\nRecorded as an Audit entry.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RFC 7807 conflict response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"]
+      }
+    },
     "/workspaces/{workspaceId}": {
       "put": {
         "operationId": "SiteWorkspaces_update",
@@ -3370,7 +3419,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["workspace:update"]
       }
     },
     "/workspaces/{workspaceId}/account-link": {
@@ -3419,7 +3469,8 @@
             }
           }
         },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": ["account_link:open"]
       }
     },
     "/workspaces/{workspaceId}/analytics/clicks-by-link": {
@@ -3468,7 +3519,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/events": {
@@ -3517,7 +3569,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/new-people": {
@@ -3566,7 +3619,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/opens-by-hour": {
@@ -3615,7 +3669,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/overview": {
@@ -3664,7 +3719,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/revenue": {
@@ -3718,7 +3774,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/analytics/subscribed-people": {
@@ -3767,7 +3824,8 @@
             }
           }
         },
-        "tags": ["Site Analytics"]
+        "tags": ["Site Analytics"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/audit-entries": {
@@ -3887,7 +3945,8 @@
             }
           }
         },
-        "tags": ["Site Audit"]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:read"]
       }
     },
     "/workspaces/{workspaceId}/audit-entries/export": {
@@ -3981,7 +4040,8 @@
             }
           }
         },
-        "tags": ["Site Audit"]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:read"]
       }
     },
     "/workspaces/{workspaceId}/audit-entries/retention": {
@@ -4040,7 +4100,8 @@
             }
           }
         },
-        "tags": ["Site Audit"]
+        "tags": ["Site Audit"],
+        "x-required-permissions": ["audit:configure"]
       },
       "put": {
         "operationId": "SiteAudit_setRetention",
@@ -4117,7 +4178,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["audit:configure"]
       }
     },
     "/workspaces/{workspaceId}/automations": {
@@ -4211,7 +4273,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteAutomations_create",
@@ -4263,7 +4326,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/dry-run-http-step": {
@@ -4327,7 +4391,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{automationId}/enrollments": {
@@ -4431,7 +4496,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}": {
@@ -4496,7 +4562,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{automationId}/report": {
@@ -4553,7 +4620,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}": {
@@ -4600,7 +4668,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteAutomations_update",
@@ -4665,7 +4734,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteAutomations_delete",
@@ -4713,7 +4783,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/activate": {
@@ -4770,7 +4841,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/archive": {
@@ -4827,7 +4899,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/deactivate": {
@@ -4874,7 +4947,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/automations/{id}/unarchive": {
@@ -4921,7 +4995,8 @@
             }
           }
         },
-        "tags": ["Site Automations"]
+        "tags": ["Site Automations"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/brand-kit": {
@@ -4960,7 +5035,8 @@
             }
           }
         },
-        "tags": ["Site Brand Kit"]
+        "tags": ["Site Brand Kit"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteBrandKit_save",
@@ -5027,7 +5103,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["brand_kit:manage"]
       }
     },
     "/workspaces/{workspaceId}/brand-kit/starter-templates": {
@@ -5089,7 +5166,8 @@
             }
           }
         },
-        "tags": ["Site Brand Kit"]
+        "tags": ["Site Brand Kit"],
+        "x-required-permissions": ["brand_kit:manage"]
       }
     },
     "/workspaces/{workspaceId}/broadcasts": {
@@ -5183,7 +5261,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteBroadcasts_create",
@@ -5235,7 +5314,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{broadcastId}/links": {
@@ -5292,7 +5372,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}": {
@@ -5339,7 +5420,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteBroadcasts_update",
@@ -5404,7 +5486,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteBroadcasts_delete",
@@ -5452,7 +5535,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/archive": {
@@ -5509,7 +5593,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/schedule": {
@@ -5576,7 +5661,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/send": {
@@ -5633,7 +5719,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/test-send": {
@@ -5744,7 +5831,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/broadcasts/{id}/unarchive": {
@@ -5791,7 +5879,8 @@
             }
           }
         },
-        "tags": ["Site Broadcasts"]
+        "tags": ["Site Broadcasts"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/captured-messages": {
@@ -5882,7 +5971,8 @@
             }
           }
         },
-        "tags": ["Site Captured Messages"]
+        "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/captured-messages/all": {
@@ -5909,7 +5999,8 @@
             }
           }
         },
-        "tags": ["Site Captured Messages"]
+        "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/captured-messages/{id}": {
@@ -5956,7 +6047,8 @@
             }
           }
         },
-        "tags": ["Site Captured Messages"]
+        "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteCapturedMessages_delete",
@@ -5994,7 +6086,8 @@
             }
           }
         },
-        "tags": ["Site Captured Messages"]
+        "tags": ["Site Captured Messages"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/contacts": {
@@ -6088,7 +6181,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteContacts_create",
@@ -6150,7 +6244,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/contacts/erase": {
@@ -6208,13 +6303,14 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/contacts/export": {
       "post": {
         "operationId": "SiteContacts_export",
-        "description": "Export everything held about one contact as a streamed JSON download.\nIdentify the contact by exactly one of `id` or `email`. Available to any\nWorkspace member (contact read access).",
+        "description": "Export everything held about one contact as a streamed JSON download.\nIdentify the contact by exactly one of `id` or `email`. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteContactResourceParentKey"
@@ -6275,6 +6371,16 @@
               }
             }
           },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -6286,7 +6392,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:export"]
       }
     },
     "/workspaces/{workspaceId}/contacts/lookup": {
@@ -6351,7 +6458,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/contacts/{contactId}/tags": {
@@ -6455,7 +6563,8 @@
             }
           }
         },
-        "tags": ["Site Tags"]
+        "tags": ["Site Tags"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteTags_apply",
@@ -6530,7 +6639,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/contacts/{contactId}/tags/{name}": {
@@ -6588,7 +6698,8 @@
             }
           }
         },
-        "tags": ["Site Tags"]
+        "tags": ["Site Tags"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/contacts/{id}": {
@@ -6635,7 +6746,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteContacts_update",
@@ -6710,7 +6822,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteContacts_delete",
@@ -6758,7 +6871,8 @@
             }
           }
         },
-        "tags": ["Site Contacts"]
+        "tags": ["Site Contacts"],
+        "x-required-permissions": ["contacts:erase"]
       }
     },
     "/workspaces/{workspaceId}/custom-fields": {
@@ -6833,7 +6947,8 @@
             }
           }
         },
-        "tags": ["Site Custom Fields"]
+        "tags": ["Site Custom Fields"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/delete": {
@@ -6902,7 +7017,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["workspace:delete"]
       }
     },
     "/workspaces/{workspaceId}/domain-join": {
@@ -6951,7 +7067,8 @@
             }
           }
         },
-        "tags": ["Site Join Domains"]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       },
       "put": {
         "operationId": "SiteDomainJoin_set",
@@ -7008,7 +7125,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/events": {
@@ -7119,7 +7237,8 @@
             }
           }
         },
-        "tags": ["Site Events"]
+        "tags": ["Site Events"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/events/actions": {
@@ -7153,7 +7272,8 @@
             }
           }
         },
-        "tags": ["Site Events"]
+        "tags": ["Site Events"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/integrations": {
@@ -7193,7 +7313,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteIntegrations_create",
@@ -7265,7 +7386,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}": {
@@ -7312,7 +7434,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteIntegrations_update",
@@ -7397,7 +7520,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/archive": {
@@ -7464,7 +7588,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/regenerate-key": {
@@ -7521,7 +7646,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/integrations/{id}/unarchive": {
@@ -7588,7 +7714,8 @@
             }
           }
         },
-        "tags": ["Site Integrations"]
+        "tags": ["Site Integrations"],
+        "x-required-permissions": ["integrations:manage"]
       }
     },
     "/workspaces/{workspaceId}/invitations": {
@@ -7625,7 +7752,8 @@
             }
           }
         },
-        "tags": ["Site Invitations"]
+        "tags": ["Site Invitations"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteInvitations_create",
@@ -7697,7 +7825,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/invitations/{id}": {
@@ -7737,7 +7866,8 @@
             }
           }
         },
-        "tags": ["Site Invitations"]
+        "tags": ["Site Invitations"],
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains": {
@@ -7789,7 +7919,8 @@
             }
           }
         },
-        "tags": ["Site Join Domains"]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       },
       "post": {
         "operationId": "SiteJoinDomains_add",
@@ -7866,7 +7997,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains/{id}": {
@@ -7916,7 +8048,8 @@
             }
           }
         },
-        "tags": ["Site Join Domains"]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/join-domains/{id}/verify": {
@@ -7993,7 +8126,8 @@
             }
           }
         },
-        "tags": ["Site Join Domains"]
+        "tags": ["Site Join Domains"],
+        "x-required-permissions": ["join_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/leave": {
@@ -8035,7 +8169,8 @@
             }
           }
         },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/memberships": {
@@ -8072,7 +8207,8 @@
             }
           }
         },
-        "tags": ["Site Memberships"]
+        "tags": ["Site Memberships"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/memberships/{id}": {
@@ -8139,7 +8275,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["members:manage"]
       },
       "delete": {
         "operationId": "SiteMemberships_delete",
@@ -8187,7 +8324,8 @@
             }
           }
         },
-        "tags": ["Site Memberships"]
+        "tags": ["Site Memberships"],
+        "x-required-permissions": ["members:manage"]
       }
     },
     "/workspaces/{workspaceId}/memberships/{id}/reset-second-factor": {
@@ -8237,56 +8375,8 @@
             }
           }
         },
-        "tags": ["Site Memberships"]
-      }
-    },
-    "/workspaces/{workspaceId}/restore": {
-      "post": {
-        "operationId": "SiteWorkspaces_restore",
-        "description": "Restore a Workspace in its deletion window (Owner only). It removes only the\npending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted\nWorkspace is not exposed to anyone but its Owners, so a caller who is not an Owner\ngets 404 as for an unknown one. A Workspace past its window, or already being\nerased, answers 409; an erased one has no Owner left to ask, so it answers 404.\nRecorded as an Audit entry.",
-        "parameters": [
-          {
-            "name": "workspaceId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/WorkspaceId"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The request has succeeded.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SiteWorkspaceResource"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "RFC 7807 not found response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "RFC 7807 conflict response",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Memberships"],
+        "x-required-permissions": ["second_factor:manage"]
       }
     },
     "/workspaces/{workspaceId}/revenue-settings": {
@@ -8325,7 +8415,8 @@
             }
           }
         },
-        "tags": ["Site Workspaces"]
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteWorkspaces_updateRevenueSettings",
@@ -8392,7 +8483,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["revenue:configure"]
       }
     },
     "/workspaces/{workspaceId}/rules": {
@@ -8486,7 +8578,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteRules_create",
@@ -8538,7 +8631,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}": {
@@ -8585,7 +8679,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteRules_update",
@@ -8650,7 +8745,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteRules_delete",
@@ -8698,7 +8794,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/activate": {
@@ -8755,7 +8852,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/archive": {
@@ -8802,7 +8900,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/deactivate": {
@@ -8849,7 +8948,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/dry-run": {
@@ -8906,7 +9006,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{id}/unarchive": {
@@ -8953,7 +9054,8 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/rules/{ruleId}/firings": {
@@ -9047,13 +9149,14 @@
             }
           }
         },
-        "tags": ["Site Rules"]
+        "tags": ["Site Rules"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/second-factor-requirement": {
       "put": {
-        "operationId": "SiteWorkspaces_setSecondFactorRequirement",
-        "description": "Switch the Two-factor requirement on or off (owner and admin only). Switching\nit on while it is already on keeps the original start, so no one's grace\nrestarts. A change is recorded as an Audit entry.",
+        "operationId": "SiteWorkspaces_requireSecondFactor",
+        "description": "Switch the Two-factor requirement on (owner and admin only): every User with a\nMembership must then have a Second factor. Switching it on while it is already on keeps\nthe original start, so no one's grace restarts. A change is recorded as an Audit entry.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -9097,16 +9200,56 @@
           }
         },
         "tags": ["Site Workspaces"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SiteSecondFactorRequirementInput"
+        "x-required-permissions": ["second_factor:manage"]
+      },
+      "delete": {
+        "operationId": "SiteWorkspaces_liftSecondFactorRequirement",
+        "description": "Switch the Two-factor requirement off (owner and admin only). It is the one operation a\nUser withheld by the requirement may still perform in the Workspace, so an Owner or Admin\nwithout a Second factor is never locked out of lifting it (ADR 0020). A change is recorded\nas an Audit entry.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
               }
             }
           }
-        }
+        },
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": ["second_factor:manage"],
+        "x-allowed-while-withheld": true
       }
     },
     "/workspaces/{workspaceId}/segments": {
@@ -9200,7 +9343,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteSegments_create",
@@ -9252,7 +9396,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/preview": {
@@ -9316,7 +9461,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/{id}": {
@@ -9363,7 +9509,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteSegments_update",
@@ -9428,7 +9575,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/{id}/archive": {
@@ -9485,7 +9633,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/{id}/unarchive": {
@@ -9532,7 +9681,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/segments/{segmentId}/contacts": {
@@ -9636,7 +9786,8 @@
             }
           }
         },
-        "tags": ["Site Segments"]
+        "tags": ["Site Segments"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/sending-domains": {
@@ -9730,7 +9881,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteSendingDomains_create",
@@ -9802,7 +9954,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}": {
@@ -9849,7 +10002,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}/archive": {
@@ -9916,7 +10070,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}/unarchive": {
@@ -9983,7 +10138,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/sending-domains/{id}/verify": {
@@ -10040,7 +10196,8 @@
             }
           }
         },
-        "tags": ["Site Sending Domains"]
+        "tags": ["Site Sending Domains"],
+        "x-required-permissions": ["sending_domains:manage"]
       }
     },
     "/workspaces/{workspaceId}/setup-checklist": {
@@ -10079,13 +10236,14 @@
             }
           }
         },
-        "tags": ["Site Setup Checklist"]
+        "tags": ["Site Setup Checklist"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/suppressions": {
       "post": {
         "operationId": "SiteSuppressions_create",
-        "description": "Manually suppress an address (reason = manual; idempotent per address)",
+        "description": "Manually suppress an address (reason = manual; idempotent per address). Owners and admins\nonly.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSuppressionResourceParentKey"
@@ -10098,6 +10256,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteSuppressionResource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -10133,11 +10301,12 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["suppressions:manage"]
       },
       "get": {
         "operationId": "SiteSuppressions_list",
-        "description": "List suppressed addresses",
+        "description": "List suppressed addresses (every member)",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSuppressionResourceParentKey"
@@ -10225,13 +10394,14 @@
             }
           }
         },
-        "tags": ["Site Suppressions"]
+        "tags": ["Site Suppressions"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/suppressions/{id}": {
       "delete": {
         "operationId": "SiteSuppressions_delete",
-        "description": "Lift a suppression: the row stays with its lift time and the address can receive mail again.\nLifting one that is already lifted is a 404.",
+        "description": "Lift a suppression: the row stays with its lift time and the address can receive mail again.\nLifting one that is already lifted is a 404. Owners and admins only.",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSuppressionResourceKey.workspaceId"
@@ -10254,6 +10424,16 @@
               }
             }
           },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -10265,7 +10445,8 @@
             }
           }
         },
-        "tags": ["Site Suppressions"]
+        "tags": ["Site Suppressions"],
+        "x-required-permissions": ["suppressions:manage"]
       }
     },
     "/workspaces/{workspaceId}/tags": {
@@ -10361,7 +10542,8 @@
             }
           }
         },
-        "tags": ["Site Tags"]
+        "tags": ["Site Tags"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/tags/{id}": {
@@ -10421,7 +10603,8 @@
             }
           }
         },
-        "tags": ["Site Tags"]
+        "tags": ["Site Tags"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/templates": {
@@ -10512,7 +10695,8 @@
             }
           }
         },
-        "tags": ["Site Templates"]
+        "tags": ["Site Templates"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteTemplates_create",
@@ -10564,7 +10748,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/templates/{id}": {
@@ -10611,7 +10796,8 @@
             }
           }
         },
-        "tags": ["Site Templates"]
+        "tags": ["Site Templates"],
+        "x-required-permissions": []
       },
       "put": {
         "operationId": "SiteTemplates_update",
@@ -10676,7 +10862,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": []
       },
       "delete": {
         "operationId": "SiteTemplates_delete",
@@ -10714,7 +10901,8 @@
             }
           }
         },
-        "tags": ["Site Templates"]
+        "tags": ["Site Templates"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/timezone": {
@@ -10783,7 +10971,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["workspace:timezone"]
       }
     },
     "/workspaces/{workspaceId}/tokens": {
@@ -10820,7 +11009,8 @@
             }
           }
         },
-        "tags": ["Site Tokens"]
+        "tags": ["Site Tokens"],
+        "x-required-permissions": []
       },
       "post": {
         "operationId": "SiteTokens_create",
@@ -10882,7 +11072,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["tokens:manage"]
       }
     },
     "/workspaces/{workspaceId}/tokens/{id}": {
@@ -10949,7 +11140,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["tokens:manage"]
       },
       "delete": {
         "operationId": "SiteTokens_delete",
@@ -10997,7 +11189,8 @@
             }
           }
         },
-        "tags": ["Site Tokens"]
+        "tags": ["Site Tokens"],
+        "x-required-permissions": ["tokens:manage"]
       }
     },
     "/workspaces/{workspaceId}/transactional-emails": {
@@ -11088,7 +11281,8 @@
             }
           }
         },
-        "tags": ["Site Transactional Emails"]
+        "tags": ["Site Transactional Emails"],
+        "x-required-permissions": []
       }
     },
     "/workspaces/{workspaceId}/webhooks": {
@@ -11189,7 +11383,8 @@
             }
           }
         },
-        "tags": ["Site Webhooks"]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       },
       "post": {
         "operationId": "SiteWebhooks_create",
@@ -11251,7 +11446,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}": {
@@ -11308,7 +11504,8 @@
             }
           }
         },
-        "tags": ["Site Webhooks"]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       },
       "put": {
         "operationId": "SiteWebhooks_update",
@@ -11383,7 +11580,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["webhooks:manage"]
       },
       "delete": {
         "operationId": "SiteWebhooks_delete",
@@ -11431,7 +11629,8 @@
             }
           }
         },
-        "tags": ["Site Webhooks"]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}/regenerate-secret": {
@@ -11488,7 +11687,8 @@
             }
           }
         },
-        "tags": ["Site Webhooks"]
+        "tags": ["Site Webhooks"],
+        "x-required-permissions": ["webhooks:manage"]
       }
     },
     "/workspaces/{workspaceId}/webhooks/{id}/test": {
@@ -11565,7 +11765,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-permissions": ["webhooks:manage"]
       }
     }
   },
@@ -17747,17 +17948,6 @@
           }
         },
         "description": "A pending enrollment: the TOTP secret to add to an authenticator app"
-      },
-      "SiteSecondFactorRequirementInput": {
-        "type": "object",
-        "required": ["required"],
-        "properties": {
-          "required": {
-            "type": "boolean",
-            "description": "Whether every User with a Membership must have a Second factor"
-          }
-        },
-        "description": "Switch the Two-factor requirement on or off"
       },
       "SiteSecondFactorStartInput": {
         "type": "object",
