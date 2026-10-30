@@ -21,7 +21,8 @@ export const zProblemCode = z.enum([
   'second_factor_required',
   'email_verification_required',
   'signup_closed',
-  'permission_required'
+  'permission_required',
+  'migrations_pending'
 ]);
 
 /**

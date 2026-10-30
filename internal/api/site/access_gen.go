@@ -136,6 +136,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteRulesRevertOperation:                           {workspace: true},
 	siteapi.SiteRulesUnarchiveOperation:                        {workspace: true},
 	siteapi.SiteRulesUpdateOperation:                           {workspace: true},
+	siteapi.SiteSchemaApplyMigrationsOperation:                 {},
 	siteapi.SiteSecondFactorConfirmEnrollmentOperation:         {},
 	siteapi.SiteSecondFactorDisableOperation:                   {},
 	siteapi.SiteSecondFactorGetStatusOperation:                 {},

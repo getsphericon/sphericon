@@ -697,6 +697,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeSignupClosed
 	case ProblemCodePermissionRequired:
 		*s = ProblemCodePermissionRequired
+	case ProblemCodeMigrationsPending:
+		*s = ProblemCodeMigrationsPending
 	default:
 		*s = ProblemCode(v)
 	}

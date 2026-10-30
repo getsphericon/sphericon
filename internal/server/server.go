@@ -155,10 +155,12 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		// Development only: a 500 carries what failed, for the page to show (devdebug.go).
 		outer = append(chi.Middlewares{devDebug}, outer...)
 	}
-	if cfg.IsDev && !cfg.AutoMigrate {
-		// Development only (ADR 0033): a database reset or rebuilt under the running process
-		// is named instead of answering bare 500s. A production Instance never answers 503 on
-		// a check of its own; the start guard is its whole protection.
+	if cfg.MigratesFromThePage() && !cfg.AutoMigrate {
+		// Development only (ADR 0033): a database that is behind, because the process started on
+		// it or because it was reset under the running process, is named, with the error page's
+		// button that runs the migrations, instead of answering bare 500s. A production Instance
+		// (and a release build) never answers 503 on a check of its own; the start guard is its
+		// whole protection.
 		outer = append(outer, SchemaGuard(schema))
 	}
 	inner := chi.Middlewares{clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
@@ -364,14 +366,20 @@ type PendingMigrations interface {
 	Pending(ctx context.Context) (int, error)
 }
 
-// SchemaGuard answers 503 with a problem that names the migrate command while the database
-// lacks migrations this binary needs, instead of letting every query fail with a bare 500.
-// The probe paths pass: /healthz is liveness only, and /readyz reports on the database itself.
+// applyMigrationsPath is the error page's button that runs the migrations (SiteSchema in the
+// contract), which SchemaGuard lets through.
+const applyMigrationsPath = "/site/schema/migrations"
+
+// SchemaGuard answers 503 with a problem (code migrations_pending) that names the migrate
+// command while the database lacks migrations this binary needs, instead of letting every
+// query fail with a bare 500. The probe paths pass: /healthz is liveness only, and /readyz
+// reports on the database itself. So does the error page's button that runs the migrations.
 // A failed lookup lets the request through: an unreachable database fails it on its own.
 func SchemaGuard(watch PendingMigrations) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+			if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" ||
+				(r.Method == http.MethodPost && r.URL.Path == applyMigrationsPath) {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -381,7 +389,7 @@ func SchemaGuard(watch PendingMigrations) func(http.Handler) http.Handler {
 				return
 			}
 			w.Header().Set("Retry-After", "5")
-			writeProblem(w, http.StatusServiceUnavailable, fmt.Sprintf(
+			writeCodedProblem(w, http.StatusServiceUnavailable, string(siteapi.ProblemCodeMigrationsPending), fmt.Sprintf(
 				"The database is %d migration(s) behind this build. Run `sphericon migrate` (in development `mise run db:migrate`), then reload.",
 				pending))
 		})

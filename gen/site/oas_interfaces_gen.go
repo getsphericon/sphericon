@@ -473,6 +473,10 @@ type SiteRulesUpdateRes interface {
 	siteRulesUpdateRes()
 }
 
+type SiteSchemaApplyMigrationsRes interface {
+	siteSchemaApplyMigrationsRes()
+}
+
 type SiteSecondFactorConfirmEnrollmentRes interface {
 	siteSecondFactorConfirmEnrollmentRes()
 }

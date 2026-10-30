@@ -112,7 +112,9 @@ stays path-based). In prod the ingress in front of the binary does the same rewr
 `demo` (Vite on `:5373`: the Brightpath demo storefront, `packages/storefront`, a customer site on its
 own origin `brightpath.localhost` that sends events through `@sphericon/analytics` and the
 `@sphericon/node` SDK; it is not part of the release image), `caddy` (:443). Inspect with `mise daemons ls|logs|status`. Migrations run via goose
-(`mise run db:migrate`); the backend does not self-migrate. Dev defaults (JWT secret, dev
+(`mise run db:migrate`); the backend does not self-migrate. After a pull with new migrations it
+starts anyway and every page shows the error page with a "Run pending migrations" button, which runs
+them (ADR 0033). Dev defaults (JWT secret, dev
 `SPHERICON_ENCRYPTION_KEY`, SMTP) live in the `[env]` table of `.mise.toml`; personal overrides go in
 the gitignored `.env` (read by the app) or `.mise.local.toml`.
 

@@ -391,6 +391,8 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "permission_required":
 		return nil
+	case "migrations_pending":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

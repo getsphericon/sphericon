@@ -2,6 +2,7 @@ import {
   Button,
   Code,
   CopyButton,
+  Group,
   Stack,
   Text,
   ThemeIcon,
@@ -9,11 +10,19 @@ import {
   Tooltip,
   UnstyledButton,
 } from '@mantine/core'
-import { IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
+import { IconAlertTriangle, IconDatabaseImport, IconRefresh } from '@tabler/icons-react'
+import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { getApiErrorMessage, getProblemDebug, getProblemStatusLine } from '../utils/apiErrors.ts'
+import { siteSchemaApplyMigrationsMutation } from '../generated/site/@tanstack/react-query.gen.ts'
+import {
+  getApiErrorMessage,
+  getProblemDebug,
+  getProblemStatusLine,
+  isMigrationsPendingError,
+} from '../utils/apiErrors.ts'
 import { splitInlineCode } from '../utils/inlineCode.ts'
+import { ApiErrorAlert } from './ApiErrorAlert.tsx'
 import { CenteredLayout } from './CenteredLayout.tsx'
 import { ProblemDebugPanel } from './ProblemDebugPanel.tsx'
 
@@ -24,9 +33,17 @@ interface AppErrorPageProps {
 // AppErrorPage is what the router renders for an error no route handled. A failed API call
 // carries a problem body: its detail is shown (a server that is not ready names what to run,
 // e.g. the migrate command), so the page never stops at a bare "something went wrong". The
-// commands a detail sets in backticks are copied with a click.
+// commands a detail sets in backticks are copied with a click. A development server whose
+// database is behind (migrations_pending, ADR 0033) gets a button that runs the migrations.
 export function AppErrorPage({ error }: AppErrorPageProps) {
   const { t } = useTranslation()
+  const migrate = useMutation({
+    ...siteSchemaApplyMigrationsMutation(),
+    onSuccess: () => {
+      globalThis.location.reload()
+    },
+  })
+  const pending = isMigrationsPendingError(error)
   const statusLine = getProblemStatusLine(error)
   const message = getApiErrorMessage(
     error,
@@ -52,15 +69,36 @@ export function AppErrorPage({ error }: AppErrorPageProps) {
         )}
       </Text>
       <ProblemDebugPanel error={error} />
-      <Button
-        mt="sm"
-        leftSection={<IconRefresh size={16} />}
-        onClick={() => {
-          globalThis.location.reload()
-        }}
-      >
-        {t(($) => $.appError.reload)}
-      </Button>
+      {migrate.isError ? (
+        <ApiErrorAlert
+          error={migrate.error}
+          title={t(($) => $.appError.migrateErrorTitle)}
+          fallback={t(($) => $.appError.migrateErrorBody)}
+        />
+      ) : null}
+      <Group mt="sm" justify="center">
+        {pending ? (
+          <Button
+            leftSection={<IconDatabaseImport size={16} />}
+            loading={migrate.isPending}
+            onClick={() => {
+              migrate.mutate({})
+            }}
+          >
+            {t(($) => $.appError.migrate)}
+          </Button>
+        ) : null}
+        <Button
+          variant={pending ? 'default' : 'filled'}
+          leftSection={<IconRefresh size={16} />}
+          disabled={migrate.isPending}
+          onClick={() => {
+            globalThis.location.reload()
+          }}
+        >
+          {t(($) => $.appError.reload)}
+        </Button>
+      </Group>
     </CenteredLayout>
   )
 }

@@ -50,6 +50,14 @@ export function isEmailVerificationRequiredError(error: unknown) {
   )
 }
 
+// A 503 problem with code migrations_pending: a development server's database has not run the
+// migrations its build needs (ADR 0033), and the error page offers to run them.
+export function isMigrationsPendingError(error: unknown) {
+  return (
+    isApiErrorLike(error) && error.status === 503 && error.code === ProblemCode.MIGRATIONS_PENDING
+  )
+}
+
 // A 429 problem body carries `status: 429` (RFC 7807): a rate limit was hit
 // (ADR 0025). The generated client types it, so callers branch on the status, not
 // on the English detail.

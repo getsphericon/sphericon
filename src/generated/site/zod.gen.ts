@@ -176,7 +176,8 @@ export const zProblemCode = z.enum([
   'second_factor_required',
   'email_verification_required',
   'signup_closed',
-  'permission_required'
+  'permission_required',
+  'migrations_pending'
 ]);
 
 /**
@@ -3500,6 +3501,11 @@ export const zSiteOAuthDecideResponse = zSiteOAuthDecisionResult;
  * The request has succeeded.
  */
 export const zSitePresetsListResponse = z.array(zSitePresetResource);
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSiteSchemaApplyMigrationsResponse = z.void();
 
 export const zSitePublicUnsubscribesPerformPath = z.object({
   token: z.string()

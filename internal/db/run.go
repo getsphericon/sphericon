@@ -36,7 +36,8 @@ func ApplyMigrations(ctx context.Context, url string) (int, error) {
 // it applies the pending migrations, the wait for the lock and the run taking at most
 // SPHERICON_DB_MIGRATE_TIMEOUT (0 = no limit), so the single binary can come up against a fresh
 // database with no extra step. Otherwise the guard refuses, naming what to do, a database the
-// binary cannot run on as it is (ADR 0033).
+// binary cannot run on as it is (ADR 0033), except for the migrations a development build lets
+// its error page run (config.MigratesFromThePage).
 func PrepareStart(ctx context.Context, cfg *config.Config) error {
 	if cfg.AutoMigrate {
 		if err := migrateOnStart(ctx, cfg); err != nil {
@@ -47,7 +48,7 @@ func PrepareStart(ctx context.Context, cfg *config.Config) error {
 	ctx, cancel := context.WithTimeout(ctx, guardTimeout)
 	defer cancel()
 	_, err := withDB(cfg.DatabaseURL, func(sqlDB *sql.DB) (struct{}, error) {
-		return struct{}{}, Guard{Build: buildinfo.Current()}.Check(ctx, sqlDB)
+		return struct{}{}, Guard{Build: buildinfo.Current(), AllowPending: cfg.MigratesFromThePage()}.Check(ctx, sqlDB)
 	})
 	if err != nil {
 		return fmt.Errorf("schema guard: %w", err)

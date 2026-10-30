@@ -130,6 +130,7 @@ const (
 	SiteRulesRevertOperation                           OperationName = "SiteRulesRevert"
 	SiteRulesUnarchiveOperation                        OperationName = "SiteRulesUnarchive"
 	SiteRulesUpdateOperation                           OperationName = "SiteRulesUpdate"
+	SiteSchemaApplyMigrationsOperation                 OperationName = "SiteSchemaApplyMigrations"
 	SiteSecondFactorConfirmEnrollmentOperation         OperationName = "SiteSecondFactorConfirmEnrollment"
 	SiteSecondFactorDisableOperation                   OperationName = "SiteSecondFactorDisable"
 	SiteSecondFactorGetStatusOperation                 OperationName = "SiteSecondFactorGetStatus"

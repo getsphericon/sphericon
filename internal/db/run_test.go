@@ -2,6 +2,7 @@ package db_test
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -85,6 +86,40 @@ func TestPrepareStartMigratesOnlyWhenAutoMigrateIsOn(t *testing.T) {
 	assert.Contains(t, migrated, "pending: none")
 	err = db.PrepareStart(t.Context(), guarded)
 	require.NoError(t, err)
+}
+
+// A development build starts on a database that has not run its migrations, and changes nothing:
+// the error page runs them.
+func TestPrepareStartOfADevelopmentBuildStartsOnADatabaseThatIsBehind(t *testing.T) {
+	cfg := emptyConfig(t, false)
+	cfg.IsDev = true
+
+	require.NoError(t, db.PrepareStart(t.Context(), cfg))
+	assert.NotContains(t, statusText(t, cfg.DatabaseURL), "pending: none")
+}
+
+// The error page's button migrates even when its request is gone, and the next request sees the
+// schema current at once instead of the verdict the watch cached.
+func TestPageMigrationsRunThroughACancelledRequestAndRefreshTheWatch(t *testing.T) {
+	url := testhelper.EmptyDBURL(t)
+	asked := 0
+	watch := db.WatchSchema(func(context.Context) (int, error) {
+		asked++
+		return 0, nil
+	}, time.Now)
+	_, err := watch.Pending(t.Context())
+	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	applied, err := db.NewPageMigrations(url, time.Minute, watch).Apply(ctx)
+
+	require.NoError(t, err)
+	assert.Positive(t, applied)
+	assert.Contains(t, statusText(t, url), "pending: none")
+	_, err = watch.Pending(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, 2, asked, "the watch asks the database again")
 }
 
 // `migrate --status` prints the schema's state and the pending migrations and changes nothing.

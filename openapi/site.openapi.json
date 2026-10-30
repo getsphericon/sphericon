@@ -94,6 +94,9 @@
       "name": "Site Instance"
     },
     {
+      "name": "Site Schema"
+    },
+    {
       "name": "Site Contacts"
     },
     {
@@ -3178,6 +3181,30 @@
           }
         },
         "tags": ["Site Integrations"]
+      }
+    },
+    "/schema/migrations": {
+      "post": {
+        "operationId": "SiteSchema_applyMigrations",
+        "description": "Run the migrations the database has not run, the button of the error page. Only a\ndevelopment build serves it; any other answers 404. The answer comes once they ran.",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Schema"],
+        "security": [{}]
       }
     },
     "/unsubscribes/{token}": {
@@ -13549,7 +13576,8 @@
           "second_factor_required",
           "email_verification_required",
           "signup_closed",
-          "permission_required"
+          "permission_required",
+          "migrations_pending"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },

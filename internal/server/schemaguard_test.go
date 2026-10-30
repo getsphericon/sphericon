@@ -21,8 +21,13 @@ func (p pendingFake) Pending(context.Context) (int, error) { return p.pending, p
 
 func serveThroughSchemaGuard(t *testing.T, watch server.PendingMigrations, path string) *httptest.ResponseRecorder {
 	t.Helper()
+	return sendThroughSchemaGuard(t, watch, http.MethodGet, path)
+}
+
+func sendThroughSchemaGuard(t *testing.T, watch server.PendingMigrations, method, path string) *httptest.ResponseRecorder {
+	t.Helper()
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
+	req := httptest.NewRequestWithContext(t.Context(), method, path, nil)
 	w := httptest.NewRecorder()
 	server.SchemaGuard(watch)(next).ServeHTTP(w, req)
 	return w
@@ -36,6 +41,16 @@ func TestSchemaGuardAnswersAProblemThatNamesMigrateWhileMigrationsArePending(t *
 	assert.Equal(t, "5", w.Header().Get("Retry-After"))
 	assert.Contains(t, w.Body.String(), "3 migration(s) behind")
 	assert.Contains(t, w.Body.String(), "mise run db:migrate")
+	assert.Contains(t, w.Body.String(), `"code":"migrations_pending"`)
+}
+
+// The error page's button is what runs the migrations, so it passes; nothing else on its path does.
+func TestSchemaGuardLetsTheButtonThatRunsTheMigrationsThrough(t *testing.T) {
+	button := sendThroughSchemaGuard(t, pendingFake{pending: 3}, http.MethodPost, "/site/schema/migrations")
+	assert.Equal(t, http.StatusNoContent, button.Code)
+
+	read := sendThroughSchemaGuard(t, pendingFake{pending: 3}, http.MethodGet, "/site/schema/migrations")
+	assert.Equal(t, http.StatusServiceUnavailable, read.Code)
 }
 
 func TestSchemaGuardPassesWhenTheSchemaIsCurrentOrTheLookupFails(t *testing.T) {

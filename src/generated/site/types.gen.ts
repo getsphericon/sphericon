@@ -662,7 +662,8 @@ export const ProblemCode = {
   SECOND_FACTOR_REQUIRED: 'second_factor_required',
   EMAIL_VERIFICATION_REQUIRED: 'email_verification_required',
   SIGNUP_CLOSED: 'signup_closed',
-  PERMISSION_REQUIRED: 'permission_required'
+  PERMISSION_REQUIRED: 'permission_required',
+  MIGRATIONS_PENDING: 'migrations_pending'
 } as const;
 
 /**
@@ -7297,6 +7298,31 @@ export type SitePresetsListResponses = {
 };
 
 export type SitePresetsListResponse = SitePresetsListResponses[keyof SitePresetsListResponses];
+
+export type SiteSchemaApplyMigrationsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/schema/migrations';
+};
+
+export type SiteSchemaApplyMigrationsErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SiteSchemaApplyMigrationsError = SiteSchemaApplyMigrationsErrors[keyof SiteSchemaApplyMigrationsErrors];
+
+export type SiteSchemaApplyMigrationsResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SiteSchemaApplyMigrationsResponse = SiteSchemaApplyMigrationsResponses[keyof SiteSchemaApplyMigrationsResponses];
 
 export type SitePublicUnsubscribesPerformData = {
   body?: never;

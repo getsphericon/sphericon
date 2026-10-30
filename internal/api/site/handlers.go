@@ -130,6 +130,7 @@ type Handlers struct {
 	passkeys       *secondfactor.Passkeys
 	now            func() time.Time
 	accountLink    *accountlink.Link
+	migrations     Migrations
 	instance       *instance.Module
 	holds          *holds.Holds
 	origins        Origins
@@ -243,6 +244,15 @@ type Deps struct {
 	// Signin is the Sign-in providers the Instance enabled (ADR 0048); none enabled when
 	// no provider is configured.
 	Signin *signin.Providers
+	// Migrations runs the pending migrations from the error page of a development server
+	// (ADR 0033); nil on any other, which leaves the operation answering 404.
+	Migrations Migrations
+}
+
+// Migrations is the seam of the error page's button: it runs the migrations the database has
+// not run and reports how many ran (db.PageMigrations).
+type Migrations interface {
+	Apply(ctx context.Context) (int, error)
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -257,6 +267,7 @@ func NewHandlers(d Deps) *Handlers {
 		sysmail: d.SysMail, sendingDomains: d.SendingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, captured: d.CapturedMessages, tokens: d.Tokens, tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, audit: d.Audit, abuseWatch: d.AbuseWatch, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, holds: d.Holds, requireVerification: d.RequireEmailVerification, signupSurvey: d.SignupSurvey,
 		signin:     d.Signin,
+		migrations: d.Migrations,
 		challenges: d.Tokens.WithClock(d.Clock),
 	}
 	h.login = h.newLogin()

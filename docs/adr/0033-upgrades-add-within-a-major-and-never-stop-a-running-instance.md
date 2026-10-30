@@ -48,11 +48,16 @@ research behind them is `docs/research/self-hoster-upgrade-prior-art.md`.
   migrates if `SPHERICON_DB_AUTO_MIGRATE` is on, otherwise refuses and names `sphericon migrate`.
   Inside a Major it does the same for migrations the database has not run: a binary's queries name
   the columns its own migrations add, so without auto-migrate it refuses and names `sphericon
-  migrate` rather than start and answer with a bare 500. In development (not `SPHERICON_ENV=production`) a
-  running process also rechecks on its requests (cached for seconds) and answers `503` with a
+  migrate` rather than start and answer with a bare 500. In development (not `SPHERICON_ENV=production`
+  and not a release build) a running process also rechecks on its requests (cached for seconds) and answers `503` with a
   problem naming the command while migrations are missing, which covers a database reset under
-  the dev stack; the probes pass. Production has only the start guard: a check of its own could
-  stop a running Instance, which this ADR forbids.
+  the dev stack; the probes pass. A development build (not `SPHERICON_ENV=production` and not a
+  release, as for the development License key) does not refuse to start for migrations it could
+  run either: it starts on the database as it is, answers that `503` (code `migrations_pending`)
+  and the error page offers a button that runs them (`POST /site/schema/migrations`), the way
+  Rails' pending-migration page does, so a pull with new migrations needs no trip to the console.
+  Production has only the start guard: a check of its own could stop a running Instance, which
+  this ADR forbids, and it serves no such button.
   It does not refuse merely because the database's Major is higher: the last release of a Major
   is exactly the floor of the next, so it starts on the next Major's schema and an interrupted
   Upgrade leaves the Instance running. A release inside a Major runs on the schema of any other

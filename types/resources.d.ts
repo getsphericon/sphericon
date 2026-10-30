@@ -216,6 +216,9 @@ export default interface Resources {
       "debugRequest": "{{method}} {{path}}",
       "debugRequestId": "request id {{id}}",
       "fallback": "The page could not be loaded.",
+      "migrate": "Run pending migrations",
+      "migrateErrorBody": "Something went wrong while running the migrations.",
+      "migrateErrorTitle": "The migrations did not run",
       "reload": "Reload",
       "title": "Something went wrong"
     },

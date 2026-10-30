@@ -1256,6 +1256,16 @@ func (UnimplementedHandler) SiteRulesUpdate(ctx context.Context, req *SiteUpdate
 	return r, ht.ErrNotImplemented
 }
 
+// SiteSchemaApplyMigrations implements SiteSchema_applyMigrations operation.
+//
+// Run the migrations the database has not run, the button of the error page. Only a development build
+// serves it; any other answers 404. The answer comes once they ran.
+//
+// POST /schema/migrations
+func (UnimplementedHandler) SiteSchemaApplyMigrations(ctx context.Context) (r SiteSchemaApplyMigrationsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSecondFactorConfirmEnrollment implements SiteSecondFactor_confirmEnrollment operation.
 //
 // Confirm the pending enrollment with the password and a code from the app. On success the Second

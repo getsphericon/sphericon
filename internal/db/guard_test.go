@@ -128,6 +128,10 @@ func TestGuardRefusesPendingMigrationsAndNamesMigrateUnlessAutoMigrateIsOn(t *te
 
 	g.AutoMigrate = true
 	require.NoError(t, g.Check(t.Context(), sqlDB))
+
+	// A development build starts anyway: its error page runs them.
+	g.AutoMigrate, g.AllowPending = false, true
+	require.NoError(t, g.Check(t.Context(), sqlDB))
 }
 
 // A build with no release (go run, a dev image) is never older than a floor.

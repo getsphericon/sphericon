@@ -1112,6 +1112,16 @@ func registerDelivery(injector do.Injector) {
 		return tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...), nil
 	})
 
+	// The development schema guard's view of the migrations the database has not run (ADR 0033):
+	// one per process, so a migration run from the error page clears what SchemaGuard cached.
+	do.Provide(injector, func(i do.Injector) (*db.SchemaWatch, error) {
+		database, err := do.Invoke[*sqlDB](i)
+		if err != nil {
+			return nil, err
+		}
+		return db.NewSchemaWatch(database.DB), nil
+	})
+
 	// Machine engagement (ADR 0053): the detector tracking judges hits by and the refresh job
 	// keeps current, over Apple's published Private Relay list.
 	do.Provide(injector, func(i do.Injector) (*machine.Detector, error) {
@@ -1607,8 +1617,12 @@ func registerHandler(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
+		schema, err := do.Invoke[*db.SchemaWatch](i)
+		if err != nil {
+			return nil, err
+		}
 
-		return server.New(cfg, database.DB, db.NewSchemaWatch(database.DB), client.Client, site, detector, external.Handler, mcp.Handler, staffAPI)
+		return server.New(cfg, database.DB, schema, client.Client, site, detector, external.Handler, mcp.Handler, staffAPI)
 	})
 }
 
@@ -1703,8 +1717,14 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 	inst := invoke[*instance.Module](r)
 	deletion := invoke[*workspacedeletion.Module](r)
 	passwords := invoke[*credentials.Hasher](r)
+	schema := invoke[*db.SchemaWatch](r)
 	if r.err != nil {
 		return apisite.Deps{}, r.err
+	}
+	// The error page's button that runs the migrations: a development build only (ADR 0033).
+	var migrations apisite.Migrations
+	if cfg.MigratesFromThePage() {
+		migrations = db.NewPageMigrations(cfg.DatabaseURL, cfg.MigrateTimeout, schema)
 	}
 	accountLink, _, err := accountlink.FromConfig(cfg)
 	if err != nil {
@@ -1724,6 +1744,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Passkeys: pk, Analytics: an,
 		RequireEmailVerification: cfg.RequireEmailVerification,
 		Signin:                   signin.FromConfig(cfg, nil),
+		Migrations:               migrations,
 	}, nil
 }
 

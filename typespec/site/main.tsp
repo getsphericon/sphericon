@@ -49,6 +49,7 @@ import "./resources/captured-messages.tsp";
 import "./resources/oauth.tsp";
 import "./resources/audit.tsp";
 import "./resources/instance.tsp";
+import "./resources/schema.tsp";
 
 using TypeSpec.OpenAPI;
 using TypeSpec.Http;

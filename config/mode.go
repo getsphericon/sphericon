@@ -57,6 +57,13 @@ func (c *Config) TrustsDevLicense() bool {
 	return (c.IsDev || c.IsE2E) && !buildinfo.IsRelease(buildinfo.Current().Version)
 }
 
+// MigratesFromThePage is whether the server starts on a database that has not run its migrations
+// and lets the error page run them (ADR 0033): a development or test env, never a release build,
+// for the reason TrustsDevLicense gives. Such a server answers 503 until the migrations run.
+func (c *Config) MigratesFromThePage() bool {
+	return c.IsDev && !buildinfo.IsRelease(buildinfo.Current().Version)
+}
+
 // validateMode refuses a saas Instance that lacks what only its deployment can give (ADR 0060):
 // without these, parts of the product silently do not work. A selfhosted one needs none of them.
 // The `staff` License key is checked where the License is read, by ee.New.

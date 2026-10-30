@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
@@ -69,6 +70,9 @@ type Guard struct {
 	Build buildinfo.Info
 	// AutoMigrate says a binary one Major ahead will migrate before it serves.
 	AutoMigrate bool
+	// AllowPending lets a development build start on a database whose migrations have not run
+	// (config.MigratesFromThePage): its requests answer 503 until the error page runs them.
+	AllowPending bool
 	// Majors is the binary's table; nil means the package's Majors.
 	Majors []Major
 }
@@ -110,7 +114,7 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 		return &RefusalError{message: fmt.Sprintf(
 			"%s skipped a Major: the database is at Major %d and this binary at Major %d; install %s first, then upgrade again.%s",
 			who, state.Major, own, needs, tail)}
-	case behind == 1 && !g.AutoMigrate:
+	case behind == 1 && !g.AutoMigrate && !g.AllowPending:
 		return &RefusalError{message: fmt.Sprintf(
 			"%s is one Major ahead of the database (Major %d, binary Major %d): run `sphericon migrate`, or set SPHERICON_DB_AUTO_MIGRATE=true.%s",
 			who, state.Major, own, tail)}
@@ -120,7 +124,11 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 		if err != nil {
 			return err
 		}
-		if pending > 0 {
+		switch {
+		case pending > 0 && g.AllowPending:
+			slog.Warn("starting on a database that has not run its migrations; requests answer 503 until they run",
+				"pending", pending)
+		case pending > 0:
 			return &RefusalError{message: fmt.Sprintf(
 				"%s needs %d migration(s) the database has not run: run `sphericon migrate` (in development `mise run db:migrate`), or set SPHERICON_DB_AUTO_MIGRATE=true.%s",
 				who, pending, tail)}

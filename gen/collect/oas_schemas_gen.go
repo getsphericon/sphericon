@@ -908,6 +908,7 @@ const (
 	ProblemCodeEmailVerificationRequired ProblemCode = "email_verification_required"
 	ProblemCodeSignupClosed              ProblemCode = "signup_closed"
 	ProblemCodePermissionRequired        ProblemCode = "permission_required"
+	ProblemCodeMigrationsPending         ProblemCode = "migrations_pending"
 )
 
 // AllValues returns all ProblemCode values.
@@ -917,6 +918,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 		ProblemCodeEmailVerificationRequired,
 		ProblemCodeSignupClosed,
 		ProblemCodePermissionRequired,
+		ProblemCodeMigrationsPending,
 	}
 }
 
@@ -930,6 +932,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeSignupClosed:
 		return []byte(s), nil
 	case ProblemCodePermissionRequired:
+		return []byte(s), nil
+	case ProblemCodeMigrationsPending:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -950,6 +954,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodePermissionRequired:
 		*s = ProblemCodePermissionRequired
+		return nil
+	case ProblemCodeMigrationsPending:
+		*s = ProblemCodeMigrationsPending
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

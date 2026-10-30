@@ -900,6 +900,13 @@ type Invoker interface {
 	//
 	// PUT /workspaces/{workspaceId}/rules/{id}
 	SiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (SiteRulesUpdateRes, error)
+	// SiteSchemaApplyMigrations invokes SiteSchema_applyMigrations operation.
+	//
+	// Run the migrations the database has not run, the button of the error page. Only a development build
+	// serves it; any other answers 404. The answer comes once they ran.
+	//
+	// POST /schema/migrations
+	SiteSchemaApplyMigrations(ctx context.Context) (SiteSchemaApplyMigrationsRes, error)
 	// SiteSecondFactorConfirmEnrollment invokes SiteSecondFactor_confirmEnrollment operation.
 	//
 	// Confirm the pending enrollment with the password and a code from the app. On success the Second
@@ -19592,6 +19599,87 @@ func (c *Client) sendSiteRulesUpdate(ctx context.Context, request *SiteUpdateRul
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteRulesUpdateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteSchemaApplyMigrations invokes SiteSchema_applyMigrations operation.
+//
+// Run the migrations the database has not run, the button of the error page. Only a development build
+// serves it; any other answers 404. The answer comes once they ran.
+//
+// POST /schema/migrations
+func (c *Client) SiteSchemaApplyMigrations(ctx context.Context) (SiteSchemaApplyMigrationsRes, error) {
+	res, err := c.sendSiteSchemaApplyMigrations(ctx)
+	return res, err
+}
+
+func (c *Client) sendSiteSchemaApplyMigrations(ctx context.Context) (res SiteSchemaApplyMigrationsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteSchema_applyMigrations"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/schema/migrations"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteSchemaApplyMigrationsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/schema/migrations"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteSchemaApplyMigrationsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

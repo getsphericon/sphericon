@@ -1,6 +1,9 @@
+import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
+import { handleSiteSchemaApplyMigrations } from '../generated/site/msw.gen.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
+import { worker } from '../test/worker.ts'
 import { AppErrorPage } from './AppErrorPage.tsx'
 
 test('shows what the server says is wrong', async () => {
@@ -43,4 +46,41 @@ test('shows the fault a development server attaches to a 500', async () => {
   await expect.element(screen.getByText('nil pointer dereference')).toBeInTheDocument()
   await expect.element(screen.getByText(/goroutine 7/)).toBeInTheDocument()
   await expect.element(screen.getByText(/GET \/site\/contacts/)).toBeInTheDocument()
+})
+
+const migrationsPending = {
+  status: 503,
+  title: 'Service Unavailable',
+  code: 'migrations_pending',
+  detail: 'The database is 2 migration(s) behind this build. Run `mise run db:migrate`.',
+}
+
+test('a server whose migrations are pending offers to run them and says why they did not', async () => {
+  const requests: string[] = []
+  worker.use(
+    handleSiteSchemaApplyMigrations(({ request }) => {
+      requests.push(request.method)
+      return HttpResponse.json(
+        { status: 500, title: 'Internal Server Error', detail: 'migration 42 failed' },
+        { status: 500 },
+      )
+    }),
+  )
+  const { screen } = await renderWithRouter(<AppErrorPage error={migrationsPending} />)
+
+  await screen.getByRole('button', { name: 'Run pending migrations' }).click()
+
+  await expect.poll(() => requests).toEqual(['POST'])
+  await expect.element(screen.getByText('migration 42 failed')).toBeInTheDocument()
+})
+
+test('offers no migrations for any other error', async () => {
+  const { screen } = await renderWithRouter(
+    <AppErrorPage error={{ ...migrationsPending, code: undefined }} />,
+  )
+
+  await expect.element(screen.getByRole('button', { name: 'Reload' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Run pending migrations' }))
+    .not.toBeInTheDocument()
 })

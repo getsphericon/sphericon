@@ -22,6 +22,11 @@ enum ProblemCode {
   /** The caller's Role in the Workspace lacks the Permission the operation needs
    * (ADR 0061); another Role in the Workspace may perform it */
   permissionRequired: "permission_required",
+
+  /** A development server's database has not run the migrations this build needs
+   * (ADR 0033); `POST /site/schema/migrations` runs them. A production Instance never
+   * sends it: its start guard refuses to start instead */
+  migrationsPending: "migrations_pending",
 }
 
 /** What a development server adds to a 500 so the page can show the fault; a production

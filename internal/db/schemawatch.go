@@ -39,6 +39,14 @@ func WatchSchema(check func(ctx context.Context) (int, error), now func() time.T
 	return &SchemaWatch{check: check, now: now}
 }
 
+// Forget drops the cached verdict, so the next Pending asks the database: a migration run by
+// this process takes effect on the next request.
+func (w *SchemaWatch) Forget() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.until = time.Time{}
+}
+
 // Pending is the number of migrations the database has not run. An error is not cached: the
 // next call asks again.
 func (w *SchemaWatch) Pending(ctx context.Context) (int, error) {
