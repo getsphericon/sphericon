@@ -1178,6 +1178,46 @@ func (UnimplementedHandler) SitePasskeysRename(ctx context.Context, req *SitePas
 	return r, ht.ErrNotImplemented
 }
 
+// SitePersonalTokensCreate implements SitePersonalTokens_create operation.
+//
+// Mint a Personal token of the caller's own; the full secret is returned once. Any member may mint
+// one, with the scopes their Role may grant: another is refused (403 permission_required). A scope
+// that is no `PersonalScope` (a token-only scope such as `tokens:write`) is not a request this
+// operation decodes (400).
+//
+// POST /workspaces/{workspaceId}/personal-tokens
+func (UnimplementedHandler) SitePersonalTokensCreate(ctx context.Context, req *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (r SitePersonalTokensCreateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePersonalTokensDelete implements SitePersonalTokens_delete operation.
+//
+// Revoke a Personal token: the caller's own, or anyone's with members:manage.
+//
+// DELETE /workspaces/{workspaceId}/personal-tokens/{id}
+func (UnimplementedHandler) SitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) (r SitePersonalTokensDeleteRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePersonalTokensGrantableScopes implements SitePersonalTokens_grantableScopes operation.
+//
+// The scopes the caller's Role may grant to a Personal token in the Workspace, in the vocabulary's
+// order: the mint form offers these and no other.
+//
+// GET /workspaces/{workspaceId}/personal-token-scopes
+func (UnimplementedHandler) SitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) (r SitePersonalTokensGrantableScopesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SitePersonalTokensList implements SitePersonalTokens_list operation.
+//
+// List the active Personal tokens the caller may see: their own, or every member's with members:manage.
+//
+// GET /workspaces/{workspaceId}/personal-tokens
+func (UnimplementedHandler) SitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) (r SitePersonalTokensListRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SitePresetsList implements SitePresets_list operation.
 //
 // List the Presets the Instance offers, with the params schema of each.

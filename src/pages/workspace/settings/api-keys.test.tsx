@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteMembershipsList,
+  handleSitePersonalTokensList,
   handleSiteUserGetMe,
   handleSiteTokensList,
   handleSiteTokensUpdate,
@@ -30,10 +31,11 @@ const workspace = {
   createdAt: '2026-01-01T00:00:00Z',
 }
 
-test('shows the API keys of the workspace', async () => {
+test('shows the API keys of the workspace and, apart, the personal tokens', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteTokensList({ body: [] }),
+    handleSitePersonalTokensList({ body: [] }),
     handleSiteUserGetMe({
       body: {
         id: '10',
@@ -67,6 +69,9 @@ test('shows the API keys of the workspace', async () => {
   await expect
     .element(screen.getByRole('heading', { name: 'API keys', level: 4 }))
     .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('heading', { name: 'Personal tokens', level: 4 }))
+    .toBeInTheDocument()
 })
 
 test('renames an API key from its row menu', async () => {
@@ -81,6 +86,7 @@ test('renames an API key from its row menu', async () => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace] }),
     handleSiteTokensList({ body: [token] }),
+    handleSitePersonalTokensList({ body: [] }),
     handleSiteTokensUpdate(async ({ request }) => {
       renamed.push(await request.json())
       return HttpResponse.json({ ...token, name: 'Deploys' })

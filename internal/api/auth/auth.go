@@ -35,9 +35,9 @@ type TokenAuth struct {
 	WorkspaceID int64
 	Name        string
 	Scopes      []string
-	// Membership is, for a Connection (ADR 0061), the approving User's Membership as this request
-	// loaded it, with its User and Workspace: its current Role bounds what the scopes allow. It is
-	// nil for the Workspace's API token.
+	// Membership is, for a Connection or a Personal token (ADR 0061), its User's Membership as this
+	// request loaded it, with its User and Workspace: its current Role bounds what the scopes allow.
+	// It is nil for the Workspace's API token.
 	Membership *ent.Membership
 	// Scoped is the client confined to WorkspaceID. This file is the external
 	// API's construction point of it (ADR 0017); read it with TokenScoped.
@@ -110,12 +110,13 @@ var _ externalapi.SecurityHandler = (*ExternalSecurityHandler)(nil)
 
 // HandleBearerAuth authenticates the Bearer token (Authenticate) and then lets it call op only
 // when it carries every scope the contract declares for op (ExternalOperationScopes, ADR 0061)
-// and, for a Connection, when its User's current Role holds the Permission granting each of
+// and, for a User's own token (a Connection or a Personal token), when its User's current Role
+// holds the Permission granting each of
 // those scopes needs (accounts.MayGrant) and each Permission op itself declares
 // (ExternalOperationPermissions). An operation absent from the scope table is refused to every
 // token. A token that is missing, invalid, revoked or expired is ErrUnauthorized (401);
-// a valid token without a scope of op is refused with 403, and a Connection whose User's Role
-// lacks the Permission with 403 permission_required; neither counts against the address's
+// a valid token without a scope of op is refused with 403, and a User's own token whose User's
+// Role lacks the Permission with 403 permission_required; neither counts against the address's
 // failed-authentication budget.
 func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op externalapi.OperationName, t externalapi.BearerAuth) (context.Context, error) {
 	authed, err := h.Authenticate(ctx, t)
@@ -132,9 +133,10 @@ func (h *ExternalSecurityHandler) HandleBearerAuth(ctx context.Context, op exter
 // the rate limits that need it (ADR 0025): a client address that spent its failed-authentication
 // budget is refused before the token is looked at, a failure counts against it, and a success
 // charges the Workspace's shared /api and /mcp budget. Rejections surface as
-// *ratelimit.LimitedError. A Connection whose User has a required acceptance pending is refused
-// with 403 acceptance_pending (ADR 0062), and one the Workspace's Two-factor requirement withholds
-// with 403 second_factor_required (ADR 0020); the Workspace's API token meets neither. /mcp
+// *ratelimit.LimitedError. A User's own token (a Connection or a Personal token) is admitted as the
+// User's session is (accounts.Admit): refused with 403 acceptance_pending while a required
+// acceptance is pending (ADR 0062), and with 403 second_factor_required once the Workspace's
+// Two-factor requirement withholds its User (ADR 0020); the Workspace's API token meets neither. /mcp
 // authenticates its requests with it; each tool call it dispatches to /api then meets the
 // operation's scopes in HandleBearerAuth.
 func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalapi.BearerAuth) (context.Context, error) {
@@ -150,9 +152,10 @@ func (h *ExternalSecurityHandler) Authenticate(ctx context.Context, t externalap
 }
 
 // permitted reports, as a refusal, whether the token may call op: the contract must declare op,
-// the token must carry each of its scopes, and a Connection's User must hold, in their current
-// Role, the Permission granting each scope needs and each Permission op declares, so a
-// Connection does no more than its User may on /site: a demotion takes effect on the next request.
+// the token must carry each of its scopes, and the User of a Connection or a Personal token must
+// hold, in their current Role, the Permission granting each scope needs (accounts.MayGrant) and
+// each Permission op declares, so the token does no more than its User may on /site: a demotion
+// takes effect on the next request.
 func permitted(op externalapi.OperationName, auth *TokenAuth) error {
 	required, declared := ExternalOperationScopes[op]
 	if !declared {
@@ -257,9 +260,10 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 	actor := events.Actor{Kind: events.ActorAPIToken, ID: strconv.FormatInt(token.ID, 10), Name: token.Name}
 	m := token.Edges.Membership
 	if m != nil {
-		// A Connection acts as its User, through its client, and is admitted as the User's own
-		// session is (ADR 0061); a token carries no Second factor step. The Workspace's API token
-		// is no User's and is not admitted.
+		// A Connection acts as its User through its client, and a Personal token (a Connection
+		// without the application) through its own name. Each is admitted as the User's own
+		// session is (ADR 0061), and a token carries no Second factor step. The Workspace's API
+		// token is no User's and is not admitted.
 		if err := h.accounts.Admit(ctx, accounts.Admission{UserID: m.UserID, Membership: m, At: h.now()}); err != nil {
 			return ctx, err
 		}

@@ -120,12 +120,14 @@ tenant row itself (the Workspace is the tenant root, so it has no wrapper).
      body, then `accounts.Accounts.Admit` as the middleware does) and `SiteWorkspacesCreate` /
      `SiteWorkspacesRestore` (a Workspace that was not live before);
   2. external (and MCP, which rides the same token auth): `ExternalSecurityHandler.HandleBearerAuth`
-     in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`. A Connection (an API token
-     with a `membership_id`, ADR 0061) is looked up with its Membership: the scope acts as its User,
-     the acceptance gate and the Two-factor requirement apply (`accounts.Accounts.Admit`, as on
-     /site: 403 `acceptance_pending` or `second_factor_required`), and the Role bounds its scopes
-     on every request (`accounts.MayGrant`, the bound the OAuth consent applies too); the
-     Workspace's API token meets neither;
+     in `internal/api/auth/auth.go`, read with `auth.TokenScoped(ctx)`. A User's own token (an API
+     token with a `membership_id`, ADR 0061: a Connection, which names its `oauth_client_id`, or a
+     Personal token, which names none; `internal/apitokens/kinds.go` tells them apart) is looked up
+     with its Membership: the scope acts as its User, the acceptance gate and the Two-factor
+     requirement apply (`accounts.Accounts.Admit`, as on /site: 403 `acceptance_pending` or
+     `second_factor_required`), and the Role bounds its scopes on every request (`accounts.MayGrant`,
+     the bound the OAuth consent and the minting of a Personal token apply too); the Workspace's API
+     token meets neither;
   3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
   4. jobs and event subscribers, right after the row that names the Workspace is loaded
      (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the

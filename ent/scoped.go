@@ -911,9 +911,27 @@ func (x *ApiTokenScopedCreate) SetNillableMembershipID(v *int64) *ApiTokenScoped
 	return x
 }
 
+// SetOauthClientID sets the "oauth_client_id" field.
+func (x *ApiTokenScopedCreate) SetOauthClientID(v int64) *ApiTokenScopedCreate {
+	x.b.SetOauthClientID(v)
+	return x
+}
+
+// SetNillableOauthClientID sets the "oauth_client_id" field if the given value is not nil.
+func (x *ApiTokenScopedCreate) SetNillableOauthClientID(v *int64) *ApiTokenScopedCreate {
+	x.b.SetNillableOauthClientID(v)
+	return x
+}
+
 // SetMembership sets the "membership" edge to the Membership entity.
 func (x *ApiTokenScopedCreate) SetMembership(v *Membership) *ApiTokenScopedCreate {
 	x.b.SetMembership(v)
+	return x
+}
+
+// SetOauthClient sets the "oauth_client" edge to the OAuthClient entity.
+func (x *ApiTokenScopedCreate) SetOauthClient(v *OAuthClient) *ApiTokenScopedCreate {
+	x.b.SetOauthClient(v)
 	return x
 }
 

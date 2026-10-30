@@ -12,7 +12,6 @@ import {
   Stack,
   TextInput,
   Title,
-  Tooltip,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
@@ -22,6 +21,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
+import { ScopesBadge } from '../../components/ScopesBadge.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteTokensCreateMutation,
@@ -137,13 +137,7 @@ export function ApiKeysSection({
           {
             accessor: 'scopes',
             title: t(($) => $.settings.tokens.scopesLabel),
-            render: (record) => (
-              <Tooltip label={record.scopes.join(', ')} multiline maw={320} withArrow>
-                <Badge variant="light" color="gray">
-                  {t(($) => $.settings.tokens.scopesCount, { count: record.scopes.length })}
-                </Badge>
-              </Tooltip>
-            ),
+            render: (record) => <ScopesBadge scopes={record.scopes} />,
           },
           {
             accessor: 'createdAt',

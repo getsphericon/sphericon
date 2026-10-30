@@ -26,9 +26,11 @@ func setupScopes() []string {
 	return lo.Map(siteapi.SetupScope("").AllValues(), func(s siteapi.SetupScope, _ int) string { return string(s) })
 }
 
-// SupportedScopes lists every scope the authorization server can issue.
+// SupportedScopes lists every scope the authorization server can issue: the contract's
+// PersonalScope, what a User may give a credential of their own (ADR 0061), a Personal token's as
+// much as a Connection's.
 func SupportedScopes() []string {
-	return slices.Concat(grantableScopes(), sendScopes(), setupScopes())
+	return lo.Map(siteapi.PersonalScope("").AllValues(), func(s siteapi.PersonalScope, _ int) string { return string(s) })
 }
 
 // requestedScopes splits an OAuth scope parameter into the scopes granted by default,

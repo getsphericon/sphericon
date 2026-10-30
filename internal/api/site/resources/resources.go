@@ -105,6 +105,12 @@ type Converter interface {
 	// goverter:map Edges.Membership.Edges.User.Name UserName
 	// goverter:map Edges.Membership.Edges.User.Email UserEmail
 	ConnectionToResource(source *ent.ApiToken) siteapi.SiteConnectionResource
+	// A Personal token is an API token read with its Membership and that Membership's User loaded
+	// (apitokens.PersonalTokens, MintPersonal); the User is who it belongs to.
+	// goverter:map Edges.Membership.UserID UserId
+	// goverter:map Edges.Membership.Edges.User.Name UserName
+	// goverter:map Edges.Membership.Edges.User.Email UserEmail
+	PersonalTokenToResource(source *ent.ApiToken) siteapi.SitePersonalTokenResource
 
 	// Verification is derived: a non-nil email_verified_at means verified.
 	// The Sign-up survey is due only while the Instance still asks it, which the mapper cannot

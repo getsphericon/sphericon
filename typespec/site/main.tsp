@@ -8,6 +8,7 @@ import "../common/errors.tsp";
 // scopes.tsp before crud.tsp: the external CRUD templates constrain their scope parameters to
 // ApiTokenScope, and a scope enum first checked through them loses its doc and extensions.
 import "../common/scopes.tsp";
+import "./scopes.tsp";
 import "../common/crud.tsp";
 import "../common/contact-export.tsp";
 import "../common/lint.tsp";
@@ -31,6 +32,7 @@ import "./resources/passkey-login.tsp";
 import "./resources/events.tsp";
 import "./resources/tokens.tsp";
 import "./resources/connections.tsp";
+import "./resources/personal-tokens.tsp";
 import "./resources/integrations.tsp";
 import "./resources/link-clicks.tsp";
 import "./resources/broadcasts.tsp";

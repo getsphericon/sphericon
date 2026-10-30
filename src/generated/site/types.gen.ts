@@ -666,6 +666,53 @@ export const Permission = {
 export type Permission = typeof Permission[keyof typeof Permission];
 
 /**
+ * The scopes a User may give a credential of their own: a Connection by consenting, a Personal
+ * token by minting it (ADR 0061). The authorization server advertises these and no other, and the
+ * Personal token form offers them. Each still needs the Permission its enum declares in
+ * `x-grant-permissions`; the token-only scopes are never a User's to give. Only /site names it,
+ * so it is declared here and not with the external vocabulary.
+ */
+export const PersonalScope = {
+  CONTACTS_READ: 'contacts:read',
+  CONTACTS_WRITE: 'contacts:write',
+  CONTACTS_EXPORT: 'contacts:export',
+  SUPPRESSIONS_WRITE: 'suppressions:write',
+  EVENTS_READ: 'events:read',
+  EVENTS_WRITE: 'events:write',
+  SEGMENTS_READ: 'segments:read',
+  SEGMENTS_WRITE: 'segments:write',
+  BROADCASTS_READ: 'broadcasts:read',
+  BROADCASTS_WRITE: 'broadcasts:write',
+  AUTOMATIONS_READ: 'automations:read',
+  AUTOMATIONS_WRITE: 'automations:write',
+  ENROLLMENTS_READ: 'enrollments:read',
+  TEMPLATES_READ: 'templates:read',
+  TEMPLATES_WRITE: 'templates:write',
+  WEBHOOKS_READ: 'webhooks:read',
+  WEBHOOKS_WRITE: 'webhooks:write',
+  WEBHOOKS_REGENERATE: 'webhooks:regenerate',
+  WEBHOOKS_TEST: 'webhooks:test',
+  CUSTOM_FIELDS_READ: 'custom_fields:read',
+  SENDING_DOMAINS_READ: 'sending_domains:read',
+  INTEGRATIONS_READ: 'integrations:read',
+  EMAILS_SEND: 'emails:send',
+  BROADCASTS_SEND: 'broadcasts:send',
+  AUTOMATIONS_PUBLISH: 'automations:publish',
+  MCP_SEND: 'mcp:send',
+  SENDING_DOMAINS_WRITE: 'sending_domains:write',
+  INTEGRATIONS_WRITE: 'integrations:write'
+} as const;
+
+/**
+ * The scopes a User may give a credential of their own: a Connection by consenting, a Personal
+ * token by minting it (ADR 0061). The authorization server advertises these and no other, and the
+ * Personal token form offers them. Each still needs the Permission its enum declares in
+ * `x-grant-permissions`; the token-only scopes are never a User's to give. Only /site names it,
+ * so it is declared here and not with the external vocabulary.
+ */
+export type PersonalScope = typeof PersonalScope[keyof typeof PersonalScope];
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const ProblemCode = {
@@ -2503,6 +2550,26 @@ export type SiteCreateInvitationResponse = {
 };
 
 /**
+ * Mint a Personal token of the caller's own
+ */
+export type SiteCreatePersonalTokenInput = {
+  name: string;
+  /**
+   * Each one a scope the caller's Role may grant (`grantableScopes`)
+   */
+  scopes: Array<PersonalScope>;
+  expiresAt?: Timestamp | null;
+};
+
+/**
+ * Personal token creation result: `token` is the full secret, shown only once
+ */
+export type SiteCreatePersonalTokenResponse = {
+  token: string;
+  resource: SitePersonalTokenResource;
+};
+
+/**
  * Site request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export type SiteCreateRuleInput = {
@@ -3998,6 +4065,52 @@ export type SitePendingSignup = {
    * The provider's name of the person; empty when it gave none
    */
   name: string;
+};
+
+/**
+ * A Personal token: a User's own bearer credential for the external API in this Workspace, for
+ * the scripts and tools they run (ADR 0061: a Connection without the application). It belongs to
+ * that User's Membership, can do no more than the User's current Role allows and ends with the
+ * Membership. Its secret is shown only once, at creation. Personal tokens are neither the
+ * Workspace's API tokens nor Connections and are listed with neither.
+ */
+export type SitePersonalTokenResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * Human-readable label
+   */
+  name: string;
+  /**
+   * Public prefix (the secret is never returned after creation)
+   */
+  prefix: string;
+  /**
+   * Granted scopes
+   */
+  scopes: Array<PersonalScope>;
+  /**
+   * Expiry, if set
+   */
+  expiresAt?: Timestamp | null;
+  /**
+   * The User the Personal token belongs to
+   */
+  userId: EntityId;
+  /**
+   * That User's display name
+   */
+  userName: string;
+  /**
+   * That User's email
+   */
+  userEmail: EmailAddress;
+  /**
+   * Creation timestamp
+   */
+  createdAt: Timestamp;
 };
 
 /**
@@ -6178,6 +6291,23 @@ export type SiteMembershipResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteMembershipResourceParentKey = WorkspaceId;
+
+/**
+ * Unique identifier
+ */
+export type SitePersonalTokenResourceKeyId = EntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SitePersonalTokenResourceKeyWorkspaceId = WorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export type SitePersonalTokenResourceParentKey = WorkspaceId;
 
 /**
  * Unique identifier
@@ -11387,6 +11517,142 @@ export type SiteMembershipsResetSecondFactorResponses = {
 };
 
 export type SiteMembershipsResetSecondFactorResponse = SiteMembershipsResetSecondFactorResponses[keyof SiteMembershipsResetSecondFactorResponses];
+
+export type SitePersonalTokensGrantableScopesData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/personal-token-scopes';
+};
+
+export type SitePersonalTokensGrantableScopesErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SitePersonalTokensGrantableScopesError = SitePersonalTokensGrantableScopesErrors[keyof SitePersonalTokensGrantableScopesErrors];
+
+export type SitePersonalTokensGrantableScopesResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<PersonalScope>;
+};
+
+export type SitePersonalTokensGrantableScopesResponse = SitePersonalTokensGrantableScopesResponses[keyof SitePersonalTokensGrantableScopesResponses];
+
+export type SitePersonalTokensListData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/personal-tokens';
+};
+
+export type SitePersonalTokensListErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SitePersonalTokensListError = SitePersonalTokensListErrors[keyof SitePersonalTokensListErrors];
+
+export type SitePersonalTokensListResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: Array<SitePersonalTokenResource>;
+};
+
+export type SitePersonalTokensListResponse = SitePersonalTokensListResponses[keyof SitePersonalTokensListResponses];
+
+export type SitePersonalTokensCreateData = {
+  body: SiteCreatePersonalTokenInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/personal-tokens';
+};
+
+export type SitePersonalTokensCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 forbidden response
+   */
+  403: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+  /**
+   * RFC 7807 validation response
+   */
+  422: ProblemDetails;
+};
+
+export type SitePersonalTokensCreateError = SitePersonalTokensCreateErrors[keyof SitePersonalTokensCreateErrors];
+
+export type SitePersonalTokensCreateResponses = {
+  /**
+   * The request has succeeded and a new resource has been created as a result.
+   */
+  201: SiteCreatePersonalTokenResponse;
+};
+
+export type SitePersonalTokensCreateResponse = SitePersonalTokensCreateResponses[keyof SitePersonalTokensCreateResponses];
+
+export type SitePersonalTokensDeleteData = {
+  body?: never;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/personal-tokens/{id}';
+};
+
+export type SitePersonalTokensDeleteErrors = {
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type SitePersonalTokensDeleteError = SitePersonalTokensDeleteErrors[keyof SitePersonalTokensDeleteErrors];
+
+export type SitePersonalTokensDeleteResponses = {
+  /**
+   * There is no content to send for this request, but the headers may be useful.
+   */
+  204: void;
+};
+
+export type SitePersonalTokensDeleteResponse = SitePersonalTokensDeleteResponses[keyof SitePersonalTokensDeleteResponses];
 
 export type SiteWorkspacesGetRevenueSettingsData = {
   body?: never;

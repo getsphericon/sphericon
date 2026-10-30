@@ -60,6 +60,11 @@ func TestAMemberMakesAConnectionOfHerOwn(t *testing.T) {
 	for _, token := range *tokens.(*siteapi.SiteTokensListOKApplicationJSON) {
 		assert.NotEqual(t, siteapi.EntityId(row.ID), token.ID, "a Connection is not shown with the API tokens")
 	}
+	personal, err := mary.SitePersonalTokensList(t.Context(), siteapi.SitePersonalTokensListParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	personalTokens, isList := personal.(*siteapi.SitePersonalTokensListOKApplicationJSON)
+	require.Truef(t, isList, "got %#v", personal)
+	assert.Empty(t, *personalTokens, "a Connection is not a Personal token")
 }
 
 // The consent screen learns what the User may grant, and the server refuses a scope whose

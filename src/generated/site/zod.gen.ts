@@ -180,6 +180,44 @@ export const zPermission = z.enum([
 ]);
 
 /**
+ * The scopes a User may give a credential of their own: a Connection by consenting, a Personal
+ * token by minting it (ADR 0061). The authorization server advertises these and no other, and the
+ * Personal token form offers them. Each still needs the Permission its enum declares in
+ * `x-grant-permissions`; the token-only scopes are never a User's to give. Only /site names it,
+ * so it is declared here and not with the external vocabulary.
+ */
+export const zPersonalScope = z.enum([
+  'contacts:read',
+  'contacts:write',
+  'contacts:export',
+  'suppressions:write',
+  'events:read',
+  'events:write',
+  'segments:read',
+  'segments:write',
+  'broadcasts:read',
+  'broadcasts:write',
+  'automations:read',
+  'automations:write',
+  'enrollments:read',
+  'templates:read',
+  'templates:write',
+  'webhooks:read',
+  'webhooks:write',
+  'webhooks:regenerate',
+  'webhooks:test',
+  'custom_fields:read',
+  'sending_domains:read',
+  'integrations:read',
+  'emails:send',
+  'broadcasts:send',
+  'automations:publish',
+  'mcp:send',
+  'sending_domains:write',
+  'integrations:write'
+]);
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum([
@@ -2402,6 +2440,15 @@ export const zSiteContactResource = z.object({
 });
 
 /**
+ * Mint a Personal token of the caller's own
+ */
+export const zSiteCreatePersonalTokenInput = z.object({
+  name: z.string(),
+  scopes: z.array(zPersonalScope),
+  expiresAt: z.exactOptional(zTimestamp.nullable())
+});
+
+/**
  * Create a workspace API token
  */
 export const zSiteCreateTokenInput = z.object({
@@ -2625,6 +2672,33 @@ export const zSitePasskeyList = z.object({
   available: z.boolean(),
   passwordSet: z.boolean(),
   identityProofFresh: z.boolean()
+});
+
+/**
+ * A Personal token: a User's own bearer credential for the external API in this Workspace, for
+ * the scripts and tools they run (ADR 0061: a Connection without the application). It belongs to
+ * that User's Membership, can do no more than the User's current Role allows and ends with the
+ * Membership. Its secret is shown only once, at creation. Personal tokens are neither the
+ * Workspace's API tokens nor Connections and are listed with neither.
+ */
+export const zSitePersonalTokenResource = z.object({
+  id: zEntityId,
+  name: z.string(),
+  prefix: z.string(),
+  scopes: z.array(zPersonalScope),
+  expiresAt: z.exactOptional(zTimestamp.nullable()),
+  userId: zEntityId,
+  userName: z.string(),
+  userEmail: zEmailAddress,
+  createdAt: zTimestamp
+});
+
+/**
+ * Personal token creation result: `token` is the full secret, shown only once
+ */
+export const zSiteCreatePersonalTokenResponse = z.object({
+  token: z.string(),
+  resource: zSitePersonalTokenResource
 });
 
 /**
@@ -3282,6 +3356,23 @@ export const zSiteMembershipResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteMembershipResourceParentKey = zWorkspaceId;
+
+/**
+ * Unique identifier
+ */
+export const zSitePersonalTokenResourceKeyId = zEntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSitePersonalTokenResourceKeyWorkspaceId = zWorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSitePersonalTokenResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -4758,6 +4849,45 @@ export const zSiteMembershipsResetSecondFactorPath = z.object({
  * There is no content to send for this request, but the headers may be useful.
  */
 export const zSiteMembershipsResetSecondFactorResponse = z.void();
+
+export const zSitePersonalTokensGrantableScopesPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePersonalTokensGrantableScopesResponse = z.array(zPersonalScope);
+
+export const zSitePersonalTokensListPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSitePersonalTokensListResponse = z.array(zSitePersonalTokenResource);
+
+export const zSitePersonalTokensCreateBody = zSiteCreatePersonalTokenInput;
+
+export const zSitePersonalTokensCreatePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSitePersonalTokensCreateResponse = zSiteCreatePersonalTokenResponse;
+
+export const zSitePersonalTokensDeletePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * There is no content to send for this request, but the headers may be useful.
+ */
+export const zSitePersonalTokensDeleteResponse = z.void();
 
 export const zSiteWorkspacesGetRevenueSettingsPath = z.object({
   workspaceId: zWorkspaceId

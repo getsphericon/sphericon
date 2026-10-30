@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Anchor,
-  Badge,
   Box,
   Button,
   CopyButton,
@@ -18,6 +17,7 @@ import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
+import { ScopesBadge } from '../../../components/ScopesBadge.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
 import {
   siteConnectionsDeleteMutation,
@@ -132,13 +132,7 @@ function ConnectionsSection({ workspace }: { workspace: SiteWorkspaceResource })
           {
             accessor: 'scopes',
             title: t(($) => $.settings.connections.scopes),
-            render: (record) => (
-              <Tooltip label={record.scopes.join(', ')} multiline maw={320} withArrow>
-                <Badge variant="light" color="gray">
-                  {t(($) => $.settings.connections.scopesCount, { count: record.scopes.length })}
-                </Badge>
-              </Tooltip>
-            ),
+            render: (record) => <ScopesBadge scopes={record.scopes} />,
           },
           {
             accessor: 'createdAt',

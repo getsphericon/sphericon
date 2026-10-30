@@ -425,6 +425,22 @@ type SitePasskeysRenameRes interface {
 	sitePasskeysRenameRes()
 }
 
+type SitePersonalTokensCreateRes interface {
+	sitePersonalTokensCreateRes()
+}
+
+type SitePersonalTokensDeleteRes interface {
+	sitePersonalTokensDeleteRes()
+}
+
+type SitePersonalTokensGrantableScopesRes interface {
+	sitePersonalTokensGrantableScopesRes()
+}
+
+type SitePersonalTokensListRes interface {
+	sitePersonalTokensListRes()
+}
+
 type SitePublicConfirmationsPerformRes interface {
 	sitePublicConfirmationsPerformRes()
 }

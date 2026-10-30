@@ -386,6 +386,29 @@ func HasRefreshTokensWith(preds ...predicate.OAuthRefreshToken) predicate.OAuthC
 	})
 }
 
+// HasConnections applies the HasEdge predicate on the "connections" edge.
+func HasConnections() predicate.OAuthClient {
+	return predicate.OAuthClient(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ConnectionsTable, ConnectionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConnectionsWith applies the HasEdge predicate on the "connections" edge with a given conditions (other predicates).
+func HasConnectionsWith(preds ...predicate.ApiToken) predicate.OAuthClient {
+	return predicate.OAuthClient(func(s *sql.Selector) {
+		step := newConnectionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.OAuthClient) predicate.OAuthClient {
 	return predicate.OAuthClient(sql.AndPredicates(predicates...))

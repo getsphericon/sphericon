@@ -22,6 +22,7 @@ var (
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "membership_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "oauth_client_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// APITokensTable holds the schema information for the "api_tokens" table.
@@ -37,8 +38,14 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "api_tokens_workspaces_api_tokens",
+				Symbol:     "api_tokens_oauth_clients_connections",
 				Columns:    []*schema.Column{APITokensColumns[11]},
+				RefColumns: []*schema.Column{OauthClientsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "api_tokens_workspaces_api_tokens",
+				Columns:    []*schema.Column{APITokensColumns[12]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -47,12 +54,17 @@ var (
 			{
 				Name:    "apitoken_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{APITokensColumns[11]},
+				Columns: []*schema.Column{APITokensColumns[12]},
 			},
 			{
 				Name:    "apitoken_membership_id",
 				Unique:  false,
 				Columns: []*schema.Column{APITokensColumns[10]},
+			},
+			{
+				Name:    "apitoken_oauth_client_id",
+				Unique:  false,
+				Columns: []*schema.Column{APITokensColumns[11]},
 			},
 		},
 	}
@@ -2710,9 +2722,13 @@ var (
 
 func init() {
 	APITokensTable.ForeignKeys[0].RefTable = MembershipsTable
-	APITokensTable.ForeignKeys[1].RefTable = WorkspacesTable
+	APITokensTable.ForeignKeys[1].RefTable = OauthClientsTable
+	APITokensTable.ForeignKeys[2].RefTable = WorkspacesTable
 	APITokensTable.Annotation = &entsql.Annotation{
 		Table: "api_tokens",
+	}
+	APITokensTable.Annotation.Checks = map[string]string{
+		"api_tokens_oauth_client_check": "oauth_client_id IS NULL OR membership_id IS NOT NULL",
 	}
 	AuditEntriesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	AuditEntriesTable.Annotation = &entsql.Annotation{

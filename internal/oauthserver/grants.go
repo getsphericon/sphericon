@@ -146,7 +146,8 @@ func (s *Server) exchangeCode(ctx context.Context, code, clientID, redirectURI, 
 			return invalidGrant("unknown or expired code")
 		}
 
-		// The Connection: the approving User's Membership is its own, so it ends with it.
+		// The Connection: the approving User's Membership is its own, so it ends with it, and it
+		// names the client it was approved for, which tells it apart from a Personal token.
 		token, err := tx.ApiToken.Create().
 			SetName(grant.Edges.Client.Name).
 			SetPrefix(prefix).
@@ -154,6 +155,7 @@ func (s *Server) exchangeCode(ctx context.Context, code, clientID, redirectURI, 
 			SetScopes(grant.Scopes).
 			SetWorkspaceID(grant.WorkspaceID).
 			SetMembershipID(grant.MembershipID).
+			SetOauthClientID(grant.ClientID).
 			SetExpiresAt(now.Add(accessTokenTTL)).
 			Save(ctx)
 		if err != nil {

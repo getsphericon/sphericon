@@ -131,6 +131,9 @@ func ScopedEntities() []ScopedEntity {
 				if src.MembershipID != nil {
 					b.SetMembershipID(remap("Membership", *src.MembershipID))
 				}
+				if src.OauthClientID != nil {
+					b.SetOauthClientID(*src.OauthClientID)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

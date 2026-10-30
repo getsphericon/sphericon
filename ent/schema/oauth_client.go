@@ -53,5 +53,8 @@ func (OAuthClient) Edges() []ent.Edge {
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("refresh_tokens", OAuthRefreshToken.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// The Connections approved for the client end with it.
+		edge.To("connections", ApiToken.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
