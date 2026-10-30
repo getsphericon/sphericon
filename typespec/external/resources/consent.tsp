@@ -66,10 +66,10 @@ namespace Suppressions {
    * Idempotent: an already-suppressed destination keeps its existing entry and
    * reason. Lifting a suppression is not available through the API.
    */
-  // A Connection's User needs suppressions:manage, as on /site (ADR 0061).
+  // The suppressions:write scope needs suppressions:manage to be granted, and a
+  // Connection's User holds it on every request, as on /site (ADR 0061).
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
-  @extension("x-required-permissions", #[Permission.suppressionsManage])
+  @extension("x-required-scopes", #[ApiTokenScope.suppressionsWrite])
   op create(@body body: CreateSuppressionInput):
     | {
         @statusCode statusCode: 201;

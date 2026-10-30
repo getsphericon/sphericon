@@ -18,6 +18,14 @@ namespace Sphericon;
   #[
     #{ scope: GrantableScope.contactsRead },
     #{ scope: GrantableScope.contactsWrite },
+    #{
+      scope: GrantableScope.contactsExport,
+      permission: Permission.contactsExport,
+    },
+    #{
+      scope: GrantableScope.suppressionsWrite,
+      permission: Permission.suppressionsManage,
+    },
     #{ scope: GrantableScope.eventsRead },
     #{ scope: GrantableScope.eventsWrite },
     #{ scope: GrantableScope.segmentsRead },
@@ -53,6 +61,8 @@ namespace Sphericon;
 enum GrantableScope {
   contactsRead: "contacts:read",
   contactsWrite: "contacts:write",
+  contactsExport: "contacts:export",
+  suppressionsWrite: "suppressions:write",
   eventsRead: "events:read",
   eventsWrite: "events:write",
   segmentsRead: "segments:read",

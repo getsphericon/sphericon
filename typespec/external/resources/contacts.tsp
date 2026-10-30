@@ -123,15 +123,13 @@ interface Contacts
    * message bodies are not included. Identify the contact by exactly one of
    * `id` or `email`.
    */
-  // A Connection's User needs what /site asks for the same action (ADR 0061): exporting
-  // a Contact (contacts:export) and, as `email` finds one by address, contacts:erase.
+  // The contacts:export scope needs the contacts:export Permission to be granted, and a
+  // Connection's User holds it on every request (ADR 0061); as `email` finds a Contact by
+  // address, the User also needs contacts:erase, as on /site.
   @collectionAction(ContactResource, "export")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.contactsRead])
-  @extension(
-    "x-required-permissions",
-    #[Permission.contactsExport, Permission.contactsErase]
-  )
+  @extension("x-required-scopes", #[ApiTokenScope.contactsExport])
+  @extension("x-required-permissions", #[Permission.contactsErase])
   export(
     ...ResourceCollectionParameters<ContactResource>,
 

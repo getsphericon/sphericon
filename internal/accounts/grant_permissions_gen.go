@@ -6,8 +6,10 @@ package accounts
 // the contract declares it on each grantable scope (ADR 0061). A grantable scope absent here is
 // any member's to grant.
 var GrantPermissions = map[string]Permission{
+	"contacts:export":       PermContactsExport,
 	"integrations:write":    PermIntegrationsManage,
 	"sending_domains:write": PermSendingDomainsManage,
+	"suppressions:write":    PermSuppressionsManage,
 	"webhooks:read":         PermWebhooksManage,
 	"webhooks:regenerate":   PermWebhooksManage,
 	"webhooks:test":         PermWebhooksManage,

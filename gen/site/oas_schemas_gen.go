@@ -42,6 +42,8 @@ type ApiTokenScope string
 const (
 	ApiTokenScopeContactsRead          ApiTokenScope = "contacts:read"
 	ApiTokenScopeContactsWrite         ApiTokenScope = "contacts:write"
+	ApiTokenScopeContactsExport        ApiTokenScope = "contacts:export"
+	ApiTokenScopeSuppressionsWrite     ApiTokenScope = "suppressions:write"
 	ApiTokenScopeEventsRead            ApiTokenScope = "events:read"
 	ApiTokenScopeEventsWrite           ApiTokenScope = "events:write"
 	ApiTokenScopeSegmentsRead          ApiTokenScope = "segments:read"
@@ -80,6 +82,8 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 	return []ApiTokenScope{
 		ApiTokenScopeContactsRead,
 		ApiTokenScopeContactsWrite,
+		ApiTokenScopeContactsExport,
+		ApiTokenScopeSuppressionsWrite,
 		ApiTokenScopeEventsRead,
 		ApiTokenScopeEventsWrite,
 		ApiTokenScopeSegmentsRead,
@@ -120,6 +124,10 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeContactsRead:
 		return []byte(s), nil
 	case ApiTokenScopeContactsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeContactsExport:
+		return []byte(s), nil
+	case ApiTokenScopeSuppressionsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeEventsRead:
 		return []byte(s), nil
@@ -196,6 +204,12 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeContactsWrite:
 		*s = ApiTokenScopeContactsWrite
+		return nil
+	case ApiTokenScopeContactsExport:
+		*s = ApiTokenScopeContactsExport
+		return nil
+	case ApiTokenScopeSuppressionsWrite:
+		*s = ApiTokenScopeSuppressionsWrite
 		return nil
 	case ApiTokenScopeEventsRead:
 		*s = ApiTokenScopeEventsRead
@@ -1414,6 +1428,8 @@ type GrantableScope string
 const (
 	GrantableScopeContactsRead       GrantableScope = "contacts:read"
 	GrantableScopeContactsWrite      GrantableScope = "contacts:write"
+	GrantableScopeContactsExport     GrantableScope = "contacts:export"
+	GrantableScopeSuppressionsWrite  GrantableScope = "suppressions:write"
 	GrantableScopeEventsRead         GrantableScope = "events:read"
 	GrantableScopeEventsWrite        GrantableScope = "events:write"
 	GrantableScopeSegmentsRead       GrantableScope = "segments:read"
@@ -1439,6 +1455,8 @@ func (GrantableScope) AllValues() []GrantableScope {
 	return []GrantableScope{
 		GrantableScopeContactsRead,
 		GrantableScopeContactsWrite,
+		GrantableScopeContactsExport,
+		GrantableScopeSuppressionsWrite,
 		GrantableScopeEventsRead,
 		GrantableScopeEventsWrite,
 		GrantableScopeSegmentsRead,
@@ -1466,6 +1484,10 @@ func (s GrantableScope) MarshalText() ([]byte, error) {
 	case GrantableScopeContactsRead:
 		return []byte(s), nil
 	case GrantableScopeContactsWrite:
+		return []byte(s), nil
+	case GrantableScopeContactsExport:
+		return []byte(s), nil
+	case GrantableScopeSuppressionsWrite:
 		return []byte(s), nil
 	case GrantableScopeEventsRead:
 		return []byte(s), nil
@@ -1516,6 +1538,12 @@ func (s *GrantableScope) UnmarshalText(data []byte) error {
 		return nil
 	case GrantableScopeContactsWrite:
 		*s = GrantableScopeContactsWrite
+		return nil
+	case GrantableScopeContactsExport:
+		*s = GrantableScopeContactsExport
+		return nil
+	case GrantableScopeSuppressionsWrite:
+		*s = GrantableScopeSuppressionsWrite
 		return nil
 	case GrantableScopeEventsRead:
 		*s = GrantableScopeEventsRead

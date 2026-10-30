@@ -29,7 +29,7 @@ func eligible(t *testing.T, env *testhelper.TestEnv, dest, source string) eligib
 // takes her out of every send surface, transactional included.
 func TestExternalSuppressionsCreateNarrowsEligibility(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, "suppressions:write")
 	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
 	require.True(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible)
 
@@ -48,7 +48,7 @@ func TestExternalSuppressionsCreateNarrowsEligibility(t *testing.T) {
 // again is idempotent and never rewrites the reason.
 func TestExternalSuppressionsCreateIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
-	c := env.ExternalScoped(t, "contacts:write")
+	c := env.ExternalScoped(t, "suppressions:write")
 	before, err := env.DB.Suppression.Query().Count(context.Background())
 	require.NoError(t, err)
 
@@ -139,6 +139,20 @@ func TestExternalConsentRequiresWriteScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.UnsubscribesCreateForbidden{}, r2)
 	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Eligible)
+}
+
+// Adding a Suppression is a scope of its own, as on /site it is a Permission of its own (ADR
+// 0061): a token that writes Contacts and records Unsubscribes suppresses nothing.
+func TestExternalSuppressionsCreateNeedsTheSuppressionsWriteScope(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, "contacts:read", "contacts:write")
+
+	res, err := c.SuppressionsCreate(context.Background(), &externalapi.CreateSuppressionInput{Destination: fixtures.ContactAliceEmail})
+	require.NoError(t, err)
+	refused, isRefused := res.(*externalapi.SuppressionsCreateForbidden)
+	require.Truef(t, isRefused, "got %T", res)
+	assert.Equal(t, "the API token lacks the scope suppressions:write", refused.Detail.Value)
+	assert.True(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible, "the refused call suppressed nothing")
 }
 
 // Consent only narrows through /api (ADR 0016): the contract has no operation that

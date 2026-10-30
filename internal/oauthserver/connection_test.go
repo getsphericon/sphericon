@@ -69,14 +69,20 @@ func TestConsentBoundsTheScopesByTheUsersRole(t *testing.T) {
 	mary := env.SiteActor(t, fixtures.MemberMaryEmail)
 
 	described, err := mary.SiteOAuthDescribe(t.Context(), siteapi.SiteOAuthDescribeParams{
-		ClientId: fixtureClientID, RedirectUri: fixtureRedirectURI, Scope: siteapi.NewOptString("contacts:read webhooks:read"),
+		ClientId: fixtureClientID, RedirectUri: fixtureRedirectURI,
+		Scope: siteapi.NewOptString("contacts:read webhooks:read contacts:export suppressions:write"),
 	})
 	require.NoError(t, err)
-	assert.Equal(t, siteapi.SiteOAuthAuthorizationRequestRequiredPermissions{"webhooks:read": siteapi.PermissionWebhooksManage},
-		described.(*siteapi.SiteOAuthAuthorizationRequest).RequiredPermissions)
+	assert.Equal(t, siteapi.SiteOAuthAuthorizationRequestRequiredPermissions{
+		"webhooks:read":      siteapi.PermissionWebhooksManage,
+		"contacts:export":    siteapi.PermissionContactsExport,
+		"suppressions:write": siteapi.PermissionSuppressionsManage,
+	}, described.(*siteapi.SiteOAuthAuthorizationRequest).RequiredPermissions)
 
 	for name, in := range map[string]siteapi.SiteOAuthDecisionInput{
-		"a granted scope": approval("contacts:read webhooks:read", false),
+		"a granted scope":      approval("contacts:read webhooks:read", false),
+		"exporting a Contact":  approval("contacts:read contacts:export", false),
+		"adding a Suppression": approval("contacts:write suppressions:write", false),
 		"a setup scope": func() siteapi.SiteOAuthDecisionInput {
 			in := approval("contacts:read sending_domains:write", false)
 			in.AllowSetup = siteapi.NewOptBool(true)
@@ -121,25 +127,46 @@ func TestADemotionTakesEffectOnTheNextRequest(t *testing.T) {
 	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refused.Code.Value)
 }
 
-// A member's Connection is bounded by her Role on what /site gates by a Permission her scopes do
-// not already need to be granted (ADR 0061): exporting a Contact, finding one by address and
-// adding a Suppression answer 403 permission_required, and the refused write leaves no row.
-func TestAMembersConnectionIsBoundedByHerRole(t *testing.T) {
+// An owner and an admin may grant exporting a Contact and adding a Suppression, which their Roles
+// hold, and their Connection does both.
+func TestAnOwnerOrAdminGrantsExportAndSuppressions(t *testing.T) {
+	for name, email := range map[string]string{"owner": fixtures.OwnerJohnEmail, "admin": fixtures.AdminAliceEmail} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			tok := connectAs(t, env, email, fixtures.AcmePublicID, "contacts:export suppressions:write")
+			assert.Equal(t, "contacts:export suppressions:write", tok.Scope)
+			api := env.ExternalWithToken(t, tok.AccessToken)
+
+			exported, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{Email: externalapi.NewOptEmailAddress(fixtures.ContactBobEmail)})
+			require.NoError(t, err)
+			assert.IsType(t, &externalapi.ContactsExportOKApplicationOctetStreamHeaders{}, exported)
+
+			suppressed, err := api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
+			require.NoError(t, err)
+			assert.IsType(t, &externalapi.SuppressionResource{}, suppressed)
+		})
+	}
+}
+
+// The Role bounds the new scopes on every request (ADR 0061): an admin's Connection that exports
+// and suppresses answers 403 permission_required on both once the admin is made a member, and the
+// refused write leaves no row.
+func TestADemotionTakesExportAndSuppressionsAway(t *testing.T) {
 	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.MemberMaryEmail, fixtures.AcmePublicID, "contacts:read contacts:write")
+	tok := connectAs(t, env, fixtures.AdminAliceEmail, fixtures.AcmePublicID, "contacts:export suppressions:write")
 	api := env.ExternalWithToken(t, tok.AccessToken)
+
+	demoted, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteMembershipsUpdate(t.Context(),
+		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
+		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AcmeAdminMembershipID)})
+	require.NoError(t, err)
+	require.IsType(t, &siteapi.SiteMembershipResource{}, demoted)
 
 	exported, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(fixtures.ContactBobID))})
 	require.NoError(t, err)
 	refusedExport, isRefused := exported.(*externalapi.ContactsExportForbidden)
 	require.Truef(t, isRefused, "got %T", exported)
 	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refusedExport.Code.Value)
-
-	found, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{Email: externalapi.NewOptEmailAddress(fixtures.ContactBobEmail)})
-	require.NoError(t, err)
-	refusedLookup, isRefused := found.(*externalapi.ContactsExportForbidden)
-	require.Truef(t, isRefused, "got %T", found)
-	assert.Equal(t, externalapi.ProblemCodePermissionRequired, refusedLookup.Code.Value)
 
 	suppressed, err := api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
 	require.NoError(t, err)
@@ -149,21 +176,6 @@ func TestAMembersConnectionIsBoundedByHerRole(t *testing.T) {
 	added, err := env.DB.Suppression.Query().Where(suppression.Destination("bounded@example.com")).Exist(t.Context())
 	require.NoError(t, err)
 	assert.False(t, added, "the refused call suppressed nothing")
-}
-
-// An admin's Connection with the same scopes does both: her Role holds the Permissions.
-func TestAnAdminsConnectionExportsAndSuppresses(t *testing.T) {
-	env := testhelper.Setup(t)
-	tok := connectAs(t, env, fixtures.AdminAliceEmail, fixtures.AcmePublicID, "contacts:read contacts:write")
-	api := env.ExternalWithToken(t, tok.AccessToken)
-
-	exported, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{Email: externalapi.NewOptEmailAddress(fixtures.ContactBobEmail)})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.ContactsExportOKApplicationOctetStreamHeaders{}, exported)
-
-	suppressed, err := api.SuppressionsCreate(t.Context(), &externalapi.CreateSuppressionInput{Destination: "bounded@example.com"})
-	require.NoError(t, err)
-	assert.IsType(t, &externalapi.SuppressionResource{}, suppressed)
 }
 
 // assertConnectionEnded checks that the Connection tok was issued is over: its access token is
