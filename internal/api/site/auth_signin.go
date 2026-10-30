@@ -5,14 +5,12 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"net/http"
 	"net/url"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/signin"
 )
@@ -40,10 +38,9 @@ func (h *Handlers) SiteAuthSigninProviders(context.Context) (*siteapi.SiteSignin
 // the signed flow cookie with the `return_to` that survived validation, and redirects the
 // browser to the provider.
 func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAuthSigninStartParams) (siteapi.SiteAuthSigninStartRes, error) {
-	authURL, flow, ok := h.signin.Start(params.Provider, signin.SafeReturnTo(params.ReturnTo.Or("")))
-	if !ok {
-		v := problem(http.StatusNotFound, i18n.T("errors.signin_provider_unknown", nil))
-		return &v, nil
+	authURL, flow, err := h.signin.Start(params.Provider, signin.SafeReturnTo(params.ReturnTo.Or("")))
+	if err != nil {
+		return nil, err
 	}
 	flow.Invitation = params.Invitation.Or("")
 	sealed, err := h.signin.SealFlow(flow)
@@ -90,7 +87,7 @@ func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.Si
 	var invite *ent.Invitation
 	if flow.Invitation != "" {
 		invite, err = h.accounts.PendingInvitation(ctx, flow.Invitation)
-		if ent.IsNotFound(err) {
+		if errors.Is(err, accounts.ErrInvitationLinkNotFound) {
 			return h.signinRefused(flow, signin.ReasonInvitationInvalid), nil
 		}
 		if err != nil {

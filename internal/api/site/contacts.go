@@ -110,22 +110,6 @@ func (h *Handlers) SiteContactsDelete(ctx context.Context, params siteapi.SiteCo
 	return &siteapi.SiteContactsDeleteNoContent{}, nil
 }
 
-// problem builds a ProblemDetails with status, title and detail.
-func problem(code int, detail string) siteapi.ProblemDetails {
-	return siteapi.ProblemDetails{
-		Status: siteapi.NewOptInt32(narrow.Int32(code)),
-		Title:  siteapi.NewOptString(http.StatusText(code)),
-		Detail: siteapi.NewOptString(detail),
-	}
-}
-
-// problemWithErrors builds a ProblemDetails with field-level validation errors.
-func problemWithErrors(code int, detail string, fieldErrors map[string][]string) siteapi.ProblemDetails {
-	p := problem(code, detail)
-	p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors(fieldErrors))
-	return p
-}
-
 // conflictProblem renders a contacts.ConflictError, with the field-level error.
 func conflictProblem(c *contacts.ConflictError) siteapi.ProblemDetails {
 	return problemWithErrors(http.StatusConflict, c.Message(), map[string][]string{c.Field: {c.Message()}})

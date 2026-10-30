@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/lifecycle"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // DeletionWindow is how long a deleted Workspace stays restorable before its data is
@@ -43,7 +44,11 @@ const DeletionWindow = 30 * 24 * time.Hour
 func EraseDate(discardedAt time.Time) time.Time { return discardedAt.Add(DeletionWindow) }
 
 // ErrNameMismatch refuses deleting a Workspace whose typed name differs from the stored one.
-var ErrNameMismatch = errors.New("workspacedeletion: the typed name does not match the workspace name")
+var ErrNameMismatch = validation.RefuseField("name", "workspacedeletion: the typed name does not match the workspace name", "errors.workspace_name_mismatch")
+
+// ErrNotRestorable refuses restoring a Workspace past its deletion window or already erased. It
+// wraps the lifecycle.ErrInvalidTransition the cycle refused the move with.
+var ErrNotRestorable = validation.Conflict("workspacedeletion: the workspace can no longer be restored", "errors.workspace_not_restorable")
 
 // State is where a Workspace is in the deletion cycle.
 type State string
@@ -228,7 +233,7 @@ func (m *Module) SoleOwned(ctx context.Context, workspaceIDs []int64) (map[int64
 // lifts only the pending-deletion Hold (a suspension or Staff hold stays). A Workspace whose
 // User's Role does not hold workspace:delete (ADR 0061), or one that is not deleted, is
 // accounts.ErrWorkspaceNotFound: a deleted Workspace is not exposed to anyone else. A Workspace past its window or
-// already erased is lifecycle.ErrInvalidTransition. Recorded as `workspace.restore` in the
+// already erased is ErrNotRestorable (a lifecycle.ErrInvalidTransition). Recorded as `workspace.restore` in the
 // same transaction. It returns the restored Workspace.
 func (m *Module) Restore(ctx context.Context, userID int64, publicID string, actor events.Actor, now time.Time) (*ent.Workspace, error) {
 	// An erased Workspace has no Memberships left (the erase removes them), so the lookup
@@ -246,7 +251,11 @@ func (m *Module) Restore(ctx context.Context, userID int64, publicID string, act
 	}
 	var restored *ent.Workspace
 	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		if err := cycleTable(cycleStorage(tx, workspaceID, now)).FireCtx(ctx, TriggerRestore); err != nil {
+		err := cycleTable(cycleStorage(tx, workspaceID, now)).FireCtx(ctx, TriggerRestore)
+		if errors.Is(err, lifecycle.ErrInvalidTransition) {
+			return fmt.Errorf("%w: %w", ErrNotRestorable, err)
+		}
+		if err != nil {
 			return err
 		}
 		ws, err := tx.Workspace.Get(ctx, workspaceID)

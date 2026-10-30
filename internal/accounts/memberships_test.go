@@ -241,7 +241,7 @@ func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
 	refused := lo.Filter(errs, func(err error, _ int) bool { return err != nil })
 	require.Len(t, refused, 1)
 	require.ErrorIs(t, refused[0], accounts.ErrLastOwner)
-	var sole *accounts.SoleOwnerError
+	var sole *accounts.DeletionRefusedError
 	require.ErrorAs(t, refused[0], &sole)
 	assert.Equal(t, fixtures.InitechName, sole.Workspaces[0].Name)
 	owners, err := client.Scoped(fixtures.InitechID).Membership().Query().Where(membership.RoleEQ(membership.RoleOwner)).Count(t.Context())

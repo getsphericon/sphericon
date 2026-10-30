@@ -18,6 +18,14 @@ func (r rig) prove(t *testing.T, address, hash, password string) login.ProofResu
 	return res
 }
 
+// proveErr is the refusal of a proof that does not hold.
+func (r rig) proveErr(t *testing.T, address, hash, password string) error {
+	t.Helper()
+	_, err := r.module.Prove(t.Context(), address, hash, password)
+	require.Error(t, err)
+	return err
+}
+
 func TestProvingTheRightPasswordHolds(t *testing.T) {
 	r := newRig(t)
 	hash := hashOf(t, fixtures.OwnerJohnPassword)
@@ -27,8 +35,8 @@ func TestProvingTheRightPasswordHolds(t *testing.T) {
 func TestProofFailuresShareTheLoginBudget(t *testing.T) {
 	r := newRig(t)
 	hash := hashOf(t, fixtures.OwnerJohnPassword)
-	require.Equal(t, login.ProofWrong, r.prove(t, fixtures.OwnerJohnEmail, hash, "wrong").Proof)
-	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
+	require.ErrorIs(t, r.proveErr(t, fixtures.OwnerJohnEmail, hash, "wrong"), login.ErrPasswordIncorrect)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 
 	res := r.prove(t, fixtures.OwnerJohnEmail, hash, fixtures.OwnerJohnPassword)
 	assert.Equal(t, login.ProofThrottled, res.Proof, "a right password is refused while the delay runs")
@@ -39,8 +47,8 @@ func TestProofFailuresShareTheLoginBudget(t *testing.T) {
 func TestProvingAnAccountWithoutAPasswordIsWrongAndCounted(t *testing.T) {
 	r := newRig(t)
 	const address = "passwordless@login.test"
-	assert.Equal(t, login.ProofWrong, r.prove(t, address, "", "anything").Proof)
-	assert.Equal(t, login.ProofWrong, r.prove(t, address, "", "anything").Proof)
+	require.ErrorIs(t, r.proveErr(t, address, "", "anything"), login.ErrPasswordIncorrect)
+	require.ErrorIs(t, r.proveErr(t, address, "", "anything"), login.ErrPasswordIncorrect)
 	assert.Equal(t, login.ProofThrottled, r.prove(t, address, "", "anything").Proof)
 }
 

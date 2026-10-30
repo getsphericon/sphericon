@@ -1,10 +1,12 @@
 id: no-common-refusal-in-handlers
 language: Go
 severity: error
-message: "rule 15: a handler maps a refusal the server's error handler renders; fix: return the module's error (a validation.Refuse/NotFound/Conflict/Forbidden sentinel or accounts.Require, validation.Error, inuse.Error, accounts.ErrWorkspaceNotFound) and let refusalProblem in internal/server answer it"
+message: "rule 15: a handler maps a refusal the server's error handler renders; fix: return the module's error (a validation.Refuse/RefuseField/NotFound/Conflict/Forbidden/Unauthorized/Denied/Unverified/LinkInvalid/Incomplete sentinel or accounts.Require, validation.Error, inuse.Error, accounts.ErrWorkspaceNotFound) and let refusalProblem in internal/server answer it"
 note: >-
   A module's sentinel refusal (`validation.RefusalError`) carries its kind, which decides its
-  answer: not found 404, refused 422, conflict 409, forbidden 403 with code permission_required (a Role without a Permission, accounts.Require). A refused input (`*validation.Error`, 422), a
+  answer: not found 404, refused 422, conflict 409, forbidden 403 with code permission_required (a
+  Role without a Permission, accounts.Require), unauthorized 401, denied 403, unverified 403 with
+  code email_verification_required, an invalid link 400, incomplete 428. A refused input (`*validation.Error`, 422), a
   removal refused while live work uses the row (`*inuse.Error`, 409) and a Workspace the caller
   cannot reach (`accounts.ErrWorkspaceNotFound`, 404) answer the same on every surface too, so
   `refusalProblem` in internal/server writes their problem once. A handler that reads a

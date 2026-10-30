@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -55,13 +53,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	inv, token, err := h.accounts.Invite(ctx, s, h.actor(ctx), accounts.InviteInput{
 		Email: string(req.Email), Role: invitation.Role(req.Role), InvitedBy: a.UserID,
 	})
-	switch {
-	case errors.Is(err, accounts.ErrEmailEmpty):
-		v := siteapi.SiteInvitationsCreateUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity, i18n.T("errors.email_empty", nil),
-			map[string][]string{fieldEmail: {i18n.T("errors.email_empty", nil)}}))
-		return &v, nil
-	case err != nil:
+	if err != nil {
 		return nil, err
 	}
 
@@ -98,30 +90,16 @@ func (h *Handlers) SiteInvitationsDelete(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 
-	found, err := h.accounts.RevokeInvitation(ctx, s, h.actor(ctx), id)
-	if err != nil {
+	if err := h.accounts.RevokeInvitation(ctx, s, h.actor(ctx), id); err != nil {
 		return nil, err
 	}
-	if !found {
-		v := siteapi.SiteInvitationsDeleteNotFound(problem(http.StatusNotFound, "invitation not found"))
-		return &v, nil
-	}
 	return &siteapi.SiteInvitationsDeleteNoContent{}, nil
-}
-
-// validInvitation looks up a pending, unexpired invitation by its raw token.
-func (h *Handlers) validInvitation(ctx context.Context, token string) (*ent.Invitation, error) {
-	return h.accounts.PendingInvitation(ctx, token)
 }
 
 // SitePublicInvitationsLookup reveals a pending invite (workspace + email) so the
 // public accept page can render. Session-less: the token is the authorization.
 func (h *Handlers) SitePublicInvitationsLookup(ctx context.Context, params siteapi.SitePublicInvitationsLookupParams) (siteapi.SitePublicInvitationsLookupRes, error) {
-	inv, err := h.validInvitation(ctx, params.Token)
-	if ent.IsNotFound(err) {
-		v := problem(http.StatusNotFound, "invitation not found or expired")
-		return &v, nil
-	}
+	inv, err := h.accounts.PendingInvitation(ctx, params.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -142,11 +120,7 @@ type acceptForm struct {
 // joins them to the workspace. Link possession authorizes an address with no Verified
 // User; a Verified User's address also needs that User's session.
 func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi.SiteAcceptInvitationInput, params siteapi.SitePublicInvitationsAcceptParams) (siteapi.SitePublicInvitationsAcceptRes, error) {
-	inv, err := h.validInvitation(ctx, params.Token)
-	if ent.IsNotFound(err) {
-		v := siteapi.SitePublicInvitationsAcceptNotFound(problem(http.StatusNotFound, "invitation not found or expired"))
-		return &v, nil
-	}
+	inv, err := h.accounts.PendingInvitation(ctx, params.Token)
 	if err != nil {
 		return nil, err
 	}
@@ -166,14 +140,6 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	}
 
 	err = h.accounts.AcceptInvitation(ctx, inv, strings.TrimSpace(name), password, sessionEmail)
-	if errors.Is(err, accounts.ErrSignInRequired) || errors.Is(err, accounts.ErrAlreadyVerified) {
-		v := siteapi.SitePublicInvitationsAcceptUnauthorized(problem(http.StatusUnauthorized, "sign in to accept this invitation"))
-		return &v, nil
-	}
-	if errors.Is(err, accounts.ErrWrongAccount) {
-		v := siteapi.SitePublicInvitationsAcceptForbidden(problem(http.StatusForbidden, "this invitation is for another account"))
-		return &v, nil
-	}
 	if errors.Is(err, accounts.ErrCredentialsRequired) {
 		// No Verified User for the address: the invitee sets up the account.
 		v := siteapi.SitePublicInvitationsAcceptUnprocessableEntity(problemWithErrors(

@@ -2,19 +2,13 @@ package site
 
 import (
 	"context"
-	"errors"
-	"net/http"
-	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
-	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // SiteUserGetMe returns the authenticated user's profile. Auth is enforced by
@@ -44,12 +38,11 @@ func (h *Handlers) userResource(u *ent.User) *siteapi.SiteUserResource {
 // which holds the profile rules. The email is the login identity and is not editable here. A
 // password change ended every session; the acting one continues under a fresh cookie.
 func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdateMeInput) (siteapi.SiteUserUpdateMeRes, error) {
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		v := siteapi.SiteUserUpdateMeForbidden(problem(http.StatusForbidden, "unauthorized"))
-		return &v, nil
+	userID, err := sessionUserID(ctx)
+	if err != nil {
+		return nil, err
 	}
-	u, err := h.accounts.User(ctx, a.UserID)
+	u, err := h.accounts.User(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,10 +51,6 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 		change.Name = &name
 	}
 	changed, err := h.accounts.ChangeProfile(ctx, u, change, h.proveCurrentPassword)
-	if errors.Is(err, accounts.ErrCurrentPasswordIncorrect) {
-		v := siteapi.SiteUserUpdateMeForbidden(problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil)))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -76,44 +65,26 @@ func (h *Handlers) SiteUserUpdateMe(ctx context.Context, req *siteapi.SiteUpdate
 	return res, nil
 }
 
-// emailChangeForm is what SiteUserEmailChange checks beyond the contract, the address trimmed.
-type emailChangeForm struct {
-	NewEmail string `json:"newEmail" validate:"required,account_email"`
-}
-
 // SiteUserEmailChange requests a change of the login email. It verifies the
 // current password, and emails a confirmation link to the NEW address (or, when that
 // address is Taken, a notice to its owner: the answer is the same) — the change only
 // takes effect once that link is confirmed (SiteAuthConfirmEmailChange). Returns 202.
 func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEmailChangeInput) (siteapi.SiteUserEmailChangeRes, error) {
-	a := auth.GetSiteAuth(ctx)
-	if a == nil {
-		v := siteapi.SiteUserEmailChangeForbidden(problem(http.StatusForbidden, "unauthorized"))
-		return &v, nil
+	userID, err := sessionUserID(ctx)
+	if err != nil {
+		return nil, err
 	}
-	u, err := h.accounts.User(ctx, a.UserID)
+	u, err := h.accounts.User(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	newEmail := strings.TrimSpace(string(req.NewEmail))
-	if err := validation.Form(emailChangeForm{NewEmail: newEmail}); err != nil {
+	newEmail, err := accounts.NewEmailFor(u, string(req.NewEmail))
+	if err != nil {
 		return nil, err
 	}
-	if strings.EqualFold(newEmail, u.Email) {
-		v := siteapi.SiteUserEmailChangeUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.new_email_must_differ", nil),
-			map[string][]string{fieldNewEmail: {i18n.T("errors.new_email_must_differ", nil)}},
-		))
-		return &v, nil
-	}
-
-	if proved, err := h.proveCurrentPassword(ctx, u, req.CurrentPassword); err != nil {
+	if err := h.proveCurrentPassword(ctx, u, req.CurrentPassword); err != nil {
 		return nil, err
-	} else if !proved {
-		v := siteapi.SiteUserEmailChangeForbidden(problem(http.StatusForbidden, i18n.T("errors.current_password_incorrect", nil)))
-		return &v, nil
 	}
 
 	// Whether the new address is Taken is never told to the requester (ADR 0031): every
@@ -129,9 +100,7 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 		return nil, err
 	}
 
-	// Bind to the current email so the token is single-use (invalid once swapped);
-	// carry the requested new address in the token.
-	token, err := h.tokens.Mint(authtoken.PurposeEmailChange, u.ID, u.Email, emailChangeTokenTTL, map[string]string{"new": newEmail})
+	token, err := h.links.EmailChangeLink(u, newEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -161,18 +130,19 @@ func (h *Handlers) SiteUserSignOutEverywhere(ctx context.Context) (*siteapi.Site
 	return &siteapi.SiteUserSignOutEverywhereNoContent{SetCookie: h.sessions.Cleared().String()}, nil
 }
 
-// proveCurrentPassword is the profile's proof of the current password: the login module's
-// one prove path (throttle first, decoy hash, a failure counted on the Login budget).
-// While the address's delay runs it returns the 429 error even for a right password.
-func (h *Handlers) proveCurrentPassword(ctx context.Context, u *ent.User, password string) (bool, error) {
+// proveCurrentPassword is the profile's proof of the current password (accounts.Prove): the
+// login module's one prove path (throttle first, decoy hash, a failure counted on the Login
+// budget). It returns nil when the password is the User's and login.ErrPasswordIncorrect when
+// it is not; while the address's delay runs it returns the 429 error even for a right password.
+func (h *Handlers) proveCurrentPassword(ctx context.Context, u *ent.User, password string) error {
 	res, err := h.login.Prove(ctx, u.Email, u.PasswordHash, password)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if res.Proof == login.ProofThrottled {
-		return false, loginDelayError(ctx, res.Delay)
+		return loginDelayError(ctx, res.Delay)
 	}
-	return res.Proof == login.ProofHolds, nil
+	return nil
 }
 
 // loginDelayError is the 429 rejection of a running Login throttle delay.

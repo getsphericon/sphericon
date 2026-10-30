@@ -15,27 +15,67 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/accounts/roles"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
-// SoleOwnerError is the refusal of User deletion while the User is the only Owner of a live
-// Workspace (ADR 0050): nothing is deleted, and Workspaces says which ones to hand over or
-// delete first. It is an ErrLastOwner, the same rule as any Owner change.
-type SoleOwnerError struct {
+// The rules that refuse a User deletion (ADR 0050). A deletion answers each as a
+// *DeletionRefusedError, whose answer names the Workspaces the User solely owns.
+var (
+	// ErrDeletionEmailMismatch: the email typed to confirm is not the User's own.
+	ErrDeletionEmailMismatch = validation.RefuseField("email", "accounts: the typed email is not the user's", "errors.delete_user_email_mismatch")
+	// ErrDeletionUsePassword: a deletion link asked for a User who has a password, which
+	// confirms the deletion instead.
+	ErrDeletionUsePassword = validation.Refuse("accounts: the user confirms the deletion with the password", "errors.delete_user_use_password")
+	// ErrProofStale: the proof no longer fits the User: the User's password was set or removed
+	// between the proof and the transaction that locked the row.
+	ErrProofStale = validation.Refuse("accounts: the deletion proof no longer fits the user", "errors.delete_user_proof_stale")
+	// ErrSoleOwner: the User is the only Owner of a live Workspace. It is an ErrLastOwner, the
+	// same rule as any Owner change.
+	ErrSoleOwner = validation.Refuse("accounts: the user is the only owner of live workspaces", "errors.delete_user_only_owner")
+)
+
+// DeletionRefusedError is a User deletion refused by Reason, one of the rules above: nothing is
+// deleted. For ErrSoleOwner, Workspaces says which Workspaces to hand over or delete first.
+// errors.Is matches Reason (and ErrLastOwner for ErrSoleOwner).
+type DeletionRefusedError struct {
+	Reason *validation.RefusalError
 	// Workspaces are the live Workspaces the User solely owns, in ascending id order.
 	Workspaces []*ent.Workspace
 }
 
-func (e *SoleOwnerError) Error() string {
+func (e *DeletionRefusedError) Error() string {
+	if len(e.Workspaces) == 0 {
+		return e.Reason.Error()
+	}
 	names := lo.Map(e.Workspaces, func(w *ent.Workspace, _ int) string { return w.Name })
-	return fmt.Sprintf("%s: the user is the only owner of %s", ErrLastOwner.Error(), strings.Join(names, ", "))
+	return fmt.Sprintf("%s: %s", e.Reason.Error(), strings.Join(names, ", "))
 }
 
-// Unwrap makes errors.Is(err, ErrLastOwner) true for the refusal.
-func (e *SoleOwnerError) Unwrap() error { return ErrLastOwner }
+// Unwrap is the rule that refused the deletion, and ErrLastOwner for a sole Owner.
+func (e *DeletionRefusedError) Unwrap() []error {
+	if errors.Is(e.Reason, ErrSoleOwner) {
+		return []error{e.Reason, ErrLastOwner}
+	}
+	return []error{e.Reason}
+}
 
-// ErrProofStale is the refusal of a deletion whose proof no longer fits the User: the User's
-// password was set or removed between the proof and the transaction that locked the row.
-var ErrProofStale = errors.New("accounts: the deletion proof no longer fits the user")
+// refuseDeletion is the deletion refused by reason.
+func refuseDeletion(reason *validation.RefusalError) error {
+	return &DeletionRefusedError{Reason: reason}
+}
+
+// DeletionSubject is the User userID who asks to delete themself, once typedEmail, the email
+// they typed to confirm, is theirs (ErrDeletionEmailMismatch otherwise).
+func (a *Accounts) DeletionSubject(ctx context.Context, userID int64, typedEmail string) (*ent.User, error) {
+	u, err := a.User(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !strings.EqualFold(strings.TrimSpace(typedEmail), u.Email) {
+		return nil, refuseDeletion(ErrDeletionEmailMismatch)
+	}
+	return u, nil
+}
 
 // DeleteConfirm is the spending of a second-factor code inside DeleteUser's transaction, with
 // the User's row locked and freshly read. The transaction's client stays inside the closure's
@@ -54,7 +94,7 @@ type DeleteProof struct {
 // transaction, and returns the deleted User (its name and address, for the mail that tells
 // the owner of the mailbox). The caller has proven who is asking; proof is re-checked inside
 // the transaction, after the refusal check and before anything is removed, with the User's
-// row locked and freshly read: a password set or removed since the proof was read is an
+// row locked and freshly read: a password set or removed since the proof was read is
 // ErrProofStale, and a second-factor code is spent only if the deletion commits (a nil proof
 // checks nothing).
 //
@@ -62,8 +102,8 @@ type DeleteProof struct {
 // belongs to, in ascending Workspace id order, so two co-Owners deleting at once serialize
 // on the Workspace and cannot deadlock: the later one reads the earlier one's outcome. Only
 // then does it read the User's Memberships and Roles that the decision rests on, so a
-// concurrent change cannot leave them stale. It refuses with a *SoleOwnerError (an
-// ErrLastOwner) while the User is the only Owner of a Workspace that is not in its deletion
+// concurrent change cannot leave them stale. It refuses with ErrSoleOwner (an ErrLastOwner,
+// naming the Workspaces) while the User is the only Owner of a Workspace that is not in its deletion
 // window (ADR 0043); a sole-owned Workspace in the window does not block and is erased on
 // schedule. Every Membership then goes through its Workspace's scope with the User as actor
 // of a `membership.delete` Audit entry (Audit entries that name the User are never
@@ -87,11 +127,11 @@ func (a *Accounts) DeleteUser(ctx context.Context, userID int64, proof *DeletePr
 			return err
 		}
 		if len(live) > 0 {
-			return &SoleOwnerError{Workspaces: live}
+			return &DeletionRefusedError{Reason: ErrSoleOwner, Workspaces: live}
 		}
 		if proof != nil {
 			if (u.PasswordHash != "") != proof.HadPassword {
-				return ErrProofStale
+				return refuseDeletion(ErrProofStale)
 			}
 			if proof.Confirm != nil {
 				if err := proof.Confirm(ctx, tx, pub, u); err != nil {

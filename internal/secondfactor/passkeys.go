@@ -11,6 +11,7 @@ import (
 	"math"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -48,7 +49,12 @@ var (
 	ErrPasskeyRefused = errors.New("secondfactor: passkey response refused")
 	// ErrPasskeyNotFound: no Passkey of that id belongs to the User (another User's counts as
 	// none).
-	ErrPasskeyNotFound = errors.New("secondfactor: passkey not found")
+	ErrPasskeyNotFound = validation.NotFound("secondfactor: passkey not found", "errors.passkey_not_found")
+	// ErrPasskeyNameEmpty: the name given to a Passkey is empty once trimmed.
+	ErrPasskeyNameEmpty = validation.RefuseField("name", "secondfactor: passkey name is empty", "errors.passkey_name_invalid")
+	// ErrRegistrationFailed: a registration ceremony that cannot finish (CeremonyFailed); the
+	// User starts it again.
+	ErrRegistrationFailed = validation.Refuse("secondfactor: passkey registration failed", "errors.passkey_registration_failed")
 	// ErrLastSignIn: the Passkey is the last way the User can sign in: no password, no Linked
 	// identity and no other Passkey.
 	ErrLastSignIn = validation.Conflict("secondfactor: the passkey is the last way to sign in", "errors.passkey_last_sign_in")
@@ -143,13 +149,34 @@ func UserIDOfHandle(handle []byte) (int64, bool) {
 	return int64(id), true
 }
 
+// CeremonyFailed reports whether err is a ceremony that cannot finish: its cookie is missing,
+// expired or spent, or the authenticator's response does not verify.
+func CeremonyFailed(err error) bool {
+	return errors.Is(err, ErrCeremony) || errors.Is(err, ErrChallengeSpent) || errors.Is(err, ErrPasskeyRefused)
+}
+
+// PasskeyName is the name a User gives a Passkey, trimmed; ErrPasskeyNameEmpty when nothing is
+// left. The contract (PasskeyName) already bounds the length.
+func PasskeyName(name string) (string, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return "", ErrPasskeyNameEmpty
+	}
+	return trimmed, nil
+}
+
 // List returns the User's Passkeys, oldest first.
 func (p *Passkeys) List(ctx context.Context, userID int64) ([]*ent.Passkey, error) {
 	return p.ent.Passkey.Query().Where(passkey.UserID(userID)).Order(passkey.ByID()).All(ctx)
 }
 
-// Rename gives the User's Passkey id a new name; ErrPasskeyNotFound when it is not theirs.
+// Rename gives the User's Passkey id a new name, trimmed (PasskeyName); ErrPasskeyNotFound when
+// it is not theirs.
 func (p *Passkeys) Rename(ctx context.Context, userID, id int64, name string) (*ent.Passkey, error) {
+	name, err := PasskeyName(name)
+	if err != nil {
+		return nil, err
+	}
 	row, err := p.ent.Passkey.Query().Where(passkey.ID(id), passkey.UserID(userID)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrPasskeyNotFound
@@ -239,10 +266,18 @@ func (p *Passkeys) BeginRegistration(ctx context.Context, u *ent.User) (options 
 // challenge, stores the Passkey and bumps the session epoch (ending every session of the
 // User), and returns the saved User for reissuing the acting session.
 //
-// ErrCeremony for an unusable cookie, ErrChallengeSpent when the ceremony already finished,
-// ErrPasskeyRefused when the response is not acceptable (including an authenticator that did
-// not verify the user).
+// A ceremony that cannot finish is ErrRegistrationFailed, wrapping its cause: ErrCeremony for an
+// unusable cookie, ErrChallengeSpent when the ceremony already finished, ErrPasskeyRefused when
+// the response is not acceptable (including an authenticator that did not verify the user).
 func (p *Passkeys) FinishRegistration(ctx context.Context, userID int64, ceremony string, response []byte, name string) (*ent.User, *ent.Passkey, error) {
+	saved, row, err := p.finishRegistration(ctx, userID, ceremony, response, name)
+	if CeremonyFailed(err) {
+		return nil, nil, fmt.Errorf("%w: %w", ErrRegistrationFailed, err)
+	}
+	return saved, row, err
+}
+
+func (p *Passkeys) finishRegistration(ctx context.Context, userID int64, ceremony string, response []byte, name string) (*ent.User, *ent.Passkey, error) {
 	if !p.Available() {
 		return nil, nil, ErrPasskeysUnavailable
 	}

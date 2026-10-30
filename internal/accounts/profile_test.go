@@ -19,16 +19,22 @@ import (
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
+var (
+	errWrongPassword = errors.New("the password is not the user's")
+	errThrottled     = errors.New("the address's delay is running")
+)
+
 // proveByHash is the proof of the current password against the stored hash, as the login
 // module's Prove checks it once its throttle lets it.
-func proveByHash(_ context.Context, u *ent.User, password string) (bool, error) {
-	return credentials.VerifyPassword(u.PasswordHash, password), nil
+func proveByHash(_ context.Context, u *ent.User, password string) error {
+	if credentials.VerifyPassword(u.PasswordHash, password) {
+		return nil
+	}
+	return errWrongPassword
 }
 
-var errThrottled = errors.New("the address's delay is running")
-
 // proveThrottled is the proof while the throttle's delay runs: refused whatever the password.
-func proveThrottled(context.Context, *ent.User, string) (bool, error) { return false, errThrottled }
+func proveThrottled(context.Context, *ent.User, string) error { return errThrottled }
 
 type profileRig struct {
 	acc  *accounts.Accounts
@@ -106,7 +112,7 @@ func TestAWrongCurrentPasswordRefusesTheChangeAndKeepsTheName(t *testing.T) {
 	_, err := r.acc.ChangeProfile(t.Context(), r.john,
 		accounts.ProfileChange{Name: new("Mallory"), NewPassword: "newsecret123", CurrentPassword: "wrong"}, proveByHash)
 
-	require.ErrorIs(t, err, accounts.ErrCurrentPasswordIncorrect)
+	require.ErrorIs(t, err, errWrongPassword)
 	stored := r.stored(t)
 	assert.Equal(t, r.john.PasswordHash, stored.PasswordHash)
 	assert.Equal(t, r.john.Name, stored.Name, "nothing is written unless every rule holds")

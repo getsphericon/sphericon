@@ -180,7 +180,7 @@ func TestResetWithoutASecondFactorChangesNothing(t *testing.T) {
 	require.NoError(t, err)
 
 	err = env.SecondFactor.Reset(ctx, fixtures.OwnerJohnID, events.Actor{Kind: events.ActorUser, ID: "2"}, fixtures.AcmeID)
-	require.ErrorIs(t, err, secondfactor.ErrNotActive)
+	require.ErrorIs(t, err, secondfactor.ErrNothingToReset)
 
 	after, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
 	require.NoError(t, err)

@@ -1,0 +1,36 @@
+id: no-hand-written-problem-in-site
+valid:
+  - |
+    func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, _ siteapi.SiteWorkspacesLeaveParams) (siteapi.SiteWorkspacesLeaveRes, error) {
+    	if err := h.accounts.Leave(ctx, workspaceScope(ctx), sessionUserID(ctx)); err != nil {
+    		return nil, err
+    	}
+    	return &siteapi.SiteWorkspacesLeaveNoContent{}, nil
+    }
+  - |
+    func (h *Handlers) SiteUserDeleteUserLink(ctx context.Context) (siteapi.SiteUserDeleteUserLinkRes, error) {
+    	return &siteapi.SiteUserDeleteUserLinkAccepted{}, nil
+    }
+invalid:
+  - |
+    func (h *Handlers) SiteSuppressionsDelete(ctx context.Context, params siteapi.SiteSuppressionsDeleteParams) (siteapi.SiteSuppressionsDeleteRes, error) {
+    	v := siteapi.SiteSuppressionsDeleteNotFound(problem(http.StatusNotFound, "suppression not found"))
+    	return &v, nil
+    }
+  - |
+    func timezoneUnknown() siteapi.ProblemDetails {
+    	msg := i18n.T("errors.timezone_unknown", nil)
+    	return problemWithErrors(http.StatusUnprocessableEntity, msg, map[string][]string{"timezone": {msg}})
+    }
+  - |
+    func gated() siteapi.SiteAuthLoginRes {
+    	v := siteapi.SiteAuthLoginForbidden(siteapi.ProblemDetails{
+    		Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),
+    		Detail: siteapi.NewOptString(i18n.T("errors.email_verification_required", nil)),
+    	})
+    	return &v
+    }
+  - |
+    func deletionRefused(detail string) siteapi.SiteDeleteUserProblemDetails {
+    	return siteapi.SiteDeleteUserProblemDetails{Detail: siteapi.NewOptString(detail)}
+    }

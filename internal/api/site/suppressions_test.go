@@ -110,3 +110,18 @@ func TestSiteSuppressionsRequireOwnedWorkspace(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSuppressionsListNotFound{}, out)
 }
+
+// A blank destination is refused on its field, with the message the module's refusal carries.
+func TestSiteSuppressionsRefuseABlankDestinationOnItsField(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	res, err := c.SiteSuppressionsCreate(t.Context(), &siteapi.SiteCreateSuppressionInput{Destination: "   "},
+		siteapi.SiteSuppressionsCreateParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID)})
+
+	require.NoError(t, err)
+	refused, ok := res.(*siteapi.SiteSuppressionsCreateUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Equal(t, "invalid destination", refused.Detail.Value)
+	assert.Equal(t, siteapi.ProblemDetailsErrors{"destination": {"invalid destination"}}, refused.Errors.Value)
+}

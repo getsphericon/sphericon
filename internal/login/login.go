@@ -2,8 +2,9 @@
 // that signs a person in with an address and a password: it normalizes the address
 // once, consults the throttle (ADR 0025), looks the account up and checks the password
 // against a decoy hash when there is none, applies the verification gate (ADR 0030),
-// counts a failure and mints the second-factor challenge. It returns one Result and
-// holds no database client: an adapter supplies the Store, the throttle's counter, the
+// counts a failure and mints the second-factor challenge. It returns one Result, or the
+// refusal as its error (a validation sentinel every surface answers alike, review rule 15),
+// and holds no database client: an adapter supplies the Store, the throttle's counter, the
 // challenge and, after an Authenticated result, the session.
 //
 // The order is the module's contract, and is asserted without HTTP:
@@ -31,6 +32,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/credentials"
+	"github.com/getsphericon/sphericon/internal/validation"
 )
 
 // Outcome is what the password step decided.
@@ -39,12 +41,6 @@ type Outcome int
 const (
 	// Throttled: the address's delay is running. Result.Wait, Limit and Now say how long.
 	Throttled Outcome = iota + 1
-	// InvalidCredentials: an unknown address, a wrong password or an account without a
-	// password, indistinguishably. The failure is counted.
-	InvalidCredentials
-	// Gated: the verification gate refused the account. Nothing is counted and no
-	// challenge is minted.
-	Gated
 	// SecondFactor: the password is right and a second step follows. Result.Challenge
 	// is its token.
 	SecondFactor
@@ -60,23 +56,30 @@ const (
 	// SecondThrottled: the address's delay is running. SecondResult.Wait, Limit and Now
 	// say how long.
 	SecondThrottled SecondOutcome = iota + 1
-	// SecondInvalidChallenge: the challenge is forged, expired, spent, moved or its
-	// account is gone. It has no trusted address, so nothing is counted.
-	SecondInvalidChallenge
-	// SecondInvalidCode: the code is wrong. The failure is counted against the same
-	// budget as a wrong password.
-	SecondInvalidCode
 	// SecondAuthenticated: the code is right. The counter is reset; the adapter issues
 	// the session.
 	SecondAuthenticated
 )
 
+// The refusals of signing in. Every surface answers them alike (review rule 15).
 var (
-	// ErrChallengeInvalid is what an adapter's Parse and Verify return for a challenge
-	// that no longer stands (forged, expired, spent, moved, factor gone).
-	ErrChallengeInvalid = errors.New("login: challenge invalid")
-	// ErrInvalidCode is what an adapter's Verify returns for a wrong code.
-	ErrInvalidCode = errors.New("login: invalid code")
+	// ErrInvalidCredentials is the password step's refusal of an unknown address, a wrong
+	// password or an account without a password, indistinguishably. The failure is counted.
+	ErrInvalidCredentials = validation.Unauthorized("login: invalid credentials", "errors.invalid_credentials")
+	// ErrChallengeInvalid is the second step's refusal of a challenge that no longer stands
+	// (forged, expired, spent, moved, its account gone or its factor gone). It has no trusted
+	// address, so nothing is counted. An adapter's Parse and Verify return it too.
+	ErrChallengeInvalid = validation.Unauthorized("login: challenge invalid", "errors.login_challenge_invalid")
+	// ErrInvalidCode is the second step's refusal of a wrong code, counted against the same
+	// budget as a wrong password. An adapter's Verify returns it too.
+	ErrInvalidCode = validation.Unauthorized("login: invalid code", "errors.second_factor_code_invalid")
+	// ErrPasskeyFailed is every refusal of a Passkey login, indistinguishably: an unknown
+	// credential, a response that does not verify (no user verification included), a spent or
+	// expired challenge, an account the verification gate refuses. Nothing is counted.
+	ErrPasskeyFailed = validation.Unauthorized("login: passkey sign-in failed", "errors.passkey_login_failed")
+	// ErrPasswordIncorrect is Prove's refusal of a password that is not the account's (or of an
+	// account without one). The failure is counted on the same budget as a login failure.
+	ErrPasswordIncorrect = validation.Denied("login: current password incorrect", "errors.current_password_incorrect")
 )
 
 // PasskeyOutcome is what the Passkey step decided (ADR 0052).
@@ -85,10 +88,6 @@ type PasskeyOutcome int
 const (
 	// PasskeyThrottled: the delay of the User the credential names is running.
 	PasskeyThrottled PasskeyOutcome = iota + 1
-	// PasskeyFailed is every other refusal, indistinguishably: an unknown credential, a
-	// response that does not verify (no user verification included), a spent or expired
-	// challenge, an account the verification gate refuses. Nothing is counted.
-	PasskeyFailed
 	// PasskeyAuthenticated: the credential is proven and the person verified. The counter
 	// is reset; the adapter issues the session. No Second factor follows.
 	PasskeyAuthenticated
@@ -141,8 +140,8 @@ type Delay struct {
 	Now   time.Time
 }
 
-// Result is the one answer of the password step. Principal is set for Gated,
-// SecondFactor and Authenticated.
+// Result is the one answer of the password step. Principal is set for SecondFactor and
+// Authenticated.
 type Result[P any] struct {
 	// Delay is set for a Throttled result.
 	Delay
@@ -198,7 +197,8 @@ type Config[P any] struct {
 	Passwords *credentials.Hasher
 	// Gate, when set, reports that an account may not sign in yet (an Unverified User,
 	// ADR 0030). It is consulted for every known account, before the password result is
-	// acted on.
+	// acted on: the password step refuses a gated account with accounts.ErrEmailNotVerified,
+	// counting nothing and minting no challenge.
 	Gate func(P) bool
 	// Challenge mints the second step's token for an account with a second factor.
 	Challenge func(ctx context.Context, principal P) (string, error)
@@ -239,7 +239,8 @@ func (m *Module[P]) throttle(ctx context.Context, address string) (delay Delay, 
 	return Delay{Wait: d, Limit: m.cfg.Throttle.Limit(), Now: m.cfg.Throttle.Now()}, true, nil
 }
 
-// Password runs the first step for an address and a password as typed.
+// Password runs the first step for an address and a password as typed. A refusal is its
+// error: accounts.ErrEmailNotVerified for a gated account, ErrInvalidCredentials otherwise.
 func (m *Module[P]) Password(ctx context.Context, address, password string) (Result[P], error) {
 	address = accounts.NormalizeEmail(address)
 
@@ -258,13 +259,13 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 	ok := m.verify(acc.PasswordHash, password)
 
 	if found && m.cfg.Gate != nil && m.cfg.Gate(acc.Principal) {
-		return Result[P]{Outcome: Gated, Principal: acc.Principal}, nil
+		return Result[P]{}, accounts.ErrEmailNotVerified
 	}
 	if !found || !ok {
 		if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
 			return Result[P]{}, err
 		}
-		return Result[P]{Outcome: InvalidCredentials}, nil
+		return Result[P]{}, ErrInvalidCredentials
 	}
 	if acc.SecondFactor {
 		challenge, err := m.cfg.Challenge(ctx, acc.Principal)
@@ -281,15 +282,12 @@ func (m *Module[P]) Password(ctx context.Context, address, password string) (Res
 }
 
 // SecondFactor runs the second step for a challenge and a code as typed. Order: a bad
-// challenge is refused without counting; the throttle is consulted before the code, so
+// challenge is refused (ErrChallengeInvalid) without counting; the throttle is consulted before the code, so
 // a correct code is refused while the delay runs; a wrong code counts against the same
-// budget as a wrong password (a counting error refuses the attempt); a committed second
+// budget as a wrong password (ErrInvalidCode; a counting error refuses the attempt); a committed second
 // factor resets the counter, and a reset that fails is logged, not fatal.
 func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (SecondResult[P], error) {
 	p, err := m.cfg.Parse(ctx, challenge)
-	if errors.Is(err, ErrChallengeInvalid) {
-		return SecondResult[P]{Outcome: SecondInvalidChallenge}, nil
-	}
 	if err != nil {
 		return SecondResult[P]{}, err
 	}
@@ -308,9 +306,7 @@ func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (S
 		if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
 			return SecondResult[P]{}, err
 		}
-		return SecondResult[P]{Outcome: SecondInvalidCode}, nil
-	case errors.Is(err, ErrChallengeInvalid):
-		return SecondResult[P]{Outcome: SecondInvalidChallenge}, nil
+		return SecondResult[P]{}, ErrInvalidCode
 	case err != nil:
 		return SecondResult[P]{}, err
 	}
@@ -323,8 +319,8 @@ func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (S
 }
 
 // Passkey runs the Passkey login for a response as the browser sent it (ADR 0052). The
-// account is found by the credential, never by an address. Order: an unknown credential is
-// refused without counting; the throttle of the account found is consulted before the
+// account is found by the credential, never by an address. Every refusal is ErrPasskeyFailed.
+// Order: an unknown credential is refused without counting; the throttle of the account found is consulted before the
 // response is verified, so a correct response is refused while the delay runs; the
 // verification gate refuses an account that may not sign in yet, with the same answer and no
 // count; a response that does not verify is the same refusal and counts nothing (without the
@@ -334,7 +330,7 @@ func (m *Module[P]) SecondFactor(ctx context.Context, challenge, code string) (S
 func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyResult[P], error) {
 	p, err := m.cfg.PasskeyFind(ctx, a)
 	if errors.Is(err, ErrPasskeyUnknown) {
-		return PasskeyResult[P]{Outcome: PasskeyFailed}, nil
+		return PasskeyResult[P]{}, ErrPasskeyFailed
 	}
 	if err != nil {
 		return PasskeyResult[P]{}, err
@@ -349,12 +345,13 @@ func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyRes
 		return PasskeyResult[P]{Outcome: PasskeyThrottled, Delay: delay}, nil
 	}
 	if m.cfg.Gate != nil && m.cfg.Gate(p.Principal) {
-		return PasskeyResult[P]{Outcome: PasskeyFailed}, nil
+		// The same refusal as any other: a Passkey login does not tell that the address waits.
+		return PasskeyResult[P]{}, ErrPasskeyFailed
 	}
 
 	err = m.cfg.PasskeyVerify(ctx, p, a)
 	if errors.Is(err, ErrPasskeyInvalid) {
-		return PasskeyResult[P]{Outcome: PasskeyFailed}, nil
+		return PasskeyResult[P]{}, ErrPasskeyFailed
 	}
 	if err != nil {
 		return PasskeyResult[P]{}, err

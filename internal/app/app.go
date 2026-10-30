@@ -639,7 +639,7 @@ func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error)
 		return false, err
 	}
 	err = sf.ResetByStaff(ctx, id, "cli")
-	if errors.Is(err, secondfactor.ErrNotActive) {
+	if errors.Is(err, secondfactor.ErrNothingToReset) {
 		return false, nil
 	}
 	return err == nil, err

@@ -3,11 +3,9 @@ package site
 import (
 	"context"
 	"errors"
-	"net/http"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/signin"
 )
 
@@ -44,10 +42,9 @@ func (h *Handlers) SiteIdentitiesLink(ctx context.Context, params siteapi.SiteId
 	if err != nil {
 		return nil, err
 	}
-	authURL, flow, ok := h.signin.Start(params.Provider, signin.SafeReturnTo(params.ReturnTo.Or("")))
-	if !ok {
-		v := problem(http.StatusNotFound, i18n.T("errors.signin_provider_unknown", nil))
-		return &v, nil
+	authURL, flow, err := h.signin.Start(params.Provider, signin.SafeReturnTo(params.ReturnTo.Or("")))
+	if err != nil {
+		return nil, err
 	}
 	flow.LinkUserID = userID
 	sealed, err := h.signin.SealFlow(flow)

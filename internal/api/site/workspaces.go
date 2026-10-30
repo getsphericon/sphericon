@@ -2,9 +2,7 @@ package site
 
 import (
 	"context"
-	"errors"
 	"log/slog"
-	"net/http"
 	"slices"
 	"strings"
 
@@ -15,12 +13,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/i18n"
-	"github.com/getsphericon/sphericon/internal/lifecycle"
-	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/suspension"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 )
 
 // SiteWorkspacesList returns the workspaces the authenticated user is a member of.
@@ -82,15 +76,6 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 		return nil, &ent.NotFoundError{}
 	}
 	ws, err := h.accounts.CreateWorkspace(ctx, a.UserID, req.Name)
-	if errors.Is(err, accounts.ErrEmailNotVerified) {
-		v := siteapi.SiteWorkspacesCreateForbidden(siteapi.ProblemDetails{
-			Code:   siteapi.NewOptProblemCode(siteapi.ProblemCodeEmailVerificationRequired),
-			Status: siteapi.NewOptInt32(http.StatusForbidden),
-			Title:  siteapi.NewOptString(http.StatusText(http.StatusForbidden)),
-			Detail: siteapi.NewOptString(i18n.T("errors.email_verification_required", nil)),
-		})
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -110,8 +95,7 @@ func (h *Handlers) SiteWorkspacesCreate(ctx context.Context, req *siteapi.SiteCr
 // configuration it answers 404.
 func (h *Handlers) SiteWorkspacesAccountLink(ctx context.Context, _ siteapi.SiteWorkspacesAccountLinkParams) (siteapi.SiteWorkspacesAccountLinkRes, error) {
 	if h.accountLink == nil {
-		v := siteapi.SiteWorkspacesAccountLinkNotFound(problem(http.StatusNotFound, "account link is not configured"))
-		return &v, nil
+		return nil, accountlink.ErrNotConfigured
 	}
 	s, m := workspaceScope(ctx), callerMembership(ctx)
 	token, expires, err := h.accountLink.Token(accountlink.Subject{UserID: m.UserID, WorkspaceID: s.WorkspaceID(), Role: string(m.Role)}, h.now())
@@ -194,14 +178,6 @@ func (h *Handlers) SiteWorkspacesUpdate(ctx context.Context, req *siteapi.SiteUp
 func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.SiteWorkspaceTimezoneInput, _ siteapi.SiteWorkspacesSetTimezoneParams) (siteapi.SiteWorkspacesSetTimezoneRes, error) {
 	s, m := workspaceScope(ctx), callerMembership(ctx)
 	w, err := h.accounts.SetTimezone(ctx, s, h.actor(ctx), string(req.Timezone))
-	if errors.Is(err, reportday.ErrUnknownZone) {
-		v := siteapi.SiteWorkspacesSetTimezoneUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.timezone_unknown", nil),
-			map[string][]string{"timezone": {i18n.T("errors.timezone_unknown", nil)}},
-		))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -244,14 +220,6 @@ func (h *Handlers) SiteWorkspacesListDeleted(ctx context.Context) ([]siteapi.Sit
 func (h *Handlers) SiteWorkspacesDelete(ctx context.Context, req *siteapi.SiteDeleteWorkspaceInput, _ siteapi.SiteWorkspacesDeleteParams) (siteapi.SiteWorkspacesDeleteRes, error) {
 	s := workspaceScope(ctx)
 	w, err := h.deletion.Delete(ctx, s, h.actor(ctx), req.Name, h.now())
-	if errors.Is(err, workspacedeletion.ErrNameMismatch) {
-		v := siteapi.SiteWorkspacesDeleteUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.workspace_name_mismatch", nil),
-			map[string][]string{fieldName: {i18n.T("errors.workspace_name_mismatch", nil)}},
-		))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -271,16 +239,7 @@ func (h *Handlers) SiteWorkspacesLeave(ctx context.Context, _ siteapi.SiteWorksp
 	if err != nil {
 		return nil, err
 	}
-	err = h.accounts.Leave(ctx, s, userID)
-	if errors.Is(err, accounts.ErrLastOwner) {
-		v := siteapi.SiteWorkspacesLeaveUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity,
-			i18n.T("errors.leave_only_owner", nil),
-			map[string][]string{"workspace": {i18n.T("errors.leave_only_owner", nil)}},
-		))
-		return &v, nil
-	}
-	if err != nil {
+	if err := h.accounts.Leave(ctx, s, userID); err != nil {
 		return nil, err
 	}
 	return &siteapi.SiteWorkspacesLeaveNoContent{}, nil
@@ -294,12 +253,7 @@ func (h *Handlers) SiteWorkspacesRestore(ctx context.Context, params siteapi.Sit
 	if a == nil {
 		return nil, accounts.ErrWorkspaceNotFound
 	}
-	_, err := h.deletion.Restore(ctx, a.UserID, string(params.ID), h.actor(ctx), h.now())
-	if errors.Is(err, lifecycle.ErrInvalidTransition) {
-		v := siteapi.SiteWorkspacesRestoreConflict(problem(http.StatusConflict, i18n.T("errors.workspace_not_restorable", nil)))
-		return &v, nil
-	}
-	if err != nil {
+	if _, err := h.deletion.Restore(ctx, a.UserID, string(params.ID), h.actor(ctx), h.now()); err != nil {
 		return nil, err
 	}
 	// The Workspace is live again, so the caller's Owner Membership resolves like any other.
@@ -341,14 +295,6 @@ func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req 
 		days = &n
 	}
 	w, err := h.accounts.SetRevenueSettings(ctx, s, h.actor(ctx), code, days)
-	if errors.Is(err, accounts.ErrUnknownCurrency) {
-		reason := i18n.T("errors.currency_unknown", nil)
-		v := siteapi.SiteWorkspacesUpdateRevenueSettingsUnprocessableEntity(problemWithErrors(
-			http.StatusUnprocessableEntity, reason,
-			map[string][]string{"reportingCurrency": {reason}},
-		))
-		return &v, nil
-	}
 	if err != nil {
 		return nil, err
 	}

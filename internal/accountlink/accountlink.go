@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -27,6 +28,10 @@ const TTL = 2 * time.Minute
 
 // JWKSPath is where the app publishes its public key set.
 const JWKSPath = "/.well-known/jwks.json"
+
+// ErrNotConfigured is the Account link of an installation that configured none: there is no
+// page to open.
+var ErrNotConfigured = validation.NotFound("accountlink: the account link is not configured", "errors.account_link_not_configured")
 
 // Link signs Account link tokens for one configured address.
 type Link struct {

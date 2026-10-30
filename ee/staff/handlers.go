@@ -61,8 +61,6 @@ func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginI
 	switch res.Outcome {
 	case login.Throttled:
 		return nil, throttled(ctx, res.Delay)
-	case login.InvalidCredentials:
-		return unauthorized(i18n.T("errors.invalid_credentials", nil)), nil
 	case login.SecondFactor:
 		out := &staffapi.StaffLoginResult{Outcome: staffapi.StaffLoginOutcomeChallenge, Challenge: res.Challenge}
 		key, err := h.module.Enrolment(ctx, res.Principal)
@@ -74,8 +72,8 @@ func (h *Handlers) StaffAuthLogin(ctx context.Context, req *staffapi.StaffLoginI
 			out.Enrolment = staffapi.NewOptStaffEnrolment(staffapi.StaffEnrolment{Secret: key.Secret, URI: key.URI, QrCode: key.QRCode})
 		}
 		return out, nil
-	case login.Gated, login.Authenticated:
-		// The Staff login has no gate and always has a second step.
+	case login.Authenticated:
+		// The Staff login always has a second step.
 	}
 	return nil, fmt.Errorf("staff: unhandled login outcome %d", res.Outcome)
 }
@@ -90,10 +88,6 @@ func (h *Handlers) StaffAuthSecondFactor(ctx context.Context, req *staffapi.Staf
 	switch res.Outcome {
 	case login.SecondThrottled:
 		return nil, throttled(ctx, res.Delay)
-	case login.SecondInvalidChallenge:
-		return unauthorized(i18n.T("errors.login_challenge_invalid", nil)), nil
-	case login.SecondInvalidCode:
-		return unauthorized(i18n.T("errors.second_factor_code_invalid", nil)), nil
 	case login.SecondAuthenticated:
 		// No audit entry: the Staff member belongs to no Workspace.
 		cookie, err := h.sessions.Issue(res.Principal)
@@ -125,18 +119,6 @@ func (h *Handlers) StaffMeGet(ctx context.Context) (staffapi.StaffMeGetRes, erro
 // renders the problem.
 func throttled(ctx context.Context, res login.Delay) error {
 	return ratelimit.FromContext(ctx).Delay(ctx, ratelimit.PolicyLoginAccount, res.Limit, res.Wait, res.Now)
-}
-
-// problem is the RFC 7807 body of a refusal.
-type problem = staffapi.ProblemDetails
-
-// unauthorized is the 401 of a failed login step. It satisfies both login responses.
-func unauthorized(detail string) *problem {
-	return &problem{
-		Status: staffapi.NewOptInt32(http.StatusUnauthorized),
-		Title:  staffapi.NewOptString(http.StatusText(http.StatusUnauthorized)),
-		Detail: staffapi.NewOptString(detail),
-	}
 }
 
 // StaffWorkspacesList is a page of Workspaces, newest first, narrowed by an id or name

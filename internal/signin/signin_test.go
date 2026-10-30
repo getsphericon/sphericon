@@ -124,10 +124,11 @@ func TestRedirectURLDerivesFromTheAppURL(t *testing.T) {
 func TestStartDrawsAFreshFlowAndSendsPKCEAndTheRedirectURI(t *testing.T) {
 	p := newProviders()
 
-	authURL, flow, ok := p.Start("google", "/w/x")
-	_, other, _ := p.Start("google", "/w/x")
+	authURL, flow, err := p.Start("google", "/w/x")
+	require.NoError(t, err)
+	_, other, err := p.Start("google", "/w/x")
+	require.NoError(t, err)
 
-	require.True(t, ok)
 	u, err := url.Parse(authURL)
 	require.NoError(t, err)
 	q := u.Query()
@@ -144,9 +145,9 @@ func TestStartDrawsAFreshFlowAndSendsPKCEAndTheRedirectURI(t *testing.T) {
 func TestStartRefusesAProviderThatIsNotEnabled(t *testing.T) {
 	p := newProviders()
 
-	_, _, ok := p.Start("github", "")
+	_, _, err := p.Start("github", "")
 
-	assert.False(t, ok)
+	assert.ErrorIs(t, err, signin.ErrProviderUnknown)
 }
 
 // A flow opens only as it was sealed, for its own provider, while it lives.

@@ -138,6 +138,22 @@ func (r rig) password(t *testing.T, address, password string) login.Result[*ent.
 	return res
 }
 
+// passwordErr is the refusal of a password step that does not go on.
+func (r rig) passwordErr(t *testing.T, address, password string) error {
+	t.Helper()
+	_, err := r.module.Password(t.Context(), address, password)
+	require.Error(t, err)
+	return err
+}
+
+// secondErr is the refusal of a second step that does not authenticate.
+func (r rig) secondErr(t *testing.T, challenge, code string) error {
+	t.Helper()
+	_, err := r.module.SecondFactor(t.Context(), challenge, code)
+	require.Error(t, err)
+	return err
+}
+
 func TestAKnownAddressWithItsPasswordIsAuthenticated(t *testing.T) {
 	r := newRig(t)
 	res := r.password(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword)
@@ -150,15 +166,15 @@ func TestTheAddressIsNormalizedOnceForTheLookupAndTheCounter(t *testing.T) {
 	assert.Equal(t, login.Authenticated, r.password(t, "  INFO@GetSphericon.com ", fixtures.OwnerJohnPassword).Outcome)
 
 	// Two spellings of one address feed one counter.
-	assert.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
-	assert.Equal(t, login.InvalidCredentials, r.password(t, " INFO@getsphericon.COM", "wrong").Outcome)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
+	require.ErrorIs(t, r.passwordErr(t, " INFO@getsphericon.COM", "wrong"), login.ErrInvalidCredentials)
 	assert.Equal(t, login.Throttled, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
 }
 
 func TestThrottlePrecedesThePasswordCheckEvenForACorrectPassword(t *testing.T) {
 	r := newRig(t)
 	for range 2 {
-		require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
+		require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	}
 	res := r.password(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword)
 	assert.Equal(t, login.Throttled, res.Outcome)
@@ -169,7 +185,7 @@ func TestThrottlePrecedesThePasswordCheckEvenForACorrectPassword(t *testing.T) {
 func TestThePasswordStepWorksAgainOnceTheDelayHasPassed(t *testing.T) {
 	r := newRig(t)
 	for range 2 {
-		require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
+		require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	}
 	require.Equal(t, login.Throttled, r.password(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword).Outcome)
 
@@ -181,31 +197,31 @@ func TestThePasswordStepWorksAgainOnceTheDelayHasPassed(t *testing.T) {
 func TestAnUnknownAddressFollowsTheSamePathAsAKnownOne(t *testing.T) {
 	r := newRig(t)
 	const unknown = "nobody@login.test"
-	assert.Equal(t, login.InvalidCredentials, r.password(t, unknown, "anything").Outcome)
-	assert.Equal(t, login.InvalidCredentials, r.password(t, unknown, "anything").Outcome)
+	require.ErrorIs(t, r.passwordErr(t, unknown, "anything"), login.ErrInvalidCredentials)
+	require.ErrorIs(t, r.passwordErr(t, unknown, "anything"), login.ErrInvalidCredentials)
 	// Counted like a known address, so it is throttled like one.
 	assert.Equal(t, login.Throttled, r.password(t, unknown, "anything").Outcome)
 }
 
 func TestThePasswordStepDoesNotResetTheCounterWhenASecondFactorFollows(t *testing.T) {
 	r := newRig(t)
-	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.SecondFactorSamEmail, "wrong").Outcome)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, "wrong"), login.ErrInvalidCredentials)
 
 	res := r.password(t, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword)
 	require.Equal(t, login.SecondFactor, res.Outcome)
 	assert.Equal(t, "challenge-"+strconv.Itoa(fixtures.SecondFactorSamID), res.Challenge)
 
 	// The earlier failure still counts: one more reaches the threshold of two.
-	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.SecondFactorSamEmail, "wrong").Outcome)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, "wrong"), login.ErrInvalidCredentials)
 	assert.Equal(t, login.Throttled, r.password(t, fixtures.SecondFactorSamEmail, "wrong").Outcome)
 }
 
 func TestASuccessWithoutASecondFactorResetsTheCounter(t *testing.T) {
 	r := newRig(t)
-	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
 	require.Equal(t, login.Authenticated, r.password(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword).Outcome)
-	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome)
-	assert.Equal(t, login.InvalidCredentials, r.password(t, fixtures.OwnerJohnEmail, "wrong").Outcome, "the count restarted at the success")
+	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.OwnerJohnEmail, "wrong"), login.ErrInvalidCredentials, "the count restarted at the success")
 }
 
 func TestTheVerificationGatePrecedesTheChallengeAndCountsNothing(t *testing.T) {
@@ -215,8 +231,8 @@ func TestTheVerificationGatePrecedesTheChallengeAndCountsNothing(t *testing.T) {
 	r := newRig(t, gate)
 	// Whatever the password, a gated account gets neither a challenge nor a failure.
 	for range 3 {
-		assert.Equal(t, login.Gated, r.password(t, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword).Outcome)
-		assert.Equal(t, login.Gated, r.password(t, fixtures.SecondFactorSamEmail, "wrong").Outcome)
+		require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword), accounts.ErrEmailNotVerified)
+		require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, "wrong"), accounts.ErrEmailNotVerified)
 	}
 	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
 }
@@ -241,7 +257,7 @@ var samChallenge = "challenge-" + strconv.Itoa(fixtures.SecondFactorSamID)
 func TestABadChallengeIsRefusedWithoutCountingAFailure(t *testing.T) {
 	r := newRig(t)
 	for range 3 {
-		assert.Equal(t, login.SecondInvalidChallenge, r.second(t, "forged", "123456").Outcome)
+		require.ErrorIs(t, r.secondErr(t, "forged", "123456"), login.ErrChallengeInvalid)
 	}
 	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
 	assert.Zero(t, r.factor.verifyHit, "a bad challenge never reaches the code check")
@@ -251,15 +267,15 @@ func TestAChallengeThatMovedIsRefusedWithoutCountingAFailure(t *testing.T) {
 	r := newRig(t)
 	r.factor.moved = true
 	for range 3 {
-		assert.Equal(t, login.SecondInvalidChallenge, r.second(t, samChallenge, "123456").Outcome)
+		require.ErrorIs(t, r.secondErr(t, samChallenge, "123456"), login.ErrChallengeInvalid)
 	}
 	assert.Zero(t, delayOf(t, r.login, fixtures.SecondFactorSamEmail))
 }
 
 func TestAWrongCodeCountsAgainstTheBudgetOfAWrongPassword(t *testing.T) {
 	r := newRig(t)
-	require.Equal(t, login.InvalidCredentials, r.password(t, fixtures.SecondFactorSamEmail, "wrong").Outcome)
-	assert.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "000000").Outcome)
+	require.ErrorIs(t, r.passwordErr(t, fixtures.SecondFactorSamEmail, "wrong"), login.ErrInvalidCredentials)
+	require.ErrorIs(t, r.secondErr(t, samChallenge, "000000"), login.ErrInvalidCode)
 	// One password failure and one code failure reach the threshold of two.
 	assert.Equal(t, login.SecondThrottled, r.second(t, samChallenge, "123456").Outcome, "a correct code does not skip the delay")
 	assert.Equal(t, login.Throttled, r.password(t, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword).Outcome)
@@ -268,19 +284,19 @@ func TestAWrongCodeCountsAgainstTheBudgetOfAWrongPassword(t *testing.T) {
 func TestARecoveryCodeIsSpentOnce(t *testing.T) {
 	r := newRig(t)
 	assert.Equal(t, login.SecondAuthenticated, r.second(t, samChallenge, "recovery").Outcome)
-	assert.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "recovery").Outcome)
+	require.ErrorIs(t, r.secondErr(t, samChallenge, "recovery"), login.ErrInvalidCode)
 }
 
 func TestAGoodCodeAuthenticatesAndResetsTheCounter(t *testing.T) {
 	r := newRig(t)
-	require.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "000000").Outcome)
+	require.ErrorIs(t, r.secondErr(t, samChallenge, "000000"), login.ErrInvalidCode)
 	res := r.second(t, samChallenge, "123456")
 	require.Equal(t, login.SecondAuthenticated, res.Outcome)
 	assert.Equal(t, int64(fixtures.SecondFactorSamID), res.Principal.ID)
 	assert.Equal(t, "password", res.Method)
 
-	require.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "000000").Outcome)
-	assert.Equal(t, login.SecondInvalidCode, r.second(t, samChallenge, "000000").Outcome, "the count restarted at the success")
+	require.ErrorIs(t, r.secondErr(t, samChallenge, "000000"), login.ErrInvalidCode)
+	require.ErrorIs(t, r.secondErr(t, samChallenge, "000000"), login.ErrInvalidCode, "the count restarted at the success")
 }
 
 func TestAFailingCounterResetAfterACommittedSecondFactorStillAuthenticates(t *testing.T) {

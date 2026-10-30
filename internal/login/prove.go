@@ -12,9 +12,6 @@ type Proof int
 const (
 	// ProofThrottled: the address's delay is running. ProofResult.Wait, Limit and Now say how long.
 	ProofThrottled Proof = iota + 1
-	// ProofWrong: the password does not match (or the account has none). The failure is
-	// counted on the same budget as a login failure.
-	ProofWrong
 	// ProofHolds: the password is right.
 	ProofHolds
 )
@@ -31,7 +28,8 @@ type ProofResult struct {
 // and regenerate, a profile password or email change): the same throttle as the first
 // step (consulted first, so a right password is refused while the delay runs), the same
 // decoy for an account without a password, and a failure counted on the same budget as a
-// login failure. The caller holds the account, so it passes its address and hash.
+// login failure. The caller holds the account, so it passes its address and hash. A password
+// that is not the account's is refused with ErrPasswordIncorrect.
 func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password string) (ProofResult, error) {
 	address = accounts.NormalizeEmail(address)
 
@@ -48,7 +46,7 @@ func (m *Module[P]) Prove(ctx context.Context, address, passwordHash, password s
 	if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
 		return ProofResult{}, err
 	}
-	return ProofResult{Proof: ProofWrong}, nil
+	return ProofResult{}, ErrPasswordIncorrect
 }
 
 // Throttled consults the address's delay without proving anything, for a profile action
