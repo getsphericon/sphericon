@@ -84,7 +84,10 @@ func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []bro
 		chunk := sends[i:min(i+recipientInsertChunk, len(sends))]
 		params := make([]river.InsertManyParams, 0, len(chunk))
 		for _, send := range chunk {
-			opts := &river.InsertOpts{Queue: broadcasts.Queue, MaxAttempts: recipientMaxAttempts}
+			// A plan job retried after inserting some chunks plans the same recipients again:
+			// river refuses a second job with the same args while the first is in any state
+			// but cancelled or discarded, so each recipient keeps one job.
+			opts := &river.InsertOpts{Queue: broadcasts.Queue, MaxAttempts: recipientMaxAttempts, UniqueOpts: river.UniqueOpts{ByArgs: true}}
 			if !send.At.IsZero() {
 				opts.ScheduledAt = send.At
 			}
