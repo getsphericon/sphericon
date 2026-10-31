@@ -868,6 +868,12 @@
     "verify": "Verify",
     "verifyError": "Could not verify the domain"
   },
+  "leave": {
+    "discard": "Leave",
+    "message": "Your changes are not saved.",
+    "stay": "Keep editing",
+    "title": "Leave without saving?"
+  },
   "legal": {
     "loadError": "Could not load the document",
     "notFound": "This document does not exist.",
@@ -2010,11 +2016,5 @@
     "description": "Outbound email sending is suspended for this workspace. Scheduled broadcasts and automations are paused and resume when the suspension is lifted. You can still sign in and view your data.",
     "reason": "Reason: {{reason}}",
     "title": "Sending is suspended"
-  },
-  "leave": {
-    "discard": "Leave",
-    "message": "Your changes are not saved.",
-    "stay": "Keep editing",
-    "title": "Leave without saving?"
   }
 }

@@ -343,13 +343,22 @@ test('a second init is ignored', async () => {
   expect(firstCall().url).toBe('https://collect.example/collect/events')
 })
 
+// Settles the promise chains queued so far, letting no timer run.
+async function flushMicrotasks(rounds = 20): Promise<void> {
+  if (rounds > 0) {
+    await Promise.resolve()
+    await flushMicrotasks(rounds - 1)
+  }
+}
+
 test('pagehide flushes pending events without waiting for the timer', async () => {
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
   track('leaving')
 
   window.dispatchEvent(new Event('pagehide'))
-  await vi.advanceTimersByTimeAsync(0)
+  // The request starts before any timer may run: a page that is unloading runs none.
+  await flushMicrotasks()
 
   // Trackers loaded by earlier tests keep their pagehide listeners, so look for this event only.
   const sent = (await sentEvents()).flat().filter((e) => e.action === 'leaving')
