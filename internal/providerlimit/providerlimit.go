@@ -1,5 +1,5 @@
 // Package providerlimit enforces an Integration's Provider limit (ADR 0023): two token
-// buckets, per-second and rolling 24 hours, whose state is one send_limiters row per
+// buckets, per-second and rolling 24 hours, whose state is one provider_limiters row per
 // Integration in Postgres (no Redis). A reservation takes one token from both buckets
 // or from none, in a single UPDATE through the scoped client, so concurrent workers
 // and instances cannot overspend; a denial reports how long until capacity returns.
@@ -20,7 +20,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 )
 
 // daySeconds is the length of the rolling window in seconds.
@@ -65,9 +65,9 @@ type bucket struct {
 func buckets(l Limits) []bucket {
 	return []bucket{
 		// Capacity is one second's worth of messages, refilled over one second.
-		{column: sendlimiter.FieldSecondFill, capacity: l.PerSecond, fillPerSec: 1},
+		{column: providerlimiter.FieldSecondFill, capacity: l.PerSecond, fillPerSec: 1},
 		// Capacity is a day's worth of messages, refilled evenly over 24 hours.
-		{column: sendlimiter.FieldDayFill, capacity: l.PerDay, fillPerSec: 1 / daySeconds},
+		{column: providerlimiter.FieldDayFill, capacity: l.PerDay, fillPerSec: 1 / daySeconds},
 	}
 }
 
@@ -75,7 +75,7 @@ func buckets(l Limits) []bucket {
 func (b bucket) writeRefilled(bld *entsql.Builder, now time.Time) {
 	bld.WriteString("LEAST(1.0, " + b.column + " + GREATEST(0, EXTRACT(EPOCH FROM (")
 	bld.Arg(now)
-	bld.WriteString("::timestamptz - " + sendlimiter.FieldRefilledAt + "))) * ")
+	bld.WriteString("::timestamptz - " + providerlimiter.FieldRefilledAt + "))) * ")
 	bld.Arg(b.fillPerSec)
 	bld.WriteString("::float8)")
 }
@@ -135,7 +135,7 @@ func Spend(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, no
 // holds a token, and spend one, all in a single UPDATE. It returns the rows changed.
 func take(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, now time.Time, guarded bool) (int, error) {
 	bs := buckets(l)
-	enough := predicate.SendLimiter(func(sel *entsql.Selector) {
+	enough := predicate.ProviderLimiter(func(sel *entsql.Selector) {
 		if !guarded {
 			return
 		}
@@ -153,8 +153,8 @@ func take(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, now
 			}))
 		}
 	})
-	return s.SendLimiter().Update().
-		Where(sendlimiter.IntegrationID(integrationID), enough).
+	return s.ProviderLimiter().Update().
+		Where(providerlimiter.IntegrationID(integrationID), enough).
 		Modify(func(u *ent.ScopedAssign) {
 			for _, b := range bs {
 				if b.capacity == nil {
@@ -172,8 +172,8 @@ func take(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, now
 				}))
 			}
 			// raw sql: GREATEST(refilled_at, now) so the clock never moves back; ent has no GREATEST.
-			u.Set(sendlimiter.FieldRefilledAt, entsql.ExprFunc(func(bld *entsql.Builder) {
-				bld.WriteString("GREATEST(" + sendlimiter.FieldRefilledAt + ", ")
+			u.Set(providerlimiter.FieldRefilledAt, entsql.ExprFunc(func(bld *entsql.Builder) {
+				bld.WriteString("GREATEST(" + providerlimiter.FieldRefilledAt + ", ")
 				bld.Arg(now)
 				bld.WriteString("::timestamptz)")
 			}))
@@ -184,12 +184,12 @@ func take(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, now
 // ensure creates the Integration's limiter row with both buckets full, unless a
 // concurrent reservation already did.
 func ensure(ctx context.Context, s *ent.Scoped, integrationID int64, now time.Time) error {
-	err := s.SendLimiter().Create().
+	err := s.ProviderLimiter().Create().
 		SetIntegrationID(integrationID).
 		SetSecondFill(1).
 		SetDayFill(1).
 		SetRefilledAt(now).
-		OnConflictColumns(sendlimiter.FieldIntegrationID).
+		OnConflictColumns(providerlimiter.FieldIntegrationID).
 		DoNothing().
 		Exec(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -202,7 +202,7 @@ func ensure(ctx context.Context, s *ent.Scoped, integrationID int64, now time.Ti
 // token. It is informational (the reservation itself already failed atomically), so
 // a concurrent reservation between the two can only make the answer slightly stale.
 func waitFor(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, now time.Time) (time.Duration, error) {
-	row, err := s.SendLimiter().Query().Where(sendlimiter.IntegrationID(integrationID)).Only(ctx)
+	row, err := s.ProviderLimiter().Query().Where(providerlimiter.IntegrationID(integrationID)).Only(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -213,7 +213,7 @@ func waitFor(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits, 
 			continue
 		}
 		fill := row.SecondFill
-		if b.column == sendlimiter.FieldDayFill {
+		if b.column == providerlimiter.FieldDayFill {
 			fill = row.DayFill
 		}
 		fill = math.Min(1, fill+elapsed*b.fillPerSec)

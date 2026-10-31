@@ -11,7 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -159,7 +159,7 @@ func TestNoLimitMeansNoLimiterStateAndNoDeferral(t *testing.T) {
 		for _, key := range []string{"bc:1", "bc:2", "bc:3", "bc:4", "bc:5"} {
 			assert.Equal(t, outbound.Sent, send(t, m, env, key).Outcome)
 		}
-		n, err := env.DB.SendLimiter.Query().Where(sendlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).Count(context.Background())
+		n, err := env.DB.ProviderLimiter.Query().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).Count(context.Background())
 		require.NoError(t, err)
 		assert.Zero(t, n)
 	})
@@ -246,7 +246,7 @@ func TestUnlimitedIntegrationKeepsNoStateForTransactional(t *testing.T) {
 		res, err := m.Send(context.Background(), acme(env), transactional("tx:1", "a@example.com"))
 		require.NoError(t, err)
 		require.Equal(t, outbound.Sent, res.Outcome)
-		n, err := env.DB.SendLimiter.Query().Where(sendlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).Count(context.Background())
+		n, err := env.DB.ProviderLimiter.Query().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).Count(context.Background())
 		require.NoError(t, err)
 		assert.Zero(t, n)
 	})

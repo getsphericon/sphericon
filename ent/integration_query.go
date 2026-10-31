@@ -16,7 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -28,7 +28,7 @@ type IntegrationQuery struct {
 	inters               []Interceptor
 	predicates           []predicate.Integration
 	withWorkspace        *WorkspaceQuery
-	withSendLimiter      *SendLimiterQuery
+	withProviderLimiter  *ProviderLimiterQuery
 	withCapturedMessages *CapturedMessageQuery
 	modifiers            []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -89,9 +89,9 @@ func (_q *IntegrationQuery) QueryWorkspace() *WorkspaceQuery {
 	return query
 }
 
-// QuerySendLimiter chains the current query on the "send_limiter" edge.
-func (_q *IntegrationQuery) QuerySendLimiter() *SendLimiterQuery {
-	query := (&SendLimiterClient{config: _q.config}).Query()
+// QueryProviderLimiter chains the current query on the "provider_limiter" edge.
+func (_q *IntegrationQuery) QueryProviderLimiter() *ProviderLimiterQuery {
+	query := (&ProviderLimiterClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -102,8 +102,8 @@ func (_q *IntegrationQuery) QuerySendLimiter() *SendLimiterQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(integration.Table, integration.FieldID, selector),
-			sqlgraph.To(sendlimiter.Table, sendlimiter.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, integration.SendLimiterTable, integration.SendLimiterColumn),
+			sqlgraph.To(providerlimiter.Table, providerlimiter.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, integration.ProviderLimiterTable, integration.ProviderLimiterColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -326,7 +326,7 @@ func (_q *IntegrationQuery) Clone() *IntegrationQuery {
 		inters:               append([]Interceptor{}, _q.inters...),
 		predicates:           append([]predicate.Integration{}, _q.predicates...),
 		withWorkspace:        _q.withWorkspace.Clone(),
-		withSendLimiter:      _q.withSendLimiter.Clone(),
+		withProviderLimiter:  _q.withProviderLimiter.Clone(),
 		withCapturedMessages: _q.withCapturedMessages.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
@@ -346,14 +346,14 @@ func (_q *IntegrationQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *Integr
 	return _q
 }
 
-// WithSendLimiter tells the query-builder to eager-load the nodes that are connected to
-// the "send_limiter" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *IntegrationQuery) WithSendLimiter(opts ...func(*SendLimiterQuery)) *IntegrationQuery {
-	query := (&SendLimiterClient{config: _q.config}).Query()
+// WithProviderLimiter tells the query-builder to eager-load the nodes that are connected to
+// the "provider_limiter" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *IntegrationQuery) WithProviderLimiter(opts ...func(*ProviderLimiterQuery)) *IntegrationQuery {
+	query := (&ProviderLimiterClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withSendLimiter = query
+	_q.withProviderLimiter = query
 	return _q
 }
 
@@ -448,7 +448,7 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		_spec       = _q.querySpec()
 		loadedTypes = [3]bool{
 			_q.withWorkspace != nil,
-			_q.withSendLimiter != nil,
+			_q.withProviderLimiter != nil,
 			_q.withCapturedMessages != nil,
 		}
 	)
@@ -479,9 +479,9 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 			return nil, err
 		}
 	}
-	if query := _q.withSendLimiter; query != nil {
-		if err := _q.loadSendLimiter(ctx, query, nodes, nil,
-			func(n *Integration, e *SendLimiter) { n.Edges.SendLimiter = e }); err != nil {
+	if query := _q.withProviderLimiter; query != nil {
+		if err := _q.loadProviderLimiter(ctx, query, nodes, nil,
+			func(n *Integration, e *ProviderLimiter) { n.Edges.ProviderLimiter = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -526,7 +526,7 @@ func (_q *IntegrationQuery) loadWorkspace(ctx context.Context, query *WorkspaceQ
 	}
 	return nil
 }
-func (_q *IntegrationQuery) loadSendLimiter(ctx context.Context, query *SendLimiterQuery, nodes []*Integration, init func(*Integration), assign func(*Integration, *SendLimiter)) error {
+func (_q *IntegrationQuery) loadProviderLimiter(ctx context.Context, query *ProviderLimiterQuery, nodes []*Integration, init func(*Integration), assign func(*Integration, *ProviderLimiter)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*Integration)
 	for i := range nodes {
@@ -534,10 +534,10 @@ func (_q *IntegrationQuery) loadSendLimiter(ctx context.Context, query *SendLimi
 		nodeids[nodes[i].ID] = nodes[i]
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(sendlimiter.FieldIntegrationID)
+		query.ctx.AppendFieldOnce(providerlimiter.FieldIntegrationID)
 	}
-	query.Where(predicate.SendLimiter(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(integration.SendLimiterColumn), fks...))
+	query.Where(predicate.ProviderLimiter(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(integration.ProviderLimiterColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

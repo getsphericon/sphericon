@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -67,8 +67,8 @@ type Integration struct {
 type IntegrationEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
-	// SendLimiter holds the value of the send_limiter edge.
-	SendLimiter *SendLimiter `json:"send_limiter,omitempty"`
+	// ProviderLimiter holds the value of the provider_limiter edge.
+	ProviderLimiter *ProviderLimiter `json:"provider_limiter,omitempty"`
 	// CapturedMessages holds the value of the captured_messages edge.
 	CapturedMessages []*CapturedMessage `json:"captured_messages,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -87,15 +87,15 @@ func (e IntegrationEdges) WorkspaceOrErr() (*Workspace, error) {
 	return nil, &NotLoadedError{edge: "workspace"}
 }
 
-// SendLimiterOrErr returns the SendLimiter value or an error if the edge
+// ProviderLimiterOrErr returns the ProviderLimiter value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e IntegrationEdges) SendLimiterOrErr() (*SendLimiter, error) {
-	if e.SendLimiter != nil {
-		return e.SendLimiter, nil
+func (e IntegrationEdges) ProviderLimiterOrErr() (*ProviderLimiter, error) {
+	if e.ProviderLimiter != nil {
+		return e.ProviderLimiter, nil
 	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: sendlimiter.Label}
+		return nil, &NotFoundError{label: providerlimiter.Label}
 	}
-	return nil, &NotLoadedError{edge: "send_limiter"}
+	return nil, &NotLoadedError{edge: "provider_limiter"}
 }
 
 // CapturedMessagesOrErr returns the CapturedMessages value or an error if the edge
@@ -281,9 +281,9 @@ func (_m *Integration) QueryWorkspace() *WorkspaceQuery {
 	return NewIntegrationClient(_m.config).QueryWorkspace(_m)
 }
 
-// QuerySendLimiter queries the "send_limiter" edge of the Integration entity.
-func (_m *Integration) QuerySendLimiter() *SendLimiterQuery {
-	return NewIntegrationClient(_m.config).QuerySendLimiter(_m)
+// QueryProviderLimiter queries the "provider_limiter" edge of the Integration entity.
+func (_m *Integration) QueryProviderLimiter() *ProviderLimiterQuery {
+	return NewIntegrationClient(_m.config).QueryProviderLimiter(_m)
 }
 
 // QueryCapturedMessages queries the "captured_messages" edge of the Integration entity.

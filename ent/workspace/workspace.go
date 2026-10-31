@@ -89,8 +89,8 @@ const (
 	EdgeSendingDomains = "sending_domains"
 	// EdgeJoinDomains holds the string denoting the join_domains edge name in mutations.
 	EdgeJoinDomains = "join_domains"
-	// EdgeSendLimiters holds the string denoting the send_limiters edge name in mutations.
-	EdgeSendLimiters = "send_limiters"
+	// EdgeProviderLimiters holds the string denoting the provider_limiters edge name in mutations.
+	EdgeProviderLimiters = "provider_limiters"
 	// EdgeHolds holds the string denoting the holds edge name in mutations.
 	EdgeHolds = "holds"
 	// EdgeBroadcasts holds the string denoting the broadcasts edge name in mutations.
@@ -230,13 +230,13 @@ const (
 	JoinDomainsInverseTable = "join_domains"
 	// JoinDomainsColumn is the table column denoting the join_domains relation/edge.
 	JoinDomainsColumn = "workspace_id"
-	// SendLimitersTable is the table that holds the send_limiters relation/edge.
-	SendLimitersTable = "send_limiters"
-	// SendLimitersInverseTable is the table name for the SendLimiter entity.
-	// It exists in this package in order to avoid circular dependency with the "sendlimiter" package.
-	SendLimitersInverseTable = "send_limiters"
-	// SendLimitersColumn is the table column denoting the send_limiters relation/edge.
-	SendLimitersColumn = "workspace_id"
+	// ProviderLimitersTable is the table that holds the provider_limiters relation/edge.
+	ProviderLimitersTable = "provider_limiters"
+	// ProviderLimitersInverseTable is the table name for the ProviderLimiter entity.
+	// It exists in this package in order to avoid circular dependency with the "providerlimiter" package.
+	ProviderLimitersInverseTable = "provider_limiters"
+	// ProviderLimitersColumn is the table column denoting the provider_limiters relation/edge.
+	ProviderLimitersColumn = "workspace_id"
 	// HoldsTable is the table that holds the holds relation/edge.
 	HoldsTable = "holds"
 	// HoldsInverseTable is the table name for the Hold entity.
@@ -806,17 +806,17 @@ func ByJoinDomains(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// BySendLimitersCount orders the results by send_limiters count.
-func BySendLimitersCount(opts ...sql.OrderTermOption) OrderOption {
+// ByProviderLimitersCount orders the results by provider_limiters count.
+func ByProviderLimitersCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newSendLimitersStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newProviderLimitersStep(), opts...)
 	}
 }
 
-// BySendLimiters orders the results by send_limiters terms.
-func BySendLimiters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByProviderLimiters orders the results by provider_limiters terms.
+func ByProviderLimiters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newSendLimitersStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newProviderLimitersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1232,11 +1232,11 @@ func newJoinDomainsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, JoinDomainsTable, JoinDomainsColumn),
 	)
 }
-func newSendLimitersStep() *sqlgraph.Step {
+func newProviderLimitersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(SendLimitersInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, SendLimitersTable, SendLimitersColumn),
+		sqlgraph.To(ProviderLimitersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ProviderLimitersTable, ProviderLimitersColumn),
 	)
 }
 func newHoldsStep() *sqlgraph.Step {

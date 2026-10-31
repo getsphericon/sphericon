@@ -36,13 +36,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -666,19 +666,19 @@ func (_u *WorkspaceUpdate) AddJoinDomains(v ...*JoinDomain) *WorkspaceUpdate {
 	return _u.AddJoinDomainIDs(ids...)
 }
 
-// AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by IDs.
-func (_u *WorkspaceUpdate) AddSendLimiterIDs(ids ...int64) *WorkspaceUpdate {
-	_u.mutation.AddSendLimiterIDs(ids...)
+// AddProviderLimiterIDs adds the "provider_limiters" edge to the ProviderLimiter entity by IDs.
+func (_u *WorkspaceUpdate) AddProviderLimiterIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddProviderLimiterIDs(ids...)
 	return _u
 }
 
-// AddSendLimiters adds the "send_limiters" edges to the SendLimiter entity.
-func (_u *WorkspaceUpdate) AddSendLimiters(v ...*SendLimiter) *WorkspaceUpdate {
+// AddProviderLimiters adds the "provider_limiters" edges to the ProviderLimiter entity.
+func (_u *WorkspaceUpdate) AddProviderLimiters(v ...*ProviderLimiter) *WorkspaceUpdate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddSendLimiterIDs(ids...)
+	return _u.AddProviderLimiterIDs(ids...)
 }
 
 // AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
@@ -1304,25 +1304,25 @@ func (_u *WorkspaceUpdate) RemoveJoinDomains(v ...*JoinDomain) *WorkspaceUpdate 
 	return _u.RemoveJoinDomainIDs(ids...)
 }
 
-// ClearSendLimiters clears all "send_limiters" edges to the SendLimiter entity.
-func (_u *WorkspaceUpdate) ClearSendLimiters() *WorkspaceUpdate {
-	_u.mutation.ClearSendLimiters()
+// ClearProviderLimiters clears all "provider_limiters" edges to the ProviderLimiter entity.
+func (_u *WorkspaceUpdate) ClearProviderLimiters() *WorkspaceUpdate {
+	_u.mutation.ClearProviderLimiters()
 	return _u
 }
 
-// RemoveSendLimiterIDs removes the "send_limiters" edge to SendLimiter entities by IDs.
-func (_u *WorkspaceUpdate) RemoveSendLimiterIDs(ids ...int64) *WorkspaceUpdate {
-	_u.mutation.RemoveSendLimiterIDs(ids...)
+// RemoveProviderLimiterIDs removes the "provider_limiters" edge to ProviderLimiter entities by IDs.
+func (_u *WorkspaceUpdate) RemoveProviderLimiterIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveProviderLimiterIDs(ids...)
 	return _u
 }
 
-// RemoveSendLimiters removes "send_limiters" edges to SendLimiter entities.
-func (_u *WorkspaceUpdate) RemoveSendLimiters(v ...*SendLimiter) *WorkspaceUpdate {
+// RemoveProviderLimiters removes "provider_limiters" edges to ProviderLimiter entities.
+func (_u *WorkspaceUpdate) RemoveProviderLimiters(v ...*ProviderLimiter) *WorkspaceUpdate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveSendLimiterIDs(ids...)
+	return _u.RemoveProviderLimiterIDs(ids...)
 }
 
 // ClearHolds clears all "holds" edges to the Hold entity.
@@ -2599,28 +2599,28 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.SendLimitersCleared() {
+	if _u.mutation.ProviderLimitersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.SendLimitersTable,
-			Columns: []string{workspace.SendLimitersColumn},
+			Table:   workspace.ProviderLimitersTable,
+			Columns: []string{workspace.ProviderLimitersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedSendLimitersIDs(); len(nodes) > 0 && !_u.mutation.SendLimitersCleared() {
+	if nodes := _u.mutation.RemovedProviderLimitersIDs(); len(nodes) > 0 && !_u.mutation.ProviderLimitersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.SendLimitersTable,
-			Columns: []string{workspace.SendLimitersColumn},
+			Table:   workspace.ProviderLimitersTable,
+			Columns: []string{workspace.ProviderLimitersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2628,15 +2628,15 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.SendLimitersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ProviderLimitersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.SendLimitersTable,
-			Columns: []string{workspace.SendLimitersColumn},
+			Table:   workspace.ProviderLimitersTable,
+			Columns: []string{workspace.ProviderLimitersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -4301,19 +4301,19 @@ func (_u *WorkspaceUpdateOne) AddJoinDomains(v ...*JoinDomain) *WorkspaceUpdateO
 	return _u.AddJoinDomainIDs(ids...)
 }
 
-// AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by IDs.
-func (_u *WorkspaceUpdateOne) AddSendLimiterIDs(ids ...int64) *WorkspaceUpdateOne {
-	_u.mutation.AddSendLimiterIDs(ids...)
+// AddProviderLimiterIDs adds the "provider_limiters" edge to the ProviderLimiter entity by IDs.
+func (_u *WorkspaceUpdateOne) AddProviderLimiterIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddProviderLimiterIDs(ids...)
 	return _u
 }
 
-// AddSendLimiters adds the "send_limiters" edges to the SendLimiter entity.
-func (_u *WorkspaceUpdateOne) AddSendLimiters(v ...*SendLimiter) *WorkspaceUpdateOne {
+// AddProviderLimiters adds the "provider_limiters" edges to the ProviderLimiter entity.
+func (_u *WorkspaceUpdateOne) AddProviderLimiters(v ...*ProviderLimiter) *WorkspaceUpdateOne {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddSendLimiterIDs(ids...)
+	return _u.AddProviderLimiterIDs(ids...)
 }
 
 // AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
@@ -4939,25 +4939,25 @@ func (_u *WorkspaceUpdateOne) RemoveJoinDomains(v ...*JoinDomain) *WorkspaceUpda
 	return _u.RemoveJoinDomainIDs(ids...)
 }
 
-// ClearSendLimiters clears all "send_limiters" edges to the SendLimiter entity.
-func (_u *WorkspaceUpdateOne) ClearSendLimiters() *WorkspaceUpdateOne {
-	_u.mutation.ClearSendLimiters()
+// ClearProviderLimiters clears all "provider_limiters" edges to the ProviderLimiter entity.
+func (_u *WorkspaceUpdateOne) ClearProviderLimiters() *WorkspaceUpdateOne {
+	_u.mutation.ClearProviderLimiters()
 	return _u
 }
 
-// RemoveSendLimiterIDs removes the "send_limiters" edge to SendLimiter entities by IDs.
-func (_u *WorkspaceUpdateOne) RemoveSendLimiterIDs(ids ...int64) *WorkspaceUpdateOne {
-	_u.mutation.RemoveSendLimiterIDs(ids...)
+// RemoveProviderLimiterIDs removes the "provider_limiters" edge to ProviderLimiter entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveProviderLimiterIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveProviderLimiterIDs(ids...)
 	return _u
 }
 
-// RemoveSendLimiters removes "send_limiters" edges to SendLimiter entities.
-func (_u *WorkspaceUpdateOne) RemoveSendLimiters(v ...*SendLimiter) *WorkspaceUpdateOne {
+// RemoveProviderLimiters removes "provider_limiters" edges to ProviderLimiter entities.
+func (_u *WorkspaceUpdateOne) RemoveProviderLimiters(v ...*ProviderLimiter) *WorkspaceUpdateOne {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveSendLimiterIDs(ids...)
+	return _u.RemoveProviderLimiterIDs(ids...)
 }
 
 // ClearHolds clears all "holds" edges to the Hold entity.
@@ -6264,28 +6264,28 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.SendLimitersCleared() {
+	if _u.mutation.ProviderLimitersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.SendLimitersTable,
-			Columns: []string{workspace.SendLimitersColumn},
+			Table:   workspace.ProviderLimitersTable,
+			Columns: []string{workspace.ProviderLimitersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedSendLimitersIDs(); len(nodes) > 0 && !_u.mutation.SendLimitersCleared() {
+	if nodes := _u.mutation.RemovedProviderLimitersIDs(); len(nodes) > 0 && !_u.mutation.ProviderLimitersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.SendLimitersTable,
-			Columns: []string{workspace.SendLimitersColumn},
+			Table:   workspace.ProviderLimitersTable,
+			Columns: []string{workspace.ProviderLimitersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -6293,15 +6293,15 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.SendLimitersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ProviderLimitersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.SendLimitersTable,
-			Columns: []string{workspace.SendLimitersColumn},
+			Table:   workspace.ProviderLimitersTable,
+			Columns: []string{workspace.ProviderLimitersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

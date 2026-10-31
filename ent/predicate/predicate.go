@@ -123,6 +123,9 @@ type PendingSignup func(*sql.Selector)
 // PrivateRelayRange is the predicate function for privaterelayrange builders.
 type PrivateRelayRange func(*sql.Selector)
 
+// ProviderLimiter is the predicate function for providerlimiter builders.
+type ProviderLimiter func(*sql.Selector)
+
 // RecoveryCode is the predicate function for recoverycode builders.
 type RecoveryCode func(*sql.Selector)
 
@@ -146,9 +149,6 @@ type SchemaState func(*sql.Selector)
 
 // Segment is the predicate function for segment builders.
 type Segment func(*sql.Selector)
-
-// SendLimiter is the predicate function for sendlimiter builders.
-type SendLimiter func(*sql.Selector)
 
 // SendingDomain is the predicate function for sendingdomain builders.
 type SendingDomain func(*sql.Selector)

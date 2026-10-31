@@ -105,7 +105,7 @@ func (Integration) Fields() []ent.Field {
 func (Integration) Edges() []ent.Edge {
 	return []ent.Edge{
 		// Purging an Integration (Workspace erasure) deletes its Provider limit state with it.
-		edge.To("send_limiter", SendLimiter.Type).
+		edge.To("provider_limiter", ProviderLimiter.Type).
 			Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		// What a Test inbox kept (ADR 0058) dies with the Integration; only Workspace deletion

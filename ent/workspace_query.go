@@ -38,13 +38,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -74,7 +74,7 @@ type WorkspaceQuery struct {
 	withIntegrations        *IntegrationQuery
 	withSendingDomains      *SendingDomainQuery
 	withJoinDomains         *JoinDomainQuery
-	withSendLimiters        *SendLimiterQuery
+	withProviderLimiters    *ProviderLimiterQuery
 	withHolds               *HoldQuery
 	withBroadcasts          *BroadcastQuery
 	withBroadcastRecipients *BroadcastRecipientQuery
@@ -421,9 +421,9 @@ func (_q *WorkspaceQuery) QueryJoinDomains() *JoinDomainQuery {
 	return query
 }
 
-// QuerySendLimiters chains the current query on the "send_limiters" edge.
-func (_q *WorkspaceQuery) QuerySendLimiters() *SendLimiterQuery {
-	query := (&SendLimiterClient{config: _q.config}).Query()
+// QueryProviderLimiters chains the current query on the "provider_limiters" edge.
+func (_q *WorkspaceQuery) QueryProviderLimiters() *ProviderLimiterQuery {
+	query := (&ProviderLimiterClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -434,8 +434,8 @@ func (_q *WorkspaceQuery) QuerySendLimiters() *SendLimiterQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
-			sqlgraph.To(sendlimiter.Table, sendlimiter.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SendLimitersTable, workspace.SendLimitersColumn),
+			sqlgraph.To(providerlimiter.Table, providerlimiter.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ProviderLimitersTable, workspace.ProviderLimitersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1154,7 +1154,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withIntegrations:        _q.withIntegrations.Clone(),
 		withSendingDomains:      _q.withSendingDomains.Clone(),
 		withJoinDomains:         _q.withJoinDomains.Clone(),
-		withSendLimiters:        _q.withSendLimiters.Clone(),
+		withProviderLimiters:    _q.withProviderLimiters.Clone(),
 		withHolds:               _q.withHolds.Clone(),
 		withBroadcasts:          _q.withBroadcasts.Clone(),
 		withBroadcastRecipients: _q.withBroadcastRecipients.Clone(),
@@ -1328,14 +1328,14 @@ func (_q *WorkspaceQuery) WithJoinDomains(opts ...func(*JoinDomainQuery)) *Works
 	return _q
 }
 
-// WithSendLimiters tells the query-builder to eager-load the nodes that are connected to
-// the "send_limiters" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *WorkspaceQuery) WithSendLimiters(opts ...func(*SendLimiterQuery)) *WorkspaceQuery {
-	query := (&SendLimiterClient{config: _q.config}).Query()
+// WithProviderLimiters tells the query-builder to eager-load the nodes that are connected to
+// the "provider_limiters" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithProviderLimiters(opts ...func(*ProviderLimiterQuery)) *WorkspaceQuery {
+	query := (&ProviderLimiterClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withSendLimiters = query
+	_q.withProviderLimiters = query
 	return _q
 }
 
@@ -1684,7 +1684,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withIntegrations != nil,
 			_q.withSendingDomains != nil,
 			_q.withJoinDomains != nil,
-			_q.withSendLimiters != nil,
+			_q.withProviderLimiters != nil,
 			_q.withHolds != nil,
 			_q.withBroadcasts != nil,
 			_q.withBroadcastRecipients != nil,
@@ -1822,10 +1822,10 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			return nil, err
 		}
 	}
-	if query := _q.withSendLimiters; query != nil {
-		if err := _q.loadSendLimiters(ctx, query, nodes,
-			func(n *Workspace) { n.Edges.SendLimiters = []*SendLimiter{} },
-			func(n *Workspace, e *SendLimiter) { n.Edges.SendLimiters = append(n.Edges.SendLimiters, e) }); err != nil {
+	if query := _q.withProviderLimiters; query != nil {
+		if err := _q.loadProviderLimiters(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.ProviderLimiters = []*ProviderLimiter{} },
+			func(n *Workspace, e *ProviderLimiter) { n.Edges.ProviderLimiters = append(n.Edges.ProviderLimiters, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2389,7 +2389,7 @@ func (_q *WorkspaceQuery) loadJoinDomains(ctx context.Context, query *JoinDomain
 	}
 	return nil
 }
-func (_q *WorkspaceQuery) loadSendLimiters(ctx context.Context, query *SendLimiterQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *SendLimiter)) error {
+func (_q *WorkspaceQuery) loadProviderLimiters(ctx context.Context, query *ProviderLimiterQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *ProviderLimiter)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*Workspace)
 	for i := range nodes {
@@ -2400,10 +2400,10 @@ func (_q *WorkspaceQuery) loadSendLimiters(ctx context.Context, query *SendLimit
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(sendlimiter.FieldWorkspaceID)
+		query.ctx.AppendFieldOnce(providerlimiter.FieldWorkspaceID)
 	}
-	query.Where(predicate.SendLimiter(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(workspace.SendLimitersColumn), fks...))
+	query.Where(predicate.ProviderLimiter(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.ProviderLimitersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

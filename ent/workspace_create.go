@@ -35,13 +35,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -572,19 +572,19 @@ func (_c *WorkspaceCreate) AddJoinDomains(v ...*JoinDomain) *WorkspaceCreate {
 	return _c.AddJoinDomainIDs(ids...)
 }
 
-// AddSendLimiterIDs adds the "send_limiters" edge to the SendLimiter entity by IDs.
-func (_c *WorkspaceCreate) AddSendLimiterIDs(ids ...int64) *WorkspaceCreate {
-	_c.mutation.AddSendLimiterIDs(ids...)
+// AddProviderLimiterIDs adds the "provider_limiters" edge to the ProviderLimiter entity by IDs.
+func (_c *WorkspaceCreate) AddProviderLimiterIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddProviderLimiterIDs(ids...)
 	return _c
 }
 
-// AddSendLimiters adds the "send_limiters" edges to the SendLimiter entity.
-func (_c *WorkspaceCreate) AddSendLimiters(v ...*SendLimiter) *WorkspaceCreate {
+// AddProviderLimiters adds the "provider_limiters" edges to the ProviderLimiter entity.
+func (_c *WorkspaceCreate) AddProviderLimiters(v ...*ProviderLimiter) *WorkspaceCreate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _c.AddSendLimiterIDs(ids...)
+	return _c.AddProviderLimiterIDs(ids...)
 }
 
 // AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
@@ -1405,15 +1405,15 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.SendLimitersIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.ProviderLimitersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   workspace.SendLimitersTable,
-			Columns: []string{workspace.SendLimitersColumn},
+			Table:   workspace.ProviderLimitersTable,
+			Columns: []string{workspace.ProviderLimitersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

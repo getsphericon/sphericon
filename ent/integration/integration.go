@@ -55,8 +55,8 @@ const (
 	FieldProviderQuotaFailedAt = "provider_quota_failed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
-	// EdgeSendLimiter holds the string denoting the send_limiter edge name in mutations.
-	EdgeSendLimiter = "send_limiter"
+	// EdgeProviderLimiter holds the string denoting the provider_limiter edge name in mutations.
+	EdgeProviderLimiter = "provider_limiter"
 	// EdgeCapturedMessages holds the string denoting the captured_messages edge name in mutations.
 	EdgeCapturedMessages = "captured_messages"
 	// Table holds the table name of the integration in the database.
@@ -68,13 +68,13 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
-	// SendLimiterTable is the table that holds the send_limiter relation/edge.
-	SendLimiterTable = "send_limiters"
-	// SendLimiterInverseTable is the table name for the SendLimiter entity.
-	// It exists in this package in order to avoid circular dependency with the "sendlimiter" package.
-	SendLimiterInverseTable = "send_limiters"
-	// SendLimiterColumn is the table column denoting the send_limiter relation/edge.
-	SendLimiterColumn = "integration_id"
+	// ProviderLimiterTable is the table that holds the provider_limiter relation/edge.
+	ProviderLimiterTable = "provider_limiters"
+	// ProviderLimiterInverseTable is the table name for the ProviderLimiter entity.
+	// It exists in this package in order to avoid circular dependency with the "providerlimiter" package.
+	ProviderLimiterInverseTable = "provider_limiters"
+	// ProviderLimiterColumn is the table column denoting the provider_limiter relation/edge.
+	ProviderLimiterColumn = "integration_id"
 	// CapturedMessagesTable is the table that holds the captured_messages relation/edge.
 	CapturedMessagesTable = "captured_messages"
 	// CapturedMessagesInverseTable is the table name for the CapturedMessage entity.
@@ -301,10 +301,10 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// BySendLimiterField orders the results by send_limiter field.
-func BySendLimiterField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByProviderLimiterField orders the results by provider_limiter field.
+func ByProviderLimiterField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newSendLimiterStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newProviderLimiterStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -328,11 +328,11 @@ func newWorkspaceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
 	)
 }
-func newSendLimiterStep() *sqlgraph.Step {
+func newProviderLimiterStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(SendLimiterInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, false, SendLimiterTable, SendLimiterColumn),
+		sqlgraph.To(ProviderLimiterInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ProviderLimiterTable, ProviderLimiterColumn),
 	)
 }
 func newCapturedMessagesStep() *sqlgraph.Step {

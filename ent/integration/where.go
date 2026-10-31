@@ -1018,21 +1018,21 @@ func HasWorkspaceWith(preds ...predicate.Workspace) predicate.Integration {
 	})
 }
 
-// HasSendLimiter applies the HasEdge predicate on the "send_limiter" edge.
-func HasSendLimiter() predicate.Integration {
+// HasProviderLimiter applies the HasEdge predicate on the "provider_limiter" edge.
+func HasProviderLimiter() predicate.Integration {
 	return predicate.Integration(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, SendLimiterTable, SendLimiterColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, ProviderLimiterTable, ProviderLimiterColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSendLimiterWith applies the HasEdge predicate on the "send_limiter" edge with a given conditions (other predicates).
-func HasSendLimiterWith(preds ...predicate.SendLimiter) predicate.Integration {
+// HasProviderLimiterWith applies the HasEdge predicate on the "provider_limiter" edge with a given conditions (other predicates).
+func HasProviderLimiterWith(preds ...predicate.ProviderLimiter) predicate.Integration {
 	return predicate.Integration(func(s *sql.Selector) {
-		step := newSendLimiterStep()
+		step := newProviderLimiterStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

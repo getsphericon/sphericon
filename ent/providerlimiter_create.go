@@ -12,26 +12,26 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
-// SendLimiterCreate is the builder for creating a SendLimiter entity.
-type SendLimiterCreate struct {
+// ProviderLimiterCreate is the builder for creating a ProviderLimiter entity.
+type ProviderLimiterCreate struct {
 	config
-	mutation *SendLimiterMutation
+	mutation *ProviderLimiterMutation
 	hooks    []Hook
 	conflict []sql.ConflictOption
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_c *SendLimiterCreate) SetCreatedAt(v time.Time) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetCreatedAt(v time.Time) *ProviderLimiterCreate {
 	_c.mutation.SetCreatedAt(v)
 	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_c *SendLimiterCreate) SetNillableCreatedAt(v *time.Time) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetNillableCreatedAt(v *time.Time) *ProviderLimiterCreate {
 	if v != nil {
 		_c.SetCreatedAt(*v)
 	}
@@ -39,13 +39,13 @@ func (_c *SendLimiterCreate) SetNillableCreatedAt(v *time.Time) *SendLimiterCrea
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_c *SendLimiterCreate) SetUpdatedAt(v time.Time) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetUpdatedAt(v time.Time) *ProviderLimiterCreate {
 	_c.mutation.SetUpdatedAt(v)
 	return _c
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (_c *SendLimiterCreate) SetNillableUpdatedAt(v *time.Time) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetNillableUpdatedAt(v *time.Time) *ProviderLimiterCreate {
 	if v != nil {
 		_c.SetUpdatedAt(*v)
 	}
@@ -53,64 +53,64 @@ func (_c *SendLimiterCreate) SetNillableUpdatedAt(v *time.Time) *SendLimiterCrea
 }
 
 // SetWorkspaceID sets the "workspace_id" field.
-func (_c *SendLimiterCreate) SetWorkspaceID(v int64) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetWorkspaceID(v int64) *ProviderLimiterCreate {
 	_c.mutation.SetWorkspaceID(v)
 	return _c
 }
 
 // SetIntegrationID sets the "integration_id" field.
-func (_c *SendLimiterCreate) SetIntegrationID(v int64) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetIntegrationID(v int64) *ProviderLimiterCreate {
 	_c.mutation.SetIntegrationID(v)
 	return _c
 }
 
 // SetSecondFill sets the "second_fill" field.
-func (_c *SendLimiterCreate) SetSecondFill(v float64) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetSecondFill(v float64) *ProviderLimiterCreate {
 	_c.mutation.SetSecondFill(v)
 	return _c
 }
 
 // SetDayFill sets the "day_fill" field.
-func (_c *SendLimiterCreate) SetDayFill(v float64) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetDayFill(v float64) *ProviderLimiterCreate {
 	_c.mutation.SetDayFill(v)
 	return _c
 }
 
 // SetRefilledAt sets the "refilled_at" field.
-func (_c *SendLimiterCreate) SetRefilledAt(v time.Time) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetRefilledAt(v time.Time) *ProviderLimiterCreate {
 	_c.mutation.SetRefilledAt(v)
 	return _c
 }
 
 // SetID sets the "id" field.
-func (_c *SendLimiterCreate) SetID(v int64) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetID(v int64) *ProviderLimiterCreate {
 	_c.mutation.SetID(v)
 	return _c
 }
 
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
-func (_c *SendLimiterCreate) SetWorkspace(v *Workspace) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetWorkspace(v *Workspace) *ProviderLimiterCreate {
 	return _c.SetWorkspaceID(v.ID)
 }
 
 // SetIntegration sets the "integration" edge to the Integration entity.
-func (_c *SendLimiterCreate) SetIntegration(v *Integration) *SendLimiterCreate {
+func (_c *ProviderLimiterCreate) SetIntegration(v *Integration) *ProviderLimiterCreate {
 	return _c.SetIntegrationID(v.ID)
 }
 
-// Mutation returns the SendLimiterMutation object of the builder.
-func (_c *SendLimiterCreate) Mutation() *SendLimiterMutation {
+// Mutation returns the ProviderLimiterMutation object of the builder.
+func (_c *ProviderLimiterCreate) Mutation() *ProviderLimiterMutation {
 	return _c.mutation
 }
 
-// Save creates the SendLimiter in the database.
-func (_c *SendLimiterCreate) Save(ctx context.Context) (*SendLimiter, error) {
+// Save creates the ProviderLimiter in the database.
+func (_c *ProviderLimiterCreate) Save(ctx context.Context) (*ProviderLimiter, error) {
 	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *SendLimiterCreate) SaveX(ctx context.Context) *SendLimiter {
+func (_c *ProviderLimiterCreate) SaveX(ctx context.Context) *ProviderLimiter {
 	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -119,63 +119,63 @@ func (_c *SendLimiterCreate) SaveX(ctx context.Context) *SendLimiter {
 }
 
 // Exec executes the query.
-func (_c *SendLimiterCreate) Exec(ctx context.Context) error {
+func (_c *ProviderLimiterCreate) Exec(ctx context.Context) error {
 	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *SendLimiterCreate) ExecX(ctx context.Context) {
+func (_c *ProviderLimiterCreate) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *SendLimiterCreate) defaults() {
+func (_c *ProviderLimiterCreate) defaults() {
 	if _, ok := _c.mutation.CreatedAt(); !ok {
-		v := sendlimiter.DefaultCreatedAt()
+		v := providerlimiter.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
-		v := sendlimiter.DefaultUpdatedAt()
+		v := providerlimiter.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *SendLimiterCreate) check() error {
+func (_c *ProviderLimiterCreate) check() error {
 	if _, ok := _c.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "SendLimiter.created_at"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "ProviderLimiter.created_at"`)}
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
-		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "SendLimiter.updated_at"`)}
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "ProviderLimiter.updated_at"`)}
 	}
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
-		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "SendLimiter.workspace_id"`)}
+		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "ProviderLimiter.workspace_id"`)}
 	}
 	if _, ok := _c.mutation.IntegrationID(); !ok {
-		return &ValidationError{Name: "integration_id", err: errors.New(`ent: missing required field "SendLimiter.integration_id"`)}
+		return &ValidationError{Name: "integration_id", err: errors.New(`ent: missing required field "ProviderLimiter.integration_id"`)}
 	}
 	if _, ok := _c.mutation.SecondFill(); !ok {
-		return &ValidationError{Name: "second_fill", err: errors.New(`ent: missing required field "SendLimiter.second_fill"`)}
+		return &ValidationError{Name: "second_fill", err: errors.New(`ent: missing required field "ProviderLimiter.second_fill"`)}
 	}
 	if _, ok := _c.mutation.DayFill(); !ok {
-		return &ValidationError{Name: "day_fill", err: errors.New(`ent: missing required field "SendLimiter.day_fill"`)}
+		return &ValidationError{Name: "day_fill", err: errors.New(`ent: missing required field "ProviderLimiter.day_fill"`)}
 	}
 	if _, ok := _c.mutation.RefilledAt(); !ok {
-		return &ValidationError{Name: "refilled_at", err: errors.New(`ent: missing required field "SendLimiter.refilled_at"`)}
+		return &ValidationError{Name: "refilled_at", err: errors.New(`ent: missing required field "ProviderLimiter.refilled_at"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
-		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "SendLimiter.workspace"`)}
+		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "ProviderLimiter.workspace"`)}
 	}
 	if len(_c.mutation.IntegrationIDs()) == 0 {
-		return &ValidationError{Name: "integration", err: errors.New(`ent: missing required edge "SendLimiter.integration"`)}
+		return &ValidationError{Name: "integration", err: errors.New(`ent: missing required edge "ProviderLimiter.integration"`)}
 	}
 	return nil
 }
 
-func (_c *SendLimiterCreate) sqlSave(ctx context.Context) (*SendLimiter, error) {
+func (_c *ProviderLimiterCreate) sqlSave(ctx context.Context) (*ProviderLimiter, error) {
 	if err := _c.check(); err != nil {
 		return nil, err
 	}
@@ -195,10 +195,10 @@ func (_c *SendLimiterCreate) sqlSave(ctx context.Context) (*SendLimiter, error) 
 	return _node, nil
 }
 
-func (_c *SendLimiterCreate) createSpec() (*SendLimiter, *sqlgraph.CreateSpec) {
+func (_c *ProviderLimiterCreate) createSpec() (*ProviderLimiter, *sqlgraph.CreateSpec) {
 	var (
-		_node = &SendLimiter{config: _c.config}
-		_spec = sqlgraph.NewCreateSpec(sendlimiter.Table, sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64))
+		_node = &ProviderLimiter{config: _c.config}
+		_spec = sqlgraph.NewCreateSpec(providerlimiter.Table, sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64))
 	)
 	_spec.OnConflict = _c.conflict
 	if id, ok := _c.mutation.ID(); ok {
@@ -206,31 +206,31 @@ func (_c *SendLimiterCreate) createSpec() (*SendLimiter, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = id
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
-		_spec.SetField(sendlimiter.FieldCreatedAt, field.TypeTime, value)
+		_spec.SetField(providerlimiter.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := _c.mutation.UpdatedAt(); ok {
-		_spec.SetField(sendlimiter.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(providerlimiter.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := _c.mutation.SecondFill(); ok {
-		_spec.SetField(sendlimiter.FieldSecondFill, field.TypeFloat64, value)
+		_spec.SetField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
 		_node.SecondFill = value
 	}
 	if value, ok := _c.mutation.DayFill(); ok {
-		_spec.SetField(sendlimiter.FieldDayFill, field.TypeFloat64, value)
+		_spec.SetField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
 		_node.DayFill = value
 	}
 	if value, ok := _c.mutation.RefilledAt(); ok {
-		_spec.SetField(sendlimiter.FieldRefilledAt, field.TypeTime, value)
+		_spec.SetField(providerlimiter.FieldRefilledAt, field.TypeTime, value)
 		_node.RefilledAt = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   sendlimiter.WorkspaceTable,
-			Columns: []string{sendlimiter.WorkspaceColumn},
+			Table:   providerlimiter.WorkspaceTable,
+			Columns: []string{providerlimiter.WorkspaceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
@@ -246,8 +246,8 @@ func (_c *SendLimiterCreate) createSpec() (*SendLimiter, *sqlgraph.CreateSpec) {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   sendlimiter.IntegrationTable,
-			Columns: []string{sendlimiter.IntegrationColumn},
+			Table:   providerlimiter.IntegrationTable,
+			Columns: []string{providerlimiter.IntegrationColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(integration.FieldID, field.TypeInt64),
@@ -265,7 +265,7 @@ func (_c *SendLimiterCreate) createSpec() (*SendLimiter, *sqlgraph.CreateSpec) {
 // OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
 // of the `INSERT` statement. For example:
 //
-//	client.SendLimiter.Create().
+//	client.ProviderLimiter.Create().
 //		SetCreatedAt(v).
 //		OnConflict(
 //			// Update the row with the new values
@@ -274,13 +274,13 @@ func (_c *SendLimiterCreate) createSpec() (*SendLimiter, *sqlgraph.CreateSpec) {
 //		).
 //		// Override some of the fields with custom
 //		// update values.
-//		Update(func(u *ent.SendLimiterUpsert) {
+//		Update(func(u *ent.ProviderLimiterUpsert) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (_c *SendLimiterCreate) OnConflict(opts ...sql.ConflictOption) *SendLimiterUpsertOne {
+func (_c *ProviderLimiterCreate) OnConflict(opts ...sql.ConflictOption) *ProviderLimiterUpsertOne {
 	_c.conflict = opts
-	return &SendLimiterUpsertOne{
+	return &ProviderLimiterUpsertOne{
 		create: _c,
 	}
 }
@@ -288,123 +288,123 @@ func (_c *SendLimiterCreate) OnConflict(opts ...sql.ConflictOption) *SendLimiter
 // OnConflictColumns calls `OnConflict` and configures the columns
 // as conflict target. Using this option is equivalent to using:
 //
-//	client.SendLimiter.Create().
+//	client.ProviderLimiter.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (_c *SendLimiterCreate) OnConflictColumns(columns ...string) *SendLimiterUpsertOne {
+func (_c *ProviderLimiterCreate) OnConflictColumns(columns ...string) *ProviderLimiterUpsertOne {
 	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &SendLimiterUpsertOne{
+	return &ProviderLimiterUpsertOne{
 		create: _c,
 	}
 }
 
 type (
-	// SendLimiterUpsertOne is the builder for "upsert"-ing
-	//  one SendLimiter node.
-	SendLimiterUpsertOne struct {
-		create *SendLimiterCreate
+	// ProviderLimiterUpsertOne is the builder for "upsert"-ing
+	//  one ProviderLimiter node.
+	ProviderLimiterUpsertOne struct {
+		create *ProviderLimiterCreate
 	}
 
-	// SendLimiterUpsert is the "OnConflict" setter.
-	SendLimiterUpsert struct {
+	// ProviderLimiterUpsert is the "OnConflict" setter.
+	ProviderLimiterUpsert struct {
 		*sql.UpdateSet
 	}
 )
 
 // SetUpdatedAt sets the "updated_at" field.
-func (u *SendLimiterUpsert) SetUpdatedAt(v time.Time) *SendLimiterUpsert {
-	u.Set(sendlimiter.FieldUpdatedAt, v)
+func (u *ProviderLimiterUpsert) SetUpdatedAt(v time.Time) *ProviderLimiterUpsert {
+	u.Set(providerlimiter.FieldUpdatedAt, v)
 	return u
 }
 
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *SendLimiterUpsert) UpdateUpdatedAt() *SendLimiterUpsert {
-	u.SetExcluded(sendlimiter.FieldUpdatedAt)
+func (u *ProviderLimiterUpsert) UpdateUpdatedAt() *ProviderLimiterUpsert {
+	u.SetExcluded(providerlimiter.FieldUpdatedAt)
 	return u
 }
 
 // SetWorkspaceID sets the "workspace_id" field.
-func (u *SendLimiterUpsert) SetWorkspaceID(v int64) *SendLimiterUpsert {
-	u.Set(sendlimiter.FieldWorkspaceID, v)
+func (u *ProviderLimiterUpsert) SetWorkspaceID(v int64) *ProviderLimiterUpsert {
+	u.Set(providerlimiter.FieldWorkspaceID, v)
 	return u
 }
 
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
-func (u *SendLimiterUpsert) UpdateWorkspaceID() *SendLimiterUpsert {
-	u.SetExcluded(sendlimiter.FieldWorkspaceID)
+func (u *ProviderLimiterUpsert) UpdateWorkspaceID() *ProviderLimiterUpsert {
+	u.SetExcluded(providerlimiter.FieldWorkspaceID)
 	return u
 }
 
 // SetSecondFill sets the "second_fill" field.
-func (u *SendLimiterUpsert) SetSecondFill(v float64) *SendLimiterUpsert {
-	u.Set(sendlimiter.FieldSecondFill, v)
+func (u *ProviderLimiterUpsert) SetSecondFill(v float64) *ProviderLimiterUpsert {
+	u.Set(providerlimiter.FieldSecondFill, v)
 	return u
 }
 
 // UpdateSecondFill sets the "second_fill" field to the value that was provided on create.
-func (u *SendLimiterUpsert) UpdateSecondFill() *SendLimiterUpsert {
-	u.SetExcluded(sendlimiter.FieldSecondFill)
+func (u *ProviderLimiterUpsert) UpdateSecondFill() *ProviderLimiterUpsert {
+	u.SetExcluded(providerlimiter.FieldSecondFill)
 	return u
 }
 
 // AddSecondFill adds v to the "second_fill" field.
-func (u *SendLimiterUpsert) AddSecondFill(v float64) *SendLimiterUpsert {
-	u.Add(sendlimiter.FieldSecondFill, v)
+func (u *ProviderLimiterUpsert) AddSecondFill(v float64) *ProviderLimiterUpsert {
+	u.Add(providerlimiter.FieldSecondFill, v)
 	return u
 }
 
 // SetDayFill sets the "day_fill" field.
-func (u *SendLimiterUpsert) SetDayFill(v float64) *SendLimiterUpsert {
-	u.Set(sendlimiter.FieldDayFill, v)
+func (u *ProviderLimiterUpsert) SetDayFill(v float64) *ProviderLimiterUpsert {
+	u.Set(providerlimiter.FieldDayFill, v)
 	return u
 }
 
 // UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *SendLimiterUpsert) UpdateDayFill() *SendLimiterUpsert {
-	u.SetExcluded(sendlimiter.FieldDayFill)
+func (u *ProviderLimiterUpsert) UpdateDayFill() *ProviderLimiterUpsert {
+	u.SetExcluded(providerlimiter.FieldDayFill)
 	return u
 }
 
 // AddDayFill adds v to the "day_fill" field.
-func (u *SendLimiterUpsert) AddDayFill(v float64) *SendLimiterUpsert {
-	u.Add(sendlimiter.FieldDayFill, v)
+func (u *ProviderLimiterUpsert) AddDayFill(v float64) *ProviderLimiterUpsert {
+	u.Add(providerlimiter.FieldDayFill, v)
 	return u
 }
 
 // SetRefilledAt sets the "refilled_at" field.
-func (u *SendLimiterUpsert) SetRefilledAt(v time.Time) *SendLimiterUpsert {
-	u.Set(sendlimiter.FieldRefilledAt, v)
+func (u *ProviderLimiterUpsert) SetRefilledAt(v time.Time) *ProviderLimiterUpsert {
+	u.Set(providerlimiter.FieldRefilledAt, v)
 	return u
 }
 
 // UpdateRefilledAt sets the "refilled_at" field to the value that was provided on create.
-func (u *SendLimiterUpsert) UpdateRefilledAt() *SendLimiterUpsert {
-	u.SetExcluded(sendlimiter.FieldRefilledAt)
+func (u *ProviderLimiterUpsert) UpdateRefilledAt() *ProviderLimiterUpsert {
+	u.SetExcluded(providerlimiter.FieldRefilledAt)
 	return u
 }
 
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
-//	client.SendLimiter.Create().
+//	client.ProviderLimiter.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
 //			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(sendlimiter.FieldID)
+//				u.SetIgnore(providerlimiter.FieldID)
 //			}),
 //		).
 //		Exec(ctx)
-func (u *SendLimiterUpsertOne) UpdateNewValues() *SendLimiterUpsertOne {
+func (u *ProviderLimiterUpsertOne) UpdateNewValues() *ProviderLimiterUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.ID(); exists {
-			s.SetIgnore(sendlimiter.FieldID)
+			s.SetIgnore(providerlimiter.FieldID)
 		}
 		if _, exists := u.create.mutation.CreatedAt(); exists {
-			s.SetIgnore(sendlimiter.FieldCreatedAt)
+			s.SetIgnore(providerlimiter.FieldCreatedAt)
 		}
 		if _, exists := u.create.mutation.IntegrationID(); exists {
-			s.SetIgnore(sendlimiter.FieldIntegrationID)
+			s.SetIgnore(providerlimiter.FieldIntegrationID)
 		}
 	}))
 	return u
@@ -413,131 +413,131 @@ func (u *SendLimiterUpsertOne) UpdateNewValues() *SendLimiterUpsertOne {
 // Ignore sets each column to itself in case of conflict.
 // Using this option is equivalent to using:
 //
-//	client.SendLimiter.Create().
+//	client.ProviderLimiter.Create().
 //	    OnConflict(sql.ResolveWithIgnore()).
 //	    Exec(ctx)
-func (u *SendLimiterUpsertOne) Ignore() *SendLimiterUpsertOne {
+func (u *ProviderLimiterUpsertOne) Ignore() *ProviderLimiterUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
 // Supported only by SQLite and PostgreSQL.
-func (u *SendLimiterUpsertOne) DoNothing() *SendLimiterUpsertOne {
+func (u *ProviderLimiterUpsertOne) DoNothing() *ProviderLimiterUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.DoNothing())
 	return u
 }
 
-// Update allows overriding fields `UPDATE` values. See the SendLimiterCreate.OnConflict
+// Update allows overriding fields `UPDATE` values. See the ProviderLimiterCreate.OnConflict
 // documentation for more info.
-func (u *SendLimiterUpsertOne) Update(set func(*SendLimiterUpsert)) *SendLimiterUpsertOne {
+func (u *ProviderLimiterUpsertOne) Update(set func(*ProviderLimiterUpsert)) *ProviderLimiterUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&SendLimiterUpsert{UpdateSet: update})
+		set(&ProviderLimiterUpsert{UpdateSet: update})
 	}))
 	return u
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (u *SendLimiterUpsertOne) SetUpdatedAt(v time.Time) *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) SetUpdatedAt(v time.Time) *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetUpdatedAt(v)
 	})
 }
 
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *SendLimiterUpsertOne) UpdateUpdatedAt() *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) UpdateUpdatedAt() *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateUpdatedAt()
 	})
 }
 
 // SetWorkspaceID sets the "workspace_id" field.
-func (u *SendLimiterUpsertOne) SetWorkspaceID(v int64) *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) SetWorkspaceID(v int64) *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetWorkspaceID(v)
 	})
 }
 
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
-func (u *SendLimiterUpsertOne) UpdateWorkspaceID() *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) UpdateWorkspaceID() *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateWorkspaceID()
 	})
 }
 
 // SetSecondFill sets the "second_fill" field.
-func (u *SendLimiterUpsertOne) SetSecondFill(v float64) *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) SetSecondFill(v float64) *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetSecondFill(v)
 	})
 }
 
 // AddSecondFill adds v to the "second_fill" field.
-func (u *SendLimiterUpsertOne) AddSecondFill(v float64) *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) AddSecondFill(v float64) *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.AddSecondFill(v)
 	})
 }
 
 // UpdateSecondFill sets the "second_fill" field to the value that was provided on create.
-func (u *SendLimiterUpsertOne) UpdateSecondFill() *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) UpdateSecondFill() *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateSecondFill()
 	})
 }
 
 // SetDayFill sets the "day_fill" field.
-func (u *SendLimiterUpsertOne) SetDayFill(v float64) *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) SetDayFill(v float64) *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetDayFill(v)
 	})
 }
 
 // AddDayFill adds v to the "day_fill" field.
-func (u *SendLimiterUpsertOne) AddDayFill(v float64) *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) AddDayFill(v float64) *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.AddDayFill(v)
 	})
 }
 
 // UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *SendLimiterUpsertOne) UpdateDayFill() *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) UpdateDayFill() *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateDayFill()
 	})
 }
 
 // SetRefilledAt sets the "refilled_at" field.
-func (u *SendLimiterUpsertOne) SetRefilledAt(v time.Time) *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) SetRefilledAt(v time.Time) *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetRefilledAt(v)
 	})
 }
 
 // UpdateRefilledAt sets the "refilled_at" field to the value that was provided on create.
-func (u *SendLimiterUpsertOne) UpdateRefilledAt() *SendLimiterUpsertOne {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertOne) UpdateRefilledAt() *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateRefilledAt()
 	})
 }
 
 // Exec executes the query.
-func (u *SendLimiterUpsertOne) Exec(ctx context.Context) error {
+func (u *ProviderLimiterUpsertOne) Exec(ctx context.Context) error {
 	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for SendLimiterCreate.OnConflict")
+		return errors.New("ent: missing options for ProviderLimiterCreate.OnConflict")
 	}
 	return u.create.Exec(ctx)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (u *SendLimiterUpsertOne) ExecX(ctx context.Context) {
+func (u *ProviderLimiterUpsertOne) ExecX(ctx context.Context) {
 	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *SendLimiterUpsertOne) ID(ctx context.Context) (id int64, err error) {
+func (u *ProviderLimiterUpsertOne) ID(ctx context.Context) (id int64, err error) {
 	node, err := u.create.Save(ctx)
 	if err != nil {
 		return id, err
@@ -546,7 +546,7 @@ func (u *SendLimiterUpsertOne) ID(ctx context.Context) (id int64, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *SendLimiterUpsertOne) IDX(ctx context.Context) int64 {
+func (u *ProviderLimiterUpsertOne) IDX(ctx context.Context) int64 {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -554,28 +554,28 @@ func (u *SendLimiterUpsertOne) IDX(ctx context.Context) int64 {
 	return id
 }
 
-// SendLimiterCreateBulk is the builder for creating many SendLimiter entities in bulk.
-type SendLimiterCreateBulk struct {
+// ProviderLimiterCreateBulk is the builder for creating many ProviderLimiter entities in bulk.
+type ProviderLimiterCreateBulk struct {
 	config
 	err      error
-	builders []*SendLimiterCreate
+	builders []*ProviderLimiterCreate
 	conflict []sql.ConflictOption
 }
 
-// Save creates the SendLimiter entities in the database.
-func (_c *SendLimiterCreateBulk) Save(ctx context.Context) ([]*SendLimiter, error) {
+// Save creates the ProviderLimiter entities in the database.
+func (_c *ProviderLimiterCreateBulk) Save(ctx context.Context) ([]*ProviderLimiter, error) {
 	if _c.err != nil {
 		return nil, _c.err
 	}
 	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*SendLimiter, len(_c.builders))
+	nodes := make([]*ProviderLimiter, len(_c.builders))
 	mutators := make([]Mutator, len(_c.builders))
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				mutation, ok := m.(*SendLimiterMutation)
+				mutation, ok := m.(*ProviderLimiterMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
 				}
@@ -623,7 +623,7 @@ func (_c *SendLimiterCreateBulk) Save(ctx context.Context) ([]*SendLimiter, erro
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *SendLimiterCreateBulk) SaveX(ctx context.Context) []*SendLimiter {
+func (_c *ProviderLimiterCreateBulk) SaveX(ctx context.Context) []*ProviderLimiter {
 	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -632,13 +632,13 @@ func (_c *SendLimiterCreateBulk) SaveX(ctx context.Context) []*SendLimiter {
 }
 
 // Exec executes the query.
-func (_c *SendLimiterCreateBulk) Exec(ctx context.Context) error {
+func (_c *ProviderLimiterCreateBulk) Exec(ctx context.Context) error {
 	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *SendLimiterCreateBulk) ExecX(ctx context.Context) {
+func (_c *ProviderLimiterCreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
@@ -647,7 +647,7 @@ func (_c *SendLimiterCreateBulk) ExecX(ctx context.Context) {
 // OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
 // of the `INSERT` statement. For example:
 //
-//	client.SendLimiter.CreateBulk(builders...).
+//	client.ProviderLimiter.CreateBulk(builders...).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -655,13 +655,13 @@ func (_c *SendLimiterCreateBulk) ExecX(ctx context.Context) {
 //		).
 //		// Override some of the fields with custom
 //		// update values.
-//		Update(func(u *ent.SendLimiterUpsert) {
+//		Update(func(u *ent.ProviderLimiterUpsert) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (_c *SendLimiterCreateBulk) OnConflict(opts ...sql.ConflictOption) *SendLimiterUpsertBulk {
+func (_c *ProviderLimiterCreateBulk) OnConflict(opts ...sql.ConflictOption) *ProviderLimiterUpsertBulk {
 	_c.conflict = opts
-	return &SendLimiterUpsertBulk{
+	return &ProviderLimiterUpsertBulk{
 		create: _c,
 	}
 }
@@ -669,45 +669,45 @@ func (_c *SendLimiterCreateBulk) OnConflict(opts ...sql.ConflictOption) *SendLim
 // OnConflictColumns calls `OnConflict` and configures the columns
 // as conflict target. Using this option is equivalent to using:
 //
-//	client.SendLimiter.Create().
+//	client.ProviderLimiter.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (_c *SendLimiterCreateBulk) OnConflictColumns(columns ...string) *SendLimiterUpsertBulk {
+func (_c *ProviderLimiterCreateBulk) OnConflictColumns(columns ...string) *ProviderLimiterUpsertBulk {
 	_c.conflict = append(_c.conflict, sql.ConflictColumns(columns...))
-	return &SendLimiterUpsertBulk{
+	return &ProviderLimiterUpsertBulk{
 		create: _c,
 	}
 }
 
-// SendLimiterUpsertBulk is the builder for "upsert"-ing
-// a bulk of SendLimiter nodes.
-type SendLimiterUpsertBulk struct {
-	create *SendLimiterCreateBulk
+// ProviderLimiterUpsertBulk is the builder for "upsert"-ing
+// a bulk of ProviderLimiter nodes.
+type ProviderLimiterUpsertBulk struct {
+	create *ProviderLimiterCreateBulk
 }
 
 // UpdateNewValues updates the mutable fields using the new values that
 // were set on create. Using this option is equivalent to using:
 //
-//	client.SendLimiter.Create().
+//	client.ProviderLimiter.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
 //			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(sendlimiter.FieldID)
+//				u.SetIgnore(providerlimiter.FieldID)
 //			}),
 //		).
 //		Exec(ctx)
-func (u *SendLimiterUpsertBulk) UpdateNewValues() *SendLimiterUpsertBulk {
+func (u *ProviderLimiterUpsertBulk) UpdateNewValues() *ProviderLimiterUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
-				s.SetIgnore(sendlimiter.FieldID)
+				s.SetIgnore(providerlimiter.FieldID)
 			}
 			if _, exists := b.mutation.CreatedAt(); exists {
-				s.SetIgnore(sendlimiter.FieldCreatedAt)
+				s.SetIgnore(providerlimiter.FieldCreatedAt)
 			}
 			if _, exists := b.mutation.IntegrationID(); exists {
-				s.SetIgnore(sendlimiter.FieldIntegrationID)
+				s.SetIgnore(providerlimiter.FieldIntegrationID)
 			}
 		}
 	}))
@@ -717,132 +717,132 @@ func (u *SendLimiterUpsertBulk) UpdateNewValues() *SendLimiterUpsertBulk {
 // Ignore sets each column to itself in case of conflict.
 // Using this option is equivalent to using:
 //
-//	client.SendLimiter.Create().
+//	client.ProviderLimiter.Create().
 //		OnConflict(sql.ResolveWithIgnore()).
 //		Exec(ctx)
-func (u *SendLimiterUpsertBulk) Ignore() *SendLimiterUpsertBulk {
+func (u *ProviderLimiterUpsertBulk) Ignore() *ProviderLimiterUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
 // Supported only by SQLite and PostgreSQL.
-func (u *SendLimiterUpsertBulk) DoNothing() *SendLimiterUpsertBulk {
+func (u *ProviderLimiterUpsertBulk) DoNothing() *ProviderLimiterUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.DoNothing())
 	return u
 }
 
-// Update allows overriding fields `UPDATE` values. See the SendLimiterCreateBulk.OnConflict
+// Update allows overriding fields `UPDATE` values. See the ProviderLimiterCreateBulk.OnConflict
 // documentation for more info.
-func (u *SendLimiterUpsertBulk) Update(set func(*SendLimiterUpsert)) *SendLimiterUpsertBulk {
+func (u *ProviderLimiterUpsertBulk) Update(set func(*ProviderLimiterUpsert)) *ProviderLimiterUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&SendLimiterUpsert{UpdateSet: update})
+		set(&ProviderLimiterUpsert{UpdateSet: update})
 	}))
 	return u
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (u *SendLimiterUpsertBulk) SetUpdatedAt(v time.Time) *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) SetUpdatedAt(v time.Time) *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetUpdatedAt(v)
 	})
 }
 
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
-func (u *SendLimiterUpsertBulk) UpdateUpdatedAt() *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) UpdateUpdatedAt() *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateUpdatedAt()
 	})
 }
 
 // SetWorkspaceID sets the "workspace_id" field.
-func (u *SendLimiterUpsertBulk) SetWorkspaceID(v int64) *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) SetWorkspaceID(v int64) *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetWorkspaceID(v)
 	})
 }
 
 // UpdateWorkspaceID sets the "workspace_id" field to the value that was provided on create.
-func (u *SendLimiterUpsertBulk) UpdateWorkspaceID() *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) UpdateWorkspaceID() *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateWorkspaceID()
 	})
 }
 
 // SetSecondFill sets the "second_fill" field.
-func (u *SendLimiterUpsertBulk) SetSecondFill(v float64) *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) SetSecondFill(v float64) *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetSecondFill(v)
 	})
 }
 
 // AddSecondFill adds v to the "second_fill" field.
-func (u *SendLimiterUpsertBulk) AddSecondFill(v float64) *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) AddSecondFill(v float64) *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.AddSecondFill(v)
 	})
 }
 
 // UpdateSecondFill sets the "second_fill" field to the value that was provided on create.
-func (u *SendLimiterUpsertBulk) UpdateSecondFill() *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) UpdateSecondFill() *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateSecondFill()
 	})
 }
 
 // SetDayFill sets the "day_fill" field.
-func (u *SendLimiterUpsertBulk) SetDayFill(v float64) *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) SetDayFill(v float64) *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetDayFill(v)
 	})
 }
 
 // AddDayFill adds v to the "day_fill" field.
-func (u *SendLimiterUpsertBulk) AddDayFill(v float64) *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) AddDayFill(v float64) *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.AddDayFill(v)
 	})
 }
 
 // UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *SendLimiterUpsertBulk) UpdateDayFill() *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) UpdateDayFill() *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateDayFill()
 	})
 }
 
 // SetRefilledAt sets the "refilled_at" field.
-func (u *SendLimiterUpsertBulk) SetRefilledAt(v time.Time) *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) SetRefilledAt(v time.Time) *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.SetRefilledAt(v)
 	})
 }
 
 // UpdateRefilledAt sets the "refilled_at" field to the value that was provided on create.
-func (u *SendLimiterUpsertBulk) UpdateRefilledAt() *SendLimiterUpsertBulk {
-	return u.Update(func(s *SendLimiterUpsert) {
+func (u *ProviderLimiterUpsertBulk) UpdateRefilledAt() *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
 		s.UpdateRefilledAt()
 	})
 }
 
 // Exec executes the query.
-func (u *SendLimiterUpsertBulk) Exec(ctx context.Context) error {
+func (u *ProviderLimiterUpsertBulk) Exec(ctx context.Context) error {
 	if u.create.err != nil {
 		return u.create.err
 	}
 	for i, b := range u.create.builders {
 		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the SendLimiterCreateBulk instead", i)
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the ProviderLimiterCreateBulk instead", i)
 		}
 	}
 	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for SendLimiterCreateBulk.OnConflict")
+		return errors.New("ent: missing options for ProviderLimiterCreateBulk.OnConflict")
 	}
 	return u.create.Exec(ctx)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (u *SendLimiterUpsertBulk) ExecX(ctx context.Context) {
+func (u *ProviderLimiterUpsertBulk) ExecX(ctx context.Context) {
 	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}

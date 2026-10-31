@@ -1,7 +1,7 @@
 # Provider limit state (ADR 0023), one row per limited Integration. Acme's is the
 # disabled SES Integration (id 2) so the default Integration (id 1) stays on a clean
 # slate for tests that exercise lazy creation; Globex's is its only Integration.
-- id: 1 # fixture: SendLimiterAcme
+- id: 1 # fixture: ProviderLimiterAcme
   integration_id: 2
   second_fill: 1.0
   day_fill: 1.0
@@ -9,7 +9,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
-- id: 900 # fixture: SendLimiterGlobex
+- id: 900 # fixture: ProviderLimiterGlobex
   integration_id: 900
   second_fill: 1.0
   day_fill: 1.0

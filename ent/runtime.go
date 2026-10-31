@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/pendingsignup"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
@@ -50,7 +51,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -944,6 +944,21 @@ func init() {
 	privaterelayrangeDescCidr := privaterelayrangeFields[1].Descriptor()
 	// privaterelayrange.CidrValidator is a validator for the "cidr" field. It is called by the builders before save.
 	privaterelayrange.CidrValidator = privaterelayrangeDescCidr.Validators[0].(func(string) error)
+	providerlimiterMixin := schema.ProviderLimiter{}.Mixin()
+	providerlimiterMixinFields0 := providerlimiterMixin[0].Fields()
+	_ = providerlimiterMixinFields0
+	providerlimiterFields := schema.ProviderLimiter{}.Fields()
+	_ = providerlimiterFields
+	// providerlimiterDescCreatedAt is the schema descriptor for created_at field.
+	providerlimiterDescCreatedAt := providerlimiterMixinFields0[0].Descriptor()
+	// providerlimiter.DefaultCreatedAt holds the default value on creation for the created_at field.
+	providerlimiter.DefaultCreatedAt = providerlimiterDescCreatedAt.Default.(func() time.Time)
+	// providerlimiterDescUpdatedAt is the schema descriptor for updated_at field.
+	providerlimiterDescUpdatedAt := providerlimiterMixinFields0[1].Descriptor()
+	// providerlimiter.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	providerlimiter.DefaultUpdatedAt = providerlimiterDescUpdatedAt.Default.(func() time.Time)
+	// providerlimiter.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	providerlimiter.UpdateDefaultUpdatedAt = providerlimiterDescUpdatedAt.UpdateDefault.(func() time.Time)
 	recoverycodeMixin := schema.RecoveryCode{}.Mixin()
 	recoverycodeMixinFields0 := recoverycodeMixin[0].Fields()
 	_ = recoverycodeMixinFields0
@@ -1089,21 +1104,6 @@ func init() {
 	segmentDescName := segmentFields[1].Descriptor()
 	// segment.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	segment.NameValidator = segmentDescName.Validators[0].(func(string) error)
-	sendlimiterMixin := schema.SendLimiter{}.Mixin()
-	sendlimiterMixinFields0 := sendlimiterMixin[0].Fields()
-	_ = sendlimiterMixinFields0
-	sendlimiterFields := schema.SendLimiter{}.Fields()
-	_ = sendlimiterFields
-	// sendlimiterDescCreatedAt is the schema descriptor for created_at field.
-	sendlimiterDescCreatedAt := sendlimiterMixinFields0[0].Descriptor()
-	// sendlimiter.DefaultCreatedAt holds the default value on creation for the created_at field.
-	sendlimiter.DefaultCreatedAt = sendlimiterDescCreatedAt.Default.(func() time.Time)
-	// sendlimiterDescUpdatedAt is the schema descriptor for updated_at field.
-	sendlimiterDescUpdatedAt := sendlimiterMixinFields0[1].Descriptor()
-	// sendlimiter.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	sendlimiter.DefaultUpdatedAt = sendlimiterDescUpdatedAt.Default.(func() time.Time)
-	// sendlimiter.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	sendlimiter.UpdateDefaultUpdatedAt = sendlimiterDescUpdatedAt.UpdateDefault.(func() time.Time)
 	sendingdomainMixin := schema.SendingDomain{}.Mixin()
 	sendingdomainMixinFields0 := sendingdomainMixin[0].Fields()
 	_ = sendingdomainMixinFields0

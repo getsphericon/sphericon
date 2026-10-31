@@ -7,7 +7,7 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -67,14 +67,14 @@ func (m *bucketModel) shortBy(now time.Time) (granted, borderline bool) {
 // Whatever mix of marketing sends, transactional sends and waiting, a reservation is granted
 // exactly when the model says both buckets hold a token, and a denied one reports a wait after
 // which the same reservation is granted.
-func TestSendLimiterFollowsTheTokenBucketModel(t *testing.T) {
+func TestProviderLimiterFollowsTheTokenBucketModel(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	start := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	rapid.Check(t, func(t *rapid.T) {
 		// Each run starts from no limiter row, so the first reservation creates it full.
-		env.DB.SendLimiter.Delete().Where(sendlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).ExecX(t.Context())
+		env.DB.ProviderLimiter.Delete().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).ExecX(t.Context())
 
 		var limits providerlimit.Limits
 		if rapid.Bool().Draw(t, "limited per second") {

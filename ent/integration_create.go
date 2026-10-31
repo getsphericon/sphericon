@@ -13,7 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -262,23 +262,23 @@ func (_c *IntegrationCreate) SetWorkspace(v *Workspace) *IntegrationCreate {
 	return _c.SetWorkspaceID(v.ID)
 }
 
-// SetSendLimiterID sets the "send_limiter" edge to the SendLimiter entity by ID.
-func (_c *IntegrationCreate) SetSendLimiterID(id int64) *IntegrationCreate {
-	_c.mutation.SetSendLimiterID(id)
+// SetProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID.
+func (_c *IntegrationCreate) SetProviderLimiterID(id int64) *IntegrationCreate {
+	_c.mutation.SetProviderLimiterID(id)
 	return _c
 }
 
-// SetNillableSendLimiterID sets the "send_limiter" edge to the SendLimiter entity by ID if the given value is not nil.
-func (_c *IntegrationCreate) SetNillableSendLimiterID(id *int64) *IntegrationCreate {
+// SetNillableProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID if the given value is not nil.
+func (_c *IntegrationCreate) SetNillableProviderLimiterID(id *int64) *IntegrationCreate {
 	if id != nil {
-		_c = _c.SetSendLimiterID(*id)
+		_c = _c.SetProviderLimiterID(*id)
 	}
 	return _c
 }
 
-// SetSendLimiter sets the "send_limiter" edge to the SendLimiter entity.
-func (_c *IntegrationCreate) SetSendLimiter(v *SendLimiter) *IntegrationCreate {
-	return _c.SetSendLimiterID(v.ID)
+// SetProviderLimiter sets the "provider_limiter" edge to the ProviderLimiter entity.
+func (_c *IntegrationCreate) SetProviderLimiter(v *ProviderLimiter) *IntegrationCreate {
+	return _c.SetProviderLimiterID(v.ID)
 }
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
@@ -545,15 +545,15 @@ func (_c *IntegrationCreate) createSpec() (*Integration, *sqlgraph.CreateSpec) {
 		_node.WorkspaceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.SendLimiterIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.ProviderLimiterIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   integration.SendLimiterTable,
-			Columns: []string{integration.SendLimiterColumn},
+			Table:   integration.ProviderLimiterTable,
+			Columns: []string{integration.ProviderLimiterColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
