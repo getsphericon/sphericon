@@ -1,10 +1,9 @@
 import { EmptyState, Stack } from '@mantine/core'
-import { useCounter } from '@mantine/hooks'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { QueryKey, UseQueryOptions } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import type { DataTableColumn } from 'mantine-datatable'
-import { useDeferredValue, useState, ViewTransition } from 'react'
+import { useDeferredValue, ViewTransition } from 'react'
 import type { ReactNode } from 'react'
 
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
@@ -17,6 +16,10 @@ interface Page {
 }
 
 interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey extends QueryKey> {
+  // The page shown, the route's `page` search param (pageParam), and the move to another one
+  // (a navigation with withPage).
+  page: number | undefined
+  onPageChange: (page: number) => void
   // The generated list query options, called with the page to load.
   options: (paging: {
     page: number
@@ -30,13 +33,12 @@ interface PagedTableProps<TPage extends Page, TError extends ApiErrorLike, TKey 
   emptyState?: ReactNode
   // Opens the clicked row; the rows then highlight on hover.
   onRowClick?: (record: TPage['items'][number]) => void
-  // A different list in the same table (a filter or a view changed): back to the first page. The
-  // table is not remounted, so its rows stay under the loading overlay until the new ones arrive.
-  resetKey?: string
 }
 
 // A server-paged mantine-datatable over a generated list query: owns the page, the load
-// states and the error alert, so a list page only describes its columns.
+// states and the error alert, so a list page only describes its columns. The page lives in the
+// route's `page` search param, so it is linkable and Back returns to it; a link that changes the
+// list (a filter, the archived view) leaves the param out and lands on the first page.
 export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey extends QueryKey>({
   options,
   columns,
@@ -45,14 +47,9 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
   noRecordsText,
   emptyState,
   onRowClick,
-  resetKey,
+  page = 1,
+  onPageChange,
 }: PagedTableProps<TPage, TError, TKey>) {
-  const [page, pageHandlers] = useCounter(1, { min: 1 })
-  const [seenResetKey, setSeenResetKey] = useState(resetKey)
-  if (seenResetKey !== resetKey) {
-    setSeenResetKey(resetKey)
-    pageHandlers.set(1)
-  }
   const list = useQuery({ ...options({ page, pageSize }), placeholderData: keepPreviousData })
   // A deferred render is a React transition, which is what lets the ViewTransition below
   // cross-fade the old rows into the new ones when they arrive.
@@ -82,7 +79,7 @@ export function PagedTable<TPage extends Page, TError extends ApiErrorLike, TKey
             totalRecords={totalItems}
             recordsPerPage={pageSize}
             page={page}
-            onPageChange={pageHandlers.set}
+            onPageChange={onPageChange}
             fetching={list.isFetching}
             emptyState={<EmptyState title={noRecordsText} description={emptyState} />}
           />

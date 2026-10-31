@@ -11,9 +11,12 @@ import {
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { Route as tagsRoute } from '../../routes/workspaces/$workspaceId/tags/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 export function TagsListPage() {
   const { formatDateTime } = useDateFormat()
+  const { page } = tagsRoute.useSearch()
+  const pageNavigate = tagsRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId } = tagsRoute.useParams()
 
@@ -30,6 +33,10 @@ export function TagsListPage() {
       <Title order={2}>{t(($) => $.nav.tags)}</Title>
 
       <PagedTable
+        page={page}
+        onPageChange={(next) =>
+          void pageNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) => siteTagsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.tagLoadErrorTitle)}
         noRecordsText={t(($) => $.tags.noRecords)}

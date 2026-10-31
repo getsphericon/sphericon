@@ -146,7 +146,7 @@ test('deleting a broadcast asks for confirmation, deletes it and refreshes the l
   await expect.element(screen.getByText('Spring launch')).not.toBeInTheDocument()
 })
 
-test('changing the page requests page 2 of the broadcasts', async () => {
+test('the page in the URL is the page of the broadcasts requested', async () => {
   const pages: (string | null)[] = []
   worker.use(
     handleSiteBroadcastsList(({ request }) => {
@@ -155,11 +155,22 @@ test('changing the page requests page 2 of the broadcasts', async () => {
     }),
   )
 
-  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+  await renderWithRouter(<BroadcastsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?page=2`,
+  })
+
+  await expect.poll(() => pages).toEqual(['2'])
+})
+
+test('choosing a page of the broadcasts puts it in the URL', async () => {
+  worker.use(handleSiteBroadcastsList(() => HttpResponse.json({ items: [DRAFT], totalItems: 25 })))
+
+  const { screen, navigate } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
   await screen.getByRole('button', { name: '2', exact: true }).click()
 
-  await expect.poll(() => pages).toEqual(['1', '2'])
+  expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ search: expect.any(Function) }))
 })
 
 test('a failed delete shows the error toast and keeps the broadcast', async () => {

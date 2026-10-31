@@ -1,3 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
 
-export const Route = createFileRoute('/workspaces/$workspaceId/transactional-emails/')()
+import { pageParam } from '../../../../searchSchemas.ts'
+
+export const Route = createFileRoute('/workspaces/$workspaceId/transactional-emails/')({
+  validateSearch: z.object({ page: pageParam }),
+})

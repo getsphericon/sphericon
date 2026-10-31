@@ -17,6 +17,7 @@ import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 import { Route as segmentsCreateRoute } from '../../routes/workspaces/$workspaceId/segments/new.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 export function SegmentsListPage() {
   const { t } = useTranslation()
@@ -35,7 +36,7 @@ export function SegmentsListPage() {
     successMessage: t(($) => $.notifications.segmentRestored),
     errorTitle: t(($) => $.alerts.segmentRestoreErrorTitle),
   })
-  const { archived = false } = segmentsRoute.useSearch()
+  const { archived = false, page } = segmentsRoute.useSearch()
   const routeNavigate = segmentsRoute.useNavigate()
 
   return (
@@ -59,7 +60,10 @@ export function SegmentsListPage() {
       />
 
       <PagedTable
-        resetKey={String(archived)}
+        page={page}
+        onPageChange={(next) =>
+          void routeNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) =>
           siteSegmentsListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }

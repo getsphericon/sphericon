@@ -73,7 +73,7 @@ test('offers view and edit per contact, and no delete', async () => {
   await expect.element(screen.getByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument()
 })
 
-test('changing the page requests page 2 of the contacts', async () => {
+test('the page in the URL is the page of the contacts requested', async () => {
   const pages: (string | null)[] = []
   worker.use(
     handleSiteContactsList(({ request }) => {
@@ -82,11 +82,22 @@ test('changing the page requests page 2 of the contacts', async () => {
     }),
   )
 
-  const { screen } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  await renderWithRouter(<ContactsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?page=2`,
+  })
+
+  await expect.poll(() => pages).toEqual(['2'])
+})
+
+test('choosing a page of the contacts puts it in the URL', async () => {
+  worker.use(handleSiteContactsList(() => HttpResponse.json({ items: [ALICE], totalItems: 25 })))
+
+  const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
   await expect.element(screen.getByText('alice@example.com')).toBeInTheDocument()
   await screen.getByRole('button', { name: '2', exact: true }).click()
 
-  await expect.poll(() => pages).toEqual(['1', '2'])
+  expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ search: expect.any(Function) }))
 })
 
 test('typing in the search field puts the email in the URL search', async () => {

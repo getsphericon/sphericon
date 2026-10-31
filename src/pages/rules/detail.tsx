@@ -23,6 +23,7 @@ import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspace
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 import { ruleDraftActions } from './draftActions.ts'
 
 const resultColor = {
@@ -68,6 +69,8 @@ function RuleVersionSummary({ version }: { version: SiteRuleVersion }) {
 // every Action did. Its draft is published or reverted here (ADR 0065).
 export function RuleDetailPage() {
   const { formatDateTime } = useDateFormat()
+  const { page } = rulesDetailRoute.useSearch()
+  const pageNavigate = rulesDetailRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId, ruleId } = rulesDetailRoute.useParams()
   const ruleQuery = useQuery(siteRulesGetOptions({ path: { workspaceId, id: ruleId } }))
@@ -152,6 +155,10 @@ export function RuleDetailPage() {
 
       <Title order={5}>{t(($) => $.rules.firingsTitle)}</Title>
       <PagedTable
+        page={page}
+        onPageChange={(next) =>
+          void pageNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) => siteRuleFiringsListOptions({ path: { workspaceId, ruleId }, query })}
         loadErrorTitle={t(($) => $.alerts.firingsLoadErrorTitle)}
         noRecordsText={t(($) => $.rules.noFirings)}

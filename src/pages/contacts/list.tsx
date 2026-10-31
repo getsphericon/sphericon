@@ -12,12 +12,14 @@ import { siteContactsListOptions } from '../../generated/site/@tanstack/react-qu
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 import { ContactCreateModal } from './resource.tsx'
 
 export function ContactsListPage() {
+  const pageNavigate = contactsRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId } = contactsRoute.useParams()
-  const { email } = contactsRoute.useSearch()
+  const { email, page } = contactsRoute.useSearch()
   const navigate = useNavigate({ from: contactsRoute.fullPath })
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [search, setSearch] = useState(email ?? '')
@@ -54,6 +56,10 @@ export function ContactsListPage() {
       />
 
       <PagedTable
+        page={page}
+        onPageChange={(next) =>
+          void pageNavigate({ search: withPage(next), viewTransition: false })
+        }
         // A new search starts again from the first page.
         key={email ?? ''}
         options={(query) =>

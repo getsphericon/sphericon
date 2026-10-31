@@ -15,6 +15,7 @@ import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspace
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 export function SegmentDetailPage() {
   const { t } = useTranslation()
@@ -29,6 +30,8 @@ export function SegmentDetailPage() {
 }
 
 function SegmentDetail() {
+  const { page } = segmentsDetailRoute.useSearch()
+  const pageNavigate = segmentsDetailRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId, segmentId } = segmentsDetailRoute.useParams()
   const navigate = useNavigate()
@@ -56,6 +59,10 @@ function SegmentDetail() {
 
       <Title order={5}>{t(($) => $.segments.matchingContacts)}</Title>
       <PagedTable
+        page={page}
+        onPageChange={(next) =>
+          void pageNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) =>
           siteSegmentContactsListOptions({ path: { workspaceId, segmentId }, query })
         }

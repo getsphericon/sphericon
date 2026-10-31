@@ -21,6 +21,7 @@ import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/ru
 import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 export function RulesListPage() {
   const { t } = useTranslation()
@@ -60,7 +61,7 @@ export function RulesListPage() {
     successMessage: t(($) => $.notifications.ruleDeleted),
     errorTitle: t(($) => $.alerts.ruleDeleteErrorTitle),
   })
-  const { archived = false } = rulesRoute.useSearch()
+  const { archived = false, page } = rulesRoute.useSearch()
   const routeNavigate = rulesRoute.useNavigate()
 
   return (
@@ -84,7 +85,10 @@ export function RulesListPage() {
       />
 
       <PagedTable
-        resetKey={String(archived)}
+        page={page}
+        onPageChange={(next) =>
+          void routeNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) =>
           siteRulesListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }
