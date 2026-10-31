@@ -1,7 +1,8 @@
 import { Button, Modal, Stack } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { useJsonForms } from '@workflowbuilder/sdk'
 import type { ControlProps } from '@workflowbuilder/sdk'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
@@ -16,7 +17,7 @@ export function MessageControl(props: ControlProps) {
   const { data, label } = props
   const { t } = useTranslation()
   const { core } = useJsonForms()
-  const [opened, setOpened] = useState(false)
+  const [opened, { open, close }] = useDisclosure(false)
 
   const body = typeof data === 'string' ? data : ''
   const docText: unknown = core?.data?.doc
@@ -27,10 +28,10 @@ export function MessageControl(props: ControlProps) {
 
   return (
     <Stack gap="xs">
-      <Button variant="default" onClick={() => setOpened(true)}>
+      <Button variant="default" onClick={open}>
         {t(($) => $.automations.editMessage)}
       </Button>
-      <Modal opened={opened} onClose={() => setOpened(false)} title={label} size="xl">
+      <Modal opened={opened} onClose={close} title={label} size="xl">
         <Stack>
           <MessageEditor
             doc={doc}
@@ -44,7 +45,7 @@ export function MessageControl(props: ControlProps) {
               }
             }}
           />
-          <Button onClick={() => setOpened(false)}>{t(($) => $.automations.messageDone)}</Button>
+          <Button onClick={close}>{t(($) => $.automations.messageDone)}</Button>
         </Stack>
       </Modal>
     </Stack>

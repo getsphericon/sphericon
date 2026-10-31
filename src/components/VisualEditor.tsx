@@ -10,6 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { EmailEditor } from '@react-email/editor'
 import type { EmailEditorRef } from '@react-email/editor'
 import {
@@ -26,8 +27,9 @@ import {
   IconStrikethrough,
   IconUnderline,
 } from '@tabler/icons-react'
+import { useEditorState } from '@tiptap/react'
 import type { ComponentType } from 'react'
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
@@ -58,15 +60,9 @@ interface ToolbarButton {
 function EditorToolbar({ editor }: { editor: Editor }) {
   const { t } = useTranslation()
   // The toolbar shows the state of the selection, so it redraws on every transaction.
-  const [, redraw] = useReducer((n: number) => n + 1, 0)
-  useEffect(() => {
-    editor.on('transaction', redraw)
-    return () => {
-      editor.off('transaction', redraw)
-    }
-  }, [editor])
+  useEditorState({ editor, selector: ({ transactionNumber }) => transactionNumber })
 
-  const [linkOpen, setLinkOpen] = useState(false)
+  const [linkOpen, link] = useDisclosure(false)
   const [href, setHref] = useState('')
 
   const groups: ToolbarButton[][] = [
@@ -177,7 +173,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
     } else {
       chain.setLink({ href: href.trim() }).run()
     }
-    setLinkOpen(false)
+    link.close()
   }
 
   return (
@@ -203,7 +199,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
         </Group>
       ))}
       <Divider orientation="vertical" />
-      <Popover opened={linkOpen} onChange={setLinkOpen} withArrow>
+      <Popover opened={linkOpen} onChange={link.set} withArrow>
         <Popover.Target>
           <Tooltip label={t(($) => $.messageEditor.toolbar.link)}>
             <ActionIcon
@@ -212,7 +208,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
                 setHref(String(editor.getAttributes('link').href ?? ''))
-                setLinkOpen((open) => !open)
+                link.toggle()
               }}
             >
               <IconLink size={16} />

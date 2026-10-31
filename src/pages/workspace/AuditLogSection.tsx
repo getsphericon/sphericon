@@ -17,6 +17,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useDisclosure } from '@mantine/hooks'
 import { IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
@@ -124,7 +125,7 @@ function DiffView({ diff }: { diff: Record<string, unknown> }) {
 function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
   const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
+  const [open, { toggle }] = useDisclosure(false)
   const diff = entry.diff && Object.keys(entry.diff).length > 0 ? entry.diff : null
 
   return (
@@ -147,7 +148,7 @@ function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
               aria-label={
                 open ? t(($) => $.settings.auditLog.collapse) : t(($) => $.settings.auditLog.expand)
               }
-              onClick={() => setOpen((v) => !v)}
+              onClick={toggle}
             >
               {open ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
             </ActionIcon>
