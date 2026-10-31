@@ -5,7 +5,3 @@ id = "GHSA-hhx9-57xq-r5rw"
 ignoreUntil = 2026-12-01
 reason = "@hey-api/openapi-ts runs on its next channel (hey-api#4235, it drops the TypeScript dependency so the generator runs under TypeScript 7); the fixed release is on the stable channel. A code generator run by developers, never shipped."
 
-[[IgnoredVulns]]
-id = "GHSA-gcqx-w48m-w2h4"
-ignoreUntil = 2027-01-31
-reason = "deepmerge 4.3.1 (no fixed release) reaches us through @react-email/editor -> @react-email/render -> html-to-text, whose two merge calls combine its own default options with the options @react-email/render passes and the selectors list; no document or request data is merged, so an attacker cannot supply the poisoning source object."
