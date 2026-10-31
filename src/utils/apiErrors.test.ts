@@ -10,15 +10,12 @@ import {
 
 describe('getApiErrorMessage', () => {
   test('prefers detail over every other field', () => {
-    const error = { detail: 'detail', form: 'form', error: 'error', title: 'title' }
+    const error = { detail: 'detail', form: 'form', title: 'title' }
     expect(getApiErrorMessage(error, 'fallback')).toBe('detail')
   })
 
-  test('falls through detail → form → error → title → fallback', () => {
-    expect(getApiErrorMessage({ form: 'form', error: 'error', title: 'title' }, 'fallback')).toBe(
-      'form',
-    )
-    expect(getApiErrorMessage({ error: 'error', title: 'title' }, 'fallback')).toBe('error')
+  test('falls through detail → form → title → fallback', () => {
+    expect(getApiErrorMessage({ form: 'form', title: 'title' }, 'fallback')).toBe('form')
     expect(getApiErrorMessage({ title: 'title' }, 'fallback')).toBe('title')
   })
 
