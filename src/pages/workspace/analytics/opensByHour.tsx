@@ -1,4 +1,5 @@
-import { EmptyState, Stack, Table, Text } from '@mantine/core'
+import { MatrixChart } from '@mantine/charts'
+import { EmptyState, ScrollArea, Stack, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
@@ -18,15 +19,7 @@ const WEEKDAYS = [
   'sunday',
 ] as const
 
-const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
-
-// shade is the blue of a cell: the busiest hour is the darkest, an empty one is plain gray.
-function shade(opens: number, busiest: number) {
-  if (opens === 0) {
-    return 'gray.0'
-  }
-  return `blue.${Math.min(9, 1 + Math.ceil((opens / busiest) * 8))}`
-}
+const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour))
 
 // OpensByHourPage is the Opens by hour report: a weekday by hour grid of human opens, in the
 // Workspace time zone, for the section's window.
@@ -46,54 +39,44 @@ export function OpensByHourPage() {
     return <EmptyState title={t(($) => $.analytics.opensByHour.empty)} />
   }
 
-  const opens = new Map(query.data.cells.map((c) => [`${c.weekday}-${c.hour}`, c.opens]))
-  const busiest = Math.max(...query.data.cells.map((c) => c.opens))
+  const days = WEEKDAYS.map((key) => t(($) => $.analytics.opensByHour.weekdays[key]))
+  // A cell of the report as the chart takes it: the hour is the column, the weekday the row.
+  const data = query.data.cells.map((cell) => ({
+    x: String(cell.hour),
+    y: days[cell.weekday - 1] ?? '',
+    value: cell.opens,
+  }))
+  const cellLabel = (cell: { x: string; y: string; value: number | null }) =>
+    t(($) => $.analytics.opensByHour.cell, {
+      day: cell.y,
+      hour: cell.x.padStart(2, '0'),
+      count: cell.value ?? 0,
+    })
 
   return (
     <Stack gap="xs">
       <Text size="sm" c="dimmed">
         {t(($) => $.analytics.opensByHour.note)}
       </Text>
-      <Table.ScrollContainer minWidth={720}>
-        <Table withColumnBorders>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th />
-              {HOURS.map((hour) => (
-                <Table.Th key={hour} ta="center" px={2}>
-                  {hour}
-                </Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {WEEKDAYS.map((key, index) => {
-              const day = t(($) => $.analytics.opensByHour.weekdays[key])
-              return (
-                <Table.Tr key={key}>
-                  <Table.Th>{day}</Table.Th>
-                  {HOURS.map((hour) => {
-                    const count = opens.get(`${index + 1}-${hour}`) ?? 0
-                    const label = t(($) => $.analytics.opensByHour.cell, {
-                      day,
-                      hour: String(hour).padStart(2, '0'),
-                      count,
-                    })
-                    return (
-                      <Table.Td
-                        key={hour}
-                        bg={shade(count, busiest)}
-                        aria-label={label}
-                        title={label}
-                      />
-                    )
-                  })}
-                </Table.Tr>
-              )
-            })}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+      <ScrollArea>
+        <MatrixChart
+          aria-label={t(($) => $.analytics.nav.opensByHour)}
+          data={data}
+          xLabels={HOURS}
+          yLabels={days}
+          withXLabels
+          withYLabels
+          xLabelsPosition="top"
+          xLabelsRotation={0}
+          xLabelsHeight={24}
+          yLabelsWidth={96}
+          cellSize={26}
+          colors={['blue.1', 'blue.3', 'blue.5', 'blue.7', 'blue.9']}
+          withTooltip
+          getTooltipLabel={cellLabel}
+          getCellProps={(cell) => ({ 'aria-label': cellLabel(cell) })}
+        />
+      </ScrollArea>
     </Stack>
   )
 }
