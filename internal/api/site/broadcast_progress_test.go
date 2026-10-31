@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -51,6 +52,7 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	got, ok := progress.EstimatedCompletionAt.Get()
 	require.True(t, ok)
 	assert.WithinDuration(t, eta, time.Time(got), time.Second, "timestamps are served to the second")
+	assert.Equal(t, siteapi.SiteBroadcastLimitProviderLimit, progress.LimitedBy.Value, "the planner's pace is the Provider limit's")
 
 	list, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -68,4 +70,32 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	assert.Equal(t, int32(2), progress.RemainingCount, "recipients stay intact under a hold")
 	_, hasETA := progress.EstimatedCompletionAt.Get()
 	assert.False(t, hasETA, "no ETA while held")
+	assert.True(t, progress.LimitedBy.Null, "a hold blocks, nothing paces")
+}
+
+// A sending Broadcast beyond the Workspace's Send cap names the Send cap, with its estimate.
+func TestSiteBroadcastProgressNamesTheSendCap(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	id := int64(fixtures.BroadcastDraftID)
+	sendCap := 1
+	_, err := suspension.SetSendCap(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-1"), &sendCap)
+	require.NoError(t, err)
+	require.NoError(t, s.Broadcast().UpdateOneID(id).SetStatus(broadcast.StatusSending).Exec(ctx))
+	env.PlaceRecipient(ctx, id, fixtures.ContactAliceID)
+	env.PlaceRecipient(ctx, id, fixtures.ContactBobID)
+
+	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
+	require.NoError(t, err)
+	res, ok := got.(*siteapi.SiteBroadcastResource)
+	require.Truef(t, ok, "got %T", got)
+
+	progress, ok := res.Progress.Get()
+	require.True(t, ok)
+	assert.Equal(t, siteapi.SiteBroadcastLimitSendCap, progress.LimitedBy.Value)
+	eta, ok := progress.EstimatedCompletionAt.Get()
+	require.True(t, ok)
+	assert.WithinDuration(t, time.Now().Add(24*time.Hour), time.Time(eta), time.Minute, "one now, the other a day later")
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -79,6 +80,7 @@ func TestProgressHasNoETAWithoutALimit(t *testing.T) {
 	require.NotNil(t, p)
 	assert.Equal(t, 3, p.Remaining)
 	assert.Nil(t, p.EstimatedCompletion)
+	assert.Empty(t, p.LimitedBy, "nothing limits it")
 }
 
 // A Broadcast that is not sending has its figures but no Progress, and a sending one gets
@@ -99,4 +101,67 @@ func TestDetailHasProgressOnlyWhileSending(t *testing.T) {
 	require.NotNil(t, sending.Progress)
 	assert.Equal(t, sending.Stats.Pending, sending.Progress.Remaining)
 	assert.Equal(t, sending.Stats.Processed(), sending.Progress.Processed)
+}
+
+// capAcme sets Acme's Send cap (ADR 0067), as a Staff member does.
+func capAcme(t *testing.T, env *testhelper.TestEnv, sendCap int) {
+	t.Helper()
+	_, err := suspension.SetSendCap(context.Background(), env.Bus, fixtures.AcmeID, suspension.StaffMember("op-1"), &sendCap)
+	require.NoError(t, err)
+}
+
+// Recipients beyond the Send cap's tokens go out at the Send cap per 24 hours: when that finishes
+// after the Provider limit's pace, the estimate is the Send cap's and the progress names it.
+func TestProgressNamesTheSendCapWhenItFinishesLater(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	f := sendingWithPending(t, env, 3)
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
+	capAcme(t, env, 2)
+
+	now := time.Now()
+	detail, err := detailOf(env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), now)
+	require.NoError(t, err)
+
+	p := detail.Progress
+	assert.Equal(t, broadcasts.LimitSendCap, p.LimitedBy)
+	require.NotNil(t, p.EstimatedCompletion)
+	assert.WithinDuration(t, now.Add(12*time.Hour), *p.EstimatedCompletion, time.Second,
+		"two go out on the bucket's tokens, the third when it holds one again: 12 hours at 2 a day")
+}
+
+// A Send cap whose tokens cover the remaining recipients slows nothing: the Provider limit's pace
+// is the estimate and the progress names it.
+func TestProgressNamesTheProviderLimitWhileTheSendCapCoversTheRest(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	f := sendingWithPending(t, env, 3)
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
+	capAcme(t, env, 1000)
+
+	now := time.Now()
+	detail, err := detailOf(env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), now)
+	require.NoError(t, err)
+
+	p := detail.Progress
+	assert.Equal(t, broadcasts.LimitProviderLimit, p.LimitedBy)
+	require.NotNil(t, p.EstimatedCompletion)
+	assert.WithinDuration(t, now.Add(1500*time.Millisecond), *p.EstimatedCompletion, time.Millisecond)
+}
+
+// A Send cap limits even a route the Provider limit does not pace.
+func TestProgressNamesTheSendCapWithoutAProviderLimit(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	f := sendingWithPending(t, env, 3)
+	capAcme(t, env, 1)
+
+	now := time.Now()
+	detail, err := detailOf(env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), now)
+	require.NoError(t, err)
+
+	p := detail.Progress
+	assert.Equal(t, broadcasts.LimitSendCap, p.LimitedBy)
+	require.NotNil(t, p.EstimatedCompletion)
+	assert.WithinDuration(t, now.Add(48*time.Hour), *p.EstimatedCompletion, time.Second, "one now, two more a day apart")
 }

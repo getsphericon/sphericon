@@ -680,6 +680,11 @@ export const zSiteAutomationVersion = z.object({
 });
 
 /**
+ * What slows a sending broadcast
+ */
+export const zSiteBroadcastLimit = z.enum(['send_cap', 'provider_limit']);
+
+/**
  * Broadcast lifecycle status
  */
 export const zSiteBroadcastStatus = z.enum([
@@ -2410,11 +2415,14 @@ export const zSiteBrandKitResource = z.object({
  * How far a sending broadcast has got. A broadcast limited by its Integration's Send
  * rate limit is paced: recipients go out at an even interval, so the estimate is
  * derived on the server from the last scheduled time and the recipients remaining.
+ * Recipients beyond the Workspace's Send cap go out at the Send cap per 24 hours; the
+ * estimate is the later of the two.
  */
 export const zSiteBroadcastProgress = z.object({
   processedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   remainingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  estimatedCompletionAt: z.exactOptional(zTimestamp.nullable())
+  estimatedCompletionAt: z.exactOptional(zTimestamp.nullable()),
+  limitedBy: zSiteBroadcastLimit.nullable()
 });
 
 /**

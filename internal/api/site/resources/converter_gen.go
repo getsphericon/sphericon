@@ -191,6 +191,7 @@ func (c *ConverterImpl) BroadcastProgressToResource(source broadcasts.Progress) 
 	siteapiSiteBroadcastProgress.ProcessedCount = count(source.Processed)
 	siteapiSiteBroadcastProgress.RemainingCount = count(source.Remaining)
 	siteapiSiteBroadcastProgress.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletion)
+	siteapiSiteBroadcastProgress.LimitedBy = broadcastLimit(source.LimitedBy)
 	return siteapiSiteBroadcastProgress
 }
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) site.ContactExportBroadcastRecipient {

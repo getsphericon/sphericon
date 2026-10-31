@@ -1,8 +1,10 @@
 # Send cap state (ADR 0067), one row per Workspace that sent under a Send cap. Both buckets are
-# full; a Workspace without a row has its bucket created full on its first capped send.
+# full; a Workspace without a row has its bucket created full on its first capped send. Acme's was
+# last refilled before any clock a test runs on (a synctest bubble starts in 2000), so it refills
+# as that clock moves.
 - id: 1 # fixture: SendLimiterAcme
   day_fill: 1.0
-  refilled_at: '{{daysAgo 1}}'
+  refilled_at: '1999-01-01T00:00:00Z'
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'

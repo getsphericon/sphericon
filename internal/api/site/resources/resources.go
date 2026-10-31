@@ -221,6 +221,7 @@ type Converter interface {
 	// goverter:map Processed ProcessedCount
 	// goverter:map Remaining RemainingCount
 	// goverter:map EstimatedCompletion EstimatedCompletionAt
+	// goverter:map LimitedBy | broadcastLimit
 	BroadcastProgressToResource(source broadcasts.Progress) siteapi.SiteBroadcastProgress
 
 	// goverter:ignore Warnings
@@ -922,4 +923,12 @@ func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactEx
 // Condition's table, listed so a client offers what the server takes.
 func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperator {
 	return lo.Map(condition.RuleOperators(t), func(op string, _ int) siteapi.SiteConditionOperator { return siteapi.SiteConditionOperator(op) })
+}
+
+// broadcastLimit is what slows a sending Broadcast, null when nothing does.
+func broadcastLimit(v broadcasts.Limit) siteapi.NilSiteBroadcastLimit {
+	if v == "" {
+		return siteapi.NilSiteBroadcastLimit{Null: true}
+	}
+	return siteapi.NewNilSiteBroadcastLimit(siteapi.SiteBroadcastLimit(v))
 }

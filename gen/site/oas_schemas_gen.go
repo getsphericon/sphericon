@@ -2739,6 +2739,51 @@ func (o NilSiteAutomationVersion) Or(d SiteAutomationVersion) SiteAutomationVers
 	return d
 }
 
+// NewNilSiteBroadcastLimit returns new NilSiteBroadcastLimit with value set to v.
+func NewNilSiteBroadcastLimit(v SiteBroadcastLimit) NilSiteBroadcastLimit {
+	return NilSiteBroadcastLimit{
+		Value: v,
+	}
+}
+
+// NilSiteBroadcastLimit is nullable SiteBroadcastLimit.
+type NilSiteBroadcastLimit struct {
+	Value SiteBroadcastLimit
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilSiteBroadcastLimit) SetTo(v SiteBroadcastLimit) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilSiteBroadcastLimit) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilSiteBroadcastLimit) SetToNull() {
+	o.Null = true
+	var v SiteBroadcastLimit
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilSiteBroadcastLimit) Get() (v SiteBroadcastLimit, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilSiteBroadcastLimit) Or(d SiteBroadcastLimit) SiteBroadcastLimit {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilSiteProviderLimitSource returns new NilSiteProviderLimitSource with value set to v.
 func NewNilSiteProviderLimitSource(v SiteProviderLimitSource) NilSiteProviderLimitSource {
 	return NilSiteProviderLimitSource{
@@ -10819,6 +10864,49 @@ type SiteBrandKitSaveUnprocessableEntity ProblemDetails
 
 func (*SiteBrandKitSaveUnprocessableEntity) siteBrandKitSaveRes() {}
 
+// What slows a sending broadcast.
+// Ref: #/components/schemas/SiteBroadcastLimit
+type SiteBroadcastLimit string
+
+const (
+	SiteBroadcastLimitSendCap       SiteBroadcastLimit = "send_cap"
+	SiteBroadcastLimitProviderLimit SiteBroadcastLimit = "provider_limit"
+)
+
+// AllValues returns all SiteBroadcastLimit values.
+func (SiteBroadcastLimit) AllValues() []SiteBroadcastLimit {
+	return []SiteBroadcastLimit{
+		SiteBroadcastLimitSendCap,
+		SiteBroadcastLimitProviderLimit,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteBroadcastLimit) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteBroadcastLimitSendCap:
+		return []byte(s), nil
+	case SiteBroadcastLimitProviderLimit:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteBroadcastLimit) UnmarshalText(data []byte) error {
+	switch SiteBroadcastLimit(data) {
+	case SiteBroadcastLimitSendCap:
+		*s = SiteBroadcastLimitSendCap
+		return nil
+	case SiteBroadcastLimitProviderLimit:
+		*s = SiteBroadcastLimitProviderLimit
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A broadcast's per-link click figures, most clicked first.
 // Ref: #/components/schemas/SiteBroadcastLinkClicksList
 type SiteBroadcastLinkClicksList struct {
@@ -10848,7 +10936,8 @@ func (*SiteBroadcastLinksListNotFound) siteBroadcastLinksListRes() {}
 
 // How far a sending broadcast has got. A broadcast limited by its Integration's Send rate limit is
 // paced: recipients go out at an even interval, so the estimate is derived on the server from the last
-// scheduled time and the recipients remaining.
+// scheduled time and the recipients remaining. Recipients beyond the Workspace's Send cap go out at
+// the Send cap per 24 hours; the estimate is the later of the two.
 // Ref: #/components/schemas/SiteBroadcastProgress
 type SiteBroadcastProgress struct {
 	// Recipients already decided: sent, skipped or failed.
@@ -10856,8 +10945,11 @@ type SiteBroadcastProgress struct {
 	// Recipients still waiting to be sent.
 	RemainingCount int32 `json:"remainingCount"`
 	// When the last remaining recipient is expected to be sent. Null when it is not knowable: the
-	// broadcast is on hold, or it is not paced by a Provider limit.
+	// broadcast is on hold, or nothing paces it.
 	EstimatedCompletionAt OptNilTimestamp `json:"estimatedCompletionAt"`
+	// What the estimate waits on: the Send cap or the Provider limit, whichever finishes later; null when
+	// nothing slows the broadcast.
+	LimitedBy NilSiteBroadcastLimit `json:"limitedBy"`
 }
 
 // GetProcessedCount returns the value of ProcessedCount.
@@ -10875,6 +10967,11 @@ func (s *SiteBroadcastProgress) GetEstimatedCompletionAt() OptNilTimestamp {
 	return s.EstimatedCompletionAt
 }
 
+// GetLimitedBy returns the value of LimitedBy.
+func (s *SiteBroadcastProgress) GetLimitedBy() NilSiteBroadcastLimit {
+	return s.LimitedBy
+}
+
 // SetProcessedCount sets the value of ProcessedCount.
 func (s *SiteBroadcastProgress) SetProcessedCount(val int32) {
 	s.ProcessedCount = val
@@ -10888,6 +10985,11 @@ func (s *SiteBroadcastProgress) SetRemainingCount(val int32) {
 // SetEstimatedCompletionAt sets the value of EstimatedCompletionAt.
 func (s *SiteBroadcastProgress) SetEstimatedCompletionAt(val OptNilTimestamp) {
 	s.EstimatedCompletionAt = val
+}
+
+// SetLimitedBy sets the value of LimitedBy.
+func (s *SiteBroadcastProgress) SetLimitedBy(val NilSiteBroadcastLimit) {
+	s.LimitedBy = val
 }
 
 // Broadcast resource used by the site UI.

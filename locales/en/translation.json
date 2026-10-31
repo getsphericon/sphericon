@@ -411,6 +411,12 @@
     "openedLabel": "Opened",
     "progress": {
       "almostDone": "almost done",
+      "limitedBy": {
+        "provider_limit": "Paced by the Provider limit of the Integration.",
+        "send_cap": "Slowed by the Send cap the platform set on this Workspace: the rest go out as the 24-hour window frees up."
+      },
+      "remainingDays_one": "about {{count}} day remaining",
+      "remainingDays_other": "about {{count}} days remaining",
       "remainingHours": "about {{count}} hour remaining",
       "remainingHours_one": "about {{count}} hour remaining",
       "remainingHours_other": "about {{count}} hours remaining",

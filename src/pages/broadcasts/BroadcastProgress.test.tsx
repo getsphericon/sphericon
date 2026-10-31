@@ -12,6 +12,7 @@ test('shows how many were sent and about how long remains', async () => {
         processedCount: 1200,
         remainingCount: 800,
         estimatedCompletionAt: new Date(Date.now() + 3 * HOUR_MS + 60_000).toISOString(),
+        limitedBy: 'provider_limit',
       }}
     />,
   )
@@ -27,6 +28,7 @@ test('counts minutes when under an hour and says almost done when due', async ()
         processedCount: 1,
         remainingCount: 9,
         estimatedCompletionAt: new Date(Date.now() + 15 * 60_000 + 5_000).toISOString(),
+        limitedBy: 'provider_limit',
       }}
     />,
   )
@@ -38,6 +40,7 @@ test('counts minutes when under an hour and says almost done when due', async ()
         processedCount: 9,
         remainingCount: 1,
         estimatedCompletionAt: new Date(Date.now() + 10_000).toISOString(),
+        limitedBy: 'provider_limit',
       }}
     />,
   )
@@ -46,9 +49,45 @@ test('counts minutes when under an hour and says almost done when due', async ()
 
 test('shows no estimate when the server has none (a hold)', async () => {
   const screen = await renderWithProviders(
-    <BroadcastProgress progress={{ processedCount: 5, remainingCount: 5 }} />,
+    <BroadcastProgress progress={{ processedCount: 5, remainingCount: 5, limitedBy: null }} />,
   )
 
   await expect.element(screen.getByText('Sent 5 of 10')).toBeInTheDocument()
   await expect.element(screen.getByText(/remaining/)).not.toBeInTheDocument()
+})
+
+test('names the Send cap when it is what slows the broadcast, and counts days', async () => {
+  const screen = await renderWithProviders(
+    <BroadcastProgress
+      progress={{
+        processedCount: 1000,
+        remainingCount: 4000,
+        estimatedCompletionAt: new Date(Date.now() + 4 * 24 * HOUR_MS + 60_000).toISOString(),
+        limitedBy: 'send_cap',
+      }}
+    />,
+  )
+
+  await expect.element(screen.getByText('about 4 days remaining')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/Slowed by the Send cap the platform set/))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/Provider limit/)).not.toBeInTheDocument()
+})
+
+test('names the Provider limit when it paces the broadcast', async () => {
+  const screen = await renderWithProviders(
+    <BroadcastProgress
+      progress={{
+        processedCount: 10,
+        remainingCount: 10,
+        estimatedCompletionAt: new Date(Date.now() + 2 * HOUR_MS).toISOString(),
+        limitedBy: 'provider_limit',
+      }}
+    />,
+  )
+
+  await expect
+    .element(screen.getByText('Paced by the Provider limit of the Integration.'))
+    .toBeInTheDocument()
 })

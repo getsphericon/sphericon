@@ -98,6 +98,30 @@ func SendCapStatusOf(ctx context.Context, s *ent.Scoped, sendCap int, now time.T
 	return SendCapStatus{PerDay: sendCap, Sent24h: sent}, err
 }
 
+// SendCapFinish is when n more sends would have spent their way through the Workspace's Send cap
+// at now: nil when the bucket's tokens cover them all, otherwise when the bucket, refilling evenly
+// at sendCap per 24 hours, has held a token for the last of them. Its debt from Transactional
+// sends pushes the time out.
+func SendCapFinish(ctx context.Context, s *ent.Scoped, sendCap, n int, now time.Time) (*time.Time, error) {
+	b := dayBucket(sendCap)
+	fill := 1.0
+	row, err := s.SendLimiter().Query().Only(ctx)
+	switch {
+	case ent.IsNotFound(err): // no send yet: the bucket starts full
+	case err != nil:
+		return nil, err
+	default:
+		fill = math.Min(1, row.DayFill+math.Max(0, now.Sub(row.RefilledAt).Seconds())*b.fillPerSec)
+	}
+	tokens := fill * float64(sendCap)
+	if float64(n) <= math.Floor(tokens+epsilon) {
+		return nil, nil
+	}
+	short := float64(n) - tokens
+	at := now.Add(time.Duration(math.Ceil(short/float64(sendCap)*daySeconds)) * time.Second)
+	return &at, nil
+}
+
 // SentLast24h counts the Workspace's Outbound messages the provider accepted over the 24 hours
 // before now, across its Integrations and Transactional included: what its Send cap spends.
 func SentLast24h(ctx context.Context, s *ent.Scoped, now time.Time) (int, error) {

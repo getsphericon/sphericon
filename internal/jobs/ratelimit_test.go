@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/stepping"
+	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
 )
@@ -153,5 +154,30 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 		err = w.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID}))
 		var snooze *river.JobSnoozeError
 		require.ErrorAs(t, err, &snooze, "the Broadcast recipient finds the Automation's spend")
+	})
+}
+
+// A Broadcast larger than the Workspace's Send cap (ADR 0067) stays sending, no hold: the
+// recipient past the bucket's tokens defers, asked again within minutes, and goes out as the
+// 24-hour window frees up; every recipient is sent exactly once.
+func TestABroadcastLargerThanTheSendCapStaysSendingAndFinishes(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		e := newRiverEnv(t)
+		ctx := e.workCtx()
+		mod := outbound.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"), outbound.WithSendCap())
+		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
+		require.NoError(t, err)
+		// One recipient more than the cap, so the test waits for one token, not a day per recipient.
+		sendCap := len(ids) - 1
+		_, err = suspension.SetSendCap(ctx, e.Bus, fixtures.AcmeID, suspension.StaffMember("op-1"), &sendCap)
+		require.NoError(t, err)
+		w := jobs.NewSendRecipientWorker(e.DB, mod)
+
+		start := time.Now()
+		end := driveRecipients(t, e, w, ids, start)
+
+		assert.GreaterOrEqual(t, end.Sub(start), 24*time.Hour/time.Duration(sendCap), "the last one waits for a token")
+		assert.Len(t, e.sender.sent, len(ids), "every recipient sent exactly once")
+		assert.Equal(t, broadcast.StatusSent, e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
 	})
 }

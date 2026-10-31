@@ -2115,6 +2115,16 @@ export type SiteBrandKitResource = {
 };
 
 /**
+ * What slows a sending broadcast
+ */
+export const SiteBroadcastLimit = { SEND_CAP: 'send_cap', PROVIDER_LIMIT: 'provider_limit' } as const;
+
+/**
+ * What slows a sending broadcast
+ */
+export type SiteBroadcastLimit = typeof SiteBroadcastLimit[keyof typeof SiteBroadcastLimit];
+
+/**
  * A broadcast's per-link click figures, most clicked first
  */
 export type SiteBroadcastLinkClicksList = {
@@ -2128,6 +2138,8 @@ export type SiteBroadcastLinkClicksList = {
  * How far a sending broadcast has got. A broadcast limited by its Integration's Send
  * rate limit is paced: recipients go out at an even interval, so the estimate is
  * derived on the server from the last scheduled time and the recipients remaining.
+ * Recipients beyond the Workspace's Send cap go out at the Send cap per 24 hours; the
+ * estimate is the later of the two.
  */
 export type SiteBroadcastProgress = {
   /**
@@ -2140,9 +2152,14 @@ export type SiteBroadcastProgress = {
   remainingCount: number;
   /**
    * When the last remaining recipient is expected to be sent. Null when it is not
-   * knowable: the broadcast is on hold, or it is not paced by a Provider limit.
+   * knowable: the broadcast is on hold, or nothing paces it.
    */
   estimatedCompletionAt?: Timestamp | null;
+  /**
+   * What the estimate waits on: the Send cap or the Provider limit, whichever finishes later;
+   * null when nothing slows the broadcast
+   */
+  limitedBy: SiteBroadcastLimit | null;
 };
 
 /**

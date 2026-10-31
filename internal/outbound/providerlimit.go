@@ -53,3 +53,17 @@ func (m *Module) SendCap(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) 
 	}
 	return &st, nil
 }
+
+// SendCapFinish is when n more sends of the Workspace would have got through its Send cap at now
+// (providerlimit.SendCapFinish); nil when no Send cap applies or its tokens cover them all. The
+// Broadcast progress estimate reads it.
+func (m *Module) SendCapFinish(ctx context.Context, s *ent.Scoped, n int, now time.Time) (*time.Time, error) {
+	if !m.sendCap {
+		return nil, nil
+	}
+	ws, err := s.Workspace(ctx)
+	if err != nil || ws.SendCap == nil {
+		return nil, err
+	}
+	return providerlimit.SendCapFinish(ctx, s, *ws.SendCap, n, now)
+}

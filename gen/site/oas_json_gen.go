@@ -5130,6 +5130,50 @@ func (s *NilSiteAutomationVersion) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteBroadcastLimit as json.
+func (o NilSiteBroadcastLimit) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes SiteBroadcastLimit from json.
+func (o *NilSiteBroadcastLimit) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilSiteBroadcastLimit to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v SiteBroadcastLimit
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilSiteBroadcastLimit) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilSiteBroadcastLimit) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SiteProviderLimitSource as json.
 func (o NilSiteProviderLimitSource) Encode(e *jx.Encoder) {
 	if o.Null {
@@ -17676,6 +17720,46 @@ func (s *SiteBrandKitSaveUnprocessableEntity) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SiteBroadcastLimit as json.
+func (s SiteBroadcastLimit) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SiteBroadcastLimit from json.
+func (s *SiteBroadcastLimit) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteBroadcastLimit to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SiteBroadcastLimit(v) {
+	case SiteBroadcastLimitSendCap:
+		*s = SiteBroadcastLimitSendCap
+	case SiteBroadcastLimitProviderLimit:
+		*s = SiteBroadcastLimitProviderLimit
+	default:
+		*s = SiteBroadcastLimit(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SiteBroadcastLimit) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteBroadcastLimit) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode implements json.Marshaler.
 func (s *SiteBroadcastLinkClicksList) Encode(e *jx.Encoder) {
 	e.ObjStart()
@@ -17881,12 +17965,17 @@ func (s *SiteBroadcastProgress) encodeFields(e *jx.Encoder) {
 			s.EstimatedCompletionAt.Encode(e)
 		}
 	}
+	{
+		e.FieldStart("limitedBy")
+		s.LimitedBy.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfSiteBroadcastProgress = [3]string{
+var jsonFieldsNameOfSiteBroadcastProgress = [4]string{
 	0: "processedCount",
 	1: "remainingCount",
 	2: "estimatedCompletionAt",
+	3: "limitedBy",
 }
 
 // Decode decodes SiteBroadcastProgress from json.
@@ -17932,6 +18021,16 @@ func (s *SiteBroadcastProgress) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"estimatedCompletionAt\"")
 			}
+		case "limitedBy":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.LimitedBy.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"limitedBy\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -17942,7 +18041,7 @@ func (s *SiteBroadcastProgress) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00001011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

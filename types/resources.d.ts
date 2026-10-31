@@ -412,6 +412,11 @@ export default interface Resources {
       "openedLabel": "Opened",
       "progress": {
         "almostDone": "almost done",
+        "limitedBy": {
+          "provider_limit": "Paced by the Provider limit of the Integration.",
+          "send_cap": "Slowed by the Send cap the platform set on this Workspace: the rest go out as the 24-hour window frees up."
+        },
+        "remainingDays": "about {{count}} day remaining" | "about {{count}} days remaining",
         "remainingHours": "about {{count}} hour remaining" | "about {{count}} hour remaining" | "about {{count}} hours remaining",
         "remainingMinutes": "about {{count}} minutes remaining" | "about {{count}} minute remaining" | "about {{count}} minutes remaining",
         "summary": "Sent {{processed}} of {{total}}"
