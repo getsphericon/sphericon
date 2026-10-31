@@ -1,10 +1,10 @@
 import { Badge, Card, Group, Stack, Text, Title } from '@mantine/core'
 import { IconArrowLeft } from '@tabler/icons-react'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { ButtonLink } from '../components/RouterLink.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { staffWorkspacesGetOptions } from '../generated/staffee/@tanstack/react-query.gen.ts'
@@ -126,13 +126,39 @@ function AbuseCard({ workspaceId, abuse }: { workspaceId: string; abuse: StaffAb
   )
 }
 
+// The cards of the Workspace; the page's boundary shows the load and its failure.
+function WorkspaceCards({ workspaceId }: { workspaceId: string }) {
+  const { t } = useTranslation()
+  const workspace = useSuspenseQuery(staffWorkspacesGetOptions({ path: { workspaceId } })).data
+
+  return (
+    <>
+      <Title order={2}>{workspace.name}</Title>
+      <Card withBorder>
+        <Title order={4} mb="sm">
+          {t(($) => $.console.workspace.detailsTitle)}
+        </Title>
+        <Stack gap="xs">
+          <Field label={t(($) => $.console.workspace.id)}>{workspace.id}</Field>
+          <Field label={t(($) => $.console.workspaces.createdAt)}>
+            {formatDateTime(workspace.createdAt)}
+          </Field>
+        </Stack>
+      </Card>
+      <SuspensionCard workspaceId={workspace.id} suspension={workspace.suspension} />
+      <AbuseCard workspaceId={workspace.id} abuse={workspace.abuse} />
+      <HoldsCard holds={workspace.holds} />
+      <DeliverabilityCard deliverability={workspace.deliverability} />
+      <AuditLogCard workspaceId={workspace.id} />
+    </>
+  )
+}
+
 // One Workspace: metadata and suspension state, as stacked cards so a later slice
 // (rates, Audit log, suspend actions) adds a card without reshaping the page.
 export function ConsoleWorkspacePage() {
   const { t } = useTranslation()
   const { workspaceId } = consoleWorkspaceRoute.useParams()
-  const workspaceQuery = useQuery(staffWorkspacesGetOptions({ path: { workspaceId } }))
-  const workspace = workspaceQuery.data
 
   return (
     <Stack>
@@ -145,35 +171,12 @@ export function ConsoleWorkspacePage() {
           {t(($) => $.console.workspace.back)}
         </ButtonLink>
       </Group>
-      {workspaceQuery.isLoading ? <BlockSkeleton /> : null}
-      {workspaceQuery.isError ? (
-        <ApiErrorAlert
-          error={workspaceQuery.error}
-          title={t(($) => $.console.workspace.loadError)}
-          fallback={t(($) => $.console.workspace.loadError)}
-        />
-      ) : null}
-      {workspace ? (
-        <>
-          <Title order={2}>{workspace.name}</Title>
-          <Card withBorder>
-            <Title order={4} mb="sm">
-              {t(($) => $.console.workspace.detailsTitle)}
-            </Title>
-            <Stack gap="xs">
-              <Field label={t(($) => $.console.workspace.id)}>{workspace.id}</Field>
-              <Field label={t(($) => $.console.workspaces.createdAt)}>
-                {formatDateTime(workspace.createdAt)}
-              </Field>
-            </Stack>
-          </Card>
-          <SuspensionCard workspaceId={workspace.id} suspension={workspace.suspension} />
-          <AbuseCard workspaceId={workspace.id} abuse={workspace.abuse} />
-          <HoldsCard holds={workspace.holds} />
-          <DeliverabilityCard deliverability={workspace.deliverability} />
-          <AuditLogCard workspaceId={workspace.id} />
-        </>
-      ) : null}
+      <QueryBoundary
+        fallback={<BlockSkeleton />}
+        errorTitle={t(($) => $.console.workspace.loadError)}
+      >
+        <WorkspaceCards workspaceId={workspaceId} />
+      </QueryBoundary>
     </Stack>
   )
 }

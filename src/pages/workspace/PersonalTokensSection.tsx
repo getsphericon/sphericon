@@ -15,11 +15,12 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ScopesBadge } from '../../components/ScopesBadge.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -49,6 +50,70 @@ function expiryOf(lifetime: Lifetime): string | null {
     : new Date(Date.now() + Number(lifetime) * DAY_MS).toISOString()
 }
 
+// PersonalTokensTable lists the tokens; the section's boundary shows the load and its failure.
+function PersonalTokensTable({
+  workspaceId,
+  onRevoke,
+}: {
+  workspaceId: string
+  onRevoke: (id: string) => void
+}) {
+  const { t } = useTranslation()
+  const records = useSuspenseQuery(sitePersonalTokensListOptions({ path: { workspaceId } })).data
+
+  return (
+    <DataTable
+      minHeight={records.length === 0 ? 160 : 0}
+      withTableBorder
+      records={records}
+      idAccessor="id"
+      columns={[
+        { accessor: 'name', title: t(($) => $.settings.personalTokens.nameLabel) },
+        {
+          accessor: 'userName',
+          title: t(($) => $.settings.personalTokens.user),
+          render: (record) => `${record.userName} (${record.userEmail})`,
+        },
+        {
+          accessor: 'scopes',
+          title: t(($) => $.settings.personalTokens.scopes),
+          render: (record) => <ScopesBadge scopes={record.scopes} />,
+        },
+        {
+          accessor: 'createdAt',
+          title: t(($) => $.settings.personalTokens.created),
+          render: (record) => formatDate(record.createdAt),
+        },
+        {
+          accessor: 'expiresAt',
+          title: t(($) => $.settings.personalTokens.expires),
+          render: (record) =>
+            record.expiresAt
+              ? formatDate(record.expiresAt)
+              : t(($) => $.settings.personalTokens.never),
+        },
+        {
+          accessor: 'actions',
+          title: '',
+          textAlign: 'right',
+          render: (record) => (
+            <Button
+              size="xs"
+              variant="subtle"
+              color="red"
+              onClick={() => onRevoke(record.id)}
+              aria-label={t(($) => $.settings.personalTokens.revokeLabel, { name: record.name })}
+            >
+              {t(($) => $.settings.personalTokens.revoke)}
+            </Button>
+          ),
+        },
+      ]}
+      emptyState={<EmptyState title={t(($) => $.settings.personalTokens.empty)} />}
+    />
+  )
+}
+
 // PersonalTokensSection lists the Personal tokens the caller may see (their own, or everyone's with
 // members:manage, which the server decides) and mints one of the caller's own (ADR 0061). The mint
 // form offers only the scopes the server says the caller's Role may grant.
@@ -65,7 +130,6 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
   }
 
   const queryKey = sitePersonalTokensListQueryKey({ path: { workspaceId } })
-  const tokens = useQuery(sitePersonalTokensListOptions({ path: { workspaceId } }))
   const grantable = useQuery({
     ...sitePersonalTokensGrantableScopesOptions({ path: { workspaceId } }),
     enabled: createOpened,
@@ -100,8 +164,6 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
     })
   }
 
-  const records = tokens.data ?? []
-
   return (
     <Box>
       <Group justify="space-between" mb="xs">
@@ -115,59 +177,12 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
           ? t(($) => $.settings.personalTokens.descriptionManager)
           : t(($) => $.settings.personalTokens.description)}
       </Text>
-      {tokens.isError ? (
-        <Alert color="red" title={t(($) => $.settings.personalTokens.loadError)} mb="md" />
-      ) : null}
-      {tokens.isLoading ? <TableSkeleton /> : null}
-      <DataTable
-        minHeight={records.length === 0 ? 160 : 0}
-        withTableBorder
-        records={records}
-        idAccessor="id"
-        columns={[
-          { accessor: 'name', title: t(($) => $.settings.personalTokens.nameLabel) },
-          {
-            accessor: 'userName',
-            title: t(($) => $.settings.personalTokens.user),
-            render: (record) => `${record.userName} (${record.userEmail})`,
-          },
-          {
-            accessor: 'scopes',
-            title: t(($) => $.settings.personalTokens.scopes),
-            render: (record) => <ScopesBadge scopes={record.scopes} />,
-          },
-          {
-            accessor: 'createdAt',
-            title: t(($) => $.settings.personalTokens.created),
-            render: (record) => formatDate(record.createdAt),
-          },
-          {
-            accessor: 'expiresAt',
-            title: t(($) => $.settings.personalTokens.expires),
-            render: (record) =>
-              record.expiresAt
-                ? formatDate(record.expiresAt)
-                : t(($) => $.settings.personalTokens.never),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            textAlign: 'right',
-            render: (record) => (
-              <Button
-                size="xs"
-                variant="subtle"
-                color="red"
-                onClick={() => onRevoke(record.id)}
-                aria-label={t(($) => $.settings.personalTokens.revokeLabel, { name: record.name })}
-              >
-                {t(($) => $.settings.personalTokens.revoke)}
-              </Button>
-            ),
-          },
-        ]}
-        emptyState={<EmptyState title={t(($) => $.settings.personalTokens.empty)} />}
-      />
+      <QueryBoundary
+        fallback={<TableSkeleton />}
+        errorTitle={t(($) => $.settings.personalTokens.loadError)}
+      >
+        <PersonalTokensTable workspaceId={workspaceId} onRevoke={onRevoke} />
+      </QueryBoundary>
       <Modal
         opened={createOpened}
         onClose={closeCreate}

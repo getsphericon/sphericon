@@ -1,8 +1,8 @@
 import { Anchor, Box, Button, Code, Group, Stack, Table, Tabs, Text, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -19,13 +19,25 @@ import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspa
 export function CapturedMessagePage() {
   const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
+  return (
+    <QueryBoundary
+      fallback={<PageSkeleton />}
+      errorTitle={t(($) => $.capturedMessages.messageLoadError)}
+    >
+      <CapturedMessage />
+    </QueryBoundary>
+  )
+}
+
+function CapturedMessage() {
+  const { t } = useTranslation()
   const { workspaceId, messageId } = capturedMessageRoute.useParams()
   const navigate = capturedMessageRoute.useNavigate()
   const confirm = useConfirmation()
 
-  const messageQuery = useQuery(
+  const message = useSuspenseQuery(
     siteCapturedMessagesGetOptions({ path: { workspaceId, id: messageId } }),
-  )
+  ).data
   const deleteMessage = useResourceMutation({
     mutation: siteCapturedMessagesDeleteMutation(),
     invalidate: [siteCapturedMessagesListQueryKey({ path: { workspaceId } })],
@@ -33,22 +45,6 @@ export function CapturedMessagePage() {
     errorTitle: t(($) => $.capturedMessages.deleteError),
     onDone: async () => navigate({ to: capturedMessagesRoute.to, params: { workspaceId } }),
   })
-
-  if (messageQuery.isLoading) {
-    return <PageSkeleton />
-  }
-
-  if (messageQuery.isError || !messageQuery.data) {
-    return (
-      <ApiErrorAlert
-        error={messageQuery.error}
-        title={t(($) => $.capturedMessages.messageLoadError)}
-        fallback={t(($) => $.capturedMessages.messageLoadError)}
-      />
-    )
-  }
-
-  const message = messageQuery.data
 
   return (
     <Stack>

@@ -1,12 +1,12 @@
 import { MatrixChart } from '@mantine/charts'
 import { EmptyState, ScrollArea, Stack, Text } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { siteAnalyticsOpensByHourOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
 import { Route as opensByHourRoute } from '../../../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
-import { ReportState } from './ReportState.tsx'
+import { ReportBoundary } from './ReportBoundary.tsx'
 
 // ISO weekdays, Monday first: the report's `weekday` 1 to 7.
 const WEEKDAYS = [
@@ -24,24 +24,29 @@ const HOURS = Array.from({ length: 24 }, (_, hour) => String(hour))
 // OpensByHourPage is the Opens by hour report: a weekday by hour grid of human opens, in the
 // Workspace time zone, for the section's window.
 export function OpensByHourPage() {
+  return (
+    <ReportBoundary>
+      <OpensByHourReport />
+    </ReportBoundary>
+  )
+}
+
+function OpensByHourReport() {
   const { t } = useTranslation()
   const { workspaceId } = opensByHourRoute.useParams()
   const range = useAnalyticsRange()
 
-  const query = useQuery(
+  const report = useSuspenseQuery(
     siteAnalyticsOpensByHourOptions({ path: { workspaceId }, query: { range } }),
-  )
+  ).data
 
-  if (!query.data) {
-    return <ReportState query={query} />
-  }
-  if (query.data.total === 0) {
+  if (report.total === 0) {
     return <EmptyState title={t(($) => $.analytics.opensByHour.empty)} />
   }
 
   const days = WEEKDAYS.map((key) => t(($) => $.analytics.opensByHour.weekdays[key]))
   // A cell of the report as the chart takes it: the hour is the column, the weekday the row.
-  const data = query.data.cells.map((cell) => ({
+  const data = report.cells.map((cell) => ({
     x: String(cell.hour),
     y: days[cell.weekday - 1] ?? '',
     value: cell.opens,

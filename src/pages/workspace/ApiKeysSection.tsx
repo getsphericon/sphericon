@@ -15,11 +15,12 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { ScopesBadge } from '../../components/ScopesBadge.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
@@ -39,6 +40,72 @@ import { ScopePicker } from './ScopePicker.tsx'
 
 // Scopes offered in the UI: the contract's ApiTokenScope vocabulary.
 const SCOPE_OPTIONS = zApiTokenScope.options
+
+// ApiKeysTable lists the tokens; the section's boundary shows the load and its failure.
+function ApiKeysTable({
+  workspaceId,
+  canManage,
+  onRename,
+  onRevoke,
+}: {
+  workspaceId: string
+  canManage: boolean
+  onRename: (record: { id: string; name: string }) => void
+  onRevoke: (id: string) => void
+}) {
+  const { t } = useTranslation()
+  const records = useSuspenseQuery(siteTokensListOptions({ path: { workspaceId } })).data
+
+  return (
+    <DataTable
+      minHeight={records.length === 0 ? 200 : 0}
+      withTableBorder
+      records={records}
+      idAccessor="id"
+      columns={[
+        { accessor: 'name' },
+        {
+          accessor: 'scopes',
+          title: t(($) => $.settings.tokens.scopesLabel),
+          render: (record) => <ScopesBadge scopes={record.scopes} />,
+        },
+        {
+          accessor: 'createdAt',
+          title: t(($) => $.settings.tokens.created),
+          render: (record) => formatDate(record.createdAt),
+        },
+        {
+          accessor: 'expiresAt',
+          title: t(($) => $.settings.tokens.expires),
+          render: (record) =>
+            record.expiresAt ? formatDate(record.expiresAt) : t(($) => $.settings.tokens.never),
+        },
+        {
+          accessor: 'actions',
+          title: '',
+          render: (record) =>
+            record.revokedAt ? (
+              <Badge color="red" variant="light">
+                {t(($) => $.settings.tokens.revoked)}
+              </Badge>
+            ) : canManage ? (
+              <Group justify="flex-end">
+                <RowActionsMenu>
+                  <Menu.Item onClick={() => onRename(record)}>
+                    {t(($) => $.settings.tokens.rename)}
+                  </Menu.Item>
+                  <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
+                    {t(($) => $.settings.tokens.revoke)}
+                  </Menu.Item>
+                </RowActionsMenu>
+              </Group>
+            ) : null,
+        },
+      ]}
+      emptyState={<EmptyState title={t(($) => $.settings.tokens.empty)} />}
+    />
+  )
+}
 
 // ApiKeysSection lists the API tokens to every member; creating, renaming and revoking one is
 // offered only with `canManage` (tokens:manage), as the API refuses everyone else.
@@ -61,7 +128,6 @@ export function ApiKeysSection({
   }
 
   const queryKey = siteTokensListQueryKey({ path: { workspaceId } })
-  const tokensQuery = useQuery(siteTokensListOptions({ path: { workspaceId } }))
 
   const renameForm = useForm({ initialValues: { name: '' } })
   const openRename = (record: { id: string; name: string }) => {
@@ -107,8 +173,6 @@ export function ApiKeysSection({
     })
   }
 
-  const records = tokensQuery.data ?? []
-
   return (
     <Box>
       <Group justify="space-between" mb="sm">
@@ -120,61 +184,18 @@ export function ApiKeysSection({
         ) : null}
       </Group>
 
-      {tokensQuery.isError ? (
-        <Alert color="red" title={t(($) => $.settings.tokens.loadError)} mb="md">
-          {t(($) => $.settings.tokens.loadError)}
-        </Alert>
-      ) : null}
+      <QueryBoundary
+        fallback={<TableSkeleton />}
+        errorTitle={t(($) => $.settings.tokens.loadError)}
+      >
+        <ApiKeysTable
+          workspaceId={workspaceId}
+          canManage={canManage}
+          onRename={openRename}
+          onRevoke={onRevoke}
+        />
+      </QueryBoundary>
 
-      {tokensQuery.isLoading ? <TableSkeleton /> : null}
-
-      <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
-        withTableBorder
-        records={records}
-        idAccessor="id"
-        columns={[
-          { accessor: 'name' },
-          {
-            accessor: 'scopes',
-            title: t(($) => $.settings.tokens.scopesLabel),
-            render: (record) => <ScopesBadge scopes={record.scopes} />,
-          },
-          {
-            accessor: 'createdAt',
-            title: t(($) => $.settings.tokens.created),
-            render: (record) => formatDate(record.createdAt),
-          },
-          {
-            accessor: 'expiresAt',
-            title: t(($) => $.settings.tokens.expires),
-            render: (record) =>
-              record.expiresAt ? formatDate(record.expiresAt) : t(($) => $.settings.tokens.never),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            render: (record) =>
-              record.revokedAt ? (
-                <Badge color="red" variant="light">
-                  {t(($) => $.settings.tokens.revoked)}
-                </Badge>
-              ) : canManage ? (
-                <Group justify="flex-end">
-                  <RowActionsMenu>
-                    <Menu.Item onClick={() => openRename(record)}>
-                      {t(($) => $.settings.tokens.rename)}
-                    </Menu.Item>
-                    <Menu.Item color="red" onClick={() => onRevoke(record.id)}>
-                      {t(($) => $.settings.tokens.revoke)}
-                    </Menu.Item>
-                  </RowActionsMenu>
-                </Group>
-              ) : null,
-          },
-        ]}
-        emptyState={<EmptyState title={t(($) => $.settings.tokens.empty)} />}
-      />
       <Modal
         opened={renaming !== null}
         onClose={() => setRenaming(null)}

@@ -14,11 +14,11 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
 import { LegalMarkdown } from '../components/LegalMarkdown.tsx'
+import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { AnchorLink } from '../components/RouterLink.tsx'
 import { PageSkeleton } from '../components/Skeletons.tsx'
 import {
@@ -112,24 +112,24 @@ function ArchiveButton({ item }: { item: StaffSignupItemResource }) {
   )
 }
 
-// Every published version with who published it and when, the current one first.
+// Every published version with who published it and when, the current one first. Its own boundary
+// keeps a failed load inside the card instead of replacing the page.
 function VersionHistory({ itemId }: { itemId: string }) {
   const { t } = useTranslation()
-  const versionsQuery = useQuery(staffSignupItemsListVersionsOptions({ path: { id: itemId } }))
+  return (
+    <QueryBoundary
+      fallback={<PageSkeleton />}
+      errorTitle={t(($) => $.console.signupItem.versionsLoadError)}
+    >
+      <VersionTable itemId={itemId} />
+    </QueryBoundary>
+  )
+}
 
-  if (versionsQuery.isPending) {
-    return <PageSkeleton />
-  }
-  if (versionsQuery.isError) {
-    return (
-      <ApiErrorAlert
-        error={versionsQuery.error}
-        title={t(($) => $.console.signupItem.versionsLoadError)}
-        fallback={t(($) => $.console.signupItem.versionsLoadError)}
-      />
-    )
-  }
-  const versions = versionsQuery.data.items
+function VersionTable({ itemId }: { itemId: string }) {
+  const { t } = useTranslation()
+  const versions = useSuspenseQuery(staffSignupItemsListVersionsOptions({ path: { id: itemId } }))
+    .data.items
   if (versions.length === 0) {
     return <Text c="dimmed">{t(($) => $.console.signupItem.noVersions)}</Text>
   }
@@ -309,22 +309,20 @@ function PublishForm({ item, unsaved }: { item: StaffSignupItemResource; unsaved
 // effect with a link to its public page.
 export function ConsoleSignupItemPage() {
   const { t } = useTranslation()
-  const { itemId } = consoleSignupItemRoute.useParams()
-  const itemQuery = useQuery(staffSignupItemsGetOptions({ path: { id: itemId } }))
+  return (
+    <QueryBoundary
+      fallback={<PageSkeleton />}
+      errorTitle={t(($) => $.console.signupItem.loadError)}
+    >
+      <ConsoleSignupItem />
+    </QueryBoundary>
+  )
+}
 
-  if (itemQuery.isPending) {
-    return <PageSkeleton />
-  }
-  if (itemQuery.isError) {
-    return (
-      <ApiErrorAlert
-        error={itemQuery.error}
-        title={t(($) => $.console.signupItem.loadError)}
-        fallback={t(($) => $.console.signupItem.loadError)}
-      />
-    )
-  }
-  const item = itemQuery.data
+function ConsoleSignupItem() {
+  const { t } = useTranslation()
+  const { itemId } = consoleSignupItemRoute.useParams()
+  const item = useSuspenseQuery(staffSignupItemsGetOptions({ path: { id: itemId } })).data
 
   return (
     <Stack>

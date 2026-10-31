@@ -15,13 +15,14 @@ import {
 } from '@mantine/core'
 import type { PasswordInputProps } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { IdentityProof } from '../../components/IdentityProof.tsx'
 import { LinkedIdentities } from '../../components/LinkedIdentities.tsx'
 import { Passkeys } from '../../components/Passkeys.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteSecondFactorConfirmEnrollmentMutation,
@@ -393,11 +394,28 @@ function SecurityBody({
   )
 }
 
+// StatusBadge says whether the Second factor is on; it shows nothing until the status loads.
+function StatusBadge() {
+  const { t } = useTranslation()
+  const status = useSuspenseQuery(siteSecondFactorGetStatusOptions()).data
+  return (
+    <Badge color={status.enabled ? 'teal' : 'gray'} variant="light">
+      {status.enabled ? t(($) => $.security.on) : t(($) => $.security.off)}
+    </Badge>
+  )
+}
+
+// SecurityStatus reads the Second factor's status for the body; the page's boundary shows the
+// load and its failure.
+function SecurityStatus({ onCodes }: { onCodes: (codes: string[]) => void }) {
+  const status = useSuspenseQuery(siteSecondFactorGetStatusOptions()).data
+  return <SecurityBody status={status} onCodes={onCodes} />
+}
+
 // SecurityPage is the User's Second factor (ADR 0020): enroll an authenticator
 // app, see the Recovery codes once, regenerate them, or disable the factor.
 export function SecurityPage() {
   const { t } = useTranslation()
-  const statusQuery = useQuery(siteSecondFactorGetStatusOptions())
   const [codes, setCodes] = useState<string[] | null>(null)
 
   return (
@@ -405,23 +423,26 @@ export function SecurityPage() {
       <Title order={2}>{t(($) => $.security.title)}</Title>
       <Group justify="space-between">
         <Title order={4}>{t(($) => $.security.twoFactorTitle)}</Title>
-        {statusQuery.data ? (
-          <Badge color={statusQuery.data.enabled ? 'teal' : 'gray'} variant="light">
-            {statusQuery.data.enabled ? t(($) => $.security.on) : t(($) => $.security.off)}
-          </Badge>
-        ) : null}
+        {/* The body's boundary below reports the load and its failure once. */}
+        <QueryBoundary
+          fallback={null}
+          errorTitle={t(($) => $.security.loadErrorTitle)}
+          renderError={() => null}
+        >
+          <StatusBadge />
+        </QueryBoundary>
       </Group>
-
-      {statusQuery.isError ? (
-        <Alert color="red" title={t(($) => $.security.loadErrorTitle)} />
-      ) : null}
-      {statusQuery.isLoading ? <BlockSkeleton /> : null}
 
       {codes ? <RecoveryCodes codes={codes} onDone={() => setCodes(null)} /> : null}
 
-      {statusQuery.data && !codes ? (
-        <SecurityBody status={statusQuery.data} onCodes={setCodes} />
-      ) : null}
+      {codes ? null : (
+        <QueryBoundary
+          fallback={<BlockSkeleton />}
+          errorTitle={t(($) => $.security.loadErrorTitle)}
+        >
+          <SecurityStatus onCodes={setCodes} />
+        </QueryBoundary>
+      )}
 
       <Passkeys returnTo={securityRoute.to} />
 

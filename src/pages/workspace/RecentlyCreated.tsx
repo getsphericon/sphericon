@@ -1,10 +1,10 @@
 import { EmptyState, Stack } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQueries } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteAutomationsListOptions,
@@ -30,29 +30,34 @@ interface Recent {
 export function RecentlyCreated({ workspaceId }: { workspaceId: string }) {
   const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
+  return (
+    <QueryBoundary fallback={<TableSkeleton />} errorTitle={t(($) => $.overview.recentLoadError)}>
+      <RecentTable workspaceId={workspaceId} />
+    </QueryBoundary>
+  )
+}
+
+// RecentTable reads both lists at once; the boundary around it shows the load and its failure.
+function RecentTable({ workspaceId }: { workspaceId: string }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const query = { page: 1, pageSize: LIMIT }
-  const broadcasts = useQuery(siteBroadcastsListOptions({ path: { workspaceId }, query }))
-  const automations = useQuery(siteAutomationsListOptions({ path: { workspaceId }, query }))
-
-  const error = broadcasts.error ?? automations.error
-  if (error) {
-    const title = t(($) => $.overview.recentLoadError)
-    return <ApiErrorAlert error={error} title={title} fallback={title} />
-  }
-  if (broadcasts.isLoading || automations.isLoading) {
-    return <TableSkeleton />
-  }
+  const [broadcasts, automations] = useSuspenseQueries({
+    queries: [
+      siteBroadcastsListOptions({ path: { workspaceId }, query }),
+      siteAutomationsListOptions({ path: { workspaceId }, query }),
+    ],
+  })
 
   const records: Recent[] = [
-    ...(broadcasts.data?.items ?? []).map((b) => ({
+    ...broadcasts.data.items.map((b) => ({
       kind: 'broadcast' as const,
       id: b.id,
       name: b.name,
       status: t(($) => $.broadcasts.status[b.status]),
       createdAt: b.createdAt,
     })),
-    ...(automations.data?.items ?? []).map((a) => ({
+    ...automations.data.items.map((a) => ({
       kind: 'automation' as const,
       id: a.id,
       name: a.name,

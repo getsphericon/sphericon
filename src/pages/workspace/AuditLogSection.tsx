@@ -2,7 +2,6 @@ import {
   Box,
   EmptyState,
   ActionIcon,
-  Alert,
   Badge,
   Button,
   Code,
@@ -19,10 +18,11 @@ import {
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -166,44 +166,41 @@ function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
   )
 }
 
-// AuditPage renders one page of the log and, while more exist, a button that mounts the
-// next page beneath it, so the list grows without holding every page in one state.
-function AuditPage({
-  workspaceId,
-  filter,
-  cursor,
-  first,
-}: {
+interface AuditPageProps {
   workspaceId: string
   filter: AuditFilter
   cursor?: string
   first: boolean
-}) {
+}
+
+// AuditPage is one page of the log under a boundary of its own, so a next page loads and fails
+// beneath the rows already shown; a refused log shows nothing.
+function AuditPage(props: AuditPageProps) {
+  const { t } = useTranslation()
+  return (
+    <QueryBoundary
+      fallback={<BlockSkeleton />}
+      errorTitle={t(($) => $.settings.auditLog.loadError)}
+      renderError={(error) => (isHidden(error) ? null : undefined)}
+    >
+      <AuditPageRows {...props} />
+    </QueryBoundary>
+  )
+}
+
+// AuditPageRows renders one page of the log and, while more exist, a button that mounts the
+// next page beneath it, so the list grows without holding every page in one state.
+function AuditPageRows({ workspaceId, filter, cursor, first }: AuditPageProps) {
   const { t } = useTranslation()
   const [showNext, setShowNext] = useState(false)
-  const query = useQuery(
+  const { items, nextCursor } = useSuspenseQuery(
     siteAuditListOptions({
       path: { workspaceId },
       query: { ...auditQuery(filter), limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) },
     }),
-  )
+  ).data
 
-  if (query.isLoading) {
-    return <BlockSkeleton />
-  }
-  if (isHidden(query.error)) {
-    return null
-  }
-  if (query.isError) {
-    return (
-      <Alert color="red" title={t(($) => $.settings.auditLog.loadError)}>
-        {t(($) => $.settings.auditLog.loadError)}
-      </Alert>
-    )
-  }
-
-  const items = query.data?.items ?? []
-  const next = query.data?.nextCursor ?? undefined
+  const next = nextCursor ?? undefined
   if (first && items.length === 0) {
     return (
       <EmptyState

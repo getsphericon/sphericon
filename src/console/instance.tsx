@@ -1,8 +1,8 @@
 import { Alert, Card, Stack, Switch, Text, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { ReleaseAlert } from '../components/UpdateBanner.tsx'
 import {
@@ -74,28 +74,31 @@ function InstanceAlerts({ state }: { state: StaffInstanceState }) {
   )
 }
 
+// The sections that read the Instance state; the page's boundary shows the load and its failure.
+function InstanceState() {
+  const state = useSuspenseQuery(staffInstanceGetStateOptions()).data
+
+  return (
+    <>
+      <InstanceAlerts state={state} />
+      <TelemetrySection state={state} />
+    </>
+  )
+}
+
 // The Instance's own settings (ADR 0063), open to every signed-in Staff member.
 export function ConsoleInstancePage() {
   const { t } = useTranslation()
-  const state = useQuery(staffInstanceGetStateOptions())
 
   return (
     <Stack maw={720}>
       <Title order={2}>{t(($) => $.console.instance.title)}</Title>
-      {state.isPending ? <BlockSkeleton /> : null}
-      {state.isError ? (
-        <ApiErrorAlert
-          error={state.error}
-          title={t(($) => $.console.instance.loadError)}
-          fallback={t(($) => $.console.instance.loadError)}
-        />
-      ) : null}
-      {state.data ? (
-        <>
-          <InstanceAlerts state={state.data} />
-          <TelemetrySection state={state.data} />
-        </>
-      ) : null}
+      <QueryBoundary
+        fallback={<BlockSkeleton />}
+        errorTitle={t(($) => $.console.instance.loadError)}
+      >
+        <InstanceState />
+      </QueryBoundary>
     </Stack>
   )
 }

@@ -39,6 +39,7 @@
     "edit": "Edit",
     "more": "More actions",
     "remove": "Remove",
+    "retry": "Try again",
     "save": "Save",
     "unarchive": "Restore",
     "view": "View"
@@ -297,10 +298,7 @@
     "httpUrlLabel": "URL",
     "integrationDefault": "Workspace default",
     "integrationLabel": "Integration",
-    "leaveDiscard": "Leave",
     "leaveMessage": "Your changes to this automation are not saved.",
-    "leaveStay": "Keep editing",
-    "leaveTitle": "Leave without saving?",
     "liveVersion": "Live version {{number}}",
     "messageDone": "Done",
     "nameLabel": "Name",
@@ -2012,5 +2010,11 @@
     "description": "Outbound email sending is suspended for this workspace. Scheduled broadcasts and automations are paused and resume when the suspension is lifted. You can still sign in and view your data.",
     "reason": "Reason: {{reason}}",
     "title": "Sending is suspended"
+  },
+  "leave": {
+    "discard": "Leave",
+    "message": "Your changes are not saved.",
+    "stay": "Keep editing",
+    "title": "Leave without saving?"
   }
 }
