@@ -55,18 +55,17 @@ import (
 // New composes the HTTP handler. client is the raw ent client: only the pieces whose
 // Workspace is not known up front take it (auth, OAuth, tracking, provider hooks);
 // the site, external and collect handlers get none (ADR 0017). schema answers the development
-// schema guard (SchemaGuard).
-func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site apisite.Deps, detector *machine.Detector, external, mcp, staff http.Handler) (http.Handler, error) {
+// schema guard (SchemaGuard). limiter is the process's request budgets, shared with the
+// internal listener.
+func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.Client, site apisite.Deps, detector *machine.Detector, limiter *ratelimit.Limiter, external, mcp, staff http.Handler) (http.Handler, error) {
 	bus := site.Bus
 	mux := http.NewServeMux()
 
 	// Login and logout are /site operations (ADR 0020), and the login operation is
-	// the one route that mints a session, through this issuer. The library's
+	// the one route that mints a session, through site.Sessions. The library's
 	// /auth/ and /avatar/ routes are gone and must not fall through to the SPA shell.
-	site.Sessions = apiauth.NewSessions(cfg.JWTSecret, cfg.SessionTTL, cfg.SecureCookies(), site.Clock, cfg.JWTVerifySecrets()...)
 	mux.Handle("/auth/", http.NotFoundHandler())
 	mux.Handle("/avatar/", http.NotFoundHandler())
-	limiter := ratelimit.New(cfg.RateLimits)
 
 	// Site API — /site (JWT cookie via generated SecurityHandler; sign up, login
 	// and logout are public per the spec).
@@ -183,11 +182,12 @@ func ExternalSecurity(client *ent.Client, deps apiexternal.Deps) *apiauth.Extern
 }
 
 // NewExternalAPI builds the external API (/api) ogen server: Bearer API-token
-// auth, RFC 7807 errors, mounted under the /api prefix.
-func NewExternalAPI(client *ent.Client, deps apiexternal.Deps) (http.Handler, error) {
+// auth through security (ExternalSecurity, which /mcp shares), RFC 7807 errors, mounted under
+// the /api prefix.
+func NewExternalAPI(deps apiexternal.Deps, security *apiauth.ExternalSecurityHandler) (http.Handler, error) {
 	return externalapi.NewServer(
 		apiexternal.NewHandlers(deps),
-		ExternalSecurity(client, deps),
+		security,
 		externalapi.WithPathPrefix("/api"),
 		externalapi.WithErrorHandler(ProblemErrorHandler),
 	)
@@ -235,8 +235,8 @@ type ServiceSurface interface {
 // uses where it applies (recoverer, request id, client address, rate limit, timeout,
 // body limit). The edge's on-demand TLS question (paths.TLSAsk, ADR 0038) is core and
 // always served; the service endpoints exist only with a surface, so a nil one (no
-// `staff` license) leaves /service unrouted (404).
-func NewInternal(cfg *config.Config, client *ent.Client, surface ServiceSurface) (http.Handler, error) {
+// `staff` license) leaves /service unrouted (404). limiter is the one the public server uses.
+func NewInternal(cfg *config.Config, client *ent.Client, limiter *ratelimit.Limiter, surface ServiceSurface) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.Handle("GET "+paths.TLSAsk, tlsAskHandler(client))
 	if surface != nil {
@@ -246,7 +246,6 @@ func NewInternal(cfg *config.Config, client *ent.Client, surface ServiceSurface)
 		}
 		mux.Handle(paths.Service+"/", srv)
 	}
-	limiter := ratelimit.New(cfg.RateLimits)
 	return chi.Chain(recoverer, requestID, accessLog, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 

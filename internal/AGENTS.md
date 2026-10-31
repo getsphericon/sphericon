@@ -7,6 +7,12 @@ a transaction that rolls back on cleanup (`dbcleaner`'s `Transaction` strategy, 
 full isolation, DB stays at fixture state). Tests drive the real server in-memory through **actors** (typed ogen clients, see
 below) — no sockets. See `internal/api/site/contacts_test.go`.
 
+`Setup` builds the Instance from the production container (`app.Container`), replacing only the
+seams it names (clock, database, License, senders, DNS, inline jobs, …) with `do.Override`. A module
+or a surface gets no wiring of its own in the harness: add its provider to `internal/app/container.go`
+and read it from the container in `Setup`. A difference a test needs (no System sender, a volume
+floor) is configuration, set on the test's config.
+
 A test that needs a **real commit** (code that opens its own connection, the outbox router, concurrent
 workers, a whole `app.App`) cannot ride a transaction. It takes a database of its own instead:
 `testhelper.RealDB(t)` (a `*sql.DB`), `RealDBURL(t)` (a URL, e.g. `t.Setenv("DATABASE_URL", ...)` for

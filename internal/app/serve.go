@@ -49,7 +49,7 @@ func Serve(ctx context.Context, env string) error {
 		return err
 	}
 
-	application, err := New(env)
+	application, err := newApp(cfg, options{})
 	if err != nil {
 		return fmt.Errorf("init app: %w", err)
 	}
