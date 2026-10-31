@@ -3,6 +3,12 @@
 
 import * as z from 'zod';
 
+/**
+ * The email editor's JSON document, an opaque object the server checks against the schema
+ * `email_schema` returns. One named model, as JsonObject.
+ */
+export const zEditorDocument = z.record(z.string(), z.unknown());
+
 export const zEmailAddress = z.email().max(320);
 
 /**
@@ -13,6 +19,13 @@ export const zEmailAddress = z.email().max(320);
  * reaches, so every id the schema admits fits an int64.
  */
 export const zEntityId = z.string().regex(/^[0-9]+$/);
+
+/**
+ * A JSON object whose members the contract leaves open: custom field values, event properties,
+ * integration params, an audit diff. One named model, so every surface's Go code has one type for
+ * it rather than one per field.
+ */
+export const zJsonObject = z.record(z.string(), z.unknown());
 
 /**
  * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
@@ -353,7 +366,7 @@ export const zStaffAuditEntryResource = z.object({
   actor: zStaffAuditActor,
   action: z.string(),
   target: zStaffAuditTarget,
-  diff: z.exactOptional(z.record(z.string(), z.unknown()).nullable()),
+  diff: z.exactOptional(zJsonObject.nullable()),
   requestId: z.exactOptional(z.string().nullable()),
   ip: z.exactOptional(z.string().nullable()),
   userAgent: z.exactOptional(z.string().nullable())

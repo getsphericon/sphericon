@@ -225,8 +225,8 @@ func updateParams(t *testing.T, c *externalapi.Client, id int64, update external
 	return out
 }
 
-func secretParam(secret string) externalapi.OptUpdateIntegrationInputParams {
-	return externalapi.NewOptUpdateIntegrationInputParams(externalapi.UpdateIntegrationInputParams{
+func secretParam(secret string) externalapi.OptJsonObject {
+	return externalapi.NewOptJsonObject(externalapi.JsonObject{
 		"secret": jx.Raw(strconv.Quote(secret)),
 	})
 }
@@ -282,8 +282,8 @@ func TestIntegrationParamsAreValidatedAgainstThePresetSchema(t *testing.T) {
 	id := externalapi.EntityId(fixtures.IntegrationAcmeGenericAID)
 
 	for name, in := range map[string]externalapi.UpdateIntegrationInput{
-		"a secret of the wrong type": {Params: externalapi.NewOptUpdateIntegrationInputParams(externalapi.UpdateIntegrationInputParams{"secret": jx.Raw(`42`)})},
-		"a param the schema does not know": {Params: externalapi.NewOptUpdateIntegrationInputParams(externalapi.UpdateIntegrationInputParams{
+		"a secret of the wrong type": {Params: externalapi.NewOptJsonObject(externalapi.JsonObject{"secret": jx.Raw(`42`)})},
+		"a param the schema does not know": {Params: externalapi.NewOptJsonObject(externalapi.JsonObject{
 			"secret": jx.Raw(strconv.Quote(newSecret("x-0123456789"))), "extra": jx.Raw(`true`),
 		})},
 		"a Preset that does not exist": {Preset: externalapi.NewOptNilString("nope")},

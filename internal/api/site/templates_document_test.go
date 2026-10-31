@@ -33,7 +33,7 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	created, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name:    "Authored",
 		Subject: siteapi.NewOptString("Hi {{ first_name }}"),
-		Doc:     siteapi.NewOptCreateTemplateInputDoc(paragraphDoc("Hello {{ first_name }}")),
+		Doc:     siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteEmailTemplateResource)
@@ -51,7 +51,7 @@ func TestSiteTemplatesSaveADocumentWithItsBody(t *testing.T) {
 
 	// Saving another document rebuilds the body.
 	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
-		Doc: siteapi.NewOptUpdateTemplateInputDoc(paragraphDoc("Second")),
+		Doc: siteapi.NewOptEditorDocument(paragraphDoc("Second")),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteEmailTemplateResource)
@@ -108,7 +108,7 @@ func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 		"content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`),
 	}
 	created, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
-		Name: "Bad", Doc: siteapi.NewOptCreateTemplateInputDoc(badLevel),
+		Name: "Bad", Doc: siteapi.NewOptEditorDocument(badLevel),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	refused, ok := created.(*siteapi.SiteTemplatesCreateUnprocessableEntity)
@@ -118,7 +118,7 @@ func TestSiteTemplatesRefuseADocumentThatCannotBeRendered(t *testing.T) {
 
 	notADoc := map[string]jx.Raw{"type": jx.Raw(`"nope"`)}
 	updated, err := c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{
-		Name: siteapi.NewOptString("Renamed"), Doc: siteapi.NewOptUpdateTemplateInputDoc(notADoc),
+		Name: siteapi.NewOptString("Renamed"), Doc: siteapi.NewOptEditorDocument(notADoc),
 	}, siteapi.SiteTemplatesUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.TemplateWelcomeID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTemplatesUpdateUnprocessableEntity{}, updated)
@@ -133,7 +133,7 @@ func TestSiteTemplatesRefuseABodyAndADocumentTogether(t *testing.T) {
 
 	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{
 		Name: "Both", Body: siteapi.NewOptString("<p>x</p>"),
-		Doc: siteapi.NewOptCreateTemplateInputDoc(paragraphDoc("x")),
+		Doc: siteapi.NewOptEditorDocument(paragraphDoc("x")),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTemplatesCreateUnprocessableEntity{}, created)

@@ -109,8 +109,8 @@ func nilMaxPerDay(v *int) staffapi.NilMaxPerDay {
 }
 
 // instanceAuditDiff is an entry's stored diff as the contract's object.
-func instanceAuditDiff(d map[string]any) staffapi.StaffInstanceAuditEntryResourceDiff {
-	return convert.RawObject[staffapi.StaffInstanceAuditEntryResourceDiff](d)
+func instanceAuditDiff(d map[string]any) staffapi.JsonObject {
+	return convert.RawObject[staffapi.JsonObject](d)
 }
 
 func optDraft(d *string) staffapi.OptLegalDocumentMarkdown {

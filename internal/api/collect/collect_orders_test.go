@@ -16,7 +16,7 @@ func orderCompleted(total string) collectapi.CollectEventInput {
 	return collectapi.CollectEventInput{
 		VisitorId: "v-1",
 		Action:    "Order Completed",
-		Properties: collectapi.NewOptNilCollectEventInputProperties(collectapi.CollectEventInputProperties{
+		Properties: collectapi.NewOptNilJsonObject(collectapi.JsonObject{
 			"order_id": jx.Raw(`"T-1"`), "total": jx.Raw(total), "currency": jx.Raw(`"USD"`),
 		}),
 	}

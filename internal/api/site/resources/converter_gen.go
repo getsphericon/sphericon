@@ -338,7 +338,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.FromName = optNilString((*source).FromName)
 		siteapiSiteBroadcastResource.FromEmail = optNilEmailAddress((*source).FromEmail)
 		siteapiSiteBroadcastResource.Body = (*source).Body
-		siteapiSiteBroadcastResource.Doc = broadcastDoc((*source).Doc)
+		siteapiSiteBroadcastResource.Doc = editorDocument((*source).Doc)
 		siteapiSiteBroadcastResource.EditorVersion = optNilString((*source).EditorVersion)
 		// siteapiSiteBroadcastResource.Warnings: ignore
 		siteapiSiteBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
@@ -524,7 +524,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) site.ContactExportC
 		siteapiContactExportContact.FirstName = optNilString((*source).FirstName)
 		siteapiContactExportContact.LastName = optNilString((*source).LastName)
 		siteapiContactExportContact.TimeZone = optNilString((*source).TimeZone)
-		siteapiContactExportContact.CustomFields = exportJSON((*source).CustomFields)
+		siteapiContactExportContact.CustomFields = jsonObject((*source).CustomFields)
 		siteapiContactExportContact.Source = optNilContactSource(c, (*source).Source)
 		siteapiContactExportContact.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiContactExportContact.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -541,7 +541,7 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) site.SiteContactR
 		siteapiSiteContactResource.FirstName = optNilString((*source).FirstName)
 		siteapiSiteContactResource.LastName = optNilString((*source).LastName)
 		siteapiSiteContactResource.TimeZone = optNilTimeZone((*source).TimeZone)
-		siteapiSiteContactResource.CustomFields = contactCustomFields((*source).CustomFields)
+		siteapiSiteContactResource.CustomFields = jsonObject((*source).CustomFields)
 		siteapiSiteContactResource.Tags = tagNames((*source).Edges.Tags)
 		siteapiSiteContactResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteContactResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -637,7 +637,7 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.
 		siteapiSiteEmailTemplateResource.Name = (*source).Name
 		siteapiSiteEmailTemplateResource.Subject = (*source).Subject
 		siteapiSiteEmailTemplateResource.Body = (*source).Body
-		siteapiSiteEmailTemplateResource.Doc = templateDoc((*source).Doc)
+		siteapiSiteEmailTemplateResource.Doc = editorDocument((*source).Doc)
 		siteapiSiteEmailTemplateResource.EditorVersion = optNilString((*source).EditorVersion)
 		// siteapiSiteEmailTemplateResource.Warnings: ignore
 		siteapiSiteEmailTemplateResource.CreatedAt = timestamp((*source).CreatedAt)
@@ -732,7 +732,7 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) site.ContactExportEvent
 		siteapiContactExportEvent.Email = optNilString((*source).Email)
 		siteapiContactExportEvent.Phone = optNilString((*source).Phone)
 		siteapiContactExportEvent.Action = (*source).Action
-		siteapiContactExportEvent.Properties = exportJSON((*source).Properties)
+		siteapiContactExportEvent.Properties = jsonObject((*source).Properties)
 		siteapiContactExportEvent.OccurredAt = timestamp((*source).OccurredAt)
 		siteapiContactExportEvent.Backfill = (*source).Backfill
 		siteapiContactExportEvent.CreatedAt = timestamp((*source).CreatedAt)
@@ -746,7 +746,7 @@ func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResourc
 		siteapiSiteEventResource.SubjectId = (*source).SubjectID
 		siteapiSiteEventResource.Email = optNilString((*source).Email)
 		siteapiSiteEventResource.Action = (*source).Action
-		siteapiSiteEventResource.Properties = eventProperties((*source).Properties)
+		siteapiSiteEventResource.Properties = jsonObject((*source).Properties)
 		siteapiSiteEventResource.OccurredAt = timestamp((*source).OccurredAt)
 		siteapiSiteEventResource.CreatedAt = timestamp((*source).CreatedAt)
 	}

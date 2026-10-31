@@ -30,7 +30,7 @@ func smtpInput(host, password string) siteapi.IntegrationConfigInput {
 
 // sesTopicParams names the SNS topic an SES Integration needs to be saved (the `ses`
 // Preset requires one).
-var sesTopicParams = siteapi.NewOptCreateIntegrationInputParams(siteapi.CreateIntegrationInputParams{
+var sesTopicParams = siteapi.NewOptJsonObject(siteapi.JsonObject{
 	"topic_arn": jx.Raw(`"arn:aws:sns:eu-west-1:123456789012:acme-ses-events"`),
 })
 

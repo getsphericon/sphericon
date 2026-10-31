@@ -48,7 +48,7 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.
 	automationsStep.Type = string(source.Type)
 	automationsStep.Subject = stringIn(source.Subject)
 	automationsStep.Body = stringIn(source.Body)
-	automationsStep.Doc = stepDocIn(source.Doc)
+	automationsStep.Doc = documentIn(source.Doc)
 	// automationsStep.EditorVersion: ignore
 	automationsStep.Seconds = int32In(source.Seconds)
 	automationsStep.Tag = stringIn(source.Tag)
@@ -110,7 +110,7 @@ func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) broadcas
 		broadcastsCreateInput.FromName = nilStringPtrIn((*source).FromName)
 		broadcastsCreateInput.FromEmail = nilEmailPtrIn((*source).FromEmail)
 		broadcastsCreateInput.Body = stringPtrIn((*source).Body)
-		broadcastsCreateInput.Doc = createBroadcastDoc((*source).Doc)
+		broadcastsCreateInput.Doc = documentIn((*source).Doc)
 		broadcastsCreateInput.SegmentID = nilEntityIDPtrIn((*source).SegmentId)
 		broadcastsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
@@ -124,7 +124,7 @@ func (c *InputsImpl) BroadcastUpdate(source *site.UpdateBroadcastInput) broadcas
 		broadcastsUpdateInput.FromName = nilStringPatch((*source).FromName)
 		broadcastsUpdateInput.FromEmail = nilEmailPatch((*source).FromEmail)
 		broadcastsUpdateInput.Body = stringPatch((*source).Body)
-		broadcastsUpdateInput.Doc = updateBroadcastDoc((*source).Doc)
+		broadcastsUpdateInput.Doc = documentPatch((*source).Doc)
 		broadcastsUpdateInput.SegmentID = nilEntityIDPatch((*source).SegmentId)
 		broadcastsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
 	}
@@ -138,7 +138,7 @@ func (c *InputsImpl) ContactAttributes(source site.SiteCreateContactInput) conta
 	contactsAttributes.FirstName = nilStringPtrIn(source.FirstName)
 	contactsAttributes.LastName = nilStringPtrIn(source.LastName)
 	contactsAttributes.TimeZone = nilTimeZonePtrIn(source.TimeZone)
-	contactsAttributes.CustomFields = createContactFields(source.CustomFields)
+	contactsAttributes.CustomFields = nilObjectIn(source.CustomFields)
 	return contactsAttributes
 }
 func (c *InputsImpl) ContactCreate(source *site.SiteCreateContactInput) contacts.CreateInput {
@@ -163,7 +163,7 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 		contactsUpdateInput.FirstName = nilStringPatch((*source).FirstName)
 		contactsUpdateInput.LastName = nilStringPatch((*source).LastName)
 		contactsUpdateInput.TimeZone = nilTimeZonePatch((*source).TimeZone)
-		contactsUpdateInput.CustomFields = updateContactFields((*source).CustomFields)
+		contactsUpdateInput.CustomFields = nilObjectPatch((*source).CustomFields)
 		contactsUpdateInput.Tags = listPatch((*source).Tags)
 	}
 	return contactsUpdateInput
@@ -182,7 +182,7 @@ func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (int
 		}
 		integrationsCreateInput.Config = integrationsConfigInput
 		integrationsCreateInput.Preset = nilStringPtrIn((*source).Preset)
-		integrationsCreateInput.Params = createIntegrationParams((*source).Params)
+		integrationsCreateInput.Params = objectIn((*source).Params)
 	}
 	return integrationsCreateInput, nil
 }
@@ -200,7 +200,7 @@ func (c *InputsImpl) IntegrationUpdate(source *site.UpdateIntegrationInput) (int
 		}
 		integrationsUpdateInput.Config = patchField
 		integrationsUpdateInput.Preset = nilStringPatch((*source).Preset)
-		integrationsUpdateInput.Params = updateIntegrationParams((*source).Params)
+		integrationsUpdateInput.Params = objectPatch((*source).Params)
 		integrationsUpdateInput.RetireSecrets = boolIn((*source).RetireSecrets)
 	}
 	return integrationsUpdateInput, nil
@@ -367,7 +367,7 @@ func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) templates.
 		templatesCreateInput.Name = (*source).Name
 		templatesCreateInput.Subject = stringPtrIn((*source).Subject)
 		templatesCreateInput.Body = stringPtrIn((*source).Body)
-		templatesCreateInput.Doc = createTemplateDoc((*source).Doc)
+		templatesCreateInput.Doc = documentIn((*source).Doc)
 		// templatesCreateInput.Prepared: ignore
 	}
 	return templatesCreateInput
@@ -378,7 +378,7 @@ func (c *InputsImpl) TemplateUpdate(source *site.UpdateTemplateInput) templates.
 		templatesUpdateInput.Name = stringPatch((*source).Name)
 		templatesUpdateInput.Subject = stringPatch((*source).Subject)
 		templatesUpdateInput.Body = stringPatch((*source).Body)
-		templatesUpdateInput.Doc = updateTemplateDoc((*source).Doc)
+		templatesUpdateInput.Doc = documentPatch((*source).Doc)
 	}
 	return templatesUpdateInput
 }

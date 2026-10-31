@@ -42,9 +42,9 @@ type CollectEventInput struct {
 	// again with the same id changes nothing, so a client that did not see the answer (a network error, a
 	// `503`) resends the whole batch. Generate it once per event, when the event happens (a UUID), and
 	// reuse it on every retry. An event without one is not deduplicated.
-	ClientEventId OptNilString                      `json:"clientEventId"`
-	Properties    OptNilCollectEventInputProperties `json:"properties"`
-	OccurredAt    OptNilTimestamp                   `json:"occurredAt"`
+	ClientEventId OptNilString     `json:"clientEventId"`
+	Properties    OptNilJsonObject `json:"properties"`
+	OccurredAt    OptNilTimestamp  `json:"occurredAt"`
 }
 
 // GetVisitorId returns the value of VisitorId.
@@ -63,7 +63,7 @@ func (s *CollectEventInput) GetClientEventId() OptNilString {
 }
 
 // GetProperties returns the value of Properties.
-func (s *CollectEventInput) GetProperties() OptNilCollectEventInputProperties {
+func (s *CollectEventInput) GetProperties() OptNilJsonObject {
 	return s.Properties
 }
 
@@ -88,24 +88,13 @@ func (s *CollectEventInput) SetClientEventId(val OptNilString) {
 }
 
 // SetProperties sets the value of Properties.
-func (s *CollectEventInput) SetProperties(val OptNilCollectEventInputProperties) {
+func (s *CollectEventInput) SetProperties(val OptNilJsonObject) {
 	s.Properties = val
 }
 
 // SetOccurredAt sets the value of OccurredAt.
 func (s *CollectEventInput) SetOccurredAt(val OptNilTimestamp) {
 	s.OccurredAt = val
-}
-
-type CollectEventInputProperties map[string]jx.Raw
-
-func (s *CollectEventInputProperties) init() CollectEventInputProperties {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 type CollectEventsCreateBadRequest ProblemDetails
@@ -191,11 +180,11 @@ func (*CollectIdentifyCreateUnprocessableEntity) collectIdentifyCreateRes() {}
 
 // Ref: #/components/schemas/CollectIdentifyInput
 type CollectIdentifyInput struct {
-	VisitorId string                           `json:"visitorId"`
-	Email     OptNilEmailAddress               `json:"email"`
-	Phone     OptNilString                     `json:"phone"`
-	SubjectId OptNilString                     `json:"subjectId"`
-	Traits    OptNilCollectIdentifyInputTraits `json:"traits"`
+	VisitorId string             `json:"visitorId"`
+	Email     OptNilEmailAddress `json:"email"`
+	Phone     OptNilString       `json:"phone"`
+	SubjectId OptNilString       `json:"subjectId"`
+	Traits    OptNilJsonObject   `json:"traits"`
 }
 
 // GetVisitorId returns the value of VisitorId.
@@ -219,7 +208,7 @@ func (s *CollectIdentifyInput) GetSubjectId() OptNilString {
 }
 
 // GetTraits returns the value of Traits.
-func (s *CollectIdentifyInput) GetTraits() OptNilCollectIdentifyInputTraits {
+func (s *CollectIdentifyInput) GetTraits() OptNilJsonObject {
 	return s.Traits
 }
 
@@ -244,19 +233,8 @@ func (s *CollectIdentifyInput) SetSubjectId(val OptNilString) {
 }
 
 // SetTraits sets the value of Traits.
-func (s *CollectIdentifyInput) SetTraits(val OptNilCollectIdentifyInputTraits) {
+func (s *CollectIdentifyInput) SetTraits(val OptNilJsonObject) {
 	s.Traits = val
-}
-
-type CollectIdentifyInputTraits map[string]jx.Raw
-
-func (s *CollectIdentifyInputTraits) init() CollectIdentifyInputTraits {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // Ref: #/components/schemas/CollectOkResponse
@@ -290,6 +268,21 @@ func (CollectOkResponseOk) AllValues() []CollectOkResponseOk {
 }
 
 type EmailAddress string
+
+// A JSON object whose members the contract leaves open: custom field values, event properties,
+// integration params, an audit diff. One named model, so every surface's Go code has one type for it
+// rather than one per field.
+// Ref: #/components/schemas/JsonObject
+type JsonObject map[string]jx.Raw
+
+func (s *JsonObject) init() JsonObject {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // NewOptInt32 returns new OptInt32 with value set to v.
 func NewOptInt32(v int32) OptInt32 {
@@ -331,142 +324,6 @@ func (o OptInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptInt32) Or(d int32) int32 {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilCollectEventInputProperties returns new OptNilCollectEventInputProperties with value set to v.
-func NewOptNilCollectEventInputProperties(v CollectEventInputProperties) OptNilCollectEventInputProperties {
-	return OptNilCollectEventInputProperties{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilCollectEventInputProperties is optional nullable CollectEventInputProperties.
-type OptNilCollectEventInputProperties struct {
-	Value CollectEventInputProperties
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilCollectEventInputProperties was set.
-func (o OptNilCollectEventInputProperties) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilCollectEventInputProperties) Reset() {
-	var v CollectEventInputProperties
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilCollectEventInputProperties) SetTo(v CollectEventInputProperties) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilCollectEventInputProperties) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilCollectEventInputProperties) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v CollectEventInputProperties
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilCollectEventInputProperties) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilCollectEventInputProperties) Get() (v CollectEventInputProperties, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilCollectEventInputProperties) Or(d CollectEventInputProperties) CollectEventInputProperties {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilCollectIdentifyInputTraits returns new OptNilCollectIdentifyInputTraits with value set to v.
-func NewOptNilCollectIdentifyInputTraits(v CollectIdentifyInputTraits) OptNilCollectIdentifyInputTraits {
-	return OptNilCollectIdentifyInputTraits{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilCollectIdentifyInputTraits is optional nullable CollectIdentifyInputTraits.
-type OptNilCollectIdentifyInputTraits struct {
-	Value CollectIdentifyInputTraits
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilCollectIdentifyInputTraits was set.
-func (o OptNilCollectIdentifyInputTraits) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilCollectIdentifyInputTraits) Reset() {
-	var v CollectIdentifyInputTraits
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilCollectIdentifyInputTraits) SetTo(v CollectIdentifyInputTraits) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilCollectIdentifyInputTraits) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilCollectIdentifyInputTraits) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v CollectIdentifyInputTraits
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilCollectIdentifyInputTraits) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilCollectIdentifyInputTraits) Get() (v CollectIdentifyInputTraits, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilCollectIdentifyInputTraits) Or(d CollectIdentifyInputTraits) CollectIdentifyInputTraits {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -535,6 +392,74 @@ func (o OptNilEmailAddress) Get() (v EmailAddress, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilEmailAddress) Or(d EmailAddress) EmailAddress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilJsonObject returns new OptNilJsonObject with value set to v.
+func NewOptNilJsonObject(v JsonObject) OptNilJsonObject {
+	return OptNilJsonObject{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilJsonObject is optional nullable JsonObject.
+type OptNilJsonObject struct {
+	Value JsonObject
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilJsonObject was set.
+func (o OptNilJsonObject) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilJsonObject) Reset() {
+	var v JsonObject
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilJsonObject) SetTo(v JsonObject) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilJsonObject) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilJsonObject) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v JsonObject
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilJsonObject) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilJsonObject) Get() (v JsonObject, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilJsonObject) Or(d JsonObject) JsonObject {
 	if v, ok := o.Get(); ok {
 		return v
 	}

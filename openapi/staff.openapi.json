@@ -545,8 +545,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/JsonObject"
                 }
               }
             }
@@ -1161,6 +1160,11 @@
   ],
   "components": {
     "schemas": {
+      "EditorDocument": {
+        "type": "object",
+        "additionalProperties": {},
+        "description": "The email editor's JSON document, an opaque object the server checks against the schema\n`email_schema` returns. One named model, as JsonObject."
+      },
       "EmailAddress": {
         "type": "string",
         "maxLength": 320,
@@ -1278,6 +1282,11 @@
           }
         },
         "description": "The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it"
+      },
+      "JsonObject": {
+        "type": "object",
+        "additionalProperties": {},
+        "description": "A JSON object whose members the contract leaves open: custom field values, event properties,\nintegration params, an audit diff. One named model, so every surface's Go code has one type for\nit rather than one per field."
       },
       "LegalDocumentLabel": {
         "type": "string",
@@ -1557,8 +1566,11 @@
             "description": "What was changed, as `instance.<what>_change`"
           },
           "diff": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "description": "The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there\nwas no value, `to` where it was cleared"
           }
         },

@@ -13940,7 +13940,11 @@
           },
           "diff": {
             "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "nullable": true,
             "description": "Before/after of the changed fields; secrets appear as changed only"
           },
@@ -14347,8 +14351,11 @@
             "description": "Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it"
           },
           "doc": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "description": "The editor's JSON document an email step's body was built from, an opaque object checked by the\nserver against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the\nserver renders the body from it in the same save, and a document that cannot be rendered refuses\nthe whole save, naming the step. Writing only a body clears the step's document."
           },
           "editorVersion": {
@@ -14658,7 +14665,11 @@
           },
           "doc": {
             "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "nullable": true,
             "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
           },
@@ -15457,7 +15468,7 @@
             "type": "object",
             "allOf": [
               {
-                "$ref": "#/components/schemas/ContactExportJson"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ],
             "nullable": true,
@@ -15616,7 +15627,7 @@
             "type": "object",
             "allOf": [
               {
-                "$ref": "#/components/schemas/ContactExportJson"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ],
             "nullable": true,
@@ -15644,11 +15655,6 @@
           }
         },
         "description": "An event tracked for the contact or its visitors"
-      },
-      "ContactExportJson": {
-        "type": "object",
-        "additionalProperties": {},
-        "description": "An arbitrary JSON object: typed custom field values or event properties"
       },
       "ContactExportOutboundMessage": {
         "type": "object",
@@ -16009,7 +16015,11 @@
           },
           "customFields": {
             "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key",
             "x-untrusted": true
@@ -16142,8 +16152,11 @@
             "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
           },
           "doc": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
           },
           "segmentId": {
@@ -16214,7 +16227,11 @@
           },
           "customFields": {
             "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key"
           }
@@ -16263,8 +16280,11 @@
             "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with"
           },
           "params": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "description": "The Preset's params, validated against its `paramsSchema`: read the schema first"
           }
         },
@@ -16364,8 +16384,11 @@
             "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
           },
           "doc": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
           }
         },
@@ -16554,6 +16577,11 @@
         },
         "description": "Request body for dry-running a Rule on a stored Event"
       },
+      "EditorDocument": {
+        "type": "object",
+        "additionalProperties": {},
+        "description": "The email editor's JSON document, an opaque object the server checks against the schema\n`email_schema` returns. One named model, as JsonObject."
+      },
       "EmailAddress": {
         "type": "string",
         "maxLength": 320,
@@ -16614,8 +16642,11 @@
             "description": "Rules that hold across the document, in words"
           },
           "example": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "description": "A valid document to start from"
           }
         },
@@ -16838,7 +16869,11 @@
           },
           "properties": {
             "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "nullable": true,
             "description": "Event properties",
             "x-untrusted": true
@@ -16934,7 +16969,7 @@
           "diff": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ContactExportJson"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ],
             "description": "Before/after of the changed fields as one JSON column; secrets appear as changed only"
@@ -17030,7 +17065,7 @@
           "custom_fields": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ContactExportJson"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ],
             "description": "Custom field values keyed by the field's machine key, as one JSON column"
@@ -17172,7 +17207,7 @@
           "properties": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ContactExportJson"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ],
             "description": "Event properties as one JSON column"
@@ -17803,8 +17838,11 @@
             "description": "The Preset this Integration's provider callbacks are read with; null when it receives none"
           },
           "params": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "description": "The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as `********`, never its value"
           },
           "secretsRetiring": {
@@ -17847,6 +17885,11 @@
         },
         "description": "A sending-provider Integration. Credentials are write-only: the config is returned with secrets redacted."
       },
+      "JsonObject": {
+        "type": "object",
+        "additionalProperties": {},
+        "description": "A JSON object whose members the contract leaves open: custom field values, event properties,\nintegration params, an audit diff. One named model, so every surface's Go code has one type for\nit rather than one per field."
+      },
       "LinkClicks": {
         "type": "object",
         "required": ["url", "clicks"],
@@ -17887,8 +17930,11 @@
             "description": "HTML body with Liquid merge tags. Send this or `doc`, not both."
           },
           "doc": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "description": "The editor's JSON document, an opaque object checked against the schema `email_schema`\nreturns. It is rendered to HTML as a save would, then linted. A document that cannot be\nrendered is an error finding with the reason."
           }
         },
@@ -18035,8 +18081,11 @@
             "description": "What the Preset is for"
           },
           "paramsSchema": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "description": "JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked `writeOnly` is a secret: it is never returned by a read."
           }
         },
@@ -18783,8 +18832,11 @@
             "description": "The destination email address"
           },
           "variables": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "description": "Per-call variables merged into the template's subject and body (Liquid `{{ }}`)"
           },
           "track": {
@@ -19238,7 +19290,11 @@
           },
           "doc": {
             "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "nullable": true,
             "description": "The editor's JSON document the body was built from; null when the body was written as HTML"
           },
@@ -19485,8 +19541,11 @@
             "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
           },
           "doc": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
           },
           "segmentId": {
@@ -19557,7 +19616,11 @@
           },
           "customFields": {
             "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key"
           }
@@ -19605,8 +19668,11 @@
             "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over"
           },
           "params": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)"
           },
           "retireSecrets": {
@@ -19687,8 +19753,11 @@
             "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
           },
           "doc": {
-            "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
           }
         },
@@ -19760,7 +19829,11 @@
           },
           "customFields": {
             "type": "object",
-            "additionalProperties": {},
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
             "nullable": true,
             "description": "Typed custom field values keyed by the field's machine key, merged into the contact's"
           }

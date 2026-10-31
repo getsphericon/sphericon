@@ -55,7 +55,7 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 	ident, err := c.CollectIdentifyCreate(ctx, &collectapi.CollectIdentifyInput{
 		VisitorId: "v1",
 		Email:     collectapi.NewOptNilEmailAddress("trav@example.com"),
-		Traits: collectapi.NewOptNilCollectIdentifyInputTraits(collectapi.CollectIdentifyInputTraits{
+		Traits: collectapi.NewOptNilJsonObject(collectapi.JsonObject{
 			"plan":   jx.Raw(`"pro"`),
 			"visits": jx.Raw(`3`),
 		}),
@@ -87,7 +87,7 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 		Events: []collectapi.CollectEventInput{{
 			VisitorId: "v1",
 			Action:    "page_view",
-			Properties: collectapi.NewOptNilCollectEventInputProperties(collectapi.CollectEventInputProperties{
+			Properties: collectapi.NewOptNilJsonObject(collectapi.JsonObject{
 				"url": jx.Raw(`"/pricing"`),
 				"n":   jx.Raw(`5`),
 			}),

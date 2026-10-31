@@ -58,7 +58,7 @@ func createProContact(t *testing.T, c *externalapi.Client, email string) {
 	t.Helper()
 	res, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{
 		Email:        externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(email)),
-		CustomFields: externalapi.NewOptNilCreateContactInputCustomFields(externalapi.CreateContactInputCustomFields{"plan": jx.Raw(`"pro"`)}),
+		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"plan": jx.Raw(`"pro"`)}),
 	})
 	require.NoError(t, err)
 	require.IsTypef(t, &externalapi.ContactResource{}, res, "got %T", res)

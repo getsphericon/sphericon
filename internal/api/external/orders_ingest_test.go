@@ -16,14 +16,14 @@ import (
 )
 
 func orderEvent(action string, props map[string]string) externalapi.EventInput {
-	raw := make(externalapi.EventInputProperties, len(props))
+	raw := make(externalapi.JsonObject, len(props))
 	for k, v := range props {
 		raw[k] = jx.Raw(v)
 	}
 	return externalapi.EventInput{
 		SubjectId:  "user:" + fixtures.ContactAliceEmail,
 		Action:     action,
-		Properties: externalapi.NewOptNilEventInputProperties(raw),
+		Properties: externalapi.NewOptNilJsonObject(raw),
 	}
 }
 

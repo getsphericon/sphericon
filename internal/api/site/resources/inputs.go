@@ -66,16 +66,18 @@ import (
 // goverter:extend timestampPtrIn
 // goverter:extend automationStepsPtrIn
 // goverter:extend ruleActionsPtrIn
+// goverter:extend documentIn
+// goverter:extend documentPatch
+// goverter:extend objectIn
+// goverter:extend objectPatch
+// goverter:extend nilObjectIn
+// goverter:extend nilObjectPatch
 type Inputs interface {
-	// goverter:map Doc | createTemplateDoc
 	// goverter:ignore Prepared
 	TemplateCreate(source *siteapi.CreateTemplateInput) templates.CreateInput
-	// goverter:map Doc | updateTemplateDoc
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) templates.UpdateInput
 
-	// goverter:map Doc | createBroadcastDoc
 	BroadcastCreate(source *siteapi.CreateBroadcastInput) broadcasts.CreateInput
-	// goverter:map Doc | updateBroadcastDoc
 	BroadcastUpdate(source *siteapi.UpdateBroadcastInput) broadcasts.UpdateInput
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhooks.CreateInput
@@ -86,14 +88,10 @@ type Inputs interface {
 
 	// goverter:map . Attributes
 	ContactCreate(source *siteapi.SiteCreateContactInput) contacts.CreateInput
-	// goverter:map CustomFields | createContactFields
 	ContactAttributes(source siteapi.SiteCreateContactInput) contacts.Attributes
-	// goverter:map CustomFields | updateContactFields
 	ContactUpdate(source *siteapi.SiteUpdateContactInput) contacts.UpdateInput
 
-	// goverter:map Params | createIntegrationParams
 	IntegrationCreate(source *siteapi.CreateIntegrationInput) (integrations.CreateInput, error)
-	// goverter:map Params | updateIntegrationParams
 	IntegrationUpdate(source *siteapi.UpdateIntegrationInput) (integrations.UpdateInput, error)
 
 	// goverter:map Condition | createSegmentCondition
@@ -102,7 +100,6 @@ type Inputs interface {
 	SegmentUpdate(source *siteapi.SiteUpdateSegmentInput) (segments.UpdateInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
-	// goverter:map Doc | stepDocIn
 	// goverter:ignore EditorVersion
 	AutomationStep(source siteapi.SiteAutomationStep) automations.Step
 	AutomationSteps(source []siteapi.SiteAutomationStep) []automations.Step
@@ -199,37 +196,24 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleAction) *[]rules.Actio
 func ruleConditionIn(o siteapi.OptSiteConditionGroup) (*string, error) {
 	return condition.EncodeOptional(o)
 }
-func createTemplateDoc(o siteapi.OptCreateTemplateInputDoc) json.RawMessage {
-	return convert.DocJSON(o.Value, o.Set)
-}
-func updateTemplateDoc(o siteapi.OptUpdateTemplateInputDoc) patch.Field[json.RawMessage] {
+
+// documentIn is the editor document of a write as the JSON the modules render; nil when the
+// request names none.
+func documentIn(o siteapi.OptEditorDocument) json.RawMessage { return convert.DocJSON(o.Value, o.Set) }
+
+// documentPatch is the editor document of an update: an absent key keeps the stored document.
+func documentPatch(o siteapi.OptEditorDocument) patch.Field[json.RawMessage] {
 	return convert.DocPatch(o)
 }
-func createBroadcastDoc(o siteapi.OptCreateBroadcastInputDoc) json.RawMessage {
-	return convert.DocJSON(o.Value, o.Set)
-}
-func updateBroadcastDoc(o siteapi.OptUpdateBroadcastInputDoc) patch.Field[json.RawMessage] {
-	return convert.DocPatch(o)
-}
-func stepDocIn(o siteapi.OptSiteAutomationStepDoc) json.RawMessage {
-	return convert.DocJSON(o.Value, o.Set)
-}
 
-func createContactFields(o siteapi.OptNilSiteCreateContactInputCustomFields) map[string]any {
-	v, _ := o.Get()
-	return convert.RawMap(v)
-}
+// objectIn and nilObjectIn are an opaque object of a write as plain values; nil when absent or null.
+func objectIn(o siteapi.OptJsonObject) map[string]any       { return convert.RawMap(o.Or(nil)) }
+func nilObjectIn(o siteapi.OptNilJsonObject) map[string]any { return convert.RawMap(o.Or(nil)) }
 
-func updateContactFields(o siteapi.OptNilSiteUpdateContactInputCustomFields) patch.Field[map[string]any] {
-	return convert.MapPatch(o)
-}
-
-func createIntegrationParams(o siteapi.OptCreateIntegrationInputParams) map[string]any {
-	v, _ := o.Get()
-	return convert.RawMap(v)
-}
-
-func updateIntegrationParams(o siteapi.OptUpdateIntegrationInputParams) patch.Field[map[string]any] {
+// objectPatch and nilObjectPatch are an opaque object of an update: an absent key keeps, an
+// explicit null clears.
+func objectPatch(o siteapi.OptJsonObject) patch.Field[map[string]any] { return convert.MapPatch(o) }
+func nilObjectPatch(o siteapi.OptNilJsonObject) patch.Field[map[string]any] {
 	return convert.MapPatch(o)
 }
 

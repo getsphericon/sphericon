@@ -21,7 +21,7 @@ model CollectEventInput {
   @maxLength(255)
   clientEventId?: string | null;
 
-  properties?: Record<unknown> | null;
+  properties?: JsonObject | null;
   occurredAt?: Timestamp | null;
 }
 

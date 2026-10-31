@@ -35,7 +35,7 @@ model ContactResource {
 
   /** Typed custom field values keyed by the field's machine key */
   @untrusted
-  customFields?: Record<unknown> | null;
+  customFields?: JsonObject | null;
 
   /** Creation timestamp */
   createdAt: Timestamp;
@@ -149,7 +149,7 @@ model UpsertContactInput {
   timeZone?: TimeZoneName | null;
 
   /** Typed custom field values keyed by the field's machine key, merged into the contact's */
-  customFields?: Record<unknown> | null;
+  customFields?: JsonObject | null;
 }
 
 /** Request body for upserting contacts in batch */

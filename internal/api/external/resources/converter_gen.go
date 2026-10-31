@@ -289,7 +289,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.FromName = optNilString((*source).FromName)
 		externalapiBroadcastResource.FromEmail = optNilEmailAddress((*source).FromEmail)
 		externalapiBroadcastResource.Body = (*source).Body
-		externalapiBroadcastResource.Doc = broadcastDoc((*source).Doc)
+		externalapiBroadcastResource.Doc = editorDocument((*source).Doc)
 		externalapiBroadcastResource.EditorVersion = optNilString((*source).EditorVersion)
 		externalapiBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		externalapiBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
@@ -434,7 +434,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) external.ContactExp
 		externalapiContactExportContact.FirstName = optNilString((*source).FirstName)
 		externalapiContactExportContact.LastName = optNilString((*source).LastName)
 		externalapiContactExportContact.TimeZone = optNilString((*source).TimeZone)
-		externalapiContactExportContact.CustomFields = exportJSON((*source).CustomFields)
+		externalapiContactExportContact.CustomFields = jsonObject((*source).CustomFields)
 		externalapiContactExportContact.Source = optNilContactSource(c, (*source).Source)
 		externalapiContactExportContact.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiContactExportContact.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -451,7 +451,7 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) external.ContactR
 		externalapiContactResource.FirstName = optNilString((*source).FirstName)
 		externalapiContactResource.LastName = optNilString((*source).LastName)
 		externalapiContactResource.TimeZone = optNilTimeZone((*source).TimeZone)
-		externalapiContactResource.CustomFields = contactCustomFields((*source).CustomFields)
+		externalapiContactResource.CustomFields = jsonObject((*source).CustomFields)
 		externalapiContactResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiContactResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -556,7 +556,7 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) exter
 		externalapiTemplateResource.Name = (*source).Name
 		externalapiTemplateResource.Subject = (*source).Subject
 		externalapiTemplateResource.Body = (*source).Body
-		externalapiTemplateResource.Doc = templateDoc((*source).Doc)
+		externalapiTemplateResource.Doc = editorDocument((*source).Doc)
 		externalapiTemplateResource.EditorVersion = optNilString((*source).EditorVersion)
 		externalapiTemplateResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiTemplateResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -662,7 +662,7 @@ func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportE
 		externalapiContactExportEvent.Email = optNilString((*source).Email)
 		externalapiContactExportEvent.Phone = optNilString((*source).Phone)
 		externalapiContactExportEvent.Action = (*source).Action
-		externalapiContactExportEvent.Properties = exportJSON((*source).Properties)
+		externalapiContactExportEvent.Properties = jsonObject((*source).Properties)
 		externalapiContactExportEvent.OccurredAt = timestamp((*source).OccurredAt)
 		externalapiContactExportEvent.Backfill = (*source).Backfill
 		externalapiContactExportEvent.CreatedAt = timestamp((*source).CreatedAt)

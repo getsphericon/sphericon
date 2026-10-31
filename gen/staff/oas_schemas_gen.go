@@ -38,6 +38,23 @@ type EmailAddress string
 
 type EntityId int64
 
+// A JSON object whose members the contract leaves open: custom field values, event properties,
+// integration params, an audit diff. One named model, so every surface's Go code has one type for it
+// rather than one per field.
+// Ref: #/components/schemas/JsonObject
+type JsonObject map[string]jx.Raw
+
+func (s *JsonObject) init() JsonObject {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+func (*JsonObject) staffInstancePreviewTelemetryReportRes() {}
+
 type LegalDocumentLabel string
 
 type LegalDocumentMarkdown string
@@ -1399,7 +1416,7 @@ type StaffInstanceAuditEntryResource struct {
 	Action string `json:"action"`
 	// The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there was no
 	// value, `to` where it was cleared.
-	Diff StaffInstanceAuditEntryResourceDiff `json:"diff"`
+	Diff JsonObject `json:"diff"`
 }
 
 // GetID returns the value of ID.
@@ -1423,7 +1440,7 @@ func (s *StaffInstanceAuditEntryResource) GetAction() string {
 }
 
 // GetDiff returns the value of Diff.
-func (s *StaffInstanceAuditEntryResource) GetDiff() StaffInstanceAuditEntryResourceDiff {
+func (s *StaffInstanceAuditEntryResource) GetDiff() JsonObject {
 	return s.Diff
 }
 
@@ -1448,21 +1465,8 @@ func (s *StaffInstanceAuditEntryResource) SetAction(val string) {
 }
 
 // SetDiff sets the value of Diff.
-func (s *StaffInstanceAuditEntryResource) SetDiff(val StaffInstanceAuditEntryResourceDiff) {
+func (s *StaffInstanceAuditEntryResource) SetDiff(val JsonObject) {
 	s.Diff = val
-}
-
-// The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there was no
-// value, `to` where it was cleared.
-type StaffInstanceAuditEntryResourceDiff map[string]jx.Raw
-
-func (s *StaffInstanceAuditEntryResourceDiff) init() StaffInstanceAuditEntryResourceDiff {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 type StaffInstanceClearDefaultSendCapNotFound ProblemDetails
@@ -1480,19 +1484,6 @@ func (*StaffInstanceListAuditEntriesBadRequest) staffInstanceListAuditEntriesRes
 type StaffInstanceListAuditEntriesUnauthorized ProblemDetails
 
 func (*StaffInstanceListAuditEntriesUnauthorized) staffInstanceListAuditEntriesRes() {}
-
-type StaffInstancePreviewTelemetryReportOK map[string]jx.Raw
-
-func (s *StaffInstancePreviewTelemetryReportOK) init() StaffInstancePreviewTelemetryReportOK {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
-
-func (*StaffInstancePreviewTelemetryReportOK) staffInstancePreviewTelemetryReportRes() {}
 
 type StaffInstanceSetDefaultSendCapBadRequest ProblemDetails
 

@@ -110,13 +110,13 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			name: "body and document together", want: "write a body or a doc, not both",
 			site: func(c *siteapi.Client) (any, error) {
 				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptCreateBroadcastInputDoc(badDoc),
+					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(badDoc),
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return res, err
 			},
 			ext: func(c *externalapi.Client) (any, error) {
 				res, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
-					Name: "x", Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptCreateBroadcastInputDoc(badDoc),
+					Name: "x", Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(badDoc),
 				})
 				return res, err
 			},
@@ -201,13 +201,13 @@ func TestTemplateRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			name: "body and document together", want: "write a body or a doc, not both",
 			site: func(c *siteapi.Client) (any, error) {
 				res, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
-					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptCreateTemplateInputDoc(badDoc),
+					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(badDoc),
 				}, siteapi.SiteTemplatesCreateParams{WorkspaceId: ws})
 				return res, err
 			},
 			ext: func(c *externalapi.Client) (any, error) {
 				res, err := c.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{
-					Name: "x", Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptCreateTemplateInputDoc(badDoc),
+					Name: "x", Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(badDoc),
 				})
 				return res, err
 			},
@@ -232,16 +232,16 @@ func TestInvalidContentReadsTheSameOnBothSurfaces(t *testing.T) {
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	b1, err1 := site.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-		Name: "x", Doc: siteapi.NewOptCreateBroadcastInputDoc(badDoc),
+		Name: "x", Doc: siteapi.NewOptEditorDocument(badDoc),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 	b2, err2 := ext.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
-		Name: "x", Doc: externalapi.NewOptCreateBroadcastInputDoc(badDoc),
+		Name: "x", Doc: externalapi.NewOptEditorDocument(badDoc),
 	})
 	t1, err3 := site.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
-		Name: "x", Doc: siteapi.NewOptCreateTemplateInputDoc(badDoc),
+		Name: "x", Doc: siteapi.NewOptEditorDocument(badDoc),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: ws})
 	t2, err4 := ext.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{
-		Name: "x", Doc: externalapi.NewOptCreateTemplateInputDoc(badDoc),
+		Name: "x", Doc: externalapi.NewOptEditorDocument(badDoc),
 	})
 
 	want := detailOf(t, b1, err1)

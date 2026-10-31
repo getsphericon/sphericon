@@ -30,7 +30,7 @@ func TestCollectedEventPropertiesKeepTheirJSONValues(t *testing.T) {
 		Events: []collectapi.CollectEventInput{{
 			VisitorId: "dev-props",
 			Action:    "viewed",
-			Properties: collectapi.NewOptNilCollectEventInputProperties(collectapi.CollectEventInputProperties{
+			Properties: collectapi.NewOptNilJsonObject(collectapi.JsonObject{
 				"s": jx.Raw(`"x"`), "n": jx.Raw(`2`), "b": jx.Raw(`true`), "o": jx.Raw(`{"k":"v"}`), "l": jx.Raw(`[1]`), "z": jx.Raw(`null`),
 			}),
 		}},
@@ -122,7 +122,7 @@ func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T)
 			VisitorId:  "dev-ev",
 			Action:     "checkout",
 			OccurredAt: collectapi.NewOptNilTimestamp(collectapi.Timestamp(at)),
-			Properties: collectapi.NewOptNilCollectEventInputProperties(collectapi.CollectEventInputProperties{"total": jx.Raw(`12.5`)}),
+			Properties: collectapi.NewOptNilJsonObject(collectapi.JsonObject{"total": jx.Raw(`12.5`)}),
 		}},
 	})
 	require.NoError(t, err)

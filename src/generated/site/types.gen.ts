@@ -157,7 +157,7 @@ export type ContactExportContact = {
   /**
    * Typed custom field values keyed by the field's machine key
    */
-  customFields?: ContactExportJson | null;
+  customFields?: JsonObject | null;
   /**
    * The door the contact came through; absent for a contact that predates the field
    */
@@ -251,7 +251,7 @@ export type ContactExportEvent = {
   /**
    * Event properties
    */
-  properties?: ContactExportJson | null;
+  properties?: JsonObject | null;
   /**
    * When the event happened: the time the source gave, or when it was published if it gave none
    */
@@ -264,13 +264,6 @@ export type ContactExportEvent = {
    * Creation timestamp
    */
   createdAt: Timestamp;
-};
-
-/**
- * An arbitrary JSON object: typed custom field values or event properties
- */
-export type ContactExportJson = {
-  [key: string]: unknown;
 };
 
 /**
@@ -497,9 +490,7 @@ export type CreateBroadcastInput = {
    * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
    * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
    */
-  doc?: {
-    [key: string]: unknown;
-  };
+  doc?: EditorDocument;
   /**
    * Target segment; null or omitted means all contacts. An archived segment is refused with 422.
    */
@@ -541,9 +532,7 @@ export type CreateContactInput = {
   /**
    * Typed custom field values keyed by the field's machine key
    */
-  customFields?: {
-    [key: string]: unknown;
-  } | null;
+  customFields?: JsonObject | null;
 };
 
 /**
@@ -569,9 +558,7 @@ export type CreateIntegrationInput = {
   /**
    * The Preset's params, validated against its `paramsSchema`: read the schema first
    */
-  params?: {
-    [key: string]: unknown;
-  };
+  params?: JsonObject;
 };
 
 /**
@@ -608,9 +595,7 @@ export type CreateTemplateInput = {
    * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
    * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
    */
-  doc?: {
-    [key: string]: unknown;
-  };
+  doc?: EditorDocument;
 };
 
 /**
@@ -636,6 +621,14 @@ export type CreateWebhookInput = {
  * by the server, which refuses an unknown one with a reason.
  */
 export type CurrencyCode = string;
+
+/**
+ * The email editor's JSON document, an opaque object the server checks against the schema
+ * `email_schema` returns. One named model, as JsonObject.
+ */
+export type EditorDocument = {
+  [key: string]: unknown;
+};
 
 export type EmailAddress = string;
 
@@ -760,6 +753,15 @@ export type IntegrationConfigInput = ({
 } & SesConfigInput) | ({
   kind: 'inbox';
 } & InboxConfigInput);
+
+/**
+ * A JSON object whose members the contract leaves open: custom field values, event properties,
+ * integration params, an audit diff. One named model, so every surface's Go code has one type for
+ * it rather than one per field.
+ */
+export type JsonObject = {
+  [key: string]: unknown;
+};
 
 /**
  * The label a Staff member gives a published Legal document version, unique per item
@@ -1645,9 +1647,7 @@ export type SiteAuditEntryResource = {
   /**
    * Before/after of the changed fields; secrets appear as changed only
    */
-  diff?: {
-    [key: string]: unknown;
-  } | null;
+  diff?: JsonObject | null;
   /**
    * Request id of the change
    */
@@ -1972,9 +1972,7 @@ export type SiteAutomationStep = {
    * same save, and a document that cannot be rendered refuses the whole save, naming the step.
    * Writing only a body clears the step's document.
    */
-  doc?: {
-    [key: string]: unknown;
-  };
+  doc?: EditorDocument;
   /**
    * Version of the editor that rendered the document (email steps, read only)
    */
@@ -2191,9 +2189,7 @@ export type SiteBroadcastResource = {
   /**
    * The editor's JSON document the body was built from; null when the body was written as HTML
    */
-  doc?: {
-    [key: string]: unknown;
-  } | null;
+  doc?: EditorDocument | null;
   /**
    * Version of the editor that rendered the document; null with it
    */
@@ -2859,9 +2855,7 @@ export type SiteContactResource = {
   /**
    * Typed custom field values keyed by the field's machine key
    */
-  customFields?: {
-    [key: string]: unknown;
-  } | null;
+  customFields?: JsonObject | null;
   /**
    * The labels the contact carries, ordered by name
    */
@@ -2933,9 +2927,7 @@ export type SiteCreateContactInput = {
   /**
    * Typed custom field values keyed by the field's machine key
    */
-  customFields?: {
-    [key: string]: unknown;
-  } | null;
+  customFields?: JsonObject | null;
   /**
    * Tags to give the contact, created on first use
    */
@@ -3340,9 +3332,7 @@ export type SiteEmailTemplateResource = {
   /**
    * The editor's JSON document the body was built from; null when the body was written as HTML
    */
-  doc?: {
-    [key: string]: unknown;
-  } | null;
+  doc?: EditorDocument | null;
   /**
    * Version of the editor that rendered the document; null with it
    */
@@ -3485,9 +3475,7 @@ export type SiteEventResource = {
   /**
    * Arbitrary event properties
    */
-  properties?: {
-    [key: string]: unknown;
-  } | null;
+  properties?: JsonObject | null;
   /**
    * When the event happened: the time the source gave, or when it was published if it gave none
    */
@@ -3611,9 +3599,7 @@ export type SiteIntegrationResource = {
   /**
    * The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as `********`, never its value
    */
-  params: {
-    [key: string]: unknown;
-  };
+  params: JsonObject;
   /**
    * Names of the secret params that are rotating: a retiring value is still accepted beside the current one
    */
@@ -4437,9 +4423,7 @@ export type SitePresetResource = {
   /**
    * JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret
    */
-  paramsSchema: {
-    [key: string]: unknown;
-  };
+  paramsSchema: JsonObject;
 };
 
 /**
@@ -5715,9 +5699,7 @@ export type SiteUpdateContactInput = {
   /**
    * Typed custom field values keyed by the field's machine key
    */
-  customFields?: {
-    [key: string]: unknown;
-  } | null;
+  customFields?: JsonObject | null;
   /**
    * The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps them
    */
@@ -6238,9 +6220,7 @@ export type UpdateBroadcastInput = {
    * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
    * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
    */
-  doc?: {
-    [key: string]: unknown;
-  };
+  doc?: EditorDocument;
   /**
    * Target segment; null means all contacts. An archived segment is refused with 422.
    */
@@ -6282,9 +6262,7 @@ export type UpdateContactInput = {
   /**
    * Typed custom field values keyed by the field's machine key
    */
-  customFields?: {
-    [key: string]: unknown;
-  } | null;
+  customFields?: JsonObject | null;
 };
 
 /**
@@ -6310,9 +6288,7 @@ export type UpdateIntegrationInput = {
   /**
    * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)
    */
-  params?: {
-    [key: string]: unknown;
-  };
+  params?: JsonObject;
   /**
    * Stop accepting the retiring value of every rotating secret
    */
@@ -6339,9 +6315,7 @@ export type UpdateTemplateInput = {
    * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
    * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
    */
-  doc?: {
-    [key: string]: unknown;
-  };
+  doc?: EditorDocument;
 };
 
 /**

@@ -22,7 +22,7 @@ model SendTransactionalEmailInput {
   destination: EmailAddress;
 
   /** Per-call variables merged into the template's subject and body (Liquid `{{ }}`) */
-  variables?: Record<unknown>;
+  variables?: JsonObject;
 
   /**
    * Track opens and clicks of this message (default false). The email then carries an open
@@ -56,7 +56,7 @@ model LintEmailInput {
   /** The editor's JSON document, an opaque object checked against the schema `email_schema`
    * returns. It is rendered to HTML as a save would, then linted. A document that cannot be
    * rendered is an error finding with the reason. */
-  doc?: Record<unknown>;
+  doc?: EditorDocument;
 }
 
 /** What the lint found in a message */
@@ -131,7 +131,7 @@ model EmailSchemaResult {
   rules: string[];
 
   /** A valid document to start from */
-  example: Record<unknown>;
+  example: EditorDocument;
 }
 
 @route("/emails/schema")

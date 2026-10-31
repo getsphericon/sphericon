@@ -64,16 +64,18 @@ import (
 // goverter:extend timestampPtrIn
 // goverter:extend automationStepsPtrIn
 // goverter:extend ruleActionsPtrIn
+// goverter:extend documentIn
+// goverter:extend documentPatch
+// goverter:extend objectIn
+// goverter:extend objectPatch
+// goverter:extend nilObjectIn
+// goverter:extend nilObjectPatch
 type Inputs interface {
-	// goverter:map Doc | createTemplateDoc
 	// goverter:ignore Prepared
 	TemplateCreate(source *externalapi.CreateTemplateInput) templates.CreateInput
-	// goverter:map Doc | updateTemplateDoc
 	TemplateUpdate(source *externalapi.UpdateTemplateInput) templates.UpdateInput
 
-	// goverter:map Doc | createBroadcastDoc
 	BroadcastCreate(source *externalapi.CreateBroadcastInput) broadcasts.CreateInput
-	// goverter:map Doc | updateBroadcastDoc
 	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) broadcasts.UpdateInput
 
 	WebhookCreate(source *externalapi.CreateWebhookInput) webhooks.CreateInput
@@ -88,18 +90,13 @@ type Inputs interface {
 	// goverter:map . Attributes
 	// goverter:ignore Tags
 	ContactCreate(source *externalapi.CreateContactInput) contacts.CreateInput
-	// goverter:map CustomFields | createContactFields
 	ContactAttributes(source externalapi.CreateContactInput) contacts.Attributes
-	// goverter:map CustomFields | updateContactFields
 	// goverter:ignore Tags
 	ContactUpdate(source *externalapi.UpdateContactInput) contacts.UpdateInput
-	// goverter:map CustomFields | upsertContactFields
 	ContactUpsert(source externalapi.UpsertContactInput) contacts.Attributes
 	ContactUpserts(source []externalapi.UpsertContactInput) []contacts.Attributes
 
-	// goverter:map Params | createIntegrationParams
 	IntegrationCreate(source *externalapi.CreateIntegrationInput) (integrations.CreateInput, error)
-	// goverter:map Params | updateIntegrationParams
 	IntegrationUpdate(source *externalapi.UpdateIntegrationInput) (integrations.UpdateInput, error)
 
 	// goverter:map Condition | createSegmentCondition
@@ -108,7 +105,6 @@ type Inputs interface {
 	SegmentUpdate(source *externalapi.UpdateSegmentInput) (segments.UpdateInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
-	// goverter:map Doc | stepDocIn
 	// goverter:ignore EditorVersion
 	AutomationStep(source externalapi.AutomationStep) automations.Step
 	AutomationSteps(source []externalapi.AutomationStep) []automations.Step
@@ -214,7 +210,7 @@ func ruleConditionIn(o externalapi.OptConditionGroup) (*string, error) {
 
 // eventPropertiesIn decodes each property keeping numbers as the text that was sent: an amount of
 // an order Event is checked for its decimal places (ADR 0064), which a float64 would blur.
-func eventPropertiesIn(o externalapi.OptNilEventInputProperties) (map[string]any, error) {
+func eventPropertiesIn(o externalapi.OptNilJsonObject) (map[string]any, error) {
 	props, ok := o.Get()
 	if !ok {
 		return nil, nil
@@ -231,42 +227,26 @@ func eventPropertiesIn(o externalapi.OptNilEventInputProperties) (map[string]any
 	}
 	return out, nil
 }
-func createTemplateDoc(o externalapi.OptCreateTemplateInputDoc) json.RawMessage {
+
+// documentIn is the editor document of a write as the JSON the modules render; nil when the
+// request names none.
+func documentIn(o externalapi.OptEditorDocument) json.RawMessage {
 	return convert.DocJSON(o.Value, o.Set)
 }
-func updateTemplateDoc(o externalapi.OptUpdateTemplateInputDoc) patch.Field[json.RawMessage] {
+
+// documentPatch is the editor document of an update: an absent key keeps the stored document.
+func documentPatch(o externalapi.OptEditorDocument) patch.Field[json.RawMessage] {
 	return convert.DocPatch(o)
 }
-func createBroadcastDoc(o externalapi.OptCreateBroadcastInputDoc) json.RawMessage {
-	return convert.DocJSON(o.Value, o.Set)
-}
-func updateBroadcastDoc(o externalapi.OptUpdateBroadcastInputDoc) patch.Field[json.RawMessage] {
-	return convert.DocPatch(o)
-}
-func stepDocIn(o externalapi.OptAutomationStepDoc) json.RawMessage {
-	return convert.DocJSON(o.Value, o.Set)
-}
 
-func createContactFields(o externalapi.OptNilCreateContactInputCustomFields) map[string]any {
-	v, _ := o.Get()
-	return convert.RawMap(v)
-}
+// objectIn and nilObjectIn are an opaque object of a write as plain values; nil when absent or null.
+func objectIn(o externalapi.OptJsonObject) map[string]any       { return convert.RawMap(o.Or(nil)) }
+func nilObjectIn(o externalapi.OptNilJsonObject) map[string]any { return convert.RawMap(o.Or(nil)) }
 
-func upsertContactFields(o externalapi.OptNilUpsertContactInputCustomFields) map[string]any {
-	v, _ := o.Get()
-	return convert.RawMap(v)
-}
-
-func updateContactFields(o externalapi.OptNilUpdateContactInputCustomFields) patch.Field[map[string]any] {
-	return convert.MapPatch(o)
-}
-
-func createIntegrationParams(o externalapi.OptCreateIntegrationInputParams) map[string]any {
-	v, _ := o.Get()
-	return convert.RawMap(v)
-}
-
-func updateIntegrationParams(o externalapi.OptUpdateIntegrationInputParams) patch.Field[map[string]any] {
+// objectPatch and nilObjectPatch are an opaque object of an update: an absent key keeps, an
+// explicit null clears.
+func objectPatch(o externalapi.OptJsonObject) patch.Field[map[string]any] { return convert.MapPatch(o) }
+func nilObjectPatch(o externalapi.OptNilJsonObject) patch.Field[map[string]any] {
 	return convert.MapPatch(o)
 }
 

@@ -56,7 +56,7 @@ func TestSiteContactsUpdateNullClearsCustomFields(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 100}
 
-	var null siteapi.OptNilSiteUpdateContactInputCustomFields
+	var null siteapi.OptNilJsonObject
 	null.SetToNull()
 	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{CustomFields: null}, params)
 	require.NoError(t, err)

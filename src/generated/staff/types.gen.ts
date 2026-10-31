@@ -5,6 +5,14 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:3000/staff' | (string & {});
 };
 
+/**
+ * The email editor's JSON document, an opaque object the server checks against the schema
+ * `email_schema` returns. One named model, as JsonObject.
+ */
+export type EditorDocument = {
+  [key: string]: unknown;
+};
+
 export type EmailAddress = string;
 
 /**
@@ -95,6 +103,15 @@ export type InUseProblemDetails = {
    * The live rows that use the one a removal was refused for, never empty
    */
   usedBy: Array<UsedBy>;
+};
+
+/**
+ * A JSON object whose members the contract leaves open: custom field values, event properties,
+ * integration params, an audit diff. One named model, so every surface's Go code has one type for
+ * it rather than one per field.
+ */
+export type JsonObject = {
+  [key: string]: unknown;
 };
 
 /**
@@ -332,9 +349,7 @@ export type StaffInstanceAuditEntryResource = {
    * The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there
    * was no value, `to` where it was cleared
    */
-  diff: {
-    [key: string]: unknown;
-  };
+  diff: JsonObject;
 };
 
 /**
@@ -960,9 +975,7 @@ export type StaffInstancePreviewTelemetryReportResponses = {
   /**
    * The request has succeeded.
    */
-  200: {
-    [key: string]: unknown;
-  };
+  200: JsonObject;
 };
 
 export type StaffInstancePreviewTelemetryReportResponse = StaffInstancePreviewTelemetryReportResponses[keyof StaffInstancePreviewTelemetryReportResponses];

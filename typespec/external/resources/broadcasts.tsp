@@ -38,7 +38,7 @@ model BroadcastResource {
   body: string;
 
   /** The editor's JSON document the body was built from; null when the body was written as HTML */
-  doc?: Record<unknown> | null;
+  doc?: EditorDocument | null;
 
   /** Version of the editor that rendered the document; null with it */
   editorVersion?: string | null;

@@ -254,8 +254,8 @@ func workspaceSuspension(c StaffConverter, w *ent.Workspace) staffeeapi.OptNilSt
 	})
 }
 
-func staffAuditDiff(d map[string]jx.Raw) staffeeapi.OptNilStaffAuditEntryResourceDiff {
-	return convert.OptObject[staffeeapi.OptNilStaffAuditEntryResourceDiff](staffeeapi.StaffAuditEntryResourceDiff(d))
+func staffAuditDiff(d map[string]jx.Raw) staffeeapi.OptNilJsonObject {
+	return convert.OptObject[staffeeapi.OptNilJsonObject](staffeeapi.JsonObject(d))
 }
 
 func nilFloat64(v *float64) staffeeapi.NilFloat64 {

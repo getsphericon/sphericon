@@ -53,7 +53,7 @@ model StaffAuditEntryResource {
   target: StaffAuditTarget;
 
   /** Before/after of the changed fields */
-  diff?: Record<unknown> | null;
+  diff?: JsonObject | null;
 
   /** Request id of the change */
   requestId?: string | null;

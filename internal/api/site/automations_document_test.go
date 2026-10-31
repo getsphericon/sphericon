@@ -20,7 +20,7 @@ func docStep(subject string, doc map[string]jx.Raw) siteapi.SiteAutomationStep {
 	return siteapi.SiteAutomationStep{
 		Type:    siteapi.SiteAutomationStepTypeEmail,
 		Subject: siteapi.NewOptString(subject),
-		Doc:     siteapi.NewOptSiteAutomationStepDoc(doc),
+		Doc:     siteapi.NewOptEditorDocument(doc),
 	}
 }
 

@@ -25,7 +25,7 @@ func TestExternalContactsUpdatePersistsAttributesAndCustomFields(t *testing.T) {
 
 	res, err := c.ContactsUpdate(ctx, &externalapi.UpdateContactInput{
 		FirstName: externalapi.NewOptNilString("Alicia"),
-		CustomFields: externalapi.NewOptNilUpdateContactInputCustomFields(externalapi.UpdateContactInputCustomFields{
+		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{
 			"plan": jx.Raw(`"pro"`), "seats": jx.Raw(`4`),
 		}),
 	}, externalapi.ContactsUpdateParams{ID: entityIDString(fixtures.ContactAliceID)})
@@ -118,7 +118,7 @@ func TestExternalContactsBatchUpsertCarriesCustomFields(t *testing.T) {
 
 	res, err := c.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{{
 		Email: externalapi.NewOptNilEmailAddress("batch.cf@example.com"),
-		CustomFields: externalapi.NewOptNilUpsertContactInputCustomFields(externalapi.UpsertContactInputCustomFields{
+		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{
 			"tier": jx.Raw(`"gold"`),
 		}),
 	}}})

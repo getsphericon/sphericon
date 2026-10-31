@@ -42,7 +42,7 @@ func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 	created, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name:    "Authored",
 		Subject: externalapi.NewOptString("Hi {{ first_name }}"),
-		Doc:     externalapi.NewOptCreateTemplateInputDoc(paragraphDoc("Hello {{ first_name }}")),
+		Doc:     externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
 	})
 	require.NoError(t, err)
 	res, ok := created.(*externalapi.TemplateResource)
@@ -69,7 +69,7 @@ func TestExternalTemplatesSaveADocumentWithItsBody(t *testing.T) {
 
 	// Saving another document rebuilds the body.
 	updated, err := c.TemplatesUpdate(ctx, &externalapi.UpdateTemplateInput{
-		Doc: externalapi.NewOptUpdateTemplateInputDoc(paragraphDoc("Second")),
+		Doc: externalapi.NewOptEditorDocument(paragraphDoc("Second")),
 	}, externalapi.TemplatesUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*externalapi.TemplateResource)
@@ -96,7 +96,7 @@ func TestExternalTemplateBodyOnlyWriteStoresNoDocument(t *testing.T) {
 
 	// A body written over a document clears it.
 	authored, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
-		Name: "Authored", Doc: externalapi.NewOptCreateTemplateInputDoc(paragraphDoc("x")),
+		Name: "Authored", Doc: externalapi.NewOptEditorDocument(paragraphDoc("x")),
 	})
 	require.NoError(t, err)
 	id := authored.(*externalapi.TemplateResource).ID
@@ -119,7 +119,7 @@ func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t 
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 
 	created, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
-		Name: "Bad", Doc: externalapi.NewOptCreateTemplateInputDoc(badHeadingDoc()),
+		Name: "Bad", Doc: externalapi.NewOptEditorDocument(badHeadingDoc()),
 	})
 	require.NoError(t, err)
 	refused, ok := created.(*externalapi.TemplatesCreateUnprocessableEntity)
@@ -128,7 +128,7 @@ func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t 
 
 	both, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
 		Name: "Both", Body: externalapi.NewOptString("<p>x</p>"),
-		Doc: externalapi.NewOptCreateTemplateInputDoc(paragraphDoc("x")),
+		Doc: externalapi.NewOptEditorDocument(paragraphDoc("x")),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.TemplatesCreateUnprocessableEntity{}, both)
@@ -141,7 +141,7 @@ func TestExternalTemplatesRefuseAnInvalidDocumentWithTheReasonAndStoreNothing(t 
 			`{"type":"link","attrs":{"href":"javascript:alert(1)"}}]}]}]`),
 	}
 	bad, err := c.TemplatesCreate(ctx, &externalapi.CreateTemplateInput{
-		Name: "Hostile", Doc: externalapi.NewOptCreateTemplateInputDoc(hostile),
+		Name: "Hostile", Doc: externalapi.NewOptEditorDocument(hostile),
 	})
 	require.NoError(t, err)
 	hostileRefused, ok := bad.(*externalapi.TemplatesCreateUnprocessableEntity)
@@ -158,7 +158,7 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 
 	created, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name: "Authored", Subject: externalapi.NewOptString("Hi"),
-		Doc: externalapi.NewOptCreateBroadcastInputDoc(paragraphDoc("Hello {{ first_name }}")),
+		Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
 	})
 	require.NoError(t, err)
 	res, ok := created.(*externalapi.BroadcastResource)
@@ -171,7 +171,7 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	assert.NotEmpty(t, row.Doc)
 
 	refused, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
-		Doc: externalapi.NewOptUpdateBroadcastInputDoc(badHeadingDoc()),
+		Doc: externalapi.NewOptEditorDocument(badHeadingDoc()),
 	}, externalapi.BroadcastsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	r, ok := refused.(*externalapi.BroadcastsUpdateUnprocessableEntity)
@@ -181,7 +181,7 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 
 	both, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
 		Body: externalapi.NewOptString("<p>x</p>"),
-		Doc:  externalapi.NewOptUpdateBroadcastInputDoc(paragraphDoc("x")),
+		Doc:  externalapi.NewOptEditorDocument(paragraphDoc("x")),
 	}, externalapi.BroadcastsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUpdateUnprocessableEntity{}, both)
@@ -205,7 +205,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 		Steps: []externalapi.AutomationStep{{
 			Type:    externalapi.AutomationStepTypeEmail,
 			Subject: externalapi.NewOptString("Hi"),
-			Doc:     externalapi.NewOptAutomationStepDoc(paragraphDoc("Hello {{ first_name }}")),
+			Doc:     externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
 		}},
 	})
 	require.NoError(t, err)
@@ -219,7 +219,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	// Read, change the document, write it back (without the body).
 	step.Body = externalapi.OptString{}
 	step.EditorVersion = externalapi.OptString{}
-	step.Doc = externalapi.NewOptAutomationStepDoc(paragraphDoc("Second"))
+	step.Doc = externalapi.NewOptEditorDocument(paragraphDoc("Second"))
 	updated, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{step}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
@@ -239,7 +239,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	// An invalid document refuses the save; the stored step is unchanged.
 	bad := upd.Draft.Value.Steps[0]
 	bad.Body = externalapi.OptString{}
-	bad.Doc = externalapi.NewOptAutomationStepDoc(badHeadingDoc())
+	bad.Doc = externalapi.NewOptEditorDocument(badHeadingDoc())
 	invalid, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Steps: []externalapi.AutomationStep{bad}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
@@ -254,13 +254,13 @@ func TestExternalEmailLintTakesADocument(t *testing.T) {
 	c := env.ExternalScoped(t, "templates:read")
 	ctx := context.Background()
 
-	ok, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{Doc: externalapi.NewOptLintEmailInputDoc(paragraphDoc("Hi {{ first_name }}"))})
+	ok, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hi {{ first_name }}"))})
 	require.NoError(t, err)
 	res, isResult := ok.(*externalapi.LintEmailResult)
 	require.Truef(t, isResult, "got %T", ok)
 	assert.Empty(t, res.Errors)
 
-	bad, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{Doc: externalapi.NewOptLintEmailInputDoc(badHeadingDoc())})
+	bad, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{Doc: externalapi.NewOptEditorDocument(badHeadingDoc())})
 	require.NoError(t, err)
 	got, isResult := bad.(*externalapi.LintEmailResult)
 	require.Truef(t, isResult, "got %T", bad)
@@ -268,7 +268,7 @@ func TestExternalEmailLintTakesADocument(t *testing.T) {
 	assert.Contains(t, got.Errors[0].Detail.Or(""), "level")
 
 	both, err := c.EmailLintLint(ctx, &externalapi.LintEmailInput{
-		Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptLintEmailInputDoc(paragraphDoc("x")),
+		Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("x")),
 	})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.EmailLintLintUnprocessableEntity{}, both)

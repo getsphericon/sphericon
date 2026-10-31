@@ -37,7 +37,7 @@ func TestExternalContactsCreatePersistsCustomFields(t *testing.T) {
 
 	res, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{
 		Email: externalapi.NewOptNilEmailAddress("fields@example.com"),
-		CustomFields: externalapi.NewOptNilCreateContactInputCustomFields(externalapi.CreateContactInputCustomFields{
+		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{
 			"plan": jx.Raw(`"pro"`),
 		}),
 	})

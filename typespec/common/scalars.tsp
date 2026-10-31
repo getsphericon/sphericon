@@ -26,3 +26,16 @@ scalar EntityId extends string;
  */
 @pattern("^[0-9A-Za-z]{8}$")
 scalar WorkspaceId extends string;
+
+/**
+ * A JSON object whose members the contract leaves open: custom field values, event properties,
+ * integration params, an audit diff. One named model, so every surface's Go code has one type for
+ * it rather than one per field.
+ */
+model JsonObject is Record<unknown>;
+
+/**
+ * The email editor's JSON document, an opaque object the server checks against the schema
+ * `email_schema` returns. One named model, as JsonObject.
+ */
+model EditorDocument is Record<unknown>;

@@ -36,6 +36,21 @@ func (s *ApiKeyAuth) SetRoles(val []string) {
 
 type EntityId int64
 
+// A JSON object whose members the contract leaves open: custom field values, event properties,
+// integration params, an audit diff. One named model, so every surface's Go code has one type for it
+// rather than one per field.
+// Ref: #/components/schemas/JsonObject
+type JsonObject map[string]jx.Raw
+
+func (s *JsonObject) init() JsonObject {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
 type MaxPerDay int32
 
 // NewNilFloat64 returns new NilFloat64 with value set to v.
@@ -174,6 +189,74 @@ func (o OptInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewOptNilJsonObject returns new OptNilJsonObject with value set to v.
+func NewOptNilJsonObject(v JsonObject) OptNilJsonObject {
+	return OptNilJsonObject{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilJsonObject is optional nullable JsonObject.
+type OptNilJsonObject struct {
+	Value JsonObject
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilJsonObject was set.
+func (o OptNilJsonObject) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilJsonObject) Reset() {
+	var v JsonObject
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilJsonObject) SetTo(v JsonObject) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilJsonObject) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilJsonObject) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v JsonObject
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilJsonObject) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilJsonObject) Get() (v JsonObject, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilJsonObject) Or(d JsonObject) JsonObject {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilStaffAbuseWarning returns new OptNilStaffAbuseWarning with value set to v.
 func NewOptNilStaffAbuseWarning(v StaffAbuseWarning) OptNilStaffAbuseWarning {
 	return OptNilStaffAbuseWarning{
@@ -236,74 +319,6 @@ func (o OptNilStaffAbuseWarning) Get() (v StaffAbuseWarning, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilStaffAbuseWarning) Or(d StaffAbuseWarning) StaffAbuseWarning {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilStaffAuditEntryResourceDiff returns new OptNilStaffAuditEntryResourceDiff with value set to v.
-func NewOptNilStaffAuditEntryResourceDiff(v StaffAuditEntryResourceDiff) OptNilStaffAuditEntryResourceDiff {
-	return OptNilStaffAuditEntryResourceDiff{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilStaffAuditEntryResourceDiff is optional nullable StaffAuditEntryResourceDiff.
-type OptNilStaffAuditEntryResourceDiff struct {
-	Value StaffAuditEntryResourceDiff
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilStaffAuditEntryResourceDiff was set.
-func (o OptNilStaffAuditEntryResourceDiff) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilStaffAuditEntryResourceDiff) Reset() {
-	var v StaffAuditEntryResourceDiff
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilStaffAuditEntryResourceDiff) SetTo(v StaffAuditEntryResourceDiff) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilStaffAuditEntryResourceDiff) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilStaffAuditEntryResourceDiff) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v StaffAuditEntryResourceDiff
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilStaffAuditEntryResourceDiff) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilStaffAuditEntryResourceDiff) Get() (v StaffAuditEntryResourceDiff, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilStaffAuditEntryResourceDiff) Or(d StaffAuditEntryResourceDiff) StaffAuditEntryResourceDiff {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -1494,7 +1509,7 @@ type StaffAuditEntryResource struct {
 	// What it was done to.
 	Target StaffAuditTarget `json:"target"`
 	// Before/after of the changed fields.
-	Diff OptNilStaffAuditEntryResourceDiff `json:"diff"`
+	Diff OptNilJsonObject `json:"diff"`
 	// Request id of the change.
 	RequestId OptNilString `json:"requestId"`
 	// Client address of the change.
@@ -1529,7 +1544,7 @@ func (s *StaffAuditEntryResource) GetTarget() StaffAuditTarget {
 }
 
 // GetDiff returns the value of Diff.
-func (s *StaffAuditEntryResource) GetDiff() OptNilStaffAuditEntryResourceDiff {
+func (s *StaffAuditEntryResource) GetDiff() OptNilJsonObject {
 	return s.Diff
 }
 
@@ -1574,7 +1589,7 @@ func (s *StaffAuditEntryResource) SetTarget(val StaffAuditTarget) {
 }
 
 // SetDiff sets the value of Diff.
-func (s *StaffAuditEntryResource) SetDiff(val OptNilStaffAuditEntryResourceDiff) {
+func (s *StaffAuditEntryResource) SetDiff(val OptNilJsonObject) {
 	s.Diff = val
 }
 
@@ -1591,18 +1606,6 @@ func (s *StaffAuditEntryResource) SetIP(val OptNilString) {
 // SetUserAgent sets the value of UserAgent.
 func (s *StaffAuditEntryResource) SetUserAgent(val OptNilString) {
 	s.UserAgent = val
-}
-
-// Before/after of the changed fields.
-type StaffAuditEntryResourceDiff map[string]jx.Raw
-
-func (s *StaffAuditEntryResourceDiff) init() StaffAuditEntryResourceDiff {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
 }
 
 // What an audited change was done to.

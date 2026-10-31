@@ -116,7 +116,7 @@ func (h *Handlers) PresetsList(_ context.Context) (externalapi.PresetsListRes, e
 		p, _ := reg.Get(name)
 		items = append(items, externalapi.PresetResource{
 			Name: p.Name(), Description: p.Description(),
-			ParamsSchema: externalapi.PresetResourceParamsSchema(integrations.RawOf(p.ParamsSchema())),
+			ParamsSchema: externalapi.JsonObject(integrations.RawOf(p.ParamsSchema())),
 		})
 	}
 	return mapper.PresetsListPage(pagination.Whole(items)), nil
@@ -176,7 +176,7 @@ func (h *Handlers) integrationResource(row *ent.Integration, limit providerlimit
 	}
 	res := mapper.IntegrationToResource(row)
 	res.ProviderLimit = mapper.ProviderLimitToStatus(limit)
-	res.Params = externalapi.IntegrationResourceParams(integrations.RawOf(view.Values))
+	res.Params = externalapi.JsonObject(integrations.RawOf(view.Values))
 	res.SecretsRetiring = view.SecretsRetiring
 	res.HookUrl = h.integrations.HookURL(row)
 	// The config is a oneOf per provider, which goverter cannot express: only the wrapper

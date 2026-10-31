@@ -29,7 +29,7 @@ func newShop(t *testing.T, env *testhelper.TestEnv) shop {
 }
 
 func orderInput(subject, action string, props map[string]string) externalapi.EventInput {
-	raw := make(externalapi.EventInputProperties, len(props))
+	raw := make(externalapi.JsonObject, len(props))
 	for k, v := range props {
 		raw[k] = jx.Raw(v)
 	}
@@ -37,7 +37,7 @@ func orderInput(subject, action string, props map[string]string) externalapi.Eve
 		SubjectId:  subject,
 		Email:      externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail),
 		Action:     action,
-		Properties: externalapi.NewOptNilEventInputProperties(raw),
+		Properties: externalapi.NewOptNilJsonObject(raw),
 	}
 }
 

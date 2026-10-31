@@ -70,7 +70,7 @@ func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 
 	_, err = c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{
 		LastName:     siteapi.NewOptNilString("Lastleak"),
-		CustomFields: siteapi.NewOptNilSiteUpdateContactInputCustomFields(siteapi.SiteUpdateContactInputCustomFields{"plan": jx.Raw(`"` + secret + `"`)}),
+		CustomFields: siteapi.NewOptNilJsonObject(siteapi.JsonObject{"plan": jx.Raw(`"` + secret + `"`)}),
 	}, siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 	_, err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id})

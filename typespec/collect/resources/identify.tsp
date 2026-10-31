@@ -15,7 +15,7 @@ model CollectIdentifyInput {
   @maxLength(255)
   subjectId?: string | null;
 
-  traits?: Record<unknown> | null;
+  traits?: JsonObject | null;
 }
 
 model CollectOkResponse {
