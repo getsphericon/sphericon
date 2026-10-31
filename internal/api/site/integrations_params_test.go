@@ -17,12 +17,12 @@ import (
 func TestSiteIntegrationsRefuseParamsOnTheirOwnField(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	create := func(params siteapi.CreateIntegrationInputParams) siteapi.ProblemDetailsErrors {
+	create := func(params siteapi.JsonObject) siteapi.ProblemDetailsErrors {
 		t.Helper()
 		res, err := c.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{
 			Name:   "SES",
 			Config: sesInput("eu-west-1", "AKIA1234", "secret"),
-			Params: siteapi.NewOptCreateIntegrationInputParams(params),
+			Params: siteapi.NewOptJsonObject(params),
 		}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
 		refused, ok := res.(*siteapi.SiteIntegrationsCreateUnprocessableEntity)
@@ -30,9 +30,9 @@ func TestSiteIntegrationsRefuseParamsOnTheirOwnField(t *testing.T) {
 		return refused.Errors.Value
 	}
 
-	pattern := create(siteapi.CreateIntegrationInputParams{"topic_arn": jx.Raw(`"not-an-arn"`)})
-	missing := create(siteapi.CreateIntegrationInputParams{})
-	extra := create(siteapi.CreateIntegrationInputParams{
+	pattern := create(siteapi.JsonObject{"topic_arn": jx.Raw(`"not-an-arn"`)})
+	missing := create(siteapi.JsonObject{})
+	extra := create(siteapi.JsonObject{
 		"topic_arn": jx.Raw(`"arn:aws:sns:eu-west-1:123456789012:acme-ses-events"`),
 		"region":    jx.Raw(`"eu-west-1"`),
 	})
