@@ -114,6 +114,7 @@ func (c *ConverterImpl) AutomationResultsPointToResource(source automations.Resu
 }
 func (c *ConverterImpl) AutomationResultsToResource(source automations.Results) external.AutomationResults {
 	var externalapiAutomationResults external.AutomationResults
+	// externalapiAutomationResults.Period: ignore
 	externalapiAutomationResults.Current = c.AutomationPeriodResultsToResource(source.Current)
 	externalapiAutomationResults.Previous = c.AutomationPeriodResultsToResource(source.Previous)
 	if source.Series != nil {
@@ -154,6 +155,14 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 		externalapiAutomationVersion.Steps = automationSteps(source)
 	}
 	return externalapiAutomationVersion
+}
+func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) []external.AutomationResource {
+	var externalapiAutomationResourceList []external.AutomationResource
+	externalapiAutomationResourceList = make([]external.AutomationResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiAutomationResourceList[i] = c.AutomationToResource(source[i])
+	}
+	return externalapiAutomationResourceList
 }
 func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) external.BrandKitResource {
 	var externalapiBrandKitResource external.BrandKitResource
@@ -221,6 +230,14 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiBroadcastResource
+}
+func (c *ConverterImpl) BroadcastsToResources(source []*ent.Broadcast) []external.BroadcastResource {
+	var externalapiBroadcastResourceList []external.BroadcastResource
+	externalapiBroadcastResourceList = make([]external.BroadcastResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiBroadcastResourceList[i] = c.BroadcastToResource(source[i])
+	}
+	return externalapiBroadcastResourceList
 }
 func (c *ConverterImpl) CapturedMessageToResource(source *ent.CapturedMessage) external.CapturedMessageResource {
 	var externalapiCapturedMessageResource external.CapturedMessageResource
@@ -314,6 +331,14 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) external.ContactR
 	}
 	return externalapiContactResource
 }
+func (c *ConverterImpl) ContactsToResources(source []*ent.Contact) []external.ContactResource {
+	var externalapiContactResourceList []external.ContactResource
+	externalapiContactResourceList = make([]external.ContactResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiContactResourceList[i] = c.ContactToResource(source[i])
+	}
+	return externalapiContactResourceList
+}
 func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.CustomFieldResource {
 	var externalapiCustomFieldResource external.CustomFieldResource
 	if source != nil {
@@ -369,6 +394,14 @@ func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) exter
 	}
 	return externalapiTemplateResource
 }
+func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) []external.TemplateResource {
+	var externalapiTemplateResourceList []external.TemplateResource
+	externalapiTemplateResourceList = make([]external.TemplateResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiTemplateResourceList[i] = c.EmailTemplateToResource(source[i])
+	}
+	return externalapiTemplateResourceList
+}
 func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external.EnrollmentResource {
 	var externalapiEnrollmentResource external.EnrollmentResource
 	if source != nil {
@@ -383,6 +416,14 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiEnrollmentResource
+}
+func (c *ConverterImpl) EnrollmentsToResources(source []*ent.AutomationRun) []external.EnrollmentResource {
+	var externalapiEnrollmentResourceList []external.EnrollmentResource
+	externalapiEnrollmentResourceList = make([]external.EnrollmentResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiEnrollmentResourceList[i] = c.EnrollmentToResource(source[i])
+	}
+	return externalapiEnrollmentResourceList
 }
 func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportEvent {
 	var externalapiContactExportEvent external.ContactExportEvent
@@ -412,7 +453,12 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 		externalapiIntegrationResource.IsDefault = (*source).IsDefault
 		externalapiIntegrationResource.MaxPerSecond = nilInt32((*source).MaxPerSecond)
 		externalapiIntegrationResource.MaxPerDay = nilInt32((*source).MaxPerDay)
+		// externalapiIntegrationResource.ProviderLimit: ignore
+		// externalapiIntegrationResource.Config: ignore
 		externalapiIntegrationResource.Preset = nilString((*source).Preset)
+		// externalapiIntegrationResource.Params: ignore
+		// externalapiIntegrationResource.SecretsRetiring: ignore
+		// externalapiIntegrationResource.HookUrl: ignore
 		externalapiIntegrationResource.ArchivedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiIntegrationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -506,6 +552,14 @@ func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) external.Ru
 	}
 	return externalapiRuleFiringResource
 }
+func (c *ConverterImpl) RuleFiringsToResources(source []*ent.RuleFiring) []external.RuleFiringResource {
+	var externalapiRuleFiringResourceList []external.RuleFiringResource
+	externalapiRuleFiringResourceList = make([]external.RuleFiringResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiRuleFiringResourceList[i] = c.RuleFiringToResource(source[i])
+	}
+	return externalapiRuleFiringResourceList
+}
 func (c *ConverterImpl) RuleToResource(source *ent.Rule) external.RuleResource {
 	var externalapiRuleResource external.RuleResource
 	if source != nil {
@@ -531,6 +585,14 @@ func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) external.
 	}
 	return externalapiRuleVersion
 }
+func (c *ConverterImpl) RulesToResources(source []*ent.Rule) []external.RuleResource {
+	var externalapiRuleResourceList []external.RuleResource
+	externalapiRuleResourceList = make([]external.RuleResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiRuleResourceList[i] = c.RuleToResource(source[i])
+	}
+	return externalapiRuleResourceList
+}
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentResource {
 	var externalapiSegmentResource external.SegmentResource
 	if source != nil {
@@ -543,6 +605,14 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentR
 	}
 	return externalapiSegmentResource
 }
+func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []external.SegmentResource {
+	var externalapiSegmentResourceList []external.SegmentResource
+	externalapiSegmentResourceList = make([]external.SegmentResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiSegmentResourceList[i] = c.SegmentToResource(source[i])
+	}
+	return externalapiSegmentResourceList
+}
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) external.SendingDomainResource {
 	var externalapiSendingDomainResource external.SendingDomainResource
 	if source != nil {
@@ -550,6 +620,10 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		externalapiSendingDomainResource.Domain = (*source).Domain
 		externalapiSendingDomainResource.DkimSelector = (*source).DkimSelector
 		externalapiSendingDomainResource.Verified = sendingDomainVerified((*source))
+		// externalapiSendingDomainResource.DkimRecord: ignore
+		// externalapiSendingDomainResource.SpfRecord: ignore
+		// externalapiSendingDomainResource.DmarcRecord: ignore
+		// externalapiSendingDomainResource.TrackingRecord: ignore
 		externalapiSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
 		externalapiSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
 		externalapiSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
@@ -618,6 +692,14 @@ func (c *ConverterImpl) TagToResource(source *ent.Tag) external.TagResource {
 		externalapiTagResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiTagResource
+}
+func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []external.TagResource {
+	var externalapiTagResourceList []external.TagResource
+	externalapiTagResourceList = make([]external.TagResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiTagResourceList[i] = c.TagToResource(source[i])
+	}
+	return externalapiTagResourceList
 }
 func (c *ConverterImpl) TrackingRecordToResource(source sendingdomains.TrackingRecord) external.TrackingRecord {
 	var externalapiTrackingRecord external.TrackingRecord

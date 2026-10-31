@@ -3,9 +3,6 @@ package external
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/automations"
@@ -20,7 +17,7 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 		return nil, err
 	}
 	return &externalapi.AutomationsListOK{
-		Items:      lo.Map(page.Items, func(a *ent.Automation, _ int) externalapi.AutomationResource { return mapper.AutomationToResource(a) }),
+		Items:      mapper.AutomationsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),

@@ -25,6 +25,7 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.
 	automationsStep.Subject = stringIn(source.Subject)
 	automationsStep.Body = stringIn(source.Body)
 	automationsStep.Doc = stepDocIn(source.Doc)
+	// automationsStep.EditorVersion: ignore
 	automationsStep.Seconds = int32In(source.Seconds)
 	automationsStep.Tag = stringIn(source.Tag)
 	automationsStep.ID = stringIn(source.ID)
@@ -202,6 +203,7 @@ func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) templates.
 		templatesCreateInput.Subject = stringPtrIn((*source).Subject)
 		templatesCreateInput.Body = stringPtrIn((*source).Body)
 		templatesCreateInput.Doc = createTemplateDoc((*source).Doc)
+		// templatesCreateInput.Prepared: ignore
 	}
 	return templatesCreateInput
 }

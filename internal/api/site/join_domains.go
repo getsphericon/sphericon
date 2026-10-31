@@ -3,9 +3,6 @@ package site
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 )
 
@@ -17,7 +14,7 @@ func (h *Handlers) SiteJoinDomainsList(ctx context.Context, _ siteapi.SiteJoinDo
 	if err != nil {
 		return nil, err
 	}
-	items := lo.Map(rows, func(d *ent.JoinDomain, _ int) siteapi.SiteJoinDomainResource { return mapper.JoinDomainToResource(d) })
+	items := mapper.JoinDomainsToResources(rows)
 	res := siteapi.SiteJoinDomainsListOKApplicationJSON(items)
 	return &res, nil
 }

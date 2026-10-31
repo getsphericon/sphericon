@@ -3,8 +3,6 @@ package external
 import (
 	"context"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -82,6 +80,6 @@ func (h *Handlers) TagsDelete(ctx context.Context, params externalapi.TagsDelete
 
 // tagsPage maps and pages a small in-memory tag set.
 func tagsPage(items []*ent.Tag, page, pageSize externalapi.OptInt32) pagination.Page[externalapi.TagResource] {
-	resources := lo.Map(items, func(t *ent.Tag, _ int) externalapi.TagResource { return mapper.TagToResource(t) })
+	resources := mapper.TagsToResources(items)
 	return pagination.Paginate(resources, convert.Ptr(page), convert.Ptr(pageSize))
 }

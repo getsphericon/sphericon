@@ -3,9 +3,6 @@ package external
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/condition"
@@ -25,7 +22,7 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 		return nil, err
 	}
 	return &externalapi.RulesListOK{
-		Items:      lo.Map(page.Items, func(r *ent.Rule, _ int) externalapi.RuleResource { return mapper.RuleToResource(r) }),
+		Items:      mapper.RulesToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),
@@ -166,9 +163,7 @@ func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleF
 		return nil, err
 	}
 	return &externalapi.RuleFiringsListOK{
-		Items: lo.Map(page.Items, func(f *ent.RuleFiring, _ int) externalapi.RuleFiringResource {
-			return mapper.RuleFiringToResource(f)
-		}),
+		Items:      mapper.RuleFiringsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),

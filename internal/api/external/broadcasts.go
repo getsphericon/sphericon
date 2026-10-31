@@ -4,9 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
@@ -26,7 +23,7 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 		return nil, err
 	}
 	return &externalapi.BroadcastsListOK{
-		Items:      lo.Map(page.Items, func(b *ent.Broadcast, _ int) externalapi.BroadcastResource { return mapper.BroadcastToResource(b) }),
+		Items:      mapper.BroadcastsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),
