@@ -37,6 +37,7 @@ import (
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
+	"time"
 )
 
 type ConverterImpl struct{}
@@ -169,6 +170,65 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 		siteapiSiteAutomationVersion.Steps = automationSteps(source)
 	}
 	return siteapiSiteAutomationVersion
+}
+func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithRevenue) site.SiteAutomationResource {
+	var siteapiSiteAutomationResource site.SiteAutomationResource
+	var pInt64 *int64
+	if source.Automation != nil {
+		pInt64 = &source.Automation.ID
+	}
+	if pInt64 != nil {
+		siteapiSiteAutomationResource.ID = site.EntityId(*pInt64)
+	}
+	var pString *string
+	if source.Automation != nil {
+		pString = &source.Automation.Name
+	}
+	if pString != nil {
+		siteapiSiteAutomationResource.Name = *pString
+	}
+	var pAutomationStatus *automation.Status
+	if source.Automation != nil {
+		pAutomationStatus = &source.Automation.Status
+	}
+	if pAutomationStatus != nil {
+		siteapiSiteAutomationResource.Status = c.AutomationStatusToResource(*pAutomationStatus)
+	}
+	var pEntAutomationVersion *ent.AutomationVersion
+	if source.Automation != nil {
+		pEntAutomationVersion = source.Automation.Edges.LiveVersion
+	}
+	siteapiSiteAutomationResource.Live = automationVersionOrNull(c, pEntAutomationVersion)
+	var pEntAutomationVersion2 *ent.AutomationVersion
+	if source.Automation != nil {
+		pEntAutomationVersion2 = source.Automation.Edges.DraftVersion
+	}
+	siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, pEntAutomationVersion2)
+	var pTimeTime *time.Time
+	if source.Automation != nil {
+		pTimeTime = source.Automation.DiscardedAt
+	}
+	siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp(pTimeTime)
+	siteapiSiteAutomationResource.Revenue = optMessageRevenue(c, source.Revenue)
+	var pTimeTime2 *time.Time
+	if source.Automation != nil {
+		pTimeTime2 = &source.Automation.CreatedAt
+	}
+	siteapiSiteAutomationResource.CreatedAt = timestampOf(pTimeTime2)
+	var pTimeTime3 *time.Time
+	if source.Automation != nil {
+		pTimeTime3 = &source.Automation.UpdatedAt
+	}
+	siteapiSiteAutomationResource.UpdatedAt = timestampOf(pTimeTime3)
+	return siteapiSiteAutomationResource
+}
+func (c *ConverterImpl) AutomationsWithRevenueToResources(source []automations.WithRevenue) []site.SiteAutomationResource {
+	var siteapiSiteAutomationResourceList []site.SiteAutomationResource
+	siteapiSiteAutomationResourceList = make([]site.SiteAutomationResource, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteAutomationResourceList[i] = c.AutomationWithRevenueToResource(source[i])
+	}
+	return siteapiSiteAutomationResourceList
 }
 func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKitResource {
 	var siteapiSiteBrandKitResource site.SiteBrandKitResource
