@@ -17,7 +17,7 @@ func analyticsReport[Res any](ctx context.Context, rng siteapi.OptSiteAnalyticsR
 	return build(workspaceScope(ctx), inputs.AnalyticsWindow(rng.Or(siteapi.SiteAnalyticsRange7d)))
 }
 
-// SiteAnalyticsOverview maps the analytics module's Overview onto the DTO.
+// SiteAnalyticsOverview maps the analytics module's Overview onto the DTO, with the abuse warning.
 func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.SiteAnalyticsOverviewParams) (siteapi.SiteAnalyticsOverviewRes, error) {
 	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsOverviewRes, error) {
 		ov, err := h.analytics.Overview(ctx, s, w)
@@ -28,26 +28,9 @@ func (h *Handlers) SiteAnalyticsOverview(ctx context.Context, params siteapi.Sit
 		if err != nil {
 			return nil, err
 		}
-		series := make([]siteapi.SiteAnalyticsPoint, len(ov.Series))
-		for i, p := range ov.Series {
-			series[i] = siteapi.SiteAnalyticsPoint{Date: p.Date, Sent: narrow.Int32(p.Sent), Opened: narrow.Int32(p.Opened), Clicked: narrow.Int32(p.Clicked)}
-		}
-		return &siteapi.SiteAnalyticsOverview{
-			Contacts: siteapi.SiteAnalyticsContacts{
-				Total: narrow.Int32(ov.Contacts.Total), Active: narrow.Int32(ov.Contacts.Active),
-				Unsubscribed: narrow.Int32(ov.Contacts.Unsubscribed), NewInRange: narrow.Int32(ov.Contacts.NewInWindow),
-			},
-			Email: siteapi.SiteAnalyticsEmail{
-				SentCount: narrow.Int32(ov.Email.Sent), OpenedCount: narrow.Int32(ov.Email.Opened), ClickedCount: narrow.Int32(ov.Email.Clicked),
-				OpenRate: ov.Email.OpenRate, ClickRate: ov.Email.ClickRate, ClickToOpenRate: ov.Email.ClickToOpenRate,
-			},
-			Automations: siteapi.SiteAnalyticsAutomations{
-				Total: narrow.Int32(ov.Automations.Total), Active: narrow.Int32(ov.Automations.Active),
-				RunsActive: narrow.Int32(ov.Automations.RunsActive), RunsCompleted: narrow.Int32(ov.Automations.RunsCompleted),
-			},
-			Timeseries:   series,
-			AbuseWarning: warning,
-		}, nil
+		out := mapper.AnalyticsOverviewToResource(ov)
+		out.AbuseWarning = warning
+		return out, nil
 	})
 }
 
@@ -58,13 +41,7 @@ func (h *Handlers) SiteAnalyticsEvents(ctx context.Context, params siteapi.SiteA
 		if err != nil {
 			return nil, err
 		}
-		actions := make([]siteapi.SiteAnalyticsEventAction, len(rows))
-		for i, r := range rows {
-			actions[i] = siteapi.SiteAnalyticsEventAction{
-				Action: r.Action, Count: narrow.Int32(r.Count), Contacts: narrow.Int32(r.Contacts), LastAt: siteapi.Timestamp(r.LastAt),
-			}
-		}
-		return &siteapi.SiteAnalyticsEvents{Actions: actions}, nil
+		return &siteapi.SiteAnalyticsEvents{Actions: mapper.AnalyticsEventActionsToResources(rows)}, nil
 	})
 }
 
@@ -78,9 +55,7 @@ func (h *Handlers) abuseWarning(ctx context.Context, s *ent.Scoped) (siteapi.Opt
 	if err != nil || w == nil {
 		return siteapi.OptNilSiteAbuseWarning{}, err
 	}
-	return siteapi.NewOptNilSiteAbuseWarning(siteapi.SiteAbuseWarning{
-		Domain: w.Domain, Metric: siteapi.SiteAbuseMetric(w.Metric), Rate: w.Rate,
-	}), nil
+	return siteapi.NewOptNilSiteAbuseWarning(mapper.AbuseWarningToResource(*w)), nil
 }
 
 // SiteAnalyticsSubscribedPeople maps the Subscribed people report onto the DTO.
@@ -90,34 +65,22 @@ func (h *Handlers) SiteAnalyticsSubscribedPeople(ctx context.Context, params sit
 		if err != nil {
 			return nil, err
 		}
-		series := make([]siteapi.SiteAnalyticsSubscribedPoint, len(report.Series))
-		for i, p := range report.Series {
-			series[i] = siteapi.SiteAnalyticsSubscribedPoint{
-				Date: p.Date, Subscribed: narrow.Int32(p.Subscribed), Unsubscribed: narrow.Int32(p.Unsubscribed), Net: narrow.Int32(p.Net),
-			}
-		}
-		return &siteapi.SiteAnalyticsSubscribedPeople{Current: narrow.Int32(report.Current), Series: series}, nil
+		return mapper.AnalyticsSubscribedPeopleToResource(report), nil
 	})
 }
 
-// SiteAnalyticsClicksByLink maps the analytics module's Clicks by link report onto the DTO.
+// SiteAnalyticsClicksByLink maps the analytics module's Clicks by link report onto the DTO, with
+// the Event retention the counts cover.
 func (h *Handlers) SiteAnalyticsClicksByLink(ctx context.Context, params siteapi.SiteAnalyticsClicksByLinkParams) (siteapi.SiteAnalyticsClicksByLinkRes, error) {
 	return analyticsReport(ctx, params.Range, func(s *ent.Scoped, w analytics.Window) (siteapi.SiteAnalyticsClicksByLinkRes, error) {
 		links, err := h.analytics.ClicksByLink(ctx, s, w)
 		if err != nil {
 			return nil, err
 		}
-		out := make([]siteapi.SiteAnalyticsLink, len(links))
-		for i, l := range links {
-			owners := make([]siteapi.SiteAnalyticsLinkOwner, len(l.Owners))
-			for j, o := range l.Owners {
-				owners[j] = siteapi.SiteAnalyticsLinkOwner{
-					Kind: siteapi.SiteAnalyticsOwnerKind(o.Kind), ID: siteapi.EntityId(o.ID), Name: o.Name, Clicks: narrow.Int32(o.Clicks),
-				}
-			}
-			out[i] = siteapi.SiteAnalyticsLink{URL: l.URL, Clicks: narrow.Int32(l.Clicks), Owners: owners}
-		}
-		return &siteapi.SiteAnalyticsClicksByLink{Links: out, EventsRetentionDays: narrow.Int32(h.analytics.RetentionDays())}, nil
+		return &siteapi.SiteAnalyticsClicksByLink{
+			Links:               mapper.AnalyticsLinksToResources(links),
+			EventsRetentionDays: narrow.Int32(h.analytics.RetentionDays()),
+		}, nil
 	})
 }
 
@@ -128,11 +91,7 @@ func (h *Handlers) SiteAnalyticsOpensByHour(ctx context.Context, params siteapi.
 		if err != nil {
 			return nil, err
 		}
-		cells := make([]siteapi.SiteAnalyticsOpensCell, len(report.Cells))
-		for i, c := range report.Cells {
-			cells[i] = siteapi.SiteAnalyticsOpensCell{Weekday: narrow.Int32(c.Weekday), Hour: narrow.Int32(c.Hour), Opens: narrow.Int32(c.Opens)}
-		}
-		return &siteapi.SiteAnalyticsOpensByHour{Cells: cells, Total: narrow.Int32(report.Total)}, nil
+		return mapper.AnalyticsOpensByHourToResource(report), nil
 	})
 }
 
@@ -143,14 +102,7 @@ func (h *Handlers) SiteAnalyticsNewPeople(ctx context.Context, params siteapi.Si
 		if err != nil {
 			return nil, err
 		}
-		series := make([]siteapi.SiteNewPeoplePoint, len(report.Series))
-		for i, p := range report.Series {
-			series[i] = siteapi.SiteNewPeoplePoint{
-				Date: p.Date, Manual: narrow.Int32(p.Manual), API: narrow.Int32(p.API),
-				Tracker: narrow.Int32(p.Tracker), Unknown: narrow.Int32(p.Unknown),
-			}
-		}
-		return &siteapi.SiteNewPeopleReport{Total: narrow.Int32(report.Total), Timeseries: series}, nil
+		return mapper.AnalyticsNewPeopleToResource(report), nil
 	})
 }
 
