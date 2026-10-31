@@ -1,7 +1,7 @@
 # Codegen pipeline
 
-The diagram, goverter and the generated-versus-hand-written rules. The list of files never to
-edit by hand is in `AGENTS.md`.
+The diagram, goverter and the generated-versus-hand-written rules. The list of generated files,
+never edited by hand, is [`.gitattributes`](../../.gitattributes) (`linguist-generated`).
 
 ```
 typespec/{site,external,collect,staff,staffee,service,telemetry}   ──tsp compile──▶  openapi/*.openapi.json
@@ -90,12 +90,14 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 
 - `mise run generate` — full cycle: typespec → openapi → backend (ent + ogen) → fixture catalog → frontend → i18n types → format.
 - `mise run generate:typespec` / `mise run generate:backend` / `mise run generate:openapi` — partial regens.
-- The README claims echo + oapi-codegen; that is **outdated**. The HTTP stack is **ogen**
-  (`gen/*` are ogen servers, wired in `internal/server/server.go`).
 
 ### What is generated vs hand-written
 
-Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
-frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
-diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the three `converter_gen.go`, the two `inputs_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_{scopes,permissions}_gen.go`, `internal/accounts/{permissions,grant_permissions}_gen.go`, `internal/apitokens/scopes_gen.go`, `internal/fixtures/catalog_gen.go`, `internal/i18n/ids_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
+The generated files are the ones [`.gitattributes`](../../.gitattributes) marks
+`linguist-generated` (GitHub collapses them in diffs and leaves them out of the language stats).
+All but the OpenAPI documents and `internal/emaildoc/assets/` carry a header (`// Code generated …
+DO NOT EDIT.`, or `// @ts-nocheck` on the frontend).
+`check:generated` (`mise/scripts/check-generated.ts`, part of `mise run check`) fails on a file with
+the header that no pattern marks and on a pattern that matches no file. Generated code lives in
+dedicated dirs (`gen/`, `ent/`, `openapi/`, the `generated/` dirs); `internal/` and `ee/` are
+hand-written but for the `*_gen.go` and `*_gen_test.go` files and `internal/emaildoc/assets/`.

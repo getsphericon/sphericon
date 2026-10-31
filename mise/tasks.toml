@@ -535,6 +535,7 @@ depends = [
   "check:ast",
   "check:openapi",
   "check:copies",
+  "check:generated",
   "check:typos",
   "check:adr",
   "check:helm",
@@ -658,6 +659,10 @@ run = ["ast-grep test", "ast-grep scan"]
 ["check:copies"]
 description = "Rule 6: no hand-written copy of a TypeSpec enum, limit or scope in Go, TypeScript or fixtures (cmd/contractcopy reads openapi/*.openapi.json; a value that only looks like a contract value carries `// contract-copy: <reason>`)"
 run = "go run ./cmd/contractcopy"
+
+["check:generated"]
+description = "Generated files and .gitattributes agree: every file with a generated header is marked linguist-generated, every linguist-generated pattern matches a tracked file"
+run = "node mise/scripts/check-generated.ts"
 
 ["check:typos"]
 description = "Spelling in code, docs and comments (_typos.toml)"

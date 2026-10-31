@@ -21,7 +21,8 @@ maintainer rules further down (worktrees, `mise run land`, merging, closing tick
   both are accepted. The CLA and any `Signed-off-by` are the human's, never the agent's.
 - Before you push: `mise run generate` after a TypeSpec or `ent/schema` change, then
   `mise run check` and `mise run test`. The pull request title is a Conventional Commit.
-- A generated file is never edited by hand (the list is under "Codegen pipeline").
+- A generated file is never edited by hand: the list is `.gitattributes` (`linguist-generated`), see
+  "Codegen pipeline".
 
 ## What this is
 
@@ -37,10 +38,15 @@ every caller (regenerate afterwards), rather than layering the new design over t
 
 ## Codegen pipeline (read this first)
 
-API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. Never
-hand-edit anything under `openapi/`, `gen/`, `ent/` (except `ent/schema/`),
-`src/generated/` / `packages/analytics/src/generated/` / `packages/node/src/generated/`, `src/routeTree.gen.ts`, or the `*_gen.go` files in the
-`internal/api/{site,external,staff}/resources` packages, `ee/staff/resources`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_scopes_gen.go`, `internal/api/auth/external_permissions_gen.go`, `internal/accounts/grant_permissions_gen.go`, `internal/accounts/permissions_gen.go`, `internal/apitokens/scopes_gen.go`, `internal/fixtures/catalog_gen.go` and `internal/i18n/ids_gen.go`, or any `*_gen_test.go` mock, or `internal/emaildoc/assets/` (the document renderer bundle and schema listing) — regenerate instead.
+API contracts are **one-directional**: TypeSpec → OpenAPI → generated Go + TS. A generated file
+is regenerated, never edited by hand: `mise run generate`, or `mise run build:emaildoc` for
+`internal/emaildoc/assets/`. The generated files are the ones `.gitattributes` marks
+`linguist-generated`; most also carry a header (`// Code generated … DO NOT EDIT.`, or
+`// @ts-nocheck` on the frontend), and `mise run check` (`check:generated`) fails when a file with
+the header is missing from that list or a pattern of the list matches nothing. Inside `ent/`,
+`ent/schema/`, `ent/template/`, `entc.go` and `generate.go` are hand-written. A new generator's
+output gets the header and a path `.gitattributes` covers (`*_gen.go`, `*_gen_test.go`, or a new
+pattern).
 
 Pipeline diagram, goverter and what is generated: `docs/agents/codegen.md`.
 
@@ -53,7 +59,7 @@ mise run dev            # db:migrate (db:up first), then mise daemons start cadd
 mise run dev:down       # stop this checkout's dev stack (never the shared Postgres)
 mise run dev:restart    # dev:down, then dev
 mise run test           # creates the test DB, then `go test ./...` (packages in parallel)
-mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint with our analyzers (tools/analyzers, see CODING_STANDARDS.md; incl. gofmt) + easement (package boundaries, `easement.yml`; `check:lint` is all of it but easement, which CI runs as a job of its own) + gitleaks + jactionlint + zizmor + links in the Markdown (lychee --offline)
+mise run check          # tsc + oxlint + oxfmt --check + knip + golangci-lint with our analyzers (tools/analyzers, see CODING_STANDARDS.md; incl. gofmt) + check:generated (generated headers vs `.gitattributes`) + easement (package boundaries, `easement.yml`; `check:lint` is all of it but easement, which CI runs as a job of its own) + gitleaks + jactionlint + zizmor + links in the Markdown (lychee --offline)
 mise run test:cover     # Go suite with coverage, fails under the total in .testcoverage.yml (nightly in CI)
 mise run check:vulns    # govulncheck (nightly in CI, not part of `check`)
 mise run fix            # i18n extract + oxlint --fix + tsp format + oxfmt + go fmt

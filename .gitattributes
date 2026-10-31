@@ -3,6 +3,8 @@
 *.jar binary
 
 # --- Generated code (linguist collapses in diffs + drops from language stats) ---
+# The one list of generated files, never edited by hand. `mise run check:generated` fails when a
+# file with a generated header is not marked here or a pattern here matches no tracked file.
 # Later/more-specific patterns win, so hand-written exceptions follow the broad rule.
 ent/**                               linguist-generated=true
 ent/schema/**                        linguist-generated=false
