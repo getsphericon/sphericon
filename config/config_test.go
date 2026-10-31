@@ -702,3 +702,54 @@ func TestEverySecretVariableAcceptsAFile(t *testing.T) {
 		require.Containsf(t, values, "file-of-"+name, "%s_FILE is not read", name)
 	}
 }
+
+func TestConfigLoadRefusesAValueThatBreaksItsRule(t *testing.T) {
+	for env, want := range map[string]string{
+		"SPHERICON_SESSION_TTL=0s":                                     "SPHERICON_SESSION_TTL must be positive",
+		"SPHERICON_STAFF_SESSION_TTL=0s":                               "SPHERICON_STAFF_SESSION_TTL must be positive",
+		"SPHERICON_STAFF_HOLD_MAX_EXPIRY=0s":                           "SPHERICON_STAFF_HOLD_MAX_EXPIRY must be positive",
+		"SPHERICON_ABUSE_VOLUME_FLOOR=0":                               "SPHERICON_ABUSE_VOLUME_FLOOR must be positive",
+		"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT=0":                     "SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT must be positive",
+		"SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT=0.5":                   "SPHERICON_ABUSE_WARN_COMPLAINT_PERCENT must be below SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT",
+		"SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT=101":                 "SPHERICON_ABUSE_FREEZE_COMPLAINT_PERCENT must be at most 100",
+		"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT=0":                        "SPHERICON_ABUSE_WARN_BOUNCE_PERCENT must be positive",
+		"SPHERICON_ABUSE_WARN_BOUNCE_PERCENT=20":                       "SPHERICON_ABUSE_WARN_BOUNCE_PERCENT must be below SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT",
+		"SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT=101":                    "SPHERICON_ABUSE_FREEZE_BOUNCE_PERCENT must be at most 100",
+		"SPHERICON_ACCOUNT_LINK_URL=https://account.example.com":       "SPHERICON_ACCOUNT_LINK_SIGNING_KEY must be set together with SPHERICON_ACCOUNT_LINK_URL",
+		"SPHERICON_ACCOUNT_LINK_SIGNING_KEY=key":                       "SPHERICON_ACCOUNT_LINK_URL must be set together with SPHERICON_ACCOUNT_LINK_SIGNING_KEY",
+		"SPHERICON_MAX_BODY_BYTES=0":                                   "SPHERICON_MAX_BODY_BYTES must be positive",
+		"SPHERICON_COLLECT_MAX_BODY_BYTES=0":                           "SPHERICON_COLLECT_MAX_BODY_BYTES must be positive",
+		"SPHERICON_COLLECT_MAX_EVENT_BYTES=0":                          "SPHERICON_COLLECT_MAX_EVENT_BYTES must be positive",
+		"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE=-1":                     "SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE must not be negative",
+		"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND=-1":                 "SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND must not be negative",
+		"SPHERICON_RATE_LIMIT_API_PER_MINUTE=-1":                       "SPHERICON_RATE_LIMIT_API_PER_MINUTE must not be negative",
+		"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE=-1":               "SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE must not be negative",
+		"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE=-1":                  "SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE must not be negative",
+		"SPHERICON_RATE_LIMIT_LOGIN_FAILURES=-1":                       "SPHERICON_RATE_LIMIT_LOGIN_FAILURES must not be negative",
+		"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE=-1":                  "SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE must not be negative",
+		"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE=-1":                   "SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE must not be negative",
+		"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE=-1":                "SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE must not be negative",
+		"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE=-1":                   "SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE must not be negative",
+		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR=-1": "SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR must not be negative",
+		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR=-1":          "SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR must not be negative",
+		"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS=-1":                     "SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS must not be negative",
+		"SPHERICON_EVENTS_RETENTION_DAYS=-1":                           "SPHERICON_EVENTS_RETENTION_DAYS must not be negative",
+		"SPHERICON_UNVERIFIED_USER_RETENTION_DAYS=-1":                  "SPHERICON_UNVERIFIED_USER_RETENTION_DAYS must not be negative",
+		"SPHERICON_EVENT_LIVE_WINDOW_HOURS=0":                          "SPHERICON_EVENT_LIVE_WINDOW_HOURS must be at least 1",
+		"SPHERICON_TEST_INBOX_RETENTION_DAYS=0":                        "SPHERICON_TEST_INBOX_RETENTION_DAYS must be at least 1",
+		"SPHERICON_TEST_INBOX_MAX_MESSAGES=0":                          "SPHERICON_TEST_INBOX_MAX_MESSAGES must be at least 1",
+		"SPHERICON_DB_MAX_OPEN_CONNS=0":                                "SPHERICON_DB_MAX_OPEN_CONNS must be positive",
+		"SPHERICON_DB_MAX_IDLE_CONNS=-1":                               "SPHERICON_DB_MAX_IDLE_CONNS must not be negative",
+		"SPHERICON_DB_MAX_IDLE_CONNS=100":                              "SPHERICON_DB_MAX_IDLE_CONNS must not be above SPHERICON_DB_MAX_OPEN_CONNS",
+		"SPHERICON_DB_CONN_MAX_LIFETIME=0s":                            "SPHERICON_DB_CONN_MAX_LIFETIME must be positive",
+		"SPHERICON_RIVER_DB_MAX_CONNS=0":                               "SPHERICON_RIVER_DB_MAX_CONNS must be positive",
+	} {
+		t.Run(env, func(t *testing.T) {
+			t.Setenv("DATABASE_URL", "postgres://x")
+			name, value, _ := strings.Cut(env, "=")
+			t.Setenv(name, value)
+			_, err := config.Load("test")
+			require.ErrorContains(t, err, want)
+		})
+	}
+}
