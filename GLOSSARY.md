@@ -311,22 +311,33 @@ _Avoid_: Send log, delivery row, email record
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (Suppression,
 Unsubscribe, or missing Confirmation), or a permanent failure of that one message — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified
-Sending domain, or no Integration) or a **Deferral** (the Integration's Send rate limit is spent),
-after which the same messages may still be sent.
+Sending domain, no Integration, or a provider that has stopped the customer's account) or a **Deferral** (the Integration's Provider limit or the
+Workspace's Send cap is spent), after which the same messages may still be sent.
 _Avoid_: Status, result (unqualified)
 
-**Send rate limit**:
-The ceiling an Integration puts on how fast mail may leave it: a maximum messages per second and a
-maximum messages per rolling 24 hours, mirroring what the external provider account allows.
-The provider reports its own ceiling where it can (SES) and a user may set one; the lower of
-the two applies (the user's on a tie), and with neither the Integration is unlimited. Applies
-to Broadcast and Automation sends; Transactional sends are never delayed or deferred by it but
-still count against the 24-hour total.
-_Avoid_: Throttle (as a noun for the limit), quota
+**Provider limit**:
+How fast an Integration may send, mirroring what the customer's own provider account allows: a
+maximum messages per second and a maximum messages per rolling 24 hours. The provider reports
+its own where it can (SES) and a user may set one; the lower of the two applies (the user's on a
+tie), and with neither the Integration is unlimited. It protects the customer's provider account,
+not the platform. Applies to Broadcast and Automation sends; Transactional sends are never
+delayed or deferred by it but still count against the 24-hour total.
+_Avoid_: Send rate limit, send limit, throttle (as a noun for the limit), quota
+
+**Send cap**:
+The most messages a Workspace may send per rolling 24 hours across all its Integrations, set by
+a Staff member as a platform reputation-protection measure and not editable by the Workspace.
+Only a `saas` Instance has it: a self-hosted Instance does not limit what its Workspaces send. It
+slows sending rather than stopping it: a spent Send cap is a Deferral, and the Workspace sees the
+cap and that the platform set it. The Instance may give every new Workspace one by default; with
+none set, a Workspace has no Send cap. Transactional sends count against it but are never delayed
+by it. Distinct from the Provider limit, which the customer's provider imposes, and from Workspace
+suspension, which stops sending outright.
+_Avoid_: Quota, plan limit, allowance, throttle, ceiling (unqualified)
 
 **Deferral**:
-The reversible, per-source Outcome of an Outbound send that found its Integration's Send rate
-limit spent: the message is not consumed and is retried when capacity returns. Unlike a _Hold_,
+The reversible, per-source Outcome of an Outbound send that found its Integration's Provider
+limit or its Workspace's Send cap spent: the message is not consumed and is retried when capacity returns. Unlike a _Hold_,
 nothing is wrong with the source — it is simply busy — so it carries no hold reason and a
 Broadcast stays _sending_ with a progress estimate instead of a blocked state.
 _Avoid_: Throttled, rate-limited (as an outcome), delay

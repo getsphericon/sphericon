@@ -4,6 +4,11 @@ status: accepted
 
 # Send rate limit: a per-Integration ceiling, with Deferral as a third Outcome
 
+> **Amended by [[0067-the-send-cap-is-the-platforms-limit-the-provider-limit-the-customers]]:** the
+> Send rate limit is now the **Provider limit**. On a `saas` Instance the Workspace's **Send cap**
+> joins the minimum, and a spent one is a Deferral too. An SES-compatible Integration needs both
+> manual values. SES `EnforcementStatus` is read with the quota, and `SHUTDOWN` is a Hold.
+
 Broadcast and Automation sends are limited only by `QueueBroadcasts: {MaxWorkers: 10}`, one queue shared by every
 Workspace. Nothing knows the provider's own limits (SES: messages per second, messages per rolling 24 hours), so a
 large send against a new or sandboxed account trips provider throttling and endangers the sender's reputation.
