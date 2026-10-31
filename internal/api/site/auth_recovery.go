@@ -8,6 +8,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 )
 
 // SiteAuthForgotPassword mints a reset token and emails a link. It answers 202
@@ -43,7 +44,7 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 		return nil, err
 	}
 	// Best-effort enqueue (mirrors the welcome email): never fail the request.
-	if err := h.sysmail.EnqueuePasswordReset(ctx, to, token, u != nil && granted); err != nil {
+	if err := h.mail.Enqueue(ctx, mailjobs.PasswordReset(to, token, u != nil && granted)); err != nil {
 		mailNotQueued(ctx, "PasswordReset", err)
 	}
 	return &siteapi.SiteAuthForgotPasswordAccepted{}, nil
@@ -56,7 +57,7 @@ func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteR
 		return nil, err
 	}
 	if completedSignUp {
-		if err := h.welcome.EnqueueWelcome(ctx, u.Email, u.Name); err != nil {
+		if err := h.mail.Enqueue(ctx, mailjobs.Welcome(u.Email, u.Name)); err != nil {
 			mailNotQueued(ctx, "Welcome", err)
 		}
 	}
@@ -76,7 +77,7 @@ func (h *Handlers) SiteAuthVerifyEmail(ctx context.Context, req *siteapi.SiteVer
 	}
 	// Welcome email is a platform (transactional) send via the system sender, to an
 	// address that is now proven. Best-effort: never fail the verification.
-	if err := h.welcome.EnqueueWelcome(ctx, verified.Email, verified.Name); err != nil {
+	if err := h.mail.Enqueue(ctx, mailjobs.Welcome(verified.Email, verified.Name)); err != nil {
 		mailNotQueued(ctx, "Welcome", err)
 	}
 	// The session starts after the epoch bump VerifyEmail made, so it is the only one.

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
@@ -142,7 +143,7 @@ func (h *Handlers) switchSecondFactorRequirement(ctx context.Context, required b
 	}
 	// The requirement is committed; the email is best-effort, like the invite.
 	if switchedOn {
-		if merr := h.sysmail.EnqueueSecondFactorRequired(ctx, s.WorkspaceID()); merr != nil {
+		if merr := h.mail.Enqueue(ctx, mailjobs.SecondFactorRequired(s.WorkspaceID())); merr != nil {
 			slog.WarnContext(ctx, "second factor required email not enqueued", "error", merr, "workspace_id", s.WorkspaceID())
 		}
 	}

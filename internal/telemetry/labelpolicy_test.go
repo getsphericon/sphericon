@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
@@ -154,7 +155,7 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	require.NoError(t, client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", client.Stop(context.Background())) })
 
-	require.NoError(t, client.EnqueueWelcome(ctx, contactEmail, "Policy"))
+	require.NoError(t, client.Enqueue(ctx, mailjobs.Welcome(contactEmail, "Policy")))
 	require.Eventually(t, func() bool {
 		msgs := env.SystemMail.Messages()
 		for i := range msgs {

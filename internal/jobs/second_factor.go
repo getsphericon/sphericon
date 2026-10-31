@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/reportday"
@@ -25,38 +26,29 @@ const secondFactorReminderInterval = 15 * time.Minute
 // secondFactorSetupPath is the SPA page where a User enrolls a Second factor.
 const secondFactorSetupPath = "/account/security"
 
-// NotifySecondFactorRequiredArgs is the river payload of the "a Second factor is now
-// required" email, sent once when a Workspace's Two-factor requirement is turned on
-// (ADR 0020).
-type NotifySecondFactorRequiredArgs struct {
-	WorkspaceID int64 `json:"workspace_id"`
-}
-
-func (NotifySecondFactorRequiredArgs) Kind() string { return "second_factor_required_notify" }
-
 // NotifySecondFactorRequiredWorker sends that email via the system (platform) sender.
 type NotifySecondFactorRequiredWorker struct {
-	river.WorkerDefaults[NotifySecondFactorRequiredArgs]
+	river.WorkerDefaults[mailjobs.SecondFactorRequiredArgs]
 
 	ent    *ent.Client
 	sender messaging.EmailSender
 	appURL string
 }
 
-func (w *NotifySecondFactorRequiredWorker) Work(ctx context.Context, job *river.Job[NotifySecondFactorRequiredArgs]) error {
-	return NotifySecondFactorRequired(ctx, w.ent, w.sender, w.appURL, job.Args.WorkspaceID)
+// NewNotifySecondFactorRequiredWorker builds the worker that mails a Workspace's Users without a
+// Second factor that it now requires one; links are built on appURL.
+func NewNotifySecondFactorRequiredWorker(client *ent.Client, sender messaging.EmailSender, appURL string) *NotifySecondFactorRequiredWorker {
+	return &NotifySecondFactorRequiredWorker{ent: client, sender: sender, appURL: appURL}
 }
 
-// NotifySecondFactorRequired emails every User of the Workspace who has no Second
-// factor that the Workspace now requires one, with their deadline. The Memberships
-// are read when the job runs, so a requirement switched off again in between mails no
-// one. Platform mail goes through the system sender, outside Outbound send (ADR 0015).
-// Pure (no queue) so it runs identically under the river worker and the inline adapter.
-func NotifySecondFactorRequired(ctx context.Context, client *ent.Client, sender messaging.EmailSender, appURL string, workspaceID int64) error {
-	if sender == nil {
+func (w *NotifySecondFactorRequiredWorker) Work(ctx context.Context, job *river.Job[mailjobs.SecondFactorRequiredArgs]) error {
+	// Every User of the Workspace who has no Second factor is mailed their deadline. The
+	// Memberships are read when the job runs, so a requirement switched off again in between
+	// mails no one. Platform mail goes through the system sender, outside Outbound send (ADR 0015).
+	if w.sender == nil {
 		return errors.New("notify second factor required: no system email sender configured")
 	}
-	members, err := client.Scoped(workspaceID).Membership().Query().WithUser().WithWorkspace().All(ctx)
+	members, err := w.ent.Scoped(job.Args.WorkspaceID).Membership().Query().WithUser().WithWorkspace().All(ctx)
 	if err != nil {
 		return err
 	}
@@ -66,7 +58,7 @@ func NotifySecondFactorRequired(ctx context.Context, client *ent.Client, sender 
 		if !ok {
 			continue
 		}
-		if err := sendSecondFactorMail(ctx, sender, appURL, ownernotice.Notice{Subject: i18n.EmailSecondFactorRequiredSubject, Body: i18n.EmailSecondFactorRequiredBody}, m, deadline); err != nil {
+		if err := sendSecondFactorMail(ctx, w.sender, w.appURL, ownernotice.Notice{Subject: i18n.EmailSecondFactorRequiredSubject, Body: i18n.EmailSecondFactorRequiredBody}, m, deadline); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -91,13 +83,6 @@ func sendSecondFactorMail(ctx context.Context, sender messaging.EmailSender, app
 		return fmt.Errorf("mail %s: %w", u.Email, err)
 	}
 	return nil
-}
-
-// EnqueueSecondFactorRequired schedules the "a Second factor is now required" email
-// for the Workspace's Users (river adapter).
-func (c *Client) EnqueueSecondFactorRequired(ctx context.Context, workspaceID int64) error {
-	_, err := c.river.Insert(ctx, NotifySecondFactorRequiredArgs{WorkspaceID: workspaceID}, nil)
-	return err
 }
 
 // RemindSecondFactorArgs is the periodic tick that reminds Users whose grace under a
