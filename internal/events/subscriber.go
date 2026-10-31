@@ -165,14 +165,15 @@ func (hs ConsumerHandlers) Of(group string) (message.NoPublishHandlerFunc, bool)
 // own group named like its handler. RegisterSubscribers runs them on the router, and
 // ReplayDeadLetters runs one group's dead letters through its handler.
 func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, orders OrderRecorder, extra []Consumer) ConsumerHandlers {
-	hs := ConsumerHandlers{
+	hs := make(ConsumerHandlers, 0, len(coreGroups())+len(extra))
+	hs = append(hs, ConsumerHandlers{
 		{GroupPersist, "persist_event", persistConsumer(client)},
 		{GroupAutomations, "enroll_automations", AutomationsConsumer(enroller)},
 		{GroupRules, "evaluate_rules", RulesConsumer(client, rules)},
 		{GroupWebhooks, "dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
 		{GroupSuppression, "update_suppression", suppressionConsumer(client)},
 		{GroupOrders, "record_orders", ordersConsumer(client, orders)},
-	}
+	}...)
 	for _, c := range extra {
 		hs = append(hs, ConsumerHandler{c.Name, c.Name, c.Handler()})
 	}

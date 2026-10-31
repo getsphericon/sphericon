@@ -47,6 +47,8 @@ func TestDeadLettersAreReportedPerConsumerGroup(t *testing.T) {
 	unregister, err := events.RegisterDeadLetterGauge(env.DB)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Report("unregister the gauge", unregister()) })
+	// test writes: a dead letter is written by the router's poison queue, which this test of the
+	// gauge does not run.
 	env.DB.OutboxDeadLetter.Create().SetUUID("dead-1").SetCreatedAt(time.Now()).SetTransactionID("1").
 		SetPayload([]byte(`{}`)).SetMetadata([]byte(`{"consumer_group":"webhooks"}`)).ExecX(t.Context())
 
