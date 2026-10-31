@@ -1,4 +1,5 @@
 import { identify, initTracking, track, trackPageView } from '@sphericon/analytics'
+import type { DataRouter, Location } from 'react-router'
 
 import { ENROLL_PATH } from '../server/enroll.ts'
 import type { EnrollRequest } from '../server/enroll.ts'
@@ -12,18 +13,28 @@ export function startTracking(): void {
   })
 }
 
-export function pageViewed(): void {
-  trackPageView({
-    path: location.pathname,
-    url: location.href,
-    title: document.title,
-    referrer: document.referrer,
-    locale: navigator.language,
-  })
-}
-
-export function viewedPricing(plan: string): void {
-  track('viewed_pricing', { plan })
+// A page view on load and on every navigation, and the pricing view on the pricing page. The
+// router reports every change of its state; a navigation is the one that brings a new location.
+export function trackNavigations(router: DataRouter): void {
+  let viewed: Location | null = null
+  const view = (current: Location) => {
+    if (current === viewed) {
+      return
+    }
+    viewed = current
+    trackPageView({
+      path: location.pathname,
+      url: location.href,
+      title: document.title,
+      referrer: document.referrer,
+      locale: navigator.language,
+    })
+    if (current.pathname === '/pricing') {
+      track('viewed_pricing', { plan: 'pro' })
+    }
+  }
+  view(router.state.location)
+  router.subscribe((state) => view(state.location))
 }
 
 export function addedToCart(course: string, price: number): void {

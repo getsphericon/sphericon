@@ -1,10 +1,8 @@
 import { AppShell, Badge, Button, Container, Group, Title } from '@mantine/core'
-import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router'
+import { NavLink, Outlet } from 'react-router'
 
 import { useCart } from './cartContext.ts'
-import { pageViewed } from './tracking.ts'
 
 function NavButton({ to, children }: { to: string; children: ReactNode }) {
   return (
@@ -14,25 +12,8 @@ function NavButton({ to, children }: { to: string; children: ReactNode }) {
   )
 }
 
-// A page view on every load and every route change. The last href is remembered so React's
-// StrictMode double effect in development sends one event, not two.
-function usePageViews(): void {
-  const { pathname, search } = useLocation()
-  const href = `${pathname}${search}`
-  const last = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (last.current === href) {
-      return
-    }
-    last.current = href
-    pageViewed()
-  }, [href])
-}
-
 export function Layout() {
   const cart = useCart()
-  usePageViews()
 
   return (
     <AppShell header={{ height: 60 }} padding="md">

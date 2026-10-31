@@ -1,14 +1,8 @@
 import { Button, Card, List, SimpleGrid, Text, Title } from '@mantine/core'
-import { useEffect } from 'react'
 
 import { PLANS } from '../courses.ts'
-import { viewedPricing } from '../tracking.ts'
 
 export function PricingPage() {
-  useEffect(() => {
-    viewedPricing('pro')
-  }, [])
-
   return (
     <>
       <Title order={1} mb="md">

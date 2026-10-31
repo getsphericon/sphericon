@@ -1,27 +1,72 @@
 import { Button, Card, Group, Loader, PasswordInput, Stack, Text, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { Navigate, useNavigate } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
+import { useErrorBoundary } from 'react-error-boundary'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import { siteAuthVerifyEmailMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { siteAuthVerifyEmail } from '../../generated/site/sdk.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { Route as verifyEmailRoute } from '../../routes/verify-email.tsx'
 import { Route as overviewRoute } from '../../routes/workspaces/$workspaceId/index.tsx'
 import { getApiErrorMessage, hasErrorStatus } from '../../utils/apiErrors.ts'
 
-// Where the link in the verification email lands (ADR 0030). The page sends the token
-// alone first: in the Sign-up browser, the password from the Sign-up form
-// stays and the answer starts the session. Anywhere else the answer is "password
-// needed", nothing has changed, and the form here sets the password that goes live.
-export function VerifyEmailPage() {
+function StatusCard({ children }: { children: ReactNode }) {
+  return (
+    <CenteredLayout maw={460} align="center">
+      <Card withBorder w="100%" padding="xl">
+        <Stack align="center" gap="sm">
+          {children}
+        </Stack>
+      </Card>
+    </CenteredLayout>
+  )
+}
+
+// A refused link is spent, garbage or expired: the page says so instead of the form.
+function SpentLink() {
+  const { t } = useTranslation()
+  return (
+    <StatusCard>
+      <Title order={3}>{t(($) => $.verifyEmail.errorTitle)}</Title>
+      <Text c="dimmed" ta="center">
+        {t(($) => $.verifyEmail.errorBody)}
+      </Text>
+      <AnchorLink to={loginRoute.to} size="sm" mt="md">
+        {t(($) => $.verifyEmail.signIn)}
+      </AnchorLink>
+    </StatusCard>
+  )
+}
+
+// A failure that says nothing about the link: the token is sent again on a retry.
+function VerificationFailed() {
+  const { t } = useTranslation()
+  const { resetBoundary } = useErrorBoundary()
+  return (
+    <StatusCard>
+      <Title order={3}>{t(($) => $.verifyEmail.errorTitle)}</Title>
+      <Text c="dimmed" ta="center">
+        {t(($) => $.verifyEmail.errorMessage)}
+      </Text>
+      <Button onClick={resetBoundary}>{t(($) => $.verifyEmail.retry)}</Button>
+      <AnchorLink to={loginRoute.to} size="sm" mt="md">
+        {t(($) => $.verifyEmail.signIn)}
+      </AnchorLink>
+    </StatusCard>
+  )
+}
+
+// The link was not opened in the Sign-up browser: the form sets the password that goes live.
+function PasswordForm({ token }: { token: string }) {
   const { t } = useTranslation()
   const notify = useNotify()
-  const { token } = verifyEmailRoute.useSearch()
   const navigate = useNavigate()
 
   const form = useForm({
@@ -32,13 +77,9 @@ export function VerifyEmailPage() {
     },
   })
 
-  // The link was not opened in the Sign-up browser: the form replaces the password.
-  const [needsPassword, setNeedsPassword] = useState(false)
-
   const mutation = useMutation({
     ...siteAuthVerifyEmailMutation(),
-    // The session cookie is set by the answer, which also names the Workspace to open: the
-    // one the User joined by its domain, else their first.
+    // The session cookie is set by the answer, which also names the Workspace to open.
     onSuccess: async (result) =>
       navigate({
         to: overviewRoute.to,
@@ -47,12 +88,7 @@ export function VerifyEmailPage() {
       }),
     onError: (error) => {
       form.setValues({ password: '', confirm: '' })
-      if (hasErrorStatus(error, [428])) {
-        setNeedsPassword(true)
-        return
-      }
-      // A refused link is spent, garbage or expired: the page says so instead of the form.
-      if (hasErrorStatus(error, [400]) || !needsPassword) {
+      if (hasErrorStatus(error, [400])) {
         return
       }
       notify({
@@ -66,64 +102,8 @@ export function VerifyEmailPage() {
     },
   })
 
-  const { mutate } = mutation
-
-  // Fire once on mount, with no password; the ref guards against StrictMode's double-invoke.
-  const fired = useRef(false)
-  useEffect(() => {
-    if (fired.current || token === '') {
-      return
-    }
-    fired.current = true
-    mutate({ body: { token } })
-  }, [mutate, token])
-
-  if (token === '' || (mutation.isError && hasErrorStatus(mutation.error, [400]))) {
-    return (
-      <CenteredLayout maw={460}>
-        <Card withBorder padding="xl">
-          <Stack align="center" gap="sm">
-            <Title order={3}>{t(($) => $.verifyEmail.errorTitle)}</Title>
-            <Text c="dimmed" ta="center">
-              {t(($) => $.verifyEmail.errorBody)}
-            </Text>
-            <AnchorLink to={loginRoute.to} size="sm" mt="md">
-              {t(($) => $.verifyEmail.signIn)}
-            </AnchorLink>
-          </Stack>
-        </Card>
-      </CenteredLayout>
-    )
-  }
-
-  if (!needsPassword) {
-    return (
-      <CenteredLayout maw={460} align="center">
-        <Card withBorder w="100%" padding="xl">
-          <Stack align="center" gap="sm">
-            {mutation.isError ? (
-              <>
-                <Title order={3}>{t(($) => $.verifyEmail.errorTitle)}</Title>
-                <Text c="dimmed" ta="center">
-                  {t(($) => $.verifyEmail.errorMessage)}
-                </Text>
-                <Button onClick={() => mutate({ body: { token } })}>
-                  {t(($) => $.verifyEmail.retry)}
-                </Button>
-                <AnchorLink to={loginRoute.to} size="sm" mt="md">
-                  {t(($) => $.verifyEmail.signIn)}
-                </AnchorLink>
-              </>
-            ) : (
-              <>
-                <Loader />
-                <Text c="dimmed">{t(($) => $.verifyEmail.verifying)}</Text>
-              </>
-            )}
-          </Stack>
-        </Card>
-      </CenteredLayout>
-    )
+  if (mutation.isError && hasErrorStatus(mutation.error, [400])) {
+    return <SpentLink />
   }
 
   return (
@@ -157,5 +137,70 @@ export function VerifyEmailPage() {
         </Stack>
       </form>
     </CenteredLayout>
+  )
+}
+
+// What the token alone yields: in the Sign-up browser the password from the Sign-up form stays
+// and the answer starts the session; anywhere else the answer is "password needed" (428) and
+// nothing has changed; a refused link (400) is spent. The page reads it once: the answer is kept
+// for good, so a remount or a refocus never sends the token again, and the request takes no abort
+// signal, so one that was sent is not cut off and sent a second time.
+function Verification({ token }: { token: string }) {
+  const { data } = useSuspenseQuery({
+    queryKey: ['siteAuthVerifyEmail', token],
+    queryFn: async () => {
+      try {
+        const { data: verified } = await siteAuthVerifyEmail({
+          body: { token },
+          throwOnError: true,
+        })
+        return { kind: 'verified', landingWorkspaceId: verified.landingWorkspaceId } as const
+      } catch (error) {
+        if (hasErrorStatus(error, [428])) {
+          return { kind: 'needsPassword' } as const
+        }
+        if (hasErrorStatus(error, [400])) {
+          return { kind: 'spent' } as const
+        }
+        throw error
+      }
+    },
+    staleTime: 'static',
+    retry: false,
+  })
+
+  if (data.kind === 'needsPassword') {
+    return <PasswordForm token={token} />
+  }
+  if (data.kind === 'spent') {
+    return <SpentLink />
+  }
+  return (
+    <Navigate to={overviewRoute.to} params={{ workspaceId: data.landingWorkspaceId }} replace />
+  )
+}
+
+// Where the link in the verification email lands (ADR 0030).
+export function VerifyEmailPage() {
+  const { t } = useTranslation()
+  const { token } = verifyEmailRoute.useSearch()
+
+  if (token === '') {
+    return <SpentLink />
+  }
+
+  return (
+    <QueryBoundary
+      fallback={
+        <StatusCard>
+          <Loader />
+          <Text c="dimmed">{t(($) => $.verifyEmail.verifying)}</Text>
+        </StatusCard>
+      }
+      errorTitle={t(($) => $.verifyEmail.errorTitle)}
+      renderError={() => <VerificationFailed />}
+    >
+      <Verification token={token} />
+    </QueryBoundary>
   )
 }

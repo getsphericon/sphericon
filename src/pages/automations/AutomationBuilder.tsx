@@ -25,7 +25,7 @@ import type {
   WorkflowBuilderIsValidConnection,
 } from '@workflowbuilder/sdk'
 import i18next from 'i18next'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { I18nextProvider, useTranslation } from 'react-i18next'
 
 import { DraftControls } from '../../components/DraftControls.tsx'
@@ -55,9 +55,9 @@ import { useAutomationNodeTypes } from './nodes.ts'
 import { exitEventsRenderer, goalEventRenderer, triggerRenderer } from './triggerRenderer.ts'
 
 // Imported as a raw string (not auto-injected): the SDK sheet carries unlayered
-// global resets and .mantine-* overrides that would leak app-wide. We mount it
-// only while the builder is on screen and remove it on unmount, so it never
-// touches the rest of the app (e.g. the dashboard's body scroll).
+// global resets and .mantine-* overrides that would leak app-wide. It is rendered
+// only while the builder is on screen, so it never touches the rest of the app
+// (e.g. the dashboard's body scroll).
 import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 
 // The email step's message is edited by the editor, not a text field, and the Trigger's event,
@@ -250,17 +250,6 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
   const queryClient = useQueryClient()
   const nodeTypes = useAutomationNodeTypes()
 
-  // Scope the SDK stylesheet to the builder's lifetime: present while mounted,
-  // gone everywhere else. useLayoutEffect injects it before paint to avoid an
-  // unstyled flash of the canvas.
-  useLayoutEffect(() => {
-    const style = document.createElement('style')
-    style.dataset.workflowBuilder = ''
-    style.textContent = builderStyles
-    document.head.append(style)
-    return () => style.remove()
-  }, [])
-
   const form = useAutomationBarForm(automation.name, edited.integrationId ?? null)
 
   const initialGraph = useMemo(() => {
@@ -352,68 +341,74 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
   // over the app rather than a block inside a page. Its focus trap is off so the SDK's own
   // menus, rendered outside the dialog, stay usable.
   return (
-    <Modal
-      opened
-      onClose={() => undefined}
-      fullScreen
-      padding={0}
-      withCloseButton={false}
-      closeOnEscape={false}
-      trapFocus={false}
-      transitionProps={{ duration: 0 }}
-    >
-      {/* The SDK initialises and reads the global i18next instance for its own
+    <>
+      {/* The SDK stylesheet is rendered with the builder, so it is there at the first paint and
+          goes when the builder does. No href or precedence: React would hoist such a sheet into
+          the head and keep it after the builder is gone. */}
+      <style>{builderStyles}</style>
+      <Modal
+        opened
+        onClose={() => undefined}
+        fullScreen
+        padding={0}
+        withCloseButton={false}
+        closeOnEscape={false}
+        trapFocus={false}
+        transitionProps={{ duration: 0 }}
+      >
+        {/* The SDK initialises and reads the global i18next instance for its own
           strings. The app tree runs on a private instance (see main.tsx), so the
           builder subtree is bound back to the global one here. */}
-      <I18nextProvider i18n={i18next}>
-        {/* Children replace the SDK's default layout: its top bar (logo, folder name,
+        <I18nextProvider i18n={i18next}>
+          {/* Children replace the SDK's default layout: its top bar (logo, folder name,
             language, theme and read-only toggles) is swapped for <BuilderBar />, and
             ThemeSync keeps the canvas theme in step with Mantine's color scheme. */}
-        <WorkflowBuilder.Root
-          key={automation.id}
-          name={automation.name}
-          layoutDirection="DOWN"
-          nodeTypes={nodeTypes}
-          initialNodes={initialGraph.nodes}
-          initialEdges={initialGraph.edges}
-          integration={integration}
-          isValidConnection={isValidConnection}
-          jsonForm={jsonForm}
-          plugins={plugins}
-        >
-          <ThemeSync />
-          <QuietRestore />
-          <LeaveGuard
-            name={form.values.name}
-            integrationId={form.values.integrationId}
-            saved={saved}
-          />
-          <Box pos="relative" w="100%" h="100dvh">
-            <WorkflowBuilder.Canvas />
-            <I18nextProvider i18n={i18n}>
-              <BuilderBar
-                form={form}
-                workspaceId={workspaceId}
-                automation={automation}
-                saved={saved}
-                onSave={saveGraph}
-              />
-            </I18nextProvider>
-            <Box pos="absolute" top={88} left={16}>
-              <WorkflowBuilder.Palette />
+          <WorkflowBuilder.Root
+            key={automation.id}
+            name={automation.name}
+            layoutDirection="DOWN"
+            nodeTypes={nodeTypes}
+            initialNodes={initialGraph.nodes}
+            initialEdges={initialGraph.edges}
+            integration={integration}
+            isValidConnection={isValidConnection}
+            jsonForm={jsonForm}
+            plugins={plugins}
+          >
+            <ThemeSync />
+            <QuietRestore />
+            <LeaveGuard
+              name={form.values.name}
+              integrationId={form.values.integrationId}
+              saved={saved}
+            />
+            <Box pos="relative" w="100%" h="100dvh">
+              <WorkflowBuilder.Canvas />
+              <I18nextProvider i18n={i18n}>
+                <BuilderBar
+                  form={form}
+                  workspaceId={workspaceId}
+                  automation={automation}
+                  saved={saved}
+                  onSave={saveGraph}
+                />
+              </I18nextProvider>
+              <Box pos="absolute" top={88} left={16}>
+                <WorkflowBuilder.Palette />
+              </Box>
+              <Box
+                pos="absolute"
+                top={{ base: 'auto', sm: 88 }}
+                bottom={{ base: 16, sm: 'auto' }}
+                right={16}
+                maw="calc(100% - 32px)"
+              >
+                <WorkflowBuilder.PropertiesPanel />
+              </Box>
             </Box>
-            <Box
-              pos="absolute"
-              top={{ base: 'auto', sm: 88 }}
-              bottom={{ base: 16, sm: 'auto' }}
-              right={16}
-              maw="calc(100% - 32px)"
-            >
-              <WorkflowBuilder.PropertiesPanel />
-            </Box>
-          </Box>
-        </WorkflowBuilder.Root>
-      </I18nextProvider>
-    </Modal>
+          </WorkflowBuilder.Root>
+        </I18nextProvider>
+      </Modal>
+    </>
   )
 }

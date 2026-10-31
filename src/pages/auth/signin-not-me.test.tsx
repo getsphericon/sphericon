@@ -1,4 +1,5 @@
 import { HttpResponse } from 'msw'
+import { StrictMode } from 'react'
 import { expect, test } from 'vitest'
 
 import { handleSiteAuthSigninNotMe } from '../../generated/site/msw.gen.ts'
@@ -13,7 +14,7 @@ import { SigninNotMePage } from './signin-not-me.tsx'
 const mount = routeMount(signinNotMeRoute)
 const MOUNT = { ...mount, initialPath: `${mount.initialPath}?token=tok-n` }
 
-test('unlinks the provider on mount and links to sign in', async () => {
+test('unlinks the provider once, under StrictMode too, and links to sign in', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthSigninNotMe(async ({ request }) => {
@@ -21,7 +22,12 @@ test('unlinks the provider on mount and links to sign in', async () => {
       return HttpResponse.json({})
     }),
   )
-  const { screen } = await renderWithRouter(<SigninNotMePage />, MOUNT)
+  const { screen } = await renderWithRouter(
+    <StrictMode>
+      <SigninNotMePage />
+    </StrictMode>,
+    MOUNT,
+  )
 
   await expect.element(screen.getByText('Provider unlinked')).toBeInTheDocument()
   expect(bodies).toEqual([{ token: 'tok-n' }])
