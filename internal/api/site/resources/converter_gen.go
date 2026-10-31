@@ -13,6 +13,7 @@ import (
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
+	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
 	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
@@ -25,18 +26,32 @@ import (
 
 type ConverterImpl struct{}
 
+func (c *ConverterImpl) AuditActorToResource(source auditapi.View) site.SiteAuditActor {
+	var siteapiSiteAuditActor site.SiteAuditActor
+	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.ActorKind)
+	siteapiSiteAuditActor.ID = optNilString(source.ActorID)
+	siteapiSiteAuditActor.Name = optNilString(source.ActorName)
+	return siteapiSiteAuditActor
+}
 func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAuditEntryResource {
 	var siteapiSiteAuditEntryResource site.SiteAuditEntryResource
 	siteapiSiteAuditEntryResource.ID = site.EntityId(source.ID)
 	siteapiSiteAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
-	siteapiSiteAuditEntryResource.Actor = auditActor(source)
+	siteapiSiteAuditEntryResource.Actor = c.AuditActorToResource(source)
 	siteapiSiteAuditEntryResource.Action = source.Action
-	siteapiSiteAuditEntryResource.Target = auditTarget(source)
+	siteapiSiteAuditEntryResource.Target = c.AuditTargetToResource(source)
 	siteapiSiteAuditEntryResource.Diff = auditDiff(source.Diff)
 	siteapiSiteAuditEntryResource.RequestId = optNilString(source.RequestID)
 	siteapiSiteAuditEntryResource.IP = optNilString(source.IP)
 	siteapiSiteAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return siteapiSiteAuditEntryResource
+}
+func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) site.SiteAuditTarget {
+	var siteapiSiteAuditTarget site.SiteAuditTarget
+	siteapiSiteAuditTarget.Type = source.TargetType
+	siteapiSiteAuditTarget.ID = optNilString(source.TargetID)
+	siteapiSiteAuditTarget.Name = optNilString(source.TargetName)
+	return siteapiSiteAuditTarget
 }
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) site.SiteAutomationPeriodResults {
 	var siteapiSiteAutomationPeriodResults site.SiteAutomationPeriodResults
@@ -150,6 +165,27 @@ func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipien
 		siteapiContactExportBroadcastRecipient.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportBroadcastRecipient
+}
+func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Stats) site.SiteBroadcastStats {
+	var siteapiSiteBroadcastStats site.SiteBroadcastStats
+	siteapiSiteBroadcastStats.RecipientsTotal = count(source.Recipients)
+	siteapiSiteBroadcastStats.SentCount = count(source.Sent)
+	siteapiSiteBroadcastStats.OpenedCount = count(source.Opened)
+	siteapiSiteBroadcastStats.ClickedCount = count(source.Clicked)
+	siteapiSiteBroadcastStats.UnsubscribedCount = count(source.Unsubscribed)
+	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
+	siteapiSiteBroadcastStats.DeliveredCount = count(source.Delivered)
+	siteapiSiteBroadcastStats.BouncedCount = count(source.Bounced)
+	siteapiSiteBroadcastStats.ComplainedCount = count(source.Complained)
+	siteapiSiteBroadcastStats.CapturedCount = count(source.Captured)
+	siteapiSiteBroadcastStats.DeliveryRate = source.DeliveryRate()
+	siteapiSiteBroadcastStats.OpenRate = source.OpenRate()
+	siteapiSiteBroadcastStats.ClickRate = source.ClickRate()
+	siteapiSiteBroadcastStats.ClickToOpenRate = source.ClickToOpenRate()
+	siteapiSiteBroadcastStats.UnsubscribeRate = source.UnsubscribeRate()
+	siteapiSiteBroadcastStats.FailureRate = source.FailureRate()
+	siteapiSiteBroadcastStats.Revenue = c.MessageRevenueToResource(source.Revenue)
+	return siteapiSiteBroadcastStats
 }
 func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroadcastResource {
 	var siteapiSiteBroadcastResource site.SiteBroadcastResource
@@ -470,6 +506,22 @@ func (c *ConverterImpl) LinkClicksToResource(source []linkclicks.Clicks) []site.
 		}
 	}
 	return siteapiSiteLinkClicksList
+}
+func (c *ConverterImpl) LintFindingToResource(source emailrender.Finding) site.LintFinding {
+	var siteapiLintFinding site.LintFinding
+	siteapiLintFinding.Code = site.LintCode(source.Code)
+	siteapiLintFinding.Message = source.Message
+	siteapiLintFinding.Element = optNonEmpty(source.Element)
+	siteapiLintFinding.Detail = optNonEmpty(source.Detail)
+	return siteapiLintFinding
+}
+func (c *ConverterImpl) LintFindingsToResource(source []emailrender.Finding) []site.LintFinding {
+	var siteapiLintFindingList []site.LintFinding
+	siteapiLintFindingList = make([]site.LintFinding, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiLintFindingList[i] = c.LintFindingToResource(source[i])
+	}
+	return siteapiLintFindingList
 }
 func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMembershipResource {
 	var siteapiSiteMembershipResource site.SiteMembershipResource
@@ -891,7 +943,10 @@ func (c *ConverterImpl) WebhookEndpointToResource(source *ent.WebhookEndpoint) s
 	if source != nil {
 		siteapiSiteWebhookEndpointResource.ID = site.EntityId((*source).ID)
 		siteapiSiteWebhookEndpointResource.URL = (*source).URL
-		siteapiSiteWebhookEndpointResource.EventTypes = eventTypes((*source).EventTypes)
+		siteapiSiteWebhookEndpointResource.EventTypes = make([]string, len((*source).EventTypes))
+		for i := 0; i < len((*source).EventTypes); i++ {
+			siteapiSiteWebhookEndpointResource.EventTypes[i] = (*source).EventTypes[i]
+		}
 		siteapiSiteWebhookEndpointResource.Enabled = webhookEnabled((*source))
 		siteapiSiteWebhookEndpointResource.DisabledAt = optTimestamp((*source).DisabledAt)
 		siteapiSiteWebhookEndpointResource.DisabledReason = optWebhookDisabledReason((*source).DisabledReason)

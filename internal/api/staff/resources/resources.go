@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/signupitems"
@@ -43,19 +44,13 @@ type Converter interface {
 func timestamp(t time.Time) staffapi.Timestamp { return staffapi.Timestamp(t) }
 
 func optTimestamp(t *time.Time) staffapi.OptTimestamp {
-	if t == nil {
-		return staffapi.OptTimestamp{}
-	}
-	return staffapi.NewOptTimestamp(staffapi.Timestamp(*t))
+	return convert.Opt[staffapi.OptTimestamp]((*staffapi.Timestamp)(t))
 }
 
 func position(p int) int32 { return narrow.Int32(p) }
 
 func optString(v *string) staffapi.OptString {
-	if v == nil {
-		return staffapi.OptString{}
-	}
-	return staffapi.NewOptString(*v)
+	return convert.Opt[staffapi.OptString](v)
 }
 
 // optLapse is when the license key expired, absent unless it has lapsed.
@@ -68,17 +63,11 @@ func optLapse(t time.Time) staffapi.OptTimestamp {
 
 // optLock is what decides the Telemetry report, absent while the Staff member does.
 func optLock(l instance.Lock) staffapi.OptStaffInstanceTelemetryLock {
-	if l == instance.LockNone {
-		return staffapi.OptStaffInstanceTelemetryLock{}
-	}
-	return staffapi.NewOptStaffInstanceTelemetryLock(staffapi.StaffInstanceTelemetryLock(l))
+	return convert.OptNonZero[staffapi.OptStaffInstanceTelemetryLock](staffapi.StaffInstanceTelemetryLock(l))
 }
 
 func optDraft(d *string) staffapi.OptLegalDocumentMarkdown {
-	if d == nil {
-		return staffapi.OptLegalDocumentMarkdown{}
-	}
-	return staffapi.NewOptLegalDocumentMarkdown(staffapi.LegalDocumentMarkdown(*d))
+	return convert.Opt[staffapi.OptLegalDocumentMarkdown]((*staffapi.LegalDocumentMarkdown)(d))
 }
 
 func optVersion(c Converter, v *signupitems.Version) staffapi.OptStaffLegalDocumentVersion {

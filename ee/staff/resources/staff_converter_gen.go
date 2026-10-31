@@ -23,18 +23,32 @@ func (c *StaffConverterImpl) AbuseToResource(source *ent.Workspace) staffee.Staf
 	}
 	return staffeeapiStaffAbuse
 }
+func (c *StaffConverterImpl) AuditActorToResource(source auditapi.View) staffee.StaffAuditActor {
+	var staffeeapiStaffAuditActor staffee.StaffAuditActor
+	staffeeapiStaffAuditActor.Kind = staffee.StaffAuditActorKind(source.ActorKind)
+	staffeeapiStaffAuditActor.ID = nilableString(source.ActorID)
+	staffeeapiStaffAuditActor.Name = nilableString(source.ActorName)
+	return staffeeapiStaffAuditActor
+}
 func (c *StaffConverterImpl) AuditEntryToResource(source auditapi.View) staffee.StaffAuditEntryResource {
 	var staffeeapiStaffAuditEntryResource staffee.StaffAuditEntryResource
 	staffeeapiStaffAuditEntryResource.ID = staffee.EntityId(source.ID)
 	staffeeapiStaffAuditEntryResource.OccurredAt = staffTimestamp(source.OccurredAt)
-	staffeeapiStaffAuditEntryResource.Actor = staffAuditActor(source)
+	staffeeapiStaffAuditEntryResource.Actor = c.AuditActorToResource(source)
 	staffeeapiStaffAuditEntryResource.Action = source.Action
-	staffeeapiStaffAuditEntryResource.Target = staffAuditTarget(source)
+	staffeeapiStaffAuditEntryResource.Target = c.AuditTargetToResource(source)
 	staffeeapiStaffAuditEntryResource.Diff = staffAuditDiff(source.Diff)
 	staffeeapiStaffAuditEntryResource.RequestId = nilableString(source.RequestID)
 	staffeeapiStaffAuditEntryResource.IP = nilableString(source.IP)
 	staffeeapiStaffAuditEntryResource.UserAgent = nilableString(source.UserAgent)
 	return staffeeapiStaffAuditEntryResource
+}
+func (c *StaffConverterImpl) AuditTargetToResource(source auditapi.View) staffee.StaffAuditTarget {
+	var staffeeapiStaffAuditTarget staffee.StaffAuditTarget
+	staffeeapiStaffAuditTarget.Type = source.TargetType
+	staffeeapiStaffAuditTarget.ID = nilableString(source.TargetID)
+	staffeeapiStaffAuditTarget.Name = nilableString(source.TargetName)
+	return staffeeapiStaffAuditTarget
 }
 func (c *StaffConverterImpl) BreachToWarning(source abuse.Breach) staffee.StaffAbuseWarning {
 	var staffeeapiStaffAbuseWarning staffee.StaffAbuseWarning

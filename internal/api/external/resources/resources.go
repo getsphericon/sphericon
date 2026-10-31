@@ -22,6 +22,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/emaildoc"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -92,8 +94,6 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
 // goverter:extend optNilTimestamp
-// goverter:extend openRate
-// goverter:extend clickRate
 // goverter:extend optNilEntityID
 // goverter:extend contactCustomFields
 // goverter:extend optNilInt32
@@ -135,8 +135,8 @@ type Converter interface {
 	// goverter:map Stats.Bounced BouncedCount
 	// goverter:map Stats.Complained ComplainedCount
 	// goverter:map Stats.Captured CapturedCount
-	// goverter:map Stats OpenRate | openRate
-	// goverter:map Stats ClickRate | clickRate
+	// goverter:map Stats.OpenRate OpenRate
+	// goverter:map Stats.ClickRate ClickRate
 	BroadcastReportToResource(source broadcasts.Report) externalapi.BroadcastReport
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
@@ -156,6 +156,22 @@ type Converter interface {
 	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource
+
+	// A lint finding (ADR 0040) names its element and detail only when the check has one.
+	// goverter:map Element Element | optNonEmpty
+	// goverter:map Detail Detail | optNonEmpty
+	LintFindingToResource(source emailrender.Finding) externalapi.LintFinding
+	// goverter:useEmptyOnNil:slice
+	LintFindingsToResource(source []emailrender.Finding) []externalapi.LintFinding
+
+	// The editor's document described to an agent (ADR 0040); the example is an opaque object.
+	// goverter:map Example Example | schemaExample
+	// goverter:useEmptyOnNil:map
+	EmailSchemaToResource(source emaildoc.AgentDescription) externalapi.EmailSchemaResult
+	// goverter:map Content Content | optNonEmpty
+	// goverter:map Group Group | optNonEmpty
+	// goverter:useEmptyOnNil:map
+	EmailSchemaTypeToResource(source emaildoc.AgentType) externalapi.EmailSchemaType
 	// goverter:map Type RuleOperators | customFieldRuleOperators
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
 	TagToResource(source *ent.Tag) externalapi.TagResource
@@ -230,7 +246,7 @@ type Converter interface {
 
 	// The signing secret is deliberately never part of an /api response; the failure state
 	// is derived from the failure columns and a nil event filter renders as an empty list.
-	// goverter:map EventTypes EventTypes | eventTypes
+	// goverter:useEmptyOnNil:slice
 	// goverter:map . Failure | webhookFailure
 	// goverter:map . Enabled | webhookEnabled
 	WebhookToResource(source *ent.WebhookEndpoint) externalapi.WebhookResource
@@ -256,9 +272,18 @@ type Converter interface {
 	// goverter:map . UpdatedAt | brandKitUpdatedAt
 	BrandKitToResource(source brandkit.Kit) externalapi.BrandKitResource
 
-	// goverter:map . Actor | auditActor
-	// goverter:map . Target | auditTarget
+	// goverter:map . Actor
+	// goverter:map . Target
 	AuditEntryToResource(source auditapi.View) externalapi.AuditEntryResource
+	// An entry's actor and target are columns of the entry, nested in the contract.
+	// goverter:map ActorKind Kind
+	// goverter:map ActorID ID
+	// goverter:map ActorName Name
+	AuditActorToResource(source auditapi.View) externalapi.AuditActor
+	// goverter:map TargetType Type
+	// goverter:map TargetID ID
+	// goverter:map TargetName Name
+	AuditTargetToResource(source auditapi.View) externalapi.AuditTarget
 
 	SuppressionToResource(source *ent.Suppression) externalapi.SuppressionResource
 	UnsubscribeToResource(source *ent.Unsubscribe) externalapi.UnsubscribeResource
@@ -304,10 +329,6 @@ func providerLimitWarning(w providerlimit.Warning) externalapi.ProviderLimitWarn
 	return externalapi.ProviderLimitWarning(w)
 }
 
-// openRate and clickRate are the report's rates, which Stats computes.
-func openRate(st broadcasts.Stats) float32  { return st.OpenRate() }
-func clickRate(st broadcasts.Stats) float32 { return st.ClickRate() }
-
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
 
@@ -323,26 +344,17 @@ func durationSeconds(d *time.Duration) externalapi.NilInt64 {
 
 // nilString renders an optional value: null when there is none.
 func nilString(v *string) externalapi.NilString {
-	if v == nil {
-		return externalapi.NilString{Null: true}
-	}
-	return externalapi.NewNilString(*v)
+	return convert.Nil[externalapi.NilString](v)
 }
 
 // nilEntityID renders an optional reference: null when there is none.
 func nilEntityID(v *int64) externalapi.NilEntityId {
-	if v == nil {
-		return externalapi.NilEntityId{Null: true}
-	}
-	return externalapi.NewNilEntityId(externalapi.EntityId(*v))
+	return convert.Nil[externalapi.NilEntityId]((*externalapi.EntityId)(v))
 }
 
 // nilInt32 renders a limit: null when there is none.
 func nilInt32(v *int) externalapi.NilInt32 {
-	if v == nil {
-		return externalapi.NilInt32{Null: true}
-	}
-	return externalapi.NewNilInt32(narrow.Int32(*v))
+	return convert.Nil[externalapi.NilInt32](convert.Int32Ptr(v))
 }
 
 // providerLimitSource is null exactly when the window has no limit (its source is empty).
@@ -354,26 +366,12 @@ func providerLimitSource(v providerlimit.Source) externalapi.NilProviderLimitSou
 }
 
 func optNilInt32(v *int) externalapi.OptNilInt32 {
-	if v == nil {
-		return externalapi.OptNilInt32{}
-	}
-	return externalapi.NewOptNilInt32(narrow.Int32(*v))
+	return convert.Opt[externalapi.OptNilInt32](convert.Int32Ptr(v))
 }
 
 // exportJSON renders a stored JSON object (custom fields, event properties).
 func exportJSON(m map[string]any) externalapi.OptNilContactExportJson {
-	if len(m) == 0 {
-		return externalapi.OptNilContactExportJson{}
-	}
-	out := make(externalapi.ContactExportJson, len(m))
-	for k, v := range m {
-		b, err := json.Marshal(v)
-		if err != nil {
-			continue
-		}
-		out[k] = jx.Raw(b)
-	}
-	return externalapi.NewOptNilContactExportJson(out)
+	return convert.OptObject[externalapi.OptNilContactExportJson](convert.RawObject[externalapi.ContactExportJson](m))
 }
 
 func timestamp(t time.Time) externalapi.Timestamp {
@@ -381,53 +379,27 @@ func timestamp(t time.Time) externalapi.Timestamp {
 }
 
 func optNilString(v *string) externalapi.OptNilString {
-	if v == nil {
-		return externalapi.OptNilString{}
-	}
-	return externalapi.NewOptNilString(*v)
+	return convert.Opt[externalapi.OptNilString](v)
 }
 
 func optNilEmailAddress(v *string) externalapi.OptNilEmailAddress {
-	if v == nil {
-		return externalapi.OptNilEmailAddress{}
-	}
-	return externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(*v))
+	return convert.Opt[externalapi.OptNilEmailAddress]((*externalapi.EmailAddress)(v))
 }
 
 func optNilEntityID(v *int64) externalapi.OptNilEntityId {
-	if v == nil {
-		return externalapi.OptNilEntityId{}
-	}
-	return externalapi.NewOptNilEntityId(externalapi.EntityId(*v))
+	return convert.Opt[externalapi.OptNilEntityId]((*externalapi.EntityId)(v))
 }
 
 func optNilTimeZone(v *string) externalapi.OptNilTimeZoneName {
-	if v == nil {
-		return externalapi.OptNilTimeZoneName{}
-	}
-	return externalapi.NewOptNilTimeZoneName(externalapi.TimeZoneName(*v))
+	return convert.Opt[externalapi.OptNilTimeZoneName]((*externalapi.TimeZoneName)(v))
 }
 
 func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
-	if v == nil {
-		return externalapi.OptNilTimestamp{}
-	}
-	return externalapi.NewOptNilTimestamp(externalapi.Timestamp(*v))
+	return convert.Opt[externalapi.OptNilTimestamp]((*externalapi.Timestamp)(v))
 }
 
 func contactCustomFields(m map[string]any) externalapi.OptNilContactResourceCustomFields {
-	if len(m) == 0 {
-		return externalapi.OptNilContactResourceCustomFields{}
-	}
-	fields := make(externalapi.ContactResourceCustomFields, len(m))
-	for k, v := range m {
-		b, err := json.Marshal(v)
-		if err != nil {
-			continue
-		}
-		fields[k] = jx.Raw(b)
-	}
-	return externalapi.NewOptNilContactResourceCustomFields(fields)
+	return convert.OptObject[externalapi.OptNilContactResourceCustomFields](convert.RawObject[externalapi.ContactResourceCustomFields](m))
 }
 
 // segmentCondition decodes the stored rule group into the typed DTO. A segment with no
@@ -446,47 +418,29 @@ func segmentCondition(def *string) externalapi.OptConditionGroup {
 // templateDoc is a Template's stored editor document as the opaque object of the contract; a
 // Template written as HTML has none.
 func templateDoc(doc json.RawMessage) externalapi.OptNilTemplateResourceDoc {
-	if fields := convert.DocObject[externalapi.TemplateResourceDoc](doc); fields != nil {
-		return externalapi.NewOptNilTemplateResourceDoc(fields)
-	}
-	return externalapi.OptNilTemplateResourceDoc{}
+	return convert.OptObject[externalapi.OptNilTemplateResourceDoc](convert.DocObject[externalapi.TemplateResourceDoc](doc))
 }
 
 // broadcastDoc is a Broadcast's stored editor document as the opaque object of the contract; a
 // Broadcast written as HTML has none.
 func broadcastDoc(doc json.RawMessage) externalapi.OptNilBroadcastResourceDoc {
-	if fields := convert.DocObject[externalapi.BroadcastResourceDoc](doc); fields != nil {
-		return externalapi.NewOptNilBroadcastResourceDoc(fields)
-	}
-	return externalapi.OptNilBroadcastResourceDoc{}
+	return convert.OptObject[externalapi.OptNilBroadcastResourceDoc](convert.DocObject[externalapi.BroadcastResourceDoc](doc))
 }
 
 func optTimestamp(v *time.Time) externalapi.OptTimestamp {
-	if v == nil {
-		return externalapi.OptTimestamp{}
-	}
-	return externalapi.NewOptTimestamp(externalapi.Timestamp(*v))
+	return convert.Opt[externalapi.OptTimestamp]((*externalapi.Timestamp)(v))
 }
 
 func optInt32(v *int) externalapi.OptInt32 {
-	if v == nil {
-		return externalapi.OptInt32{}
-	}
-	return externalapi.NewOptInt32(narrow.Int32(*v))
+	return convert.Opt[externalapi.OptInt32](convert.Int32Ptr(v))
 }
 
 func optString(v *string) externalapi.OptString {
-	if v == nil {
-		return externalapi.OptString{}
-	}
-	return externalapi.NewOptString(*v)
+	return convert.Opt[externalapi.OptString](v)
 }
 
 func optTrackingReason(v *sendingdomain.TrackingReason) externalapi.OptTrackingReason {
-	if v == nil {
-		return externalapi.OptTrackingReason{}
-	}
-	return externalapi.NewOptTrackingReason(externalapi.TrackingReason(*v))
+	return convert.Opt[externalapi.OptTrackingReason]((*externalapi.TrackingReason)(v))
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.
@@ -517,27 +471,8 @@ func brandKitUpdatedAt(k brandkit.Kit) externalapi.OptNilTimestamp {
 	return externalapi.NewOptNilTimestamp(externalapi.Timestamp(k.UpdatedAt))
 }
 
-func auditActor(v auditapi.View) externalapi.AuditActor {
-	return externalapi.AuditActor{Kind: externalapi.AuditActorKind(v.ActorKind), ID: optNilString(v.ActorID), Name: optNilString(v.ActorName)}
-}
-
-func auditTarget(v auditapi.View) externalapi.AuditTarget {
-	return externalapi.AuditTarget{Type: v.TargetType, ID: optNilString(v.TargetID), Name: optNilString(v.TargetName)}
-}
-
 func auditDiff(d map[string]jx.Raw) externalapi.OptNilAuditEntryResourceDiff {
-	if d == nil {
-		return externalapi.OptNilAuditEntryResourceDiff{}
-	}
-	return externalapi.NewOptNilAuditEntryResourceDiff(d)
-}
-
-// eventTypes shows an endpoint with no event filter as an empty list, never null.
-func eventTypes(v []string) []string {
-	if v == nil {
-		return []string{}
-	}
-	return v
+	return convert.OptObject[externalapi.OptNilAuditEntryResourceDiff](externalapi.AuditEntryResourceDiff(d))
 }
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
@@ -556,18 +491,12 @@ func webhookFailure(e ent.WebhookEndpoint) externalapi.OptWebhookFailure {
 
 // optWebhookDisabledReason is why the endpoint turned itself off; absent otherwise.
 func optWebhookDisabledReason(v *webhookendpoint.DisabledReason) externalapi.OptWebhookDisabledReason {
-	if v == nil {
-		return externalapi.OptWebhookDisabledReason{}
-	}
-	return externalapi.NewOptWebhookDisabledReason(externalapi.WebhookDisabledReason(*v))
+	return convert.Opt[externalapi.OptWebhookDisabledReason]((*externalapi.WebhookDisabledReason)(v))
 }
 
 // omitEmpty is unset for an empty value, so redacted optional fields are omitted.
 func omitEmpty(s string) externalapi.OptNilString {
-	if s == "" {
-		return externalapi.OptNilString{}
-	}
-	return externalapi.NewOptNilString(s)
+	return convert.OptNonZero[externalapi.OptNilString](s)
 }
 
 func smtpConfigKind(integrations.RedactedSMTP) externalapi.SmtpConfigKind {
@@ -595,12 +524,9 @@ func ruleVersionOrNull(c Converter, v *ent.RuleVersion) externalapi.NilRuleVersi
 	return externalapi.NewNilRuleVersion(c.RuleVersionToResource(v))
 }
 
-// ruleOptString is a text that is absent when empty.
-func ruleOptString(s string) externalapi.OptString {
-	if s == "" {
-		return externalapi.OptString{}
-	}
-	return externalapi.NewOptString(s)
+// optNonEmpty is a text that is absent when empty.
+func optNonEmpty(s string) externalapi.OptString {
+	return convert.OptNonZero[externalapi.OptString](s)
 }
 
 // ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
@@ -613,14 +539,14 @@ func ruleActions(stored string) []externalapi.RuleAction {
 		return nil
 	}
 	return lo.Map(actions, func(a rules.Action, _ int) externalapi.RuleAction {
-		out := externalapi.RuleAction{Type: externalapi.RuleActionType(a.Type), Tag: ruleOptString(a.Tag)}
+		out := externalapi.RuleAction{Type: externalapi.RuleActionType(a.Type), Tag: optNonEmpty(a.Tag)}
 		if a.Type == rules.ActionEnroll {
 			out.AutomationId = externalapi.NewOptEntityId(externalapi.EntityId(a.AutomationID))
 		}
 		if a.Type == rules.ActionHTTP {
 			// Masked: the URL, header values and signing secret never leave the server.
-			out.ID = ruleOptString(a.ID)
-			out.Body = ruleOptString(a.Body)
+			out.ID = optNonEmpty(a.ID)
+			out.Body = optNonEmpty(a.Body)
 			out.HasSecret = externalapi.NewOptBool(a.Secret != "")
 			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) externalapi.AutomationHttpHeader {
 				return externalapi.AutomationHttpHeader{Name: h.Name}
@@ -642,16 +568,18 @@ func ruleResults(stored string) []externalapi.RuleActionResult {
 		return externalapi.RuleActionResult{
 			Type:   externalapi.RuleActionType(r.Type),
 			Status: externalapi.RuleActionStatus(r.Status),
-			Detail: ruleOptString(r.Detail),
+			Detail: optNonEmpty(r.Detail),
 		}
 	})
 }
 
 func optNilContactSource(v *contact.Source) externalapi.OptNilContactExportSource {
-	if v == nil {
-		return externalapi.OptNilContactExportSource{}
-	}
-	return externalapi.NewOptNilContactExportSource(externalapi.ContactExportSource(*v))
+	return convert.Opt[externalapi.OptNilContactExportSource]((*externalapi.ContactExportSource)(v))
+}
+
+// schemaExample is the agent schema's example document as the contract's opaque object.
+func schemaExample(doc json.RawMessage) externalapi.EmailSchemaResultExample {
+	return convert.DocObject[externalapi.EmailSchemaResultExample](doc)
 }
 
 // customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the

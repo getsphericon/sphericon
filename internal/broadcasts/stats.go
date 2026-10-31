@@ -48,6 +48,18 @@ func (st Stats) OpenRate() float32 { return Ratio(st.Opened, st.Sent) }
 // ClickRate is the share of sent messages that were clicked, in [0,1].
 func (st Stats) ClickRate() float32 { return Ratio(st.Clicked, st.Sent) }
 
+// DeliveryRate is the share of recipients whose message was sent, in [0,1].
+func (st Stats) DeliveryRate() float32 { return Ratio(st.Sent, st.Recipients) }
+
+// ClickToOpenRate is the share of opened messages that were clicked, in [0,1].
+func (st Stats) ClickToOpenRate() float32 { return Ratio(st.Clicked, st.Opened) }
+
+// UnsubscribeRate is the share of sent messages whose recipient unsubscribed, in [0,1].
+func (st Stats) UnsubscribeRate() float32 { return Ratio(st.Unsubscribed, st.Sent) }
+
+// FailureRate is the share of recipients whose send failed, in [0,1].
+func (st Stats) FailureRate() float32 { return Ratio(st.Failed, st.Recipients) }
+
 // Ratio is num/denom as a float32 in [0,1]; a zero denominator yields 0.
 func Ratio(num, denom int) float32 {
 	if denom <= 0 {

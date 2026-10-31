@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
+	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/joindomains"
@@ -169,7 +170,7 @@ type Converter interface {
 	AutomationResultsToResource(source automations.Results) siteapi.SiteAutomationResults
 
 	// The delivery figures are derived from the Broadcast's recipients and their Outbound
-	// messages, which the mapper cannot see: the handler attaches them (BroadcastStats).
+	// messages, which the mapper cannot see: the handler attaches them (BroadcastStatsToResource).
 	// goverter:ignore Stats
 	// Progress is derived from the recipients, which the mapper cannot see: the
 	// handler attaches it.
@@ -181,6 +182,19 @@ type Converter interface {
 	// goverter:map DiscardedAt ArchivedAt
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
 
+	// A Broadcast's delivery figures; the rates are Stats methods, ratios in [0,1].
+	// goverter:map Recipients RecipientsTotal
+	// goverter:map Sent SentCount
+	// goverter:map Opened OpenedCount
+	// goverter:map Clicked ClickedCount
+	// goverter:map Unsubscribed UnsubscribedCount
+	// goverter:map Failed FailedCount
+	// goverter:map Delivered DeliveredCount
+	// goverter:map Bounced BouncedCount
+	// goverter:map Complained ComplainedCount
+	// goverter:map Captured CapturedCount
+	BroadcastStatsToResource(source broadcasts.Stats) siteapi.SiteBroadcastStats
+
 	// goverter:map Processed ProcessedCount
 	// goverter:map Remaining RemainingCount
 	// goverter:map EstimatedCompletion EstimatedCompletionAt
@@ -188,6 +202,13 @@ type Converter interface {
 
 	// goverter:ignore Warnings
 	EmailTemplateToResource(source *ent.EmailTemplate) siteapi.SiteEmailTemplateResource
+
+	// A lint finding (ADR 0040) names its element and detail only when the check has one.
+	// goverter:map Element Element | optNonEmpty
+	// goverter:map Detail Detail | optNonEmpty
+	LintFindingToResource(source emailrender.Finding) siteapi.LintFinding
+	// goverter:useEmptyOnNil:slice
+	LintFindingsToResource(source []emailrender.Finding) []siteapi.LintFinding
 
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
@@ -319,15 +340,25 @@ type Converter interface {
 	// goverter:map . UpdatedAt | brandKitUpdatedAt
 	BrandKitToResource(source brandkit.Kit) siteapi.SiteBrandKitResource
 
-	// goverter:map . Actor | auditActor
-	// goverter:map . Target | auditTarget
+	// goverter:map . Actor
+	// goverter:map . Target
 	// goverter:map Diff Diff | auditDiff
 	AuditEntryToResource(source auditapi.View) siteapi.SiteAuditEntryResource
+	// An entry's actor and target are columns of the entry, nested in the contract.
+	// goverter:map ActorKind Kind
+	// goverter:map ActorID ID
+	// goverter:map ActorName Name
+	AuditActorToResource(source auditapi.View) siteapi.SiteAuditActor
+	// goverter:map TargetType Type
+	// goverter:map TargetID ID
+	// goverter:map TargetName Name
+	AuditTargetToResource(source auditapi.View) siteapi.SiteAuditTarget
 
 	// The signing secret is decrypted by the webhooks module, which the mapper cannot see:
-	// the handler attaches it. The failure state is derived from the failure columns.
+	// the handler attaches it. The failure state is derived from the failure columns, and an
+	// endpoint with no event filter shows an empty list, never null.
 	// goverter:ignore Secret
-	// goverter:map EventTypes EventTypes | eventTypes
+	// goverter:useEmptyOnNil:slice
 	// goverter:map . Failure | webhookFailure
 	// goverter:map . Enabled | webhookEnabled
 	WebhookEndpointToResource(source *ent.WebhookEndpoint) siteapi.SiteWebhookEndpointResource
@@ -391,26 +422,17 @@ func count(n int) int32 { return narrow.Int32(n) }
 
 // nilString renders an optional value: null when there is none.
 func nilString(v *string) siteapi.NilString {
-	if v == nil {
-		return siteapi.NilString{Null: true}
-	}
-	return siteapi.NewNilString(*v)
+	return convert.Nil[siteapi.NilString](v)
 }
 
 // nilEntityID renders an optional reference: null when there is none.
 func nilEntityID(v *int64) siteapi.NilEntityId {
-	if v == nil {
-		return siteapi.NilEntityId{Null: true}
-	}
-	return siteapi.NewNilEntityId(siteapi.EntityId(*v))
+	return convert.Nil[siteapi.NilEntityId]((*siteapi.EntityId)(v))
 }
 
 // nilInt32 renders a limit: null when there is none.
 func nilInt32(v *int) siteapi.NilInt32 {
-	if v == nil {
-		return siteapi.NilInt32{Null: true}
-	}
-	return siteapi.NewNilInt32(narrow.Int32(*v))
+	return convert.Nil[siteapi.NilInt32](convert.Int32Ptr(v))
 }
 
 // providerLimitSource is null exactly when the window has no limit (its source is empty).
@@ -422,26 +444,12 @@ func providerLimitSource(v providerlimit.Source) siteapi.NilSiteProviderLimitSou
 }
 
 func optNilInt32(v *int) siteapi.OptNilInt32 {
-	if v == nil {
-		return siteapi.OptNilInt32{}
-	}
-	return siteapi.NewOptNilInt32(narrow.Int32(*v))
+	return convert.Opt[siteapi.OptNilInt32](convert.Int32Ptr(v))
 }
 
 // exportJSON renders a stored JSON object (custom fields, event properties).
 func exportJSON(m map[string]any) siteapi.OptNilContactExportJson {
-	if len(m) == 0 {
-		return siteapi.OptNilContactExportJson{}
-	}
-	out := make(siteapi.ContactExportJson, len(m))
-	for k, v := range m {
-		b, err := json.Marshal(v)
-		if err != nil {
-			continue
-		}
-		out[k] = jx.Raw(b)
-	}
-	return siteapi.NewOptNilContactExportJson(out)
+	return convert.OptObject[siteapi.OptNilContactExportJson](convert.RawObject[siteapi.ContactExportJson](m))
 }
 
 // emailVerified derives the verified flag from the nullable timestamp.
@@ -483,48 +491,15 @@ func transactionalError(m ent.OutboundMessage) siteapi.OptNilString {
 }
 
 func optNilString(v *string) siteapi.OptNilString {
-	if v == nil {
-		return siteapi.OptNilString{}
-	}
-	return siteapi.NewOptNilString(*v)
+	return convert.Opt[siteapi.OptNilString](v)
 }
 
 func optNilEmailAddress(v *string) siteapi.OptNilEmailAddress {
-	if v == nil {
-		return siteapi.OptNilEmailAddress{}
-	}
-	return siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(*v))
+	return convert.Opt[siteapi.OptNilEmailAddress]((*siteapi.EmailAddress)(v))
 }
 
 func optNilEntityID(v *int64) siteapi.OptNilEntityId {
-	if v == nil {
-		return siteapi.OptNilEntityId{}
-	}
-	return siteapi.NewOptNilEntityId(siteapi.EntityId(*v))
-}
-
-// BroadcastStats nests a Broadcast's delivery figures in the Stats DTO and computes the
-// derived engagement rates. Rates are ratios in [0,1]; a zero denominator yields 0.
-func BroadcastStats(c Converter, st broadcasts.Stats) siteapi.SiteBroadcastStats {
-	return siteapi.SiteBroadcastStats{
-		RecipientsTotal:   narrow.Int32(st.Recipients),
-		SentCount:         narrow.Int32(st.Sent),
-		OpenedCount:       narrow.Int32(st.Opened),
-		ClickedCount:      narrow.Int32(st.Clicked),
-		UnsubscribedCount: narrow.Int32(st.Unsubscribed),
-		FailedCount:       narrow.Int32(st.Failed),
-		DeliveredCount:    narrow.Int32(st.Delivered),
-		BouncedCount:      narrow.Int32(st.Bounced),
-		ComplainedCount:   narrow.Int32(st.Complained),
-		CapturedCount:     narrow.Int32(st.Captured),
-		DeliveryRate:      broadcasts.Ratio(st.Sent, st.Recipients),
-		OpenRate:          st.OpenRate(),
-		ClickRate:         st.ClickRate(),
-		ClickToOpenRate:   broadcasts.Ratio(st.Clicked, st.Opened),
-		UnsubscribeRate:   broadcasts.Ratio(st.Unsubscribed, st.Sent),
-		FailureRate:       broadcasts.Ratio(st.Failed, st.Recipients),
-		Revenue:           c.MessageRevenueToResource(st.Revenue),
-	}
+	return convert.Opt[siteapi.OptNilEntityId]((*siteapi.EntityId)(v))
 }
 
 // durationSeconds is a duration in whole seconds, null when there was nothing to measure.
@@ -544,10 +519,7 @@ func nilCurrencyCode(v *string) siteapi.NilCurrencyCode {
 
 // nilTimeZone is the User time zone (ADR 0068), null while the app follows the browser.
 func nilTimeZone(v *string) siteapi.NilTimeZoneName {
-	if v == nil {
-		return siteapi.NilTimeZoneName{Null: true}
-	}
-	return siteapi.NewNilTimeZoneName(siteapi.TimeZoneName(*v))
+	return convert.Nil[siteapi.NilTimeZoneName]((*siteapi.TimeZoneName)(v))
 }
 
 func attributionWindowDays(v int) siteapi.AttributionWindowDays {
@@ -555,81 +527,31 @@ func attributionWindowDays(v int) siteapi.AttributionWindowDays {
 }
 
 func optNilTimeZone(v *string) siteapi.OptNilTimeZoneName {
-	if v == nil {
-		return siteapi.OptNilTimeZoneName{}
-	}
-	return siteapi.NewOptNilTimeZoneName(siteapi.TimeZoneName(*v))
+	return convert.Opt[siteapi.OptNilTimeZoneName]((*siteapi.TimeZoneName)(v))
 }
 
 func optNilTimestamp(v *time.Time) siteapi.OptNilTimestamp {
-	if v == nil {
-		return siteapi.OptNilTimestamp{}
-	}
-	return siteapi.NewOptNilTimestamp(siteapi.Timestamp(*v))
+	return convert.Opt[siteapi.OptNilTimestamp]((*siteapi.Timestamp)(v))
 }
 
 func contactCustomFields(m map[string]any) siteapi.OptNilSiteContactResourceCustomFields {
-	if len(m) == 0 {
-		return siteapi.OptNilSiteContactResourceCustomFields{}
-	}
-	fields := make(siteapi.SiteContactResourceCustomFields, len(m))
-	for k, v := range m {
-		b, err := json.Marshal(v)
-		if err != nil {
-			continue
-		}
-		fields[k] = jx.Raw(b)
-	}
-	return siteapi.NewOptNilSiteContactResourceCustomFields(fields)
+	return convert.OptObject[siteapi.OptNilSiteContactResourceCustomFields](convert.RawObject[siteapi.SiteContactResourceCustomFields](m))
 }
 
 // templateDoc is a Template's stored editor document as the opaque object of the contract; a
 // Template written as HTML has none.
 func templateDoc(doc json.RawMessage) siteapi.OptNilSiteEmailTemplateResourceDoc {
-	if len(doc) == 0 {
-		return siteapi.OptNilSiteEmailTemplateResourceDoc{}
-	}
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(doc, &fields); err != nil {
-		return siteapi.OptNilSiteEmailTemplateResourceDoc{}
-	}
-	out := make(siteapi.SiteEmailTemplateResourceDoc, len(fields))
-	for k, v := range fields {
-		out[k] = jx.Raw(v)
-	}
-	return siteapi.NewOptNilSiteEmailTemplateResourceDoc(out)
+	return convert.OptObject[siteapi.OptNilSiteEmailTemplateResourceDoc](convert.DocObject[siteapi.SiteEmailTemplateResourceDoc](doc))
 }
 
 // broadcastDoc is a Broadcast's stored editor document as the opaque object of the contract; a
 // Broadcast written as HTML has none.
 func broadcastDoc(doc json.RawMessage) siteapi.OptNilSiteBroadcastResourceDoc {
-	if len(doc) == 0 {
-		return siteapi.OptNilSiteBroadcastResourceDoc{}
-	}
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(doc, &fields); err != nil {
-		return siteapi.OptNilSiteBroadcastResourceDoc{}
-	}
-	out := make(siteapi.SiteBroadcastResourceDoc, len(fields))
-	for k, v := range fields {
-		out[k] = jx.Raw(v)
-	}
-	return siteapi.NewOptNilSiteBroadcastResourceDoc(out)
+	return convert.OptObject[siteapi.OptNilSiteBroadcastResourceDoc](convert.DocObject[siteapi.SiteBroadcastResourceDoc](doc))
 }
 
 func eventProperties(m map[string]any) siteapi.OptNilSiteEventResourceProperties {
-	if len(m) == 0 {
-		return siteapi.OptNilSiteEventResourceProperties{}
-	}
-	props := make(siteapi.SiteEventResourceProperties, len(m))
-	for k, v := range m {
-		b, err := json.Marshal(v)
-		if err != nil {
-			continue
-		}
-		props[k] = jx.Raw(b)
-	}
-	return siteapi.NewOptNilSiteEventResourceProperties(props)
+	return convert.OptObject[siteapi.OptNilSiteEventResourceProperties](convert.RawObject[siteapi.SiteEventResourceProperties](m))
 }
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
@@ -691,47 +613,29 @@ func segmentCondition(def *string) siteapi.OptSiteConditionGroup {
 }
 
 func optTimestamp(v *time.Time) siteapi.OptTimestamp {
-	if v == nil {
-		return siteapi.OptTimestamp{}
-	}
-	return siteapi.NewOptTimestamp(siteapi.Timestamp(*v))
+	return convert.Opt[siteapi.OptTimestamp]((*siteapi.Timestamp)(v))
 }
 
 func optInt32(v *int) siteapi.OptInt32 {
-	if v == nil {
-		return siteapi.OptInt32{}
-	}
-	return siteapi.NewOptInt32(narrow.Int32(*v))
+	return convert.Opt[siteapi.OptInt32](convert.Int32Ptr(v))
 }
 
 func optString(v *string) siteapi.OptString {
-	if v == nil {
-		return siteapi.OptString{}
-	}
-	return siteapi.NewOptString(*v)
+	return convert.Opt[siteapi.OptString](v)
 }
 
 func optMembershipSource(v *membership.Source) siteapi.OptSiteMembershipSource {
-	if v == nil {
-		return siteapi.OptSiteMembershipSource{}
-	}
-	return siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSource(*v))
+	return convert.Opt[siteapi.OptSiteMembershipSource]((*siteapi.SiteMembershipSource)(v))
 }
 
 // optConsentDecision is a User's current answer to an optional consent, absent with none; it is
 // never `shown`, which only a notice is.
 func optConsentDecision(v *consentrecord.Decision) siteapi.OptSiteOptionalConsentDecision {
-	if v == nil {
-		return siteapi.OptSiteOptionalConsentDecision{}
-	}
-	return siteapi.NewOptSiteOptionalConsentDecision(siteapi.SiteOptionalConsentDecision(*v))
+	return convert.Opt[siteapi.OptSiteOptionalConsentDecision]((*siteapi.SiteOptionalConsentDecision)(v))
 }
 
 func optTrackingReason(v *sendingdomain.TrackingReason) siteapi.OptSiteTrackingReason {
-	if v == nil {
-		return siteapi.OptSiteTrackingReason{}
-	}
-	return siteapi.NewOptSiteTrackingReason(siteapi.SiteTrackingReason(*v))
+	return convert.Opt[siteapi.OptSiteTrackingReason]((*siteapi.SiteTrackingReason)(v))
 }
 
 // tagNames lists the names of a contact's loaded tags, in the order they were read.
@@ -799,27 +703,8 @@ func brandKitUpdatedAt(k brandkit.Kit) siteapi.OptNilTimestamp {
 	return siteapi.NewOptNilTimestamp(siteapi.Timestamp(k.UpdatedAt))
 }
 
-func auditActor(v auditapi.View) siteapi.SiteAuditActor {
-	return siteapi.SiteAuditActor{Kind: siteapi.SiteAuditActorKind(v.ActorKind), ID: optNilString(v.ActorID), Name: optNilString(v.ActorName)}
-}
-
-func auditTarget(v auditapi.View) siteapi.SiteAuditTarget {
-	return siteapi.SiteAuditTarget{Type: v.TargetType, ID: optNilString(v.TargetID), Name: optNilString(v.TargetName)}
-}
-
 func auditDiff(d map[string]jx.Raw) siteapi.OptNilSiteAuditEntryResourceDiff {
-	if d == nil {
-		return siteapi.OptNilSiteAuditEntryResourceDiff{}
-	}
-	return siteapi.NewOptNilSiteAuditEntryResourceDiff(d)
-}
-
-// eventTypes shows an endpoint with no event filter as an empty list, never null.
-func eventTypes(v []string) []string {
-	if v == nil {
-		return []string{}
-	}
-	return v
+	return convert.OptObject[siteapi.OptNilSiteAuditEntryResourceDiff](siteapi.SiteAuditEntryResourceDiff(d))
 }
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
@@ -838,18 +723,12 @@ func webhookFailure(e ent.WebhookEndpoint) siteapi.OptSiteWebhookFailure {
 
 // optWebhookDisabledReason is why the endpoint turned itself off; absent otherwise.
 func optWebhookDisabledReason(v *webhookendpoint.DisabledReason) siteapi.OptSiteWebhookDisabledReason {
-	if v == nil {
-		return siteapi.OptSiteWebhookDisabledReason{}
-	}
-	return siteapi.NewOptSiteWebhookDisabledReason(siteapi.SiteWebhookDisabledReason(*v))
+	return convert.Opt[siteapi.OptSiteWebhookDisabledReason]((*siteapi.SiteWebhookDisabledReason)(v))
 }
 
 // omitEmpty is unset for an empty value, so redacted optional fields are omitted.
 func omitEmpty(s string) siteapi.OptNilString {
-	if s == "" {
-		return siteapi.OptNilString{}
-	}
-	return siteapi.NewOptNilString(s)
+	return convert.OptNonZero[siteapi.OptNilString](s)
 }
 
 func smtpConfigKind(integrations.RedactedSMTP) siteapi.SiteSmtpConfigKind {
@@ -877,12 +756,9 @@ func ruleVersionOrNull(c Converter, v *ent.RuleVersion) siteapi.NilSiteRuleVersi
 	return siteapi.NewNilSiteRuleVersion(c.RuleVersionToResource(v))
 }
 
-// ruleOptString is a text that is absent when empty.
-func ruleOptString(s string) siteapi.OptString {
-	if s == "" {
-		return siteapi.OptString{}
-	}
-	return siteapi.NewOptString(s)
+// optNonEmpty is a text that is absent when empty.
+func optNonEmpty(s string) siteapi.OptString {
+	return convert.OptNonZero[siteapi.OptString](s)
 }
 
 // ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
@@ -895,14 +771,14 @@ func ruleActions(stored string) []siteapi.SiteRuleAction {
 		return nil
 	}
 	return lo.Map(actions, func(a rules.Action, _ int) siteapi.SiteRuleAction {
-		out := siteapi.SiteRuleAction{Type: siteapi.SiteRuleActionType(a.Type), Tag: ruleOptString(a.Tag)}
+		out := siteapi.SiteRuleAction{Type: siteapi.SiteRuleActionType(a.Type), Tag: optNonEmpty(a.Tag)}
 		if a.Type == rules.ActionEnroll {
 			out.AutomationId = siteapi.NewOptEntityId(siteapi.EntityId(a.AutomationID))
 		}
 		if a.Type == rules.ActionHTTP {
 			// Masked: the URL, header values and signing secret never leave the server.
-			out.ID = ruleOptString(a.ID)
-			out.Body = ruleOptString(a.Body)
+			out.ID = optNonEmpty(a.ID)
+			out.Body = optNonEmpty(a.Body)
 			out.HasSecret = siteapi.NewOptBool(a.Secret != "")
 			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) siteapi.SiteAutomationHttpHeader {
 				return siteapi.SiteAutomationHttpHeader{Name: h.Name}
@@ -924,16 +800,13 @@ func ruleResults(stored string) []siteapi.SiteRuleActionResult {
 		return siteapi.SiteRuleActionResult{
 			Type:   siteapi.SiteRuleActionType(r.Type),
 			Status: siteapi.SiteRuleActionStatus(r.Status),
-			Detail: ruleOptString(r.Detail),
+			Detail: optNonEmpty(r.Detail),
 		}
 	})
 }
 
 func optNilContactSource(v *contact.Source) siteapi.OptNilContactExportSource {
-	if v == nil {
-		return siteapi.OptNilContactExportSource{}
-	}
-	return siteapi.NewOptNilContactExportSource(siteapi.ContactExportSource(*v))
+	return convert.Opt[siteapi.OptNilContactExportSource]((*siteapi.ContactExportSource)(v))
 }
 
 // customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the

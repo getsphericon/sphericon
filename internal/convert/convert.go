@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-faster/jx"
 
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/patch"
 )
 
@@ -178,6 +179,71 @@ func Nil[N any, T any, P interface {
 		P(&n).SetTo(*v)
 	}
 	return n
+}
+
+// setter is implemented by the pointer to every ogen Opt*/OptNil*/Nil* value type.
+type setter[O any, T any] interface {
+	*O
+	SetTo(v T)
+}
+
+// Opt is the ogen Opt* or OptNil* value O of v (OptString, OptNilTimestamp, ...): absent when v is
+// nil, never null. As with Nil, every surface's package has its own O, so its mapper names the
+// type and the rule stays here. A named contract scalar takes a converted pointer:
+// Opt[siteapi.OptNilEmailAddress]((*siteapi.EmailAddress)(v)).
+func Opt[O any, T any, P setter[O, T]](v *T) O {
+	var o O
+	if v != nil {
+		P(&o).SetTo(*v)
+	}
+	return o
+}
+
+// OptNonZero is the ogen Opt* or OptNil* value O of v, absent when v is its zero value: an empty
+// text a contract leaves out rather than sending "".
+func OptNonZero[O any, T comparable, P setter[O, T]](v T) O {
+	var zero T
+	if v == zero {
+		var o O
+		return o
+	}
+	return Opt[O, T, P](&v)
+}
+
+// OptObject is the ogen Opt* or OptNil* value O of an opaque object, absent when m is nil.
+func OptObject[O any, M ~map[string]jx.Raw, P setter[O, M]](m M) O {
+	if m == nil {
+		var o O
+		return o
+	}
+	return Opt[O, M, P](&m)
+}
+
+// RawObject is a stored JSON object as an ogen Record<unknown> (the reverse of RawMap): nil when it
+// has no keys. A value that does not encode is left out.
+func RawObject[M ~map[string]jx.Raw](m map[string]any) M {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make(M, len(m))
+	for k, v := range m {
+		b, err := json.Marshal(v)
+		if err != nil {
+			continue
+		}
+		out[k] = jx.Raw(b)
+	}
+	return out
+}
+
+// Int32Ptr is v narrowed to the int32 the contracts use (saturating, see internal/narrow), nil
+// when v is nil.
+func Int32Ptr(v *int) *int32 {
+	if v == nil {
+		return nil
+	}
+	n := narrow.Int32(*v)
+	return &n
 }
 
 // WholeSeconds is d in whole seconds, nil when there is no duration.

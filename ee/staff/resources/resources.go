@@ -17,6 +17,7 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/auditapi"
+	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
@@ -79,9 +80,18 @@ type StaffConverter interface {
 	// goverter:map Window WindowHours | windowHours
 	DeliverabilityToResource(source abuse.Deliverability) staffeeapi.StaffDeliverability
 
-	// goverter:map . Actor | staffAuditActor
-	// goverter:map . Target | staffAuditTarget
+	// goverter:map . Actor
+	// goverter:map . Target
 	AuditEntryToResource(source auditapi.View) staffeeapi.StaffAuditEntryResource
+	// An entry's actor and target are columns of the entry, nested in the contract.
+	// goverter:map ActorKind Kind
+	// goverter:map ActorID ID
+	// goverter:map ActorName Name
+	AuditActorToResource(source auditapi.View) staffeeapi.StaffAuditActor
+	// goverter:map TargetType Type
+	// goverter:map TargetID ID
+	// goverter:map TargetName Name
+	AuditTargetToResource(source auditapi.View) staffeeapi.StaffAuditTarget
 
 	// One User's Sign-up survey answers. The enums share the contract's values.
 	// goverter:map UserID UserId
@@ -144,31 +154,19 @@ func staffTimestamp(t time.Time) staffeeapi.Timestamp { return staffeeapi.Timest
 func serviceTimestamp(t time.Time) serviceapi.Timestamp { return serviceapi.Timestamp(t) }
 
 func nilableString(v *string) staffeeapi.OptNilString {
-	if v == nil {
-		return staffeeapi.OptNilString{}
-	}
-	return staffeeapi.NewOptNilString(*v)
+	return convert.Opt[staffeeapi.OptNilString](v)
 }
 
 func serviceNilableString(v *string) serviceapi.OptNilString {
-	if v == nil {
-		return serviceapi.OptNilString{}
-	}
-	return serviceapi.NewOptNilString(*v)
+	return convert.Opt[serviceapi.OptNilString](v)
 }
 
 func optNilTimestamp(t *time.Time) staffeeapi.OptNilTimestamp {
-	if t == nil {
-		return staffeeapi.OptNilTimestamp{}
-	}
-	return staffeeapi.NewOptNilTimestamp(staffeeapi.Timestamp(*t))
+	return convert.Opt[staffeeapi.OptNilTimestamp]((*staffeeapi.Timestamp)(t))
 }
 
 func serviceOptNilTimestamp(t *time.Time) serviceapi.OptNilTimestamp {
-	if t == nil {
-		return serviceapi.OptNilTimestamp{}
-	}
-	return serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(*t))
+	return convert.Opt[serviceapi.OptNilTimestamp]((*serviceapi.Timestamp)(t))
 }
 
 func serviceOptString(v string) serviceapi.OptString { return serviceapi.NewOptString(v) }
@@ -210,36 +208,19 @@ func workspaceSuspension(w *ent.Workspace) staffeeapi.OptNilStaffSuspension {
 	})
 }
 
-func staffAuditActor(v auditapi.View) staffeeapi.StaffAuditActor {
-	return staffeeapi.StaffAuditActor{Kind: staffeeapi.StaffAuditActorKind(v.ActorKind), ID: nilableString(v.ActorID), Name: nilableString(v.ActorName)}
-}
-
-func staffAuditTarget(v auditapi.View) staffeeapi.StaffAuditTarget {
-	return staffeeapi.StaffAuditTarget{Type: v.TargetType, ID: nilableString(v.TargetID), Name: nilableString(v.TargetName)}
-}
-
 func staffAuditDiff(d map[string]jx.Raw) staffeeapi.OptNilStaffAuditEntryResourceDiff {
-	if d == nil {
-		return staffeeapi.OptNilStaffAuditEntryResourceDiff{}
-	}
-	return staffeeapi.NewOptNilStaffAuditEntryResourceDiff(d)
+	return convert.OptObject[staffeeapi.OptNilStaffAuditEntryResourceDiff](staffeeapi.StaffAuditEntryResourceDiff(d))
 }
 
 func nilFloat64(v *float64) staffeeapi.NilFloat64 {
-	if v == nil {
-		return staffeeapi.NilFloat64{Null: true}
-	}
-	return staffeeapi.NewNilFloat64(*v)
+	return convert.Nil[staffeeapi.NilFloat64](v)
 }
 
 // count narrows a count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
 
 func optNilSource(v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilStaffSignupSource {
-	if v == nil {
-		return staffeeapi.OptNilStaffSignupSource{}
-	}
-	return staffeeapi.NewOptNilStaffSignupSource(staffeeapi.StaffSignupSource(*v))
+	return convert.Opt[staffeeapi.OptNilStaffSignupSource]((*staffeeapi.StaffSignupSource)(v))
 }
 
 func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }

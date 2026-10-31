@@ -30,37 +30,18 @@ func (h *Handlers) EmailLintLint(ctx context.Context, req *externalapi.LintEmail
 	if err != nil {
 		return nil, err
 	}
-	res := externalapi.LintEmailResult{Errors: []externalapi.LintFinding{}, Warnings: lintFindings(report.Warnings)}
+	res := externalapi.LintEmailResult{Errors: []externalapi.LintFinding{}, Warnings: mapper.LintFindingsToResource(report.Warnings)}
 	if report.Error != nil {
 		res.Errors = append(res.Errors, invalidContent(report.Error))
 	}
 	return &res, nil
 }
 
+// invalidContent is the error finding of a message that cannot render.
 func invalidContent(err error) externalapi.LintFinding {
-	return externalapi.LintFinding{
-		Code:    externalapi.LintCode(emailrender.CodeInvalidContent),
+	return mapper.LintFindingToResource(emailrender.Finding{
+		Code:    emailrender.CodeInvalidContent,
 		Message: "the message cannot be rendered",
-		Detail:  externalapi.NewOptString(err.Error()),
-	}
-}
-
-func lintFindings(list []emailrender.Finding) []externalapi.LintFinding {
-	out := make([]externalapi.LintFinding, 0, len(list))
-	for _, f := range list {
-		out = append(out, externalapi.LintFinding{
-			Code:    externalapi.LintCode(f.Code),
-			Message: f.Message,
-			Element: optString(f.Element),
-			Detail:  optString(f.Detail),
-		})
-	}
-	return out
-}
-
-func optString(v string) externalapi.OptString {
-	if v == "" {
-		return externalapi.OptString{}
-	}
-	return externalapi.NewOptString(v)
+		Detail:  err.Error(),
+	})
 }

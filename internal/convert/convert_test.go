@@ -1,6 +1,7 @@
 package convert_test
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -108,6 +109,56 @@ func TestNilIsNullWithoutAValue(t *testing.T) {
 
 	assert.Equal(t, nilInt{v: 7}, set)
 	assert.Equal(t, nilInt{null: true}, unset)
+}
+
+type optText struct {
+	v   string
+	set bool
+}
+
+func (o *optText) SetTo(v string) { o.v, o.set = v, true }
+
+func TestOptIsAbsentWithoutAValue(t *testing.T) {
+	text := "hi"
+
+	assert.Equal(t, optText{v: "hi", set: true}, convert.Opt[optText](&text))
+	assert.Equal(t, optText{}, convert.Opt[optText]((*string)(nil)))
+}
+
+func TestOptNonZeroLeavesOutTheZeroValue(t *testing.T) {
+	assert.Equal(t, optText{v: "hi", set: true}, convert.OptNonZero[optText]("hi"))
+	assert.Equal(t, optText{}, convert.OptNonZero[optText](""))
+}
+
+type object map[string]jx.Raw
+
+type optObject struct {
+	v   object
+	set bool
+}
+
+func (o *optObject) SetTo(v object) { o.v, o.set = v, true }
+
+func TestOptObjectIsAbsentOnlyWithoutAnObject(t *testing.T) {
+	assert.Equal(t, optObject{v: object{}, set: true}, convert.OptObject[optObject](object{}))
+	assert.Equal(t, optObject{}, convert.OptObject[optObject](object(nil)))
+}
+
+func TestRawObjectEncodesEachValue(t *testing.T) {
+	got := convert.RawObject[object](map[string]any{"plan": "pro", "seats": 3.0})
+
+	assert.Equal(t, object{"plan": jx.Raw(`"pro"`), "seats": jx.Raw(`3`)}, got)
+	assert.Nil(t, convert.RawObject[object](map[string]any{}))
+}
+
+func TestInt32PtrSaturates(t *testing.T) {
+	big := math.MaxInt32 + 1
+
+	got := convert.Int32Ptr(&big)
+
+	require.NotNil(t, got)
+	assert.Equal(t, int32(math.MaxInt32), *got)
+	assert.Nil(t, convert.Int32Ptr(nil))
 }
 
 func TestWholeSecondsDropsTheFraction(t *testing.T) {

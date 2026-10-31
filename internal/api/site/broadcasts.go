@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -25,7 +24,7 @@ func withStats(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.Si
 		return siteapi.SiteBroadcastResource{}, err
 	}
 	res := mapper.BroadcastToResource(b)
-	res.Stats = resources.BroadcastStats(mapper, figures[b.ID])
+	res.Stats = mapper.BroadcastStatsToResource(figures[b.ID])
 	return res, nil
 }
 
@@ -38,7 +37,7 @@ func broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (si
 		return siteapi.SiteBroadcastResource{}, err
 	}
 	res := mapper.BroadcastToResource(b)
-	res.Stats = resources.BroadcastStats(mapper, d.Stats)
+	res.Stats = mapper.BroadcastStatsToResource(d.Stats)
 	if d.Progress != nil {
 		res.Progress = siteapi.NewOptNilSiteBroadcastProgress(mapper.BroadcastProgressToResource(*d.Progress))
 	}
@@ -62,7 +61,7 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 	return &siteapi.SiteBroadcastsListOK{
 		Items: lo.Map(page.Items, func(b *ent.Broadcast, _ int) siteapi.SiteBroadcastResource {
 			res := mapper.BroadcastToResource(b)
-			res.Stats = resources.BroadcastStats(mapper, figures[b.ID])
+			res.Stats = mapper.BroadcastStatsToResource(figures[b.ID])
 			return res
 		}),
 		Page:       narrow.Int32(page.Page),

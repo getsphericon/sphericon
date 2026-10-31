@@ -4,6 +4,7 @@
 package resources
 
 import (
+	jsontext "encoding/json/jsontext"
 	ent "github.com/getsphericon/sphericon/ent"
 	schema "github.com/getsphericon/sphericon/ent/schema"
 	external "github.com/getsphericon/sphericon/gen/external"
@@ -11,12 +12,15 @@ import (
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	emaildoc "github.com/getsphericon/sphericon/internal/emaildoc"
+	emailrender "github.com/getsphericon/sphericon/internal/emailrender"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	orders "github.com/getsphericon/sphericon/internal/orders"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	jx "github.com/go-faster/jx"
 )
 
 type ConverterImpl struct{}
@@ -40,18 +44,32 @@ func (c *ConverterImpl) ApiTokenToInfo(source *ent.ApiToken) external.ApiTokenIn
 	}
 	return externalapiApiTokenInfo
 }
+func (c *ConverterImpl) AuditActorToResource(source auditapi.View) external.AuditActor {
+	var externalapiAuditActor external.AuditActor
+	externalapiAuditActor.Kind = external.AuditActorKind(source.ActorKind)
+	externalapiAuditActor.ID = optNilString(source.ActorID)
+	externalapiAuditActor.Name = optNilString(source.ActorName)
+	return externalapiAuditActor
+}
 func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.AuditEntryResource {
 	var externalapiAuditEntryResource external.AuditEntryResource
 	externalapiAuditEntryResource.ID = external.EntityId(source.ID)
 	externalapiAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
-	externalapiAuditEntryResource.Actor = auditActor(source)
+	externalapiAuditEntryResource.Actor = c.AuditActorToResource(source)
 	externalapiAuditEntryResource.Action = source.Action
-	externalapiAuditEntryResource.Target = auditTarget(source)
+	externalapiAuditEntryResource.Target = c.AuditTargetToResource(source)
 	externalapiAuditEntryResource.Diff = auditDiff(source.Diff)
 	externalapiAuditEntryResource.RequestId = optNilString(source.RequestID)
 	externalapiAuditEntryResource.IP = optNilString(source.IP)
 	externalapiAuditEntryResource.UserAgent = optNilString(source.UserAgent)
 	return externalapiAuditEntryResource
+}
+func (c *ConverterImpl) AuditTargetToResource(source auditapi.View) external.AuditTarget {
+	var externalapiAuditTarget external.AuditTarget
+	externalapiAuditTarget.Type = source.TargetType
+	externalapiAuditTarget.ID = optNilString(source.TargetID)
+	externalapiAuditTarget.Name = optNilString(source.TargetName)
+	return externalapiAuditTarget
 }
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) external.AutomationPeriodResults {
 	var externalapiAutomationPeriodResults external.AutomationPeriodResults
@@ -179,8 +197,8 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.BouncedCount = count(source.Stats.Bounced)
 	externalapiBroadcastReport.ComplainedCount = count(source.Stats.Complained)
 	externalapiBroadcastReport.CapturedCount = count(source.Stats.Captured)
-	externalapiBroadcastReport.OpenRate = openRate(source.Stats)
-	externalapiBroadcastReport.ClickRate = clickRate(source.Stats)
+	externalapiBroadcastReport.OpenRate = source.Stats.OpenRate()
+	externalapiBroadcastReport.ClickRate = source.Stats.ClickRate()
 	return externalapiBroadcastReport
 }
 func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.BroadcastResource {
@@ -316,6 +334,27 @@ func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) extern
 	externalapiDnsRecord.Value = source.Value
 	return externalapiDnsRecord
 }
+func (c *ConverterImpl) EmailSchemaToResource(source emaildoc.AgentDescription) external.EmailSchemaResult {
+	var externalapiEmailSchemaResult external.EmailSchemaResult
+	externalapiEmailSchemaResult.EditorVersion = source.EditorVersion
+	externalapiEmailSchemaResult.Nodes = c.mapStringEmaildocAgentTypeToExternalapiEmailSchemaResultNodes(source.Nodes)
+	externalapiEmailSchemaResult.Marks = c.mapStringEmaildocAgentTypeToExternalapiEmailSchemaResultMarks(source.Marks)
+	if source.Rules != nil {
+		externalapiEmailSchemaResult.Rules = make([]string, len(source.Rules))
+		for i := 0; i < len(source.Rules); i++ {
+			externalapiEmailSchemaResult.Rules[i] = source.Rules[i]
+		}
+	}
+	externalapiEmailSchemaResult.Example = schemaExample(source.Example)
+	return externalapiEmailSchemaResult
+}
+func (c *ConverterImpl) EmailSchemaTypeToResource(source emaildoc.AgentType) external.EmailSchemaType {
+	var externalapiEmailSchemaType external.EmailSchemaType
+	externalapiEmailSchemaType.Content = optNonEmpty(source.Content)
+	externalapiEmailSchemaType.Group = optNonEmpty(source.Group)
+	externalapiEmailSchemaType.Attrs = c.mapStringEmaildocAgentAttrToExternalapiEmailSchemaTypeAttrs(source.Attrs)
+	return externalapiEmailSchemaType
+}
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) external.TemplateResource {
 	var externalapiTemplateResource external.TemplateResource
 	if source != nil {
@@ -379,6 +418,22 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 		externalapiIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiIntegrationResource
+}
+func (c *ConverterImpl) LintFindingToResource(source emailrender.Finding) external.LintFinding {
+	var externalapiLintFinding external.LintFinding
+	externalapiLintFinding.Code = external.LintCode(source.Code)
+	externalapiLintFinding.Message = source.Message
+	externalapiLintFinding.Element = optNonEmpty(source.Element)
+	externalapiLintFinding.Detail = optNonEmpty(source.Detail)
+	return externalapiLintFinding
+}
+func (c *ConverterImpl) LintFindingsToResource(source []emailrender.Finding) []external.LintFinding {
+	var externalapiLintFindingList []external.LintFinding
+	externalapiLintFindingList = make([]external.LintFinding, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiLintFindingList[i] = c.LintFindingToResource(source[i])
+	}
+	return externalapiLintFindingList
 }
 func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) external.MessageRevenue {
 	var externalapiMessageRevenue external.MessageRevenue
@@ -611,7 +666,10 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 	if source != nil {
 		externalapiWebhookResource.ID = external.EntityId((*source).ID)
 		externalapiWebhookResource.URL = (*source).URL
-		externalapiWebhookResource.EventTypes = eventTypes((*source).EventTypes)
+		externalapiWebhookResource.EventTypes = make([]string, len((*source).EventTypes))
+		for i := 0; i < len((*source).EventTypes); i++ {
+			externalapiWebhookResource.EventTypes[i] = (*source).EventTypes[i]
+		}
 		externalapiWebhookResource.Enabled = webhookEnabled((*source))
 		externalapiWebhookResource.DisabledAt = optTimestamp((*source).DisabledAt)
 		externalapiWebhookResource.DisabledReason = optWebhookDisabledReason((*source).DisabledReason)
@@ -621,11 +679,64 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 	}
 	return externalapiWebhookResource
 }
+func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
+	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute
+	externalapiEmailSchemaAttribute.Default = c.jsontextValueToJxRaw(source.Default)
+	externalapiEmailSchemaAttribute.Type = source.Type
+	if source.Allowed != nil {
+		externalapiEmailSchemaAttribute.Allowed = make([]string, len(source.Allowed))
+		for i := 0; i < len(source.Allowed); i++ {
+			externalapiEmailSchemaAttribute.Allowed[i] = source.Allowed[i]
+		}
+	}
+	externalapiEmailSchemaAttribute.Rule = source.Rule
+	return externalapiEmailSchemaAttribute
+}
+func (c *ConverterImpl) jsontextValueToJxRaw(source jsontext.Value) jx.Raw {
+	var jxRaw jx.Raw
+	if source != nil {
+		jxRaw = make(jx.Raw, len(source))
+		for i := 0; i < len(source); i++ {
+			jxRaw[i] = source[i]
+		}
+	}
+	return jxRaw
+}
 func (c *ConverterImpl) linkclicksClicksToExternalapiLinkClicks(source linkclicks.Clicks) external.LinkClicks {
 	var externalapiLinkClicks external.LinkClicks
 	externalapiLinkClicks.URL = source.URL
 	externalapiLinkClicks.Clicks = count(source.Clicks)
 	return externalapiLinkClicks
+}
+func (c *ConverterImpl) mapStringEmaildocAgentAttrToExternalapiEmailSchemaTypeAttrs(source map[string]emaildoc.AgentAttr) external.EmailSchemaTypeAttrs {
+	var externalapiEmailSchemaTypeAttrs external.EmailSchemaTypeAttrs
+	if source != nil {
+		externalapiEmailSchemaTypeAttrs = make(external.EmailSchemaTypeAttrs, len(source))
+		for key, value := range source {
+			externalapiEmailSchemaTypeAttrs[key] = c.emaildocAgentAttrToExternalapiEmailSchemaAttribute(value)
+		}
+	}
+	return externalapiEmailSchemaTypeAttrs
+}
+func (c *ConverterImpl) mapStringEmaildocAgentTypeToExternalapiEmailSchemaResultMarks(source map[string]emaildoc.AgentType) external.EmailSchemaResultMarks {
+	var externalapiEmailSchemaResultMarks external.EmailSchemaResultMarks
+	if source != nil {
+		externalapiEmailSchemaResultMarks = make(external.EmailSchemaResultMarks, len(source))
+		for key, value := range source {
+			externalapiEmailSchemaResultMarks[key] = c.EmailSchemaTypeToResource(value)
+		}
+	}
+	return externalapiEmailSchemaResultMarks
+}
+func (c *ConverterImpl) mapStringEmaildocAgentTypeToExternalapiEmailSchemaResultNodes(source map[string]emaildoc.AgentType) external.EmailSchemaResultNodes {
+	var externalapiEmailSchemaResultNodes external.EmailSchemaResultNodes
+	if source != nil {
+		externalapiEmailSchemaResultNodes = make(external.EmailSchemaResultNodes, len(source))
+		for key, value := range source {
+			externalapiEmailSchemaResultNodes[key] = c.EmailSchemaTypeToResource(value)
+		}
+	}
+	return externalapiEmailSchemaResultNodes
 }
 func (c *ConverterImpl) providerlimitValueToExternalapiProviderLimitValue(source providerlimit.Value) external.ProviderLimitValue {
 	var externalapiProviderLimitValue external.ProviderLimitValue
