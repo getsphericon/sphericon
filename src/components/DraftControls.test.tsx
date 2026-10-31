@@ -13,7 +13,6 @@ test('a draft above a live version shows the pending badge and Revert; Publish w
       dirty
       publishMutation={NOOP}
       revertMutation={NOOP}
-      invalidate={[]}
       messages={{ published: 'Published', reverted: 'Reverted', errorTitle: 'Failed' }}
     />,
   )

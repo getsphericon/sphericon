@@ -40,7 +40,7 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
   return [params];
 };
 
-export const staffSignupSurveyCountsQueryKey = (options?: Options<StaffSignupSurveyCountsData>) => createQueryKey('staffSignupSurveyCounts', options);
+export const staffSignupSurveyCountsQueryKey = (options?: Options<StaffSignupSurveyCountsData>) => createQueryKey('staffSignupSurveyCounts', options, false, ['StaffMember Sign-up survey']);
 
 /**
  * The Sign-up survey answers, counted per question. Read only.
@@ -58,7 +58,7 @@ export const staffSignupSurveyCountsOptions = (options?: Options<StaffSignupSurv
   queryKey: staffSignupSurveyCountsQueryKey(options)
 });
 
-export const staffSignupSurveyGetQueryKey = (options: Options<StaffSignupSurveyGetData>) => createQueryKey('staffSignupSurveyGet', options);
+export const staffSignupSurveyGetQueryKey = (options: Options<StaffSignupSurveyGetData>) => createQueryKey('staffSignupSurveyGet', options, false, ['StaffMember Sign-up survey']);
 
 /**
  * One User's answers. 404 when the User is unknown or has not answered the survey.
@@ -76,7 +76,7 @@ export const staffSignupSurveyGetOptions = (options: Options<StaffSignupSurveyGe
   queryKey: staffSignupSurveyGetQueryKey(options)
 });
 
-export const staffWorkspacesListQueryKey = (options?: Options<StaffWorkspacesListData>) => createQueryKey('staffWorkspacesList', options);
+export const staffWorkspacesListQueryKey = (options?: Options<StaffWorkspacesListData>) => createQueryKey('staffWorkspacesList', options, false, ['StaffMember Workspaces']);
 
 /**
  * List all Workspaces, newest first, optionally narrowed by an id or name search
@@ -153,7 +153,7 @@ export const staffWorkspacesListInfiniteOptions = (options?: Options<StaffWorksp
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
-export const staffWorkspacesGetQueryKey = (options: Options<StaffWorkspacesGetData>) => createQueryKey('staffWorkspacesGet', options);
+export const staffWorkspacesGetQueryKey = (options: Options<StaffWorkspacesGetData>) => createQueryKey('staffWorkspacesGet', options, false, ['StaffMember Workspaces']);
 
 /**
  * One Workspace's metadata, suspension state, rates and send volume
@@ -171,7 +171,7 @@ export const staffWorkspacesGetOptions = (options: Options<StaffWorkspacesGetDat
   queryKey: staffWorkspacesGetQueryKey(options)
 });
 
-export const staffWorkspaceAuditListQueryKey = (options: Options<StaffWorkspaceAuditListData>) => createQueryKey('staffWorkspaceAuditList', options);
+export const staffWorkspaceAuditListQueryKey = (options: Options<StaffWorkspaceAuditListData>) => createQueryKey('staffWorkspaceAuditList', options, false, ['StaffMember Workspaces']);
 
 /**
  * One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing is then recorded.
@@ -219,6 +219,37 @@ export const staffWorkspaceAuditListInfiniteOptions = (options: Options<StaffWor
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export type MutationKey<TOptions extends Partial<Options>> = [
+  Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
+    _id: string;
+    tags?: ReadonlyArray<string>;
+  }
+];
+
+const createMutationKey = <TOptions extends Partial<Options>>(id: string, options?: TOptions, tags?: ReadonlyArray<string>): [
+  MutationKey<TOptions>[0]
+] => {
+  const params: MutationKey<TOptions>[0] = { _id: id, baseUrl: options?.baseUrl || (options?.client ?? client).getConfig().baseUrl };
+  if (tags) {
+    params.tags = tags;
+  }
+  if (options?.body) {
+    params.body = options.body;
+  }
+  if (options?.headers) {
+    params.headers = options.headers;
+  }
+  if (options?.path) {
+    params.path = options.path;
+  }
+  if (options?.query) {
+    params.query = options.query;
+  }
+  return [params];
+};
+
+export const staffWorkspacesExemptMutationKey = (options?: Partial<Options<StaffWorkspacesExemptData>>) => createMutationKey('staffWorkspacesExempt', options, ['StaffMember Workspaces']);
+
 /**
  * Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor
  * frozen automatically, but stays listed with its rates and can still be suspended by
@@ -233,10 +264,13 @@ export const staffWorkspacesExemptMutation = (options?: Partial<Options<StaffWor
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffWorkspacesExemptMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffWorkspacesSuspendMutationKey = (options?: Partial<Options<StaffWorkspacesSuspendData>>) => createMutationKey('staffWorkspacesSuspend', options, ['StaffMember Workspaces']);
 
 /**
  * Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the
@@ -251,10 +285,13 @@ export const staffWorkspacesSuspendMutation = (options?: Partial<Options<StaffWo
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffWorkspacesSuspendMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffWorkspacesUnexemptMutationKey = (options?: Partial<Options<StaffWorkspacesUnexemptData>>) => createMutationKey('staffWorkspacesUnexempt', options, ['StaffMember Workspaces']);
 
 /**
  * Police a Workspace by the abuse detector again. Audited. Idempotent.
@@ -268,10 +305,13 @@ export const staffWorkspacesUnexemptMutation = (options?: Partial<Options<StaffW
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffWorkspacesUnexemptMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffWorkspacesUnsuspendMutationKey = (options?: Partial<Options<StaffWorkspacesUnsuspendData>>) => createMutationKey('staffWorkspacesUnsuspend', options, ['StaffMember Workspaces']);
 
 /**
  * Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is
@@ -286,7 +326,8 @@ export const staffWorkspacesUnsuspendMutation = (options?: Partial<Options<Staff
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffWorkspacesUnsuspendMutationKey(options)
   };
   return mutationOptions;
 };

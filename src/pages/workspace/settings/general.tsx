@@ -3,7 +3,6 @@ import { useForm } from '@mantine/form'
 import { useTranslation } from 'react-i18next'
 
 import {
-  siteWorkspacesListQueryKey,
   siteWorkspacesSetTimezoneMutation,
   siteWorkspacesUpdateMutation,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
@@ -29,7 +28,6 @@ function GeneralSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 
   const updateMutation = useResourceMutation({
     mutation: siteWorkspacesUpdateMutation(),
-    invalidate: [siteWorkspacesListQueryKey()],
     successMessage: t(($) => $.settings.saved),
     errorTitle: t(($) => $.settings.errorTitle),
   })
@@ -82,7 +80,6 @@ function TimezoneSection({ workspace }: { workspace: SiteWorkspaceResource }) {
 
   const mutation = useResourceMutation({
     mutation: siteWorkspacesSetTimezoneMutation(),
-    invalidate: [siteWorkspacesListQueryKey()],
     successMessage: t(($) => $.settings.saved),
     errorTitle: t(($) => $.settings.errorTitle),
   })

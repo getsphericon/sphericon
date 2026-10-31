@@ -3,8 +3,6 @@ import * as z from 'zod'
 import {
   siteContactsCreateMutation,
   siteContactsGetOptions,
-  siteContactsGetQueryKey,
-  siteContactsListQueryKey,
   siteContactsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zSiteUpdateContactInput } from '../../generated/site/zod.gen.ts'
@@ -36,8 +34,6 @@ const contactResource = defineResource({
   getOptions: siteContactsGetOptions,
   createMutation: siteContactsCreateMutation,
   updateMutation: siteContactsUpdateMutation,
-  listQueryKey: siteContactsListQueryKey,
-  getQueryKey: siteContactsGetQueryKey,
   editRoute: contactsEditRoute,
   idParam: 'contactId',
   texts: (t) => ({

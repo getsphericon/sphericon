@@ -7,12 +7,12 @@ import { useTranslation } from 'react-i18next'
 import {
   sitePasskeysListOptions,
   sitePasskeysListQueryKey,
+  sitePasskeysRemoveMutation,
+  sitePasskeysRenameMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import {
   sitePasskeysBeginRegistration,
   sitePasskeysFinishRegistration,
-  sitePasskeysRemove,
-  sitePasskeysRename,
 } from '../generated/site/sdk.gen.ts'
 import type { SitePasskey } from '../generated/site/types.gen.ts'
 import { zPasskeyName } from '../generated/site/zod.gen.ts'
@@ -158,18 +158,18 @@ function RenamePasskeyForm({ passkey, onClose }: { passkey: SitePasskey; onClose
   const { t } = useTranslation()
   const form = useForm({ initialValues: { name: passkey.name } })
   const rename = useResourceMutation({
-    mutation: {
-      mutationFn: async (name: string) =>
-        sitePasskeysRename({ path: { id: passkey.id }, body: { name }, throwOnError: true }),
-    },
-    invalidate: [sitePasskeysListQueryKey()],
+    mutation: sitePasskeysRenameMutation(),
     successMessage: t(($) => $.security.passkeys.renamed),
     errorTitle: t(($) => $.security.passkeys.renameErrorTitle),
     onDone: onClose,
   })
 
   return (
-    <form onSubmit={form.onSubmit((v) => rename.mutate(v.name))}>
+    <form
+      onSubmit={form.onSubmit((v) =>
+        rename.mutate({ path: { id: passkey.id }, body: { name: v.name } }),
+      )}
+    >
       <Stack>
         <TextInput
           label={t(($) => $.security.passkeys.renameLabel)}
@@ -205,22 +205,21 @@ function RemovePasskeyForm({
   const { t } = useTranslation()
   const form = useForm({ initialValues: { currentPassword: '' } })
   const remove = useResourceMutation({
-    mutation: {
-      mutationFn: async (currentPassword: string) =>
-        sitePasskeysRemove({
-          path: { id: passkey.id },
-          body: passwordless ? {} : { currentPassword },
-          throwOnError: true,
-        }),
-    },
-    invalidate: [sitePasskeysListQueryKey()],
+    mutation: sitePasskeysRemoveMutation(),
     successMessage: t(($) => $.security.passkeys.removed),
     errorTitle: t(($) => $.security.passkeys.removeErrorTitle),
     onDone: onClose,
   })
 
   return (
-    <form onSubmit={form.onSubmit((v) => remove.mutate(v.currentPassword))}>
+    <form
+      onSubmit={form.onSubmit((v) =>
+        remove.mutate({
+          path: { id: passkey.id },
+          body: passwordless ? {} : { currentPassword: v.currentPassword },
+        }),
+      )}
+    >
       <Stack>
         {passwordless ? null : (
           <PasswordInput

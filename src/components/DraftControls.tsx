@@ -1,5 +1,5 @@
 import { Badge, Button, Group } from '@mantine/core'
-import type { QueryKey, UseMutationOptions } from '@tanstack/react-query'
+import type { UseMutationOptions } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
@@ -10,8 +10,8 @@ interface IdPath {
 }
 
 // DraftControls shows what an Automation or a Rule has beside its live version (ADR 0065): a
-// pending-draft badge, Publish and Revert, which run the generated mutations it is given, then
-// refresh the queries in `invalidate`. `dirty` holds Publish back while the editor has unsaved
+// pending-draft badge, Publish and Revert, which run the generated mutations it is given (each
+// refreshes its resource's queries). `dirty` holds Publish back while the editor has unsaved
 // changes. A never-published draft is not offered Revert.
 export function DraftControls<TPublished, TPublishError, TReverted, TRevertError>({
   workspaceId,
@@ -19,7 +19,6 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   dirty = false,
   publishMutation,
   revertMutation,
-  invalidate,
   messages,
 }: {
   workspaceId: string
@@ -27,20 +26,17 @@ export function DraftControls<TPublished, TPublishError, TReverted, TRevertError
   dirty?: boolean
   publishMutation: UseMutationOptions<TPublished, TPublishError, IdPath>
   revertMutation: UseMutationOptions<TReverted, TRevertError, IdPath>
-  invalidate: QueryKey[]
   messages: { published: string; reverted: string; errorTitle: string }
 }) {
   const { t } = useTranslation()
   const path = { workspaceId, id: resource.id }
   const publish = useResourceMutation({
     mutation: publishMutation,
-    invalidate,
     successMessage: messages.published,
     errorTitle: messages.errorTitle,
   })
   const revert = useResourceMutation({
     mutation: revertMutation,
-    invalidate,
     successMessage: messages.reverted,
     errorTitle: messages.errorTitle,
   })

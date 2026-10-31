@@ -10,7 +10,6 @@ import { UserMenu } from '../../components/UserMenu.tsx'
 import {
   siteWorkspacesCreateMutation,
   siteWorkspacesListOptions,
-  siteWorkspacesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
@@ -27,7 +26,6 @@ export function CreateWorkspacePage() {
 
   const createMutation = useResourceMutation({
     mutation: siteWorkspacesCreateMutation(),
-    invalidate: [siteWorkspacesListQueryKey()],
     errorTitle: t(($) => $.createWorkspace.errorTitle),
     forbiddenMessage: t(($) => $.createWorkspace.verifyFirst),
     onDone: async (created) =>

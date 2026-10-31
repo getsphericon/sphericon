@@ -9,7 +9,6 @@ import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteSegmentsArchiveMutation,
   siteSegmentsListOptions,
-  siteSegmentsListQueryKey,
   siteSegmentsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -26,13 +25,11 @@ export function SegmentsListPage() {
 
   const archiveSegment = useResourceMutation({
     mutation: siteSegmentsArchiveMutation(),
-    invalidate: [siteSegmentsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.segmentArchived),
     errorTitle: t(($) => $.alerts.segmentArchiveErrorTitle),
   })
   const restoreSegment = useResourceMutation({
     mutation: siteSegmentsUnarchiveMutation(),
-    invalidate: [siteSegmentsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.segmentRestored),
     errorTitle: t(($) => $.alerts.segmentRestoreErrorTitle),
   })

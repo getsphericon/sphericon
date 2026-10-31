@@ -25,7 +25,6 @@ import {
   siteSendingDomainsArchiveMutation,
   siteSendingDomainsCreateMutation,
   siteSendingDomainsListOptions,
-  siteSendingDomainsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
@@ -143,13 +142,10 @@ export function SendingDomainsSection({
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const [recordsId, setRecordsId] = useState<string | null>(null)
 
-  const queryKey = siteSendingDomainsListQueryKey({ path: { workspaceId } })
-
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
   const createMutation = useResourceMutation({
     mutation: siteSendingDomainsCreateMutation(),
-    invalidate: [queryKey],
     successMessage: t(($) => $.settings.sendingDomains.saved),
     errorTitle: t(($) => $.settings.sendingDomains.createError),
     onDone: (created) => {
@@ -159,11 +155,10 @@ export function SendingDomainsSection({
     },
   })
 
-  const verifyMutation = useVerifySendingDomain(workspaceId)
+  const verifyMutation = useVerifySendingDomain()
 
   const removeMutation = useResourceMutation({
     mutation: siteSendingDomainsArchiveMutation(),
-    invalidate: [queryKey],
     successMessage: t(($) => $.settings.sendingDomains.removed),
     errorTitle: t(($) => $.settings.sendingDomains.removeError),
   })

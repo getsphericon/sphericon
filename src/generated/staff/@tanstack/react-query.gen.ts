@@ -7,6 +7,37 @@ import { client } from '../client.gen.ts';
 import { type Options, staffAuthLogin, staffAuthLogout, staffAuthSecondFactor, staffInstanceAcknowledgeNotice, staffInstanceGetState, staffInstancePreviewTelemetryReport, staffInstanceSetTelemetry, staffMeGet, staffSignupItemsArchive, staffSignupItemsCreate, staffSignupItemsGet, staffSignupItemsList, staffSignupItemsListVersions, staffSignupItemsPublish, staffSignupItemsReorder, staffSignupItemsSaveDraft, staffSignupItemsUpdate } from '../sdk.gen.ts';
 import type { StaffAuthLoginData, StaffAuthLoginError, StaffAuthLoginResponse, StaffAuthLogoutData, StaffAuthLogoutError, StaffAuthLogoutResponse, StaffAuthSecondFactorData, StaffAuthSecondFactorError, StaffAuthSecondFactorResponse, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeError, StaffInstanceAcknowledgeNoticeResponse, StaffInstanceGetStateData, StaffInstanceGetStateError, StaffInstanceGetStateResponse, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportError, StaffInstancePreviewTelemetryReportResponse, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryError, StaffInstanceSetTelemetryResponse, StaffMeGetData, StaffMeGetError, StaffMeGetResponse, StaffSignupItemsArchiveData, StaffSignupItemsArchiveError, StaffSignupItemsArchiveResponse, StaffSignupItemsCreateData, StaffSignupItemsCreateError, StaffSignupItemsCreateResponse, StaffSignupItemsGetData, StaffSignupItemsGetError, StaffSignupItemsGetResponse, StaffSignupItemsListData, StaffSignupItemsListError, StaffSignupItemsListResponse, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsError, StaffSignupItemsListVersionsResponse, StaffSignupItemsPublishData, StaffSignupItemsPublishError, StaffSignupItemsPublishResponse, StaffSignupItemsReorderData, StaffSignupItemsReorderError, StaffSignupItemsReorderResponse, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftError, StaffSignupItemsSaveDraftResponse, StaffSignupItemsUpdateData, StaffSignupItemsUpdateError, StaffSignupItemsUpdateResponse } from '../types.gen.ts';
 
+export type MutationKey<TOptions extends Partial<Options>> = [
+  Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
+    _id: string;
+    tags?: ReadonlyArray<string>;
+  }
+];
+
+const createMutationKey = <TOptions extends Partial<Options>>(id: string, options?: TOptions, tags?: ReadonlyArray<string>): [
+  MutationKey<TOptions>[0]
+] => {
+  const params: MutationKey<TOptions>[0] = { _id: id, baseUrl: options?.baseUrl || (options?.client ?? client).getConfig().baseUrl };
+  if (tags) {
+    params.tags = tags;
+  }
+  if (options?.body) {
+    params.body = options.body;
+  }
+  if (options?.headers) {
+    params.headers = options.headers;
+  }
+  if (options?.path) {
+    params.path = options.path;
+  }
+  if (options?.query) {
+    params.query = options.query;
+  }
+  return [params];
+};
+
+export const staffAuthLoginMutationKey = (options?: Partial<Options<StaffAuthLoginData>>) => createMutationKey('staffAuthLogin', options, ['StaffMember Auth']);
+
 /**
  * Check the password. Answers a challenge (or, at first login, a TOTP enrolment)
  * and never a session. Unknown email and wrong password answer the same 401.
@@ -20,10 +51,13 @@ export const staffAuthLoginMutation = (options?: Partial<Options<StaffAuthLoginD
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffAuthLoginMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffAuthLogoutMutationKey = (options?: Partial<Options<StaffAuthLogoutData>>) => createMutationKey('staffAuthLogout', options, ['StaffMember Auth']);
 
 /**
  * End the session: bumps the Staff member's session epoch, so every session token of
@@ -38,10 +72,13 @@ export const staffAuthLogoutMutation = (options?: Partial<Options<StaffAuthLogou
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffAuthLogoutMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffAuthSecondFactorMutationKey = (options?: Partial<Options<StaffAuthSecondFactorData>>) => createMutationKey('staffAuthSecondFactor', options, ['StaffMember Auth']);
 
 /**
  * The second login step: verify the challenge and a TOTP code, then start the
@@ -58,7 +95,8 @@ export const staffAuthSecondFactorMutation = (options?: Partial<Options<StaffAut
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffAuthSecondFactorMutationKey(options)
   };
   return mutationOptions;
 };
@@ -96,7 +134,7 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
   return [params];
 };
 
-export const staffInstanceGetStateQueryKey = (options?: Options<StaffInstanceGetStateData>) => createQueryKey('staffInstanceGetState', options);
+export const staffInstanceGetStateQueryKey = (options?: Options<StaffInstanceGetStateData>) => createQueryKey('staffInstanceGetState', options, false, ['StaffMember Instance']);
 
 /**
  * The Instance's own settings and state
@@ -114,6 +152,8 @@ export const staffInstanceGetStateOptions = (options?: Options<StaffInstanceGetS
   queryKey: staffInstanceGetStateQueryKey(options)
 });
 
+export const staffInstanceAcknowledgeNoticeMutationKey = (options?: Partial<Options<StaffInstanceAcknowledgeNoticeData>>) => createMutationKey('staffInstanceAcknowledgeNotice', options, ['StaffMember Instance']);
+
 /**
  * Acknowledge the one-time Telemetry report notice: the first report waits for it. The first
  * acknowledgement stands, and a repeat changes nothing.
@@ -127,10 +167,13 @@ export const staffInstanceAcknowledgeNoticeMutation = (options?: Partial<Options
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffInstanceAcknowledgeNoticeMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffInstanceSetTelemetryMutationKey = (options?: Partial<Options<StaffInstanceSetTelemetryData>>) => createMutationKey('staffInstanceSetTelemetry', options, ['StaffMember Instance']);
 
 /**
  * Switch the Telemetry report on or off. Answers 409 while the environment decides.
@@ -144,12 +187,13 @@ export const staffInstanceSetTelemetryMutation = (options?: Partial<Options<Staf
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffInstanceSetTelemetryMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const staffInstancePreviewTelemetryReportQueryKey = (options?: Options<StaffInstancePreviewTelemetryReportData>) => createQueryKey('staffInstancePreviewTelemetryReport', options);
+export const staffInstancePreviewTelemetryReportQueryKey = (options?: Options<StaffInstancePreviewTelemetryReportData>) => createQueryKey('staffInstancePreviewTelemetryReport', options, false, ['StaffMember Instance']);
 
 /**
  * The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the
@@ -169,7 +213,7 @@ export const staffInstancePreviewTelemetryReportOptions = (options?: Options<Sta
   queryKey: staffInstancePreviewTelemetryReportQueryKey(options)
 });
 
-export const staffMeGetQueryKey = (options?: Options<StaffMeGetData>) => createQueryKey('staffMeGet', options);
+export const staffMeGetQueryKey = (options?: Options<StaffMeGetData>) => createQueryKey('staffMeGet', options, false, ['StaffMember']);
 
 /**
  * The authenticated Staff member
@@ -187,7 +231,7 @@ export const staffMeGetOptions = (options?: Options<StaffMeGetData>) => queryOpt
   queryKey: staffMeGetQueryKey(options)
 });
 
-export const staffSignupItemsListQueryKey = (options?: Options<StaffSignupItemsListData>) => createQueryKey('staffSignupItemsList', options);
+export const staffSignupItemsListQueryKey = (options?: Options<StaffSignupItemsListData>) => createQueryKey('staffSignupItemsList', options, false, ['StaffMember Signup Items']);
 
 /**
  * The Instance's Sign-up items, archived ones included, in the order of the sign-up form
@@ -205,6 +249,8 @@ export const staffSignupItemsListOptions = (options?: Options<StaffSignupItemsLi
   queryKey: staffSignupItemsListQueryKey(options)
 });
 
+export const staffSignupItemsCreateMutationKey = (options?: Partial<Options<StaffSignupItemsCreateData>>) => createMutationKey('staffSignupItemsCreate', options, ['StaffMember Signup Items']);
+
 /**
  * Add a Sign-up item. A taken key, a mailings consent on an item that is not an optional
  * consent, and a second mailings consent are refused (422).
@@ -218,10 +264,13 @@ export const staffSignupItemsCreateMutation = (options?: Partial<Options<StaffSi
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffSignupItemsCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffSignupItemsReorderMutationKey = (options?: Partial<Options<StaffSignupItemsReorderData>>) => createMutationKey('staffSignupItemsReorder', options, ['StaffMember Signup Items']);
 
 /**
  * Put the Sign-up items in a new order, the order the sign-up form asks them in. A list that
@@ -236,12 +285,13 @@ export const staffSignupItemsReorderMutation = (options?: Partial<Options<StaffS
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffSignupItemsReorderMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const staffSignupItemsGetQueryKey = (options: Options<StaffSignupItemsGetData>) => createQueryKey('staffSignupItemsGet', options);
+export const staffSignupItemsGetQueryKey = (options: Options<StaffSignupItemsGetData>) => createQueryKey('staffSignupItemsGet', options, false, ['StaffMember Signup Items']);
 
 /**
  * One Sign-up item
@@ -259,6 +309,8 @@ export const staffSignupItemsGetOptions = (options: Options<StaffSignupItemsGetD
   queryKey: staffSignupItemsGetQueryKey(options)
 });
 
+export const staffSignupItemsUpdateMutationKey = (options?: Partial<Options<StaffSignupItemsUpdateData>>) => createMutationKey('staffSignupItemsUpdate', options, ['StaffMember Signup Items']);
+
 /**
  * Change a Sign-up item. A blank title, a mailings consent on an item that is not an optional
  * consent or is archived, and a second mailings consent are refused (422).
@@ -272,10 +324,13 @@ export const staffSignupItemsUpdateMutation = (options?: Partial<Options<StaffSi
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffSignupItemsUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffSignupItemsArchiveMutationKey = (options?: Partial<Options<StaffSignupItemsArchiveData>>) => createMutationKey('staffSignupItemsArchive', options, ['StaffMember Signup Items']);
 
 /**
  * Archive the Sign-up item: it leaves the sign-up form and its public page at once, and its
@@ -292,10 +347,13 @@ export const staffSignupItemsArchiveMutation = (options?: Partial<Options<StaffS
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffSignupItemsArchiveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const staffSignupItemsSaveDraftMutationKey = (options?: Partial<Options<StaffSignupItemsSaveDraftData>>) => createMutationKey('staffSignupItemsSaveDraft', options, ['StaffMember Signup Items']);
 
 /**
  * Save the draft of the item's Legal document. It is edited freely and changes nothing a
@@ -310,12 +368,13 @@ export const staffSignupItemsSaveDraftMutation = (options?: Partial<Options<Staf
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffSignupItemsSaveDraftMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const staffSignupItemsListVersionsQueryKey = (options: Options<StaffSignupItemsListVersionsData>) => createQueryKey('staffSignupItemsListVersions', options);
+export const staffSignupItemsListVersionsQueryKey = (options: Options<StaffSignupItemsListVersionsData>) => createQueryKey('staffSignupItemsListVersions', options, false, ['StaffMember Signup Items']);
 
 /**
  * Every published version of the item's Legal document with who published it and when, the
@@ -334,6 +393,8 @@ export const staffSignupItemsListVersionsOptions = (options: Options<StaffSignup
   queryKey: staffSignupItemsListVersionsQueryKey(options)
 });
 
+export const staffSignupItemsPublishMutationKey = (options?: Partial<Options<StaffSignupItemsPublishData>>) => createMutationKey('staffSignupItemsPublish', options, ['StaffMember Signup Items']);
+
 /**
  * Publish the draft as a new version under a label: it takes effect at once, and is never
  * changed or removed afterwards. A label the item already has, and an item without a draft,
@@ -348,7 +409,8 @@ export const staffSignupItemsPublishMutation = (options?: Partial<Options<StaffS
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: staffSignupItemsPublishMutationKey(options)
   };
   return mutationOptions;
 };

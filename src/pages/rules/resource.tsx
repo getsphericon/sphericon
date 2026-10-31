@@ -6,8 +6,6 @@ import { DraftControls } from '../../components/DraftControls.tsx'
 import {
   siteRulesCreateMutation,
   siteRulesGetOptions,
-  siteRulesGetQueryKey,
-  siteRulesListQueryKey,
   siteRulesUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zSiteCreateRuleInput } from '../../generated/site/zod.gen.ts'
@@ -36,8 +34,6 @@ const ruleResource = defineResource({
   getOptions: siteRulesGetOptions,
   createMutation: siteRulesCreateMutation,
   updateMutation: siteRulesUpdateMutation,
-  listQueryKey: siteRulesListQueryKey,
-  getQueryKey: siteRulesGetQueryKey,
   editRoute: rulesEditRoute,
   idParam: 'ruleId',
   texts: (t) => ({
@@ -73,7 +69,7 @@ export function RuleEditPage() {
             workspaceId={workspaceId}
             resource={rule}
             dirty={dirty}
-            {...ruleDraftActions(t, workspaceId, rule.id)}
+            {...ruleDraftActions(t)}
           />
           <RuleDryRun workspaceId={workspaceId} ruleId={ruleId} />
         </>

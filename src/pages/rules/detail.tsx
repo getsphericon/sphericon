@@ -126,11 +126,7 @@ export function RuleDetailPage() {
             </Button>
           ) : (
             <>
-              <DraftControls
-                workspaceId={workspaceId}
-                resource={rule}
-                {...ruleDraftActions(t, workspaceId, rule.id)}
-              />
+              <DraftControls workspaceId={workspaceId} resource={rule} {...ruleDraftActions(t)} />
               {rule.status === 'active' ? (
                 <Button
                   variant="default"

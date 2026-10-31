@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 import {
   siteAuthSigninProvidersOptions,
   siteIdentitiesListOptions,
-  siteIdentitiesListQueryKey,
   siteIdentitiesUnlinkMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import { client } from '../generated/site/client.gen.ts'
@@ -57,7 +56,6 @@ function IdentityList() {
   })
   const unlink = useResourceMutation({
     mutation: siteIdentitiesUnlinkMutation(),
-    invalidate: [siteIdentitiesListQueryKey()],
     successMessage: t(($) => $.signin.linked.disconnected),
     errorTitle: t(($) => $.signin.linked.disconnectErrorTitle),
   })

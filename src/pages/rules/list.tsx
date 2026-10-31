@@ -12,7 +12,6 @@ import {
   siteRulesDeactivateMutation,
   siteRulesDeleteMutation,
   siteRulesListOptions,
-  siteRulesListQueryKey,
   siteRulesUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
@@ -28,36 +27,30 @@ export function RulesListPage() {
   const { workspaceId } = rulesRoute.useParams()
   const navigate = useNavigate()
 
-  const listQueryKey = siteRulesListQueryKey({ path: { workspaceId } })
   const publish = useResourceMutation({
     mutation: siteRulesPublishMutation(),
-    invalidate: [listQueryKey],
     successMessage: t(($) => $.notifications.rulePublished),
     errorTitle: t(($) => $.alerts.ruleStatusErrorTitle),
   })
   const deactivate = useResourceMutation({
     mutation: siteRulesDeactivateMutation(),
-    invalidate: [listQueryKey],
     successMessage: t(($) => $.notifications.ruleDeactivated),
     errorTitle: t(($) => $.alerts.ruleStatusErrorTitle),
   })
 
   const archive = useResourceMutation({
     mutation: siteRulesArchiveMutation(),
-    invalidate: [listQueryKey],
     successMessage: t(($) => $.notifications.ruleArchived),
     errorTitle: t(($) => $.alerts.ruleArchiveErrorTitle),
   })
   const restore = useResourceMutation({
     mutation: siteRulesUnarchiveMutation(),
-    invalidate: [listQueryKey],
     successMessage: t(($) => $.notifications.ruleRestored),
     errorTitle: t(($) => $.alerts.ruleRestoreErrorTitle),
   })
   const deleteRule = useDeleteResource({
     mutation: siteRulesDeleteMutation(),
     workspaceId,
-    listQueryKey,
     successMessage: t(($) => $.notifications.ruleDeleted),
     errorTitle: t(($) => $.alerts.ruleDeleteErrorTitle),
   })

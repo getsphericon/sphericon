@@ -3,10 +3,7 @@ import { useForm } from '@mantine/form'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import {
-  siteAutomationsCreateMutation,
-  siteAutomationsListQueryKey,
-} from '../../generated/site/@tanstack/react-query.gen.ts'
+import { siteAutomationsCreateMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
@@ -31,7 +28,6 @@ export function AutomationCreateModal({
 
   const createMutation = useResourceMutation({
     mutation: siteAutomationsCreateMutation(),
-    invalidate: [siteAutomationsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.automationCreated),
     errorTitle: t(($) => $.alerts.automationSaveErrorTitle),
     onDone: async (created) =>

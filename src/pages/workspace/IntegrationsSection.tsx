@@ -32,7 +32,6 @@ import {
   siteIntegrationsCreateMutation,
   siteIntegrationsArchiveMutation,
   siteIntegrationsListOptions,
-  siteIntegrationsListQueryKey,
   siteIntegrationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
@@ -284,7 +283,6 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   const [tile, setTile] = useState<Tile | null>(null)
   const canManageIntegrations = can(workspace, 'integrations:manage')
 
-  const queryKey = siteIntegrationsListQueryKey({ path: { workspaceId } })
   // The list the boundary below loads, read here only to know whether a provider exists yet.
   const integrationsQuery = useQuery(integrationsOptions(workspaceId))
 
@@ -307,7 +305,6 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
 
   const createMutation = useResourceMutation({
     mutation: siteIntegrationsCreateMutation(),
-    invalidate: [queryKey],
     successMessage: t(($) => $.settings.integrations.saved),
     errorTitle: t(($) => $.settings.integrations.createError),
     onDone: dismissCreate,
@@ -315,14 +312,12 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
 
   const removeMutation = useResourceMutation({
     mutation: siteIntegrationsArchiveMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.integrations.removeError),
   })
 
   // Promoting a provider clears the channel's current default on the server.
   const defaultMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
-    invalidate: [queryKey],
     successMessage: t(($) => $.settings.integrations.defaultChanged),
     errorTitle: t(($) => $.settings.integrations.defaultError),
   })

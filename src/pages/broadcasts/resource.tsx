@@ -3,8 +3,6 @@ import * as z from 'zod'
 import {
   siteBroadcastsCreateMutation,
   siteBroadcastsGetOptions,
-  siteBroadcastsGetQueryKey,
-  siteBroadcastsListQueryKey,
   siteBroadcastsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zCreateBroadcastInput } from '../../generated/site/zod.gen.ts'
@@ -37,8 +35,6 @@ const broadcastResource = defineResource({
   getOptions: siteBroadcastsGetOptions,
   createMutation: siteBroadcastsCreateMutation,
   updateMutation: siteBroadcastsUpdateMutation,
-  listQueryKey: siteBroadcastsListQueryKey,
-  getQueryKey: siteBroadcastsGetQueryKey,
   editRoute: broadcastsEditRoute,
   idParam: 'broadcastId',
   texts: (t) => ({

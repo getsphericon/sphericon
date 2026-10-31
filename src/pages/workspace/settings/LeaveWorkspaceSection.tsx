@@ -2,10 +2,7 @@ import { Button, Group, Stack, Text } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import {
-  siteWorkspacesLeaveMutation,
-  siteWorkspacesListQueryKey,
-} from '../../../generated/site/@tanstack/react-query.gen.ts'
+import { siteWorkspacesLeaveMutation } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
@@ -20,7 +17,6 @@ export function LeaveWorkspaceSection({ workspace }: { workspace: SiteWorkspaceR
 
   const leaveMutation = useResourceMutation({
     mutation: siteWorkspacesLeaveMutation(),
-    invalidate: [siteWorkspacesListQueryKey()],
     successMessage: t(($) => $.settings.danger.left),
     errorTitle: t(($) => $.settings.danger.leaveError),
     // The index route sends the User to another Workspace, or to the create screen.

@@ -7,7 +7,6 @@ import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteTemplatesDeleteMutation,
   siteTemplatesListOptions,
-  siteTemplatesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
@@ -24,7 +23,6 @@ export function TemplatesListPage() {
   const deleteTemplate = useDeleteResource({
     mutation: siteTemplatesDeleteMutation(),
     workspaceId,
-    listQueryKey: siteTemplatesListQueryKey({ path: { workspaceId } }),
     successMessage: t(($) => $.notifications.templateDeleted),
     errorTitle: t(($) => $.alerts.templateDeleteErrorTitle),
   })

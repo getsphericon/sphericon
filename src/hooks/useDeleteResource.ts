@@ -1,4 +1,4 @@
-import type { QueryKey, UseMutationOptions } from '@tanstack/react-query'
+import type { UseMutationOptions } from '@tanstack/react-query'
 
 import { useConfirmation } from './useConfirmation.tsx'
 import { useResourceMutation } from './useResourceMutation.ts'
@@ -7,7 +7,6 @@ interface DeleteResourceOptions<TData, TError, TCtx> {
   // The generated delete mutation, called with { path: { workspaceId, id } }.
   mutation: UseMutationOptions<TData, TError, { path: { workspaceId: string; id: string } }, TCtx>
   workspaceId: string
-  listQueryKey: QueryKey
   successMessage: string
   errorTitle: string
 }
@@ -17,14 +16,12 @@ interface DeleteResourceOptions<TData, TError, TCtx> {
 export function useDeleteResource<TData, TError, TCtx>({
   mutation,
   workspaceId,
-  listQueryKey,
   successMessage,
   errorTitle,
 }: DeleteResourceOptions<TData, TError, TCtx>) {
   const confirmDelete = useConfirmation()
   const deletion = useResourceMutation({
     mutation,
-    invalidate: [listQueryKey],
     successMessage,
     errorTitle,
   })

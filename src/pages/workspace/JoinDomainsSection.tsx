@@ -24,11 +24,9 @@ import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteDomainJoinGetOptions,
-  siteDomainJoinGetQueryKey,
   siteDomainJoinSetMutation,
   siteJoinDomainsAddMutation,
   siteJoinDomainsListOptions,
-  siteJoinDomainsListQueryKey,
   siteJoinDomainsRemoveMutation,
   siteJoinDomainsVerifyMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -151,22 +149,18 @@ function JoinDomainsList({
 export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmDelete = useConfirmation()
-  const queryKey = siteJoinDomainsListQueryKey({ path: { workspaceId } })
-  const joinKey = siteDomainJoinGetQueryKey({ path: { workspaceId } })
   const joinQuery = useQuery(siteDomainJoinGetOptions({ path: { workspaceId } }))
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
   const joinMutation = useResourceMutation({
     mutation: siteDomainJoinSetMutation(),
-    invalidate: [joinKey],
     successMessage: t(($) => $.joinDomains.switchSaved),
     errorTitle: t(($) => $.joinDomains.switchError),
     forbiddenMessage: t(($) => $.joinDomains.forbidden),
   })
   const addMutation = useResourceMutation({
     mutation: siteJoinDomainsAddMutation(),
-    invalidate: [queryKey],
     successMessage: t(($) => $.joinDomains.added),
     errorTitle: t(($) => $.joinDomains.addError),
     forbiddenMessage: t(($) => $.joinDomains.forbidden),
@@ -177,14 +171,12 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   })
   const verifyMutation = useResourceMutation({
     mutation: siteJoinDomainsVerifyMutation(),
-    invalidate: [queryKey],
     successMessage: t(($) => $.joinDomains.verifiedToast),
     errorTitle: t(($) => $.joinDomains.verifyError),
     forbiddenMessage: t(($) => $.joinDomains.forbidden),
   })
   const removeMutation = useResourceMutation({
     mutation: siteJoinDomainsRemoveMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.joinDomains.removeError),
     forbiddenMessage: t(($) => $.joinDomains.forbidden),
   })

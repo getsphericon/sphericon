@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
 import {
-  siteWorkspacesListQueryKey,
   siteWorkspacesLiftSecondFactorRequirementMutation,
   siteWorkspacesRequireSecondFactorMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
@@ -30,7 +29,6 @@ export function useLiftSecondFactorRequirement() {
 function useRequirementFeedback() {
   const { t } = useTranslation()
   return {
-    invalidate: [siteWorkspacesListQueryKey()],
     successMessage: t(($) => $.secondFactorRequirement.saved),
     errorTitle: t(($) => $.secondFactorRequirement.errorTitle),
     forbiddenMessage: t(($) => $.secondFactorRequirement.forbidden),

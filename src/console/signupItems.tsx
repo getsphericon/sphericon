@@ -25,7 +25,6 @@ import { TableSkeleton } from '../components/Skeletons.tsx'
 import {
   staffSignupItemsCreateMutation,
   staffSignupItemsListOptions,
-  staffSignupItemsListQueryKey,
   staffSignupItemsReorderMutation,
 } from '../generated/staff/@tanstack/react-query.gen.ts'
 import { SignupItemKind } from '../generated/staff/types.gen.ts'
@@ -58,7 +57,6 @@ function AddItemForm() {
   })
   const mutation = useResourceMutation({
     mutation: staffSignupItemsCreateMutation(),
-    invalidate: [staffSignupItemsListQueryKey()],
     errorTitle: t(($) => $.console.signupItems.add.error),
     onDone: async (created) =>
       navigate({ to: consoleSignupItemRoute.to, params: { itemId: created.id } }),
@@ -184,7 +182,6 @@ function SignupItemsTable() {
   const itemsQuery = useSuspenseQuery(staffSignupItemsListOptions())
   const reorder = useResourceMutation({
     mutation: staffSignupItemsReorderMutation(),
-    invalidate: [staffSignupItemsListQueryKey()],
     errorTitle: t(($) => $.console.signupItems.reorderError),
   })
   const items = itemsQuery.data.items

@@ -19,7 +19,6 @@ import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteBrandKitGetOptions,
-  siteBrandKitGetQueryKey,
   siteBrandKitRecreateStarterTemplatesMutation,
   siteBrandKitSaveMutation,
   siteTemplatesListQueryKey,
@@ -66,10 +65,7 @@ function BrandKitForm({
   const saveMutation = useResourceMutation({
     mutation: siteBrandKitSaveMutation(),
     // The first save also creates the starter Templates.
-    invalidate: [
-      siteBrandKitGetQueryKey({ path: { workspaceId } }),
-      siteTemplatesListQueryKey({ path: { workspaceId } }),
-    ],
+    invalidate: [siteTemplatesListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.brandKit.saved),
     errorTitle: t(($) => $.brandKit.errorTitle),
     forbiddenMessage: t(($) => $.brandKit.forbidden),

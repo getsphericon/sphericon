@@ -28,7 +28,6 @@ import {
   siteSecondFactorConfirmEnrollmentMutation,
   siteSecondFactorDisableMutation,
   siteSecondFactorGetStatusOptions,
-  siteSecondFactorGetStatusQueryKey,
   siteSecondFactorRegenerateRecoveryCodesMutation,
   siteSecondFactorStartEnrollmentMutation,
   siteWorkspacesListQueryKey,
@@ -102,7 +101,7 @@ function Enrollment({
     mutation: siteSecondFactorConfirmEnrollmentMutation(),
     // The Workspaces carry the grace deadline of a Two-factor requirement, which
     // a confirmed Second factor lifts.
-    invalidate: [siteSecondFactorGetStatusQueryKey(), siteWorkspacesListQueryKey()],
+    invalidate: [siteWorkspacesListQueryKey()],
     successMessage: t(($) => $.security.enabledMessage),
     errorTitle: t(($) => $.security.confirmErrorTitle),
     onDone: (data) => onConfirmed(data.codes),
@@ -246,7 +245,6 @@ function Regenerate({
   const form = useForm({ initialValues: { currentPassword: '' } })
   const regenerate = useResourceMutation({
     mutation: siteSecondFactorRegenerateRecoveryCodesMutation(),
-    invalidate: [siteSecondFactorGetStatusQueryKey()],
     errorTitle: t(($) => $.security.regenerateErrorTitle),
     onDone: (data) => onCodes(data.codes),
   })
@@ -283,7 +281,7 @@ function Disable({ passwordless, onClose }: { passwordless: boolean; onClose: ()
   const form = useForm({ initialValues: { currentPassword: '', code: '' } })
   const disable = useResourceMutation({
     mutation: siteSecondFactorDisableMutation(),
-    invalidate: [siteSecondFactorGetStatusQueryKey(), siteWorkspacesListQueryKey()],
+    invalidate: [siteWorkspacesListQueryKey()],
     successMessage: t(($) => $.security.disabledMessage),
     errorTitle: t(($) => $.security.disableErrorTitle),
     onDone: onClose,

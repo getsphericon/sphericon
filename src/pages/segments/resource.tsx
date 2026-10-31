@@ -4,8 +4,6 @@ import { conditionCodec, emptyGroup } from '../../components/conditions/conditio
 import {
   siteSegmentsCreateMutation,
   siteSegmentsGetOptions,
-  siteSegmentsGetQueryKey,
-  siteSegmentsListQueryKey,
   siteSegmentsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zSiteCreateSegmentInput } from '../../generated/site/zod.gen.ts'
@@ -30,8 +28,6 @@ const segmentResource = defineResource({
   getOptions: siteSegmentsGetOptions,
   createMutation: siteSegmentsCreateMutation,
   updateMutation: siteSegmentsUpdateMutation,
-  listQueryKey: siteSegmentsListQueryKey,
-  getQueryKey: siteSegmentsGetQueryKey,
   editRoute: segmentsEditRoute,
   idParam: 'segmentId',
   texts: (t) => ({

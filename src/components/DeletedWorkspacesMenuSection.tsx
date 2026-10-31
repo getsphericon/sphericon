@@ -6,8 +6,6 @@ import { useTranslation } from 'react-i18next'
 
 import {
   siteWorkspacesListDeletedOptions,
-  siteWorkspacesListDeletedQueryKey,
-  siteWorkspacesListQueryKey,
   siteWorkspacesRestoreMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
 import { useDateFormat } from '../hooks/useDateFormat.ts'
@@ -24,7 +22,6 @@ export function DeletedWorkspacesMenuSection() {
   const deleted = useQuery(siteWorkspacesListDeletedOptions())
   const restoreMutation = useResourceMutation({
     mutation: siteWorkspacesRestoreMutation(),
-    invalidate: [siteWorkspacesListQueryKey(), siteWorkspacesListDeletedQueryKey()],
     successMessage: t(($) => $.userMenu.restored),
     errorTitle: t(($) => $.userMenu.restoreErrorTitle),
     onDone: async (restored) =>

@@ -7,6 +7,37 @@ import { client } from '../client.gen.ts';
 import { type Options, siteAnalyticsClicksByLink, siteAnalyticsEvents, siteAnalyticsNewPeople, siteAnalyticsOpensByHour, siteAnalyticsOverview, siteAnalyticsRevenue, siteAnalyticsSubscribedPeople, siteAuditExport, siteAuditGetRetention, siteAuditList, siteAuditSetRetention, siteAuthConfirmEmailChange, siteAuthForgotPassword, siteAuthLogin, siteAuthLogout, siteAuthResendVerification, siteAuthResetPassword, siteAuthSecondFactor, siteAuthSigninCallback, siteAuthSigninNotMe, siteAuthSigninPending, siteAuthSigninPendingDecline, siteAuthSigninPendingSubmit, siteAuthSigninProviders, siteAuthSigninStart, siteAuthSignUp, siteAuthVerifyEmail, siteAutomationReportsGet, siteAutomationsArchive, siteAutomationsCreate, siteAutomationsDeactivate, siteAutomationsDelete, siteAutomationsDryRunHttpStep, siteAutomationsGet, siteAutomationsList, siteAutomationsPublish, siteAutomationsRevert, siteAutomationsUnarchive, siteAutomationsUpdate, siteBrandKitGet, siteBrandKitRecreateStarterTemplates, siteBrandKitSave, siteBroadcastLinksList, siteBroadcastsArchive, siteBroadcastsCreate, siteBroadcastsDelete, siteBroadcastsGet, siteBroadcastsList, siteBroadcastsSchedule, siteBroadcastsSend, siteBroadcastsTestSend, siteBroadcastsUnarchive, siteBroadcastsUpdate, siteCapturedMessagesDelete, siteCapturedMessagesDeleteAll, siteCapturedMessagesGet, siteCapturedMessagesList, siteConnectionsDelete, siteConnectionsList, siteContactsCreate, siteContactsDelete, siteContactsErase, siteContactsExport, siteContactsGet, siteContactsList, siteContactsLookup, siteContactsUpdate, siteCustomFieldsList, siteDomainJoinGet, siteDomainJoinSet, siteEnrollmentsGet, siteEnrollmentsList, siteEventsActions, siteEventsList, siteIdentitiesLink, siteIdentitiesList, siteIdentitiesUnlink, siteInstanceGetRelease, siteIntegrationsArchive, siteIntegrationsCreate, siteIntegrationsGet, siteIntegrationsList, siteIntegrationsRegenerateKey, siteIntegrationsUnarchive, siteIntegrationsUpdate, siteInvitationsCreate, siteInvitationsDelete, siteInvitationsList, siteJoinDomainsAdd, siteJoinDomainsList, siteJoinDomainsRemove, siteJoinDomainsVerify, siteLegalDocumentsGet, siteLegalDocumentsSignupItems, siteMembershipsDelete, siteMembershipsList, siteMembershipsResetSecondFactor, siteMembershipsUpdate, siteOAuthDecide, siteOAuthDescribe, siteOptionalConsentsList, siteOptionalConsentsSet, sitePasskeyLoginBegin, sitePasskeyLoginFinish, sitePasskeysBeginCheck, sitePasskeysBeginRegistration, sitePasskeysFinishCheck, sitePasskeysFinishRegistration, sitePasskeysList, sitePasskeysRemove, sitePasskeysRename, sitePersonalTokensCreate, sitePersonalTokensDelete, sitePersonalTokensGrantableScopes, sitePersonalTokensList, sitePresetsList, sitePublicConfirmationsPerform, sitePublicInvitationsAccept, sitePublicInvitationsLookup, sitePublicUnsubscribesPerform, siteRuleFiringsList, siteRulesArchive, siteRulesCreate, siteRulesDeactivate, siteRulesDelete, siteRulesDryRun, siteRulesGet, siteRulesList, siteRulesPublish, siteRulesRevert, siteRulesUnarchive, siteRulesUpdate, siteSchemaApplyMigrations, siteSecondFactorConfirmEnrollment, siteSecondFactorDisable, siteSecondFactorGetStatus, siteSecondFactorRegenerateRecoveryCodes, siteSecondFactorStartEnrollment, siteSegmentContactsList, siteSegmentsArchive, siteSegmentsCreate, siteSegmentsGet, siteSegmentsList, siteSegmentsPreview, siteSegmentsUnarchive, siteSegmentsUpdate, siteSendingDomainsArchive, siteSendingDomainsCreate, siteSendingDomainsGet, siteSendingDomainsList, siteSendingDomainsUnarchive, siteSendingDomainsVerify, siteSetupChecklistGet, siteSignupSurveySubmit, siteSuppressionsCreate, siteSuppressionsDelete, siteSuppressionsList, siteTagsApply, siteTagsDelete, siteTagsList, siteTagsListForContact, siteTagsRemove, siteTemplatesCreate, siteTemplatesDelete, siteTemplatesGet, siteTemplatesList, siteTemplatesUpdate, siteTokensCreate, siteTokensDelete, siteTokensList, siteTokensUpdate, siteTransactionalEmailsList, siteUserAcceptPending, siteUserDeleteUser, siteUserDeleteUserLink, siteUserEmailChange, siteUserGetMe, siteUserSignOutEverywhere, siteUserUpdateMe, siteWebhooksCreate, siteWebhooksDelete, siteWebhooksGet, siteWebhooksList, siteWebhooksRegenerateSecret, siteWebhooksTest, siteWebhooksUpdate, siteWorkspacesAccountLink, siteWorkspacesCreate, siteWorkspacesDelete, siteWorkspacesGetRevenueSettings, siteWorkspacesLeave, siteWorkspacesLiftSecondFactorRequirement, siteWorkspacesList, siteWorkspacesListDeleted, siteWorkspacesRequireSecondFactor, siteWorkspacesRestore, siteWorkspacesSetTimezone, siteWorkspacesUpdate, siteWorkspacesUpdateRevenueSettings } from '../sdk.gen.ts';
 import type { SiteAnalyticsClicksByLinkData, SiteAnalyticsClicksByLinkError, SiteAnalyticsClicksByLinkResponse, SiteAnalyticsEventsData, SiteAnalyticsEventsError, SiteAnalyticsEventsResponse, SiteAnalyticsNewPeopleData, SiteAnalyticsNewPeopleError, SiteAnalyticsNewPeopleResponse, SiteAnalyticsOpensByHourData, SiteAnalyticsOpensByHourError, SiteAnalyticsOpensByHourResponse, SiteAnalyticsOverviewData, SiteAnalyticsOverviewError, SiteAnalyticsOverviewResponse, SiteAnalyticsRevenueData, SiteAnalyticsRevenueError, SiteAnalyticsRevenueResponse, SiteAnalyticsSubscribedPeopleData, SiteAnalyticsSubscribedPeopleError, SiteAnalyticsSubscribedPeopleResponse, SiteAuditExportData, SiteAuditExportError, SiteAuditExportResponse, SiteAuditGetRetentionData, SiteAuditGetRetentionError, SiteAuditGetRetentionResponse, SiteAuditListData, SiteAuditListError, SiteAuditListResponse, SiteAuditSetRetentionData, SiteAuditSetRetentionError, SiteAuditSetRetentionResponse, SiteAuthConfirmEmailChangeData, SiteAuthConfirmEmailChangeError, SiteAuthForgotPasswordData, SiteAuthForgotPasswordError, SiteAuthLoginData, SiteAuthLoginError, SiteAuthLoginResponse, SiteAuthLogoutData, SiteAuthLogoutResponse, SiteAuthResendVerificationData, SiteAuthResendVerificationError, SiteAuthResetPasswordData, SiteAuthResetPasswordError, SiteAuthSecondFactorData, SiteAuthSecondFactorError, SiteAuthSecondFactorResponse, SiteAuthSigninCallbackData, SiteAuthSigninNotMeData, SiteAuthSigninNotMeError, SiteAuthSigninPendingData, SiteAuthSigninPendingDeclineData, SiteAuthSigninPendingDeclineResponse, SiteAuthSigninPendingError, SiteAuthSigninPendingResponse, SiteAuthSigninPendingSubmitData, SiteAuthSigninPendingSubmitError, SiteAuthSigninPendingSubmitResponse, SiteAuthSigninProvidersData, SiteAuthSigninProvidersResponse, SiteAuthSigninStartData, SiteAuthSigninStartError, SiteAuthSignUpData, SiteAuthSignUpError, SiteAuthVerifyEmailData, SiteAuthVerifyEmailError, SiteAuthVerifyEmailResponse, SiteAutomationReportsGetData, SiteAutomationReportsGetError, SiteAutomationReportsGetResponse, SiteAutomationsArchiveData, SiteAutomationsArchiveError, SiteAutomationsArchiveResponse, SiteAutomationsCreateData, SiteAutomationsCreateError, SiteAutomationsCreateResponse, SiteAutomationsDeactivateData, SiteAutomationsDeactivateError, SiteAutomationsDeactivateResponse, SiteAutomationsDeleteData, SiteAutomationsDeleteError, SiteAutomationsDeleteResponse, SiteAutomationsDryRunHttpStepData, SiteAutomationsDryRunHttpStepError, SiteAutomationsDryRunHttpStepResponse, SiteAutomationsGetData, SiteAutomationsGetError, SiteAutomationsGetResponse, SiteAutomationsListData, SiteAutomationsListError, SiteAutomationsListResponse, SiteAutomationsPublishData, SiteAutomationsPublishError, SiteAutomationsPublishResponse, SiteAutomationsRevertData, SiteAutomationsRevertError, SiteAutomationsRevertResponse, SiteAutomationsUnarchiveData, SiteAutomationsUnarchiveError, SiteAutomationsUnarchiveResponse, SiteAutomationsUpdateData, SiteAutomationsUpdateError, SiteAutomationsUpdateResponse, SiteBrandKitGetData, SiteBrandKitGetError, SiteBrandKitGetResponse, SiteBrandKitRecreateStarterTemplatesData, SiteBrandKitRecreateStarterTemplatesError, SiteBrandKitRecreateStarterTemplatesResponse, SiteBrandKitSaveData, SiteBrandKitSaveError, SiteBrandKitSaveResponse, SiteBroadcastLinksListData, SiteBroadcastLinksListError, SiteBroadcastLinksListResponse, SiteBroadcastsArchiveData, SiteBroadcastsArchiveError, SiteBroadcastsArchiveResponse, SiteBroadcastsCreateData, SiteBroadcastsCreateError, SiteBroadcastsCreateResponse, SiteBroadcastsDeleteData, SiteBroadcastsDeleteError, SiteBroadcastsDeleteResponse, SiteBroadcastsGetData, SiteBroadcastsGetError, SiteBroadcastsGetResponse, SiteBroadcastsListData, SiteBroadcastsListError, SiteBroadcastsListResponse, SiteBroadcastsScheduleData, SiteBroadcastsScheduleError, SiteBroadcastsScheduleResponse, SiteBroadcastsSendData, SiteBroadcastsSendError, SiteBroadcastsSendResponse, SiteBroadcastsTestSendData, SiteBroadcastsTestSendError, SiteBroadcastsTestSendResponse, SiteBroadcastsUnarchiveData, SiteBroadcastsUnarchiveError, SiteBroadcastsUnarchiveResponse, SiteBroadcastsUpdateData, SiteBroadcastsUpdateError, SiteBroadcastsUpdateResponse, SiteCapturedMessagesDeleteAllData, SiteCapturedMessagesDeleteAllError, SiteCapturedMessagesDeleteAllResponse, SiteCapturedMessagesDeleteData, SiteCapturedMessagesDeleteError, SiteCapturedMessagesDeleteResponse, SiteCapturedMessagesGetData, SiteCapturedMessagesGetError, SiteCapturedMessagesGetResponse, SiteCapturedMessagesListData, SiteCapturedMessagesListError, SiteCapturedMessagesListResponse, SiteConnectionsDeleteData, SiteConnectionsDeleteError, SiteConnectionsDeleteResponse, SiteConnectionsListData, SiteConnectionsListError, SiteConnectionsListResponse, SiteContactsCreateData, SiteContactsCreateError, SiteContactsCreateResponse, SiteContactsDeleteData, SiteContactsDeleteError, SiteContactsDeleteResponse, SiteContactsEraseData, SiteContactsEraseError, SiteContactsEraseResponse, SiteContactsExportData, SiteContactsExportError, SiteContactsExportResponse, SiteContactsGetData, SiteContactsGetError, SiteContactsGetResponse, SiteContactsListData, SiteContactsListError, SiteContactsListResponse, SiteContactsLookupData, SiteContactsLookupError, SiteContactsLookupResponse, SiteContactsUpdateData, SiteContactsUpdateError, SiteContactsUpdateResponse, SiteCustomFieldsListData, SiteCustomFieldsListError, SiteCustomFieldsListResponse, SiteDomainJoinGetData, SiteDomainJoinGetError, SiteDomainJoinGetResponse, SiteDomainJoinSetData, SiteDomainJoinSetError, SiteDomainJoinSetResponse, SiteEnrollmentsGetData, SiteEnrollmentsGetError, SiteEnrollmentsGetResponse, SiteEnrollmentsListData, SiteEnrollmentsListError, SiteEnrollmentsListResponse, SiteEventsActionsData, SiteEventsActionsError, SiteEventsActionsResponse, SiteEventsListData, SiteEventsListError, SiteEventsListResponse, SiteIdentitiesLinkData, SiteIdentitiesLinkError, SiteIdentitiesListData, SiteIdentitiesListResponse, SiteIdentitiesUnlinkData, SiteIdentitiesUnlinkError, SiteIdentitiesUnlinkResponse, SiteInstanceGetReleaseData, SiteInstanceGetReleaseError, SiteInstanceGetReleaseResponse, SiteIntegrationsArchiveData, SiteIntegrationsArchiveError, SiteIntegrationsArchiveResponse, SiteIntegrationsCreateData, SiteIntegrationsCreateError, SiteIntegrationsCreateResponse, SiteIntegrationsGetData, SiteIntegrationsGetError, SiteIntegrationsGetResponse, SiteIntegrationsListData, SiteIntegrationsListError, SiteIntegrationsListResponse, SiteIntegrationsRegenerateKeyData, SiteIntegrationsRegenerateKeyError, SiteIntegrationsRegenerateKeyResponse, SiteIntegrationsUnarchiveData, SiteIntegrationsUnarchiveError, SiteIntegrationsUnarchiveResponse, SiteIntegrationsUpdateData, SiteIntegrationsUpdateError, SiteIntegrationsUpdateResponse, SiteInvitationsCreateData, SiteInvitationsCreateError, SiteInvitationsCreateResponse, SiteInvitationsDeleteData, SiteInvitationsDeleteError, SiteInvitationsDeleteResponse, SiteInvitationsListData, SiteInvitationsListError, SiteInvitationsListResponse, SiteJoinDomainsAddData, SiteJoinDomainsAddError, SiteJoinDomainsAddResponse, SiteJoinDomainsListData, SiteJoinDomainsListError, SiteJoinDomainsListResponse, SiteJoinDomainsRemoveData, SiteJoinDomainsRemoveError, SiteJoinDomainsRemoveResponse, SiteJoinDomainsVerifyData, SiteJoinDomainsVerifyError, SiteJoinDomainsVerifyResponse, SiteLegalDocumentsGetData, SiteLegalDocumentsGetError, SiteLegalDocumentsGetResponse, SiteLegalDocumentsSignupItemsData, SiteLegalDocumentsSignupItemsResponse, SiteMembershipsDeleteData, SiteMembershipsDeleteError, SiteMembershipsDeleteResponse, SiteMembershipsListData, SiteMembershipsListError, SiteMembershipsListResponse, SiteMembershipsResetSecondFactorData, SiteMembershipsResetSecondFactorError, SiteMembershipsResetSecondFactorResponse, SiteMembershipsUpdateData, SiteMembershipsUpdateError, SiteMembershipsUpdateResponse, SiteOAuthDecideData, SiteOAuthDecideError, SiteOAuthDecideResponse, SiteOAuthDescribeData, SiteOAuthDescribeError, SiteOAuthDescribeResponse, SiteOptionalConsentsListData, SiteOptionalConsentsListResponse, SiteOptionalConsentsSetData, SiteOptionalConsentsSetError, SiteOptionalConsentsSetResponse, SitePasskeyLoginBeginData, SitePasskeyLoginBeginError, SitePasskeyLoginBeginResponse, SitePasskeyLoginFinishData, SitePasskeyLoginFinishError, SitePasskeyLoginFinishResponse, SitePasskeysBeginCheckData, SitePasskeysBeginCheckError, SitePasskeysBeginCheckResponse, SitePasskeysBeginRegistrationData, SitePasskeysBeginRegistrationError, SitePasskeysBeginRegistrationResponse, SitePasskeysFinishCheckData, SitePasskeysFinishCheckError, SitePasskeysFinishCheckResponse, SitePasskeysFinishRegistrationData, SitePasskeysFinishRegistrationError, SitePasskeysFinishRegistrationResponse, SitePasskeysListData, SitePasskeysListResponse, SitePasskeysRemoveData, SitePasskeysRemoveError, SitePasskeysRemoveResponse, SitePasskeysRenameData, SitePasskeysRenameError, SitePasskeysRenameResponse, SitePersonalTokensCreateData, SitePersonalTokensCreateError, SitePersonalTokensCreateResponse, SitePersonalTokensDeleteData, SitePersonalTokensDeleteError, SitePersonalTokensDeleteResponse, SitePersonalTokensGrantableScopesData, SitePersonalTokensGrantableScopesError, SitePersonalTokensGrantableScopesResponse, SitePersonalTokensListData, SitePersonalTokensListError, SitePersonalTokensListResponse, SitePresetsListData, SitePresetsListResponse, SitePublicConfirmationsPerformData, SitePublicConfirmationsPerformError, SitePublicConfirmationsPerformResponse, SitePublicInvitationsAcceptData, SitePublicInvitationsAcceptError, SitePublicInvitationsLookupData, SitePublicInvitationsLookupError, SitePublicInvitationsLookupResponse, SitePublicUnsubscribesPerformData, SitePublicUnsubscribesPerformError, SitePublicUnsubscribesPerformResponse, SiteRuleFiringsListData, SiteRuleFiringsListError, SiteRuleFiringsListResponse, SiteRulesArchiveData, SiteRulesArchiveError, SiteRulesArchiveResponse, SiteRulesCreateData, SiteRulesCreateError, SiteRulesCreateResponse, SiteRulesDeactivateData, SiteRulesDeactivateError, SiteRulesDeactivateResponse, SiteRulesDeleteData, SiteRulesDeleteError, SiteRulesDeleteResponse, SiteRulesDryRunData, SiteRulesDryRunError, SiteRulesDryRunResponse, SiteRulesGetData, SiteRulesGetError, SiteRulesGetResponse, SiteRulesListData, SiteRulesListError, SiteRulesListResponse, SiteRulesPublishData, SiteRulesPublishError, SiteRulesPublishResponse, SiteRulesRevertData, SiteRulesRevertError, SiteRulesRevertResponse, SiteRulesUnarchiveData, SiteRulesUnarchiveError, SiteRulesUnarchiveResponse, SiteRulesUpdateData, SiteRulesUpdateError, SiteRulesUpdateResponse, SiteSchemaApplyMigrationsData, SiteSchemaApplyMigrationsError, SiteSchemaApplyMigrationsResponse, SiteSecondFactorConfirmEnrollmentData, SiteSecondFactorConfirmEnrollmentError, SiteSecondFactorConfirmEnrollmentResponse, SiteSecondFactorDisableData, SiteSecondFactorDisableError, SiteSecondFactorDisableResponse, SiteSecondFactorGetStatusData, SiteSecondFactorGetStatusResponse, SiteSecondFactorRegenerateRecoveryCodesData, SiteSecondFactorRegenerateRecoveryCodesError, SiteSecondFactorRegenerateRecoveryCodesResponse, SiteSecondFactorStartEnrollmentData, SiteSecondFactorStartEnrollmentError, SiteSecondFactorStartEnrollmentResponse, SiteSegmentContactsListData, SiteSegmentContactsListError, SiteSegmentContactsListResponse, SiteSegmentsArchiveData, SiteSegmentsArchiveError, SiteSegmentsArchiveResponse, SiteSegmentsCreateData, SiteSegmentsCreateError, SiteSegmentsCreateResponse, SiteSegmentsGetData, SiteSegmentsGetError, SiteSegmentsGetResponse, SiteSegmentsListData, SiteSegmentsListError, SiteSegmentsListResponse, SiteSegmentsPreviewData, SiteSegmentsPreviewError, SiteSegmentsPreviewResponse, SiteSegmentsUnarchiveData, SiteSegmentsUnarchiveError, SiteSegmentsUnarchiveResponse, SiteSegmentsUpdateData, SiteSegmentsUpdateError, SiteSegmentsUpdateResponse, SiteSendingDomainsArchiveData, SiteSendingDomainsArchiveError, SiteSendingDomainsArchiveResponse, SiteSendingDomainsCreateData, SiteSendingDomainsCreateError, SiteSendingDomainsCreateResponse, SiteSendingDomainsGetData, SiteSendingDomainsGetError, SiteSendingDomainsGetResponse, SiteSendingDomainsListData, SiteSendingDomainsListError, SiteSendingDomainsListResponse, SiteSendingDomainsUnarchiveData, SiteSendingDomainsUnarchiveError, SiteSendingDomainsUnarchiveResponse, SiteSendingDomainsVerifyData, SiteSendingDomainsVerifyError, SiteSendingDomainsVerifyResponse, SiteSetupChecklistGetData, SiteSetupChecklistGetError, SiteSetupChecklistGetResponse, SiteSignupSurveySubmitData, SiteSignupSurveySubmitError, SiteSignupSurveySubmitResponse, SiteSuppressionsCreateData, SiteSuppressionsCreateError, SiteSuppressionsCreateResponse, SiteSuppressionsDeleteData, SiteSuppressionsDeleteError, SiteSuppressionsDeleteResponse, SiteSuppressionsListData, SiteSuppressionsListError, SiteSuppressionsListResponse, SiteTagsApplyData, SiteTagsApplyError, SiteTagsApplyResponse, SiteTagsDeleteData, SiteTagsDeleteError, SiteTagsDeleteResponse, SiteTagsListData, SiteTagsListError, SiteTagsListForContactData, SiteTagsListForContactError, SiteTagsListForContactResponse, SiteTagsListResponse, SiteTagsRemoveData, SiteTagsRemoveError, SiteTagsRemoveResponse, SiteTemplatesCreateData, SiteTemplatesCreateError, SiteTemplatesCreateResponse, SiteTemplatesDeleteData, SiteTemplatesDeleteError, SiteTemplatesDeleteResponse, SiteTemplatesGetData, SiteTemplatesGetError, SiteTemplatesGetResponse, SiteTemplatesListData, SiteTemplatesListError, SiteTemplatesListResponse, SiteTemplatesUpdateData, SiteTemplatesUpdateError, SiteTemplatesUpdateResponse, SiteTokensCreateData, SiteTokensCreateError, SiteTokensCreateResponse, SiteTokensDeleteData, SiteTokensDeleteError, SiteTokensDeleteResponse, SiteTokensListData, SiteTokensListError, SiteTokensListResponse, SiteTokensUpdateData, SiteTokensUpdateError, SiteTokensUpdateResponse, SiteTransactionalEmailsListData, SiteTransactionalEmailsListError, SiteTransactionalEmailsListResponse, SiteUserAcceptPendingData, SiteUserAcceptPendingError, SiteUserAcceptPendingResponse, SiteUserDeleteUserData, SiteUserDeleteUserError, SiteUserDeleteUserLinkData, SiteUserDeleteUserLinkError, SiteUserDeleteUserResponse, SiteUserEmailChangeData, SiteUserEmailChangeError, SiteUserGetMeData, SiteUserGetMeResponse, SiteUserSignOutEverywhereData, SiteUserSignOutEverywhereResponse, SiteUserUpdateMeData, SiteUserUpdateMeError, SiteUserUpdateMeResponse, SiteWebhooksCreateData, SiteWebhooksCreateError, SiteWebhooksCreateResponse, SiteWebhooksDeleteData, SiteWebhooksDeleteError, SiteWebhooksDeleteResponse, SiteWebhooksGetData, SiteWebhooksGetError, SiteWebhooksGetResponse, SiteWebhooksListData, SiteWebhooksListError, SiteWebhooksListResponse, SiteWebhooksRegenerateSecretData, SiteWebhooksRegenerateSecretError, SiteWebhooksRegenerateSecretResponse, SiteWebhooksTestData, SiteWebhooksTestError, SiteWebhooksTestResponse, SiteWebhooksUpdateData, SiteWebhooksUpdateError, SiteWebhooksUpdateResponse, SiteWorkspacesAccountLinkData, SiteWorkspacesAccountLinkError, SiteWorkspacesAccountLinkResponse, SiteWorkspacesCreateData, SiteWorkspacesCreateError, SiteWorkspacesCreateResponse, SiteWorkspacesDeleteData, SiteWorkspacesDeleteError, SiteWorkspacesDeleteResponse, SiteWorkspacesGetRevenueSettingsData, SiteWorkspacesGetRevenueSettingsError, SiteWorkspacesGetRevenueSettingsResponse, SiteWorkspacesLeaveData, SiteWorkspacesLeaveError, SiteWorkspacesLeaveResponse, SiteWorkspacesLiftSecondFactorRequirementData, SiteWorkspacesLiftSecondFactorRequirementError, SiteWorkspacesLiftSecondFactorRequirementResponse, SiteWorkspacesListData, SiteWorkspacesListDeletedData, SiteWorkspacesListDeletedResponse, SiteWorkspacesListResponse, SiteWorkspacesRequireSecondFactorData, SiteWorkspacesRequireSecondFactorError, SiteWorkspacesRequireSecondFactorResponse, SiteWorkspacesRestoreData, SiteWorkspacesRestoreError, SiteWorkspacesRestoreResponse, SiteWorkspacesSetTimezoneData, SiteWorkspacesSetTimezoneError, SiteWorkspacesSetTimezoneResponse, SiteWorkspacesUpdateData, SiteWorkspacesUpdateError, SiteWorkspacesUpdateResponse, SiteWorkspacesUpdateRevenueSettingsData, SiteWorkspacesUpdateRevenueSettingsError, SiteWorkspacesUpdateRevenueSettingsResponse } from '../types.gen.ts';
 
+export type MutationKey<TOptions extends Partial<Options>> = [
+  Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
+    _id: string;
+    tags?: ReadonlyArray<string>;
+  }
+];
+
+const createMutationKey = <TOptions extends Partial<Options>>(id: string, options?: TOptions, tags?: ReadonlyArray<string>): [
+  MutationKey<TOptions>[0]
+] => {
+  const params: MutationKey<TOptions>[0] = { _id: id, baseUrl: options?.baseUrl || (options?.client ?? client).getConfig().baseUrl };
+  if (tags) {
+    params.tags = tags;
+  }
+  if (options?.body) {
+    params.body = options.body;
+  }
+  if (options?.headers) {
+    params.headers = options.headers;
+  }
+  if (options?.path) {
+    params.path = options.path;
+  }
+  if (options?.query) {
+    params.query = options.query;
+  }
+  return [params];
+};
+
+export const siteAuthConfirmEmailChangeMutationKey = (options?: Partial<Options<SiteAuthConfirmEmailChangeData>>) => createMutationKey('siteAuthConfirmEmailChange', options, ['Site Auth']);
+
 /**
  * Confirm an email change from the token sent to the new address. Public:
  * the link may be opened from a browser without a session. The change ends
@@ -23,10 +54,13 @@ export const siteAuthConfirmEmailChangeMutation = (options?: Partial<Options<Sit
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthConfirmEmailChangeMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthForgotPasswordMutationKey = (options?: Partial<Options<SiteAuthForgotPasswordData>>) => createMutationKey('siteAuthForgotPassword', options, ['Site Auth']);
 
 /**
  * Request a password-reset link. Always returns 202 regardless of whether
@@ -43,10 +77,13 @@ export const siteAuthForgotPasswordMutation = (options?: Partial<Options<SiteAut
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthForgotPasswordMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthLoginMutationKey = (options?: Partial<Options<SiteAuthLoginData>>) => createMutationKey('siteAuthLogin', options, ['Site Auth']);
 
 /**
  * Check the password. A User without a Second factor gets a session (outcome
@@ -67,10 +104,13 @@ export const siteAuthLoginMutation = (options?: Partial<Options<SiteAuthLoginDat
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthLoginMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthLogoutMutationKey = (options?: Partial<Options<SiteAuthLogoutData>>) => createMutationKey('siteAuthLogout', options, ['Site Auth']);
 
 /**
  * End the session on this browser: clears the session cookie. Answered while an
@@ -85,10 +125,13 @@ export const siteAuthLogoutMutation = (options?: Partial<Options<SiteAuthLogoutD
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthLogoutMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePasskeyLoginBeginMutationKey = (options?: Partial<Options<SitePasskeyLoginBeginData>>) => createMutationKey('sitePasskeyLoginBegin', options, ['Site Auth']);
 
 /**
  * Begin a Passkey login: the request options for the browser, with the challenge in a signed,
@@ -105,10 +148,13 @@ export const sitePasskeyLoginBeginMutation = (options?: Partial<Options<SitePass
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePasskeyLoginBeginMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePasskeyLoginFinishMutationKey = (options?: Partial<Options<SitePasskeyLoginFinishData>>) => createMutationKey('sitePasskeyLoginFinish', options, ['Site Auth']);
 
 /**
  * Finish a Passkey login: the authenticator's response, with no email and no password. The
@@ -128,10 +174,13 @@ export const sitePasskeyLoginFinishMutation = (options?: Partial<Options<SitePas
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePasskeyLoginFinishMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthResendVerificationMutationKey = (options?: Partial<Options<SiteAuthResendVerificationData>>) => createMutationKey('siteAuthResendVerification', options, ['Site Auth']);
 
 /**
  * Send the verification link again to an Unverified User. Answers 202 the same
@@ -148,10 +197,13 @@ export const siteAuthResendVerificationMutation = (options?: Partial<Options<Sit
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthResendVerificationMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthResetPasswordMutationKey = (options?: Partial<Options<SiteAuthResetPasswordData>>) => createMutationKey('siteAuthResetPassword', options, ['Site Auth']);
 
 /**
  * Set a new password from a reset token. A password outside the length rule answers 422
@@ -166,10 +218,13 @@ export const siteAuthResetPasswordMutation = (options?: Partial<Options<SiteAuth
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthResetPasswordMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthSecondFactorMutationKey = (options?: Partial<Options<SiteAuthSecondFactorData>>) => createMutationKey('siteAuthSecondFactor', options, ['Site Auth']);
 
 /**
  * The second login step of a User with a Second factor: verify the challenge
@@ -187,10 +242,13 @@ export const siteAuthSecondFactorMutation = (options?: Partial<Options<SiteAuthS
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthSecondFactorMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthSignUpMutationKey = (options?: Partial<Options<SiteAuthSignUpData>>) => createMutationKey('siteAuthSignUp', options, ['Site Auth']);
 
 /**
  * Create an Unverified User (ADR 0030): no session, no Workspace. A verification
@@ -213,10 +271,13 @@ export const siteAuthSignUpMutation = (options?: Partial<Options<SiteAuthSignUpD
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthSignUpMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthSigninNotMeMutationKey = (options?: Partial<Options<SiteAuthSigninNotMeData>>) => createMutationKey('siteAuthSigninNotMe', options, ['Site Auth']);
 
 /**
  * Undo a silent link from the notice mailed to the owner (ADR 0048): the token names
@@ -233,7 +294,8 @@ export const siteAuthSigninNotMeMutation = (options?: Partial<Options<SiteAuthSi
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthSigninNotMeMutationKey(options)
   };
   return mutationOptions;
 };
@@ -271,7 +333,7 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
   return [params];
 };
 
-export const siteAuthSigninPendingQueryKey = (options: Options<SiteAuthSigninPendingData>) => createQueryKey('siteAuthSigninPending', options);
+export const siteAuthSigninPendingQueryKey = (options: Options<SiteAuthSigninPendingData>) => createQueryKey('siteAuthSigninPending', options, false, ['Site Auth']);
 
 /**
  * A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up
@@ -291,6 +353,8 @@ export const siteAuthSigninPendingOptions = (options: Options<SiteAuthSigninPend
   queryKey: siteAuthSigninPendingQueryKey(options)
 });
 
+export const siteAuthSigninPendingSubmitMutationKey = (options?: Partial<Options<SiteAuthSigninPendingSubmitData>>) => createMutationKey('siteAuthSigninPendingSubmit', options, ['Site Auth']);
+
 /**
  * Complete a pending sign-up with the answers to the Sign-up items: creates the User with its
  * Verified email, its Linked identity, its first Workspace (and the Membership of the
@@ -309,10 +373,13 @@ export const siteAuthSigninPendingSubmitMutation = (options?: Partial<Options<Si
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthSigninPendingSubmitMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAuthSigninPendingDeclineMutationKey = (options?: Partial<Options<SiteAuthSigninPendingDeclineData>>) => createMutationKey('siteAuthSigninPendingDecline', options, ['Site Auth']);
 
 /**
  * Decline a pending sign-up: it is deleted and nothing is created. Answers 204 also for a
@@ -327,12 +394,13 @@ export const siteAuthSigninPendingDeclineMutation = (options?: Partial<Options<S
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthSigninPendingDeclineMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteAuthSigninProvidersQueryKey = (options?: Options<SiteAuthSigninProvidersData>) => createQueryKey('siteAuthSigninProviders', options);
+export const siteAuthSigninProvidersQueryKey = (options?: Options<SiteAuthSigninProvidersData>) => createQueryKey('siteAuthSigninProviders', options, false, ['Site Auth']);
 
 /**
  * The Sign-in providers this Instance offers, for the buttons of the login and sign-up
@@ -351,7 +419,7 @@ export const siteAuthSigninProvidersOptions = (options?: Options<SiteAuthSigninP
   queryKey: siteAuthSigninProvidersQueryKey(options)
 });
 
-export const siteAuthSigninCallbackQueryKey = (options: Options<SiteAuthSigninCallbackData>) => createQueryKey('siteAuthSigninCallback', options);
+export const siteAuthSigninCallbackQueryKey = (options: Options<SiteAuthSigninCallbackData>) => createQueryKey('siteAuthSigninCallback', options, false, ['Site Auth']);
 
 /**
  * Where the provider sends the browser back (the redirect URI derived from the app URL).
@@ -379,7 +447,7 @@ export const siteAuthSigninCallbackOptions = (options: Options<SiteAuthSigninCal
   queryKey: siteAuthSigninCallbackQueryKey(options)
 });
 
-export const siteAuthSigninStartQueryKey = (options: Options<SiteAuthSigninStartData>) => createQueryKey('siteAuthSigninStart', options);
+export const siteAuthSigninStartQueryKey = (options: Options<SiteAuthSigninStartData>) => createQueryKey('siteAuthSigninStart', options, false, ['Site Auth']);
 
 /**
  * Start a sign-in with a Sign-in provider: draws the flow's `state`, PKCE verifier and
@@ -400,6 +468,8 @@ export const siteAuthSigninStartOptions = (options: Options<SiteAuthSigninStartD
   },
   queryKey: siteAuthSigninStartQueryKey(options)
 });
+
+export const siteAuthVerifyEmailMutationKey = (options?: Partial<Options<SiteAuthVerifyEmailData>>) => createMutationKey('siteAuthVerifyEmail', options, ['Site Auth']);
 
 /**
  * Complete a Sign-up from the verification link (the token is the
@@ -422,10 +492,13 @@ export const siteAuthVerifyEmailMutation = (options?: Partial<Options<SiteAuthVe
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuthVerifyEmailMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePublicConfirmationsPerformMutationKey = (options?: Partial<Options<SitePublicConfirmationsPerformData>>) => createMutationKey('sitePublicConfirmationsPerform', options, ['Site Consent']);
 
 /**
  * Perform a double opt-in confirmation (ADR 0013). The deliberate human act
@@ -441,12 +514,13 @@ export const sitePublicConfirmationsPerformMutation = (options?: Partial<Options
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePublicConfirmationsPerformMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteInstanceGetReleaseQueryKey = (options?: Options<SiteInstanceGetReleaseData>) => createQueryKey('siteInstanceGetRelease', options);
+export const siteInstanceGetReleaseQueryKey = (options?: Options<SiteInstanceGetReleaseData>) => createQueryKey('siteInstanceGetRelease', options, false, ['Site Instance']);
 
 /**
  * The newer release the Release check found, for its banner. Refused (403) to a User who holds
@@ -465,7 +539,7 @@ export const siteInstanceGetReleaseOptions = (options?: Options<SiteInstanceGetR
   queryKey: siteInstanceGetReleaseQueryKey(options)
 });
 
-export const sitePublicInvitationsLookupQueryKey = (options: Options<SitePublicInvitationsLookupData>) => createQueryKey('sitePublicInvitationsLookup', options);
+export const sitePublicInvitationsLookupQueryKey = (options: Options<SitePublicInvitationsLookupData>) => createQueryKey('sitePublicInvitationsLookup', options, false, ['Site Invitations']);
 
 /**
  * Look up a pending invite by its token to render the accept page
@@ -483,6 +557,8 @@ export const sitePublicInvitationsLookupOptions = (options: Options<SitePublicIn
   queryKey: sitePublicInvitationsLookupQueryKey(options)
 });
 
+export const sitePublicInvitationsAcceptMutationKey = (options?: Partial<Options<SitePublicInvitationsAcceptData>>) => createMutationKey('sitePublicInvitationsAccept', options, ['Site Invitations']);
+
 /**
  * Accept an invite: create or complete the User, or attach the signed-in Verified
  * User, and create the Membership. 401 without a session and 403 for another User's
@@ -497,12 +573,13 @@ export const sitePublicInvitationsAcceptMutation = (options?: Partial<Options<Si
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePublicInvitationsAcceptMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteLegalDocumentsGetQueryKey = (options: Options<SiteLegalDocumentsGetData>) => createQueryKey('siteLegalDocumentsGet', options);
+export const siteLegalDocumentsGetQueryKey = (options: Options<SiteLegalDocumentsGetData>) => createQueryKey('siteLegalDocumentsGet', options, false, ['Site Legal Documents']);
 
 /**
  * The current version of a Sign-up item's Legal document, for its public page. Public. 404
@@ -522,7 +599,7 @@ export const siteLegalDocumentsGetOptions = (options: Options<SiteLegalDocuments
   queryKey: siteLegalDocumentsGetQueryKey(options)
 });
 
-export const siteUserGetMeQueryKey = (options?: Options<SiteUserGetMeData>) => createQueryKey('siteUserGetMe', options);
+export const siteUserGetMeQueryKey = (options?: Options<SiteUserGetMeData>) => createQueryKey('siteUserGetMe', options, false, ['Site User']);
 
 /**
  * Get the authenticated user's profile
@@ -540,6 +617,8 @@ export const siteUserGetMeOptions = (options?: Options<SiteUserGetMeData>) => qu
   queryKey: siteUserGetMeQueryKey(options)
 });
 
+export const siteUserUpdateMeMutationKey = (options?: Partial<Options<SiteUserUpdateMeData>>) => createMutationKey('siteUserUpdateMe', options, ['Site User']);
+
 /**
  * Update the authenticated user's profile (name, time zone and/or password). A password
  * change ends every session of the user (ADR 0020); the acting one continues
@@ -555,10 +634,13 @@ export const siteUserUpdateMeMutation = (options?: Partial<Options<SiteUserUpdat
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteUserUpdateMeMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteUserAcceptPendingMutationKey = (options?: Partial<Options<SiteUserAcceptPendingData>>) => createMutationKey('siteUserAcceptPending', options, ['Site User']);
 
 /**
  * Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted
@@ -576,10 +658,13 @@ export const siteUserAcceptPendingMutation = (options?: Partial<Options<SiteUser
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteUserAcceptPendingMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteUserDeleteUserMutationKey = (options?: Partial<Options<SiteUserDeleteUserData>>) => createMutationKey('siteUserDeleteUser', options, ['Site User']);
 
 /**
  * Delete the User, immediately and irreversibly (User deletion, ADR 0050): every Membership,
@@ -602,10 +687,13 @@ export const siteUserDeleteUserMutation = (options?: Partial<Options<SiteUserDel
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteUserDeleteUserMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteUserDeleteUserLinkMutationKey = (options?: Partial<Options<SiteUserDeleteUserLinkData>>) => createMutationKey('siteUserDeleteUserLink', options, ['Site User']);
 
 /**
  * Mail the one-time deletion link to a User with no password (ADR 0050): it goes to the
@@ -623,10 +711,13 @@ export const siteUserDeleteUserLinkMutation = (options?: Partial<Options<SiteUse
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteUserDeleteUserLinkMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteUserEmailChangeMutationKey = (options?: Partial<Options<SiteUserEmailChangeData>>) => createMutationKey('siteUserEmailChange', options, ['Site User']);
 
 /**
  * Request an email change; sends a confirmation link to the new address.
@@ -642,12 +733,13 @@ export const siteUserEmailChangeMutation = (options?: Partial<Options<SiteUserEm
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteUserEmailChangeMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteIdentitiesListQueryKey = (options?: Options<SiteIdentitiesListData>) => createQueryKey('siteIdentitiesList', options);
+export const siteIdentitiesListQueryKey = (options?: Options<SiteIdentitiesListData>) => createQueryKey('siteIdentitiesList', options, false, ['Site Linked Identities']);
 
 /**
  * List the authenticated User's Linked identities
@@ -665,6 +757,8 @@ export const siteIdentitiesListOptions = (options?: Options<SiteIdentitiesListDa
   queryKey: siteIdentitiesListQueryKey(options)
 });
 
+export const siteIdentitiesUnlinkMutationKey = (options?: Partial<Options<SiteIdentitiesUnlinkData>>) => createMutationKey('siteIdentitiesUnlink', options, ['Site Linked Identities']);
+
 /**
  * Unlink an identity. 409 when it would leave the User no way to sign in (no password
  * and no other identity). Every other session ends; the acting one continues under the
@@ -679,12 +773,13 @@ export const siteIdentitiesUnlinkMutation = (options?: Partial<Options<SiteIdent
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteIdentitiesUnlinkMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteIdentitiesLinkQueryKey = (options: Options<SiteIdentitiesLinkData>) => createQueryKey('siteIdentitiesLink', options);
+export const siteIdentitiesLinkQueryKey = (options: Options<SiteIdentitiesLinkData>) => createQueryKey('siteIdentitiesLink', options, false, ['Site Linked Identities']);
 
 /**
  * Start linking another Sign-in provider account to the authenticated User. Works like
@@ -707,7 +802,7 @@ export const siteIdentitiesLinkOptions = (options: Options<SiteIdentitiesLinkDat
   queryKey: siteIdentitiesLinkQueryKey(options)
 });
 
-export const siteOptionalConsentsListQueryKey = (options?: Options<SiteOptionalConsentsListData>) => createQueryKey('siteOptionalConsentsList', options);
+export const siteOptionalConsentsListQueryKey = (options?: Options<SiteOptionalConsentsListData>) => createQueryKey('siteOptionalConsentsList', options, false, ['Site User']);
 
 /**
  * The optional consents in effect (not archived, with a published version) and the User's
@@ -728,6 +823,8 @@ export const siteOptionalConsentsListOptions = (options?: Options<SiteOptionalCo
   queryKey: siteOptionalConsentsListQueryKey(options)
 });
 
+export const siteOptionalConsentsSetMutationKey = (options?: Partial<Options<SiteOptionalConsentsSetData>>) => createMutationKey('siteOptionalConsentsSet', options, ['Site User']);
+
 /**
  * Give or withdraw an optional consent. Giving it records `accepted` on the current version,
  * withdrawing a given one records `withdrawn`, both with the source account settings; a change
@@ -744,12 +841,13 @@ export const siteOptionalConsentsSetMutation = (options?: Partial<Options<SiteOp
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteOptionalConsentsSetMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const sitePasskeysListQueryKey = (options?: Options<SitePasskeysListData>) => createQueryKey('sitePasskeysList', options);
+export const sitePasskeysListQueryKey = (options?: Options<SitePasskeysListData>) => createQueryKey('sitePasskeysList', options, false, ['Site Passkeys']);
 
 /**
  * List the authenticated User's Passkeys
@@ -767,6 +865,8 @@ export const sitePasskeysListOptions = (options?: Options<SitePasskeysListData>)
   queryKey: sitePasskeysListQueryKey(options)
 });
 
+export const sitePasskeysBeginCheckMutationKey = (options?: Partial<Options<SitePasskeysBeginCheckData>>) => createMutationKey('sitePasskeysBeginCheck', options, ['Site Passkeys']);
+
 /**
  * Begin a fresh Passkey check: the request options for the browser, naming the User's own
  * Passkeys, with the challenge in a signed, httpOnly cookie. Nothing is written. The check
@@ -782,10 +882,13 @@ export const sitePasskeysBeginCheckMutation = (options?: Partial<Options<SitePas
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePasskeysBeginCheckMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePasskeysFinishCheckMutationKey = (options?: Partial<Options<SitePasskeysFinishCheckData>>) => createMutationKey('sitePasskeysFinishCheck', options, ['Site Passkeys']);
 
 /**
  * Finish a Passkey check. The authenticator must have verified the person, by a Passkey of
@@ -802,10 +905,13 @@ export const sitePasskeysFinishCheckMutation = (options?: Partial<Options<SitePa
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePasskeysFinishCheckMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePasskeysBeginRegistrationMutationKey = (options?: Partial<Options<SitePasskeysBeginRegistrationData>>) => createMutationKey('sitePasskeysBeginRegistration', options, ['Site Passkeys']);
 
 /**
  * Begin registering a Passkey: the creation options for the browser, with the challenge
@@ -821,10 +927,13 @@ export const sitePasskeysBeginRegistrationMutation = (options?: Partial<Options<
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePasskeysBeginRegistrationMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePasskeysFinishRegistrationMutationKey = (options?: Partial<Options<SitePasskeysFinishRegistrationData>>) => createMutationKey('sitePasskeysFinishRegistration', options, ['Site Passkeys']);
 
 /**
  * Finish registering a Passkey, proving the password (or a fresh provider login or Passkey check). The
@@ -844,10 +953,13 @@ export const sitePasskeysFinishRegistrationMutation = (options?: Partial<Options
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePasskeysFinishRegistrationMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePasskeysRemoveMutationKey = (options?: Partial<Options<SitePasskeysRemoveData>>) => createMutationKey('sitePasskeysRemove', options, ['Site Passkeys']);
 
 /**
  * Remove a Passkey of the authenticated User, proving the password (or a fresh provider
@@ -866,10 +978,13 @@ export const sitePasskeysRemoveMutation = (options?: Partial<Options<SitePasskey
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePasskeysRemoveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePasskeysRenameMutationKey = (options?: Partial<Options<SitePasskeysRenameData>>) => createMutationKey('sitePasskeysRename', options, ['Site Passkeys']);
 
 /**
  * Rename a Passkey of the authenticated User. 404 for an unknown Passkey or another User's,
@@ -884,12 +999,13 @@ export const sitePasskeysRenameMutation = (options?: Partial<Options<SitePasskey
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePasskeysRenameMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteSecondFactorGetStatusQueryKey = (options?: Options<SiteSecondFactorGetStatusData>) => createQueryKey('siteSecondFactorGetStatus', options);
+export const siteSecondFactorGetStatusQueryKey = (options?: Options<SiteSecondFactorGetStatusData>) => createQueryKey('siteSecondFactorGetStatus', options, false, ['Site Second Factor']);
 
 /**
  * The authenticated User's Second factor status. Answered while an acceptance is pending, for
@@ -908,6 +1024,8 @@ export const siteSecondFactorGetStatusOptions = (options?: Options<SiteSecondFac
   queryKey: siteSecondFactorGetStatusQueryKey(options)
 });
 
+export const siteSecondFactorDisableMutationKey = (options?: Partial<Options<SiteSecondFactorDisableData>>) => createMutationKey('siteSecondFactorDisable', options, ['Site Second Factor']);
+
 /**
  * Disable the Second factor, proving the password and a current code. Every
  * other session ends; the acting one continues under the cookie set here. 403 on
@@ -923,10 +1041,13 @@ export const siteSecondFactorDisableMutation = (options?: Partial<Options<SiteSe
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSecondFactorDisableMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSecondFactorStartEnrollmentMutationKey = (options?: Partial<Options<SiteSecondFactorStartEnrollmentData>>) => createMutationKey('siteSecondFactorStartEnrollment', options, ['Site Second Factor']);
 
 /**
  * Start enrolling a TOTP Second factor, proving the password: creates a pending
@@ -944,10 +1065,13 @@ export const siteSecondFactorStartEnrollmentMutation = (options?: Partial<Option
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSecondFactorStartEnrollmentMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSecondFactorConfirmEnrollmentMutationKey = (options?: Partial<Options<SiteSecondFactorConfirmEnrollmentData>>) => createMutationKey('siteSecondFactorConfirmEnrollment', options, ['Site Second Factor']);
 
 /**
  * Confirm the pending enrollment with the password and a code from the app. On
@@ -965,10 +1089,13 @@ export const siteSecondFactorConfirmEnrollmentMutation = (options?: Partial<Opti
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSecondFactorConfirmEnrollmentMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSecondFactorRegenerateRecoveryCodesMutationKey = (options?: Partial<Options<SiteSecondFactorRegenerateRecoveryCodesData>>) => createMutationKey('siteSecondFactorRegenerateRecoveryCodes', options, ['Site Second Factor']);
 
 /**
  * Replace the Recovery codes with a fresh set (the previous set stops working).
@@ -985,10 +1112,13 @@ export const siteSecondFactorRegenerateRecoveryCodesMutation = (options?: Partia
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSecondFactorRegenerateRecoveryCodesMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteUserSignOutEverywhereMutationKey = (options?: Partial<Options<SiteUserSignOutEverywhereData>>) => createMutationKey('siteUserSignOutEverywhere', options, ['Site User']);
 
 /**
  * Sign out everywhere: end every session of the user, on every device,
@@ -1003,10 +1133,13 @@ export const siteUserSignOutEverywhereMutation = (options?: Partial<Options<Site
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteUserSignOutEverywhereMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSignupSurveySubmitMutationKey = (options?: Partial<Options<SiteSignupSurveySubmitData>>) => createMutationKey('siteSignupSurveySubmit', options, ['Site User']);
 
 /**
  * Answer the Sign-up survey. It belongs to the User, so it takes no Workspace. The answers
@@ -1025,12 +1158,13 @@ export const siteSignupSurveySubmitMutation = (options?: Partial<Options<SiteSig
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSignupSurveySubmitMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteOAuthDescribeQueryKey = (options: Options<SiteOAuthDescribeData>) => createQueryKey('siteOAuthDescribe', options);
+export const siteOAuthDescribeQueryKey = (options: Options<SiteOAuthDescribeData>) => createQueryKey('siteOAuthDescribe', options, false, ['Site OAuth']);
 
 /**
  * Validate an OAuth authorization request for the consent screen
@@ -1048,6 +1182,8 @@ export const siteOAuthDescribeOptions = (options: Options<SiteOAuthDescribeData>
   queryKey: siteOAuthDescribeQueryKey(options)
 });
 
+export const siteOAuthDecideMutationKey = (options?: Partial<Options<SiteOAuthDecideData>>) => createMutationKey('siteOAuthDecide', options, ['Site OAuth']);
+
 /**
  * Approve or deny an OAuth authorization request as the signed-in user. Approving creates a Connection tied to the User's Membership, so any member may approve; a scope whose Permission the User's Role lacks is refused (403 permission_required).
  */
@@ -1060,12 +1196,13 @@ export const siteOAuthDecideMutation = (options?: Partial<Options<SiteOAuthDecid
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteOAuthDecideMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const sitePresetsListQueryKey = (options?: Options<SitePresetsListData>) => createQueryKey('sitePresetsList', options);
+export const sitePresetsListQueryKey = (options?: Options<SitePresetsListData>) => createQueryKey('sitePresetsList', options, false, ['Site Integrations']);
 
 /**
  * List the Presets the Instance offers, with the params schema of each
@@ -1083,6 +1220,8 @@ export const sitePresetsListOptions = (options?: Options<SitePresetsListData>) =
   queryKey: sitePresetsListQueryKey(options)
 });
 
+export const siteSchemaApplyMigrationsMutationKey = (options?: Partial<Options<SiteSchemaApplyMigrationsData>>) => createMutationKey('siteSchemaApplyMigrations', options, ['Site Schema']);
+
 /**
  * Run the migrations the database has not run, the button of the error page. Only a
  * development build serves it; any other answers 404. The answer comes once they ran.
@@ -1096,12 +1235,13 @@ export const siteSchemaApplyMigrationsMutation = (options?: Partial<Options<Site
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSchemaApplyMigrationsMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteLegalDocumentsSignupItemsQueryKey = (options?: Options<SiteLegalDocumentsSignupItemsData>) => createQueryKey('siteLegalDocumentsSignupItems', options);
+export const siteLegalDocumentsSignupItemsQueryKey = (options?: Options<SiteLegalDocumentsSignupItemsData>) => createQueryKey('siteLegalDocumentsSignupItems', options, false, ['Site Legal Documents']);
 
 /**
  * The Sign-up items in effect: those not archived that have a published version, with that
@@ -1121,6 +1261,8 @@ export const siteLegalDocumentsSignupItemsOptions = (options?: Options<SiteLegal
   queryKey: siteLegalDocumentsSignupItemsQueryKey(options)
 });
 
+export const sitePublicUnsubscribesPerformMutationKey = (options?: Partial<Options<SitePublicUnsubscribesPerformData>>) => createMutationKey('sitePublicUnsubscribesPerform', options, ['Site Consent']);
+
 /**
  * Perform an unsubscribe (ADR 0012). The button on the unsubscribe page; the
  * mailbox provider one-click POST keeps using POST /e/u/{token}. Repeating it
@@ -1135,12 +1277,13 @@ export const sitePublicUnsubscribesPerformMutation = (options?: Partial<Options<
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePublicUnsubscribesPerformMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteWorkspacesListQueryKey = (options?: Options<SiteWorkspacesListData>) => createQueryKey('siteWorkspacesList', options);
+export const siteWorkspacesListQueryKey = (options?: Options<SiteWorkspacesListData>) => createQueryKey('siteWorkspacesList', options, false, ['Site Workspaces']);
 
 /**
  * List workspaces owned by the authenticated user
@@ -1158,6 +1301,8 @@ export const siteWorkspacesListOptions = (options?: Options<SiteWorkspacesListDa
   queryKey: siteWorkspacesListQueryKey(options)
 });
 
+export const siteWorkspacesCreateMutationKey = (options?: Partial<Options<SiteWorkspacesCreateData>>) => createMutationKey('siteWorkspacesCreate', options, ['Site Workspaces']);
+
 /**
  * Create a Workspace; the authenticated User becomes its Owner. Names are free text
  * and need not be unique. An Unverified User is refused with 403 and code
@@ -1172,12 +1317,13 @@ export const siteWorkspacesCreateMutation = (options?: Partial<Options<SiteWorks
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesCreateMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteWorkspacesListDeletedQueryKey = (options?: Options<SiteWorkspacesListDeletedData>) => createQueryKey('siteWorkspacesListDeleted', options);
+export const siteWorkspacesListDeletedQueryKey = (options?: Options<SiteWorkspacesListDeletedData>) => createQueryKey('siteWorkspacesListDeleted', options, false, ['Site Workspaces']);
 
 /**
  * List the Workspaces in their deletion window that the authenticated User owns, with
@@ -1197,6 +1343,8 @@ export const siteWorkspacesListDeletedOptions = (options?: Options<SiteWorkspace
   queryKey: siteWorkspacesListDeletedQueryKey(options)
 });
 
+export const siteWorkspacesRestoreMutationKey = (options?: Partial<Options<SiteWorkspacesRestoreData>>) => createMutationKey('siteWorkspacesRestore', options, ['Site Workspaces']);
+
 /**
  * Restore a Workspace in its deletion window (Owner only). It removes only the
  * pending-deletion freeze: a Workspace suspension or Staff hold stays. A deleted
@@ -1214,10 +1362,13 @@ export const siteWorkspacesRestoreMutation = (options?: Partial<Options<SiteWork
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesRestoreMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteWorkspacesUpdateMutationKey = (options?: Partial<Options<SiteWorkspacesUpdateData>>) => createMutationKey('siteWorkspacesUpdate', options, ['Site Workspaces']);
 
 /**
  * Rename a workspace or change its postal address (Owner and Admin only). The id
@@ -1232,10 +1383,13 @@ export const siteWorkspacesUpdateMutation = (options?: Partial<Options<SiteWorks
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteWorkspacesAccountLinkMutationKey = (options?: Partial<Options<SiteWorkspacesAccountLinkData>>) => createMutationKey('siteWorkspacesAccountLink', options, ['Site Workspaces']);
 
 /**
  * Mint an Account link token (Owner only). Answers 404 when the installation has no
@@ -1250,12 +1404,13 @@ export const siteWorkspacesAccountLinkMutation = (options?: Partial<Options<Site
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesAccountLinkMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteAnalyticsClicksByLinkQueryKey = (options: Options<SiteAnalyticsClicksByLinkData>) => createQueryKey('siteAnalyticsClicksByLink', options);
+export const siteAnalyticsClicksByLinkQueryKey = (options: Options<SiteAnalyticsClicksByLinkData>) => createQueryKey('siteAnalyticsClicksByLink', options, false, ['Site Analytics']);
 
 /**
  * Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link
@@ -1273,7 +1428,7 @@ export const siteAnalyticsClicksByLinkOptions = (options: Options<SiteAnalyticsC
   queryKey: siteAnalyticsClicksByLinkQueryKey(options)
 });
 
-export const siteAnalyticsEventsQueryKey = (options: Options<SiteAnalyticsEventsData>) => createQueryKey('siteAnalyticsEvents', options);
+export const siteAnalyticsEventsQueryKey = (options: Options<SiteAnalyticsEventsData>) => createQueryKey('siteAnalyticsEvents', options, false, ['Site Analytics']);
 
 /**
  * Events in the range, grouped by action
@@ -1291,7 +1446,7 @@ export const siteAnalyticsEventsOptions = (options: Options<SiteAnalyticsEventsD
   queryKey: siteAnalyticsEventsQueryKey(options)
 });
 
-export const siteAnalyticsNewPeopleQueryKey = (options: Options<SiteAnalyticsNewPeopleData>) => createQueryKey('siteAnalyticsNewPeople', options);
+export const siteAnalyticsNewPeopleQueryKey = (options: Options<SiteAnalyticsNewPeopleData>) => createQueryKey('siteAnalyticsNewPeople', options, false, ['Site Analytics']);
 
 /**
  * New people report: Contacts created per Report day, split by Contact source
@@ -1309,7 +1464,7 @@ export const siteAnalyticsNewPeopleOptions = (options: Options<SiteAnalyticsNewP
   queryKey: siteAnalyticsNewPeopleQueryKey(options)
 });
 
-export const siteAnalyticsOpensByHourQueryKey = (options: Options<SiteAnalyticsOpensByHourData>) => createQueryKey('siteAnalyticsOpensByHour', options);
+export const siteAnalyticsOpensByHourQueryKey = (options: Options<SiteAnalyticsOpensByHourData>) => createQueryKey('siteAnalyticsOpensByHour', options, false, ['Site Analytics']);
 
 /**
  * Human opens by hour of day and day of week in the Workspace time zone
@@ -1327,7 +1482,7 @@ export const siteAnalyticsOpensByHourOptions = (options: Options<SiteAnalyticsOp
   queryKey: siteAnalyticsOpensByHourQueryKey(options)
 });
 
-export const siteAnalyticsOverviewQueryKey = (options: Options<SiteAnalyticsOverviewData>) => createQueryKey('siteAnalyticsOverview', options);
+export const siteAnalyticsOverviewQueryKey = (options: Options<SiteAnalyticsOverviewData>) => createQueryKey('siteAnalyticsOverview', options, false, ['Site Analytics']);
 
 /**
  * Aggregate metrics for the workspace dashboard
@@ -1345,7 +1500,7 @@ export const siteAnalyticsOverviewOptions = (options: Options<SiteAnalyticsOverv
   queryKey: siteAnalyticsOverviewQueryKey(options)
 });
 
-export const siteAnalyticsRevenueQueryKey = (options: Options<SiteAnalyticsRevenueData>) => createQueryKey('siteAnalyticsRevenue', options);
+export const siteAnalyticsRevenueQueryKey = (options: Options<SiteAnalyticsRevenueData>) => createQueryKey('siteAnalyticsRevenue', options, false, ['Site Analytics']);
 
 /**
  * Revenue of the Workspace's Orders over the range, in its Reporting currency (ADR 0064).
@@ -1364,7 +1519,7 @@ export const siteAnalyticsRevenueOptions = (options: Options<SiteAnalyticsRevenu
   queryKey: siteAnalyticsRevenueQueryKey(options)
 });
 
-export const siteAnalyticsSubscribedPeopleQueryKey = (options: Options<SiteAnalyticsSubscribedPeopleData>) => createQueryKey('siteAnalyticsSubscribedPeople', options);
+export const siteAnalyticsSubscribedPeopleQueryKey = (options: Options<SiteAnalyticsSubscribedPeopleData>) => createQueryKey('siteAnalyticsSubscribedPeople', options, false, ['Site Analytics']);
 
 /**
  * Subscribed people report: who subscribed and unsubscribed per Report day, and how many are subscribed now
@@ -1382,7 +1537,7 @@ export const siteAnalyticsSubscribedPeopleOptions = (options: Options<SiteAnalyt
   queryKey: siteAnalyticsSubscribedPeopleQueryKey(options)
 });
 
-export const siteAuditListQueryKey = (options: Options<SiteAuditListData>) => createQueryKey('siteAuditList', options);
+export const siteAuditListQueryKey = (options: Options<SiteAuditListData>) => createQueryKey('siteAuditList', options, false, ['Site Audit']);
 
 /**
  * List the workspace's Audit log, newest first (Enterprise; owner and admin only)
@@ -1459,7 +1614,7 @@ export const siteAuditListInfiniteOptions = (options: Options<SiteAuditListData>
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
-export const siteAuditExportQueryKey = (options: Options<SiteAuditExportData>) => createQueryKey('siteAuditExport', options);
+export const siteAuditExportQueryKey = (options: Options<SiteAuditExportData>) => createQueryKey('siteAuditExport', options, false, ['Site Audit']);
 
 /**
  * Export the Audit log as CSV, newest first, narrowed by the same filter as the list (Enterprise; owner and admin only)
@@ -1477,7 +1632,7 @@ export const siteAuditExportOptions = (options: Options<SiteAuditExportData>) =>
   queryKey: siteAuditExportQueryKey(options)
 });
 
-export const siteAuditGetRetentionQueryKey = (options: Options<SiteAuditGetRetentionData>) => createQueryKey('siteAuditGetRetention', options);
+export const siteAuditGetRetentionQueryKey = (options: Options<SiteAuditGetRetentionData>) => createQueryKey('siteAuditGetRetention', options, false, ['Site Audit']);
 
 /**
  * Read the Audit log retention window (Enterprise; owner and admin only)
@@ -1495,6 +1650,8 @@ export const siteAuditGetRetentionOptions = (options: Options<SiteAuditGetRetent
   queryKey: siteAuditGetRetentionQueryKey(options)
 });
 
+export const siteAuditSetRetentionMutationKey = (options?: Partial<Options<SiteAuditSetRetentionData>>) => createMutationKey('siteAuditSetRetention', options, ['Site Audit']);
+
 /**
  * Set or clear the Audit log retention window; recorded as an Audit entry (Enterprise; owner and admin only)
  */
@@ -1507,12 +1664,13 @@ export const siteAuditSetRetentionMutation = (options?: Partial<Options<SiteAudi
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAuditSetRetentionMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteAutomationsListQueryKey = (options: Options<SiteAutomationsListData>) => createQueryKey('siteAutomationsList', options);
+export const siteAutomationsListQueryKey = (options: Options<SiteAutomationsListData>) => createQueryKey('siteAutomationsList', options, false, ['Site Automations']);
 
 /**
  * List resources for the site UI
@@ -1560,6 +1718,8 @@ export const siteAutomationsListInfiniteOptions = (options: Options<SiteAutomati
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteAutomationsCreateMutationKey = (options?: Partial<Options<SiteAutomationsCreateData>>) => createMutationKey('siteAutomationsCreate', options, ['Site Automations']);
+
 /**
  * Create a resource from the site UI
  */
@@ -1572,10 +1732,13 @@ export const siteAutomationsCreateMutation = (options?: Partial<Options<SiteAuto
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAutomationsDryRunHttpStepMutationKey = (options?: Partial<Options<SiteAutomationsDryRunHttpStepData>>) => createMutationKey('siteAutomationsDryRunHttpStep', options, ['Site Automations']);
 
 /**
  * Render an HTTP step's body for a Contact and validate it, calling nothing
@@ -1589,12 +1752,13 @@ export const siteAutomationsDryRunHttpStepMutation = (options?: Partial<Options<
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsDryRunHttpStepMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteEnrollmentsListQueryKey = (options: Options<SiteEnrollmentsListData>) => createQueryKey('siteEnrollmentsList', options);
+export const siteEnrollmentsListQueryKey = (options: Options<SiteEnrollmentsListData>) => createQueryKey('siteEnrollmentsList', options, false, ['Site Automations']);
 
 /**
  * List an Automation's Enrollments, newest first
@@ -1642,7 +1806,7 @@ export const siteEnrollmentsListInfiniteOptions = (options: Options<SiteEnrollme
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
-export const siteEnrollmentsGetQueryKey = (options: Options<SiteEnrollmentsGetData>) => createQueryKey('siteEnrollmentsGet', options);
+export const siteEnrollmentsGetQueryKey = (options: Options<SiteEnrollmentsGetData>) => createQueryKey('siteEnrollmentsGet', options, false, ['Site Automations']);
 
 /**
  * Get one Enrollment of an Automation
@@ -1660,7 +1824,7 @@ export const siteEnrollmentsGetOptions = (options: Options<SiteEnrollmentsGetDat
   queryKey: siteEnrollmentsGetQueryKey(options)
 });
 
-export const siteAutomationReportsGetQueryKey = (options: Options<SiteAutomationReportsGetData>) => createQueryKey('siteAutomationReportsGet', options);
+export const siteAutomationReportsGetQueryKey = (options: Options<SiteAutomationReportsGetData>) => createQueryKey('siteAutomationReportsGet', options, false, ['Site Automations']);
 
 /**
  * The opens and clicks of an automation's emails, with a count per clicked link, and its results
@@ -1681,6 +1845,8 @@ export const siteAutomationReportsGetOptions = (options: Options<SiteAutomationR
   queryKey: siteAutomationReportsGetQueryKey(options)
 });
 
+export const siteAutomationsDeleteMutationKey = (options?: Partial<Options<SiteAutomationsDeleteData>>) => createMutationKey('siteAutomationsDelete', options, ['Site Automations']);
+
 /**
  * Delete a resource from the site UI
  */
@@ -1693,12 +1859,13 @@ export const siteAutomationsDeleteMutation = (options?: Partial<Options<SiteAuto
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteAutomationsGetQueryKey = (options: Options<SiteAutomationsGetData>) => createQueryKey('siteAutomationsGet', options);
+export const siteAutomationsGetQueryKey = (options: Options<SiteAutomationsGetData>) => createQueryKey('siteAutomationsGet', options, false, ['Site Automations']);
 
 /**
  * Get a resource by ID for the site UI
@@ -1716,6 +1883,8 @@ export const siteAutomationsGetOptions = (options: Options<SiteAutomationsGetDat
   queryKey: siteAutomationsGetQueryKey(options)
 });
 
+export const siteAutomationsUpdateMutationKey = (options?: Partial<Options<SiteAutomationsUpdateData>>) => createMutationKey('siteAutomationsUpdate', options, ['Site Automations']);
+
 /**
  * Update a resource from the site UI
  */
@@ -1728,10 +1897,13 @@ export const siteAutomationsUpdateMutation = (options?: Partial<Options<SiteAuto
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAutomationsArchiveMutationKey = (options?: Partial<Options<SiteAutomationsArchiveData>>) => createMutationKey('siteAutomationsArchive', options, ['Site Automations']);
 
 /**
  * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and
@@ -1747,10 +1919,13 @@ export const siteAutomationsArchiveMutation = (options?: Partial<Options<SiteAut
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsArchiveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAutomationsDeactivateMutationKey = (options?: Partial<Options<SiteAutomationsDeactivateData>>) => createMutationKey('siteAutomationsDeactivate', options, ['Site Automations']);
 
 /**
  * Deactivate an automation (stops new enrollments)
@@ -1764,10 +1939,13 @@ export const siteAutomationsDeactivateMutation = (options?: Partial<Options<Site
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsDeactivateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAutomationsPublishMutationKey = (options?: Partial<Options<SiteAutomationsPublishData>>) => createMutationKey('siteAutomationsPublish', options, ['Site Automations']);
 
 /**
  * Publish an automation: the draft becomes live and the automation active, enrolling contacts;
@@ -1784,10 +1962,13 @@ export const siteAutomationsPublishMutation = (options?: Partial<Options<SiteAut
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsPublishMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAutomationsRevertMutationKey = (options?: Partial<Options<SiteAutomationsRevertData>>) => createMutationKey('siteAutomationsRevert', options, ['Site Automations']);
 
 /**
  * Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
@@ -1801,10 +1982,13 @@ export const siteAutomationsRevertMutation = (options?: Partial<Options<SiteAuto
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsRevertMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteAutomationsUnarchiveMutationKey = (options?: Partial<Options<SiteAutomationsUnarchiveData>>) => createMutationKey('siteAutomationsUnarchive', options, ['Site Automations']);
 
 /**
  * Restore an archived automation to the list, inactive: only publish makes it enroll again
@@ -1818,12 +2002,13 @@ export const siteAutomationsUnarchiveMutation = (options?: Partial<Options<SiteA
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteAutomationsUnarchiveMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteBrandKitGetQueryKey = (options: Options<SiteBrandKitGetData>) => createQueryKey('siteBrandKitGet', options);
+export const siteBrandKitGetQueryKey = (options: Options<SiteBrandKitGetData>) => createQueryKey('siteBrandKitGet', options, false, ['Site Brand Kit']);
 
 /**
  * Read the Brand kit. Every member may read it.
@@ -1841,6 +2026,8 @@ export const siteBrandKitGetOptions = (options: Options<SiteBrandKitGetData>) =>
   queryKey: siteBrandKitGetQueryKey(options)
 });
 
+export const siteBrandKitSaveMutationKey = (options?: Partial<Options<SiteBrandKitSaveData>>) => createMutationKey('siteBrandKitSave', options, ['Site Brand Kit']);
+
 /**
  * Save the Brand kit (owner and admin only). The first save also creates the starter
  * Templates (a welcome, a receipt, a digest and a one-button message) in its brand; a later
@@ -1856,10 +2043,13 @@ export const siteBrandKitSaveMutation = (options?: Partial<Options<SiteBrandKitS
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBrandKitSaveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteBrandKitRecreateStarterTemplatesMutationKey = (options?: Partial<Options<SiteBrandKitRecreateStarterTemplatesData>>) => createMutationKey('siteBrandKitRecreateStarterTemplates', options, ['Site Brand Kit']);
 
 /**
  * Create the starter Templates again from the saved Brand kit (owner and admin only). It adds
@@ -1875,12 +2065,13 @@ export const siteBrandKitRecreateStarterTemplatesMutation = (options?: Partial<O
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBrandKitRecreateStarterTemplatesMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteBroadcastsListQueryKey = (options: Options<SiteBroadcastsListData>) => createQueryKey('siteBroadcastsList', options);
+export const siteBroadcastsListQueryKey = (options: Options<SiteBroadcastsListData>) => createQueryKey('siteBroadcastsList', options, false, ['Site Broadcasts']);
 
 /**
  * List resources for the site UI
@@ -1928,6 +2119,8 @@ export const siteBroadcastsListInfiniteOptions = (options: Options<SiteBroadcast
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteBroadcastsCreateMutationKey = (options?: Partial<Options<SiteBroadcastsCreateData>>) => createMutationKey('siteBroadcastsCreate', options, ['Site Broadcasts']);
+
 /**
  * Create a resource from the site UI
  */
@@ -1940,12 +2133,13 @@ export const siteBroadcastsCreateMutation = (options?: Partial<Options<SiteBroad
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBroadcastsCreateMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteBroadcastLinksListQueryKey = (options: Options<SiteBroadcastLinksListData>) => createQueryKey('siteBroadcastLinksList', options);
+export const siteBroadcastLinksListQueryKey = (options: Options<SiteBroadcastLinksListData>) => createQueryKey('siteBroadcastLinksList', options, false, ['Site Broadcasts']);
 
 /**
  * The links of a broadcast that were clicked, with a count each, most clicked first. The counts
@@ -1965,6 +2159,8 @@ export const siteBroadcastLinksListOptions = (options: Options<SiteBroadcastLink
   queryKey: siteBroadcastLinksListQueryKey(options)
 });
 
+export const siteBroadcastsDeleteMutationKey = (options?: Partial<Options<SiteBroadcastsDeleteData>>) => createMutationKey('siteBroadcastsDelete', options, ['Site Broadcasts']);
+
 /**
  * Delete a resource from the site UI
  */
@@ -1977,12 +2173,13 @@ export const siteBroadcastsDeleteMutation = (options?: Partial<Options<SiteBroad
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBroadcastsDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteBroadcastsGetQueryKey = (options: Options<SiteBroadcastsGetData>) => createQueryKey('siteBroadcastsGet', options);
+export const siteBroadcastsGetQueryKey = (options: Options<SiteBroadcastsGetData>) => createQueryKey('siteBroadcastsGet', options, false, ['Site Broadcasts']);
 
 /**
  * Get a resource by ID for the site UI
@@ -2000,6 +2197,8 @@ export const siteBroadcastsGetOptions = (options: Options<SiteBroadcastsGetData>
   queryKey: siteBroadcastsGetQueryKey(options)
 });
 
+export const siteBroadcastsUpdateMutationKey = (options?: Partial<Options<SiteBroadcastsUpdateData>>) => createMutationKey('siteBroadcastsUpdate', options, ['Site Broadcasts']);
+
 /**
  * Update a resource from the site UI
  */
@@ -2012,10 +2211,13 @@ export const siteBroadcastsUpdateMutation = (options?: Partial<Options<SiteBroad
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBroadcastsUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteBroadcastsArchiveMutationKey = (options?: Partial<Options<SiteBroadcastsArchiveData>>) => createMutationKey('siteBroadcastsArchive', options, ['Site Broadcasts']);
 
 /**
  * Archive a sent or failed broadcast: it leaves the list, keeps its report, tracking and
@@ -2031,10 +2233,13 @@ export const siteBroadcastsArchiveMutation = (options?: Partial<Options<SiteBroa
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBroadcastsArchiveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteBroadcastsScheduleMutationKey = (options?: Partial<Options<SiteBroadcastsScheduleData>>) => createMutationKey('siteBroadcastsSchedule', options, ['Site Broadcasts']);
 
 /**
  * Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused.
@@ -2048,10 +2253,13 @@ export const siteBroadcastsScheduleMutation = (options?: Partial<Options<SiteBro
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBroadcastsScheduleMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteBroadcastsSendMutationKey = (options?: Partial<Options<SiteBroadcastsSendData>>) => createMutationKey('siteBroadcastsSend', options, ['Site Broadcasts']);
 
 /**
  * Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused.
@@ -2065,10 +2273,13 @@ export const siteBroadcastsSendMutation = (options?: Partial<Options<SiteBroadca
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBroadcastsSendMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteBroadcastsTestSendMutationKey = (options?: Partial<Options<SiteBroadcastsTestSendData>>) => createMutationKey('siteBroadcastsTestSend', options, ['Site Broadcasts']);
 
 /**
  * Send a one-off rendered preview to a single address. While the Workspace has no verified
@@ -2084,10 +2295,13 @@ export const siteBroadcastsTestSendMutation = (options?: Partial<Options<SiteBro
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBroadcastsTestSendMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteBroadcastsUnarchiveMutationKey = (options?: Partial<Options<SiteBroadcastsUnarchiveData>>) => createMutationKey('siteBroadcastsUnarchive', options, ['Site Broadcasts']);
 
 /**
  * Restore an archived broadcast to the list
@@ -2101,12 +2315,13 @@ export const siteBroadcastsUnarchiveMutation = (options?: Partial<Options<SiteBr
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteBroadcastsUnarchiveMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteCapturedMessagesListQueryKey = (options: Options<SiteCapturedMessagesListData>) => createQueryKey('siteCapturedMessagesList', options);
+export const siteCapturedMessagesListQueryKey = (options: Options<SiteCapturedMessagesListData>) => createQueryKey('siteCapturedMessagesList', options, false, ['Site Captured Messages']);
 
 /**
  * List the Captured messages of the workspace, newest first, without their content (read one for it). Every member may read.
@@ -2154,6 +2369,8 @@ export const siteCapturedMessagesListInfiniteOptions = (options: Options<SiteCap
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteCapturedMessagesDeleteAllMutationKey = (options?: Partial<Options<SiteCapturedMessagesDeleteAllData>>) => createMutationKey('siteCapturedMessagesDeleteAll', options, ['Site Captured Messages']);
+
 /**
  * Delete every Captured message of the workspace. Every member may delete.
  */
@@ -2166,10 +2383,13 @@ export const siteCapturedMessagesDeleteAllMutation = (options?: Partial<Options<
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteCapturedMessagesDeleteAllMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteCapturedMessagesDeleteMutationKey = (options?: Partial<Options<SiteCapturedMessagesDeleteData>>) => createMutationKey('siteCapturedMessagesDelete', options, ['Site Captured Messages']);
 
 /**
  * Delete one Captured message. Every member may delete.
@@ -2183,12 +2403,13 @@ export const siteCapturedMessagesDeleteMutation = (options?: Partial<Options<Sit
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteCapturedMessagesDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteCapturedMessagesGetQueryKey = (options: Options<SiteCapturedMessagesGetData>) => createQueryKey('siteCapturedMessagesGet', options);
+export const siteCapturedMessagesGetQueryKey = (options: Options<SiteCapturedMessagesGetData>) => createQueryKey('siteCapturedMessagesGet', options, false, ['Site Captured Messages']);
 
 /**
  * Read one Captured message in full: headers, HTML, text and links. Every member may read.
@@ -2206,7 +2427,7 @@ export const siteCapturedMessagesGetOptions = (options: Options<SiteCapturedMess
   queryKey: siteCapturedMessagesGetQueryKey(options)
 });
 
-export const siteConnectionsListQueryKey = (options: Options<SiteConnectionsListData>) => createQueryKey('siteConnectionsList', options);
+export const siteConnectionsListQueryKey = (options: Options<SiteConnectionsListData>) => createQueryKey('siteConnectionsList', options, false, ['Site Connections']);
 
 /**
  * List the Connections the caller may see: their own, or every member's with members:manage
@@ -2224,6 +2445,8 @@ export const siteConnectionsListOptions = (options: Options<SiteConnectionsListD
   queryKey: siteConnectionsListQueryKey(options)
 });
 
+export const siteConnectionsDeleteMutationKey = (options?: Partial<Options<SiteConnectionsDeleteData>>) => createMutationKey('siteConnectionsDelete', options, ['Site Connections']);
+
 /**
  * Revoke a Connection: the caller's own, or anyone's with members:manage
  */
@@ -2236,12 +2459,13 @@ export const siteConnectionsDeleteMutation = (options?: Partial<Options<SiteConn
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteConnectionsDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteContactsListQueryKey = (options: Options<SiteContactsListData>) => createQueryKey('siteContactsList', options);
+export const siteContactsListQueryKey = (options: Options<SiteContactsListData>) => createQueryKey('siteContactsList', options, false, ['Site Contacts']);
 
 /**
  * List resources for the site UI
@@ -2289,6 +2513,8 @@ export const siteContactsListInfiniteOptions = (options: Options<SiteContactsLis
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteContactsCreateMutationKey = (options?: Partial<Options<SiteContactsCreateData>>) => createMutationKey('siteContactsCreate', options, ['Site Contacts']);
+
 /**
  * Create a resource from the site UI
  */
@@ -2301,10 +2527,13 @@ export const siteContactsCreateMutation = (options?: Partial<Options<SiteContact
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteContactsCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteContactsEraseMutationKey = (options?: Partial<Options<SiteContactsEraseData>>) => createMutationKey('siteContactsErase', options, ['Site Contacts']);
 
 /**
  * Erase by email address (GDPR Art. 17, a Privacy request), the same Erasure as
@@ -2322,10 +2551,13 @@ export const siteContactsEraseMutation = (options?: Partial<Options<SiteContacts
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteContactsEraseMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteContactsExportMutationKey = (options?: Partial<Options<SiteContactsExportData>>) => createMutationKey('siteContactsExport', options, ['Site Contacts']);
 
 /**
  * Export everything held about one contact as a streamed JSON download.
@@ -2340,12 +2572,13 @@ export const siteContactsExportMutation = (options?: Partial<Options<SiteContact
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteContactsExportMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteContactsLookupQueryKey = (options: Options<SiteContactsLookupData>) => createQueryKey('siteContactsLookup', options);
+export const siteContactsLookupQueryKey = (options: Options<SiteContactsLookupData>) => createQueryKey('siteContactsLookup', options, false, ['Site Contacts']);
 
 /**
  * Look up what the Workspace holds for one email address (a Privacy request):
@@ -2365,7 +2598,7 @@ export const siteContactsLookupOptions = (options: Options<SiteContactsLookupDat
   queryKey: siteContactsLookupQueryKey(options)
 });
 
-export const siteTagsListForContactQueryKey = (options: Options<SiteTagsListForContactData>) => createQueryKey('siteTagsListForContact', options);
+export const siteTagsListForContactQueryKey = (options: Options<SiteTagsListForContactData>) => createQueryKey('siteTagsListForContact', options, false, ['Site Tags']);
 
 /**
  * List the tags a contact has
@@ -2413,6 +2646,8 @@ export const siteTagsListForContactInfiniteOptions = (options: Options<SiteTagsL
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteTagsApplyMutationKey = (options?: Partial<Options<SiteTagsApplyData>>) => createMutationKey('siteTagsApply', options, ['Site Tags']);
+
 /**
  * Apply a tag to a contact, creating the tag on first use. Idempotent.
  */
@@ -2425,10 +2660,13 @@ export const siteTagsApplyMutation = (options?: Partial<Options<SiteTagsApplyDat
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTagsApplyMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteTagsRemoveMutationKey = (options?: Partial<Options<SiteTagsRemoveData>>) => createMutationKey('siteTagsRemove', options, ['Site Tags']);
 
 /**
  * Remove a tag from a contact. Idempotent; the tag stays in the catalogue.
@@ -2442,10 +2680,13 @@ export const siteTagsRemoveMutation = (options?: Partial<Options<SiteTagsRemoveD
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTagsRemoveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteContactsDeleteMutationKey = (options?: Partial<Options<SiteContactsDeleteData>>) => createMutationKey('siteContactsDelete', options, ['Site Contacts']);
 
 /**
  * Erase a contact (GDPR Art. 17): its personal data is removed, delivery records are anonymized and its opt-outs survive. Owner or admin only.
@@ -2459,12 +2700,13 @@ export const siteContactsDeleteMutation = (options?: Partial<Options<SiteContact
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteContactsDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteContactsGetQueryKey = (options: Options<SiteContactsGetData>) => createQueryKey('siteContactsGet', options);
+export const siteContactsGetQueryKey = (options: Options<SiteContactsGetData>) => createQueryKey('siteContactsGet', options, false, ['Site Contacts']);
 
 /**
  * Get a resource by ID for the site UI
@@ -2482,6 +2724,8 @@ export const siteContactsGetOptions = (options: Options<SiteContactsGetData>) =>
   queryKey: siteContactsGetQueryKey(options)
 });
 
+export const siteContactsUpdateMutationKey = (options?: Partial<Options<SiteContactsUpdateData>>) => createMutationKey('siteContactsUpdate', options, ['Site Contacts']);
+
 /**
  * Update a resource from the site UI
  */
@@ -2494,12 +2738,13 @@ export const siteContactsUpdateMutation = (options?: Partial<Options<SiteContact
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteContactsUpdateMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteCustomFieldsListQueryKey = (options: Options<SiteCustomFieldsListData>) => createQueryKey('siteCustomFieldsList', options);
+export const siteCustomFieldsListQueryKey = (options: Options<SiteCustomFieldsListData>) => createQueryKey('siteCustomFieldsList', options, false, ['Site Custom Fields']);
 
 /**
  * List the workspace's custom field definitions
@@ -2516,6 +2761,8 @@ export const siteCustomFieldsListOptions = (options: Options<SiteCustomFieldsLis
   },
   queryKey: siteCustomFieldsListQueryKey(options)
 });
+
+export const siteWorkspacesDeleteMutationKey = (options?: Partial<Options<SiteWorkspacesDeleteData>>) => createMutationKey('siteWorkspacesDelete', options, ['Site Workspaces']);
 
 /**
  * Delete a Workspace (Owner only). The typed name must equal the Workspace's name,
@@ -2534,12 +2781,13 @@ export const siteWorkspacesDeleteMutation = (options?: Partial<Options<SiteWorks
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteDomainJoinGetQueryKey = (options: Options<SiteDomainJoinGetData>) => createQueryKey('siteDomainJoinGet', options);
+export const siteDomainJoinGetQueryKey = (options: Options<SiteDomainJoinGetData>) => createQueryKey('siteDomainJoinGet', options, false, ['Site Join Domains']);
 
 /**
  * Read the domain join switch (owner and admin only).
@@ -2557,6 +2805,8 @@ export const siteDomainJoinGetOptions = (options: Options<SiteDomainJoinGetData>
   queryKey: siteDomainJoinGetQueryKey(options)
 });
 
+export const siteDomainJoinSetMutationKey = (options?: Partial<Options<SiteDomainJoinSetData>>) => createMutationKey('siteDomainJoinSet', options, ['Site Join Domains']);
+
 /**
  * Switch domain join on or off (owner and admin only). Switching it on adds nobody who is already
  * a User: only an address proven afterwards joins. Recorded as an Audit entry.
@@ -2570,12 +2820,13 @@ export const siteDomainJoinSetMutation = (options?: Partial<Options<SiteDomainJo
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteDomainJoinSetMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteEventsListQueryKey = (options: Options<SiteEventsListData>) => createQueryKey('siteEventsList', options);
+export const siteEventsListQueryKey = (options: Options<SiteEventsListData>) => createQueryKey('siteEventsList', options, false, ['Site Events']);
 
 /**
  * List events for the site UI (most recent first)
@@ -2623,7 +2874,7 @@ export const siteEventsListInfiniteOptions = (options: Options<SiteEventsListDat
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
-export const siteEventsActionsQueryKey = (options: Options<SiteEventsActionsData>) => createQueryKey('siteEventsActions', options);
+export const siteEventsActionsQueryKey = (options: Options<SiteEventsActionsData>) => createQueryKey('siteEventsActions', options, false, ['Site Events']);
 
 /**
  * Distinct event actions in the workspace, sorted — powers the segment builder
@@ -2641,7 +2892,7 @@ export const siteEventsActionsOptions = (options: Options<SiteEventsActionsData>
   queryKey: siteEventsActionsQueryKey(options)
 });
 
-export const siteIntegrationsListQueryKey = (options: Options<SiteIntegrationsListData>) => createQueryKey('siteIntegrationsList', options);
+export const siteIntegrationsListQueryKey = (options: Options<SiteIntegrationsListData>) => createQueryKey('siteIntegrationsList', options, false, ['Site Integrations']);
 
 /**
  * List the workspace's sending-provider integrations: the kept ones, or with `archived` the archived ones
@@ -2659,6 +2910,8 @@ export const siteIntegrationsListOptions = (options: Options<SiteIntegrationsLis
   queryKey: siteIntegrationsListQueryKey(options)
 });
 
+export const siteIntegrationsCreateMutationKey = (options?: Partial<Options<SiteIntegrationsCreateData>>) => createMutationKey('siteIntegrationsCreate', options, ['Site Integrations']);
+
 /**
  * Create an integration. Owners and admins only.
  */
@@ -2671,12 +2924,13 @@ export const siteIntegrationsCreateMutation = (options?: Partial<Options<SiteInt
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteIntegrationsCreateMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteIntegrationsGetQueryKey = (options: Options<SiteIntegrationsGetData>) => createQueryKey('siteIntegrationsGet', options);
+export const siteIntegrationsGetQueryKey = (options: Options<SiteIntegrationsGetData>) => createQueryKey('siteIntegrationsGet', options, false, ['Site Integrations']);
 
 /**
  * Get an integration by id
@@ -2694,6 +2948,8 @@ export const siteIntegrationsGetOptions = (options: Options<SiteIntegrationsGetD
   queryKey: siteIntegrationsGetQueryKey(options)
 });
 
+export const siteIntegrationsUpdateMutationKey = (options?: Partial<Options<SiteIntegrationsUpdateData>>) => createMutationKey('siteIntegrationsUpdate', options, ['Site Integrations']);
+
 /**
  * Update an integration. Owners and admins only.
  */
@@ -2706,10 +2962,13 @@ export const siteIntegrationsUpdateMutation = (options?: Partial<Options<SiteInt
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteIntegrationsUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteIntegrationsArchiveMutationKey = (options?: Partial<Options<SiteIntegrationsArchiveData>>) => createMutationKey('siteIntegrationsArchive', options, ['Site Integrations']);
 
 /**
  * Archive an integration: it leaves the list and gives up the default, and can be restored (it does not become the default again). Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it. Owners and admins only.
@@ -2723,10 +2982,13 @@ export const siteIntegrationsArchiveMutation = (options?: Partial<Options<SiteIn
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteIntegrationsArchiveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteIntegrationsRegenerateKeyMutationKey = (options?: Partial<Options<SiteIntegrationsRegenerateKeyData>>) => createMutationKey('siteIntegrationsRegenerateKey', options, ['Site Integrations']);
 
 /**
  * Replace the integration's hook key: the old hook URL stops working at once. Owners and admins only.
@@ -2740,10 +3002,13 @@ export const siteIntegrationsRegenerateKeyMutation = (options?: Partial<Options<
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteIntegrationsRegenerateKeyMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteIntegrationsUnarchiveMutationKey = (options?: Partial<Options<SiteIntegrationsUnarchiveData>>) => createMutationKey('siteIntegrationsUnarchive', options, ['Site Integrations']);
 
 /**
  * Restore an archived integration to the list. It is not the default; promote it with an update. Refused with 409 when it is a Test inbox and the Workspace keeps another. Owners and admins only.
@@ -2757,12 +3022,13 @@ export const siteIntegrationsUnarchiveMutation = (options?: Partial<Options<Site
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteIntegrationsUnarchiveMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteInvitationsListQueryKey = (options: Options<SiteInvitationsListData>) => createQueryKey('siteInvitationsList', options);
+export const siteInvitationsListQueryKey = (options: Options<SiteInvitationsListData>) => createQueryKey('siteInvitationsList', options, false, ['Site Invitations']);
 
 /**
  * List pending (unaccepted) invitations for the workspace
@@ -2780,6 +3046,8 @@ export const siteInvitationsListOptions = (options: Options<SiteInvitationsListD
   queryKey: siteInvitationsListQueryKey(options)
 });
 
+export const siteInvitationsCreateMutationKey = (options?: Partial<Options<SiteInvitationsCreateData>>) => createMutationKey('siteInvitationsCreate', options, ['Site Invitations']);
+
 /**
  * Invite an email address; the accept link is returned once
  */
@@ -2792,10 +3060,13 @@ export const siteInvitationsCreateMutation = (options?: Partial<Options<SiteInvi
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteInvitationsCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteInvitationsDeleteMutationKey = (options?: Partial<Options<SiteInvitationsDeleteData>>) => createMutationKey('siteInvitationsDelete', options, ['Site Invitations']);
 
 /**
  * Revoke a pending invitation
@@ -2809,12 +3080,13 @@ export const siteInvitationsDeleteMutation = (options?: Partial<Options<SiteInvi
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteInvitationsDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteJoinDomainsListQueryKey = (options: Options<SiteJoinDomainsListData>) => createQueryKey('siteJoinDomainsList', options);
+export const siteJoinDomainsListQueryKey = (options: Options<SiteJoinDomainsListData>) => createQueryKey('siteJoinDomainsList', options, false, ['Site Join Domains']);
 
 /**
  * List the Workspace's Join domains (owner and admin only), pending and verified.
@@ -2832,6 +3104,8 @@ export const siteJoinDomainsListOptions = (options: Options<SiteJoinDomainsListD
   queryKey: siteJoinDomainsListQueryKey(options)
 });
 
+export const siteJoinDomainsAddMutationKey = (options?: Partial<Options<SiteJoinDomainsAddData>>) => createMutationKey('siteJoinDomainsAdd', options, ['Site Join Domains']);
+
 /**
  * Add a Join domain (owner and admin only). It starts pending, with the TXT record to publish at
  * `_sphericon-join.<domain>`. Another Workspace's claim never blocks it. An invalid
@@ -2846,10 +3120,13 @@ export const siteJoinDomainsAddMutation = (options?: Partial<Options<SiteJoinDom
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteJoinDomainsAddMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteJoinDomainsRemoveMutationKey = (options?: Partial<Options<SiteJoinDomainsRemoveData>>) => createMutationKey('siteJoinDomainsRemove', options, ['Site Join Domains']);
 
 /**
  * Remove a Join domain (owner and admin only): only the claim goes, no Membership is touched.
@@ -2863,10 +3140,13 @@ export const siteJoinDomainsRemoveMutation = (options?: Partial<Options<SiteJoin
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteJoinDomainsRemoveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteJoinDomainsVerifyMutationKey = (options?: Partial<Options<SiteJoinDomainsVerifyData>>) => createMutationKey('siteJoinDomainsVerify', options, ['Site Join Domains']);
 
 /**
  * Check the TXT record now (owner and admin only) and verify the domain when it is published. A
@@ -2883,10 +3163,13 @@ export const siteJoinDomainsVerifyMutation = (options?: Partial<Options<SiteJoin
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteJoinDomainsVerifyMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteWorkspacesLeaveMutationKey = (options?: Partial<Options<SiteWorkspacesLeaveData>>) => createMutationKey('siteWorkspacesLeave', options, ['Site Workspaces']);
 
 /**
  * Leave a Workspace (any Role): the caller's own Membership is removed at once, with no
@@ -2903,12 +3186,13 @@ export const siteWorkspacesLeaveMutation = (options?: Partial<Options<SiteWorksp
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesLeaveMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteMembershipsListQueryKey = (options: Options<SiteMembershipsListData>) => createQueryKey('siteMembershipsList', options);
+export const siteMembershipsListQueryKey = (options: Options<SiteMembershipsListData>) => createQueryKey('siteMembershipsList', options, false, ['Site Memberships']);
 
 /**
  * List the workspace's members
@@ -2926,6 +3210,8 @@ export const siteMembershipsListOptions = (options: Options<SiteMembershipsListD
   queryKey: siteMembershipsListQueryKey(options)
 });
 
+export const siteMembershipsDeleteMutationKey = (options?: Partial<Options<SiteMembershipsDeleteData>>) => createMutationKey('siteMembershipsDelete', options, ['Site Memberships']);
+
 /**
  * Remove a member (owner/admin only; the last owner cannot be removed)
  */
@@ -2938,10 +3224,13 @@ export const siteMembershipsDeleteMutation = (options?: Partial<Options<SiteMemb
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteMembershipsDeleteMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteMembershipsUpdateMutationKey = (options?: Partial<Options<SiteMembershipsUpdateData>>) => createMutationKey('siteMembershipsUpdate', options, ['Site Memberships']);
 
 /**
  * Change a member's role (owner/admin only; owner-only to grant owner)
@@ -2955,10 +3244,13 @@ export const siteMembershipsUpdateMutation = (options?: Partial<Options<SiteMemb
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteMembershipsUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteMembershipsResetSecondFactorMutationKey = (options?: Partial<Options<SiteMembershipsResetSecondFactorData>>) => createMutationKey('siteMembershipsResetSecondFactor', options, ['Site Memberships']);
 
 /**
  * Reset the member's Second factor (owner/admin only; owner-only for an owner):
@@ -2975,12 +3267,13 @@ export const siteMembershipsResetSecondFactorMutation = (options?: Partial<Optio
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteMembershipsResetSecondFactorMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const sitePersonalTokensGrantableScopesQueryKey = (options: Options<SitePersonalTokensGrantableScopesData>) => createQueryKey('sitePersonalTokensGrantableScopes', options);
+export const sitePersonalTokensGrantableScopesQueryKey = (options: Options<SitePersonalTokensGrantableScopesData>) => createQueryKey('sitePersonalTokensGrantableScopes', options, false, ['Site Personal Tokens']);
 
 /**
  * The scopes the caller's Role may grant to a Personal token in the Workspace, in the
@@ -2999,7 +3292,7 @@ export const sitePersonalTokensGrantableScopesOptions = (options: Options<SitePe
   queryKey: sitePersonalTokensGrantableScopesQueryKey(options)
 });
 
-export const sitePersonalTokensListQueryKey = (options: Options<SitePersonalTokensListData>) => createQueryKey('sitePersonalTokensList', options);
+export const sitePersonalTokensListQueryKey = (options: Options<SitePersonalTokensListData>) => createQueryKey('sitePersonalTokensList', options, false, ['Site Personal Tokens']);
 
 /**
  * List the active Personal tokens the caller may see: their own, or every member's with
@@ -3018,6 +3311,8 @@ export const sitePersonalTokensListOptions = (options: Options<SitePersonalToken
   queryKey: sitePersonalTokensListQueryKey(options)
 });
 
+export const sitePersonalTokensCreateMutationKey = (options?: Partial<Options<SitePersonalTokensCreateData>>) => createMutationKey('sitePersonalTokensCreate', options, ['Site Personal Tokens']);
+
 /**
  * Mint a Personal token of the caller's own; the full secret is returned once. Any member may
  * mint one, with the scopes their Role may grant: another is refused (403 permission_required).
@@ -3033,10 +3328,13 @@ export const sitePersonalTokensCreateMutation = (options?: Partial<Options<SiteP
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePersonalTokensCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const sitePersonalTokensDeleteMutationKey = (options?: Partial<Options<SitePersonalTokensDeleteData>>) => createMutationKey('sitePersonalTokensDelete', options, ['Site Personal Tokens']);
 
 /**
  * Revoke a Personal token: the caller's own, or anyone's with members:manage
@@ -3050,12 +3348,13 @@ export const sitePersonalTokensDeleteMutation = (options?: Partial<Options<SiteP
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: sitePersonalTokensDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteWorkspacesGetRevenueSettingsQueryKey = (options: Options<SiteWorkspacesGetRevenueSettingsData>) => createQueryKey('siteWorkspacesGetRevenueSettings', options);
+export const siteWorkspacesGetRevenueSettingsQueryKey = (options: Options<SiteWorkspacesGetRevenueSettingsData>) => createQueryKey('siteWorkspacesGetRevenueSettings', options, false, ['Site Workspaces']);
 
 /**
  * Read the Workspace's revenue settings: the Reporting currency (null until chosen) and the
@@ -3074,6 +3373,8 @@ export const siteWorkspacesGetRevenueSettingsOptions = (options: Options<SiteWor
   queryKey: siteWorkspacesGetRevenueSettingsQueryKey(options)
 });
 
+export const siteWorkspacesUpdateRevenueSettingsMutationKey = (options?: Partial<Options<SiteWorkspacesUpdateRevenueSettingsData>>) => createMutationKey('siteWorkspacesUpdateRevenueSettings', options, ['Site Workspaces']);
+
 /**
  * Change the Reporting currency and the Attribution window (Owner and Admin only, Permission
  * `revenue:configure`, ADR 0061). 422 for a currency code that is not in ISO 4217 or a window
@@ -3088,12 +3389,13 @@ export const siteWorkspacesUpdateRevenueSettingsMutation = (options?: Partial<Op
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesUpdateRevenueSettingsMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteRulesListQueryKey = (options: Options<SiteRulesListData>) => createQueryKey('siteRulesList', options);
+export const siteRulesListQueryKey = (options: Options<SiteRulesListData>) => createQueryKey('siteRulesList', options, false, ['Site Rules']);
 
 /**
  * List resources for the site UI
@@ -3141,6 +3443,8 @@ export const siteRulesListInfiniteOptions = (options: Options<SiteRulesListData>
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteRulesCreateMutationKey = (options?: Partial<Options<SiteRulesCreateData>>) => createMutationKey('siteRulesCreate', options, ['Site Rules']);
+
 /**
  * Create a resource from the site UI
  */
@@ -3153,10 +3457,13 @@ export const siteRulesCreateMutation = (options?: Partial<Options<SiteRulesCreat
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteRulesDeleteMutationKey = (options?: Partial<Options<SiteRulesDeleteData>>) => createMutationKey('siteRulesDelete', options, ['Site Rules']);
 
 /**
  * Delete a resource from the site UI
@@ -3170,12 +3477,13 @@ export const siteRulesDeleteMutation = (options?: Partial<Options<SiteRulesDelet
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteRulesGetQueryKey = (options: Options<SiteRulesGetData>) => createQueryKey('siteRulesGet', options);
+export const siteRulesGetQueryKey = (options: Options<SiteRulesGetData>) => createQueryKey('siteRulesGet', options, false, ['Site Rules']);
 
 /**
  * Get a resource by ID for the site UI
@@ -3193,6 +3501,8 @@ export const siteRulesGetOptions = (options: Options<SiteRulesGetData>) => query
   queryKey: siteRulesGetQueryKey(options)
 });
 
+export const siteRulesUpdateMutationKey = (options?: Partial<Options<SiteRulesUpdateData>>) => createMutationKey('siteRulesUpdate', options, ['Site Rules']);
+
 /**
  * Update a resource from the site UI
  */
@@ -3205,10 +3515,13 @@ export const siteRulesUpdateMutation = (options?: Partial<Options<SiteRulesUpdat
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteRulesArchiveMutationKey = (options?: Partial<Options<SiteRulesArchiveData>>) => createMutationKey('siteRulesArchive', options, ['Site Rules']);
 
 /**
  * Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and
@@ -3223,10 +3536,13 @@ export const siteRulesArchiveMutation = (options?: Partial<Options<SiteRulesArch
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesArchiveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteRulesDeactivateMutationKey = (options?: Partial<Options<SiteRulesDeactivateData>>) => createMutationKey('siteRulesDeactivate', options, ['Site Rules']);
 
 /**
  * Deactivate a Rule: it stops firing
@@ -3240,10 +3556,13 @@ export const siteRulesDeactivateMutation = (options?: Partial<Options<SiteRulesD
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesDeactivateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteRulesDryRunMutationKey = (options?: Partial<Options<SiteRulesDryRunData>>) => createMutationKey('siteRulesDryRun', options, ['Site Rules']);
 
 /**
  * Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing.
@@ -3257,10 +3576,13 @@ export const siteRulesDryRunMutation = (options?: Partial<Options<SiteRulesDryRu
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesDryRunMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteRulesPublishMutationKey = (options?: Partial<Options<SiteRulesPublishData>>) => createMutationKey('siteRulesPublish', options, ['Site Rules']);
 
 /**
  * Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version.
@@ -3274,10 +3596,13 @@ export const siteRulesPublishMutation = (options?: Partial<Options<SiteRulesPubl
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesPublishMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteRulesRevertMutationKey = (options?: Partial<Options<SiteRulesRevertData>>) => createMutationKey('siteRulesRevert', options, ['Site Rules']);
 
 /**
  * Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.
@@ -3291,10 +3616,13 @@ export const siteRulesRevertMutation = (options?: Partial<Options<SiteRulesRever
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesRevertMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteRulesUnarchiveMutationKey = (options?: Partial<Options<SiteRulesUnarchiveData>>) => createMutationKey('siteRulesUnarchive', options, ['Site Rules']);
 
 /**
  * Restore an archived Rule to the list, inactive
@@ -3308,12 +3636,13 @@ export const siteRulesUnarchiveMutation = (options?: Partial<Options<SiteRulesUn
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteRulesUnarchiveMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteRuleFiringsListQueryKey = (options: Options<SiteRuleFiringsListData>) => createQueryKey('siteRuleFiringsList', options);
+export const siteRuleFiringsListQueryKey = (options: Options<SiteRuleFiringsListData>) => createQueryKey('siteRuleFiringsList', options, false, ['Site Rules']);
 
 /**
  * List a Rule's Firings, newest first
@@ -3361,6 +3690,8 @@ export const siteRuleFiringsListInfiniteOptions = (options: Options<SiteRuleFiri
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteWorkspacesLiftSecondFactorRequirementMutationKey = (options?: Partial<Options<SiteWorkspacesLiftSecondFactorRequirementData>>) => createMutationKey('siteWorkspacesLiftSecondFactorRequirement', options, ['Site Workspaces']);
+
 /**
  * Switch the Two-factor requirement off (owner and admin only). It is the one operation a
  * User withheld by the requirement may still perform in the Workspace, so an Owner or Admin
@@ -3376,10 +3707,13 @@ export const siteWorkspacesLiftSecondFactorRequirementMutation = (options?: Part
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesLiftSecondFactorRequirementMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteWorkspacesRequireSecondFactorMutationKey = (options?: Partial<Options<SiteWorkspacesRequireSecondFactorData>>) => createMutationKey('siteWorkspacesRequireSecondFactor', options, ['Site Workspaces']);
 
 /**
  * Switch the Two-factor requirement on (owner and admin only): every User with a
@@ -3395,12 +3729,13 @@ export const siteWorkspacesRequireSecondFactorMutation = (options?: Partial<Opti
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesRequireSecondFactorMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteSegmentsListQueryKey = (options: Options<SiteSegmentsListData>) => createQueryKey('siteSegmentsList', options);
+export const siteSegmentsListQueryKey = (options: Options<SiteSegmentsListData>) => createQueryKey('siteSegmentsList', options, false, ['Site Segments']);
 
 /**
  * List resources for the site UI
@@ -3448,6 +3783,8 @@ export const siteSegmentsListInfiniteOptions = (options: Options<SiteSegmentsLis
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteSegmentsCreateMutationKey = (options?: Partial<Options<SiteSegmentsCreateData>>) => createMutationKey('siteSegmentsCreate', options, ['Site Segments']);
+
 /**
  * Create a resource from the site UI
  */
@@ -3460,10 +3797,13 @@ export const siteSegmentsCreateMutation = (options?: Partial<Options<SiteSegment
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSegmentsCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSegmentsPreviewMutationKey = (options?: Partial<Options<SiteSegmentsPreviewData>>) => createMutationKey('siteSegmentsPreview', options, ['Site Segments']);
 
 /**
  * Preview how many active contacts match a rule definition
@@ -3477,12 +3817,13 @@ export const siteSegmentsPreviewMutation = (options?: Partial<Options<SiteSegmen
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSegmentsPreviewMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteSegmentsGetQueryKey = (options: Options<SiteSegmentsGetData>) => createQueryKey('siteSegmentsGet', options);
+export const siteSegmentsGetQueryKey = (options: Options<SiteSegmentsGetData>) => createQueryKey('siteSegmentsGet', options, false, ['Site Segments']);
 
 /**
  * Get a resource by ID for the site UI
@@ -3500,6 +3841,8 @@ export const siteSegmentsGetOptions = (options: Options<SiteSegmentsGetData>) =>
   queryKey: siteSegmentsGetQueryKey(options)
 });
 
+export const siteSegmentsUpdateMutationKey = (options?: Partial<Options<SiteSegmentsUpdateData>>) => createMutationKey('siteSegmentsUpdate', options, ['Site Segments']);
+
 /**
  * Update a resource from the site UI
  */
@@ -3512,10 +3855,13 @@ export const siteSegmentsUpdateMutation = (options?: Partial<Options<SiteSegment
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSegmentsUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSegmentsArchiveMutationKey = (options?: Partial<Options<SiteSegmentsArchiveData>>) => createMutationKey('siteSegmentsArchive', options, ['Site Segments']);
 
 /**
  * Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it.
@@ -3529,10 +3875,13 @@ export const siteSegmentsArchiveMutation = (options?: Partial<Options<SiteSegmen
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSegmentsArchiveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSegmentsUnarchiveMutationKey = (options?: Partial<Options<SiteSegmentsUnarchiveData>>) => createMutationKey('siteSegmentsUnarchive', options, ['Site Segments']);
 
 /**
  * Restore an archived resource
@@ -3546,12 +3895,13 @@ export const siteSegmentsUnarchiveMutation = (options?: Partial<Options<SiteSegm
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSegmentsUnarchiveMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteSegmentContactsListQueryKey = (options: Options<SiteSegmentContactsListData>) => createQueryKey('siteSegmentContactsList', options);
+export const siteSegmentContactsListQueryKey = (options: Options<SiteSegmentContactsListData>) => createQueryKey('siteSegmentContactsList', options, false, ['Site Segments']);
 
 /**
  * List the contacts a segment matches right now, evaluated live, ascending by id. A stored
@@ -3601,7 +3951,7 @@ export const siteSegmentContactsListInfiniteOptions = (options: Options<SiteSegm
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
-export const siteSendingDomainsListQueryKey = (options: Options<SiteSendingDomainsListData>) => createQueryKey('siteSendingDomainsList', options);
+export const siteSendingDomainsListQueryKey = (options: Options<SiteSendingDomainsListData>) => createQueryKey('siteSendingDomainsList', options, false, ['Site Sending Domains']);
 
 /**
  * List sending domains for the site UI
@@ -3649,6 +3999,8 @@ export const siteSendingDomainsListInfiniteOptions = (options: Options<SiteSendi
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteSendingDomainsCreateMutationKey = (options?: Partial<Options<SiteSendingDomainsCreateData>>) => createMutationKey('siteSendingDomainsCreate', options, ['Site Sending Domains']);
+
 /**
  * Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
  */
@@ -3661,12 +4013,13 @@ export const siteSendingDomainsCreateMutation = (options?: Partial<Options<SiteS
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSendingDomainsCreateMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteSendingDomainsGetQueryKey = (options: Options<SiteSendingDomainsGetData>) => createQueryKey('siteSendingDomainsGet', options);
+export const siteSendingDomainsGetQueryKey = (options: Options<SiteSendingDomainsGetData>) => createQueryKey('siteSendingDomainsGet', options, false, ['Site Sending Domains']);
 
 /**
  * Get a sending domain by ID for the site UI
@@ -3684,6 +4037,8 @@ export const siteSendingDomainsGetOptions = (options: Options<SiteSendingDomains
   queryKey: siteSendingDomainsGetQueryKey(options)
 });
 
+export const siteSendingDomainsArchiveMutationKey = (options?: Partial<Options<SiteSendingDomainsArchiveData>>) => createMutationKey('siteSendingDomainsArchive', options, ['Site Sending Domains']);
+
 /**
  * Archive a sending domain: it leaves the list, serves no Tracking domain host and can be
  * restored. Refused with 409 while a scheduled or sending broadcast or an active automation
@@ -3698,10 +4053,13 @@ export const siteSendingDomainsArchiveMutation = (options?: Partial<Options<Site
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSendingDomainsArchiveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSendingDomainsUnarchiveMutationKey = (options?: Partial<Options<SiteSendingDomainsUnarchiveData>>) => createMutationKey('siteSendingDomainsUnarchive', options, ['Site Sending Domains']);
 
 /**
  * Restore an archived sending domain. It starts a new DNS check and serves its Tracking
@@ -3717,10 +4075,13 @@ export const siteSendingDomainsUnarchiveMutation = (options?: Partial<Options<Si
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSendingDomainsUnarchiveMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSendingDomainsVerifyMutationKey = (options?: Partial<Options<SiteSendingDomainsVerifyData>>) => createMutationKey('siteSendingDomainsVerify', options, ['Site Sending Domains']);
 
 /**
  * Re-check the DNS now and answer once the check is done: `verified` and `lastCheckedAt` of
@@ -3735,12 +4096,13 @@ export const siteSendingDomainsVerifyMutation = (options?: Partial<Options<SiteS
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSendingDomainsVerifyMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteSetupChecklistGetQueryKey = (options: Options<SiteSetupChecklistGetData>) => createQueryKey('siteSetupChecklistGet', options);
+export const siteSetupChecklistGetQueryKey = (options: Options<SiteSetupChecklistGetData>) => createQueryKey('siteSetupChecklistGet', options, false, ['Site Setup Checklist']);
 
 /**
  * The Workspace's Setup checklist
@@ -3758,7 +4120,7 @@ export const siteSetupChecklistGetOptions = (options: Options<SiteSetupChecklist
   queryKey: siteSetupChecklistGetQueryKey(options)
 });
 
-export const siteSuppressionsListQueryKey = (options: Options<SiteSuppressionsListData>) => createQueryKey('siteSuppressionsList', options);
+export const siteSuppressionsListQueryKey = (options: Options<SiteSuppressionsListData>) => createQueryKey('siteSuppressionsList', options, false, ['Site Suppressions']);
 
 /**
  * List suppressed addresses (every member)
@@ -3806,6 +4168,8 @@ export const siteSuppressionsListInfiniteOptions = (options: Options<SiteSuppres
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteSuppressionsCreateMutationKey = (options?: Partial<Options<SiteSuppressionsCreateData>>) => createMutationKey('siteSuppressionsCreate', options, ['Site Suppressions']);
+
 /**
  * Manually suppress an address (reason = manual; idempotent per address). Owners and admins
  * only.
@@ -3819,10 +4183,13 @@ export const siteSuppressionsCreateMutation = (options?: Partial<Options<SiteSup
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSuppressionsCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteSuppressionsDeleteMutationKey = (options?: Partial<Options<SiteSuppressionsDeleteData>>) => createMutationKey('siteSuppressionsDelete', options, ['Site Suppressions']);
 
 /**
  * Lift a suppression: the row stays with its lift time and the address can receive mail again.
@@ -3837,12 +4204,13 @@ export const siteSuppressionsDeleteMutation = (options?: Partial<Options<SiteSup
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteSuppressionsDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteTagsListQueryKey = (options: Options<SiteTagsListData>) => createQueryKey('siteTagsList', options);
+export const siteTagsListQueryKey = (options: Options<SiteTagsListData>) => createQueryKey('siteTagsList', options, false, ['Site Tags']);
 
 /**
  * List the workspace's tags (feeds the segment builder)
@@ -3890,6 +4258,8 @@ export const siteTagsListInfiniteOptions = (options: Options<SiteTagsListData>) 
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteTagsDeleteMutationKey = (options?: Partial<Options<SiteTagsDeleteData>>) => createMutationKey('siteTagsDelete', options, ['Site Tags']);
+
 /**
  * Delete a tag from the catalogue, unless a segment rule or an automation step names it
  */
@@ -3902,12 +4272,13 @@ export const siteTagsDeleteMutation = (options?: Partial<Options<SiteTagsDeleteD
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTagsDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteTemplatesListQueryKey = (options: Options<SiteTemplatesListData>) => createQueryKey('siteTemplatesList', options);
+export const siteTemplatesListQueryKey = (options: Options<SiteTemplatesListData>) => createQueryKey('siteTemplatesList', options, false, ['Site Templates']);
 
 /**
  * List resources for the site UI
@@ -3955,6 +4326,8 @@ export const siteTemplatesListInfiniteOptions = (options: Options<SiteTemplatesL
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteTemplatesCreateMutationKey = (options?: Partial<Options<SiteTemplatesCreateData>>) => createMutationKey('siteTemplatesCreate', options, ['Site Templates']);
+
 /**
  * Create a resource from the site UI
  */
@@ -3967,10 +4340,13 @@ export const siteTemplatesCreateMutation = (options?: Partial<Options<SiteTempla
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTemplatesCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteTemplatesDeleteMutationKey = (options?: Partial<Options<SiteTemplatesDeleteData>>) => createMutationKey('siteTemplatesDelete', options, ['Site Templates']);
 
 /**
  * Delete a resource from the site UI
@@ -3984,12 +4360,13 @@ export const siteTemplatesDeleteMutation = (options?: Partial<Options<SiteTempla
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTemplatesDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteTemplatesGetQueryKey = (options: Options<SiteTemplatesGetData>) => createQueryKey('siteTemplatesGet', options);
+export const siteTemplatesGetQueryKey = (options: Options<SiteTemplatesGetData>) => createQueryKey('siteTemplatesGet', options, false, ['Site Templates']);
 
 /**
  * Get a resource by ID for the site UI
@@ -4007,6 +4384,8 @@ export const siteTemplatesGetOptions = (options: Options<SiteTemplatesGetData>) 
   queryKey: siteTemplatesGetQueryKey(options)
 });
 
+export const siteTemplatesUpdateMutationKey = (options?: Partial<Options<SiteTemplatesUpdateData>>) => createMutationKey('siteTemplatesUpdate', options, ['Site Templates']);
+
 /**
  * Update a resource from the site UI
  */
@@ -4019,10 +4398,13 @@ export const siteTemplatesUpdateMutation = (options?: Partial<Options<SiteTempla
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTemplatesUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteWorkspacesSetTimezoneMutationKey = (options?: Partial<Options<SiteWorkspacesSetTimezoneData>>) => createMutationKey('siteWorkspacesSetTimezone', options, ['Site Workspaces']);
 
 /**
  * Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
@@ -4038,12 +4420,13 @@ export const siteWorkspacesSetTimezoneMutation = (options?: Partial<Options<Site
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWorkspacesSetTimezoneMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteTokensListQueryKey = (options: Options<SiteTokensListData>) => createQueryKey('siteTokensList', options);
+export const siteTokensListQueryKey = (options: Options<SiteTokensListData>) => createQueryKey('siteTokensList', options, false, ['Site Tokens']);
 
 /**
  * List the workspace's API tokens, revoked ones included (marked by `revokedAt`)
@@ -4061,6 +4444,8 @@ export const siteTokensListOptions = (options: Options<SiteTokensListData>) => q
   queryKey: siteTokensListQueryKey(options)
 });
 
+export const siteTokensCreateMutationKey = (options?: Partial<Options<SiteTokensCreateData>>) => createMutationKey('siteTokensCreate', options, ['Site Tokens']);
+
 /**
  * Create an API token; the full secret is returned once. Owners and admins only.
  */
@@ -4073,10 +4458,13 @@ export const siteTokensCreateMutation = (options?: Partial<Options<SiteTokensCre
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTokensCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteTokensDeleteMutationKey = (options?: Partial<Options<SiteTokensDeleteData>>) => createMutationKey('siteTokensDelete', options, ['Site Tokens']);
 
 /**
  * Revoke an API token. Owners and admins only.
@@ -4090,10 +4478,13 @@ export const siteTokensDeleteMutation = (options?: Partial<Options<SiteTokensDel
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTokensDeleteMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteTokensUpdateMutationKey = (options?: Partial<Options<SiteTokensUpdateData>>) => createMutationKey('siteTokensUpdate', options, ['Site Tokens']);
 
 /**
  * Rename an active API token. Owners and admins only.
@@ -4107,12 +4498,13 @@ export const siteTokensUpdateMutation = (options?: Partial<Options<SiteTokensUpd
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteTokensUpdateMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteTransactionalEmailsListQueryKey = (options: Options<SiteTransactionalEmailsListData>) => createQueryKey('siteTransactionalEmailsList', options);
+export const siteTransactionalEmailsListQueryKey = (options: Options<SiteTransactionalEmailsListData>) => createQueryKey('siteTransactionalEmailsList', options, false, ['Site Transactional Emails']);
 
 /**
  * List transactional sends, most recent first
@@ -4160,7 +4552,7 @@ export const siteTransactionalEmailsListInfiniteOptions = (options: Options<Site
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
-export const siteWebhooksListQueryKey = (options: Options<SiteWebhooksListData>) => createQueryKey('siteWebhooksList', options);
+export const siteWebhooksListQueryKey = (options: Options<SiteWebhooksListData>) => createQueryKey('siteWebhooksList', options, false, ['Site Webhooks']);
 
 /**
  * List webhook endpoints. Owners and admins only.
@@ -4208,6 +4600,8 @@ export const siteWebhooksListInfiniteOptions = (options: Options<SiteWebhooksLis
   return opts as Omit<typeof opts, 'initialData'>;
 };
 
+export const siteWebhooksCreateMutationKey = (options?: Partial<Options<SiteWebhooksCreateData>>) => createMutationKey('siteWebhooksCreate', options, ['Site Webhooks']);
+
 /**
  * Create a webhook endpoint. Owners and admins only.
  */
@@ -4220,10 +4614,13 @@ export const siteWebhooksCreateMutation = (options?: Partial<Options<SiteWebhook
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWebhooksCreateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteWebhooksDeleteMutationKey = (options?: Partial<Options<SiteWebhooksDeleteData>>) => createMutationKey('siteWebhooksDelete', options, ['Site Webhooks']);
 
 /**
  * Delete a webhook endpoint. Owners and admins only.
@@ -4237,12 +4634,13 @@ export const siteWebhooksDeleteMutation = (options?: Partial<Options<SiteWebhook
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWebhooksDeleteMutationKey(options)
   };
   return mutationOptions;
 };
 
-export const siteWebhooksGetQueryKey = (options: Options<SiteWebhooksGetData>) => createQueryKey('siteWebhooksGet', options);
+export const siteWebhooksGetQueryKey = (options: Options<SiteWebhooksGetData>) => createQueryKey('siteWebhooksGet', options, false, ['Site Webhooks']);
 
 /**
  * Get a webhook endpoint by ID. Owners and admins only.
@@ -4260,6 +4658,8 @@ export const siteWebhooksGetOptions = (options: Options<SiteWebhooksGetData>) =>
   queryKey: siteWebhooksGetQueryKey(options)
 });
 
+export const siteWebhooksUpdateMutationKey = (options?: Partial<Options<SiteWebhooksUpdateData>>) => createMutationKey('siteWebhooksUpdate', options, ['Site Webhooks']);
+
 /**
  * Update a webhook endpoint. Owners and admins only.
  */
@@ -4272,10 +4672,13 @@ export const siteWebhooksUpdateMutation = (options?: Partial<Options<SiteWebhook
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWebhooksUpdateMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteWebhooksRegenerateSecretMutationKey = (options?: Partial<Options<SiteWebhooksRegenerateSecretData>>) => createMutationKey('siteWebhooksRegenerateSecret', options, ['Site Webhooks']);
 
 /**
  * Replace the signing secret. The old one stops verifying at once; the new one is in the response. Owners and admins only.
@@ -4289,10 +4692,13 @@ export const siteWebhooksRegenerateSecretMutation = (options?: Partial<Options<S
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWebhooksRegenerateSecretMutationKey(options)
   };
   return mutationOptions;
 };
+
+export const siteWebhooksTestMutationKey = (options?: Partial<Options<SiteWebhooksTestData>>) => createMutationKey('siteWebhooksTest', options, ['Site Webhooks']);
 
 /**
  * Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Owners and admins only.
@@ -4306,7 +4712,8 @@ export const siteWebhooksTestMutation = (options?: Partial<Options<SiteWebhooksT
         throwOnError: true
       });
       return data;
-    }
+    },
+    mutationKey: siteWebhooksTestMutationKey(options)
   };
   return mutationOptions;
 };

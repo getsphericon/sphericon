@@ -29,6 +29,11 @@ const surface = (name: 'site' | 'staff' | 'staffee'): UserConfig => ({
       name: '@tanstack/react-query',
       queryOptions: true,
       mutationOptions: true,
+      // Every key carries its operation's tags (the resource, e.g. `Site Segments`), so a
+      // mutation invalidates the queries of its own resource without listing them
+      // (src/queryClient.ts).
+      queryKeys: { tags: true },
+      mutationKeys: { tags: true },
     },
     {
       name: 'zod',

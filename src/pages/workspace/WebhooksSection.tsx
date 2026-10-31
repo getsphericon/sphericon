@@ -30,7 +30,6 @@ import {
   siteWebhooksCreateMutation,
   siteWebhooksDeleteMutation,
   siteWebhooksListOptions,
-  siteWebhooksListQueryKey,
   siteWebhooksRegenerateSecretMutation,
   siteWebhooksTestMutation,
   siteWebhooksUpdateMutation,
@@ -279,15 +278,12 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [testingId, setTestingId] = useState<string | null>(null)
 
-  const queryKey = siteWebhooksListQueryKey({ path: { workspaceId } })
-
   const form = useForm<{ url: string; eventTypes: string[] }>({
     initialValues: { url: '', eventTypes: [] },
   })
 
   const createMutation = useResourceMutation({
     mutation: siteWebhooksCreateMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.webhooks.createError),
     onDone: () => {
       form.reset()
@@ -297,19 +293,16 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
 
   const updateMutation = useResourceMutation({
     mutation: siteWebhooksUpdateMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.webhooks.saveError),
   })
 
   const deleteMutation = useResourceMutation({
     mutation: siteWebhooksDeleteMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.webhooks.deleteError),
   })
 
   const regenerateMutation = useResourceMutation({
     mutation: siteWebhooksRegenerateSecretMutation(),
-    invalidate: [queryKey],
     successMessage: t(($) => $.settings.webhooks.regenerated),
     errorTitle: t(($) => $.settings.webhooks.regenerateError),
   })

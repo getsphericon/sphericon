@@ -8,7 +8,6 @@ import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteCapturedMessagesDeleteMutation,
   siteCapturedMessagesGetOptions,
-  siteCapturedMessagesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
@@ -40,7 +39,6 @@ function CapturedMessage() {
   ).data
   const deleteMessage = useResourceMutation({
     mutation: siteCapturedMessagesDeleteMutation(),
-    invalidate: [siteCapturedMessagesListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.capturedMessages.deleted),
     errorTitle: t(($) => $.capturedMessages.deleteError),
     onDone: async () => navigate({ to: capturedMessagesRoute.to, params: { workspaceId } }),

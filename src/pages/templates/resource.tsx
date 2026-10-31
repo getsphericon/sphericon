@@ -3,8 +3,6 @@ import * as z from 'zod'
 import {
   siteTemplatesCreateMutation,
   siteTemplatesGetOptions,
-  siteTemplatesGetQueryKey,
-  siteTemplatesListQueryKey,
   siteTemplatesUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { zCreateTemplateInput } from '../../generated/site/zod.gen.ts'
@@ -27,8 +25,6 @@ const templateResource = defineResource({
   getOptions: siteTemplatesGetOptions,
   createMutation: siteTemplatesCreateMutation,
   updateMutation: siteTemplatesUpdateMutation,
-  listQueryKey: siteTemplatesListQueryKey,
-  getQueryKey: siteTemplatesGetQueryKey,
   editRoute: templatesEditRoute,
   idParam: 'templateId',
   texts: (t) => ({
