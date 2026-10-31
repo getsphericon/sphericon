@@ -52,7 +52,9 @@ So there are two limits with two owners, and each gets its own name.
     - `SHUTDOWN` is a **Hold** (the provider has stopped the customer's account) that lifts when the
       status recovers.
     - `PROBATION` and the sandbox are warnings on the Integration.
-  - A failed read still never blocks sending.
+  - A failed read still never blocks sending. It does not lift a `SHUTDOWN` read before it either:
+    the last answer stands until a read succeeds, as sending into a stopped account fails anyway.
+    New credentials may name another account, so saving them clears it.
 
 ## Considered options
 
