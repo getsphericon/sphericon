@@ -240,14 +240,17 @@ func ScopedEntities() []ScopedEntity {
 				if src.DiscardedAt != nil {
 					b.SetDiscardedAt(*src.DiscardedAt)
 				}
-				b.SetName(src.Name)
 				b.SetStatus(src.Status)
+				if src.ActivatedAt != nil {
+					b.SetActivatedAt(*src.ActivatedAt)
+				}
 				if src.LiveVersionID != nil {
 					b.SetLiveVersionID(remap("AutomationVersion", *src.LiveVersionID))
 				}
 				if src.DraftVersionID != nil {
 					b.SetDraftVersionID(remap("AutomationVersion", *src.DraftVersionID))
 				}
+				b.SetName(src.Name)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -256,21 +259,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 			Refs: []ScopedRef{
 				{
-					Name: "runs", Target: "AutomationRun",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Automation().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
-					},
-				},
-				{
 					Name: "versions", Target: "AutomationVersion",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Automation().UpdateOneID(id).AddVersionIDs(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "outbound_messages", Target: "OutboundMessage",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Automation().UpdateOneID(id).AddOutboundMessageIDs(target).Exec(ctx)
 					},
 				},
 				{
@@ -283,6 +274,18 @@ func ScopedEntities() []ScopedEntity {
 					Name: "draft_version", Target: "AutomationVersion",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Automation().UpdateOneID(id).SetDraftVersionID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "runs", Target: "AutomationRun",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Automation().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "outbound_messages", Target: "OutboundMessage",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Automation().UpdateOneID(id).AddOutboundMessageIDs(target).Exec(ctx)
 					},
 				},
 			},
@@ -1637,7 +1640,6 @@ func ScopedEntities() []ScopedEntity {
 				if src.DiscardedAt != nil {
 					b.SetDiscardedAt(*src.DiscardedAt)
 				}
-				b.SetName(src.Name)
 				b.SetStatus(src.Status)
 				if src.ActivatedAt != nil {
 					b.SetActivatedAt(*src.ActivatedAt)
@@ -1648,6 +1650,7 @@ func ScopedEntities() []ScopedEntity {
 				if src.DraftVersionID != nil {
 					b.SetDraftVersionID(remap("RuleVersion", *src.DraftVersionID))
 				}
+				b.SetName(src.Name)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -1714,9 +1717,7 @@ func ScopedEntities() []ScopedEntity {
 				b.SetContactID(remap("Contact", src.ContactID))
 				b.SetAction(src.Action)
 				b.SetSourceID(src.SourceID)
-				if src.VersionID != 0 {
-					b.SetVersionID(remap("RuleVersion", src.VersionID))
-				}
+				b.SetVersionID(remap("RuleVersion", src.VersionID))
 				if src.Properties != nil {
 					b.SetProperties(*src.Properties)
 				}

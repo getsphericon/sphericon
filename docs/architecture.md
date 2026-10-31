@@ -95,7 +95,11 @@ Every Workspace-owned entity (one with `WorkspaceMixin`) is reached through
 has no `SetWorkspaceID`; a reference to another Workspace's row fails with
 `ent.ErrNotInWorkspace` (422). A new Workspace-owned entity is covered on the next
 `mise run generate`; nothing is hand-written per entity. `Scoped.Workspace(ctx)` loads the
-tenant row itself (the Workspace is the tenant root, so it has no wrapper).
+tenant row itself (the Workspace is the tenant root, so it has no wrapper). A Versioned definition
+(`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)
+also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedStore`), the moves of its
+live and draft pointers and its status; `internal/drafts` is the one lifecycle over them and the
+only caller of their writes (`forbidigo`).
 
 - **Handlers and domain modules hold no `*ent.Client` and no bare `int64` workspace id.**
   They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and never call

@@ -4792,8 +4792,9 @@ func (s *Server) handleSiteAutomationReportsGetRequest(args [2]string, argsEscap
 
 // handleSiteAutomationsArchiveRequest handles SiteAutomations_archive operation.
 //
-// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+// (`usedBy` carries their count).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/archive
 func (s *Server) handleSiteAutomationsArchiveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
@@ -6543,7 +6544,7 @@ func (s *Server) handleSiteAutomationsRevertRequest(args [2]string, argsEscaped 
 
 // handleSiteAutomationsUnarchiveRequest handles SiteAutomations_unarchive operation.
 //
-// Restore an archived automation to the list.
+// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 //
 // POST /workspaces/{workspaceId}/automations/{id}/unarchive
 func (s *Server) handleSiteAutomationsUnarchiveRequest(args [2]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

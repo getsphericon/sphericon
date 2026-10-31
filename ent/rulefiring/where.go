@@ -400,16 +400,6 @@ func VersionIDNotIn(vs ...int64) predicate.RuleFiring {
 	return predicate.RuleFiring(sql.FieldNotIn(FieldVersionID, vs...))
 }
 
-// VersionIDIsNil applies the IsNil predicate on the "version_id" field.
-func VersionIDIsNil() predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldIsNull(FieldVersionID))
-}
-
-// VersionIDNotNil applies the NotNil predicate on the "version_id" field.
-func VersionIDNotNil() predicate.RuleFiring {
-	return predicate.RuleFiring(sql.FieldNotNull(FieldVersionID))
-}
-
 // PropertiesEQ applies the EQ predicate on the "properties" field.
 func PropertiesEQ(v string) predicate.RuleFiring {
 	return predicate.RuleFiring(sql.FieldEQ(FieldProperties, v))

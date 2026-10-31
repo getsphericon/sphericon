@@ -57,8 +57,9 @@ type Invoker interface {
 	AuthTokensList(ctx context.Context) (AuthTokensListRes, error)
 	// AutomationsArchive invokes Automations_archive operation.
 	//
-	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-	// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+	// (`usedBy` carries their count).
 	//
 	// POST /automations/{id}/archive
 	AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error)
@@ -115,7 +116,7 @@ type Invoker interface {
 	AutomationsRevert(ctx context.Context, params AutomationsRevertParams) (AutomationsRevertRes, error)
 	// AutomationsUnarchive invokes Automations_unarchive operation.
 	//
-	// Restore an archived automation to the list.
+	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 	//
 	// POST /automations/{id}/unarchive
 	AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error)
@@ -1654,8 +1655,9 @@ func (c *Client) sendAuthTokensList(ctx context.Context) (res AuthTokensListRes,
 
 // AutomationsArchive invokes Automations_archive operation.
 //
-// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+// (`usedBy` carries their count).
 //
 // POST /automations/{id}/archive
 func (c *Client) AutomationsArchive(ctx context.Context, params AutomationsArchiveParams) (AutomationsArchiveRes, error) {
@@ -2866,7 +2868,7 @@ func (c *Client) sendAutomationsRevert(ctx context.Context, params AutomationsRe
 
 // AutomationsUnarchive invokes Automations_unarchive operation.
 //
-// Restore an archived automation to the list.
+// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 //
 // POST /automations/{id}/unarchive
 func (c *Client) AutomationsUnarchive(ctx context.Context, params AutomationsUnarchiveParams) (AutomationsUnarchiveRes, error) {

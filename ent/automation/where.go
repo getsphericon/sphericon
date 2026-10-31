@@ -75,9 +75,9 @@ func DiscardedAt(v time.Time) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldDiscardedAt, v))
 }
 
-// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
-func Name(v string) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldName, v))
+// ActivatedAt applies equality check predicate on the "activated_at" field. It's identical to ActivatedAtEQ.
+func ActivatedAt(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldActivatedAt, v))
 }
 
 // LiveVersionID applies equality check predicate on the "live_version_id" field. It's identical to LiveVersionIDEQ.
@@ -88,6 +88,11 @@ func LiveVersionID(v int64) predicate.Automation {
 // DraftVersionID applies equality check predicate on the "draft_version_id" field. It's identical to DraftVersionIDEQ.
 func DraftVersionID(v int64) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldDraftVersionID, v))
+}
+
+// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
+func Name(v string) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldName, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -240,6 +245,136 @@ func DiscardedAtNotNil() predicate.Automation {
 	return predicate.Automation(sql.FieldNotNull(FieldDiscardedAt))
 }
 
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v Status) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v Status) predicate.Automation {
+	return predicate.Automation(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...Status) predicate.Automation {
+	return predicate.Automation(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...Status) predicate.Automation {
+	return predicate.Automation(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// ActivatedAtEQ applies the EQ predicate on the "activated_at" field.
+func ActivatedAtEQ(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldActivatedAt, v))
+}
+
+// ActivatedAtNEQ applies the NEQ predicate on the "activated_at" field.
+func ActivatedAtNEQ(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldNEQ(FieldActivatedAt, v))
+}
+
+// ActivatedAtIn applies the In predicate on the "activated_at" field.
+func ActivatedAtIn(vs ...time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldIn(FieldActivatedAt, vs...))
+}
+
+// ActivatedAtNotIn applies the NotIn predicate on the "activated_at" field.
+func ActivatedAtNotIn(vs ...time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldNotIn(FieldActivatedAt, vs...))
+}
+
+// ActivatedAtGT applies the GT predicate on the "activated_at" field.
+func ActivatedAtGT(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldGT(FieldActivatedAt, v))
+}
+
+// ActivatedAtGTE applies the GTE predicate on the "activated_at" field.
+func ActivatedAtGTE(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldGTE(FieldActivatedAt, v))
+}
+
+// ActivatedAtLT applies the LT predicate on the "activated_at" field.
+func ActivatedAtLT(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldLT(FieldActivatedAt, v))
+}
+
+// ActivatedAtLTE applies the LTE predicate on the "activated_at" field.
+func ActivatedAtLTE(v time.Time) predicate.Automation {
+	return predicate.Automation(sql.FieldLTE(FieldActivatedAt, v))
+}
+
+// ActivatedAtIsNil applies the IsNil predicate on the "activated_at" field.
+func ActivatedAtIsNil() predicate.Automation {
+	return predicate.Automation(sql.FieldIsNull(FieldActivatedAt))
+}
+
+// ActivatedAtNotNil applies the NotNil predicate on the "activated_at" field.
+func ActivatedAtNotNil() predicate.Automation {
+	return predicate.Automation(sql.FieldNotNull(FieldActivatedAt))
+}
+
+// LiveVersionIDEQ applies the EQ predicate on the "live_version_id" field.
+func LiveVersionIDEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldLiveVersionID, v))
+}
+
+// LiveVersionIDNEQ applies the NEQ predicate on the "live_version_id" field.
+func LiveVersionIDNEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNEQ(FieldLiveVersionID, v))
+}
+
+// LiveVersionIDIn applies the In predicate on the "live_version_id" field.
+func LiveVersionIDIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldIn(FieldLiveVersionID, vs...))
+}
+
+// LiveVersionIDNotIn applies the NotIn predicate on the "live_version_id" field.
+func LiveVersionIDNotIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNotIn(FieldLiveVersionID, vs...))
+}
+
+// LiveVersionIDIsNil applies the IsNil predicate on the "live_version_id" field.
+func LiveVersionIDIsNil() predicate.Automation {
+	return predicate.Automation(sql.FieldIsNull(FieldLiveVersionID))
+}
+
+// LiveVersionIDNotNil applies the NotNil predicate on the "live_version_id" field.
+func LiveVersionIDNotNil() predicate.Automation {
+	return predicate.Automation(sql.FieldNotNull(FieldLiveVersionID))
+}
+
+// DraftVersionIDEQ applies the EQ predicate on the "draft_version_id" field.
+func DraftVersionIDEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldEQ(FieldDraftVersionID, v))
+}
+
+// DraftVersionIDNEQ applies the NEQ predicate on the "draft_version_id" field.
+func DraftVersionIDNEQ(v int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNEQ(FieldDraftVersionID, v))
+}
+
+// DraftVersionIDIn applies the In predicate on the "draft_version_id" field.
+func DraftVersionIDIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldIn(FieldDraftVersionID, vs...))
+}
+
+// DraftVersionIDNotIn applies the NotIn predicate on the "draft_version_id" field.
+func DraftVersionIDNotIn(vs ...int64) predicate.Automation {
+	return predicate.Automation(sql.FieldNotIn(FieldDraftVersionID, vs...))
+}
+
+// DraftVersionIDIsNil applies the IsNil predicate on the "draft_version_id" field.
+func DraftVersionIDIsNil() predicate.Automation {
+	return predicate.Automation(sql.FieldIsNull(FieldDraftVersionID))
+}
+
+// DraftVersionIDNotNil applies the NotNil predicate on the "draft_version_id" field.
+func DraftVersionIDNotNil() predicate.Automation {
+	return predicate.Automation(sql.FieldNotNull(FieldDraftVersionID))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Automation {
 	return predicate.Automation(sql.FieldEQ(FieldName, v))
@@ -305,86 +440,6 @@ func NameContainsFold(v string) predicate.Automation {
 	return predicate.Automation(sql.FieldContainsFold(FieldName, v))
 }
 
-// StatusEQ applies the EQ predicate on the "status" field.
-func StatusEQ(v Status) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldStatus, v))
-}
-
-// StatusNEQ applies the NEQ predicate on the "status" field.
-func StatusNEQ(v Status) predicate.Automation {
-	return predicate.Automation(sql.FieldNEQ(FieldStatus, v))
-}
-
-// StatusIn applies the In predicate on the "status" field.
-func StatusIn(vs ...Status) predicate.Automation {
-	return predicate.Automation(sql.FieldIn(FieldStatus, vs...))
-}
-
-// StatusNotIn applies the NotIn predicate on the "status" field.
-func StatusNotIn(vs ...Status) predicate.Automation {
-	return predicate.Automation(sql.FieldNotIn(FieldStatus, vs...))
-}
-
-// LiveVersionIDEQ applies the EQ predicate on the "live_version_id" field.
-func LiveVersionIDEQ(v int64) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldLiveVersionID, v))
-}
-
-// LiveVersionIDNEQ applies the NEQ predicate on the "live_version_id" field.
-func LiveVersionIDNEQ(v int64) predicate.Automation {
-	return predicate.Automation(sql.FieldNEQ(FieldLiveVersionID, v))
-}
-
-// LiveVersionIDIn applies the In predicate on the "live_version_id" field.
-func LiveVersionIDIn(vs ...int64) predicate.Automation {
-	return predicate.Automation(sql.FieldIn(FieldLiveVersionID, vs...))
-}
-
-// LiveVersionIDNotIn applies the NotIn predicate on the "live_version_id" field.
-func LiveVersionIDNotIn(vs ...int64) predicate.Automation {
-	return predicate.Automation(sql.FieldNotIn(FieldLiveVersionID, vs...))
-}
-
-// LiveVersionIDIsNil applies the IsNil predicate on the "live_version_id" field.
-func LiveVersionIDIsNil() predicate.Automation {
-	return predicate.Automation(sql.FieldIsNull(FieldLiveVersionID))
-}
-
-// LiveVersionIDNotNil applies the NotNil predicate on the "live_version_id" field.
-func LiveVersionIDNotNil() predicate.Automation {
-	return predicate.Automation(sql.FieldNotNull(FieldLiveVersionID))
-}
-
-// DraftVersionIDEQ applies the EQ predicate on the "draft_version_id" field.
-func DraftVersionIDEQ(v int64) predicate.Automation {
-	return predicate.Automation(sql.FieldEQ(FieldDraftVersionID, v))
-}
-
-// DraftVersionIDNEQ applies the NEQ predicate on the "draft_version_id" field.
-func DraftVersionIDNEQ(v int64) predicate.Automation {
-	return predicate.Automation(sql.FieldNEQ(FieldDraftVersionID, v))
-}
-
-// DraftVersionIDIn applies the In predicate on the "draft_version_id" field.
-func DraftVersionIDIn(vs ...int64) predicate.Automation {
-	return predicate.Automation(sql.FieldIn(FieldDraftVersionID, vs...))
-}
-
-// DraftVersionIDNotIn applies the NotIn predicate on the "draft_version_id" field.
-func DraftVersionIDNotIn(vs ...int64) predicate.Automation {
-	return predicate.Automation(sql.FieldNotIn(FieldDraftVersionID, vs...))
-}
-
-// DraftVersionIDIsNil applies the IsNil predicate on the "draft_version_id" field.
-func DraftVersionIDIsNil() predicate.Automation {
-	return predicate.Automation(sql.FieldIsNull(FieldDraftVersionID))
-}
-
-// DraftVersionIDNotNil applies the NotNil predicate on the "draft_version_id" field.
-func DraftVersionIDNotNil() predicate.Automation {
-	return predicate.Automation(sql.FieldNotNull(FieldDraftVersionID))
-}
-
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
@@ -408,29 +463,6 @@ func HasWorkspaceWith(preds ...predicate.Workspace) predicate.Automation {
 	})
 }
 
-// HasRuns applies the HasEdge predicate on the "runs" edge.
-func HasRuns() predicate.Automation {
-	return predicate.Automation(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasRunsWith applies the HasEdge predicate on the "runs" edge with a given conditions (other predicates).
-func HasRunsWith(preds ...predicate.AutomationRun) predicate.Automation {
-	return predicate.Automation(func(s *sql.Selector) {
-		step := newRunsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasVersions applies the HasEdge predicate on the "versions" edge.
 func HasVersions() predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
@@ -446,29 +478,6 @@ func HasVersions() predicate.Automation {
 func HasVersionsWith(preds ...predicate.AutomationVersion) predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
 		step := newVersionsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasOutboundMessages applies the HasEdge predicate on the "outbound_messages" edge.
-func HasOutboundMessages() predicate.Automation {
-	return predicate.Automation(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasOutboundMessagesWith applies the HasEdge predicate on the "outbound_messages" edge with a given conditions (other predicates).
-func HasOutboundMessagesWith(preds ...predicate.OutboundMessage) predicate.Automation {
-	return predicate.Automation(func(s *sql.Selector) {
-		step := newOutboundMessagesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -515,6 +524,52 @@ func HasDraftVersion() predicate.Automation {
 func HasDraftVersionWith(preds ...predicate.AutomationVersion) predicate.Automation {
 	return predicate.Automation(func(s *sql.Selector) {
 		step := newDraftVersionStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRuns applies the HasEdge predicate on the "runs" edge.
+func HasRuns() predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRunsWith applies the HasEdge predicate on the "runs" edge with a given conditions (other predicates).
+func HasRunsWith(preds ...predicate.AutomationRun) predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := newRunsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOutboundMessages applies the HasEdge predicate on the "outbound_messages" edge.
+func HasOutboundMessages() predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, OutboundMessagesTable, OutboundMessagesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOutboundMessagesWith applies the HasEdge predicate on the "outbound_messages" edge with a given conditions (other predicates).
+func HasOutboundMessagesWith(preds ...predicate.OutboundMessage) predicate.Automation {
+	return predicate.Automation(func(s *sql.Selector) {
+		step := newOutboundMessagesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

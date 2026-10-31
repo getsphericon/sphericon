@@ -12,7 +12,8 @@ snapshots:
         end: 162
   "func bypass(ctx context.Context, s *ent.Scoped, id int64) error {\n\treturn s.AutomationRun().UpdateOneID(id).ClearResumeAt().SetStatus(automationrun.StatusExited).Exec(ctx)\n}\n":
     labels:
-      - source: s.AutomationRun().UpdateOneID(id).ClearResumeAt().SetStatus(automationrun.StatusExited)
+      - source: >-
+          s.AutomationRun().UpdateOneID(id).ClearResumeAt().SetStatus(automationrun.StatusExited)
         style: primary
         start: 74
         end: 161
@@ -32,7 +33,8 @@ snapshots:
         end: 103
   "func bypass(ctx context.Context, s *ent.Scoped, id int64) error {\n\treturn s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing).Exec(ctx)\n}\n":
     labels:
-      - source: s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing)
+      - source: >-
+          s.SendingDomain().UpdateOneID(id).SetTrackingState(sendingdomain.TrackingStateServing)
         style: primary
         start: 74
         end: 160
@@ -50,3 +52,23 @@ snapshots:
         style: secondary
         start: 98
         end: 120
+  "func flag(ctx context.Context, s *ent.Scoped, id int64, status automation.Status) error {\n\t_, err := s.Automation().Update().Where(automation.ID(id)).SetStatus(status).Save(ctx)\n\treturn err\n}\n":
+    labels:
+      - source: s.Automation().Update().Where(automation.ID(id)).SetStatus(status)
+        style: primary
+        start: 101
+        end: 167
+      - source: s.Automation().Update()
+        style: secondary
+        start: 101
+        end: 124
+  "func ruleFlag(ctx context.Context, s *ent.Scoped, id int64) error {\n\treturn s.Rule().UpdateOneID(id).SetStatus(rule.StatusActive).Exec(ctx)\n}\n":
+    labels:
+      - source: s.Rule().UpdateOneID(id).SetStatus(rule.StatusActive)
+        style: primary
+        start: 76
+        end: 129
+      - source: s.Rule().UpdateOneID(id)
+        style: secondary
+        start: 76
+        end: 100

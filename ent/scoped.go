@@ -2391,12 +2391,6 @@ func (x *AutomationScopedCreate) SetNillableDiscardedAt(v *time.Time) *Automatio
 	return x
 }
 
-// SetName sets the "name" field.
-func (x *AutomationScopedCreate) SetName(v string) *AutomationScopedCreate {
-	x.b.SetName(v)
-	return x
-}
-
 // SetStatus sets the "status" field.
 func (x *AutomationScopedCreate) SetStatus(v automation.Status) *AutomationScopedCreate {
 	x.b.SetStatus(v)
@@ -2406,6 +2400,18 @@ func (x *AutomationScopedCreate) SetStatus(v automation.Status) *AutomationScope
 // SetNillableStatus sets the "status" field if the given value is not nil.
 func (x *AutomationScopedCreate) SetNillableStatus(v *automation.Status) *AutomationScopedCreate {
 	x.b.SetNillableStatus(v)
+	return x
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (x *AutomationScopedCreate) SetActivatedAt(v time.Time) *AutomationScopedCreate {
+	x.b.SetActivatedAt(v)
+	return x
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableActivatedAt(v *time.Time) *AutomationScopedCreate {
+	x.b.SetNillableActivatedAt(v)
 	return x
 }
 
@@ -2433,15 +2439,9 @@ func (x *AutomationScopedCreate) SetNillableDraftVersionID(v *int64) *Automation
 	return x
 }
 
-// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
-func (x *AutomationScopedCreate) AddRunIDs(ids ...int64) *AutomationScopedCreate {
-	x.b.AddRunIDs(ids...)
-	return x
-}
-
-// AddRuns adds the "runs" edges to the AutomationRun entity.
-func (x *AutomationScopedCreate) AddRuns(v ...*AutomationRun) *AutomationScopedCreate {
-	x.b.AddRuns(v...)
+// SetName sets the "name" field.
+func (x *AutomationScopedCreate) SetName(v string) *AutomationScopedCreate {
+	x.b.SetName(v)
 	return x
 }
 
@@ -2457,18 +2457,6 @@ func (x *AutomationScopedCreate) AddVersions(v ...*AutomationVersion) *Automatio
 	return x
 }
 
-// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
-func (x *AutomationScopedCreate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedCreate {
-	x.b.AddOutboundMessageIDs(ids...)
-	return x
-}
-
-// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
-func (x *AutomationScopedCreate) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedCreate {
-	x.b.AddOutboundMessages(v...)
-	return x
-}
-
 // SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
 func (x *AutomationScopedCreate) SetLiveVersion(v *AutomationVersion) *AutomationScopedCreate {
 	x.b.SetLiveVersion(v)
@@ -2481,23 +2469,47 @@ func (x *AutomationScopedCreate) SetDraftVersion(v *AutomationVersion) *Automati
 	return x
 }
 
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (x *AutomationScopedCreate) AddRunIDs(ids ...int64) *AutomationScopedCreate {
+	x.b.AddRunIDs(ids...)
+	return x
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (x *AutomationScopedCreate) AddRuns(v ...*AutomationRun) *AutomationScopedCreate {
+	x.b.AddRuns(v...)
+	return x
+}
+
+// AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
+func (x *AutomationScopedCreate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedCreate {
+	x.b.AddOutboundMessageIDs(ids...)
+	return x
+}
+
+// AddOutboundMessages adds the "outbound_messages" edges to the OutboundMessage entity.
+func (x *AutomationScopedCreate) AddOutboundMessages(v ...*OutboundMessage) *AutomationScopedCreate {
+	x.b.AddOutboundMessages(v...)
+	return x
+}
+
 func (x *AutomationScopedCreate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
-		return fmt.Errorf("runs: %w", err)
-	}
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
 		return fmt.Errorf("versions: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.LiveVersionIDs()); err != nil {
 		return fmt.Errorf("live_version: %w", err)
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.DraftVersionIDs()); err != nil {
 		return fmt.Errorf("draft_version: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
+		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
+		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -2623,18 +2635,6 @@ func (u *AutomationScopedUpsert) ClearDiscardedAt() *AutomationScopedUpsert {
 	return u
 }
 
-// SetName sets the "name" field.
-func (u *AutomationScopedUpsert) SetName(v string) *AutomationScopedUpsert {
-	u.u.Set(automation.FieldName, v)
-	return u
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *AutomationScopedUpsert) UpdateName() *AutomationScopedUpsert {
-	u.u.SetExcluded(automation.FieldName)
-	return u
-}
-
 // SetStatus sets the "status" field.
 func (u *AutomationScopedUpsert) SetStatus(v automation.Status) *AutomationScopedUpsert {
 	u.u.Set(automation.FieldStatus, v)
@@ -2644,6 +2644,24 @@ func (u *AutomationScopedUpsert) SetStatus(v automation.Status) *AutomationScope
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *AutomationScopedUpsert) UpdateStatus() *AutomationScopedUpsert {
 	u.u.SetExcluded(automation.FieldStatus)
+	return u
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (u *AutomationScopedUpsert) SetActivatedAt(v time.Time) *AutomationScopedUpsert {
+	u.u.Set(automation.FieldActivatedAt, v)
+	return u
+}
+
+// UpdateActivatedAt sets the "activated_at" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateActivatedAt() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldActivatedAt)
+	return u
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (u *AutomationScopedUpsert) ClearActivatedAt() *AutomationScopedUpsert {
+	u.u.SetNull(automation.FieldActivatedAt)
 	return u
 }
 
@@ -2668,6 +2686,18 @@ func (u *AutomationScopedUpsert) UpdateDraftVersionID() *AutomationScopedUpsert 
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (u *AutomationScopedUpsert) ClearDraftVersionID() *AutomationScopedUpsert {
 	u.u.SetNull(automation.FieldDraftVersionID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *AutomationScopedUpsert) SetName(v string) *AutomationScopedUpsert {
+	u.u.Set(automation.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *AutomationScopedUpsert) UpdateName() *AutomationScopedUpsert {
+	u.u.SetExcluded(automation.FieldName)
 	return u
 }
 
@@ -2873,18 +2903,6 @@ func (x *AutomationScopedUpdateOne) ClearDiscardedAt() *AutomationScopedUpdateOn
 	return x
 }
 
-// SetName sets the "name" field.
-func (x *AutomationScopedUpdateOne) SetName(v string) *AutomationScopedUpdateOne {
-	x.b.SetName(v)
-	return x
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (x *AutomationScopedUpdateOne) SetNillableName(v *string) *AutomationScopedUpdateOne {
-	x.b.SetNillableName(v)
-	return x
-}
-
 // SetStatus sets the "status" field.
 func (x *AutomationScopedUpdateOne) SetStatus(v automation.Status) *AutomationScopedUpdateOne {
 	x.b.SetStatus(v)
@@ -2894,6 +2912,24 @@ func (x *AutomationScopedUpdateOne) SetStatus(v automation.Status) *AutomationSc
 // SetNillableStatus sets the "status" field if the given value is not nil.
 func (x *AutomationScopedUpdateOne) SetNillableStatus(v *automation.Status) *AutomationScopedUpdateOne {
 	x.b.SetNillableStatus(v)
+	return x
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (x *AutomationScopedUpdateOne) SetActivatedAt(v time.Time) *AutomationScopedUpdateOne {
+	x.b.SetActivatedAt(v)
+	return x
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableActivatedAt(v *time.Time) *AutomationScopedUpdateOne {
+	x.b.SetNillableActivatedAt(v)
+	return x
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (x *AutomationScopedUpdateOne) ClearActivatedAt() *AutomationScopedUpdateOne {
+	x.b.ClearActivatedAt()
 	return x
 }
 
@@ -2933,33 +2969,15 @@ func (x *AutomationScopedUpdateOne) ClearDraftVersionID() *AutomationScopedUpdat
 	return x
 }
 
-// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
-func (x *AutomationScopedUpdateOne) AddRunIDs(ids ...int64) *AutomationScopedUpdateOne {
-	x.b.AddRunIDs(ids...)
+// SetName sets the "name" field.
+func (x *AutomationScopedUpdateOne) SetName(v string) *AutomationScopedUpdateOne {
+	x.b.SetName(v)
 	return x
 }
 
-// AddRuns adds the "runs" edges to the AutomationRun entity.
-func (x *AutomationScopedUpdateOne) AddRuns(v ...*AutomationRun) *AutomationScopedUpdateOne {
-	x.b.AddRuns(v...)
-	return x
-}
-
-// ClearRuns clears the "runs" edges to the AutomationRun entity.
-func (x *AutomationScopedUpdateOne) ClearRuns() *AutomationScopedUpdateOne {
-	x.b.ClearRuns()
-	return x
-}
-
-// RemoveRunIDs removes the "runs" edge to AutomationRun entities by IDs.
-func (x *AutomationScopedUpdateOne) RemoveRunIDs(ids ...int64) *AutomationScopedUpdateOne {
-	x.b.RemoveRunIDs(ids...)
-	return x
-}
-
-// RemoveRuns removes "runs" edges to AutomationRun entities.
-func (x *AutomationScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationScopedUpdateOne {
-	x.b.RemoveRuns(v...)
+// SetNillableName sets the "name" field if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableName(v *string) *AutomationScopedUpdateOne {
+	x.b.SetNillableName(v)
 	return x
 }
 
@@ -2993,6 +3011,60 @@ func (x *AutomationScopedUpdateOne) RemoveVersions(v ...*AutomationVersion) *Aut
 	return x
 }
 
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) SetLiveVersion(v *AutomationVersion) *AutomationScopedUpdateOne {
+	x.b.SetLiveVersion(v)
+	return x
+}
+
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) ClearLiveVersion() *AutomationScopedUpdateOne {
+	x.b.ClearLiveVersion()
+	return x
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) SetDraftVersion(v *AutomationVersion) *AutomationScopedUpdateOne {
+	x.b.SetDraftVersion(v)
+	return x
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdateOne) ClearDraftVersion() *AutomationScopedUpdateOne {
+	x.b.ClearDraftVersion()
+	return x
+}
+
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (x *AutomationScopedUpdateOne) AddRunIDs(ids ...int64) *AutomationScopedUpdateOne {
+	x.b.AddRunIDs(ids...)
+	return x
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (x *AutomationScopedUpdateOne) AddRuns(v ...*AutomationRun) *AutomationScopedUpdateOne {
+	x.b.AddRuns(v...)
+	return x
+}
+
+// ClearRuns clears the "runs" edges to the AutomationRun entity.
+func (x *AutomationScopedUpdateOne) ClearRuns() *AutomationScopedUpdateOne {
+	x.b.ClearRuns()
+	return x
+}
+
+// RemoveRunIDs removes the "runs" edge to AutomationRun entities by IDs.
+func (x *AutomationScopedUpdateOne) RemoveRunIDs(ids ...int64) *AutomationScopedUpdateOne {
+	x.b.RemoveRunIDs(ids...)
+	return x
+}
+
+// RemoveRuns removes "runs" edges to AutomationRun entities.
+func (x *AutomationScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationScopedUpdateOne {
+	x.b.RemoveRuns(v...)
+	return x
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (x *AutomationScopedUpdateOne) AddOutboundMessageIDs(ids ...int64) *AutomationScopedUpdateOne {
 	x.b.AddOutboundMessageIDs(ids...)
@@ -3023,47 +3095,23 @@ func (x *AutomationScopedUpdateOne) RemoveOutboundMessages(v ...*OutboundMessage
 	return x
 }
 
-// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
-func (x *AutomationScopedUpdateOne) SetLiveVersion(v *AutomationVersion) *AutomationScopedUpdateOne {
-	x.b.SetLiveVersion(v)
-	return x
-}
-
-// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
-func (x *AutomationScopedUpdateOne) ClearLiveVersion() *AutomationScopedUpdateOne {
-	x.b.ClearLiveVersion()
-	return x
-}
-
-// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
-func (x *AutomationScopedUpdateOne) SetDraftVersion(v *AutomationVersion) *AutomationScopedUpdateOne {
-	x.b.SetDraftVersion(v)
-	return x
-}
-
-// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
-func (x *AutomationScopedUpdateOne) ClearDraftVersion() *AutomationScopedUpdateOne {
-	x.b.ClearDraftVersion()
-	return x
-}
-
 func (x *AutomationScopedUpdateOne) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
-		return fmt.Errorf("runs: %w", err)
-	}
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
 		return fmt.Errorf("versions: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.LiveVersionIDs()); err != nil {
 		return fmt.Errorf("live_version: %w", err)
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.DraftVersionIDs()); err != nil {
 		return fmt.Errorf("draft_version: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
+		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
+		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -3158,18 +3206,6 @@ func (x *AutomationScopedUpdate) ClearDiscardedAt() *AutomationScopedUpdate {
 	return x
 }
 
-// SetName sets the "name" field.
-func (x *AutomationScopedUpdate) SetName(v string) *AutomationScopedUpdate {
-	x.b.SetName(v)
-	return x
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (x *AutomationScopedUpdate) SetNillableName(v *string) *AutomationScopedUpdate {
-	x.b.SetNillableName(v)
-	return x
-}
-
 // SetStatus sets the "status" field.
 func (x *AutomationScopedUpdate) SetStatus(v automation.Status) *AutomationScopedUpdate {
 	x.b.SetStatus(v)
@@ -3179,6 +3215,24 @@ func (x *AutomationScopedUpdate) SetStatus(v automation.Status) *AutomationScope
 // SetNillableStatus sets the "status" field if the given value is not nil.
 func (x *AutomationScopedUpdate) SetNillableStatus(v *automation.Status) *AutomationScopedUpdate {
 	x.b.SetNillableStatus(v)
+	return x
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (x *AutomationScopedUpdate) SetActivatedAt(v time.Time) *AutomationScopedUpdate {
+	x.b.SetActivatedAt(v)
+	return x
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableActivatedAt(v *time.Time) *AutomationScopedUpdate {
+	x.b.SetNillableActivatedAt(v)
+	return x
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (x *AutomationScopedUpdate) ClearActivatedAt() *AutomationScopedUpdate {
+	x.b.ClearActivatedAt()
 	return x
 }
 
@@ -3218,33 +3272,15 @@ func (x *AutomationScopedUpdate) ClearDraftVersionID() *AutomationScopedUpdate {
 	return x
 }
 
-// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
-func (x *AutomationScopedUpdate) AddRunIDs(ids ...int64) *AutomationScopedUpdate {
-	x.b.AddRunIDs(ids...)
+// SetName sets the "name" field.
+func (x *AutomationScopedUpdate) SetName(v string) *AutomationScopedUpdate {
+	x.b.SetName(v)
 	return x
 }
 
-// AddRuns adds the "runs" edges to the AutomationRun entity.
-func (x *AutomationScopedUpdate) AddRuns(v ...*AutomationRun) *AutomationScopedUpdate {
-	x.b.AddRuns(v...)
-	return x
-}
-
-// ClearRuns clears the "runs" edges to the AutomationRun entity.
-func (x *AutomationScopedUpdate) ClearRuns() *AutomationScopedUpdate {
-	x.b.ClearRuns()
-	return x
-}
-
-// RemoveRunIDs removes the "runs" edge to AutomationRun entities by IDs.
-func (x *AutomationScopedUpdate) RemoveRunIDs(ids ...int64) *AutomationScopedUpdate {
-	x.b.RemoveRunIDs(ids...)
-	return x
-}
-
-// RemoveRuns removes "runs" edges to AutomationRun entities.
-func (x *AutomationScopedUpdate) RemoveRuns(v ...*AutomationRun) *AutomationScopedUpdate {
-	x.b.RemoveRuns(v...)
+// SetNillableName sets the "name" field if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableName(v *string) *AutomationScopedUpdate {
+	x.b.SetNillableName(v)
 	return x
 }
 
@@ -3278,6 +3314,60 @@ func (x *AutomationScopedUpdate) RemoveVersions(v ...*AutomationVersion) *Automa
 	return x
 }
 
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) SetLiveVersion(v *AutomationVersion) *AutomationScopedUpdate {
+	x.b.SetLiveVersion(v)
+	return x
+}
+
+// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) ClearLiveVersion() *AutomationScopedUpdate {
+	x.b.ClearLiveVersion()
+	return x
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) SetDraftVersion(v *AutomationVersion) *AutomationScopedUpdate {
+	x.b.SetDraftVersion(v)
+	return x
+}
+
+// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
+func (x *AutomationScopedUpdate) ClearDraftVersion() *AutomationScopedUpdate {
+	x.b.ClearDraftVersion()
+	return x
+}
+
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (x *AutomationScopedUpdate) AddRunIDs(ids ...int64) *AutomationScopedUpdate {
+	x.b.AddRunIDs(ids...)
+	return x
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (x *AutomationScopedUpdate) AddRuns(v ...*AutomationRun) *AutomationScopedUpdate {
+	x.b.AddRuns(v...)
+	return x
+}
+
+// ClearRuns clears the "runs" edges to the AutomationRun entity.
+func (x *AutomationScopedUpdate) ClearRuns() *AutomationScopedUpdate {
+	x.b.ClearRuns()
+	return x
+}
+
+// RemoveRunIDs removes the "runs" edge to AutomationRun entities by IDs.
+func (x *AutomationScopedUpdate) RemoveRunIDs(ids ...int64) *AutomationScopedUpdate {
+	x.b.RemoveRunIDs(ids...)
+	return x
+}
+
+// RemoveRuns removes "runs" edges to AutomationRun entities.
+func (x *AutomationScopedUpdate) RemoveRuns(v ...*AutomationRun) *AutomationScopedUpdate {
+	x.b.RemoveRuns(v...)
+	return x
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (x *AutomationScopedUpdate) AddOutboundMessageIDs(ids ...int64) *AutomationScopedUpdate {
 	x.b.AddOutboundMessageIDs(ids...)
@@ -3308,47 +3398,23 @@ func (x *AutomationScopedUpdate) RemoveOutboundMessages(v ...*OutboundMessage) *
 	return x
 }
 
-// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
-func (x *AutomationScopedUpdate) SetLiveVersion(v *AutomationVersion) *AutomationScopedUpdate {
-	x.b.SetLiveVersion(v)
-	return x
-}
-
-// ClearLiveVersion clears the "live_version" edge to the AutomationVersion entity.
-func (x *AutomationScopedUpdate) ClearLiveVersion() *AutomationScopedUpdate {
-	x.b.ClearLiveVersion()
-	return x
-}
-
-// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
-func (x *AutomationScopedUpdate) SetDraftVersion(v *AutomationVersion) *AutomationScopedUpdate {
-	x.b.SetDraftVersion(v)
-	return x
-}
-
-// ClearDraftVersion clears the "draft_version" edge to the AutomationVersion entity.
-func (x *AutomationScopedUpdate) ClearDraftVersion() *AutomationScopedUpdate {
-	x.b.ClearDraftVersion()
-	return x
-}
-
 func (x *AutomationScopedUpdate) check(ctx context.Context) error {
 	m := x.b.Mutation()
 	_ = m
-	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
-		return fmt.Errorf("runs: %w", err)
-	}
 	if err := x.s.verifyAutomationVersion(ctx, m.VersionsIDs()); err != nil {
 		return fmt.Errorf("versions: %w", err)
-	}
-	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
-		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.LiveVersionIDs()); err != nil {
 		return fmt.Errorf("live_version: %w", err)
 	}
 	if err := x.s.verifyAutomationVersion(ctx, m.DraftVersionIDs()); err != nil {
 		return fmt.Errorf("draft_version: %w", err)
+	}
+	if err := x.s.verifyAutomationRun(ctx, m.RunsIDs()); err != nil {
+		return fmt.Errorf("runs: %w", err)
+	}
+	if err := x.s.verifyOutboundMessage(ctx, m.OutboundMessagesIDs()); err != nil {
+		return fmt.Errorf("outbound_messages: %w", err)
 	}
 	return nil
 }
@@ -23253,12 +23319,6 @@ func (x *RuleScopedCreate) SetNillableDiscardedAt(v *time.Time) *RuleScopedCreat
 	return x
 }
 
-// SetName sets the "name" field.
-func (x *RuleScopedCreate) SetName(v string) *RuleScopedCreate {
-	x.b.SetName(v)
-	return x
-}
-
 // SetStatus sets the "status" field.
 func (x *RuleScopedCreate) SetStatus(v rule.Status) *RuleScopedCreate {
 	x.b.SetStatus(v)
@@ -23304,6 +23364,12 @@ func (x *RuleScopedCreate) SetDraftVersionID(v int64) *RuleScopedCreate {
 // SetNillableDraftVersionID sets the "draft_version_id" field if the given value is not nil.
 func (x *RuleScopedCreate) SetNillableDraftVersionID(v *int64) *RuleScopedCreate {
 	x.b.SetNillableDraftVersionID(v)
+	return x
+}
+
+// SetName sets the "name" field.
+func (x *RuleScopedCreate) SetName(v string) *RuleScopedCreate {
+	x.b.SetName(v)
 	return x
 }
 
@@ -23482,18 +23548,6 @@ func (u *RuleScopedUpsert) ClearDiscardedAt() *RuleScopedUpsert {
 	return u
 }
 
-// SetName sets the "name" field.
-func (u *RuleScopedUpsert) SetName(v string) *RuleScopedUpsert {
-	u.u.Set(rule.FieldName, v)
-	return u
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *RuleScopedUpsert) UpdateName() *RuleScopedUpsert {
-	u.u.SetExcluded(rule.FieldName)
-	return u
-}
-
 // SetStatus sets the "status" field.
 func (u *RuleScopedUpsert) SetStatus(v rule.Status) *RuleScopedUpsert {
 	u.u.Set(rule.FieldStatus, v)
@@ -23545,6 +23599,18 @@ func (u *RuleScopedUpsert) UpdateDraftVersionID() *RuleScopedUpsert {
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (u *RuleScopedUpsert) ClearDraftVersionID() *RuleScopedUpsert {
 	u.u.SetNull(rule.FieldDraftVersionID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *RuleScopedUpsert) SetName(v string) *RuleScopedUpsert {
+	u.u.Set(rule.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *RuleScopedUpsert) UpdateName() *RuleScopedUpsert {
+	u.u.SetExcluded(rule.FieldName)
 	return u
 }
 
@@ -23750,18 +23816,6 @@ func (x *RuleScopedUpdateOne) ClearDiscardedAt() *RuleScopedUpdateOne {
 	return x
 }
 
-// SetName sets the "name" field.
-func (x *RuleScopedUpdateOne) SetName(v string) *RuleScopedUpdateOne {
-	x.b.SetName(v)
-	return x
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (x *RuleScopedUpdateOne) SetNillableName(v *string) *RuleScopedUpdateOne {
-	x.b.SetNillableName(v)
-	return x
-}
-
 // SetStatus sets the "status" field.
 func (x *RuleScopedUpdateOne) SetStatus(v rule.Status) *RuleScopedUpdateOne {
 	x.b.SetStatus(v)
@@ -23825,6 +23879,18 @@ func (x *RuleScopedUpdateOne) SetNillableDraftVersionID(v *int64) *RuleScopedUpd
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (x *RuleScopedUpdateOne) ClearDraftVersionID() *RuleScopedUpdateOne {
 	x.b.ClearDraftVersionID()
+	return x
+}
+
+// SetName sets the "name" field.
+func (x *RuleScopedUpdateOne) SetName(v string) *RuleScopedUpdateOne {
+	x.b.SetName(v)
+	return x
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (x *RuleScopedUpdateOne) SetNillableName(v *string) *RuleScopedUpdateOne {
+	x.b.SetNillableName(v)
 	return x
 }
 
@@ -24020,18 +24086,6 @@ func (x *RuleScopedUpdate) ClearDiscardedAt() *RuleScopedUpdate {
 	return x
 }
 
-// SetName sets the "name" field.
-func (x *RuleScopedUpdate) SetName(v string) *RuleScopedUpdate {
-	x.b.SetName(v)
-	return x
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (x *RuleScopedUpdate) SetNillableName(v *string) *RuleScopedUpdate {
-	x.b.SetNillableName(v)
-	return x
-}
-
 // SetStatus sets the "status" field.
 func (x *RuleScopedUpdate) SetStatus(v rule.Status) *RuleScopedUpdate {
 	x.b.SetStatus(v)
@@ -24095,6 +24149,18 @@ func (x *RuleScopedUpdate) SetNillableDraftVersionID(v *int64) *RuleScopedUpdate
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (x *RuleScopedUpdate) ClearDraftVersionID() *RuleScopedUpdate {
 	x.b.ClearDraftVersionID()
+	return x
+}
+
+// SetName sets the "name" field.
+func (x *RuleScopedUpdate) SetName(v string) *RuleScopedUpdate {
+	x.b.SetName(v)
+	return x
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (x *RuleScopedUpdate) SetNillableName(v *string) *RuleScopedUpdate {
+	x.b.SetNillableName(v)
 	return x
 }
 
@@ -24379,12 +24445,6 @@ func (x *RuleFiringScopedCreate) SetVersionID(v int64) *RuleFiringScopedCreate {
 	return x
 }
 
-// SetNillableVersionID sets the "version_id" field if the given value is not nil.
-func (x *RuleFiringScopedCreate) SetNillableVersionID(v *int64) *RuleFiringScopedCreate {
-	x.b.SetNillableVersionID(v)
-	return x
-}
-
 // SetProperties sets the "properties" field.
 func (x *RuleFiringScopedCreate) SetProperties(v string) *RuleFiringScopedCreate {
 	x.b.SetProperties(v)
@@ -24567,12 +24627,6 @@ func (u *RuleFiringScopedUpsert) UpdateSourceID() *RuleFiringScopedUpsert {
 // UpdateVersionID sets the "version_id" field to the value that was provided on create.
 func (u *RuleFiringScopedUpsert) UpdateVersionID() *RuleFiringScopedUpsert {
 	u.u.SetExcluded(rulefiring.FieldVersionID)
-	return u
-}
-
-// ClearVersionID clears the value of the "version_id" field.
-func (u *RuleFiringScopedUpsert) ClearVersionID() *RuleFiringScopedUpsert {
-	u.u.SetNull(rulefiring.FieldVersionID)
 	return u
 }
 
@@ -24836,12 +24890,6 @@ func (x *RuleFiringScopedUpdateOne) SetNillableVersionID(v *int64) *RuleFiringSc
 	return x
 }
 
-// ClearVersionID clears the value of the "version_id" field.
-func (x *RuleFiringScopedUpdateOne) ClearVersionID() *RuleFiringScopedUpdateOne {
-	x.b.ClearVersionID()
-	return x
-}
-
 // SetProperties sets the "properties" field.
 func (x *RuleFiringScopedUpdateOne) SetProperties(v string) *RuleFiringScopedUpdateOne {
 	x.b.SetProperties(v)
@@ -25054,12 +25102,6 @@ func (x *RuleFiringScopedUpdate) SetVersionID(v int64) *RuleFiringScopedUpdate {
 // SetNillableVersionID sets the "version_id" field if the given value is not nil.
 func (x *RuleFiringScopedUpdate) SetNillableVersionID(v *int64) *RuleFiringScopedUpdate {
 	x.b.SetNillableVersionID(v)
-	return x
-}
-
-// ClearVersionID clears the value of the "version_id" field.
-func (x *RuleFiringScopedUpdate) ClearVersionID() *RuleFiringScopedUpdate {
-	x.b.ClearVersionID()
 	return x
 }
 

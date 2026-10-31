@@ -1,0 +1,185 @@
+{{/*
+The storage half of a Versioned definition (ADR 0065, GLOSSARY: Versioned definition). Every
+entity that embeds VersionedMixin (entc.go finds its mixed-in live_version_id) gets
+<N>Pointers on its scoped wrapper: the operations on its live and draft pointers and on its
+state, written through the scoped, audited builders. internal/drafts, the lifecycle shared by
+every Versioned definition, is written against VersionedStore and is their one caller; nothing
+is hand-written per entity.
+*/}}
+{{ define "scoped_versioned" }}
+{{ template "header" $ }}
+
+{{ $nodes := versionedNodes $ }}
+import (
+	"context"
+	"time"
+
+	{{- range $n := $nodes }}
+	"{{ $.Config.Package }}/{{ $n.Package }}"
+	{{- $V := versionOf $n }}
+	"{{ $.Config.Package }}/{{ $V.Package }}"
+	{{- end }}
+)
+
+// VersionState is what the lifecycle reads of a Versioned definition's row: its state, its two
+// pointers and the versions they point at, as loaded on the row's edges (nil when there is none
+// or it was not loaded).
+type VersionState[O, V any] struct {
+	Row         *O
+	ID          int64
+	Active      bool
+	ActivatedAt *time.Time
+	Archived    bool
+	LiveID      *int64
+	DraftID     *int64
+	Live        *V
+	Draft       *V
+}
+
+// VersionedStore is the storage half of one Versioned definition, bound to a scope: the
+// generated <N>Pointers. Every write goes through the scoped wrapper, so a change of the
+// pointers or the state is an audited write of the row.
+type VersionedStore[O, V any] interface {
+	// Load returns the row with the id, archived or not, with its live version and draft.
+	Load(ctx context.Context, id int64) (*O, error)
+	// Lock takes the row with the id for the rest of the transaction, archived or not, and
+	// returns its state.
+	Lock(ctx context.Context, id int64) (VersionState[O, V], error)
+	// SetDraft points the row at the version as its draft.
+	SetDraft(ctx context.Context, id, versionID int64) error
+	// ClearDraft leaves the row with no draft.
+	ClearDraft(ctx context.Context, id int64) error
+	// Promote makes the version (the draft) live, clears the draft and makes the row active;
+	// activatedAt, when given, is the moment it moved from inactive to active.
+	Promote(ctx context.Context, id, versionID int64, activatedAt *time.Time) error
+	// Activate makes the row active from the moment at.
+	Activate(ctx context.Context, id int64, at time.Time) error
+	// Deactivate makes the row inactive; activated_at stays.
+	Deactivate(ctx context.Context, id int64) error
+	// Newest returns the number of the row's newest version, 0 when it has none.
+	Newest(ctx context.Context, id int64) (int, error)
+	// DeleteVersion removes a version of the row (a dropped draft, which nothing stands on).
+	DeleteVersion(ctx context.Context, id, versionID int64) error
+	// Discard archives the row; Undiscard brings an archived row back.
+	Discard(ctx context.Context, id int64) error
+	Undiscard(ctx context.Context, id int64) error
+}
+
+{{ range $n := $nodes }}
+{{ $N := $n.Name }}
+{{ $P := $n.Package }}
+{{ $V := versionOf $n }}
+{{ $VP := $V.Package }}
+{{ $of := versionOwnerField $n }}
+
+var _ VersionedStore[{{ $N }}, {{ $V.Name }}] = (*{{ $N }}Pointers)(nil)
+
+// VersionState returns the {{ $N }}'s state and the versions loaded on its edges.
+func ({{ $n.Receiver }} *{{ $N }}) VersionState() VersionState[{{ $N }}, {{ $V.Name }}] {
+	return VersionState[{{ $N }}, {{ $V.Name }}]{
+		Row:         {{ $n.Receiver }},
+		ID:          {{ $n.Receiver }}.ID,
+		Active:      {{ $n.Receiver }}.Status == {{ $P }}.StatusActive,
+		ActivatedAt: {{ $n.Receiver }}.ActivatedAt,
+		Archived:    {{ $n.Receiver }}.DiscardedAt != nil,
+		LiveID:      {{ $n.Receiver }}.LiveVersionID,
+		DraftID:     {{ $n.Receiver }}.DraftVersionID,
+		Live:        {{ $n.Receiver }}.Edges.LiveVersion,
+		Draft:       {{ $n.Receiver }}.Edges.DraftVersion,
+	}
+}
+
+// {{ $N }}Pointers are the operations on the live and draft pointers and the state of the
+// Workspace's {{ $N }} rows, a Versioned definition. internal/drafts is their one caller.
+type {{ $N }}Pointers struct {
+	t    *{{ $N }}Scoped
+	with []func(*{{ $V.Name }}Query)
+}
+
+// Pointers returns the pointer operations; with is applied to every version a read loads (its
+// child rows).
+func (t *{{ $N }}Scoped) Pointers(with ...func(*{{ $V.Name }}Query)) *{{ $N }}Pointers {
+	return &{{ $N }}Pointers{t: t, with: with}
+}
+
+func (p *{{ $N }}Pointers) query(id int64) *{{ $N }}Query {
+	return p.t.QueryWithDiscarded().Where({{ $P }}.ID(id)).WithLiveVersion(p.with...).WithDraftVersion(p.with...)
+}
+
+// Load returns the {{ $N }} with the id, archived or not, with its live version and draft.
+func (p *{{ $N }}Pointers) Load(ctx context.Context, id int64) (*{{ $N }}, error) {
+	return p.query(id).Only(ctx)
+}
+
+// Lock takes the {{ $N }} row with the id FOR UPDATE, archived or not, and returns its state.
+func (p *{{ $N }}Pointers) Lock(ctx context.Context, id int64) (VersionState[{{ $N }}, {{ $V.Name }}], error) {
+	row, err := p.query(id).ForUpdate().Only(ctx)
+	if err != nil {
+		return VersionState[{{ $N }}, {{ $V.Name }}]{}, err
+	}
+	return row.VersionState(), nil
+}
+
+// SetDraft points the {{ $N }} at the version as its draft.
+func (p *{{ $N }}Pointers) SetDraft(ctx context.Context, id, versionID int64) error {
+	return p.t.UpdateOneID(id).SetDraftVersionID(versionID).Exec(ctx)
+}
+
+// ClearDraft leaves the {{ $N }} with no draft.
+func (p *{{ $N }}Pointers) ClearDraft(ctx context.Context, id int64) error {
+	return p.t.UpdateOneID(id).ClearDraftVersionID().Exec(ctx)
+}
+
+// Promote makes the version live, clears the draft and makes the {{ $N }} active.
+func (p *{{ $N }}Pointers) Promote(ctx context.Context, id, versionID int64, activatedAt *time.Time) error {
+	u := p.t.UpdateOneID(id).
+		SetLiveVersionID(versionID).
+		ClearDraftVersionID().
+		SetStatus({{ $P }}.StatusActive)
+	if activatedAt != nil {
+		u.SetActivatedAt(*activatedAt)
+	}
+	return u.Exec(ctx)
+}
+
+// Activate makes the {{ $N }} active from the moment at.
+func (p *{{ $N }}Pointers) Activate(ctx context.Context, id int64, at time.Time) error {
+	return p.t.UpdateOneID(id).SetStatus({{ $P }}.StatusActive).SetActivatedAt(at).Exec(ctx)
+}
+
+// Deactivate makes the {{ $N }} inactive.
+func (p *{{ $N }}Pointers) Deactivate(ctx context.Context, id int64) error {
+	return p.t.UpdateOneID(id).SetStatus({{ $P }}.StatusInactive).Exec(ctx)
+}
+
+// Newest returns the number of the {{ $N }}'s newest version, 0 when it has none.
+func (p *{{ $N }}Pointers) Newest(ctx context.Context, id int64) (int, error) {
+	newest, err := p.t.s.{{ $V.Name }}().Query().
+		Where({{ $VP }}.{{ $of.StructField }}(id)).
+		Order(Desc({{ $VP }}.FieldVersion)).
+		First(ctx)
+	if IsNotFound(err) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return newest.Version, nil
+}
+
+// DeleteVersion removes the {{ $N }}'s version with the versionID.
+func (p *{{ $N }}Pointers) DeleteVersion(ctx context.Context, id, versionID int64) error {
+	return p.t.s.{{ $V.Name }}().DeleteOneID(versionID).Where({{ $VP }}.{{ $of.StructField }}(id)).Exec(ctx)
+}
+
+// Discard archives the {{ $N }}.
+func (p *{{ $N }}Pointers) Discard(ctx context.Context, id int64) error {
+	return p.t.Discard(ctx, id)
+}
+
+// Undiscard brings the archived {{ $N }} back.
+func (p *{{ $N }}Pointers) Undiscard(ctx context.Context, id int64) error {
+	return p.t.Undiscard(ctx, id)
+}
+{{ end }}
+{{ end }}

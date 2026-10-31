@@ -1779,7 +1779,7 @@
     "/automations/{id}/archive": {
       "post": {
         "operationId": "Automations_archive",
-        "description": "Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).",
+        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments (`usedBy` carries their count).",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -2248,7 +2248,7 @@
     "/automations/{id}/unarchive": {
       "post": {
         "operationId": "Automations_unarchive",
-        "description": "Restore an archived automation to the list",
+        "description": "Restore an archived automation to the list, inactive: only publish makes it enroll again",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"

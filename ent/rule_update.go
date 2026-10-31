@@ -72,20 +72,6 @@ func (_u *RuleUpdate) ClearDiscardedAt() *RuleUpdate {
 	return _u
 }
 
-// SetName sets the "name" field.
-func (_u *RuleUpdate) SetName(v string) *RuleUpdate {
-	_u.mutation.SetName(v)
-	return _u
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (_u *RuleUpdate) SetNillableName(v *string) *RuleUpdate {
-	if v != nil {
-		_u.SetName(*v)
-	}
-	return _u
-}
-
 // SetStatus sets the "status" field.
 func (_u *RuleUpdate) SetStatus(v rule.Status) *RuleUpdate {
 	_u.mutation.SetStatus(v)
@@ -157,6 +143,20 @@ func (_u *RuleUpdate) SetNillableDraftVersionID(v *int64) *RuleUpdate {
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (_u *RuleUpdate) ClearDraftVersionID() *RuleUpdate {
 	_u.mutation.ClearDraftVersionID()
+	return _u
+}
+
+// SetName sets the "name" field.
+func (_u *RuleUpdate) SetName(v string) *RuleUpdate {
+	_u.mutation.SetName(v)
+	return _u
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_u *RuleUpdate) SetNillableName(v *string) *RuleUpdate {
+	if v != nil {
+		_u.SetName(*v)
+	}
 	return _u
 }
 
@@ -308,14 +308,14 @@ func (_u *RuleUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *RuleUpdate) check() error {
-	if v, ok := _u.mutation.Name(); ok {
-		if err := rule.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := rule.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Rule.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Name(); ok {
+		if err := rule.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
 		}
 	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
@@ -351,9 +351,6 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.DiscardedAtCleared() {
 		_spec.ClearField(rule.FieldDiscardedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Name(); ok {
-		_spec.SetField(rule.FieldName, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(rule.FieldStatus, field.TypeEnum, value)
 	}
@@ -362,6 +359,9 @@ func (_u *RuleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ActivatedAtCleared() {
 		_spec.ClearField(rule.FieldActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Name(); ok {
+		_spec.SetField(rule.FieldName, field.TypeString, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -602,20 +602,6 @@ func (_u *RuleUpdateOne) ClearDiscardedAt() *RuleUpdateOne {
 	return _u
 }
 
-// SetName sets the "name" field.
-func (_u *RuleUpdateOne) SetName(v string) *RuleUpdateOne {
-	_u.mutation.SetName(v)
-	return _u
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (_u *RuleUpdateOne) SetNillableName(v *string) *RuleUpdateOne {
-	if v != nil {
-		_u.SetName(*v)
-	}
-	return _u
-}
-
 // SetStatus sets the "status" field.
 func (_u *RuleUpdateOne) SetStatus(v rule.Status) *RuleUpdateOne {
 	_u.mutation.SetStatus(v)
@@ -687,6 +673,20 @@ func (_u *RuleUpdateOne) SetNillableDraftVersionID(v *int64) *RuleUpdateOne {
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (_u *RuleUpdateOne) ClearDraftVersionID() *RuleUpdateOne {
 	_u.mutation.ClearDraftVersionID()
+	return _u
+}
+
+// SetName sets the "name" field.
+func (_u *RuleUpdateOne) SetName(v string) *RuleUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (_u *RuleUpdateOne) SetNillableName(v *string) *RuleUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
+	}
 	return _u
 }
 
@@ -851,14 +851,14 @@ func (_u *RuleUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *RuleUpdateOne) check() error {
-	if v, ok := _u.mutation.Name(); ok {
-		if err := rule.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := rule.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Rule.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Name(); ok {
+		if err := rule.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
 		}
 	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
@@ -911,9 +911,6 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 	if _u.mutation.DiscardedAtCleared() {
 		_spec.ClearField(rule.FieldDiscardedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.Name(); ok {
-		_spec.SetField(rule.FieldName, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(rule.FieldStatus, field.TypeEnum, value)
 	}
@@ -922,6 +919,9 @@ func (_u *RuleUpdateOne) sqlSave(ctx context.Context) (_node *Rule, err error) {
 	}
 	if _u.mutation.ActivatedAtCleared() {
 		_spec.ClearField(rule.FieldActivatedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Name(); ok {
+		_spec.SetField(rule.FieldName, field.TypeString, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

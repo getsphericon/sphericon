@@ -2,7 +2,6 @@ package rules_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -12,8 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
-	"github.com/getsphericon/sphericon/ent/ruleversion"
-	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -26,6 +23,10 @@ func appliedTags(t *testing.T, v *ent.RuleVersion) []string {
 	require.NoError(t, err)
 	return lo.Map(actions, func(a rules.Action, _ int) string { return a.Tag })
 }
+
+// The lifecycle the Rule shares with the Automation (edit, Publish, Revert, Archive) is tested once,
+// for both, in internal/drafts. These are what only a Rule has: Trigger events, the Condition, the
+// Actions and the Firings.
 
 func TestCreateStoresTheDefinitionAsTheDraftOfAnInactiveRule(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -84,7 +85,8 @@ func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 	assert.Empty(t, again, "the draft's Trigger event is not live")
 }
 
-func TestASecondEditRewritesTheDraftInPlace(t *testing.T) {
+// A rewritten draft keeps the Trigger events (its child rows) of the fields an edit leaves out.
+func TestARewrittenDraftKeepsTheFieldsAnEditLeavesOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
@@ -95,12 +97,8 @@ func TestASecondEditRewritesTheDraftInPlace(t *testing.T) {
 	require.NoError(t, err)
 	_, draft := rules.LiveAndDraft(r)
 	assert.EqualValues(t, fixtures.RuleTagClickedDraftVersionID, draft.ID)
-	assert.Equal(t, 2, draft.Version)
 	assert.Equal(t, []string{"rule-clicked-v3"}, appliedTags(t, draft))
 	assert.Equal(t, []string{"rule_click"}, rules.Triggers(draft), "a field left out keeps the draft's")
-	versions, err := acme(env).RuleVersion().Query().Where(ruleversion.RuleID(fixtures.RuleTagClickedID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 2, versions, "no third version")
 }
 
 // The editor always sends every field; saving it unchanged, or renaming the Rule, makes no draft.
@@ -135,41 +133,6 @@ func TestAnEmptyConditionGroupIsNoChangeToAVersionWithNoCondition(t *testing.T) 
 	assert.Nil(t, draft)
 }
 
-func TestPublishMakesTheDraftLiveAndKeepsTheOldLiveVersion(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
-	before, err := m.Get(ctx, acme(env), fixtures.RuleTagClickedID)
-	require.NoError(t, err)
-
-	r, err := m.Publish(ctx, acme(env), fixtures.RuleTagClickedID)
-
-	require.NoError(t, err)
-	live, draft := rules.LiveAndDraft(r)
-	assert.EqualValues(t, fixtures.RuleTagClickedDraftVersionID, live.ID)
-	assert.Nil(t, draft)
-	assert.Equal(t, before.ActivatedAt, r.ActivatedAt, "republishing an active Rule keeps its activation time")
-	old, err := acme(env).RuleVersion().Get(ctx, fixtures.RuleTagClickedLiveVersionID)
-	require.NoError(t, err, "the old live version stays as history")
-	assert.Equal(t, []string{"rule-clicked"}, appliedTags(t, old))
-}
-
-func TestPublishOfARuleWithOnlyALiveVersionActivatesItAgain(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
-	_, err := m.Deactivate(ctx, acme(env), fixtures.RuleVipOnlyID)
-	require.NoError(t, err)
-
-	r, err := m.Publish(ctx, acme(env), fixtures.RuleVipOnlyID)
-
-	require.NoError(t, err)
-	live, draft := rules.LiveAndDraft(r)
-	assert.Equal(t, rule.StatusActive, r.Status)
-	assert.EqualValues(t, fixtures.RuleVipOnlyID, live.ID)
-	assert.Nil(t, draft)
-}
-
 func TestPublishRefusesADraftWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -185,65 +148,6 @@ func TestPublishRefusesADraftWithNoActions(t *testing.T) {
 	require.NoError(t, err)
 	live, _ := rules.LiveAndDraft(r)
 	assert.EqualValues(t, fixtures.RuleTagClickedLiveVersionID, live.ID)
-}
-
-func TestRevertDropsTheDraft(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
-
-	r, err := m.Revert(ctx, acme(env), fixtures.RuleTagClickedID)
-
-	require.NoError(t, err)
-	live, draft := rules.LiveAndDraft(r)
-	assert.Nil(t, draft)
-	assert.EqualValues(t, fixtures.RuleTagClickedLiveVersionID, live.ID)
-	gone, err := acme(env).RuleVersion().Query().Where(ruleversion.ID(fixtures.RuleTagClickedDraftVersionID)).Exist(ctx)
-	require.NoError(t, err)
-	assert.False(t, gone)
-}
-
-func TestRevertRefusesARuleWithNoDraft(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	_, err := rules.New(env.Cipher, env.Bus).Revert(context.Background(), acme(env), fixtures.RuleVipOnlyID)
-
-	assert.ErrorIs(t, err, rules.ErrNothingToRevert)
-}
-
-// A Rule never published has only its draft, which is its whole definition: nothing to go back to.
-func TestRevertRefusesARuleNeverPublished(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	_, err := rules.New(env.Cipher, env.Bus).Revert(context.Background(), acme(env), fixtures.RuleInactiveID)
-
-	assert.ErrorIs(t, err, rules.ErrNothingToRevert)
-}
-
-func TestRevertOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	_, err := rules.New(env.Cipher, env.Bus).Revert(context.Background(), acme(env), fixtures.RuleGlobexID)
-
-	assert.ErrorIs(t, err, rules.ErrNotFound)
-}
-
-// The edit after a Revert is the version above the live one again.
-func TestAnEditAfterRevertMakesANewDraft(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	m := rules.New(env.Cipher, env.Bus)
-	_, err := m.Revert(ctx, acme(env), fixtures.RuleTagClickedID)
-	require.NoError(t, err)
-	actions := tagAction("rule-clicked-again")
-
-	r, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Actions: &actions})
-
-	require.NoError(t, err)
-	_, draft := rules.LiveAndDraft(r)
-	require.NotNil(t, draft)
-	assert.Equal(t, 2, draft.Version)
-	assert.Equal(t, []string{"rule-clicked-again"}, appliedTags(t, draft))
 }
 
 // A draft names a Tag as much as a live version does (spec #767, "In use"): the Rule never
@@ -284,29 +188,4 @@ func TestDryRunUsesTheDraft(t *testing.T) {
 	assert.Equal(t, rules.WouldFire, res.Outcome)
 	require.Len(t, res.Actions, 1)
 	assert.Contains(t, res.Actions[0].Summary, `"rule-clicked-v2"`)
-}
-
-// The first draft, a Publish and a Revert move the Rule's pointers, so each is an audited write of
-// the Rule; the Actions' values never reach an entry.
-func TestDraftPublishAndRevertAreAudited(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	actor := events.Actor{Kind: events.ActorUser, ID: strconv.Itoa(fixtures.OwnerJohnID), Name: "John"}
-	s := env.Bus.Act(acme(env), actor)
-	m := rules.New(env.Cipher, env.Bus)
-	actions := tagAction("secretish")
-	_, err := m.Update(ctx, s, fixtures.RuleVipOnlyID, rules.UpdateInput{Actions: &actions})
-	require.NoError(t, err)
-
-	_, err = m.Revert(ctx, s, fixtures.RuleVipOnlyID)
-	require.NoError(t, err)
-
-	entries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		e, ok := ev.(*events.AuditEntry)
-		return e, ok && e.TargetType == "rule" && e.TargetID == strconv.Itoa(fixtures.RuleVipOnlyID)
-	})
-	diffs := lo.Map(entries, func(e *events.AuditEntry, _ int) map[string]any { return e.Diff })
-	assert.Len(t, entries, 2, "the draft made and the draft reverted")
-	assert.Contains(t, diffs[0], rule.FieldDraftVersionID)
-	assert.Contains(t, diffs[1], rule.FieldDraftVersionID)
 }

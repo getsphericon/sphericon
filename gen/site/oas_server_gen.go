@@ -241,8 +241,9 @@ type Handler interface {
 	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (SiteAutomationReportsGetRes, error)
 	// SiteAutomationsArchive implements SiteAutomations_archive operation.
 	//
-	// Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can be
-	// restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).
+	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
+	// its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments
+	// (`usedBy` carries their count).
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/archive
 	SiteAutomationsArchive(ctx context.Context, params SiteAutomationsArchiveParams) (SiteAutomationsArchiveRes, error)
@@ -297,7 +298,7 @@ type Handler interface {
 	SiteAutomationsRevert(ctx context.Context, params SiteAutomationsRevertParams) (SiteAutomationsRevertRes, error)
 	// SiteAutomationsUnarchive implements SiteAutomations_unarchive operation.
 	//
-	// Restore an archived automation to the list.
+	// Restore an archived automation to the list, inactive: only publish makes it enroll again.
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/unarchive
 	SiteAutomationsUnarchive(ctx context.Context, params SiteAutomationsUnarchiveParams) (SiteAutomationsUnarchiveRes, error)

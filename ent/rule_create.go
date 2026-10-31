@@ -73,12 +73,6 @@ func (_c *RuleCreate) SetNillableDiscardedAt(v *time.Time) *RuleCreate {
 	return _c
 }
 
-// SetName sets the "name" field.
-func (_c *RuleCreate) SetName(v string) *RuleCreate {
-	_c.mutation.SetName(v)
-	return _c
-}
-
 // SetStatus sets the "status" field.
 func (_c *RuleCreate) SetStatus(v rule.Status) *RuleCreate {
 	_c.mutation.SetStatus(v)
@@ -132,6 +126,12 @@ func (_c *RuleCreate) SetNillableDraftVersionID(v *int64) *RuleCreate {
 	if v != nil {
 		_c.SetDraftVersionID(*v)
 	}
+	return _c
+}
+
+// SetName sets the "name" field.
+func (_c *RuleCreate) SetName(v string) *RuleCreate {
+	_c.mutation.SetName(v)
 	return _c
 }
 
@@ -246,20 +246,20 @@ func (_c *RuleCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "Rule.workspace_id"`)}
 	}
-	if _, ok := _c.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Rule.name"`)}
-	}
-	if v, ok := _c.mutation.Name(); ok {
-		if err := rule.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Rule.status"`)}
 	}
 	if v, ok := _c.mutation.Status(); ok {
 		if err := rule.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Rule.status": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Rule.name"`)}
+	}
+	if v, ok := _c.mutation.Name(); ok {
+		if err := rule.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Rule.name": %w`, err)}
 		}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
@@ -310,10 +310,6 @@ func (_c *RuleCreate) createSpec() (*Rule, *sqlgraph.CreateSpec) {
 		_spec.SetField(rule.FieldDiscardedAt, field.TypeTime, value)
 		_node.DiscardedAt = &value
 	}
-	if value, ok := _c.mutation.Name(); ok {
-		_spec.SetField(rule.FieldName, field.TypeString, value)
-		_node.Name = value
-	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(rule.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
@@ -321,6 +317,10 @@ func (_c *RuleCreate) createSpec() (*Rule, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ActivatedAt(); ok {
 		_spec.SetField(rule.FieldActivatedAt, field.TypeTime, value)
 		_node.ActivatedAt = &value
+	}
+	if value, ok := _c.mutation.Name(); ok {
+		_spec.SetField(rule.FieldName, field.TypeString, value)
+		_node.Name = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -499,18 +499,6 @@ func (u *RuleUpsert) ClearDiscardedAt() *RuleUpsert {
 	return u
 }
 
-// SetName sets the "name" field.
-func (u *RuleUpsert) SetName(v string) *RuleUpsert {
-	u.Set(rule.FieldName, v)
-	return u
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *RuleUpsert) UpdateName() *RuleUpsert {
-	u.SetExcluded(rule.FieldName)
-	return u
-}
-
 // SetStatus sets the "status" field.
 func (u *RuleUpsert) SetStatus(v rule.Status) *RuleUpsert {
 	u.Set(rule.FieldStatus, v)
@@ -574,6 +562,18 @@ func (u *RuleUpsert) UpdateDraftVersionID() *RuleUpsert {
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (u *RuleUpsert) ClearDraftVersionID() *RuleUpsert {
 	u.SetNull(rule.FieldDraftVersionID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *RuleUpsert) SetName(v string) *RuleUpsert {
+	u.Set(rule.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *RuleUpsert) UpdateName() *RuleUpsert {
+	u.SetExcluded(rule.FieldName)
 	return u
 }
 
@@ -677,20 +677,6 @@ func (u *RuleUpsertOne) ClearDiscardedAt() *RuleUpsertOne {
 	})
 }
 
-// SetName sets the "name" field.
-func (u *RuleUpsertOne) SetName(v string) *RuleUpsertOne {
-	return u.Update(func(s *RuleUpsert) {
-		s.SetName(v)
-	})
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *RuleUpsertOne) UpdateName() *RuleUpsertOne {
-	return u.Update(func(s *RuleUpsert) {
-		s.UpdateName()
-	})
-}
-
 // SetStatus sets the "status" field.
 func (u *RuleUpsertOne) SetStatus(v rule.Status) *RuleUpsertOne {
 	return u.Update(func(s *RuleUpsert) {
@@ -765,6 +751,20 @@ func (u *RuleUpsertOne) UpdateDraftVersionID() *RuleUpsertOne {
 func (u *RuleUpsertOne) ClearDraftVersionID() *RuleUpsertOne {
 	return u.Update(func(s *RuleUpsert) {
 		s.ClearDraftVersionID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *RuleUpsertOne) SetName(v string) *RuleUpsertOne {
+	return u.Update(func(s *RuleUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *RuleUpsertOne) UpdateName() *RuleUpsertOne {
+	return u.Update(func(s *RuleUpsert) {
+		s.UpdateName()
 	})
 }
 
@@ -1034,20 +1034,6 @@ func (u *RuleUpsertBulk) ClearDiscardedAt() *RuleUpsertBulk {
 	})
 }
 
-// SetName sets the "name" field.
-func (u *RuleUpsertBulk) SetName(v string) *RuleUpsertBulk {
-	return u.Update(func(s *RuleUpsert) {
-		s.SetName(v)
-	})
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *RuleUpsertBulk) UpdateName() *RuleUpsertBulk {
-	return u.Update(func(s *RuleUpsert) {
-		s.UpdateName()
-	})
-}
-
 // SetStatus sets the "status" field.
 func (u *RuleUpsertBulk) SetStatus(v rule.Status) *RuleUpsertBulk {
 	return u.Update(func(s *RuleUpsert) {
@@ -1122,6 +1108,20 @@ func (u *RuleUpsertBulk) UpdateDraftVersionID() *RuleUpsertBulk {
 func (u *RuleUpsertBulk) ClearDraftVersionID() *RuleUpsertBulk {
 	return u.Update(func(s *RuleUpsert) {
 		s.ClearDraftVersionID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *RuleUpsertBulk) SetName(v string) *RuleUpsertBulk {
+	return u.Update(func(s *RuleUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *RuleUpsertBulk) UpdateName() *RuleUpsertBulk {
+	return u.Update(func(s *RuleUpsert) {
+		s.UpdateName()
 	})
 }
 

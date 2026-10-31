@@ -1324,22 +1324,6 @@ func (c *AutomationClient) QueryWorkspace(_m *Automation) *WorkspaceQuery {
 	return query
 }
 
-// QueryRuns queries the runs edge of a Automation.
-func (c *AutomationClient) QueryRuns(_m *Automation) *AutomationRunQuery {
-	query := (&AutomationRunClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(automation.Table, automation.FieldID, id),
-			sqlgraph.To(automationrun.Table, automationrun.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, automation.RunsTable, automation.RunsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryVersions queries the versions edge of a Automation.
 func (c *AutomationClient) QueryVersions(_m *Automation) *AutomationVersionQuery {
 	query := (&AutomationVersionClient{config: c.config}).Query()
@@ -1349,22 +1333,6 @@ func (c *AutomationClient) QueryVersions(_m *Automation) *AutomationVersionQuery
 			sqlgraph.From(automation.Table, automation.FieldID, id),
 			sqlgraph.To(automationversion.Table, automationversion.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, automation.VersionsTable, automation.VersionsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryOutboundMessages queries the outbound_messages edge of a Automation.
-func (c *AutomationClient) QueryOutboundMessages(_m *Automation) *OutboundMessageQuery {
-	query := (&OutboundMessageClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(automation.Table, automation.FieldID, id),
-			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, automation.OutboundMessagesTable, automation.OutboundMessagesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -1397,6 +1365,38 @@ func (c *AutomationClient) QueryDraftVersion(_m *Automation) *AutomationVersionQ
 			sqlgraph.From(automation.Table, automation.FieldID, id),
 			sqlgraph.To(automationversion.Table, automationversion.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, automation.DraftVersionTable, automation.DraftVersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRuns queries the runs edge of a Automation.
+func (c *AutomationClient) QueryRuns(_m *Automation) *AutomationRunQuery {
+	query := (&AutomationRunClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, id),
+			sqlgraph.To(automationrun.Table, automationrun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, automation.RunsTable, automation.RunsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOutboundMessages queries the outbound_messages edge of a Automation.
+func (c *AutomationClient) QueryOutboundMessages(_m *Automation) *OutboundMessageQuery {
+	query := (&OutboundMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automation.Table, automation.FieldID, id),
+			sqlgraph.To(outboundmessage.Table, outboundmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, automation.OutboundMessagesTable, automation.OutboundMessagesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

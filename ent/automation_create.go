@@ -74,12 +74,6 @@ func (_c *AutomationCreate) SetNillableDiscardedAt(v *time.Time) *AutomationCrea
 	return _c
 }
 
-// SetName sets the "name" field.
-func (_c *AutomationCreate) SetName(v string) *AutomationCreate {
-	_c.mutation.SetName(v)
-	return _c
-}
-
 // SetStatus sets the "status" field.
 func (_c *AutomationCreate) SetStatus(v automation.Status) *AutomationCreate {
 	_c.mutation.SetStatus(v)
@@ -90,6 +84,20 @@ func (_c *AutomationCreate) SetStatus(v automation.Status) *AutomationCreate {
 func (_c *AutomationCreate) SetNillableStatus(v *automation.Status) *AutomationCreate {
 	if v != nil {
 		_c.SetStatus(*v)
+	}
+	return _c
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (_c *AutomationCreate) SetActivatedAt(v time.Time) *AutomationCreate {
+	_c.mutation.SetActivatedAt(v)
+	return _c
+}
+
+// SetNillableActivatedAt sets the "activated_at" field if the given value is not nil.
+func (_c *AutomationCreate) SetNillableActivatedAt(v *time.Time) *AutomationCreate {
+	if v != nil {
+		_c.SetActivatedAt(*v)
 	}
 	return _c
 }
@@ -122,6 +130,12 @@ func (_c *AutomationCreate) SetNillableDraftVersionID(v *int64) *AutomationCreat
 	return _c
 }
 
+// SetName sets the "name" field.
+func (_c *AutomationCreate) SetName(v string) *AutomationCreate {
+	_c.mutation.SetName(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationCreate) SetID(v int64) *AutomationCreate {
 	_c.mutation.SetID(v)
@@ -131,21 +145,6 @@ func (_c *AutomationCreate) SetID(v int64) *AutomationCreate {
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_c *AutomationCreate) SetWorkspace(v *Workspace) *AutomationCreate {
 	return _c.SetWorkspaceID(v.ID)
-}
-
-// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
-func (_c *AutomationCreate) AddRunIDs(ids ...int64) *AutomationCreate {
-	_c.mutation.AddRunIDs(ids...)
-	return _c
-}
-
-// AddRuns adds the "runs" edges to the AutomationRun entity.
-func (_c *AutomationCreate) AddRuns(v ...*AutomationRun) *AutomationCreate {
-	ids := make([]int64, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddRunIDs(ids...)
 }
 
 // AddVersionIDs adds the "versions" edge to the AutomationVersion entity by IDs.
@@ -163,6 +162,31 @@ func (_c *AutomationCreate) AddVersions(v ...*AutomationVersion) *AutomationCrea
 	return _c.AddVersionIDs(ids...)
 }
 
+// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
+func (_c *AutomationCreate) SetLiveVersion(v *AutomationVersion) *AutomationCreate {
+	return _c.SetLiveVersionID(v.ID)
+}
+
+// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
+func (_c *AutomationCreate) SetDraftVersion(v *AutomationVersion) *AutomationCreate {
+	return _c.SetDraftVersionID(v.ID)
+}
+
+// AddRunIDs adds the "runs" edge to the AutomationRun entity by IDs.
+func (_c *AutomationCreate) AddRunIDs(ids ...int64) *AutomationCreate {
+	_c.mutation.AddRunIDs(ids...)
+	return _c
+}
+
+// AddRuns adds the "runs" edges to the AutomationRun entity.
+func (_c *AutomationCreate) AddRuns(v ...*AutomationRun) *AutomationCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRunIDs(ids...)
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (_c *AutomationCreate) AddOutboundMessageIDs(ids ...int64) *AutomationCreate {
 	_c.mutation.AddOutboundMessageIDs(ids...)
@@ -176,16 +200,6 @@ func (_c *AutomationCreate) AddOutboundMessages(v ...*OutboundMessage) *Automati
 		ids[i] = v[i].ID
 	}
 	return _c.AddOutboundMessageIDs(ids...)
-}
-
-// SetLiveVersion sets the "live_version" edge to the AutomationVersion entity.
-func (_c *AutomationCreate) SetLiveVersion(v *AutomationVersion) *AutomationCreate {
-	return _c.SetLiveVersionID(v.ID)
-}
-
-// SetDraftVersion sets the "draft_version" edge to the AutomationVersion entity.
-func (_c *AutomationCreate) SetDraftVersion(v *AutomationVersion) *AutomationCreate {
-	return _c.SetDraftVersionID(v.ID)
 }
 
 // Mutation returns the AutomationMutation object of the builder.
@@ -248,20 +262,20 @@ func (_c *AutomationCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "Automation.workspace_id"`)}
 	}
-	if _, ok := _c.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Automation.name"`)}
-	}
-	if v, ok := _c.mutation.Name(); ok {
-		if err := automation.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Automation.name": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Automation.status"`)}
 	}
 	if v, ok := _c.mutation.Status(); ok {
 		if err := automation.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Automation.status": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Automation.name"`)}
+	}
+	if v, ok := _c.mutation.Name(); ok {
+		if err := automation.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Automation.name": %w`, err)}
 		}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
@@ -312,13 +326,17 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 		_spec.SetField(automation.FieldDiscardedAt, field.TypeTime, value)
 		_node.DiscardedAt = &value
 	}
-	if value, ok := _c.mutation.Name(); ok {
-		_spec.SetField(automation.FieldName, field.TypeString, value)
-		_node.Name = value
-	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(automation.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.ActivatedAt(); ok {
+		_spec.SetField(automation.FieldActivatedAt, field.TypeTime, value)
+		_node.ActivatedAt = &value
+	}
+	if value, ok := _c.mutation.Name(); ok {
+		_spec.SetField(automation.FieldName, field.TypeString, value)
+		_node.Name = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -337,22 +355,6 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 		_node.WorkspaceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.RunsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   automation.RunsTable,
-			Columns: []string{automation.RunsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
 	if nodes := _c.mutation.VersionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -362,22 +364,6 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: true,
-			Table:   automation.OutboundMessagesTable,
-			Columns: []string{automation.OutboundMessagesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -417,6 +403,38 @@ func (_c *AutomationCreate) createSpec() (*Automation, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.DraftVersionID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   automation.RunsTable,
+			Columns: []string{automation.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   automation.OutboundMessagesTable,
+			Columns: []string{automation.OutboundMessagesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outboundmessage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -513,18 +531,6 @@ func (u *AutomationUpsert) ClearDiscardedAt() *AutomationUpsert {
 	return u
 }
 
-// SetName sets the "name" field.
-func (u *AutomationUpsert) SetName(v string) *AutomationUpsert {
-	u.Set(automation.FieldName, v)
-	return u
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *AutomationUpsert) UpdateName() *AutomationUpsert {
-	u.SetExcluded(automation.FieldName)
-	return u
-}
-
 // SetStatus sets the "status" field.
 func (u *AutomationUpsert) SetStatus(v automation.Status) *AutomationUpsert {
 	u.Set(automation.FieldStatus, v)
@@ -534,6 +540,24 @@ func (u *AutomationUpsert) SetStatus(v automation.Status) *AutomationUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *AutomationUpsert) UpdateStatus() *AutomationUpsert {
 	u.SetExcluded(automation.FieldStatus)
+	return u
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (u *AutomationUpsert) SetActivatedAt(v time.Time) *AutomationUpsert {
+	u.Set(automation.FieldActivatedAt, v)
+	return u
+}
+
+// UpdateActivatedAt sets the "activated_at" field to the value that was provided on create.
+func (u *AutomationUpsert) UpdateActivatedAt() *AutomationUpsert {
+	u.SetExcluded(automation.FieldActivatedAt)
+	return u
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (u *AutomationUpsert) ClearActivatedAt() *AutomationUpsert {
+	u.SetNull(automation.FieldActivatedAt)
 	return u
 }
 
@@ -570,6 +594,18 @@ func (u *AutomationUpsert) UpdateDraftVersionID() *AutomationUpsert {
 // ClearDraftVersionID clears the value of the "draft_version_id" field.
 func (u *AutomationUpsert) ClearDraftVersionID() *AutomationUpsert {
 	u.SetNull(automation.FieldDraftVersionID)
+	return u
+}
+
+// SetName sets the "name" field.
+func (u *AutomationUpsert) SetName(v string) *AutomationUpsert {
+	u.Set(automation.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *AutomationUpsert) UpdateName() *AutomationUpsert {
+	u.SetExcluded(automation.FieldName)
 	return u
 }
 
@@ -673,20 +709,6 @@ func (u *AutomationUpsertOne) ClearDiscardedAt() *AutomationUpsertOne {
 	})
 }
 
-// SetName sets the "name" field.
-func (u *AutomationUpsertOne) SetName(v string) *AutomationUpsertOne {
-	return u.Update(func(s *AutomationUpsert) {
-		s.SetName(v)
-	})
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *AutomationUpsertOne) UpdateName() *AutomationUpsertOne {
-	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateName()
-	})
-}
-
 // SetStatus sets the "status" field.
 func (u *AutomationUpsertOne) SetStatus(v automation.Status) *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
@@ -698,6 +720,27 @@ func (u *AutomationUpsertOne) SetStatus(v automation.Status) *AutomationUpsertOn
 func (u *AutomationUpsertOne) UpdateStatus() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (u *AutomationUpsertOne) SetActivatedAt(v time.Time) *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetActivatedAt(v)
+	})
+}
+
+// UpdateActivatedAt sets the "activated_at" field to the value that was provided on create.
+func (u *AutomationUpsertOne) UpdateActivatedAt() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateActivatedAt()
+	})
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (u *AutomationUpsertOne) ClearActivatedAt() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.ClearActivatedAt()
 	})
 }
 
@@ -740,6 +783,20 @@ func (u *AutomationUpsertOne) UpdateDraftVersionID() *AutomationUpsertOne {
 func (u *AutomationUpsertOne) ClearDraftVersionID() *AutomationUpsertOne {
 	return u.Update(func(s *AutomationUpsert) {
 		s.ClearDraftVersionID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *AutomationUpsertOne) SetName(v string) *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *AutomationUpsertOne) UpdateName() *AutomationUpsertOne {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateName()
 	})
 }
 
@@ -1009,20 +1066,6 @@ func (u *AutomationUpsertBulk) ClearDiscardedAt() *AutomationUpsertBulk {
 	})
 }
 
-// SetName sets the "name" field.
-func (u *AutomationUpsertBulk) SetName(v string) *AutomationUpsertBulk {
-	return u.Update(func(s *AutomationUpsert) {
-		s.SetName(v)
-	})
-}
-
-// UpdateName sets the "name" field to the value that was provided on create.
-func (u *AutomationUpsertBulk) UpdateName() *AutomationUpsertBulk {
-	return u.Update(func(s *AutomationUpsert) {
-		s.UpdateName()
-	})
-}
-
 // SetStatus sets the "status" field.
 func (u *AutomationUpsertBulk) SetStatus(v automation.Status) *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
@@ -1034,6 +1077,27 @@ func (u *AutomationUpsertBulk) SetStatus(v automation.Status) *AutomationUpsertB
 func (u *AutomationUpsertBulk) UpdateStatus() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetActivatedAt sets the "activated_at" field.
+func (u *AutomationUpsertBulk) SetActivatedAt(v time.Time) *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetActivatedAt(v)
+	})
+}
+
+// UpdateActivatedAt sets the "activated_at" field to the value that was provided on create.
+func (u *AutomationUpsertBulk) UpdateActivatedAt() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateActivatedAt()
+	})
+}
+
+// ClearActivatedAt clears the value of the "activated_at" field.
+func (u *AutomationUpsertBulk) ClearActivatedAt() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.ClearActivatedAt()
 	})
 }
 
@@ -1076,6 +1140,20 @@ func (u *AutomationUpsertBulk) UpdateDraftVersionID() *AutomationUpsertBulk {
 func (u *AutomationUpsertBulk) ClearDraftVersionID() *AutomationUpsertBulk {
 	return u.Update(func(s *AutomationUpsert) {
 		s.ClearDraftVersionID()
+	})
+}
+
+// SetName sets the "name" field.
+func (u *AutomationUpsertBulk) SetName(v string) *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *AutomationUpsertBulk) UpdateName() *AutomationUpsertBulk {
+	return u.Update(func(s *AutomationUpsert) {
+		s.UpdateName()
 	})
 }
 

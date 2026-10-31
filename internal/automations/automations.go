@@ -7,7 +7,6 @@
 package automations
 
 import (
-	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -18,8 +17,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/drafts"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/events"
@@ -158,16 +157,22 @@ func validate(steps []Step) error {
 // Module is the automations module.
 type Module struct {
 	cipher   *secrets.Cipher
-	bus      *events.Bus
 	renderer *emaildoc.Renderer
+	life     *drafts.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
 }
 
 // New builds the automations module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets; the bus
-// opens the transaction that saves an Automation together with its steps; the renderer builds an
+// opens the transaction of each move of the definition (internal/drafts); the renderer builds an
 // email step's body from its document.
 func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer) *Module {
-	return &Module{cipher: cipher, bus: bus, renderer: renderer}
+	m := &Module{cipher: cipher, renderer: renderer}
+	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
+		NotFound:         ErrNotFound,
+		NothingToPublish: ErrNothingToPublish,
+		NothingToRevert:  ErrNothingToRevert,
+	})
+	return m
 }
 
 // build renders every email step that holds a document to its body, in the same save (ADR 0040,
@@ -242,7 +247,7 @@ type UpdateInput struct {
 // LiveAndDraft returns the Automation's live version and its draft, each nil when it has none.
 // The Automations this module returns carry both.
 func LiveAndDraft(a *ent.Automation) (live, draft *ent.AutomationVersion) {
-	return a.Edges.LiveVersion, a.Edges.DraftVersion
+	return drafts.LiveAndDraft(a)
 }
 
 // withVersions loads the live version and the draft of the Automations a query returns.
@@ -316,182 +321,183 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automat
 // Create stores a new inactive Automation whose first version is its draft: nothing is live until
 // it is published (ADR 0065).
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*ent.Automation, error) {
-	if err := validateTrigger(in.TriggerEvent); err != nil {
-		return nil, err
-	}
-	built, err := m.build(ctx, in.Steps)
+	steps, err := m.build(ctx, in.Steps)
 	if err != nil {
 		return nil, err
 	}
-	in.Steps = built
-	if err := validate(in.Steps); err != nil {
-		return nil, err
+	owner := func(ctx context.Context, ts *ent.Scoped) (int64, error) {
+		a, err := ts.Automation().Create().SetName(in.Name).Save(ctx)
+		if err != nil {
+			return 0, err
+		}
+		return a.ID, nil
 	}
-	if err := checkIntegration(ctx, s, in.IntegrationID); err != nil {
-		return nil, err
-	}
-	def := "[]"
+	e := edit{trigger: &in.TriggerEvent, integrationID: in.IntegrationID}
 	if in.Steps != nil {
-		sealed, err := m.sealSteps(in.Steps, nil)
-		if err != nil {
-			return nil, err
-		}
-		if def, err = Encode(sealed); err != nil {
-			return nil, err
-		}
+		e.steps = &steps
 	}
-	var id int64
-	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		a, err := ts.Automation().Create().
-			SetName(in.Name).
-			SetStatus(automation.StatusInactive).
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-		id = a.ID
-		v, err := ts.AutomationVersion().Create().
-			SetAutomationID(a.ID).
-			SetVersion(1).
-			SetTriggerEvent(in.TriggerEvent).
-			SetNillableIntegrationID(in.IntegrationID).
-			SetSteps(def).
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-		return ts.Automation().UpdateOneID(a.ID).SetDraftVersionID(v.ID).Exec(ctx)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return m.Get(ctx, s, id)
+	return m.life.Create(ctx, s, owner, e)
 }
 
-// Update renames the Automation and writes its definition to the draft (ADR 0065): the fields
-// left out keep the draft's, or the live version's when there is no draft. The live version is
-// never rewritten: the first edit above it creates the draft, the next ones rewrite the draft in
-// place. A definition equal to the draft's (or, with no draft, the live version's) stores nothing.
-// The status is untouched.
+// Update renames the Automation and writes its definition to the draft (ADR 0065, internal/drafts):
+// the fields left out keep the draft's, or the live version's when there is no draft. The live
+// version is never rewritten: the first edit above it creates the draft, the next ones rewrite the
+// draft in place. A definition equal to the draft's (or, with no draft, the live version's) stores
+// nothing. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
-	if in.TriggerEvent != nil {
-		if err := validateTrigger(*in.TriggerEvent); err != nil {
-			return nil, err
-		}
-	}
-	var steps []Step
+	e := edit{trigger: in.TriggerEvent, integrationID: in.IntegrationID, clearIntegration: in.ClearIntegration}
 	if in.Steps != nil {
 		built, err := m.build(ctx, *in.Steps)
 		if err != nil {
 			return nil, err
 		}
-		if err := validate(built); err != nil {
-			return nil, err
-		}
-		steps = built
+		e.steps = &built
 	}
-	if err := checkIntegration(ctx, s, in.IntegrationID); err != nil {
-		return nil, err
-	}
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		a, err := m.lock(ctx, ts, id)
-		if err != nil {
-			return err
+	rename := func(ctx context.Context, ts *ent.Scoped, a *ent.Automation) error {
+		if in.Name == nil || *in.Name == a.Name {
+			return nil
 		}
-		if in.Name != nil && *in.Name != a.Name {
-			if err := ts.Automation().UpdateOneID(id).SetName(*in.Name).Exec(ctx); err != nil {
-				return err
-			}
-		}
-		return m.saveDraft(ctx, ts, a, in, steps)
-	})
-	if err != nil {
-		return nil, notFound(err)
+		return ts.Automation().UpdateOneID(a.ID).SetName(*in.Name).Exec(ctx)
 	}
-	return m.Get(ctx, s, id)
+	return m.life.Edit(ctx, s, id, rename, e)
 }
 
-// lock takes the Automation row for the rest of the transaction, archived or not, and returns it
-// with its live version and draft: Enroll reads the live version under a share lock, so it waits
-// for a Publish or an edit in flight, and two edits of one draft take turns.
-func (m *Module) lock(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	if _, err := s.Automation().QueryWithDiscarded().Where(automation.ID(id)).ForUpdate().OnlyID(ctx); err != nil {
-		return nil, notFound(err)
-	}
-	return m.Get(ctx, s, id)
+// edit is a change of an Automation's definition; nil fields keep the base's. The steps are built
+// (their documents rendered) before the transaction.
+type edit struct {
+	trigger          *string
+	integrationID    *int64
+	clearIntegration bool
+	steps            *[]Step
 }
 
-// saveDraft merges the edit onto the draft, or onto the live version when there is none, and
-// stores the result as the draft.
-func (m *Module) saveDraft(ctx context.Context, s *ent.Scoped, a *ent.Automation, in UpdateInput, steps []Step) error {
-	live, draft := LiveAndDraft(a)
-	base := cmp.Or(draft, live)
-	if base == nil {
-		return ErrNoVersion
+// definition is the content of an Automation version as stored: its Trigger, its Integration (nil
+// for the Workspace default) and its encoded, sealed steps.
+type definition struct {
+	trigger       string
+	integrationID *int64
+	steps         string
+}
+
+// versioned is the Automation's part of the lifecycle (drafts.Definition).
+type versioned struct{ m *Module }
+
+func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.AutomationVersion] {
+	return s.Automation().Pointers()
+}
+
+// Merge lays the edit over the base version (nil for a new Automation) and validates what it
+// changes: the Trigger, the Integration (kept, not archived) and the steps. An HTTP step that
+// names one of the base's steps by ID keeps the secrets it does not resend.
+func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
+	def := definition{steps: "[]"}
+	var stored []Step
+	if base != nil {
+		var err error
+		if stored, err = Decode(base.Steps); err != nil {
+			return definition{}, err
+		}
+		if def, err = canonical(base); err != nil {
+			return definition{}, err
+		}
 	}
-	trigger := base.TriggerEvent
-	if in.TriggerEvent != nil {
-		trigger = *in.TriggerEvent
+	if e.trigger != nil {
+		if err := validateTrigger(*e.trigger); err != nil {
+			return definition{}, err
+		}
+		def.trigger = *e.trigger
 	}
-	integrationID := base.IntegrationID
 	switch {
-	case in.ClearIntegration:
-		integrationID = nil
-	case in.IntegrationID != nil:
-		integrationID = in.IntegrationID
+	case e.clearIntegration:
+		def.integrationID = nil
+	case e.integrationID != nil:
+		if err := checkIntegration(ctx, ts, e.integrationID); err != nil {
+			return definition{}, err
+		}
+		def.integrationID = e.integrationID
 	}
-	stored, err := Decode(base.Steps)
-	if err != nil {
-		return err
-	}
-	// The stored steps in the form Encode writes them, so that an unchanged edit compares equal
-	// whatever wrote the stored JSON.
-	unchanged, err := Encode(stored)
-	if err != nil {
-		return err
-	}
-	def := unchanged
-	if in.Steps != nil {
-		sealed, err := m.sealSteps(steps, stored)
+	if e.steps != nil {
+		if err := validate(*e.steps); err != nil {
+			return definition{}, err
+		}
+		sealed, err := v.m.sealSteps(*e.steps, stored)
 		if err != nil {
-			return err
+			return definition{}, err
 		}
-		if def, err = Encode(sealed); err != nil {
-			return err
+		if def.steps, err = Encode(sealed); err != nil {
+			return definition{}, err
 		}
 	}
-	sameIntegration := equalIDs(integrationID, base.IntegrationID)
-	if trigger == base.TriggerEvent && sameIntegration && def == unchanged {
-		return nil
+	return def, nil
+}
+
+// canonical is the definition a version holds, its steps in the form Encode writes them, so that
+// an unchanged edit compares equal whatever wrote the stored JSON.
+func canonical(v *ent.AutomationVersion) (definition, error) {
+	stored, err := Decode(v.Steps)
+	if err != nil {
+		return definition{}, err
 	}
+	steps, err := Encode(stored)
+	if err != nil {
+		return definition{}, err
+	}
+	return definition{trigger: v.TriggerEvent, integrationID: v.IntegrationID, steps: steps}, nil
+}
+
+func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
+	held, err := canonical(v)
+	return err == nil && held.trigger == def.trigger && equalIDs(held.integrationID, def.integrationID) && held.steps == def.steps
+}
+
+func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int, draft *ent.AutomationVersion, def definition) (int64, error) {
 	if draft != nil {
-		upd := s.AutomationVersion().UpdateOneID(draft.ID).
-			SetTriggerEvent(trigger).
-			SetSteps(def).
-			SetNillableIntegrationID(integrationID)
-		if integrationID == nil {
+		upd := ts.AutomationVersion().UpdateOneID(draft.ID).
+			SetTriggerEvent(def.trigger).
+			SetSteps(def.steps).
+			SetNillableIntegrationID(def.integrationID)
+		if def.integrationID == nil {
 			upd.ClearIntegrationID()
 		}
-		return upd.Exec(ctx)
+		return draft.ID, upd.Exec(ctx)
 	}
-	newest, err := s.AutomationVersion().Query().
-		Where(automationversion.AutomationID(a.ID)).
-		Order(ent.Desc(automationversion.FieldVersion)).
-		First(ctx)
-	if err != nil {
-		return err
-	}
-	created, err := s.AutomationVersion().Create().
-		SetAutomationID(a.ID).
-		SetVersion(newest.Version + 1).
-		SetTriggerEvent(trigger).
-		SetNillableIntegrationID(integrationID).
-		SetSteps(def).
+	created, err := ts.AutomationVersion().Create().
+		SetAutomationID(id).
+		SetVersion(number).
+		SetTriggerEvent(def.trigger).
+		SetNillableIntegrationID(def.integrationID).
+		SetSteps(def.steps).
 		Save(ctx)
 	if err != nil {
+		return 0, err
+	}
+	return created.ID, nil
+}
+
+// Publishable checks the draft's Trigger again, and its Integration must still be kept.
+func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.AutomationVersion) error {
+	if err := validateTrigger(draft.TriggerEvent); err != nil {
 		return err
 	}
-	return s.Automation().UpdateOneID(a.ID).SetDraftVersionID(created.ID).Exec(ctx)
+	return checkIntegration(ctx, ts, draft.IntegrationID)
+}
+
+// Archivable refuses to archive an Automation a kept Rule enrolls Contacts in, or one with active
+// Enrollments: an *inuse.Error carrying them.
+func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automation) error {
+	if err := refuseWhileEnrolledByRules(ctx, ts, a.ID); err != nil {
+		return err
+	}
+	active, err := ts.AutomationRun().Query().
+		Where(automationrun.AutomationID(a.ID), automationrun.StatusEQ(automationrun.StatusActive)).
+		Count(ctx)
+	if err != nil {
+		return err
+	}
+	if active > 0 {
+		return &inuse.Error{What: inuse.SubjectAutomation, Users: []inuse.User{inuse.Enrollments(a.ID, a.Name, active)}}
+	}
+	return nil
 }
 
 func equalIDs(a, b *int64) bool {
@@ -560,116 +566,44 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return &inuse.Error{What: inuse.SubjectAutomation, Users: users}
 }
 
-// Archive discards an Automation (ADR 0049): it leaves the lists and enrolls nobody, and its
-// Enrollments stay. An Automation with active Enrollments is refused with an *inuse.Error
-// carrying their count. Archiving an archived Automation changes nothing.
+// Archive discards an Automation (ADR 0049, internal/drafts): it leaves the lists and enrolls
+// nobody, and its Enrollments stay. It also makes the Automation inactive, so Unarchive never
+// re-arms it without a Publish. An Automation with active Enrollments, or one a kept Rule enrolls
+// Contacts in, is refused with an *inuse.Error naming them. Archiving an archived Automation
+// changes nothing.
 func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
-	a, err := m.Get(ctx, s, id)
-	if err != nil {
-		return err
-	}
-	if a.DiscardedAt != nil {
-		return nil
-	}
-	if err := refuseWhileEnrolledByRules(ctx, s, id); err != nil {
-		return err
-	}
-	active, err := s.AutomationRun().Query().
-		Where(automationrun.AutomationID(id), automationrun.StatusEQ(automationrun.StatusActive)).
-		Count(ctx)
-	if err != nil {
-		return err
-	}
-	if active > 0 {
-		return &inuse.Error{What: inuse.SubjectAutomation, Users: []inuse.User{inuse.Enrollments(id, a.Name, active)}}
-	}
-	return notFound(s.Automation().Discard(ctx, id))
+	return m.life.Archive(ctx, s, id)
 }
 
-// Unarchive brings an archived Automation back to the lists. Restoring one that is not
-// archived changes nothing.
+// Unarchive brings an archived Automation back to the lists, inactive: only Publish makes it
+// enroll again. Restoring one that is not archived changes nothing.
 func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return notFound(s.Automation().Restore(ctx, id))
+	return m.life.Unarchive(ctx, s, id)
 }
 
-// Publish makes the draft live and the Automation active: new Enrollments begin on the draft's
-// definition, and the old live version stays as history; the Enrollments already on it finish
-// there. With no draft it makes an inactive live version active again and leaves an active one as
-// it is; with neither it is refused. The draft's Trigger is checked again and its Integration must
-// still be kept. Publish is send-class (ADR 0065): the surfaces gate it by the publish scope. An
-// archived Automation enrolls nobody and is restored before it is published, so it is as good as
-// absent here: ErrNotFound.
+// Publish makes the draft live and the Automation active (internal/drafts): new Enrollments begin
+// on the draft's definition, and the old live version stays as history; the Enrollments already on
+// it finish there. With no draft it makes an inactive live version active again and leaves an
+// active one as it is; with neither it is refused. The draft's Trigger is checked again and its
+// Integration must still be kept. Publish is send-class (ADR 0065): the surfaces gate it by the
+// publish scope. An archived Automation enrolls nobody and is restored before it is published, so
+// it is as good as absent here: ErrNotFound.
 func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		a, err := m.lock(ctx, ts, id)
-		if err != nil {
-			return err
-		}
-		if a.DiscardedAt != nil {
-			return ErrNotFound
-		}
-		live, draft := LiveAndDraft(a)
-		upd := ts.Automation().UpdateOneID(id).SetStatus(automation.StatusActive)
-		switch {
-		case draft != nil:
-			if err := validateTrigger(draft.TriggerEvent); err != nil {
-				return err
-			}
-			if err := checkIntegration(ctx, ts, draft.IntegrationID); err != nil {
-				return err
-			}
-			upd.SetLiveVersionID(draft.ID).ClearDraftVersionID()
-		case live == nil:
-			return ErrNothingToPublish
-		case a.Status == automation.StatusActive:
-			return nil // live and active already
-		}
-		return upd.Exec(ctx)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return m.Get(ctx, s, id)
+	return m.life.Publish(ctx, s, id)
 }
 
 // Revert drops the draft: the live version is again the Automation's latest. It is refused
 // unless there is a draft above a live version, since a never-published Automation's draft is
-// its whole definition. Nothing stands on a draft, so the version goes. Revert is authoring.
+// its whole definition. Revert is authoring.
 func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		a, err := m.lock(ctx, ts, id)
-		if err != nil {
-			return err
-		}
-		live, draft := LiveAndDraft(a)
-		if live == nil || draft == nil {
-			return ErrNothingToRevert
-		}
-		// The pointer is cleared through the client first, so the Audit log records the Revert;
-		// the key's SET NULL would leave no trace.
-		if err := ts.Automation().UpdateOneID(id).ClearDraftVersionID().Exec(ctx); err != nil {
-			return err
-		}
-		return ts.AutomationVersion().DeleteOneID(draft.ID).Exec(ctx)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return m.Get(ctx, s, id)
+	return m.life.Revert(ctx, s, id)
 }
 
 // Deactivate makes the Automation inactive: it stops new Enrollments, and in-flight ones finish.
 // Its live version and draft stay. It is authoring: it can only stop sending, never start it. An
 // archived Automation enrolls nobody, so it is as good as absent here: ErrNotFound.
 func (m *Module) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
-	n, err := s.Automation().Update().Where(automation.ID(id), automation.DiscardedAtIsNil()).SetStatus(automation.StatusInactive).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if n == 0 {
-		return nil, ErrNotFound
-	}
-	return m.Get(ctx, s, id)
+	return m.life.Deactivate(ctx, s, id)
 }
 
 func notFound(err error) error {

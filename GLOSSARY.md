@@ -378,6 +378,14 @@ One copy of a Rule's definition: its Trigger events, its Condition and its Actio
 as for an Automation version; a Firing runs the version that fired.
 _Avoid_: Revision, snapshot
 
+**Versioned definition**:
+An object whose definition is kept in versions, a **live version** and a **draft**, and changes only
+by **Publish**; its name, status and archiving stay on the object. Today the Automation and the Rule.
+They share one lifecycle: an edit writes the draft, Publish makes it live, **Revert** drops it,
+Deactivate stops the object, and Archive makes it inactive too, so restoring it never re-arms a send.
+A Broadcast is not one: a scheduled Broadcast holds a copy of its Condition instead.
+_Avoid_: Versioned entity, revisioned object, publishable
+
 **Publish**:
 The send-class act that makes the draft of an Automation or a Rule its live version and makes it
 active; with no draft, it makes the live version active again. The only way the definition of a

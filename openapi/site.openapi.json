@@ -5010,7 +5010,7 @@
     "/workspaces/{workspaceId}/automations/{id}/archive": {
       "post": {
         "operationId": "SiteAutomations_archive",
-        "description": "Archive an automation: it leaves the list, enrolls nobody and keeps its enrollments, and can\nbe restored. Refused with 409 while it has active enrollments (`usedBy` carries their count).",
+        "description": "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and\nkeeps its enrollments. It can be restored, inactive. Refused with 409 while it has active\nenrollments (`usedBy` carries their count).",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
@@ -5232,7 +5232,7 @@
     "/workspaces/{workspaceId}/automations/{id}/unarchive": {
       "post": {
         "operationId": "SiteAutomations_unarchive",
-        "description": "Restore an archived automation to the list",
+        "description": "Restore an archived automation to the list, inactive: only publish makes it enroll again",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteAutomationResourceKey.workspaceId"
