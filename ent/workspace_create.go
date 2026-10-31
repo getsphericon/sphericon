@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -199,6 +200,20 @@ func (_c *WorkspaceCreate) SetAttributionWindowDays(v int) *WorkspaceCreate {
 func (_c *WorkspaceCreate) SetNillableAttributionWindowDays(v *int) *WorkspaceCreate {
 	if v != nil {
 		_c.SetAttributionWindowDays(*v)
+	}
+	return _c
+}
+
+// SetSendCap sets the "send_cap" field.
+func (_c *WorkspaceCreate) SetSendCap(v int) *WorkspaceCreate {
+	_c.mutation.SetSendCap(v)
+	return _c
+}
+
+// SetNillableSendCap sets the "send_cap" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableSendCap(v *int) *WorkspaceCreate {
+	if v != nil {
+		_c.SetSendCap(*v)
 	}
 	return _c
 }
@@ -585,6 +600,21 @@ func (_c *WorkspaceCreate) AddProviderLimiters(v ...*ProviderLimiter) *Workspace
 		ids[i] = v[i].ID
 	}
 	return _c.AddProviderLimiterIDs(ids...)
+}
+
+// AddSendCapLimiterIDs adds the "send_cap_limiters" edge to the SendCapLimiter entity by IDs.
+func (_c *WorkspaceCreate) AddSendCapLimiterIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddSendCapLimiterIDs(ids...)
+	return _c
+}
+
+// AddSendCapLimiters adds the "send_cap_limiters" edges to the SendCapLimiter entity.
+func (_c *WorkspaceCreate) AddSendCapLimiters(v ...*SendCapLimiter) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSendCapLimiterIDs(ids...)
 }
 
 // AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
@@ -1054,6 +1084,11 @@ func (_c *WorkspaceCreate) check() error {
 			return &ValidationError{Name: "attribution_window_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.attribution_window_days": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.SendCap(); ok {
+		if err := workspace.SendCapValidator(v); err != nil {
+			return &ValidationError{Name: "send_cap", err: fmt.Errorf(`ent: validator failed for field "Workspace.send_cap": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
 		return &ValidationError{Name: "domain_join_enabled", err: errors.New(`ent: missing required field "Workspace.domain_join_enabled"`)}
 	}
@@ -1148,6 +1183,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.AttributionWindowDays(); ok {
 		_spec.SetField(workspace.FieldAttributionWindowDays, field.TypeInt, value)
 		_node.AttributionWindowDays = value
+	}
+	if value, ok := _c.mutation.SendCap(); ok {
+		_spec.SetField(workspace.FieldSendCap, field.TypeInt, value)
+		_node.SendCap = &value
 	}
 	if value, ok := _c.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
@@ -1414,6 +1453,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SendCapLimitersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendCapLimitersTable,
+			Columns: []string{workspace.SendCapLimitersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendcaplimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2003,6 +2058,30 @@ func (u *WorkspaceUpsert) AddAttributionWindowDays(v int) *WorkspaceUpsert {
 	return u
 }
 
+// SetSendCap sets the "send_cap" field.
+func (u *WorkspaceUpsert) SetSendCap(v int) *WorkspaceUpsert {
+	u.Set(workspace.FieldSendCap, v)
+	return u
+}
+
+// UpdateSendCap sets the "send_cap" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateSendCap() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldSendCap)
+	return u
+}
+
+// AddSendCap adds v to the "send_cap" field.
+func (u *WorkspaceUpsert) AddSendCap(v int) *WorkspaceUpsert {
+	u.Add(workspace.FieldSendCap, v)
+	return u
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (u *WorkspaceUpsert) ClearSendCap() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldSendCap)
+	return u
+}
+
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
 func (u *WorkspaceUpsert) SetDomainJoinEnabled(v bool) *WorkspaceUpsert {
 	u.Set(workspace.FieldDomainJoinEnabled, v)
@@ -2447,6 +2526,34 @@ func (u *WorkspaceUpsertOne) AddAttributionWindowDays(v int) *WorkspaceUpsertOne
 func (u *WorkspaceUpsertOne) UpdateAttributionWindowDays() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateAttributionWindowDays()
+	})
+}
+
+// SetSendCap sets the "send_cap" field.
+func (u *WorkspaceUpsertOne) SetSendCap(v int) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetSendCap(v)
+	})
+}
+
+// AddSendCap adds v to the "send_cap" field.
+func (u *WorkspaceUpsertOne) AddSendCap(v int) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddSendCap(v)
+	})
+}
+
+// UpdateSendCap sets the "send_cap" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateSendCap() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateSendCap()
+	})
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (u *WorkspaceUpsertOne) ClearSendCap() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearSendCap()
 	})
 }
 
@@ -3094,6 +3201,34 @@ func (u *WorkspaceUpsertBulk) AddAttributionWindowDays(v int) *WorkspaceUpsertBu
 func (u *WorkspaceUpsertBulk) UpdateAttributionWindowDays() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateAttributionWindowDays()
+	})
+}
+
+// SetSendCap sets the "send_cap" field.
+func (u *WorkspaceUpsertBulk) SetSendCap(v int) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetSendCap(v)
+	})
+}
+
+// AddSendCap adds v to the "send_cap" field.
+func (u *WorkspaceUpsertBulk) AddSendCap(v int) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.AddSendCap(v)
+	})
+}
+
+// UpdateSendCap sets the "send_cap" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateSendCap() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateSendCap()
+	})
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (u *WorkspaceUpsertBulk) ClearSendCap() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearSendCap()
 	})
 }
 

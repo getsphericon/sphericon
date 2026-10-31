@@ -15,9 +15,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// A sending Broadcast reports progress and an ETA derived from its last scheduled
-// time; a held one reports progress but no ETA (a hold is not a busy source); a draft
-// has no progress at all.
+// A sending Broadcast reports progress, an ETA derived from its last scheduled time or its
+// Workspace's Send cap, whichever is later, and which of the two limits it; a held one reports
+// progress but no ETA and no limit (a hold is not a busy source); a draft has no progress at all.
 func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -51,6 +51,16 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	got, ok := progress.EstimatedCompletionAt.Get()
 	require.True(t, ok)
 	assert.WithinDuration(t, eta, time.Time(got), time.Second, "timestamps are served to the second")
+	assert.Equal(t, siteapi.NewNilSiteBroadcastLimit(siteapi.SiteBroadcastLimitProviderLimit), progress.LimitedBy, "the planner paced it by the Provider limit")
+
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
+	progress, ok = get().Progress.Get()
+	require.True(t, ok)
+	assert.Equal(t, siteapi.NewNilSiteBroadcastLimit(siteapi.SiteBroadcastLimitSendCap), progress.LimitedBy, "a Send cap of one a day outlasts the schedule")
+	got, ok = progress.EstimatedCompletionAt.Get()
+	require.True(t, ok)
+	assert.WithinDuration(t, time.Now().Add(24*time.Hour), time.Time(got), time.Minute, "the second recipient waits a day")
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).ClearSendCap().ExecX(ctx)
 
 	list, err := c.SiteBroadcastsList(ctx, siteapi.SiteBroadcastsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -68,4 +78,5 @@ func TestSiteBroadcastProgressAndETA(t *testing.T) {
 	assert.Equal(t, int32(2), progress.RemainingCount, "recipients stay intact under a hold")
 	_, hasETA := progress.EstimatedCompletionAt.Get()
 	assert.False(t, hasETA, "no ETA while held")
+	assert.True(t, progress.LimitedBy.IsNull(), "a hold is not a limit")
 }

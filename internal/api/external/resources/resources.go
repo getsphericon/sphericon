@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
+	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/go-faster/jx"
@@ -99,6 +100,7 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
 // goverter:extend optNilString
+// goverter:extend optNilSendCap
 // goverter:extend optNilContactSource
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
@@ -115,6 +117,8 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:extend nilInt32
 // goverter:extend nilString
 // goverter:extend count
+// goverter:extend maxPerDay
+// goverter:extend workspaceTimezone
 // goverter:extend omitEmpty
 // goverter:extend providerLimitSource
 // goverter:extend optTimestamp
@@ -248,6 +252,17 @@ type Converter interface {
 	SesConfigToResource(source integrations.RedactedSES) externalapi.SesConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) externalapi.ProviderLimitStatus
+	// goverter:map Sent24h SentLast24h
+	SendCapToResource(source providerlimit.SendCapStatus) externalapi.SendCap
+	// The Send cap that applies (outbound.Module.SendCapStatus), null when none does.
+	SendCapStatusToResource(source *providerlimit.SendCapStatus) externalapi.OptNilSendCap
+
+	// The numeric key stays internal: the contract's id is the Workspace id.
+	// goverter:map PublicID ID
+	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
+	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
+	// goverter:ignore SendCap
+	WorkspaceToResource(source *ent.Workspace) externalapi.WorkspaceResource
 
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
 	// are the edges the rules module loads (ADR 0065).
@@ -455,6 +470,14 @@ func count(n int) int32 { return narrow.Int32(n) }
 // eventAction is one distinct action name of the Workspace's Events.
 func eventAction(action string) externalapi.EventActionResource {
 	return externalapi.EventActionResource{Action: action}
+}
+
+// maxPerDay narrows a rolling 24-hour limit to the contract's bounded int32.
+func maxPerDay(n int) externalapi.MaxPerDay { return externalapi.MaxPerDay(narrow.Int32(n)) }
+
+// workspaceTimezone is the Workspace time zone, UTC while an Owner has not set one (ADR 0057).
+func workspaceTimezone(v *string) externalapi.TimeZoneName {
+	return externalapi.TimeZoneName(reportday.Name(v))
 }
 
 // nilCurrencyCode is the Reporting currency, null until an Owner or Admin chooses one (ADR 0064).
@@ -711,4 +734,9 @@ func schemaExample(doc json.RawMessage) externalapi.EmailSchemaResultExample {
 // Condition's table, listed so a client offers what the server takes.
 func customFieldRuleOperators(t customfield.Type) []externalapi.ConditionOperator {
 	return lo.Map(condition.RuleOperators(t), func(op string, _ int) externalapi.ConditionOperator { return externalapi.ConditionOperator(op) })
+}
+
+// optNilSendCap is null exactly when no Send cap applies.
+func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) externalapi.OptNilSendCap {
+	return convert.NilVia[externalapi.OptNilSendCap](v, c.SendCapToResource)
 }

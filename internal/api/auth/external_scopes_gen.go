@@ -122,4 +122,5 @@ var ExternalOperationScopes = map[externalapi.OperationName][]apitokens.Scope{
 	externalapi.WebhooksRegenerateSecretOperation:  {apitokens.ScopeWebhooksRegenerate},
 	externalapi.WebhooksTestOperation:              {apitokens.ScopeWebhooksTest},
 	externalapi.WebhooksUpdateOperation:            {apitokens.ScopeWebhooksWrite},
+	externalapi.WorkspaceGetOperation:              nil,
 }

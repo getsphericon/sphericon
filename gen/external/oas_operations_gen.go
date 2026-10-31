@@ -117,4 +117,5 @@ const (
 	WebhooksRegenerateSecretOperation  OperationName = "WebhooksRegenerateSecret"
 	WebhooksTestOperation              OperationName = "WebhooksTest"
 	WebhooksUpdateOperation            OperationName = "WebhooksUpdate"
+	WorkspaceGetOperation              OperationName = "WorkspaceGet"
 )

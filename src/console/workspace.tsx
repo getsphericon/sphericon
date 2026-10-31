@@ -17,6 +17,7 @@ import { AuditLogCard } from './AuditLogCard.tsx'
 import { DeliverabilityCard } from './deliverability.tsx'
 import { HoldsCard } from './HoldsCard.tsx'
 import { ExemptionAction, SuspensionActions } from './SuspensionActions.tsx'
+import { WorkspaceSendCapCard } from './WorkspaceSendCapCard.tsx'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -146,6 +147,9 @@ function WorkspaceCards({ workspaceId }: { workspaceId: string }) {
         </Stack>
       </Card>
       <SuspensionCard workspaceId={workspace.id} suspension={workspace.suspension} />
+      {workspace.sendCap ? (
+        <WorkspaceSendCapCard workspaceId={workspace.id} sendCap={workspace.sendCap} />
+      ) : null}
       <AbuseCard workspaceId={workspace.id} abuse={workspace.abuse} />
       <HoldsCard holds={workspace.holds} />
       <DeliverabilityCard deliverability={workspace.deliverability} />

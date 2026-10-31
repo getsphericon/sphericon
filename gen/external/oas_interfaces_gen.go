@@ -444,3 +444,7 @@ type WebhooksTestRes interface {
 type WebhooksUpdateRes interface {
 	webhooksUpdateRes()
 }
+
+type WorkspaceGetRes interface {
+	workspaceGetRes()
+}

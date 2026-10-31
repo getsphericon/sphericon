@@ -44,6 +44,57 @@ model StaffInstanceState {
 
   /** The page that documents the schema of the Telemetry report */
   telemetrySchemaUrl: string;
+
+  /** The Send cap every new Workspace starts with; absent on an Instance that has no Send caps */
+  defaultSendCap?: StaffDefaultSendCap;
+}
+
+/** The default Send cap (ADR 0067): copied onto every Workspace created from now on. Changing it
+ * leaves the Send caps of existing Workspaces as they are. */
+model StaffDefaultSendCap {
+  /** Messages per rolling 24 hours; null when new Workspaces get no Send cap */
+  perDay: MaxPerDay | null;
+}
+
+/** The default Send cap a Staff member sets */
+model StaffDefaultSendCapInput {
+  /** Messages per rolling 24 hours */
+  perDay: MaxPerDay;
+}
+
+/** The outcome of setting or clearing the default Send cap: the default as it now stands, and
+ * whether anything changed (setting the same value, or clearing none, changes nothing) */
+model StaffDefaultSendCapChange {
+  changed: boolean;
+  defaultSendCap: StaffDefaultSendCap;
+}
+
+/** One entry of the Instance audit log (ADR 0070): a Staff member changed a setting of the
+ * Instance itself */
+model StaffInstanceAuditEntryResource {
+  /** Unique identifier */
+  id: EntityId;
+
+  /** When the change was made */
+  occurredAt: Timestamp;
+
+  /** The Staff member who made it */
+  actor: StaffResource;
+
+  /** What was changed, as `instance.<what>_change` */
+  action: string;
+
+  /** The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there
+   * was no value, `to` where it was cleared */
+  diff: Record<unknown>;
+}
+
+/** A page of the Instance audit log, newest first */
+model StaffInstanceAuditEntryList {
+  items: StaffInstanceAuditEntryResource[];
+
+  /** Pass as `cursor` for the next page; absent on the last page */
+  nextCursor?: string | null;
 }
 
 /** Switch the Telemetry report on or off */
@@ -82,4 +133,40 @@ namespace StaffInstance {
   @get
   @route("/telemetry/preview")
   op previewTelemetryReport(): Record<unknown> | UnauthorizedProblem;
+
+  /** Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created
+   * from now on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit
+   * log. Idempotent. Not found on an Instance that has no Send caps. */
+  @put
+  @route("/default-send-cap")
+  op setDefaultSendCap(@body body: StaffDefaultSendCapInput):
+    | StaffDefaultSendCapChange
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | NotFoundProblem;
+
+  /** Remove the default Send cap: Workspaces created from now on get no Send cap; existing
+   * Workspaces keep theirs. Recorded in the Instance audit log. Idempotent. Not found on an
+   * Instance that has no Send caps. */
+  @delete
+  @route("/default-send-cap")
+  op clearDefaultSendCap():
+    | StaffDefaultSendCapChange
+    | UnauthorizedProblem
+    | NotFoundProblem;
+
+  /** The Instance audit log (ADR 0070), newest first: the changes Staff members made to the
+   * Instance's own settings */
+  @get
+  @route("/audit-entries")
+  op listAuditEntries(
+    /** Cursor from a previous page */
+    @query cursor?: string,
+
+    /** Page size */
+    @query
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 25,
+  ): StaffInstanceAuditEntryList | BadRequestProblem | UnauthorizedProblem;
 }

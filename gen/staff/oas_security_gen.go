@@ -36,8 +36,11 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 var operationRolesApiKeyAuth = map[string][]string{
 	StaffAuthLogoutOperation:                     []string{},
 	StaffInstanceAcknowledgeNoticeOperation:      []string{},
+	StaffInstanceClearDefaultSendCapOperation:    []string{},
 	StaffInstanceGetStateOperation:               []string{},
+	StaffInstanceListAuditEntriesOperation:       []string{},
 	StaffInstancePreviewTelemetryReportOperation: []string{},
+	StaffInstanceSetDefaultSendCapOperation:      []string{},
 	StaffInstanceSetTelemetryOperation:           []string{},
 	StaffMeGetOperation:                          []string{},
 	StaffSignupItemsArchiveOperation:             []string{},

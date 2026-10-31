@@ -998,6 +998,36 @@ var (
 			},
 		},
 	}
+	// InstanceAuditEntriesColumns holds the columns for the "instance_audit_entries" table.
+	InstanceAuditEntriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "action", Type: field.TypeString},
+		{Name: "diff", Type: field.TypeJSON},
+		{Name: "staff_member_id", Type: field.TypeInt64},
+	}
+	// InstanceAuditEntriesTable holds the schema information for the "instance_audit_entries" table.
+	InstanceAuditEntriesTable = &schema.Table{
+		Name:       "instance_audit_entries",
+		Columns:    InstanceAuditEntriesColumns,
+		PrimaryKey: []*schema.Column{InstanceAuditEntriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "instance_audit_entries_staff_members_staff_member",
+				Columns:    []*schema.Column{InstanceAuditEntriesColumns[5]},
+				RefColumns: []*schema.Column{StaffMembersColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "instanceauditentry_staff_member_id",
+				Unique:  false,
+				Columns: []*schema.Column{InstanceAuditEntriesColumns[5]},
+			},
+		},
+	}
 	// InstanceStateColumns holds the columns for the "instance_state" table.
 	InstanceStateColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1009,6 +1039,7 @@ var (
 		{Name: "last_report_sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "latest_release", Type: field.TypeString, Nullable: true},
 		{Name: "latest_release_checked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "default_send_cap", Type: field.TypeInt, Nullable: true},
 	}
 	// InstanceStateTable holds the schema information for the "instance_state" table.
 	InstanceStateTable = &schema.Table{
@@ -2122,6 +2153,36 @@ var (
 			},
 		},
 	}
+	// SendCapLimitersColumns holds the columns for the "send_cap_limiters" table.
+	SendCapLimitersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "day_fill", Type: field.TypeFloat64},
+		{Name: "refilled_at", Type: field.TypeTime},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// SendCapLimitersTable holds the schema information for the "send_cap_limiters" table.
+	SendCapLimitersTable = &schema.Table{
+		Name:       "send_cap_limiters",
+		Columns:    SendCapLimitersColumns,
+		PrimaryKey: []*schema.Column{SendCapLimitersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "send_cap_limiters_workspaces_send_cap_limiters",
+				Columns:    []*schema.Column{SendCapLimitersColumns[5]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sendcaplimiter_workspace_id",
+				Unique:  true,
+				Columns: []*schema.Column{SendCapLimitersColumns[5]},
+			},
+		},
+	}
 	// SendingDomainsColumns holds the columns for the "sending_domains" table.
 	SendingDomainsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2643,6 +2704,7 @@ var (
 		{Name: "timezone", Type: field.TypeString, Nullable: true},
 		{Name: "reporting_currency", Type: field.TypeString, Nullable: true},
 		{Name: "attribution_window_days", Type: field.TypeInt, Default: 5},
+		{Name: "send_cap", Type: field.TypeInt, Nullable: true},
 		{Name: "domain_join_enabled", Type: field.TypeBool, Default: false},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
@@ -2665,7 +2727,7 @@ var (
 			{
 				Name:    "workspace_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[15], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspacesColumns[16], WorkspacesColumns[0]},
 			},
 		},
 	}
@@ -2691,6 +2753,7 @@ var (
 		EventsTable,
 		HeldOrderEventsTable,
 		HoldsTable,
+		InstanceAuditEntriesTable,
 		InstanceStateTable,
 		IntegrationsTable,
 		InvitationsTable,
@@ -2716,6 +2779,7 @@ var (
 		RuleVersionTriggersTable,
 		SchemaStateTable,
 		SegmentsTable,
+		SendCapLimitersTable,
 		SendingDomainsTable,
 		ServiceCredentialsTable,
 		SignupItemsTable,
@@ -2872,6 +2936,10 @@ func init() {
 	HoldsTable.Annotation = &entsql.Annotation{
 		Table: "holds",
 	}
+	InstanceAuditEntriesTable.ForeignKeys[0].RefTable = StaffMembersTable
+	InstanceAuditEntriesTable.Annotation = &entsql.Annotation{
+		Table: "instance_audit_entries",
+	}
 	InstanceStateTable.Annotation = &entsql.Annotation{
 		Table: "instance_state",
 	}
@@ -3015,6 +3083,10 @@ func init() {
 	SegmentsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SegmentsTable.Annotation = &entsql.Annotation{
 		Table: "segments",
+	}
+	SendCapLimitersTable.ForeignKeys[0].RefTable = WorkspacesTable
+	SendCapLimitersTable.Annotation = &entsql.Annotation{
+		Table: "send_cap_limiters",
 	}
 	SendingDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SendingDomainsTable.Annotation = &entsql.Annotation{

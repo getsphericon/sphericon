@@ -24,6 +24,18 @@ model SiteWorkspaceHold {
   actionUrl?: string | null;
 }
 
+/** The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
+ * all its Integrations, Transactional included. The platform sets it; the Workspace only reads it.
+ * Sends beyond it wait for the 24-hour window to free up; Transactional mail is never delayed. It
+ * is not a Provider limit, which each Integration sets for its own provider account. */
+model SiteSendCap {
+  /** Messages per rolling 24 hours */
+  perDay: MaxPerDay;
+
+  /** Messages the Workspace sent over the last 24 hours */
+  sentLast24h: int32;
+}
+
 /** Workspace the current user belongs to */
 @resource("workspaces")
 @segment("workspaces")
@@ -91,6 +103,10 @@ model SiteWorkspaceResource {
    * After it, every request to this Workspace answers 403 with code
    * second_factor_required until the User enrolls one. */
   secondFactorGraceEndsAt?: Timestamp | null;
+
+  /** The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null
+   * when no Send cap applies. Read-only: no operation lets the Workspace change it. */
+  sendCap?: SiteSendCap | null;
 
   /** Whether the authenticated User may open the Account link: true only for an
    * Owner, and only on an installation configured for it. */

@@ -66,6 +66,9 @@ type HeldOrderEvent func(*sql.Selector)
 // Hold is the predicate function for hold builders.
 type Hold func(*sql.Selector)
 
+// InstanceAuditEntry is the predicate function for instanceauditentry builders.
+type InstanceAuditEntry func(*sql.Selector)
+
 // InstanceState is the predicate function for instancestate builders.
 type InstanceState func(*sql.Selector)
 
@@ -152,6 +155,9 @@ type SchemaState func(*sql.Selector)
 
 // Segment is the predicate function for segment builders.
 type Segment func(*sql.Selector)
+
+// SendCapLimiter is the predicate function for sendcaplimiter builders.
+type SendCapLimiter func(*sql.Selector)
 
 // SendingDomain is the predicate function for sendingdomain builders.
 type SendingDomain func(*sql.Selector)

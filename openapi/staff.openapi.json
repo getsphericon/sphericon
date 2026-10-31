@@ -3,7 +3,7 @@
   "info": {
     "title": "Sphericon StaffMember API",
     "version": "1.0.0",
-    "description": "The core API of the Staff console, served on every Instance (ADR 0063): sign-in with a password and a TOTP, the signed-in Staff member, and the Instance's own settings: its Sign-up items with their Legal documents (ADR 0062) and its Telemetry report (ADR 0032). The Enterprise sections are a contract of their own (staffee), served under the same prefix with the same session cookie."
+    "description": "The core API of the Staff console, served on every Instance (ADR 0063): sign-in with a password and a TOTP, the signed-in Staff member, and the Instance's own settings: its Sign-up items with their Legal documents (ADR 0062), its Telemetry report (ADR 0032), the default Send cap of new Workspaces (ADR 0067) and the Instance audit log (ADR 0070). The Enterprise sections are a contract of their own (staffee), served under the same prefix with the same session cookie."
   },
   "tags": [
     {
@@ -269,6 +269,169 @@
           },
           "401": {
             "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Instance"]
+      }
+    },
+    "/instance/audit-entries": {
+      "get": {
+        "operationId": "StaffInstance_listAuditEntries",
+        "description": "The Instance audit log (ADR 0070), newest first: the changes Staff members made to the\nInstance's own settings",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Cursor from a previous page",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page size",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffInstanceAuditEntryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Instance"]
+      }
+    },
+    "/instance/default-send-cap": {
+      "put": {
+        "operationId": "StaffInstance_setDefaultSendCap",
+        "description": "Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created\nfrom now on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit\nlog. Idempotent. Not found on an Instance that has no Send caps.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffDefaultSendCapChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Instance"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffDefaultSendCapInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "StaffInstance_clearDefaultSendCap",
+        "description": "Remove the default Send cap: Workspaces created from now on get no Send cap; existing\nWorkspaces keep theirs. Recorded in the Instance audit log. Idempotent. Not found on an\nInstance that has no Send caps.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffDefaultSendCapChange"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1127,6 +1290,13 @@
         "maxLength": 100000,
         "description": "A Legal document's text, in Markdown"
       },
+      "MaxPerDay": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 100000000,
+        "description": "A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap"
+      },
       "PaymentRequiredProblem": {
         "type": "object",
         "required": ["body"],
@@ -1272,6 +1442,51 @@
         "maxLength": 200,
         "description": "A Sign-up item's title: what the sign-up form shows"
       },
+      "StaffDefaultSendCap": {
+        "type": "object",
+        "required": ["perDay"],
+        "properties": {
+          "perDay": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerDay"
+              }
+            ],
+            "nullable": true,
+            "description": "Messages per rolling 24 hours; null when new Workspaces get no Send cap"
+          }
+        },
+        "description": "The default Send cap (ADR 0067): copied onto every Workspace created from now on. Changing it\nleaves the Send caps of existing Workspaces as they are."
+      },
+      "StaffDefaultSendCapChange": {
+        "type": "object",
+        "required": ["changed", "defaultSendCap"],
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          },
+          "defaultSendCap": {
+            "$ref": "#/components/schemas/StaffDefaultSendCap"
+          }
+        },
+        "description": "The outcome of setting or clearing the default Send cap: the default as it now stands, and\nwhether anything changed (setting the same value, or clearing none, changes nothing)"
+      },
+      "StaffDefaultSendCapInput": {
+        "type": "object",
+        "required": ["perDay"],
+        "properties": {
+          "perDay": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerDay"
+              }
+            ],
+            "description": "Messages per rolling 24 hours"
+          }
+        },
+        "description": "The default Send cap a Staff member sets"
+      },
       "StaffEnrolment": {
         "type": "object",
         "required": ["secret", "uri", "qrCode"],
@@ -1290,6 +1505,64 @@
           }
         },
         "description": "A TOTP secret awaiting its first confirming code"
+      },
+      "StaffInstanceAuditEntryList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffInstanceAuditEntryResource"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `cursor` for the next page; absent on the last page"
+          }
+        },
+        "description": "A page of the Instance audit log, newest first"
+      },
+      "StaffInstanceAuditEntryResource": {
+        "type": "object",
+        "required": ["id", "occurredAt", "actor", "action", "diff"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "occurredAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the change was made"
+          },
+          "actor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffResource"
+              }
+            ],
+            "description": "The Staff member who made it"
+          },
+          "action": {
+            "type": "string",
+            "description": "What was changed, as `instance.<what>_change`"
+          },
+          "diff": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there\nwas no value, `to` where it was cleared"
+          }
+        },
+        "description": "One entry of the Instance audit log (ADR 0070): a Staff member changed a setting of the\nInstance itself"
       },
       "StaffInstanceState": {
         "type": "object",
@@ -1322,6 +1595,14 @@
           "telemetrySchemaUrl": {
             "type": "string",
             "description": "The page that documents the schema of the Telemetry report"
+          },
+          "defaultSendCap": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffDefaultSendCap"
+              }
+            ],
+            "description": "The Send cap every new Workspace starts with; absent on an Instance that has no Send caps"
           }
         },
         "description": "The Instance's own settings and state, which belong to no Workspace (ADR 0063): what a Staff\nmember sees and decides about the Instance itself."

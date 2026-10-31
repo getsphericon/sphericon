@@ -66,7 +66,7 @@ var (
 		"contacts_list", "contacts_create", "contacts_get", "contacts_update", "contacts_delete", "contacts_erase_by", "contacts_export",
 		"broadcasts_list", "broadcasts_create", "broadcasts_get", "broadcasts_update", "broadcasts_delete",
 		"broadcasts_set_segment", "broadcasts_test_send", "broadcasts_report", "broadcasts_archive", "broadcasts_unarchive",
-		"events_record", "events_actions_list", "whoami",
+		"events_record", "events_actions_list", "whoami", "workspace_get",
 		"custom_fields_list", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_archive", "sending_domains_unarchive", "sending_domains_verify", "sending_domains_rates",
 		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_archive", "integrations_unarchive", "presets_list",
 		"captured_messages_list", "captured_messages_get", "captured_messages_delete",
@@ -335,6 +335,25 @@ func TestMCPIntegrationsListReadsProviderLimitAndUsage(t *testing.T) {
 	assert.Equal(t, 14, page.Items[0].ProviderLimit.PerSecond.Limit)
 	assert.Equal(t, "manual", page.Items[0].ProviderLimit.PerSecond.Source)
 	assert.Equal(t, 2, page.Items[0].ProviderLimit.SentLast24h)
+}
+
+// An agent reads its Workspace's Send cap and last-24-hour sends (ADR 0067) through the tool
+// projected from GET /workspace.
+func TestMCPWorkspaceGetReadsTheSendCap(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(5000).ExecX(context.Background())
+
+	res := call(t, env.MCPClient(t, env.ScopedBearer(t, "contacts:read")), "workspace_get", nil)
+	require.False(t, res.IsError, text(t, res))
+	var ws struct {
+		SendCap struct {
+			PerDay      int `json:"perDay"`
+			SentLast24h int `json:"sentLast24h"`
+		} `json:"sendCap"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &ws))
+	assert.Equal(t, 5000, ws.SendCap.PerDay)
+	assert.Equal(t, 3, ws.SendCap.SentLast24h)
 }
 
 // Erasure is irreversible: a token that can write Contacts cannot erase them through

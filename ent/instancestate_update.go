@@ -129,6 +129,33 @@ func (_u *InstanceStateUpdate) ClearLatestReleaseCheckedAt() *InstanceStateUpdat
 	return _u
 }
 
+// SetDefaultSendCap sets the "default_send_cap" field.
+func (_u *InstanceStateUpdate) SetDefaultSendCap(v int) *InstanceStateUpdate {
+	_u.mutation.ResetDefaultSendCap()
+	_u.mutation.SetDefaultSendCap(v)
+	return _u
+}
+
+// SetNillableDefaultSendCap sets the "default_send_cap" field if the given value is not nil.
+func (_u *InstanceStateUpdate) SetNillableDefaultSendCap(v *int) *InstanceStateUpdate {
+	if v != nil {
+		_u.SetDefaultSendCap(*v)
+	}
+	return _u
+}
+
+// AddDefaultSendCap adds value to the "default_send_cap" field.
+func (_u *InstanceStateUpdate) AddDefaultSendCap(v int) *InstanceStateUpdate {
+	_u.mutation.AddDefaultSendCap(v)
+	return _u
+}
+
+// ClearDefaultSendCap clears the value of the "default_send_cap" field.
+func (_u *InstanceStateUpdate) ClearDefaultSendCap() *InstanceStateUpdate {
+	_u.mutation.ClearDefaultSendCap()
+	return _u
+}
+
 // Mutation returns the InstanceStateMutation object of the builder.
 func (_u *InstanceStateUpdate) Mutation() *InstanceStateMutation {
 	return _u.mutation
@@ -170,6 +197,16 @@ func (_u *InstanceStateUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *InstanceStateUpdate) check() error {
+	if v, ok := _u.mutation.DefaultSendCap(); ok {
+		if err := instancestate.DefaultSendCapValidator(v); err != nil {
+			return &ValidationError{Name: "default_send_cap", err: fmt.Errorf(`ent: validator failed for field "InstanceState.default_send_cap": %w`, err)}
+		}
+	}
+	return nil
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (_u *InstanceStateUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *InstanceStateUpdate {
 	_u.modifiers = append(_u.modifiers, modifiers...)
@@ -177,6 +214,9 @@ func (_u *InstanceStateUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *
 }
 
 func (_u *InstanceStateUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(instancestate.Table, instancestate.Columns, sqlgraph.NewFieldSpec(instancestate.FieldID, field.TypeInt64))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -214,6 +254,15 @@ func (_u *InstanceStateUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.LatestReleaseCheckedAtCleared() {
 		_spec.ClearField(instancestate.FieldLatestReleaseCheckedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DefaultSendCap(); ok {
+		_spec.SetField(instancestate.FieldDefaultSendCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDefaultSendCap(); ok {
+		_spec.AddField(instancestate.FieldDefaultSendCap, field.TypeInt, value)
+	}
+	if _u.mutation.DefaultSendCapCleared() {
+		_spec.ClearField(instancestate.FieldDefaultSendCap, field.TypeInt)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
@@ -337,6 +386,33 @@ func (_u *InstanceStateUpdateOne) ClearLatestReleaseCheckedAt() *InstanceStateUp
 	return _u
 }
 
+// SetDefaultSendCap sets the "default_send_cap" field.
+func (_u *InstanceStateUpdateOne) SetDefaultSendCap(v int) *InstanceStateUpdateOne {
+	_u.mutation.ResetDefaultSendCap()
+	_u.mutation.SetDefaultSendCap(v)
+	return _u
+}
+
+// SetNillableDefaultSendCap sets the "default_send_cap" field if the given value is not nil.
+func (_u *InstanceStateUpdateOne) SetNillableDefaultSendCap(v *int) *InstanceStateUpdateOne {
+	if v != nil {
+		_u.SetDefaultSendCap(*v)
+	}
+	return _u
+}
+
+// AddDefaultSendCap adds value to the "default_send_cap" field.
+func (_u *InstanceStateUpdateOne) AddDefaultSendCap(v int) *InstanceStateUpdateOne {
+	_u.mutation.AddDefaultSendCap(v)
+	return _u
+}
+
+// ClearDefaultSendCap clears the value of the "default_send_cap" field.
+func (_u *InstanceStateUpdateOne) ClearDefaultSendCap() *InstanceStateUpdateOne {
+	_u.mutation.ClearDefaultSendCap()
+	return _u
+}
+
 // Mutation returns the InstanceStateMutation object of the builder.
 func (_u *InstanceStateUpdateOne) Mutation() *InstanceStateMutation {
 	return _u.mutation
@@ -391,6 +467,16 @@ func (_u *InstanceStateUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *InstanceStateUpdateOne) check() error {
+	if v, ok := _u.mutation.DefaultSendCap(); ok {
+		if err := instancestate.DefaultSendCapValidator(v); err != nil {
+			return &ValidationError{Name: "default_send_cap", err: fmt.Errorf(`ent: validator failed for field "InstanceState.default_send_cap": %w`, err)}
+		}
+	}
+	return nil
+}
+
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (_u *InstanceStateUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *InstanceStateUpdateOne {
 	_u.modifiers = append(_u.modifiers, modifiers...)
@@ -398,6 +484,9 @@ func (_u *InstanceStateUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)
 }
 
 func (_u *InstanceStateUpdateOne) sqlSave(ctx context.Context) (_node *InstanceState, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(instancestate.Table, instancestate.Columns, sqlgraph.NewFieldSpec(instancestate.FieldID, field.TypeInt64))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -452,6 +541,15 @@ func (_u *InstanceStateUpdateOne) sqlSave(ctx context.Context) (_node *InstanceS
 	}
 	if _u.mutation.LatestReleaseCheckedAtCleared() {
 		_spec.ClearField(instancestate.FieldLatestReleaseCheckedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.DefaultSendCap(); ok {
+		_spec.SetField(instancestate.FieldDefaultSendCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDefaultSendCap(); ok {
+		_spec.AddField(instancestate.FieldDefaultSendCap, field.TypeInt, value)
+	}
+	if _u.mutation.DefaultSendCapCleared() {
+		_spec.ClearField(instancestate.FieldDefaultSendCap, field.TypeInt)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	_node = &InstanceState{config: _u.config}

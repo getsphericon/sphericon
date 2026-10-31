@@ -181,6 +181,20 @@ func Nil[N any, T any, P interface {
 	return n
 }
 
+// NilVia is Nil of v mapped through f, null when v is nil: a nullable object goes through its
+// converter's method, NilVia[siteapi.OptNilSiteSendCap](v, c.SendCapToResource).
+func NilVia[N any, S any, T any, P interface {
+	*N
+	SetTo(v T)
+	SetToNull()
+}](v *S, f func(S) T) N {
+	if v == nil {
+		return Nil[N, T, P](nil)
+	}
+	t := f(*v)
+	return Nil[N, T, P](&t)
+}
+
 // setter is implemented by the pointer to every ogen Opt*/OptNil*/Nil* value type.
 type setter[O any, T any] interface {
 	*O

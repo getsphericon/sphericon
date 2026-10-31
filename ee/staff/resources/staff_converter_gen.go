@@ -123,6 +123,14 @@ func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staffee.Staf
 	staffeeapiStaffRate.Rate = nilFloat64(source.Rate)
 	return staffeeapiStaffRate
 }
+func (c *StaffConverterImpl) SendCapToResource(source *ent.Workspace) staffee.StaffSendCap {
+	var staffeeapiStaffSendCap staffee.StaffSendCap
+	if source != nil {
+		staffeeapiStaffSendCap.PerDay = nilMaxPerDay((*source).SendCap)
+		// staffeeapiStaffSendCap.SentLast24h: ignore
+	}
+	return staffeeapiStaffSendCap
+}
 func (c *StaffConverterImpl) SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffee.StaffSignupCompanySize {
 	var staffeeapiStaffSignupCompanySize staffee.StaffSignupCompanySize
 	switch source {
@@ -243,6 +251,7 @@ func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) st
 		// staffeeapiStaffWorkspaceDetailResource.Holds: ignore
 		// staffeeapiStaffWorkspaceDetailResource.Deliverability: ignore
 		// staffeeapiStaffWorkspaceDetailResource.Abuse: ignore
+		// staffeeapiStaffWorkspaceDetailResource.SendCap: ignore
 	}
 	return staffeeapiStaffWorkspaceDetailResource
 }

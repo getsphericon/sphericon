@@ -1,0 +1,17 @@
+# Send cap state (ADR 0067), one row per Workspace that has sent under a Send cap. Neither
+# fixture Workspace has a Send cap, so a row is never spent until a test sets one; both
+# buckets are full. They were last refilled before 2000, the start of a synctest bubble's clock:
+# a full bucket stays full however long ago that was, and a spend never moves refilled_at back
+# (GREATEST), so a refill time later than the clock of a test would stop the bucket refilling.
+- id: 1 # fixture: SendCapLimiterAcme
+  day_fill: 1.0
+  refilled_at: '1999-12-31 00:00:00+00'
+  workspace_id: 1
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 900 # fixture: SendCapLimiterGlobex
+  day_fill: 1.0
+  refilled_at: '1999-12-31 00:00:00+00'
+  workspace_id: 2
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'

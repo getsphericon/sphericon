@@ -33,7 +33,9 @@ type InstanceState struct {
 	LatestRelease *string `json:"latest_release,omitempty"`
 	// LatestReleaseCheckedAt holds the value of the "latest_release_checked_at" field.
 	LatestReleaseCheckedAt *time.Time `json:"latest_release_checked_at,omitempty"`
-	selectValues           sql.SelectValues
+	// DefaultSendCap holds the value of the "default_send_cap" field.
+	DefaultSendCap *int `json:"default_send_cap,omitempty"`
+	selectValues   sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -43,7 +45,7 @@ func (*InstanceState) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case instancestate.FieldTelemetryEnabled:
 			values[i] = new(sql.NullBool)
-		case instancestate.FieldID:
+		case instancestate.FieldID, instancestate.FieldDefaultSendCap:
 			values[i] = new(sql.NullInt64)
 		case instancestate.FieldInstanceID, instancestate.FieldLatestRelease:
 			values[i] = new(sql.NullString)
@@ -122,6 +124,13 @@ func (_m *InstanceState) assignValues(columns []string, values []any) error {
 				_m.LatestReleaseCheckedAt = new(time.Time)
 				*_m.LatestReleaseCheckedAt = value.Time
 			}
+		case instancestate.FieldDefaultSendCap:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field default_send_cap", values[i])
+			} else if value.Valid {
+				_m.DefaultSendCap = new(int)
+				*_m.DefaultSendCap = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -188,6 +197,11 @@ func (_m *InstanceState) String() string {
 	if v := _m.LatestReleaseCheckedAt; v != nil {
 		builder.WriteString("latest_release_checked_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.DefaultSendCap; v != nil {
+		builder.WriteString("default_send_cap=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

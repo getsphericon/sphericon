@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
@@ -64,6 +65,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -129,6 +131,8 @@ type Client struct {
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
 	Hold *HoldClient
+	// InstanceAuditEntry is the client for interacting with the InstanceAuditEntry builders.
+	InstanceAuditEntry *InstanceAuditEntryClient
 	// InstanceState is the client for interacting with the InstanceState builders.
 	InstanceState *InstanceStateClient
 	// Integration is the client for interacting with the Integration builders.
@@ -187,6 +191,8 @@ type Client struct {
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
 	Segment *SegmentClient
+	// SendCapLimiter is the client for interacting with the SendCapLimiter builders.
+	SendCapLimiter *SendCapLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
@@ -250,6 +256,7 @@ func (c *Client) init() {
 	c.Event = NewEventClient(c.config)
 	c.HeldOrderEvent = NewHeldOrderEventClient(c.config)
 	c.Hold = NewHoldClient(c.config)
+	c.InstanceAuditEntry = NewInstanceAuditEntryClient(c.config)
 	c.InstanceState = NewInstanceStateClient(c.config)
 	c.Integration = NewIntegrationClient(c.config)
 	c.Invitation = NewInvitationClient(c.config)
@@ -279,6 +286,7 @@ func (c *Client) init() {
 	c.RuleVersionTrigger = NewRuleVersionTriggerClient(c.config)
 	c.SchemaState = NewSchemaStateClient(c.config)
 	c.Segment = NewSegmentClient(c.config)
+	c.SendCapLimiter = NewSendCapLimiterClient(c.config)
 	c.SendingDomain = NewSendingDomainClient(c.config)
 	c.ServiceCredential = NewServiceCredentialClient(c.config)
 	c.SignupItem = NewSignupItemClient(c.config)
@@ -407,6 +415,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Event:                NewEventClient(cfg),
 		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
 		Hold:                 NewHoldClient(cfg),
+		InstanceAuditEntry:   NewInstanceAuditEntryClient(cfg),
 		InstanceState:        NewInstanceStateClient(cfg),
 		Integration:          NewIntegrationClient(cfg),
 		Invitation:           NewInvitationClient(cfg),
@@ -436,6 +445,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
 		SchemaState:          NewSchemaStateClient(cfg),
 		Segment:              NewSegmentClient(cfg),
+		SendCapLimiter:       NewSendCapLimiterClient(cfg),
 		SendingDomain:        NewSendingDomainClient(cfg),
 		ServiceCredential:    NewServiceCredentialClient(cfg),
 		SignupItem:           NewSignupItemClient(cfg),
@@ -491,6 +501,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Event:                NewEventClient(cfg),
 		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
 		Hold:                 NewHoldClient(cfg),
+		InstanceAuditEntry:   NewInstanceAuditEntryClient(cfg),
 		InstanceState:        NewInstanceStateClient(cfg),
 		Integration:          NewIntegrationClient(cfg),
 		Invitation:           NewInvitationClient(cfg),
@@ -520,6 +531,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
 		SchemaState:          NewSchemaStateClient(cfg),
 		Segment:              NewSegmentClient(cfg),
+		SendCapLimiter:       NewSendCapLimiterClient(cfg),
 		SendingDomain:        NewSendingDomainClient(cfg),
 		ServiceCredential:    NewServiceCredentialClient(cfg),
 		SignupItem:           NewSignupItemClient(cfg),
@@ -569,16 +581,17 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
 		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold,
-		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
-		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
-		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
-		c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
-		c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendingDomain,
-		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
-		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
+		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
+		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
+		c.OutboundMessage, c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset,
+		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
+		c.ProviderLimiter, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
+		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -592,16 +605,17 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AutomationVersion, c.BrandKit, c.Broadcast, c.BroadcastRecipient,
 		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.Contact, c.ContactTag,
 		c.CustomField, c.EmailTemplate, c.Erasure, c.Event, c.HeldOrderEvent, c.Hold,
-		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
-		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
-		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
-		c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset, c.Passkey,
-		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
-		c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendingDomain,
-		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
-		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
-		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
+		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
+		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
+		c.OutboundMessage, c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset,
+		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
+		c.ProviderLimiter, c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.Segment,
+		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -650,6 +664,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.HeldOrderEvent.mutate(ctx, m)
 	case *HoldMutation:
 		return c.Hold.mutate(ctx, m)
+	case *InstanceAuditEntryMutation:
+		return c.InstanceAuditEntry.mutate(ctx, m)
 	case *InstanceStateMutation:
 		return c.InstanceState.mutate(ctx, m)
 	case *IntegrationMutation:
@@ -708,6 +724,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SchemaState.mutate(ctx, m)
 	case *SegmentMutation:
 		return c.Segment.mutate(ctx, m)
+	case *SendCapLimiterMutation:
+		return c.SendCapLimiter.mutate(ctx, m)
 	case *SendingDomainMutation:
 		return c.SendingDomain.mutate(ctx, m)
 	case *ServiceCredentialMutation:
@@ -4121,6 +4139,155 @@ func (c *HoldClient) mutate(ctx context.Context, m *HoldMutation) (Value, error)
 		return (&HoldDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Hold mutation op: %q", m.Op())
+	}
+}
+
+// InstanceAuditEntryClient is a client for the InstanceAuditEntry schema.
+type InstanceAuditEntryClient struct {
+	config
+}
+
+// NewInstanceAuditEntryClient returns a client for the InstanceAuditEntry from the given config.
+func NewInstanceAuditEntryClient(c config) *InstanceAuditEntryClient {
+	return &InstanceAuditEntryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `instanceauditentry.Hooks(f(g(h())))`.
+func (c *InstanceAuditEntryClient) Use(hooks ...Hook) {
+	c.hooks.InstanceAuditEntry = append(c.hooks.InstanceAuditEntry, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `instanceauditentry.Intercept(f(g(h())))`.
+func (c *InstanceAuditEntryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InstanceAuditEntry = append(c.inters.InstanceAuditEntry, interceptors...)
+}
+
+// Create returns a builder for creating a InstanceAuditEntry entity.
+func (c *InstanceAuditEntryClient) Create() *InstanceAuditEntryCreate {
+	mutation := newInstanceAuditEntryMutation(c.config, OpCreate)
+	return &InstanceAuditEntryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InstanceAuditEntry entities.
+func (c *InstanceAuditEntryClient) CreateBulk(builders ...*InstanceAuditEntryCreate) *InstanceAuditEntryCreateBulk {
+	return &InstanceAuditEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InstanceAuditEntryClient) MapCreateBulk(slice any, setFunc func(*InstanceAuditEntryCreate, int)) *InstanceAuditEntryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InstanceAuditEntryCreateBulk{err: fmt.Errorf("calling to InstanceAuditEntryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InstanceAuditEntryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InstanceAuditEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InstanceAuditEntry.
+func (c *InstanceAuditEntryClient) Update() *InstanceAuditEntryUpdate {
+	mutation := newInstanceAuditEntryMutation(c.config, OpUpdate)
+	return &InstanceAuditEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InstanceAuditEntryClient) UpdateOne(_m *InstanceAuditEntry) *InstanceAuditEntryUpdateOne {
+	mutation := newInstanceAuditEntryMutation(c.config, OpUpdateOne, withInstanceAuditEntry(_m))
+	return &InstanceAuditEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InstanceAuditEntryClient) UpdateOneID(id int64) *InstanceAuditEntryUpdateOne {
+	mutation := newInstanceAuditEntryMutation(c.config, OpUpdateOne, withInstanceAuditEntryID(id))
+	return &InstanceAuditEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InstanceAuditEntry.
+func (c *InstanceAuditEntryClient) Delete() *InstanceAuditEntryDelete {
+	mutation := newInstanceAuditEntryMutation(c.config, OpDelete)
+	return &InstanceAuditEntryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InstanceAuditEntryClient) DeleteOne(_m *InstanceAuditEntry) *InstanceAuditEntryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InstanceAuditEntryClient) DeleteOneID(id int64) *InstanceAuditEntryDeleteOne {
+	builder := c.Delete().Where(instanceauditentry.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InstanceAuditEntryDeleteOne{builder}
+}
+
+// Query returns a query builder for InstanceAuditEntry.
+func (c *InstanceAuditEntryClient) Query() *InstanceAuditEntryQuery {
+	return &InstanceAuditEntryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInstanceAuditEntry},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InstanceAuditEntry entity by its id.
+func (c *InstanceAuditEntryClient) Get(ctx context.Context, id int64) (*InstanceAuditEntry, error) {
+	return c.Query().Where(instanceauditentry.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InstanceAuditEntryClient) GetX(ctx context.Context, id int64) *InstanceAuditEntry {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryStaffMember queries the staff_member edge of a InstanceAuditEntry.
+func (c *InstanceAuditEntryClient) QueryStaffMember(_m *InstanceAuditEntry) *StaffMemberQuery {
+	query := (&StaffMemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(instanceauditentry.Table, instanceauditentry.FieldID, id),
+			sqlgraph.To(staffmember.Table, staffmember.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, instanceauditentry.StaffMemberTable, instanceauditentry.StaffMemberColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *InstanceAuditEntryClient) Hooks() []Hook {
+	return c.hooks.InstanceAuditEntry
+}
+
+// Interceptors returns the client interceptors.
+func (c *InstanceAuditEntryClient) Interceptors() []Interceptor {
+	return c.inters.InstanceAuditEntry
+}
+
+func (c *InstanceAuditEntryClient) mutate(ctx context.Context, m *InstanceAuditEntryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InstanceAuditEntryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InstanceAuditEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InstanceAuditEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InstanceAuditEntryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InstanceAuditEntry mutation op: %q", m.Op())
 	}
 }
 
@@ -8925,6 +9092,155 @@ func (c *SegmentClient) mutate(ctx context.Context, m *SegmentMutation) (Value, 
 	}
 }
 
+// SendCapLimiterClient is a client for the SendCapLimiter schema.
+type SendCapLimiterClient struct {
+	config
+}
+
+// NewSendCapLimiterClient returns a client for the SendCapLimiter from the given config.
+func NewSendCapLimiterClient(c config) *SendCapLimiterClient {
+	return &SendCapLimiterClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sendcaplimiter.Hooks(f(g(h())))`.
+func (c *SendCapLimiterClient) Use(hooks ...Hook) {
+	c.hooks.SendCapLimiter = append(c.hooks.SendCapLimiter, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sendcaplimiter.Intercept(f(g(h())))`.
+func (c *SendCapLimiterClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SendCapLimiter = append(c.inters.SendCapLimiter, interceptors...)
+}
+
+// Create returns a builder for creating a SendCapLimiter entity.
+func (c *SendCapLimiterClient) Create() *SendCapLimiterCreate {
+	mutation := newSendCapLimiterMutation(c.config, OpCreate)
+	return &SendCapLimiterCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SendCapLimiter entities.
+func (c *SendCapLimiterClient) CreateBulk(builders ...*SendCapLimiterCreate) *SendCapLimiterCreateBulk {
+	return &SendCapLimiterCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SendCapLimiterClient) MapCreateBulk(slice any, setFunc func(*SendCapLimiterCreate, int)) *SendCapLimiterCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SendCapLimiterCreateBulk{err: fmt.Errorf("calling to SendCapLimiterClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SendCapLimiterCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SendCapLimiterCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SendCapLimiter.
+func (c *SendCapLimiterClient) Update() *SendCapLimiterUpdate {
+	mutation := newSendCapLimiterMutation(c.config, OpUpdate)
+	return &SendCapLimiterUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SendCapLimiterClient) UpdateOne(_m *SendCapLimiter) *SendCapLimiterUpdateOne {
+	mutation := newSendCapLimiterMutation(c.config, OpUpdateOne, withSendCapLimiter(_m))
+	return &SendCapLimiterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SendCapLimiterClient) UpdateOneID(id int64) *SendCapLimiterUpdateOne {
+	mutation := newSendCapLimiterMutation(c.config, OpUpdateOne, withSendCapLimiterID(id))
+	return &SendCapLimiterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SendCapLimiter.
+func (c *SendCapLimiterClient) Delete() *SendCapLimiterDelete {
+	mutation := newSendCapLimiterMutation(c.config, OpDelete)
+	return &SendCapLimiterDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SendCapLimiterClient) DeleteOne(_m *SendCapLimiter) *SendCapLimiterDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SendCapLimiterClient) DeleteOneID(id int64) *SendCapLimiterDeleteOne {
+	builder := c.Delete().Where(sendcaplimiter.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SendCapLimiterDeleteOne{builder}
+}
+
+// Query returns a query builder for SendCapLimiter.
+func (c *SendCapLimiterClient) Query() *SendCapLimiterQuery {
+	return &SendCapLimiterQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSendCapLimiter},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SendCapLimiter entity by its id.
+func (c *SendCapLimiterClient) Get(ctx context.Context, id int64) (*SendCapLimiter, error) {
+	return c.Query().Where(sendcaplimiter.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SendCapLimiterClient) GetX(ctx context.Context, id int64) *SendCapLimiter {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a SendCapLimiter.
+func (c *SendCapLimiterClient) QueryWorkspace(_m *SendCapLimiter) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sendcaplimiter.Table, sendcaplimiter.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sendcaplimiter.WorkspaceTable, sendcaplimiter.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SendCapLimiterClient) Hooks() []Hook {
+	return c.hooks.SendCapLimiter
+}
+
+// Interceptors returns the client interceptors.
+func (c *SendCapLimiterClient) Interceptors() []Interceptor {
+	return c.inters.SendCapLimiter
+}
+
+func (c *SendCapLimiterClient) mutate(ctx context.Context, m *SendCapLimiterMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SendCapLimiterCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SendCapLimiterUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SendCapLimiterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SendCapLimiterDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SendCapLimiter mutation op: %q", m.Op())
+	}
+}
+
 // SendingDomainClient is a client for the SendingDomain schema.
 type SendingDomainClient struct {
 	config
@@ -11620,6 +11936,22 @@ func (c *WorkspaceClient) QueryProviderLimiters(_m *Workspace) *ProviderLimiterQ
 	return query
 }
 
+// QuerySendCapLimiters queries the send_cap_limiters edge of a Workspace.
+func (c *WorkspaceClient) QuerySendCapLimiters(_m *Workspace) *SendCapLimiterQuery {
+	query := (&SendCapLimiterClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(sendcaplimiter.Table, sendcaplimiter.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SendCapLimitersTable, workspace.SendCapLimitersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryHolds queries the holds edge of a Workspace.
 func (c *WorkspaceClient) QueryHolds(_m *Workspace) *HoldQuery {
 	query := (&HoldClient{config: c.config}).Query()
@@ -12019,28 +12351,30 @@ type (
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
 		ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
-		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
-		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxDeadLetter,
-		OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge, PendingSignup,
-		PrivateRelayRange, ProviderLimiter, RecoveryCode, RiverJob, Rule, RuleFiring,
-		RuleVersion, RuleVersionTrigger, SchemaState, Segment, SendingDomain,
-		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, Suppression,
-		Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState, Integration,
+		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
+		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, OutboxDeadLetter, OutboxMessage, OutboxOffset, Passkey,
+		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
+		RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion, RuleVersionTrigger,
+		SchemaState, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
 		Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationRun, AutomationVersion,
 		BrandKit, Broadcast, BroadcastRecipient, CapturedMessage, Confirmation,
 		ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
-		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
-		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxDeadLetter,
-		OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge, PendingSignup,
-		PrivateRelayRange, ProviderLimiter, RecoveryCode, RiverJob, Rule, RuleFiring,
-		RuleVersion, RuleVersionTrigger, SchemaState, Segment, SendingDomain,
-		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, Suppression,
-		Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState, Integration,
+		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
+		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, OutboxDeadLetter, OutboxMessage, OutboxOffset, Passkey,
+		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
+		RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion, RuleVersionTrigger,
+		SchemaState, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
 		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )

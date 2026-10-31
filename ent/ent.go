@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
@@ -61,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -157,6 +159,7 @@ func checkColumn(t, c string) error {
 			event.Table:                event.ValidColumn,
 			heldorderevent.Table:       heldorderevent.ValidColumn,
 			hold.Table:                 hold.ValidColumn,
+			instanceauditentry.Table:   instanceauditentry.ValidColumn,
 			instancestate.Table:        instancestate.ValidColumn,
 			integration.Table:          integration.ValidColumn,
 			invitation.Table:           invitation.ValidColumn,
@@ -186,6 +189,7 @@ func checkColumn(t, c string) error {
 			ruleversiontrigger.Table:   ruleversiontrigger.ValidColumn,
 			schemastate.Table:          schemastate.ValidColumn,
 			segment.Table:              segment.ValidColumn,
+			sendcaplimiter.Table:       sendcaplimiter.ValidColumn,
 			sendingdomain.Table:        sendingdomain.ValidColumn,
 			servicecredential.Table:    servicecredential.ValidColumn,
 			signupitem.Table:           signupitem.ValidColumn,

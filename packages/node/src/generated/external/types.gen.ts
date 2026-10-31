@@ -2919,7 +2919,7 @@ export type LintFinding = {
 };
 
 /**
- * A rolling 24-hour Provider limit the caller may set
+ * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
  */
 export type MaxPerDay = number;
 
@@ -3538,6 +3538,24 @@ export type SegmentResource = {
    * Last update timestamp
    */
   updatedAt: Timestamp;
+};
+
+/**
+ * The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
+ * all its Integrations, Transactional included. The platform sets it; the Workspace only reads it.
+ * Sends beyond it are deferred until the 24-hour window frees up, never refused; Transactional mail
+ * is never delayed. It is not a Provider limit, which each Integration sets for its own provider
+ * account.
+ */
+export type SendCap = {
+  /**
+   * Messages per rolling 24 hours
+   */
+  perDay: MaxPerDay;
+  /**
+   * Messages the Workspace sent over the last 24 hours
+   */
+  sentLast24h: number;
 };
 
 /**
@@ -4460,6 +4478,29 @@ export type WebhookTestResult = {
  * Workspace's one public address.
  */
 export type WorkspaceId = string;
+
+/**
+ * The Workspace the token acts in
+ */
+export type WorkspaceResource = {
+  /**
+   * The Workspace id: its short opaque public address
+   */
+  id: WorkspaceId;
+  /**
+   * Display name
+   */
+  name: string;
+  /**
+   * The IANA time zone every analytics report counts its days in (ADR 0057)
+   */
+  timezone: TimeZoneName;
+  /**
+   * The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null
+   * when no Send cap applies
+   */
+  sendCap?: SendCap | null;
+};
 
 /**
  * true lists the archived resources instead of the kept ones; the default hides them
@@ -10277,3 +10318,32 @@ export type WebhooksTestResponses = {
 };
 
 export type WebhooksTestResponse = WebhooksTestResponses[keyof WebhooksTestResponses];
+
+export type WorkspaceGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/workspace';
+};
+
+export type WorkspaceGetErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type WorkspaceGetError = WorkspaceGetErrors[keyof WorkspaceGetErrors];
+
+export type WorkspaceGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: WorkspaceResource;
+};
+
+export type WorkspaceGetResponse = WorkspaceGetResponses[keyof WorkspaceGetResponses];

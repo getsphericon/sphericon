@@ -121,6 +121,7 @@
   "errors.second_factor_code_invalid": "the code is not valid",
   "errors.second_factor_already_active": "a second factor is already active",
   "errors.telemetry_locked": "the environment decides the telemetry report; change it there",
+  "errors.send_caps_absent": "this instance has no send caps",
   "errors.second_factor_no_pending": "start enrollment first",
   "errors.second_factor_not_active": "no second factor is active",
   "errors.second_factor_reset_nothing": "the member has no second factor or passkey",

@@ -40,7 +40,8 @@ func (h *Handlers) SiteWorkspacesList(ctx context.Context) ([]siteapi.SiteWorksp
 
 // workspaceResource is the Membership's Workspace as the Membership's User sees it,
 // with their grace end under the Two-factor requirement (ADR 0020) and the Staff member
-// holds active now (ADR 0009), read through s, the Workspace's scope. The Membership's
+// holds active now (ADR 0009) and the Send cap the send path enforces with the last 24 hours of
+// sends (ADR 0067; null when none applies), read through s, the Workspace's scope. The Membership's
 // User and Workspace edges must be loaded.
 func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.Membership) (siteapi.SiteWorkspaceResource, error) {
 	r := mapper.WorkspaceToResource(m.Edges.Workspace)
@@ -63,6 +64,11 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 		return r, err
 	}
 	r.Holds = mapper.HoldsToResources(standing.Holds())
+	sendCap, err := h.outbound.SendCapStatus(ctx, s, m.Edges.Workspace)
+	if err != nil {
+		return r, err
+	}
+	r.SendCap = mapper.SendCapStatusToResource(sendCap)
 	return r, nil
 }
 

@@ -91,6 +91,14 @@ func (Workspace) Fields() []ent.Field {
 		field.Int("attribution_window_days").
 			Default(5).
 			Positive(),
+		// The Send cap (ADR 0067): the most messages the Workspace may send per rolling 24 hours,
+		// across all its Integrations, as a Staff member set it. NULL: no Send cap. It applies only
+		// on an Instance that has Send caps (the send path is built with them); elsewhere a stored
+		// value is ignored. Its bounds are declared in the contract.
+		field.Int("send_cap").
+			Optional().
+			Nillable().
+			Positive(),
 		// Domain join (ADR 0051): whether Users who prove an address on one of the Workspace's
 		// verified Join domains become its members. Off until an Owner switches it on.
 		field.Bool("domain_join_enabled").
@@ -177,6 +185,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("sending_domains", SendingDomain.Type),
 		edge.To("join_domains", JoinDomain.Type),
 		edge.To("provider_limiters", ProviderLimiter.Type),
+		edge.To("send_cap_limiters", SendCapLimiter.Type),
 		edge.To("holds", Hold.Type),
 		edge.To("broadcasts", Broadcast.Type),
 		edge.To("broadcast_recipients", BroadcastRecipient.Type),

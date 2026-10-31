@@ -83,10 +83,20 @@ model SiteBroadcastStats {
   revenue: SiteMessageRevenue;
 }
 
+/** What slows a sending broadcast */
+enum SiteBroadcastLimit {
+  /** The Workspace's Send cap, set by the platform: the recipients beyond what it lets out today go out over the following days */
+  sendCap,
+
+  /** The Provider limit of the Integration it sends through: recipients go out at an even interval */
+  providerLimit,
+}
+
 /**
- * How far a sending broadcast has got. A broadcast limited by its Integration's Send
- * rate limit is paced: recipients go out at an even interval, so the estimate is
- * derived on the server from the last scheduled time and the recipients remaining.
+ * How far a sending broadcast has got. A broadcast limited by its Integration's Provider
+ * limit is paced: recipients go out at an even interval. The Workspace's Send cap lets a
+ * day's worth out at a time. The estimate is derived on the server from both, the later
+ * of the two, and `limitedBy` says which one it is.
  */
 model SiteBroadcastProgress {
   /** Recipients already decided: sent, skipped or failed */
@@ -97,9 +107,12 @@ model SiteBroadcastProgress {
 
   /**
    * When the last remaining recipient is expected to be sent. Null when it is not
-   * knowable: the broadcast is on hold, or it is not paced by a Provider limit.
+   * knowable: the broadcast is on hold, or nothing limits it.
    */
   estimatedCompletionAt?: Timestamp | null;
+
+  /** What slows the broadcast and sets the estimate; null when nothing does or it is on hold */
+  limitedBy: SiteBroadcastLimit | null;
 }
 
 /** Broadcast resource used by the site UI */

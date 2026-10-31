@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/suppression"
@@ -63,9 +64,10 @@ const (
 	Failed Outcome = "failed"
 	// Held: the source cannot send right now. Reason is a Hold* constant.
 	Held Outcome = "held"
-	// Deferral: the Integration's Provider limit is spent (ADR 0023). Nothing is wrong
-	// with the source, it is busy: no hold reason, no claim, no attempt consumed.
-	// Result.Wait says when capacity returns.
+	// Deferral: a send limit is spent — the Integration's Provider limit (ADR 0023), the
+	// Workspace's Send cap (ADR 0067) or the provider's own. Nothing is wrong with the source,
+	// it is busy: no hold reason, no claim, no attempt consumed. Result.Wait says when
+	// capacity returns and Result.Cause which limit it waits for.
 	Deferral Outcome = "deferral"
 	// Refused: a Test send the System sender will not make (ADR 0041). Reason is a Refuse*
 	// constant; unlike a Held it does not clear by waiting.
@@ -157,6 +159,9 @@ type Result struct {
 	ratelimit.Refusal
 
 	Outcome Outcome
+	// Cause is, for a Deferral of a Send, the limit it waits for; empty for every other Outcome
+	// and for a Test send (its cap is Limit).
+	Cause providerlimit.Cause
 	// Reason explains Skipped (eligibility reason), Failed (cause) and Held (hold).
 	Reason string
 	// MessageID is the Outbound message row; zero when Held (nothing was recorded).
@@ -203,8 +208,11 @@ type Module struct {
 	tracker *tracking.Tracker
 	// trackingDomains reports whether the Instance offers Tracking domains at all.
 	trackingDomains bool
-	lease           time.Duration
-	holds           *holds.Holds
+	// sendCaps is whether the Instance has Send caps at all (ADR 0067); without them a
+	// Workspace's stored Send cap is ignored.
+	sendCaps providerlimit.SendCaps
+	lease    time.Duration
+	holds    *holds.Holds
 	// system is the Instance's System sender; nil on an Instance with no outbound mail.
 	system messaging.EmailSender
 	// testBudget caps Test sends from the System sender; nil means uncapped.
@@ -223,6 +231,11 @@ func WithLease(d time.Duration) Option { return func(m *Module) { m.lease = d } 
 // a message from a Sending domain whose Tracking domain is serving gets its links on
 // track.<domain>. Off, every link uses the Instance's host (ADR 0038).
 func WithTrackingDomains() Option { return func(m *Module) { m.trackingDomains = true } }
+
+// WithSendCaps says whether the Instance has Send caps (ADR 0067): with them every send of a
+// Workspace that has one also spends from its 24-hour bucket. Without (the default), a stored Send
+// cap has no effect.
+func WithSendCaps(c providerlimit.SendCaps) Option { return func(m *Module) { m.sendCaps = c } }
 
 // WithSystemSender gives the module the Instance's System sender, which a Test send falls
 // back to while the Workspace has no verified Sending domain (ADR 0041).
@@ -390,16 +403,16 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	built.msg.To = dest
 	built.msg.Origin = &messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind), Source: req.Source}
 
-	// Provider limit: the last gate before the provider, so a message that was
+	// Provider limit and Send cap: the last gate before the provider, so a message that was
 	// Skipped, Held or failed to render never spends capacity.
-	if wait, err := m.reserve(ctx, s, req, g.route); err != nil {
+	if short, err := m.reserve(ctx, s, req, g.route, ws); err != nil {
 		m.release(ctx, s, msg)
 		return Result{}, err
-	} else if wait > 0 {
+	} else if short.Wait > 0 {
 		// Busy, not blocked: drop the claim so the retry starts clean and no attempt
 		// is consumed.
 		m.dropClaim(ctx, s, msg)
-		return Result{Outcome: Deferral, Wait: wait}, nil
+		return Result{Outcome: Deferral, Cause: short.Cause, Wait: short.Wait}, nil
 	}
 
 	receipt, err := g.route.Sender.Send(ctx, built.msg)
@@ -417,7 +430,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 			// Transactional mail never defers (ADR 0023): it falls through to the
 			// retryable error below, which releases the claim for the caller's retry.
 			m.dropClaim(ctx, s, msg)
-			return Result{Outcome: Deferral, Wait: wait}, nil
+			return Result{Outcome: Deferral, Cause: providerlimit.CauseProvider, Wait: wait}, nil
 		}
 		m.release(ctx, s, msg)
 		return Result{}, fmt.Errorf("outbound: send to %s: %w", dest, err)

@@ -228,6 +228,7 @@ var (
 	ErrorsSegmentConditionInvalid               = ID{key: "errors.segment_condition_invalid"}
 	ErrorsSegmentInvalid                        = ID{key: "errors.segment_invalid"}
 	ErrorsSegmentNotFound                       = ID{key: "errors.segment_not_found"}
+	ErrorsSendCapsAbsent                        = ID{key: "errors.send_caps_absent"}
 	ErrorsSendInProgress                        = ID{key: "errors.send_in_progress"}
 	ErrorsSendKeyFailed                         = ID{key: "errors.send_key_failed"}
 	ErrorsSendRouteHeld                         = ID{key: "errors.send_route_held"}

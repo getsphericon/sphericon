@@ -15185,7 +15185,7 @@
         "format": "int32",
         "minimum": 1,
         "maximum": 100000000,
-        "description": "A rolling 24-hour Provider limit the caller may set"
+        "description": "A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap"
       },
       "MaxPerSecond": {
         "type": "integer",
@@ -16774,6 +16774,11 @@
         },
         "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets\nthe palette the editor offers and what an agent is told to use. Its values are written into a\nmessage when the message is authored, so saving it never changes a message already written. A\nWorkspace that has not saved one has the defaults and `saved` false."
       },
+      "SiteBroadcastLimit": {
+        "type": "string",
+        "enum": ["sendCap", "providerLimit"],
+        "description": "What slows a sending broadcast"
+      },
       "SiteBroadcastLinkClicksList": {
         "type": "object",
         "required": ["items"],
@@ -16790,7 +16795,7 @@
       },
       "SiteBroadcastProgress": {
         "type": "object",
-        "required": ["processedCount", "remainingCount"],
+        "required": ["processedCount", "remainingCount", "limitedBy"],
         "properties": {
           "processedCount": {
             "type": "integer",
@@ -16810,10 +16815,19 @@
               }
             ],
             "nullable": true,
-            "description": "When the last remaining recipient is expected to be sent. Null when it is not\nknowable: the broadcast is on hold, or it is not paced by a Provider limit."
+            "description": "When the last remaining recipient is expected to be sent. Null when it is not\nknowable: the broadcast is on hold, or nothing limits it."
+          },
+          "limitedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteBroadcastLimit"
+              }
+            ],
+            "nullable": true,
+            "description": "What slows the broadcast and sets the estimate; null when nothing does or it is on hold"
           }
         },
-        "description": "How far a sending broadcast has got. A broadcast limited by its Integration's Send\nrate limit is paced: recipients go out at an even interval, so the estimate is\nderived on the server from the last scheduled time and the recipients remaining."
+        "description": "How far a sending broadcast has got. A broadcast limited by its Integration's Provider\nlimit is paced: recipients go out at an even interval. The Workspace's Send cap lets a\nday's worth out at a time. The estimate is derived on the server from both, the later\nof the two, and `limitedBy` says which one it is."
       },
       "SiteBroadcastResource": {
         "type": "object",
@@ -20681,6 +20695,26 @@
         },
         "description": "Segment resource used by the site UI"
       },
+      "SiteSendCap": {
+        "type": "object",
+        "required": ["perDay", "sentLast24h"],
+        "properties": {
+          "perDay": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerDay"
+              }
+            ],
+            "description": "Messages per rolling 24 hours"
+          },
+          "sentLast24h": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the Workspace sent over the last 24 hours"
+          }
+        },
+        "description": "The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across\nall its Integrations, Transactional included. The platform sets it; the Workspace only reads it.\nSends beyond it wait for the 24-hour window to free up; Transactional mail is never delayed. It\nis not a Provider limit, which each Integration sets for its own provider account."
+      },
       "SiteSendingDomainResource": {
         "type": "object",
         "required": [
@@ -22092,6 +22126,16 @@
             ],
             "nullable": true,
             "description": "When the authenticated User's grace under the Two-factor requirement ends:\n7 days after the later of the requirement's start and their Membership's\ncreation. Absent without a requirement or once the User has a Second factor.\nAfter it, every request to this Workspace answers 403 with code\nsecond_factor_required until the User enrolls one."
+          },
+          "sendCap": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteSendCap"
+              }
+            ],
+            "nullable": true,
+            "description": "The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null\nwhen no Send cap applies. Read-only: no operation lets the Workspace change it."
           },
           "accountLinkAvailable": {
             "type": "boolean",

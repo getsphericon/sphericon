@@ -11944,6 +11944,74 @@ func (o OptNilMaxPerSecond) Or(d MaxPerSecond) MaxPerSecond {
 	return d
 }
 
+// NewOptNilSendCap returns new OptNilSendCap with value set to v.
+func NewOptNilSendCap(v SendCap) OptNilSendCap {
+	return OptNilSendCap{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSendCap is optional nullable SendCap.
+type OptNilSendCap struct {
+	Value SendCap
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSendCap was set.
+func (o OptNilSendCap) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSendCap) Reset() {
+	var v SendCap
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSendCap) SetTo(v SendCap) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSendCap) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSendCap) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SendCap
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSendCap) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSendCap) Get() (v SendCap, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSendCap) Or(d SendCap) SendCap {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilString returns new OptNilString with value set to v.
 func NewOptNilString(v string) OptNilString {
 	return OptNilString{
@@ -13474,6 +13542,8 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
+func (*ProblemDetails) workspaceGetRes() {}
+
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
 
@@ -13663,6 +13733,7 @@ func (*ProblemDetailsHeaders) webhooksListRes()              {}
 func (*ProblemDetailsHeaders) webhooksRegenerateSecretRes()  {}
 func (*ProblemDetailsHeaders) webhooksTestRes()              {}
 func (*ProblemDetailsHeaders) webhooksUpdateRes()            {}
+func (*ProblemDetailsHeaders) workspaceGetRes()              {}
 
 // Where an effective Provider limit comes from.
 // Ref: #/components/schemas/ProviderLimitSource
@@ -15325,6 +15396,38 @@ func (*SegmentsUpdateUnauthorized) segmentsUpdateRes() {}
 type SegmentsUpdateUnprocessableEntity ProblemDetails
 
 func (*SegmentsUpdateUnprocessableEntity) segmentsUpdateRes() {}
+
+// The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across all
+// its Integrations, Transactional included. The platform sets it; the Workspace only reads it. Sends
+// beyond it are deferred until the 24-hour window frees up, never refused; Transactional mail is never
+// delayed. It is not a Provider limit, which each Integration sets for its own provider account.
+// Ref: #/components/schemas/SendCap
+type SendCap struct {
+	// Messages per rolling 24 hours.
+	PerDay MaxPerDay `json:"perDay"`
+	// Messages the Workspace sent over the last 24 hours.
+	SentLast24h int32 `json:"sentLast24h"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *SendCap) GetPerDay() MaxPerDay {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *SendCap) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *SendCap) SetPerDay(val MaxPerDay) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *SendCap) SetSentLast24h(val int32) {
+	s.SentLast24h = val
+}
 
 // Send a single transactional email by rendering a referenced template.
 // Ref: #/components/schemas/SendTransactionalEmailInput
@@ -18894,3 +18997,61 @@ func (*WebhooksUpdateUnauthorized) webhooksUpdateRes() {}
 type WebhooksUpdateUnprocessableEntity ProblemDetails
 
 func (*WebhooksUpdateUnprocessableEntity) webhooksUpdateRes() {}
+
+type WorkspaceId string
+
+// The Workspace the token acts in.
+// Ref: #/components/schemas/WorkspaceResource
+type WorkspaceResource struct {
+	// The Workspace id: its short opaque public address.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+	// The IANA time zone every analytics report counts its days in (ADR 0057).
+	Timezone TimeZoneName `json:"timezone"`
+	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
+	// Send cap applies.
+	SendCap OptNilSendCap `json:"sendCap"`
+}
+
+// GetID returns the value of ID.
+func (s *WorkspaceResource) GetID() WorkspaceId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *WorkspaceResource) GetName() string {
+	return s.Name
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *WorkspaceResource) GetTimezone() TimeZoneName {
+	return s.Timezone
+}
+
+// GetSendCap returns the value of SendCap.
+func (s *WorkspaceResource) GetSendCap() OptNilSendCap {
+	return s.SendCap
+}
+
+// SetID sets the value of ID.
+func (s *WorkspaceResource) SetID(val WorkspaceId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *WorkspaceResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetTimezone sets the value of Timezone.
+func (s *WorkspaceResource) SetTimezone(val TimeZoneName) {
+	s.Timezone = val
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *WorkspaceResource) SetSendCap(val OptNilSendCap) {
+	s.SendCap = val
+}
+
+func (*WorkspaceResource) workspaceGetRes() {}

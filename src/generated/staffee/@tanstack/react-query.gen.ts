@@ -4,8 +4,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen.ts';
-import { type Options, staffSignupSurveyCounts, staffSignupSurveyGet, staffWorkspaceAuditList, staffWorkspacesExempt, staffWorkspacesGet, staffWorkspacesList, staffWorkspacesSuspend, staffWorkspacesUnexempt, staffWorkspacesUnsuspend } from '../sdk.gen.ts';
-import type { StaffSignupSurveyCountsData, StaffSignupSurveyCountsError, StaffSignupSurveyCountsResponse, StaffSignupSurveyGetData, StaffSignupSurveyGetError, StaffSignupSurveyGetResponse, StaffWorkspaceAuditListData, StaffWorkspaceAuditListError, StaffWorkspaceAuditListResponse, StaffWorkspacesExemptData, StaffWorkspacesExemptError, StaffWorkspacesExemptResponse, StaffWorkspacesGetData, StaffWorkspacesGetError, StaffWorkspacesGetResponse, StaffWorkspacesListData, StaffWorkspacesListError, StaffWorkspacesListResponse, StaffWorkspacesSuspendData, StaffWorkspacesSuspendError, StaffWorkspacesSuspendResponse, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptError, StaffWorkspacesUnexemptResponse, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendError, StaffWorkspacesUnsuspendResponse } from '../types.gen.ts';
+import { type Options, staffSignupSurveyCounts, staffSignupSurveyGet, staffWorkspaceAuditList, staffWorkspacesClearSendCap, staffWorkspacesExempt, staffWorkspacesGet, staffWorkspacesList, staffWorkspacesSetSendCap, staffWorkspacesSuspend, staffWorkspacesUnexempt, staffWorkspacesUnsuspend } from '../sdk.gen.ts';
+import type { StaffSignupSurveyCountsData, StaffSignupSurveyCountsError, StaffSignupSurveyCountsResponse, StaffSignupSurveyGetData, StaffSignupSurveyGetError, StaffSignupSurveyGetResponse, StaffWorkspaceAuditListData, StaffWorkspaceAuditListError, StaffWorkspaceAuditListResponse, StaffWorkspacesClearSendCapData, StaffWorkspacesClearSendCapError, StaffWorkspacesClearSendCapResponse, StaffWorkspacesExemptData, StaffWorkspacesExemptError, StaffWorkspacesExemptResponse, StaffWorkspacesGetData, StaffWorkspacesGetError, StaffWorkspacesGetResponse, StaffWorkspacesListData, StaffWorkspacesListError, StaffWorkspacesListResponse, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapError, StaffWorkspacesSetSendCapResponse, StaffWorkspacesSuspendData, StaffWorkspacesSuspendError, StaffWorkspacesSuspendResponse, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptError, StaffWorkspacesUnexemptResponse, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendError, StaffWorkspacesUnsuspendResponse } from '../types.gen.ts';
 
 export type QueryKey<TOptions extends Options> = [
   Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -266,6 +266,49 @@ export const staffWorkspacesExemptMutation = (options?: Partial<Options<StaffWor
       return data;
     },
     mutationKey: staffWorkspacesExemptMutationKey(options)
+  };
+  return mutationOptions;
+};
+
+export const staffWorkspacesClearSendCapMutationKey = (options?: Partial<Options<StaffWorkspacesClearSendCapData>>) => createMutationKey('staffWorkspacesClearSendCap', options, ['StaffMember Workspaces']);
+
+/**
+ * Remove a Workspace's Send cap, so it is limited by its Provider limits only. Audited.
+ * Idempotent. Not found on an Instance that has no Send caps.
+ */
+export const staffWorkspacesClearSendCapMutation = (options?: Partial<Options<StaffWorkspacesClearSendCapData>>): UseMutationOptions<StaffWorkspacesClearSendCapResponse, StaffWorkspacesClearSendCapError, Options<StaffWorkspacesClearSendCapData>> => {
+  const mutationOptions: UseMutationOptions<StaffWorkspacesClearSendCapResponse, StaffWorkspacesClearSendCapError, Options<StaffWorkspacesClearSendCapData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await staffWorkspacesClearSendCap({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    },
+    mutationKey: staffWorkspacesClearSendCapMutationKey(options)
+  };
+  return mutationOptions;
+};
+
+export const staffWorkspacesSetSendCapMutationKey = (options?: Partial<Options<StaffWorkspacesSetSendCapData>>) => createMutationKey('staffWorkspacesSetSendCap', options, ['StaffMember Workspaces']);
+
+/**
+ * Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a
+ * rolling 24 hours are deferred, not refused. Audited. Idempotent. Not found on an Instance that
+ * has no Send caps.
+ */
+export const staffWorkspacesSetSendCapMutation = (options?: Partial<Options<StaffWorkspacesSetSendCapData>>): UseMutationOptions<StaffWorkspacesSetSendCapResponse, StaffWorkspacesSetSendCapError, Options<StaffWorkspacesSetSendCapData>> => {
+  const mutationOptions: UseMutationOptions<StaffWorkspacesSetSendCapResponse, StaffWorkspacesSetSendCapError, Options<StaffWorkspacesSetSendCapData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await staffWorkspacesSetSendCap({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    },
+    mutationKey: staffWorkspacesSetSendCapMutationKey(options)
   };
   return mutationOptions;
 };

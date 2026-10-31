@@ -94,7 +94,10 @@ import (
 // goverter:extend nilInt32
 // goverter:extend nilString
 // goverter:extend count
+// goverter:extend maxPerDay
 // goverter:extend providerLimitSource
+// goverter:extend broadcastLimit
+// goverter:extend optNilSendCap
 // goverter:extend optTimestamp
 // goverter:extend optInt32
 // goverter:extend optString
@@ -165,6 +168,9 @@ type Converter interface {
 	// The MCP origin is instance configuration, attached by the handler.
 	// goverter:ignore McpUrl
 	// goverter:ignore TrackerUrl
+	// The Send cap shown is the one the send path enforces (outbound.Module.SendCapStatus), which
+	// the mapper cannot see: the handler attaches it through SendCapStatusToResource.
+	// goverter:ignore SendCap
 	// The numeric key stays internal: the contract's id is the Workspace id.
 	// goverter:map PublicID ID
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
@@ -221,6 +227,12 @@ type Converter interface {
 	// goverter:map Remaining RemainingCount
 	// goverter:map EstimatedCompletion EstimatedCompletionAt
 	BroadcastProgressToResource(source broadcasts.Progress) siteapi.SiteBroadcastProgress
+	// A Broadcast's progress names only the Send cap or the Provider limit, never the provider's
+	// own throttling, which only a Deferral reports.
+	// goverter:enum:map CauseSendCap SiteBroadcastLimitSendCap
+	// goverter:enum:map CauseProviderLimit SiteBroadcastLimitProviderLimit
+	// goverter:enum:map CauseProvider @panic
+	BroadcastLimitToResource(source providerlimit.Cause) siteapi.SiteBroadcastLimit
 
 	// goverter:ignore Warnings
 	EmailTemplateToResource(source *ent.EmailTemplate) siteapi.SiteEmailTemplateResource
@@ -276,6 +288,10 @@ type Converter interface {
 	SesConfigToResource(source integrations.RedactedSES) siteapi.SiteSesConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
+	// goverter:map Sent24h SentLast24h
+	SendCapToResource(source providerlimit.SendCapStatus) siteapi.SiteSendCap
+	// The Send cap that applies (outbound.Module.SendCapStatus), null when none does.
+	SendCapStatusToResource(source *providerlimit.SendCapStatus) siteapi.OptNilSiteSendCap
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	// goverter:useEmptyOnNil:slice
 	PasskeysToResources(source []*ent.Passkey) []siteapi.SitePasskey
@@ -577,6 +593,9 @@ func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshal
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
 
+// maxPerDay narrows a rolling 24-hour limit to the contract's bounded int32.
+func maxPerDay(n int) siteapi.MaxPerDay { return siteapi.MaxPerDay(narrow.Int32(n)) }
+
 // nilString renders an optional value: null when there is none.
 func nilString(v *string) siteapi.NilString {
 	return convert.Nil[siteapi.NilString](v)
@@ -598,6 +617,19 @@ func providerLimitSource(c Converter, v providerlimit.Source) siteapi.NilSitePro
 		return siteapi.NilSiteProviderLimitSource{Null: true}
 	}
 	return siteapi.NewNilSiteProviderLimitSource(c.ProviderLimitSourceToResource(v))
+}
+
+// optNilSendCap is null exactly when no Send cap applies.
+func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) siteapi.OptNilSiteSendCap {
+	return convert.NilVia[siteapi.OptNilSiteSendCap](v, c.SendCapToResource)
+}
+
+// broadcastLimit is null exactly when nothing limits the Broadcast (its limit is empty).
+func broadcastLimit(c Converter, v providerlimit.Cause) siteapi.NilSiteBroadcastLimit {
+	if v == "" {
+		return siteapi.NilSiteBroadcastLimit{Null: true}
+	}
+	return siteapi.NewNilSiteBroadcastLimit(c.BroadcastLimitToResource(v))
 }
 
 func optNilInt32(v *int) siteapi.OptNilInt32 {

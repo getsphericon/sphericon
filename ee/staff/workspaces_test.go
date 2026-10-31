@@ -23,7 +23,7 @@ import (
 // (never Contacts, content, Events or the Workspace's secret keys).
 func requireMetadataOnly(t *testing.T, w map[string]any) {
 	t.Helper()
-	allowed := []string{"id", "name", "createdAt", "suspension", "deliverability", "holds", "exempt", "warned", "abuse", "discardedAt", "erasedAt"}
+	allowed := []string{"id", "name", "createdAt", "suspension", "deliverability", "holds", "exempt", "warned", "abuse", "discardedAt", "erasedAt", "sendCap"}
 	for k := range w {
 		assert.Contains(t, allowed, k)
 	}

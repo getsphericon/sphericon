@@ -729,6 +729,14 @@ type Handler interface {
 	//
 	// PUT /webhooks/{id}
 	WebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params WebhooksUpdateParams) (WebhooksUpdateRes, error)
+	// WorkspaceGet implements Workspace_get operation.
+	//
+	// Read the Workspace the token acts in: its name, time zone and Send cap. Read the Send cap to explain
+	// a slow send or to plan one: a send larger than what remains of it in the last 24 hours goes out over
+	// more than a day. Read-only: no operation changes the Send cap.
+	//
+	// GET /workspace
+	WorkspaceGet(ctx context.Context) (WorkspaceGetRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

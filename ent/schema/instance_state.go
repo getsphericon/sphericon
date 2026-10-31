@@ -11,8 +11,8 @@ import (
 
 // InstanceState is the one row an Instance keeps about itself (ADR 0032): its random
 // Instance id, the Owner's telemetry setting, whether the Telemetry report notice was
-// acknowledged, when a report was last sent and the newest release the Release check
-// found. It belongs to the Instance, not a Workspace (no Workspace edge, no scoped
+// acknowledged, when a report was last sent, the newest release the Release check
+// found and the default Send cap of new Workspaces. It belongs to the Instance, not a Workspace (no Workspace edge, no scoped
 // wrapper). Row id 1 is created at first start by internal/instance.
 type InstanceState struct {
 	ent.Schema
@@ -57,5 +57,13 @@ func (InstanceState) Fields() []ent.Field {
 		field.Time("latest_release_checked_at").
 			Optional().
 			Nillable(),
+		// DefaultSendCap is the Send cap every new Workspace starts with (ADR 0067), as a Staff
+		// member set it: messages per rolling 24 hours, copied onto the Workspace at its creation.
+		// NULL: new Workspaces get no Send cap. It applies only on an Instance that has Send caps;
+		// elsewhere a stored value is ignored. Its bounds are declared in the contract.
+		field.Int("default_send_cap").
+			Optional().
+			Nillable().
+			Positive(),
 	}
 }

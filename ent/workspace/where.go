@@ -115,6 +115,11 @@ func AttributionWindowDays(v int) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldAttributionWindowDays, v))
 }
 
+// SendCap applies equality check predicate on the "send_cap" field. It's identical to SendCapEQ.
+func SendCap(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSendCap, v))
+}
+
 // DomainJoinEnabled applies equality check predicate on the "domain_join_enabled" field. It's identical to DomainJoinEnabledEQ.
 func DomainJoinEnabled(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldDomainJoinEnabled, v))
@@ -818,6 +823,56 @@ func AttributionWindowDaysLT(v int) predicate.Workspace {
 // AttributionWindowDaysLTE applies the LTE predicate on the "attribution_window_days" field.
 func AttributionWindowDaysLTE(v int) predicate.Workspace {
 	return predicate.Workspace(sql.FieldLTE(FieldAttributionWindowDays, v))
+}
+
+// SendCapEQ applies the EQ predicate on the "send_cap" field.
+func SendCapEQ(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldSendCap, v))
+}
+
+// SendCapNEQ applies the NEQ predicate on the "send_cap" field.
+func SendCapNEQ(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldSendCap, v))
+}
+
+// SendCapIn applies the In predicate on the "send_cap" field.
+func SendCapIn(vs ...int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldSendCap, vs...))
+}
+
+// SendCapNotIn applies the NotIn predicate on the "send_cap" field.
+func SendCapNotIn(vs ...int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldSendCap, vs...))
+}
+
+// SendCapGT applies the GT predicate on the "send_cap" field.
+func SendCapGT(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldSendCap, v))
+}
+
+// SendCapGTE applies the GTE predicate on the "send_cap" field.
+func SendCapGTE(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldSendCap, v))
+}
+
+// SendCapLT applies the LT predicate on the "send_cap" field.
+func SendCapLT(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldSendCap, v))
+}
+
+// SendCapLTE applies the LTE predicate on the "send_cap" field.
+func SendCapLTE(v int) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldSendCap, v))
+}
+
+// SendCapIsNil applies the IsNil predicate on the "send_cap" field.
+func SendCapIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldSendCap))
+}
+
+// SendCapNotNil applies the NotNil predicate on the "send_cap" field.
+func SendCapNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldSendCap))
 }
 
 // DomainJoinEnabledEQ applies the EQ predicate on the "domain_join_enabled" field.
@@ -1674,6 +1729,29 @@ func HasProviderLimiters() predicate.Workspace {
 func HasProviderLimitersWith(preds ...predicate.ProviderLimiter) predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
 		step := newProviderLimitersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSendCapLimiters applies the HasEdge predicate on the "send_cap_limiters" edge.
+func HasSendCapLimiters() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SendCapLimitersTable, SendCapLimitersColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSendCapLimitersWith applies the HasEdge predicate on the "send_cap_limiters" edge with a given conditions (other predicates).
+func HasSendCapLimitersWith(preds ...predicate.SendCapLimiter) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newSendCapLimitersStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -144,6 +144,7 @@ var operationRolesBearerAuth = map[string][]string{
 	WebhooksRegenerateSecretOperation:  []string{},
 	WebhooksTestOperation:              []string{},
 	WebhooksUpdateOperation:            []string{},
+	WorkspaceGetOperation:              []string{},
 }
 
 // GetRolesForBearerAuth returns the required roles for the given operation.

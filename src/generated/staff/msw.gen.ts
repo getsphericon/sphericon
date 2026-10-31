@@ -3,7 +3,7 @@
 
 import { http, type HttpHandler, HttpResponse, type HttpResponseResolver, type RequestHandlerOptions as RequestHandlerOptions2 } from 'msw';
 
-import type { ClientOptions, StaffAuthLoginData, StaffAuthLoginResponses, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceGetStateResponses, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryResponses, StaffMeGetResponses, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateResponses, StaffSignupItemsGetResponses, StaffSignupItemsListResponses, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateResponses } from './types.gen.ts';
+import type { ClientOptions, StaffAuthLoginData, StaffAuthLoginResponses, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceClearDefaultSendCapResponses, StaffInstanceGetStateResponses, StaffInstanceListAuditEntriesResponses, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetDefaultSendCapData, StaffInstanceSetDefaultSendCapResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryResponses, StaffMeGetResponses, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateResponses, StaffSignupItemsGetResponses, StaffSignupItemsListResponses, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateResponses } from './types.gen.ts';
 
 export type RequestHandlerOptions = RequestHandlerOptions2 & {
   baseUrl?: ClientOptions['baseUrl'];
@@ -101,6 +101,87 @@ export type HandleStaffInstanceGetStateResponse = {
  */
 export function handleStaffInstanceGetState(response?: HandleStaffInstanceGetStateResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
   return http.get<never, never>(`${options?.baseUrl ?? '*'}/instance`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffInstanceListAuditEntriesResponse = {
+  body: StaffInstanceListAuditEntriesResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `GET /instance/audit-entries` operation.
+ */
+export function handleStaffInstanceListAuditEntries(response?: HandleStaffInstanceListAuditEntriesResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.get<never, never>(`${options?.baseUrl ?? '*'}/instance/audit-entries`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffInstanceClearDefaultSendCapResponse = {
+  body: StaffInstanceClearDefaultSendCapResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `DELETE /instance/default-send-cap` operation.
+ */
+export function handleStaffInstanceClearDefaultSendCap(response?: HandleStaffInstanceClearDefaultSendCapResponse | HttpResponseResolver<never, never>, options?: RequestHandlerOptions): HttpHandler {
+  return http.delete<never, never>(`${options?.baseUrl ?? '*'}/instance/default-send-cap`, info => {
+    if (typeof response === 'function') {
+      return response(info);
+    }
+    const body = response?.body;
+    if (body !== undefined) {
+      return HttpResponse.json(body, { status: response?.status ?? 200 });
+    }
+    if (options?.responseFallback === 'passthrough') {
+      return;
+    }
+    return new Response('Not Implemented', {
+      status: 501,
+      statusText: 'Not Implemented'
+    });
+  }, options);
+}
+
+export type HandleStaffInstanceSetDefaultSendCapResponse = {
+  body: StaffInstanceSetDefaultSendCapResponses[200];
+  status?: 200;
+};
+
+/**
+ * Handler for the `PUT /instance/default-send-cap` operation.
+ */
+export function handleStaffInstanceSetDefaultSendCap(response?: HandleStaffInstanceSetDefaultSendCapResponse | HttpResponseResolver<never, StaffInstanceSetDefaultSendCapData['body']>, options?: RequestHandlerOptions): HttpHandler {
+  return http.put<never, StaffInstanceSetDefaultSendCapData['body']>(`${options?.baseUrl ?? '*'}/instance/default-send-cap`, info => {
     if (typeof response === 'function') {
       return response(info);
     }
@@ -511,6 +592,18 @@ export type MswHandlerFactories = {
    */
   staffInstanceGetState: typeof handleStaffInstanceGetState;
   /**
+   * Handler for the `GET /instance/audit-entries` operation.
+   */
+  staffInstanceListAuditEntries: typeof handleStaffInstanceListAuditEntries;
+  /**
+   * Handler for the `DELETE /instance/default-send-cap` operation.
+   */
+  staffInstanceClearDefaultSendCap: typeof handleStaffInstanceClearDefaultSendCap;
+  /**
+   * Handler for the `PUT /instance/default-send-cap` operation.
+   */
+  staffInstanceSetDefaultSendCap: typeof handleStaffInstanceSetDefaultSendCap;
+  /**
    * Handler for the `POST /instance/notice/acknowledge` operation.
    */
   staffInstanceAcknowledgeNotice: typeof handleStaffInstanceAcknowledgeNotice;
@@ -583,6 +676,9 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
     staffAuthLogout: wrap(handleStaffAuthLogout),
     staffAuthSecondFactor: wrap(handleStaffAuthSecondFactor),
     staffInstanceGetState: wrap(handleStaffInstanceGetState),
+    staffInstanceListAuditEntries: wrap(handleStaffInstanceListAuditEntries),
+    staffInstanceClearDefaultSendCap: wrap(handleStaffInstanceClearDefaultSendCap),
+    staffInstanceSetDefaultSendCap: wrap(handleStaffInstanceSetDefaultSendCap),
     staffInstanceAcknowledgeNotice: wrap(handleStaffInstanceAcknowledgeNotice),
     staffInstanceSetTelemetry: wrap(handleStaffInstanceSetTelemetry),
     staffInstancePreviewTelemetryReport: wrap(handleStaffInstancePreviewTelemetryReport),
@@ -616,6 +712,9 @@ export function createMswHandlers(config: RequestHandlerOptions = {}): CreateMsw
       invoke(pick.staffAuthLogin, overrides.staffAuthLogin),
       invoke(pick.staffAuthLogout, overrides.staffAuthLogout),
       invoke(pick.staffAuthSecondFactor, overrides.staffAuthSecondFactor),
+      invoke(pick.staffInstanceListAuditEntries, overrides.staffInstanceListAuditEntries),
+      invoke(pick.staffInstanceClearDefaultSendCap, overrides.staffInstanceClearDefaultSendCap),
+      invoke(pick.staffInstanceSetDefaultSendCap, overrides.staffInstanceSetDefaultSendCap),
       invoke(pick.staffInstanceSetTelemetry, overrides.staffInstanceSetTelemetry),
       invoke(pick.staffSignupItemsReorder, overrides.staffSignupItemsReorder),
       invoke(pick.staffSignupItemsGet, overrides.staffSignupItemsGet),
