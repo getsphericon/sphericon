@@ -1,8 +1,11 @@
-import type {
-  CollectEventInput,
-  CollectEventsInput,
-  CollectIdentifyInput,
-} from './generated/collect/types.gen.ts'
+import { range, throttle } from 'es-toolkit'
+import Cookies from 'js-cookie'
+import { v4 as uuid } from 'uuid'
+
+import { createClient } from './generated/collect/client/index.ts'
+import type { Client } from './generated/collect/client/index.ts'
+import { collectEventsCreate, collectIdentifyCreate } from './generated/collect/sdk.gen.ts'
+import type { CollectEventInput, CollectIdentifyInput } from './generated/collect/types.gen.ts'
 
 const VISITOR_COOKIE_NAME = 'om_vid'
 const FLUSH_DELAY_MS = 200
@@ -37,12 +40,9 @@ type QueueApi = QueueCommand[] & {
 }
 
 interface Runtime {
-  config: TrackerConfig
+  client: Client
   visitorId: string
   pendingEvents: CollectEventInput[]
-  flushTimer: number | null
-  retryTimer: number | null
-  attempt: number
   sending: boolean
 }
 
@@ -80,53 +80,37 @@ function findConfigInQueue(commands: QueueCommand[]): TrackerConfig | null {
   return null
 }
 
-function randomVisitorId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-
-  return `vid_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
-}
-
-function readCookie(name: string): string | null {
-  const cookie = document.cookie.split('; ').find((part) => part.startsWith(`${name}=`))
-
-  if (!cookie) {
-    return null
-  }
-
-  const value = cookie.slice(name.length + 1)
-
-  return value ? decodeURIComponent(value) : null
-}
-
-function writeCookie(name: string, value: string): void {
-  // document.cookie on purpose: the Cookie Store API is async and not suitable here.
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`
+// The collect client of one tracker. A batch the instance cannot take now (a network failure, a
+// timeout, a 429 or a 5xx) is resent by ky until it is taken: after the wait a Retry-After names,
+// or a doubling backoff. Any other refusal is final.
+function collectClient(config: TrackerConfig): Client {
+  return createClient({
+    baseUrl: `${config.baseUrl}/collect`,
+    auth: config.collectKey,
+    keepalive: true,
+    retry: {
+      limit: Number.MAX_SAFE_INTEGER,
+      methods: ['post'],
+      statusCodes: [429, ...range(500, 600)],
+      retryOnTimeout: true,
+      delay: (attempt) => RETRY_BASE_MS * 2 ** (attempt - 1),
+      backoffLimit: RETRY_MAX_MS,
+    },
+    kyOptions: { throwHttpErrors: true },
+  })
 }
 
 function getOrCreateVisitorId(): string {
-  const existing = readCookie(VISITOR_COOKIE_NAME)
+  const existing = Cookies.get(VISITOR_COOKIE_NAME)
 
   if (existing) {
     return existing
   }
 
-  const created = randomVisitorId()
-  writeCookie(VISITOR_COOKIE_NAME, created)
+  const created = uuid()
+  Cookies.set(VISITOR_COOKIE_NAME, created, { path: '/', expires: 365, sameSite: 'Lax' })
 
   return created
-}
-
-function buildHeaders(config: TrackerConfig): HeadersInit {
-  return {
-    'content-type': 'application/json',
-    'x-collect-key': config.collectKey,
-  }
-}
-
-function collectUrl(config: TrackerConfig, path: string): string {
-  return `${config.baseUrl}${path}`
 }
 
 // Unsent events live in localStorage so a restart of the instance, or a page load, never loses them.
@@ -148,82 +132,36 @@ function saveQueue(events: CollectEventInput[]): void {
   }
 }
 
-function flushSoon(): void {
-  if (runtime?.flushTimer !== null || runtime.retryTimer !== null) {
-    return
-  }
-
-  runtime.flushTimer = window.setTimeout(() => {
-    void flushEvents()
-  }, FLUSH_DELAY_MS)
-}
-
-function retryDelay(response: Response | null, attempt: number): number {
-  const seconds = Number(response?.headers.get('retry-after'))
-
-  if (seconds > 0) {
-    return Math.min(seconds * 1000, RETRY_MAX_MS)
-  }
-
-  return Math.min(RETRY_BASE_MS * 2 ** attempt, RETRY_MAX_MS)
-}
+// Events tracked close together go out as one batch, FLUSH_DELAY_MS after the first of them.
+const flushSoon = throttle(() => void flushEvents(), FLUSH_DELAY_MS, { edges: ['trailing'] })
 
 async function flushEvents(): Promise<void> {
-  if (!runtime || runtime.sending) {
-    return
-  }
-
-  window.clearTimeout(runtime.flushTimer ?? undefined)
-  window.clearTimeout(runtime.retryTimer ?? undefined)
-  runtime.flushTimer = null
-  runtime.retryTimer = null
-
-  if (runtime.pendingEvents.length === 0) {
+  if (!runtime || runtime.sending || runtime.pendingEvents.length === 0) {
     return
   }
 
   const state = runtime
   const events = state.pendingEvents.slice()
-  const body: CollectEventsInput = { events }
-  let retry = false
-  let response: Response | null = null
 
   state.sending = true
 
-  try {
-    response = await fetch(collectUrl(state.config, '/collect/events'), {
-      method: 'POST',
-      headers: buildHeaders(state.config),
-      body: JSON.stringify(body),
-      keepalive: true,
-    })
-    retry = response.status === 429 || response.status >= 500
-  } catch {
-    retry = true
-  }
+  // Settles once the instance took the batch or refused it for good; the retries happen inside.
+  const { response } = await collectEventsCreate({ client: state.client, body: { events } })
 
   state.sending = false
 
-  if (retry) {
-    state.retryTimer = window.setTimeout(
-      () => void flushEvents(),
-      retryDelay(response, state.attempt),
-    )
-    state.attempt += 1
+  // No answer at all (the request could not be made): the batch stays queued for the next flush.
+  if (!response) {
     return
   }
 
-  state.attempt = 0
   state.pendingEvents = state.pendingEvents.filter((event) => !events.includes(event))
   saveQueue(state.pendingEvents)
   flushSoon()
 }
 
 function flushEventsOnPageHide(): void {
-  if (!runtime || runtime.pendingEvents.length === 0) {
-    return
-  }
-
+  flushSoon.cancel()
   void flushEvents()
 }
 
@@ -269,12 +207,9 @@ export function initTracking(config?: TrackerConfig): void {
   }
 
   runtime = {
-    config: resolved,
+    client: collectClient(resolved),
     visitorId: getOrCreateVisitorId(),
     pendingEvents: readQueue(),
-    flushTimer: null,
-    retryTimer: null,
-    attempt: 0,
     sending: false,
   }
 
@@ -296,19 +231,17 @@ export async function identify(payload: IdentifyInput): Promise<void> {
     return
   }
 
-  const body: CollectIdentifyInput = {
-    visitorId: runtime.visitorId,
-    email: payload.email ?? null,
-    phone: payload.phone ?? null,
-    subjectId: payload.subjectId ?? null,
-    traits: payload.traits ?? null,
-  }
-
-  await fetch(collectUrl(runtime.config, '/collect/identify'), {
-    method: 'POST',
-    headers: buildHeaders(runtime.config),
-    body: JSON.stringify(body),
-    keepalive: true,
+  // An identify is sent once: a failure is dropped, not retried.
+  await collectIdentifyCreate({
+    client: runtime.client,
+    retry: 0,
+    body: {
+      visitorId: runtime.visitorId,
+      email: payload.email ?? null,
+      phone: payload.phone ?? null,
+      subjectId: payload.subjectId ?? null,
+      traits: payload.traits ?? null,
+    },
   }).catch(() => undefined)
 }
 
@@ -327,7 +260,7 @@ export function track(action: string, properties?: EventProperties): void {
     action,
     properties: properties ?? null,
     occurredAt: new Date().toISOString(),
-    clientEventId: randomVisitorId(),
+    clientEventId: uuid(),
   })
   runtime.pendingEvents = runtime.pendingEvents.slice(-MAX_QUEUE)
   saveQueue(runtime.pendingEvents)
