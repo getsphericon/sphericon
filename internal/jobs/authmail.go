@@ -10,64 +10,13 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 )
 
-// Auth-mail flows: the self-service account emails sent through the system
-// (platform) sender. Each maps to a public SPA page that posts the token back.
-const (
-	flowPasswordReset = "password_reset"
-	flowEmailVerify   = "email_verify"
-	flowEmailChange   = "email_change"
-	// flowUserDeletion is the one-time link a User with no password confirms their User
-	// deletion with (ADR 0050).
-	flowUserDeletion = "user_deletion"
-	// flowAddressTaken is the notice to the owner of a Taken address (ADR 0031): it
-	// carries no token, only the sign-in and forgot-password pages.
-	flowAddressTaken = "address_taken"
-	// flowIdentityLinked is the notice that a Sign-in provider was linked to the account
-	// (ADR 0048): Provider names it, Token is the "this was not me" link.
-	flowIdentityLinked = "identity_linked"
-	// flowUserDeleted is the notice, to the address, that its User was deleted (ADR 0050): no
-	// token and no link, so it can never be a way in.
-	flowUserDeleted = "user_deleted"
-	// flowPasskeyChanged is the notice that a Passkey was added or removed (ADR 0052): Change
-	// says which and Provider carries the Passkey's name. No token and no link.
-	flowPasskeyChanged = "passkey_changed"
-)
-
-// PasskeyChange is what a Passkey notice reports.
-type PasskeyChange string
-
-// PasskeyAdded and PasskeyRemoved are the changes a Passkey notice reports.
-const (
-	PasskeyAdded   PasskeyChange = "added"
-	PasskeyRemoved PasskeyChange = "removed"
-)
-
-// SendAuthMailArgs is the river payload for a self-service account email. Flow
-// selects the subject line and the SPA path the link points at.
-type SendAuthMailArgs struct {
-	Flow  string `json:"flow"`
-	Email string `json:"email"`
-	Token string `json:"token"`
-	// Provider is the display name of the Sign-in provider (identity_linked only).
-	Provider string `json:"provider,omitempty"`
-	// Change is PasskeyAdded or PasskeyRemoved, and Name the Passkey's name (passkey_changed only).
-	Change PasskeyChange `json:"change,omitempty"`
-	Name   string        `json:"name,omitempty"`
-	// Discard builds the mail and drops it. Forgot-password enqueues a Discard job
-	// for an address that gets no mail (unknown, or over its budget), so every
-	// request does the same work and the response time says nothing about the
-	// address.
-	Discard bool `json:"discard,omitempty"`
-}
-
-func (SendAuthMailArgs) Kind() string { return "send_auth_mail" }
-
 // SendAuthMailWorker sends account emails via the system (platform) sender.
 type SendAuthMailWorker struct {
-	river.WorkerDefaults[SendAuthMailArgs]
+	river.WorkerDefaults[mailjobs.AuthMailArgs]
 
 	sender messaging.EmailSender
 	appURL string
@@ -78,161 +27,107 @@ func NewAuthMailWorker(sender messaging.EmailSender, appURL string) *SendAuthMai
 	return &SendAuthMailWorker{sender: sender, appURL: appURL}
 }
 
-func (w *SendAuthMailWorker) Work(ctx context.Context, job *river.Job[SendAuthMailArgs]) error {
-	return SendAuthMail(ctx, w.sender, w.appURL, job.Args)
-}
-
-// SendAuthMail renders and sends a self-service account email through the system
-// sender (sphericon's own provider — NOT a workspace integration, so it bypasses the
-// workspace suppression/eligibility machinery). Pure (no queue) so it runs
-// identically under the river worker and the inline adapter.
-func SendAuthMail(ctx context.Context, sender messaging.EmailSender, appURL string, args SendAuthMailArgs) error {
-	if sender == nil {
+func (w *SendAuthMailWorker) Work(ctx context.Context, job *river.Job[mailjobs.AuthMailArgs]) error {
+	// The system sender is sphericon's own provider, not a Workspace's Integration, so the
+	// mail bypasses the Workspace's suppression and eligibility.
+	if w.sender == nil {
 		return errors.New("send auth mail: no system email sender configured")
 	}
-	msg, err := buildAuthMail(appURL, args)
-	if err != nil || args.Discard {
+	msg, err := buildAuthMail(w.appURL, job.Args)
+	if err != nil || job.Args.Discard {
 		return err
 	}
-	_, err = sender.Send(ctx, msg)
+	_, err = w.sender.Send(ctx, msg)
 	return err
 }
 
+// linkMail is the copy of an account mail that carries a one-time link: its subject, the SPA
+// page the link opens (which posts the token back) and the line above the link. The copy is
+// localized by internal/i18n at send time.
+type linkMail struct {
+	subject, intro i18n.ID
+	path           string
+}
+
+// linkMails is the copy of every account mail with a link.
+var linkMails = map[mailjobs.Flow]linkMail{
+	mailjobs.FlowPasswordReset: {subject: i18n.EmailPasswordResetSubject, path: "/reset-password", intro: i18n.EmailPasswordResetIntro},
+	mailjobs.FlowEmailVerify:   {subject: i18n.EmailEmailVerifySubject, path: "/verify-email", intro: i18n.EmailEmailVerifyIntro},
+	mailjobs.FlowEmailChange:   {subject: i18n.EmailEmailChangeSubject, path: "/confirm-email-change", intro: i18n.EmailEmailChangeIntro},
+	mailjobs.FlowUserDeletion:  {subject: i18n.EmailUserDeletionSubject, path: "/delete-account", intro: i18n.EmailUserDeletionIntro},
+}
+
+// notices renders the account mails that are not a plain link, each in its own shape.
+var notices = map[mailjobs.Flow]func(appURL string, args mailjobs.AuthMailArgs) (messaging.EmailMessage, error){
+	mailjobs.FlowAddressTaken:   buildAddressTakenMail,
+	mailjobs.FlowIdentityLinked: buildIdentityLinkedMail,
+	mailjobs.FlowPasskeyChanged: buildPasskeyChangedMail,
+	mailjobs.FlowUserDeleted:    buildUserDeletedMail,
+}
+
 // buildAuthMail renders an account email without sending it.
-func buildAuthMail(appURL string, args SendAuthMailArgs) (messaging.EmailMessage, error) {
-	if args.Flow == flowAddressTaken {
-		return buildAddressTakenMail(appURL, args.Email), nil
+func buildAuthMail(appURL string, args mailjobs.AuthMailArgs) (messaging.EmailMessage, error) {
+	if build, ok := notices[args.Flow]; ok {
+		return build(appURL, args)
 	}
-	if args.Flow == flowIdentityLinked {
-		return buildIdentityLinkedMail(appURL, args), nil
-	}
-	if args.Flow == flowPasskeyChanged {
-		return buildPasskeyChangedMail(args)
-	}
-	if args.Flow == flowUserDeleted {
-		return buildUserDeletedMail(args.Email), nil
-	}
-	subjectID, path, introID, ok := authMailCopy(args.Flow)
+	c, ok := linkMails[args.Flow]
 	if !ok {
 		return messaging.EmailMessage{}, fmt.Errorf("send auth mail: unknown flow %q", args.Flow)
 	}
-	link := strings.TrimRight(appURL, "/") + path + "?token=" + url.QueryEscape(args.Token)
-	body := fmt.Sprintf("%s\n\n%s\n\n%s\n", i18n.T(introID, nil), link, i18n.T(i18n.EmailAuthFooter, nil))
-	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(subjectID, nil), Text: body}, nil
+	link := strings.TrimRight(appURL, "/") + c.path + "?token=" + url.QueryEscape(args.Token)
+	body := fmt.Sprintf("%s\n\n%s\n\n%s\n", i18n.T(c.intro, nil), link, i18n.T(i18n.EmailAuthFooter, nil))
+	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(c.subject, nil), Text: body}, nil
 }
 
 // buildAddressTakenMail renders the notice a Sign-up or an email change to a
 // Taken address sends its owner. It carries no token, so it can never be a way in.
-func buildAddressTakenMail(appURL, to string) messaging.EmailMessage {
+func buildAddressTakenMail(appURL string, args mailjobs.AuthMailArgs) (messaging.EmailMessage, error) {
 	base := strings.TrimRight(appURL, "/")
 	body := fmt.Sprintf("%s\n\n%s %s\n%s %s\n\n%s\n",
 		i18n.T(i18n.EmailAddressTakenIntro, nil),
 		i18n.T(i18n.EmailAddressTakenSignIn, nil), base+"/login",
 		i18n.T(i18n.EmailAddressTakenReset, nil), base+"/forgot-password",
 		i18n.T(i18n.EmailAuthFooter, nil))
-	return messaging.EmailMessage{To: to, Subject: i18n.T(i18n.EmailAddressTakenSubject, nil), Text: body}
+	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(i18n.EmailAddressTakenSubject, nil), Text: body}, nil
 }
 
 // buildUserDeletedMail renders the one mail a User deletion sends the address: the owner of
 // the mailbox learns of a deletion they did not make.
-func buildUserDeletedMail(to string) messaging.EmailMessage {
+func buildUserDeletedMail(_ string, args mailjobs.AuthMailArgs) (messaging.EmailMessage, error) {
 	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(i18n.EmailUserDeletedIntro, nil), i18n.T(i18n.EmailUserDeletedNotMe, nil))
-	return messaging.EmailMessage{To: to, Subject: i18n.T(i18n.EmailUserDeletedSubject, nil), Text: body}
+	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(i18n.EmailUserDeletedSubject, nil), Text: body}, nil
+}
+
+// passkeyCopy is the subject and intro of a Passkey notice by the change it reports.
+var passkeyCopy = map[mailjobs.PasskeyChange][2]i18n.ID{
+	mailjobs.PasskeyAdded:   {i18n.EmailPasskeyAddedSubject, i18n.EmailPasskeyAddedIntro},
+	mailjobs.PasskeyRemoved: {i18n.EmailPasskeyRemovedSubject, i18n.EmailPasskeyRemovedIntro},
 }
 
 // buildPasskeyChangedMail renders the notice a Passkey change sends the owner of the account.
-func buildPasskeyChangedMail(args SendAuthMailArgs) (messaging.EmailMessage, error) {
-	var subjectID, introID i18n.ID
-	switch args.Change {
-	case PasskeyAdded:
-		subjectID, introID = i18n.EmailPasskeyAddedSubject, i18n.EmailPasskeyAddedIntro
-	case PasskeyRemoved:
-		subjectID, introID = i18n.EmailPasskeyRemovedSubject, i18n.EmailPasskeyRemovedIntro
-	default:
+func buildPasskeyChangedMail(_ string, args mailjobs.AuthMailArgs) (messaging.EmailMessage, error) {
+	c, ok := passkeyCopy[args.Change]
+	if !ok {
 		return messaging.EmailMessage{}, fmt.Errorf("send auth mail: unknown passkey change %q", args.Change)
 	}
-	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(introID, map[string]any{"Name": args.Name}), i18n.T(i18n.EmailPasskeyChangedNotMe, nil))
-	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(subjectID, nil), Text: body}, nil
+	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(c[1], map[string]any{"Name": args.Name}), i18n.T(i18n.EmailPasskeyChangedNotMe, nil))
+	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(c[0], nil), Text: body}, nil
 }
 
 // buildIdentityLinkedMail renders the notice a silent link of a Sign-in provider sends the
 // owner of the account, with the link that undoes it.
-func buildIdentityLinkedMail(appURL string, args SendAuthMailArgs) messaging.EmailMessage {
+func buildIdentityLinkedMail(appURL string, args mailjobs.AuthMailArgs) (messaging.EmailMessage, error) {
 	link := strings.TrimRight(appURL, "/") + "/signin-not-me?token=" + url.QueryEscape(args.Token)
 	body := fmt.Sprintf("%s\n\n%s\n%s\n\n%s\n",
 		i18n.T(i18n.EmailIdentityLinkedIntro, map[string]any{"Provider": args.Provider}),
 		i18n.T(i18n.EmailIdentityLinkedNotMe, nil), link,
 		i18n.T(i18n.EmailAuthFooter, nil))
-	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(i18n.EmailIdentityLinkedSubject, nil), Text: body}
+	return messaging.EmailMessage{To: args.Email, Subject: i18n.T(i18n.EmailIdentityLinkedSubject, nil), Text: body}, nil
 }
 
-// authMailCopy returns the subject message, SPA path and intro message for a flow (false for an
-// unknown flow). The copy itself is localized by internal/i18n at send time.
-func authMailCopy(flow string) (subject i18n.ID, path string, intro i18n.ID, ok bool) {
-	switch flow {
-	case flowPasswordReset:
-		return i18n.EmailPasswordResetSubject, "/reset-password", i18n.EmailPasswordResetIntro, true
-	case flowEmailVerify:
-		return i18n.EmailEmailVerifySubject, "/verify-email", i18n.EmailEmailVerifyIntro, true
-	case flowEmailChange:
-		return i18n.EmailEmailChangeSubject, "/confirm-email-change", i18n.EmailEmailChangeIntro, true
-	case flowUserDeletion:
-		return i18n.EmailUserDeletionSubject, "/delete-account", i18n.EmailUserDeletionIntro, true
-	default:
-		return i18n.ID{}, "", i18n.ID{}, false
-	}
-}
-
-// EnqueuePasswordReset schedules the password-reset email (river adapter). With
-// send false the job is queued all the same but its worker drops the mail.
-func (c *Client) EnqueuePasswordReset(ctx context.Context, email, token string, send bool) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowPasswordReset, Email: email, Token: token, Discard: !send})
-}
-
-// EnqueueEmailVerification schedules the email-verification email. With send false
-// the job is queued all the same but its worker drops the mail (the resend answer
-// must not tell an Unverified User from anyone else by its response time).
-func (c *Client) EnqueueEmailVerification(ctx context.Context, email, token string, send bool) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowEmailVerify, Email: email, Token: token, Discard: !send})
-}
-
-// EnqueueEmailChangeConfirm schedules the confirm-new-email email (sent to the
-// requested new address). With send false the job is queued all the same but its
-// worker drops the mail.
-func (c *Client) EnqueueEmailChangeConfirm(ctx context.Context, email, token string, send bool) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowEmailChange, Email: email, Token: token, Discard: !send})
-}
-
-// EnqueueUserDeletionLink schedules the deletion link mail of a User with no password. With
-// send false the job is queued all the same but its worker drops the mail.
-func (c *Client) EnqueueUserDeletionLink(ctx context.Context, email, token string, send bool) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowUserDeletion, Email: email, Token: token, Discard: !send})
-}
-
-// EnqueueAddressTakenNotice schedules the tokenless notice to the owner of a Taken
-// address. With send false the job is queued all the same but its worker drops the
-// mail, so a request's work does not depend on whether the address was taken.
-func (c *Client) EnqueueAddressTakenNotice(ctx context.Context, email string, send bool) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowAddressTaken, Email: email, Discard: !send})
-}
-
-// EnqueueIdentityLinkedNotice schedules the notice to the owner of an account that a Sign-in
-// provider was linked to silently, with the token of its "this was not me" link.
-func (c *Client) EnqueueIdentityLinkedNotice(ctx context.Context, email, provider, token string) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowIdentityLinked, Email: email, Provider: provider, Token: token})
-}
-
-// EnqueueUserDeletedNotice schedules the notice that the User with this address was deleted.
-func (c *Client) EnqueueUserDeletedNotice(ctx context.Context, email string) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowUserDeleted, Email: email})
-}
-
-// EnqueuePasskeyNotice schedules the notice that a Passkey was added or removed.
-func (c *Client) EnqueuePasskeyNotice(ctx context.Context, email string, change PasskeyChange, name string) error {
-	return c.enqueue(ctx, SendAuthMailArgs{Flow: flowPasskeyChanged, Email: email, Change: change, Name: name})
-}
-
-func (c *Client) enqueue(ctx context.Context, args SendAuthMailArgs) error {
+// Enqueue queues one job of args. It is the one enqueue method the modules that queue
+// platform mail use (mailjobs.Enqueuer).
+func (c *Client) Enqueue(ctx context.Context, args river.JobArgs) error {
 	_, err := c.river.Insert(ctx, args, nil)
 	return err
 }

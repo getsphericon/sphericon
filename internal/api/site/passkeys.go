@@ -8,7 +8,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 )
 
@@ -81,7 +81,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 	if err != nil {
 		return nil, err
 	}
-	if err := h.sysmail.EnqueuePasskeyNotice(ctx, u.Email, jobs.PasskeyAdded, row.Name); err != nil {
+	if err := h.mail.Enqueue(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyAdded, row.Name)); err != nil {
 		mailNotQueued(ctx, "PasskeyNotice", err)
 	}
 	return &siteapi.SitePasskeyHeaders{SetCookie: cookie.String(), Response: mapper.PasskeyToResource(row)}, nil
@@ -202,7 +202,7 @@ func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePass
 	if err != nil {
 		return nil, err
 	}
-	if err := h.sysmail.EnqueuePasskeyNotice(ctx, u.Email, jobs.PasskeyRemoved, row.Name); err != nil {
+	if err := h.mail.Enqueue(ctx, mailjobs.PasskeyNotice(u.Email, mailjobs.PasskeyRemoved, row.Name)); err != nil {
 		mailNotQueued(ctx, "PasskeyNotice", err)
 	}
 	return &siteapi.SitePasskeysRemoveNoContent{SetCookie: cookie.String()}, nil

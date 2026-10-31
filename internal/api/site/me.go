@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/login"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 )
 
@@ -138,11 +139,11 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 		return nil, err
 	}
 	if taken {
-		if err := h.sysmail.EnqueueAddressTakenNotice(ctx, newEmail, granted); err != nil {
+		if err := h.mail.Enqueue(ctx, mailjobs.AddressTakenNotice(newEmail, granted)); err != nil {
 			mailNotQueued(ctx, "AddressTakenNotice", err)
 		}
 	} else {
-		if err := h.sysmail.EnqueueEmailChangeConfirm(ctx, newEmail, token, granted); err != nil {
+		if err := h.mail.Enqueue(ctx, mailjobs.EmailChangeConfirm(newEmail, token, granted)); err != nil {
 			mailNotQueued(ctx, "EmailChangeConfirm", err)
 		}
 	}

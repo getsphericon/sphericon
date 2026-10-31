@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/outbound"
@@ -123,13 +124,13 @@ func TestClientEnqueuesEveryJobKind(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := context.Background()
 
-	require.NoError(t, e.client.EnqueueWelcome(ctx, "new@example.com", "New"))
-	require.NoError(t, e.client.EnqueuePasswordReset(ctx, "a@example.com", "tok", true))
-	require.NoError(t, e.client.EnqueueEmailVerification(ctx, "a@example.com", "tok", true))
-	require.NoError(t, e.client.EnqueueEmailChangeConfirm(ctx, "a@example.com", "tok", true))
-	require.NoError(t, e.client.EnqueueMemberInvite(ctx, "a@example.com", "https://x/invite", "Acme", "Jane"))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.Welcome("new@example.com", "New")))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.PasswordReset("a@example.com", "tok", true)))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.EmailVerification("a@example.com", "tok", true)))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.EmailChangeConfirm("a@example.com", "tok", true)))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.MemberInviteArgs{Email: "a@example.com", InviteURL: "https://x/invite", WorkspaceName: "Acme", InviterName: "Jane"}))
 	require.NoError(t, e.client.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
-	require.NoError(t, e.client.EnqueueSecondFactorRequired(ctx, fixtures.UmbrellaID))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.SecondFactorRequired(fixtures.UmbrellaID)))
 	created, err := json.Marshal(&events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail})
 	require.NoError(t, err)
 	require.NoError(t, e.client.OnEvent(ctx, events.AutomationEvent{
@@ -159,7 +160,7 @@ func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
 	require.NoError(t, e.client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
 
-	require.NoError(t, e.client.EnqueueWelcome(ctx, "runtime@example.com", "Run"))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.Welcome("runtime@example.com", "Run")))
 
 	require.Eventually(t, func() bool {
 		for _, m := range e.SystemMail.Messages() {
@@ -219,31 +220,35 @@ func TestDispatchSendsAuditEntriesOnlyToEndpointsThatSelectThem(t *testing.T) {
 func TestWelcomeWorker(t *testing.T) {
 	env := testhelper.Setup(t)
 	require.NoError(t, jobs.NewWelcomeWorker(env.SystemMail).Work(context.Background(),
-		job(jobs.SendWelcomeArgs{Email: "w@example.com", Name: "Wendy"})))
+		job(mailjobs.WelcomeArgs{Email: "w@example.com", Name: "Wendy"})))
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "w@example.com", msgs[0].To)
 	assert.Contains(t, msgs[0].Text, "Wendy")
 
-	err := jobs.NewWelcomeWorker(nil).Work(context.Background(), job(jobs.SendWelcomeArgs{Email: "w@example.com"}))
+	err := jobs.NewWelcomeWorker(nil).Work(context.Background(), job(mailjobs.WelcomeArgs{Email: "w@example.com"}))
 	require.Error(t, err, "no system sender configured")
 }
 
 func TestAuthMailWorker(t *testing.T) {
 	env := testhelper.Setup(t)
 	w := jobs.NewAuthMailWorker(env.SystemMail, "https://app.example/")
-	for _, flow := range []struct{ name, path string }{
-		{"password_reset", "/reset-password"},
-		{"email_verify", "/verify-email"},
-		{"email_change", "/confirm-email-change"},
+	for _, flow := range []struct {
+		flow mailjobs.Flow
+		path string
+	}{
+		{mailjobs.FlowPasswordReset, "/reset-password"},
+		{mailjobs.FlowEmailVerify, "/verify-email"},
+		{mailjobs.FlowEmailChange, "/confirm-email-change"},
+		{mailjobs.FlowUserDeletion, "/delete-account"},
 	} {
-		require.NoError(t, w.Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: flow.name, Email: "a@example.com", Token: "t/1"})))
+		require.NoError(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: flow.flow, Email: "a@example.com", Token: "t/1"})))
 		msgs := env.SystemMail.Messages()
 		assert.Contains(t, msgs[len(msgs)-1].Text, "https://app.example"+flow.path+"?token=t%2F1")
 	}
 
-	require.Error(t, w.Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: "nope", Email: "a@example.com"})))
-	require.Error(t, jobs.NewAuthMailWorker(nil, "").Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: "password_reset"})))
+	require.Error(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "nope", Email: "a@example.com"})))
+	require.Error(t, jobs.NewAuthMailWorker(nil, "").Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "password_reset"})))
 }
 
 // The Taken-address notice (ADR 0031) carries no token: only the sign-in and the
@@ -252,7 +257,7 @@ func TestAuthMailWorkerAddressTakenNoticeCarriesNoToken(t *testing.T) {
 	env := testhelper.Setup(t)
 	w := jobs.NewAuthMailWorker(env.SystemMail, "https://app.example/")
 
-	require.NoError(t, w.Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: "address_taken", Email: "owner@example.com"})))
+	require.NoError(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "address_taken", Email: "owner@example.com"})))
 
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1)
@@ -267,19 +272,19 @@ func TestAuthMailWorkerAddressTakenNoticeCarriesNoToken(t *testing.T) {
 func TestAuthMailWorkerDiscardSendsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	w := jobs.NewAuthMailWorker(env.SystemMail, "https://app.example/")
-	require.NoError(t, w.Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: "password_reset", Email: "a@example.com", Token: "t", Discard: true})))
+	require.NoError(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "password_reset", Email: "a@example.com", Token: "t", Discard: true})))
 	assert.Empty(t, env.SystemMail.Messages())
-	require.Error(t, w.Work(context.Background(), job(jobs.SendAuthMailArgs{Flow: "nope", Email: "a@example.com", Discard: true})), "a discarded job still validates what it renders")
+	require.Error(t, w.Work(context.Background(), job(mailjobs.AuthMailArgs{Flow: "nope", Email: "a@example.com", Discard: true})), "a discarded job still validates what it renders")
 }
 
 func TestMemberInviteWorker(t *testing.T) {
 	env := testhelper.Setup(t)
 	w := jobs.NewMemberInviteWorker(env.SystemMail)
-	require.NoError(t, w.Work(context.Background(), job(jobs.SendMemberInviteArgs{
+	require.NoError(t, w.Work(context.Background(), job(mailjobs.MemberInviteArgs{
 		Email: "i@example.com", InviteURL: "https://x/invite/1", WorkspaceName: "Acme", InviterName: "Jane",
 	})))
 	// An invite without an inviter name falls back to a generic subject.
-	require.NoError(t, w.Work(context.Background(), job(jobs.SendMemberInviteArgs{
+	require.NoError(t, w.Work(context.Background(), job(mailjobs.MemberInviteArgs{
 		Email: "i@example.com", InviteURL: "https://x/invite/2", WorkspaceName: "Acme",
 	})))
 	msgs := env.SystemMail.Messages()
@@ -288,7 +293,7 @@ func TestMemberInviteWorker(t *testing.T) {
 	assert.Contains(t, msgs[1].Text, "Someone invited you")
 	assert.Equal(t, "You're invited to Acme on sphericon", msgs[0].Subject)
 
-	require.Error(t, jobs.NewMemberInviteWorker(nil).Work(context.Background(), job(jobs.SendMemberInviteArgs{})))
+	require.Error(t, jobs.NewMemberInviteWorker(nil).Work(context.Background(), job(mailjobs.MemberInviteArgs{})))
 }
 
 // webhookReceiver is an httptest server the Instance allowlist permits: the real hardened

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/riverqueue/river"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -72,29 +74,11 @@ func (s *lateStore) Lookup(ctx context.Context, email string) (*ent.User, bool, 
 	return s.store.Lookup(ctx, email)
 }
 
-// job is a mail job the Sign-up left queued.
-type job struct {
-	Kind  string
-	To    string
-	Token string
-	Send  bool
-}
-
 // queue is the mail queue: an outside boundary, read for what was left on it.
-type queue struct{ jobs []job }
+type queue struct{ jobs []river.JobArgs }
 
-func (q *queue) EnqueueEmailVerification(_ context.Context, email, token string, send bool) error {
-	q.jobs = append(q.jobs, job{Kind: "verification", To: email, Token: token, Send: send})
-	return nil
-}
-
-func (q *queue) EnqueueAddressTakenNotice(_ context.Context, email string, send bool) error {
-	q.jobs = append(q.jobs, job{Kind: "taken", To: email, Send: send})
-	return nil
-}
-
-func (q *queue) EnqueueWelcome(_ context.Context, email, _ string) error {
-	q.jobs = append(q.jobs, job{Kind: "welcome", To: email, Send: true})
+func (q *queue) Enqueue(_ context.Context, args river.JobArgs) error {
+	q.jobs = append(q.jobs, args)
 	return nil
 }
 
@@ -199,10 +183,10 @@ func TestEverySignUpDoesTheSameWorkWhateverTheAddress(t *testing.T) {
 	assert.True(t, r.budgetTaken(t, fixtures.FreshUnverifiedUserEmail))
 	assert.True(t, r.budgetTaken(t, fixtures.OwnerJohnEmail))
 	grace := r.user(t, "grace@example.com")
-	assert.Equal(t, []job{
-		{Kind: "verification", To: "grace@example.com", Token: linkOf(grace.ID, fresh), Send: true},
-		{Kind: "verification", To: fixtures.FreshUnverifiedUserEmail, Token: linkOf(fixtures.FreshUnverifiedUserID, unverified), Send: true},
-		{Kind: "taken", To: fixtures.OwnerJohnEmail, Send: true},
+	assert.Equal(t, []river.JobArgs{
+		mailjobs.EmailVerification("grace@example.com", linkOf(grace.ID, fresh), true),
+		mailjobs.EmailVerification(fixtures.FreshUnverifiedUserEmail, linkOf(fixtures.FreshUnverifiedUserID, unverified), true),
+		mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, true),
 	}, r.queue.jobs, "one job each, and only the taken address's carries no link")
 	after := r.user(t, fixtures.OwnerJohnEmail)
 	assert.Equal(t, john.PasswordHash, after.PasswordHash, "a Verified User's password is never replaced")
@@ -218,7 +202,7 @@ func TestASignUpOfANewAddressCreatesAnUnverifiedUserAndMailsItsLink(t *testing.T
 	assert.Equal(t, "Grace", u.Name)
 	assert.Nil(t, u.EmailVerifiedAt)
 	assert.True(t, credentials.VerifyPassword(u.PasswordHash, password))
-	assert.Equal(t, []job{{Kind: "verification", To: "grace@example.com", Token: linkOf(u.ID, res), Send: true}}, r.queue.jobs,
+	assert.Equal(t, []river.JobArgs{mailjobs.EmailVerification("grace@example.com", linkOf(u.ID, res), true)}, r.queue.jobs,
 		"the link is the User's and trusts the Sign-up browser of the answer")
 }
 
@@ -246,7 +230,7 @@ func TestASignUpThatLosesARaceEndsAsARepeatedSignUpOfTheWinner(t *testing.T) {
 	assert.NotEmpty(t, res.Browser)
 	winner := r.user(t, fixtures.FreshUnverifiedUserEmail)
 	assert.True(t, credentials.VerifyPassword(winner.PasswordHash, password), "the loser replaced the winner's password")
-	assert.Equal(t, []job{{Kind: "verification", To: fixtures.FreshUnverifiedUserEmail, Token: linkOf(winner.ID, res), Send: true}}, r.queue.jobs)
+	assert.Equal(t, []river.JobArgs{mailjobs.EmailVerification(fixtures.FreshUnverifiedUserEmail, linkOf(winner.ID, res), true)}, r.queue.jobs)
 }
 
 // ADR 0031: once the address's mail budget is spent a Sign-up still does all the work, and
@@ -257,7 +241,7 @@ func TestASignUpPastTheMailBudgetQueuesAJobThatDeliversNothing(t *testing.T) {
 	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
 	r.signUp(t, "Mallory", fixtures.OwnerJohnEmail, password)
 
-	assert.Equal(t, []bool{true, false}, []bool{r.queue.jobs[0].Send, r.queue.jobs[1].Send})
+	assert.Equal(t, []river.JobArgs{mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, true), mailjobs.AddressTakenNotice(fixtures.OwnerJohnEmail, false)}, r.queue.jobs)
 }
 
 func TestARefusedFormNamesEveryFieldAndCostsNothing(t *testing.T) {
@@ -283,7 +267,7 @@ func TestWithVerificationOffASignUpMakesAVerifiedUserAndWelcomesIt(t *testing.T)
 	assert.Empty(t, res.Browser)
 	u := r.user(t, "grace@example.com")
 	assert.NotNil(t, u.EmailVerifiedAt)
-	assert.Equal(t, []job{{Kind: "welcome", To: "grace@example.com", Send: true}}, r.queue.jobs)
+	assert.Equal(t, []river.JobArgs{mailjobs.Welcome("grace@example.com", "Grace")}, r.queue.jobs)
 }
 
 // ADR 0031's one exception: with no mail to tell the owner, a Taken address is the answer.

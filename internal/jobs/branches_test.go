@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/suspension"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -129,25 +128,25 @@ func TestOwnerNotificationsSurfaceSenderErrors(t *testing.T) {
 	require.Error(t, suspension.NotifyOwners(ctx, env.DB, accounts.OwnerNotifier(env.DB, env.SystemMail), "", fixtures.AcmeID))
 }
 
-// The inline adapter notifies the owner when a re-check flips a domain to
-// unverified, and a failed notification never fails the check.
-func TestInlineSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
+// A re-check that flips a domain to unverified notifies the owner, and a failed
+// notification never fails the check.
+func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	inline := jobs.NewInline(env.DB, newMod(env, resolvingTo(&fakeSender{})), env.SystemMail, domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail)), envCipher(t), registry.Default(), "http://local")
+	w := jobs.NewVerifySendingDomainWorker(domainverify.New(env.DB, gone, nil, accounts.OwnerNotifier(env.DB, env.SystemMail)))
 
-	require.NoError(t, inline.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
+	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)
 
 	// Already unverified now: no second alert.
-	require.NoError(t, inline.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
+	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert on a fresh flip is only logged.
 	env.DB.SendingDomain.UpdateOneID(fixtures.SendingDomainVerifiedID).SetVerifiedAt(time.Now()).ClearVerificationLostAt().ExecX(ctx)
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, inline.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
+	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID}))
 
-	require.Error(t, inline.EnqueueSendingDomainVerify(ctx, 424242))
+	require.Error(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{SendingDomainID: 424242}))
 }

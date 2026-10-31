@@ -8,6 +8,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -63,7 +64,7 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	if caller, cerr := h.accounts.User(ctx, a.UserID); cerr == nil {
 		inviterName = caller.Name
 	}
-	if merr := h.sysmail.EnqueueMemberInvite(ctx, inv.Email, inviteURL, wsEnt.Name, inviterName); merr != nil {
+	if merr := h.mail.Enqueue(ctx, mailjobs.MemberInviteArgs{Email: inv.Email, InviteURL: inviteURL, WorkspaceName: wsEnt.Name, InviterName: inviterName}); merr != nil {
 		slog.WarnContext(ctx, "member invite email not enqueued", "error", merr, "invitation_id", inv.ID)
 	}
 

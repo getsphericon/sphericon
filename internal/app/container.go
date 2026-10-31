@@ -49,6 +49,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/machine"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/messaging/registry"
@@ -140,10 +141,10 @@ type SystemSender struct {
 }
 
 // Enqueuer is the enqueue side of the job queue the domain modules and the /site handlers
-// queue work through: the river client in production, the inline adapter in tests.
+// queue work through: the river client in production, a test adapter that works each job at
+// once through its real worker in tests.
 type Enqueuer interface {
-	apisite.WelcomeEnqueuer
-	apisite.SystemMailEnqueuer
+	mailjobs.Enqueuer
 	integrations.QuotaEnqueuer
 	sendingdomains.Verifier
 }
@@ -478,8 +479,8 @@ var jobsPackage = do.Package(
 		}
 		return &jobsClient{Client: jc}, nil
 	}),
-	// The river client implements every enqueue seam: welcome, the self-service account mail
-	// (reset/verify/change), the Integration quota refresh and Sending domain verification.
+	// The river client implements every enqueue seam: the platform mails, the Integration quota
+	// refresh and Sending domain verification.
 	do.Lazy(func(i do.Injector) (Enqueuer, error) {
 		return do.MustInvoke[*jobsClient](i).Client, nil
 	}),
@@ -795,8 +796,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Automations:              do.MustInvoke[*automations.Module](i),
 		Rules:                    do.MustInvoke[*rules.Module](i),
 		Broadcasts:               do.MustInvoke[*broadcasts.Module](i),
-		Welcome:                  enqueue,
-		SysMail:                  enqueue,
+		Mail:                     enqueue,
 		SendingDomains:           do.MustInvoke[*sendingdomains.Module](i),
 		JoinDomains:              do.MustInvoke[*joindomains.Module](i),
 		Integrations:             do.MustInvoke[*integrations.Module](i),

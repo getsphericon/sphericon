@@ -21,10 +21,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/stepping"
 )
 
-// Tests run jobs inline, so a test that needs a job to be waiting in the queue puts
-// one there and reads it back through these helpers. They use river's own insert-only
-// client over the test's connection (the same txdb connection the ent client rides),
-// so nothing here touches the river table directly.
+// Tests work the jobs a request queues at once (enqueue.go), so a test that needs a job to be
+// waiting in the queue puts one there and reads it back through these helpers. They use
+// river's own insert-only client over the test's connection (the same txdb connection the
+// ent client rides), so nothing here touches the river table directly.
 
 // maxQueuedJobs bounds a JobsOf read; a test queues a handful.
 // contract-copy: a test helper read bound; not in the contract

@@ -99,7 +99,7 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	river.AddWorker(workers, NewWelcomeWorker(systemSender))
 	river.AddWorker(workers, NewAuthMailWorker(systemSender, appURL))
 	river.AddWorker(workers, NewMemberInviteWorker(systemSender))
-	river.AddWorker(workers, &NotifySecondFactorRequiredWorker{ent: entClient, sender: systemSender, appURL: appURL})
+	river.AddWorker(workers, NewNotifySecondFactorRequiredWorker(entClient, systemSender, appURL))
 	river.AddWorker(workers, &RemindSecondFactorWorker{ent: entClient, sender: systemSender, appURL: appURL})
 	notifyOwners := accounts.OwnerNotifier(entClient, systemSender)
 	// Sending-domain DKIM verification (ADR 0010). LookupTXT re-checks published

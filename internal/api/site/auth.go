@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/db"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/signup"
 )
 
@@ -59,12 +60,6 @@ func (s signUpStore) CreateVerified(ctx context.Context, n signup.NewUser) (*ent
 	return u, err
 }
 
-// signUpMail is the mails of a Sign-up: the account mails and the welcome.
-type signUpMail struct {
-	SystemMailEnqueuer
-	WelcomeEnqueuer
-}
-
 // newSignUp builds the signup module over the site's adapter (ADR 0030, 0031).
 func (h *Handlers) newSignUp() *signup.Module {
 	return signup.New(signup.Config{
@@ -72,7 +67,7 @@ func (h *Handlers) newSignUp() *signup.Module {
 		Consents:            h.consentRecords,
 		Budget:              h.attempts.For(accounts.KindSignUp),
 		Passwords:           h.passwords,
-		Mail:                signUpMail{h.sysmail, h.welcome},
+		Mail:                h.mail,
 		Mint:                h.links.VerificationLink,
 		RequireVerification: h.requireVerification,
 		SurveyDue:           h.signupSurvey.Enabled,
@@ -109,7 +104,7 @@ func (h *Handlers) SiteAuthResendVerification(ctx context.Context, req *siteapi.
 	if err != nil {
 		return nil, err
 	}
-	if err := h.sysmail.EnqueueEmailVerification(ctx, to, token, u != nil && u.EmailVerifiedAt == nil); err != nil {
+	if err := h.mail.Enqueue(ctx, mailjobs.EmailVerification(to, token, u != nil && u.EmailVerifiedAt == nil)); err != nil {
 		mailNotQueued(ctx, "EmailVerification", err)
 	}
 	return &siteapi.SiteAuthResendVerificationAccepted{}, nil

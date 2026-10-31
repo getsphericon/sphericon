@@ -39,7 +39,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/machine"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
@@ -176,7 +175,7 @@ type TestEnv struct {
 	now        func() time.Time // the clock the server checks site session expiry against
 	sessionTTL time.Duration    // SPHERICON_SESSION_TTL, the lifetime of the site tokens tests mint
 
-	// Captured sends from the inline jobs adapter, for assertions.
+	// Captured sends of the jobs tests work at once, for assertions.
 	SystemMail   *CapturingSender // platform mail (welcome, …)
 	CustomerMail *CapturingSender // workspace/campaign mail (broadcasts)
 
@@ -386,7 +385,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// transaction roll back with the test; no worker runs them.
 	txDB := cleaner.DB(t)
 
-	// Captured sends from the inline jobs adapter, for assertions.
+	// Captured sends of the jobs tests work at once, for assertions.
 	systemMail := &CapturingSender{}
 	customerMail := &CapturingSender{}
 	var systemSender messaging.EmailSender = systemMailFrom{systemMail}
@@ -441,12 +440,19 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.Override(injector, func(i do.Injector) (outbound.Senders, error) {
 		return inboxResolver{fixed: fixedResolver{sender: customerMail}, real: do.MustInvoke[*messaging.Resolver](i)}, nil
 	})
-	// Inline jobs adapter (Rails :inline equivalent): enqueued jobs run synchronously against
-	// the capturing senders, so tests assert the real effect.
+	// Every job a request queues is worked at once by its real worker (enqueue.go), against the
+	// capturing senders, so tests assert the real effect.
 	do.Override(injector, func(i do.Injector) (app.Enqueuer, error) {
 		client := do.MustInvoke[*ent.Client](i)
-		domains := domainverify.New(client, do.MustInvoke[sending.TXTLookup](i), nil, accounts.OwnerNotifier(client, systemMail))
-		return jobs.NewInline(client, do.MustInvoke[*outbound.Module](i), systemMail, domains, do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i), cfg.AppURL), nil
+		return &testJobs{
+			tb:      t,
+			ent:     client,
+			sender:  systemMail,
+			domains: domainverify.New(client, do.MustInvoke[sending.TXTLookup](i), nil, accounts.OwnerNotifier(client, systemMail)),
+			cipher:  do.MustInvoke[*secrets.Cipher](i),
+			catalog: do.MustInvoke[*messaging.Catalog](i),
+			appURL:  cfg.AppURL,
+		}, nil
 	})
 
 	handler, err := do.Invoke[app.Handler](injector)

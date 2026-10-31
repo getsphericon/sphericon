@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -101,14 +102,6 @@ type Budget interface {
 	Take(ctx context.Context, address string) (granted bool, err error)
 }
 
-// Mail queues the mails a Sign-up sends. With send false a job is queued all the same but
-// delivers nothing.
-type Mail interface {
-	EnqueueEmailVerification(ctx context.Context, email, token string, send bool) error
-	EnqueueAddressTakenNotice(ctx context.Context, email string, send bool) error
-	EnqueueWelcome(ctx context.Context, email, name string) error
-}
-
 // Consents answers a form's answers against the Sign-up items in effect: the Consent records
 // they make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check).
 type Consents interface {
@@ -120,7 +113,9 @@ type Config struct {
 	Store    Store
 	Consents Consents
 	Budget   Budget
-	Mail     Mail
+	// Mail queues the mails a Sign-up sends: the verification link, the Taken-address notice
+	// and the welcome.
+	Mail mailjobs.Enqueuer
 	// Mint mints the verification token of a User, bound to its stored password hash and
 	// carrying the hash of the Sign-up browser it trusts.
 	Mint func(u *ent.User, browserHash string) (string, error)
@@ -192,10 +187,10 @@ func (m *Module) SignUp(ctx context.Context, in Input) (Result, error) {
 	}
 	// Best-effort: a lost mail is asked for again.
 	if u.EmailVerifiedAt != nil {
-		if err := m.cfg.Mail.EnqueueAddressTakenNotice(ctx, u.Email, granted); err != nil {
+		if err := m.cfg.Mail.Enqueue(ctx, mailjobs.AddressTakenNotice(u.Email, granted)); err != nil {
 			mailNotQueued(ctx, "AddressTakenNotice", err)
 		}
-	} else if err := m.cfg.Mail.EnqueueEmailVerification(ctx, u.Email, token, granted); err != nil {
+	} else if err := m.cfg.Mail.Enqueue(ctx, mailjobs.EmailVerification(u.Email, token, granted)); err != nil {
 		mailNotQueued(ctx, "EmailVerification", err)
 	}
 	return Result{Browser: browser}, nil
@@ -244,7 +239,7 @@ func (m *Module) signUpVerified(ctx context.Context, n NewUser, password string)
 	case err != nil:
 		return Result{}, err
 	}
-	if err := m.cfg.Mail.EnqueueWelcome(ctx, u.Email, u.Name); err != nil {
+	if err := m.cfg.Mail.Enqueue(ctx, mailjobs.Welcome(u.Email, u.Name)); err != nil {
 		mailNotQueued(ctx, "Welcome", err)
 	}
 	return Result{}, nil

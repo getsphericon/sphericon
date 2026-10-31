@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/mailjobs"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
 )
 
@@ -25,8 +26,8 @@ func TestQueueMetricsReportDepthAndOldestAge(t *testing.T) {
 	t.Cleanup(func() { cleanup.Report("unregister the gauge", unregister()) })
 
 	ctx := t.Context()
-	require.NoError(t, e.client.EnqueueWelcome(ctx, "a@example.com", "A"))
-	require.NoError(t, e.client.EnqueueWelcome(ctx, "b@example.com", "B"))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.Welcome("a@example.com", "A")))
+	require.NoError(t, e.client.Enqueue(ctx, mailjobs.Welcome("b@example.com", "B")))
 	later := time.Now().Add(time.Hour)
 	_, err = e.queue.Insert(ctx, broadcasts.SendArgs{BroadcastID: fixtures.BroadcastDraftID, ScheduledAt: &later},
 		&river.InsertOpts{Queue: broadcasts.Queue, ScheduledAt: later})
