@@ -104,14 +104,34 @@ test('typing in the search field puts the email in the URL search', async () => 
   worker.use(handleSiteContactsList({ body: page([ALICE, BOB], 2) }))
 
   const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
-  // Typing waits for the loaded list, as a person would: on a busy CI runner, a search typed
-  // before it had loaded never reached the URL.
+  // Typing waits for the page to settle: on a busy CI runner a search typed the moment the test
+  // router rendered was lost twice, for a reason not found. Typing while the list itself is still
+  // loading reaches the URL (the next test), which is what a person can do.
   await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
   await screen.getByRole('textbox', { name: 'Search by email' }).fill('bob')
 
   await expect
     .poll(() => navigate)
     .toHaveBeenCalledWith(expect.objectContaining({ search: { email: 'bob' }, replace: true }))
+})
+
+test('a search typed while the list is still loading reaches the URL search', async () => {
+  const { promise: answered, resolve: answer } = Promise.withResolvers<undefined>()
+  worker.use(
+    handleSiteContactsList(async () => {
+      await answered
+      return HttpResponse.json(page([ALICE, BOB], 2))
+    }),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  await screen.getByRole('textbox', { name: 'Search by email' }).fill('bob')
+
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith(expect.objectContaining({ search: { email: 'bob' }, replace: true }))
+  answer(undefined)
+  await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
 })
 
 test('clearing the search field takes the email out of the URL search', async () => {

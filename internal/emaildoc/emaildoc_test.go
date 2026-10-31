@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -99,9 +98,9 @@ func TestRuntimeStartsOnFirstRender(t *testing.T) {
 func TestWarmStartsTheRuntimeWithoutACall(t *testing.T) {
 	r := emaildoc.New()
 
-	r.Warm(t.Context())
+	<-r.Warm(t.Context())
 
-	require.Eventually(t, r.Started, 2*time.Minute, 50*time.Millisecond, "the runtime starts in the background")
+	require.True(t, r.Started(), "the runtime starts in the background")
 	require.True(t, r.LanguagesRegistered(), "a warm runtime has the code block's languages")
 }
 

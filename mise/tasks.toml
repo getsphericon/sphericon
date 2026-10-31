@@ -595,11 +595,13 @@ git diff --unified=0 --no-color "$base...HEAD" | go run ./cmd/prcheck markers
 
 ["check:pr-title"]
 description = "The pull request title parses as a Conventional Commit under commitlint.config.ts: the repository squashes with it and release-please reads it (PR_TITLE comes from the pull request)"
+# The squashed commit's header is the title with GitHub's ` (#<number>)` after it, which commitlint
+# checks on main: the title is checked with the longest such suffix, so it fits the header limit too.
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 : "${PR_TITLE?set PR_TITLE to the pull request title}"
-printf '%s' "$PR_TITLE" | pnpm exec commitlint
+printf '%s (#99999)' "$PR_TITLE" | pnpm exec commitlint
 '''
 
 ["check:deps"]

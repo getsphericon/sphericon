@@ -159,12 +159,16 @@ func (r *Renderer) LanguagesRegistered() bool { return r.languages.Load() }
 // Without it that first call waits for the start, which takes longer than a request may run on a
 // small machine, and gives up with ErrRenderUnavailable. A start that fails leaves the runtime to
 // the first call, as before. How long the start took is logged, since it varies with the machine.
-// The start itself cannot be interrupted, so ctx ending only stops waiting for it.
-func (r *Renderer) Warm(ctx context.Context) {
+// The start itself cannot be interrupted, so ctx ending only stops waiting for it. The channel it
+// returns is closed once the warm-up is over, ready or not, for a caller that waits on it.
+func (r *Renderer) Warm(ctx context.Context) <-chan struct{} {
+	done := make(chan struct{})
 	if r.engine != nil {
-		return
+		close(done)
+		return done
 	}
 	go func() {
+		defer close(done)
 		began := time.Now()
 		err := r.withRuntime(ctx, r.config(), true, func(*vm) error { return nil })
 		if err != nil {
@@ -173,6 +177,7 @@ func (r *Renderer) Warm(ctx context.Context) {
 		}
 		slog.Info("document runtime ready", "duration_ms", time.Since(began).Milliseconds())
 	}()
+	return done
 }
 
 type callConfig struct {
