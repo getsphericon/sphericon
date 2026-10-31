@@ -33,7 +33,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/integrations"
 
-	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/convert"
@@ -171,7 +170,7 @@ type Converter interface {
 	RevenueSettingsToResource(source *ent.Workspace) siteapi.SiteRevenueSettingsResource
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:map Currency ReportingCurrency
-	RevenueToResource(source *analytics.Revenue) siteapi.SiteAnalyticsRevenue
+	RevenueToResource(source *orders.WorkspaceRevenue) siteapi.SiteAnalyticsRevenue
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	// goverter:useEmptyOnNil:slice
 	EventsToResources(source []*ent.Event) []siteapi.SiteEventResource
@@ -238,8 +237,8 @@ type Converter interface {
 	// The live version and the draft are the edges the automations module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
-	// The revenue is summed from Order Movements, which the mapper cannot see: the handler
-	// attaches it.
+	// The revenue is summed from Order Movements, which the mapper cannot see: the automations
+	// module reads it with the Automation (automations.WithRevenue) and the handler attaches it.
 	// goverter:ignore Revenue
 	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps

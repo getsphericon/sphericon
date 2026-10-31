@@ -169,7 +169,7 @@ func (h *Handlers) SiteAnalyticsNewPeople(ctx context.Context, params siteapi.Si
 	})
 }
 
-// SiteAnalyticsRevenue maps the analytics module's Revenue onto the DTO (ADR 0064). The
+// SiteAnalyticsRevenue maps the Workspace's revenue onto the DTO (ADR 0064). The
 // operation's default range is 30 days, declared in the contract.
 func (h *Handlers) SiteAnalyticsRevenue(ctx context.Context, params siteapi.SiteAnalyticsRevenueParams) (siteapi.SiteAnalyticsRevenueRes, error) {
 	s := workspaceScope(ctx)

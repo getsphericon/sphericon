@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -91,9 +92,9 @@ func (m *Module) Ingest(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 			return err
 		}
 	}
-	orders := events.NewOrderCheck(s)
+	check := orders.NewCheck(s)
 	for _, in := range inputs {
-		if err := orders.Check(ctx, in.Action, in.Properties); err != nil {
+		if err := check.Check(ctx, in.Action, in.Properties); err != nil {
 			return err
 		}
 	}

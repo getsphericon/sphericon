@@ -23,7 +23,6 @@ import (
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
-	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
@@ -1069,7 +1068,7 @@ func (c *ConverterImpl) RevenueSettingsToResource(source *ent.Workspace) site.Si
 	}
 	return siteapiSiteRevenueSettingsResource
 }
-func (c *ConverterImpl) RevenueToResource(source *analytics.Revenue) site.SiteAnalyticsRevenue {
+func (c *ConverterImpl) RevenueToResource(source *orders.WorkspaceRevenue) site.SiteAnalyticsRevenue {
 	var siteapiSiteAnalyticsRevenue site.SiteAnalyticsRevenue
 	if source != nil {
 		siteapiSiteAnalyticsRevenue.ReportingCurrency = nilCurrencyCode((*source).Currency)
@@ -1081,7 +1080,7 @@ func (c *ConverterImpl) RevenueToResource(source *analytics.Revenue) site.SiteAn
 		if (*source).Series != nil {
 			siteapiSiteAnalyticsRevenue.Series = make([]site.SiteRevenuePoint, len((*source).Series))
 			for i := 0; i < len((*source).Series); i++ {
-				siteapiSiteAnalyticsRevenue.Series[i] = c.analyticsRevenuePointToSiteapiSiteRevenuePoint((*source).Series[i])
+				siteapiSiteAnalyticsRevenue.Series[i] = c.ordersRevenueDayToSiteapiSiteRevenuePoint((*source).Series[i])
 			}
 		}
 	}
@@ -1592,18 +1591,18 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 	}
 	return siteapiSiteWorkspaceResource
 }
-func (c *ConverterImpl) analyticsRevenuePointToSiteapiSiteRevenuePoint(source analytics.RevenuePoint) site.SiteRevenuePoint {
-	var siteapiSiteRevenuePoint site.SiteRevenuePoint
-	siteapiSiteRevenuePoint.Date = source.Date
-	siteapiSiteRevenuePoint.Amount = source.Amount
-	siteapiSiteRevenuePoint.Orders = count(source.Orders)
-	return siteapiSiteRevenuePoint
-}
 func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
 	var siteapiSiteLinkClicks site.SiteLinkClicks
 	siteapiSiteLinkClicks.URL = source.URL
 	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
 	return siteapiSiteLinkClicks
+}
+func (c *ConverterImpl) ordersRevenueDayToSiteapiSiteRevenuePoint(source orders.RevenueDay) site.SiteRevenuePoint {
+	var siteapiSiteRevenuePoint site.SiteRevenuePoint
+	siteapiSiteRevenuePoint.Date = source.Date
+	siteapiSiteRevenuePoint.Amount = source.Amount
+	siteapiSiteRevenuePoint.Orders = count(source.Orders)
+	return siteapiSiteRevenuePoint
 }
 func (c *ConverterImpl) providerlimitValueToSiteapiSiteProviderLimitValue(source providerlimit.Value) site.SiteProviderLimitValue {
 	var siteapiSiteProviderLimitValue site.SiteProviderLimitValue

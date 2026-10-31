@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/events"
+	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/samber/lo"
 )
 
@@ -95,9 +96,9 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 			return events.CheckAction(evt.Action)
 		}
 	}
-	orders := events.NewOrderCheck(s)
+	check := orders.NewCheck(s)
 	for _, evt := range evts {
-		if err := orders.Check(ctx, evt.Action, evt.Properties); err != nil {
+		if err := check.Check(ctx, evt.Action, evt.Properties); err != nil {
 			return err
 		}
 	}

@@ -15,39 +15,33 @@ import (
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
+	"github.com/getsphericon/sphericon/internal/events"
 )
 
-// Module builds Orders and their Movements from stored order Events (ADR 0064). Its
-// functions take the Workspace-scoped client; the one place that scopes it is the event
-// subscriber (docs/architecture.md).
+// Module builds Orders and their Movements from stored order Events and credits each Order to
+// the message last clicked (ADR 0064). Its functions take the Workspace-scoped client; the one
+// place that scopes it is the event subscriber (docs/architecture.md).
 type Module struct{}
 
 // New is the Orders module.
 func New() *Module { return &Module{} }
 
-// Input is one order Event as the subscriber hands it over: the Event's own properties, the
-// Contact its identity resolved to at ingest (0 for none) and its time.
-type Input struct {
-	Action     string
-	Properties map[string]any
-	ContactID  int64
-	OccurredAt time.Time
-	// EventID is the id of the bus event, so a redelivered one is read once.
-	EventID string
-	// FindClick looks up the click that credits an Order (see ClickFinder).
-	FindClick ClickFinder
-}
+var _ events.OrderRecorder = (*Module)(nil)
+
+// IsOrderAction reports whether action names one of the four order Events.
+func (m *Module) IsOrderAction(action string) bool { return IsOrderAction(action) }
 
 // Record applies one order Event to the Workspace behind s, which runs inside a transaction
 // that serialises the order Events of the Workspace (the events package takes the lock). An
 // Order Completed creates the Order and its first Movement (a repeat of the same order_id changes
-// nothing) and then applies the Events that were held for it. An Updated, Refunded or Cancelled
-// adds its Movement to an Order that exists and is held until its Completed otherwise.
+// nothing), credits it (see credit) and then applies the Events that were held for it. An
+// Updated, Refunded or Cancelled adds its Movement to an Order that exists and is held until its
+// Completed otherwise.
 //
 // An Event that names no currency is in the Reporting currency, or, when it changes an Order that
 // exists, in the Order's own. An Order Completed that names none while the Workspace has not
 // chosen a Reporting currency is held, and Resolve reads it once one is chosen.
-func (m *Module) Record(ctx context.Context, s *ent.Scoped, in Input) error {
+func (m *Module) Record(ctx context.Context, s *ent.Scoped, in events.OrderEvent) error {
 	w, err := s.Workspace(ctx)
 	if err != nil {
 		return fmt.Errorf("read the Workspace: %w", err)
@@ -77,7 +71,7 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, in Input) error {
 // the order of their time, once the Workspace has chosen one; with none chosen it does nothing.
 // An Event whose amount has more places than that currency allows can never be read and is
 // dropped with a log line.
-func (m *Module) Resolve(ctx context.Context, s *ent.Scoped, findClick ClickFinder) error {
+func (m *Module) Resolve(ctx context.Context, s *ent.Scoped) error {
 	w, err := s.Workspace(ctx)
 	if err != nil {
 		return fmt.Errorf("read the Workspace: %w", err)
@@ -94,9 +88,9 @@ func (m *Module) Resolve(ctx context.Context, s *ent.Scoped, findClick ClickFind
 		if err := s.HeldOrderEvent().DeleteOneID(h.ID).Exec(ctx); err != nil {
 			return fmt.Errorf("drop a held Order Completed: %w", err)
 		}
-		in := Input{
+		in := events.OrderEvent{
 			Action: ActionCompleted, Properties: h.Properties, ContactID: lo.FromPtr(h.ContactID),
-			OccurredAt: h.OccurredAt, EventID: h.EventID, FindClick: findClick,
+			OccurredAt: h.OccurredAt, EventID: h.EventID,
 		}
 		parsed, err := Parse(in.Action, in.Properties, w.ReportingCurrency)
 		if IsRefusal(err) {
@@ -113,7 +107,7 @@ func (m *Module) Resolve(ctx context.Context, s *ent.Scoped, findClick ClickFind
 	return nil
 }
 
-func (m *Module) complete(ctx context.Context, s *ent.Scoped, in Input, parsed Parsed, windowDays int) error {
+func (m *Module) complete(ctx context.Context, s *ent.Scoped, in events.OrderEvent, parsed Parsed, windowDays int) error {
 	create := s.Order().Create().SetOrderID(parsed.OrderID).SetCurrency(parsed.Currency)
 	if in.ContactID != 0 {
 		// Delivery is asynchronous, so the Contact may be gone by now: the Order is kept
@@ -124,7 +118,7 @@ func (m *Module) complete(ctx context.Context, s *ent.Scoped, in Input, parsed P
 		}
 		if linked {
 			create.SetContactID(in.ContactID)
-			if err := credit(ctx, s, create, in, windowDays); err != nil {
+			if err := credit(ctx, s, create, in.ContactID, in.OccurredAt, windowDays); err != nil {
 				return fmt.Errorf("find the credit of order %q: %w", parsed.OrderID, err)
 			}
 		}
@@ -174,7 +168,7 @@ func (m *Module) applyHeld(ctx context.Context, s *ent.Scoped, orderRef int64, p
 	return nil
 }
 
-func (m *Module) adjust(ctx context.Context, s *ent.Scoped, in Input) error {
+func (m *Module) adjust(ctx context.Context, s *ent.Scoped, in events.OrderEvent) error {
 	orderID, _ := in.Properties[propOrderID].(string)
 	found, err := s.Order().Query().Where(order.OrderID(orderID)).ForUpdate().Only(ctx)
 	if ent.IsNotFound(err) {
@@ -196,7 +190,7 @@ func (m *Module) adjust(ctx context.Context, s *ent.Scoped, in Input) error {
 
 // hold keeps the Event as sent, to be read when its Order Completed arrives (or, for an Order
 // Completed, when a Reporting currency is chosen).
-func (m *Module) hold(ctx context.Context, s *ent.Scoped, in Input) error {
+func (m *Module) hold(ctx context.Context, s *ent.Scoped, in events.OrderEvent) error {
 	orderID, _ := in.Properties[propOrderID].(string)
 	kind := heldorderevent.Kind(movementKindOf(in.Action))
 	if in.Action == ActionCompleted {
@@ -318,42 +312,5 @@ func (m *Module) apply(ctx context.Context, s *ent.Scoped, orderRef int64, order
 	if err := create.Exec(ctx); err != nil {
 		return fmt.Errorf("record a %s of an order: %w", c.kind, err)
 	}
-	return nil
-}
-
-// Click is the click that earns an Order its credit: the Broadcast or the Automation (one is
-// set) whose email was clicked, and when.
-type Click struct {
-	BroadcastID  int64
-	AutomationID int64
-	At           time.Time
-}
-
-// ClickFinder finds the latest human click of the Contact on a Broadcast's or an Automation's
-// email in [since, until], nil for none. The events package supplies it: it reads the Events, and
-// this package cannot import it.
-type ClickFinder func(ctx context.Context, s *ent.Scoped, contactID int64, since, until time.Time) (*Click, error)
-
-// credit sets on create the Broadcast or Automation of the latest click of the Contact before the
-// order's time and inside the Attribution window (ADR 0064). It is looked for once, here: a repeat
-// of the Order Completed never reaches it, so a later change of the window or a click stored
-// afterwards, though dated before the order, changes nothing.
-func credit(ctx context.Context, s *ent.Scoped, create *ent.OrderScopedCreate, in Input, windowDays int) error {
-	if in.FindClick == nil {
-		return nil
-	}
-	click, err := in.FindClick(ctx, s, in.ContactID, in.OccurredAt.AddDate(0, 0, -windowDays), in.OccurredAt)
-	if err != nil || click == nil {
-		return err
-	}
-	switch {
-	case click.BroadcastID != 0:
-		create.SetBroadcastID(click.BroadcastID)
-	case click.AutomationID != 0:
-		create.SetAutomationID(click.AutomationID)
-	default:
-		return nil
-	}
-	create.SetCreditedClickAt(click.At)
 	return nil
 }
