@@ -45,11 +45,12 @@ function OpensByHourReport() {
   }
 
   const days = WEEKDAYS.map((key) => t(($) => $.analytics.opensByHour.weekdays[key]))
-  // A cell of the report as the chart takes it: the hour is the column, the weekday the row.
+  // A cell of the report as the chart takes it: the hour is the column, the weekday the row. An
+  // hour without opens is an empty cell, drawn in the theme's empty gray rather than the palest blue.
   const data = report.cells.map((cell) => ({
     x: String(cell.hour),
     y: days[cell.weekday - 1] ?? '',
-    value: cell.opens,
+    value: cell.opens === 0 ? null : cell.opens,
   }))
   const cellLabel = (cell: { x: string; y: string; value: number | null }) =>
     t(($) => $.analytics.opensByHour.cell, {

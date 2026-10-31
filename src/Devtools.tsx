@@ -9,6 +9,8 @@ import type { AppRouter } from './router.ts'
 export function Devtools({ router }: { router: AppRouter }) {
   return (
     <TanStackDevtools
+      // The default bottom-right corner covers the Save button of a form.
+      config={{ position: 'middle-right' }}
       plugins={[
         { name: 'TanStack Query', render: <ReactQueryDevtoolsPanel /> },
         { name: 'TanStack Router', render: <TanStackRouterDevtoolsPanel router={router} /> },
