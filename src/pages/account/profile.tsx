@@ -5,6 +5,7 @@ import {
   Divider,
   Group,
   PasswordInput,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -28,15 +29,19 @@ import type { SiteEmailChangeInput, SiteUserResource } from '../../generated/sit
 import { useActionModal } from '../../hooks/useActionModal.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
+import { browserTimeZone, TIME_ZONES } from '../../utils/datetime.ts'
 import { DeleteUserSection } from './DeleteUserForm.tsx'
 import { OptionalConsentsSection } from './OptionalConsentsSection.tsx'
 
 // ProfileForm is split out so the Mantine form seeds its initial values from the
-// loaded user without an effect — the parent only renders it once data is ready.
+// loaded user without an effect — the parent only renders it once data is ready. An empty time
+// zone follows the browser (ADR 0068).
 function ProfileForm({ user }: { user: SiteUserResource }) {
   const { t } = useTranslation()
 
-  const form = useForm({ initialValues: { name: user.name } })
+  const form = useForm<{ name: string; timezone: string | null }>({
+    initialValues: { name: user.name, timezone: user.timezone },
+  })
 
   const updateMutation = useResourceMutation({
     mutation: siteUserUpdateMeMutation(),
@@ -48,7 +53,7 @@ function ProfileForm({ user }: { user: SiteUserResource }) {
   return (
     <form
       onSubmit={form.onSubmit((values) =>
-        updateMutation.mutate({ body: { name: values.name.trim() } }),
+        updateMutation.mutate({ body: { name: values.name.trim(), timezone: values.timezone } }),
       )}
     >
       <Stack maw={420}>
@@ -65,6 +70,15 @@ function ProfileForm({ user }: { user: SiteUserResource }) {
                 : t(($) => $.profile.unverifiedBadge)}
             </Badge>
           }
+        />
+        <Select
+          label={t(($) => $.profile.timezoneLabel)}
+          description={t(($) => $.profile.timezoneDescription)}
+          placeholder={t(($) => $.profile.timezoneBrowser, { zone: browserTimeZone() })}
+          data={TIME_ZONES}
+          searchable
+          clearable
+          {...form.getInputProps('timezone')}
         />
         <Group justify="flex-end">
           <Button type="submit" loading={updateMutation.isPending}>

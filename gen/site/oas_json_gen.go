@@ -3695,6 +3695,50 @@ func (s *NilString) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes TimeZoneName as json.
+func (o NilTimeZoneName) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes TimeZoneName from json.
+func (o *NilTimeZoneName) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilTimeZoneName to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v TimeZoneName
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilTimeZoneName) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilTimeZoneName) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes AttributionWindowDays as json.
 func (o OptAttributionWindowDays) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -54661,6 +54705,12 @@ func (s *SiteUpdateMeInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Timezone.Set {
+			e.FieldStart("timezone")
+			s.Timezone.Encode(e)
+		}
+	}
+	{
 		if s.CurrentPassword.Set {
 			e.FieldStart("currentPassword")
 			s.CurrentPassword.Encode(e)
@@ -54674,10 +54724,11 @@ func (s *SiteUpdateMeInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateMeInput = [3]string{
+var jsonFieldsNameOfSiteUpdateMeInput = [4]string{
 	0: "name",
-	1: "currentPassword",
-	2: "newPassword",
+	1: "timezone",
+	2: "currentPassword",
+	3: "newPassword",
 }
 
 // Decode decodes SiteUpdateMeInput from json.
@@ -54697,6 +54748,16 @@ func (s *SiteUpdateMeInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "timezone":
+			if err := func() error {
+				s.Timezone.Reset()
+				if err := s.Timezone.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"timezone\"")
 			}
 		case "currentPassword":
 			if err := func() error {
@@ -55631,6 +55692,10 @@ func (s *SiteUserResource) encodeFields(e *jx.Encoder) {
 		e.Bool(s.EmailVerified)
 	}
 	{
+		e.FieldStart("timezone")
+		s.Timezone.Encode(e)
+	}
+	{
 		e.FieldStart("signupSurveyDue")
 		e.Bool(s.SignupSurveyDue)
 	}
@@ -55648,14 +55713,15 @@ func (s *SiteUserResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUserResource = [7]string{
+var jsonFieldsNameOfSiteUserResource = [8]string{
 	0: "id",
 	1: "name",
 	2: "email",
 	3: "emailVerified",
-	4: "signupSurveyDue",
-	5: "acceptancesPending",
-	6: "createdAt",
+	4: "timezone",
+	5: "signupSurveyDue",
+	6: "acceptancesPending",
+	7: "createdAt",
 }
 
 // Decode decodes SiteUserResource from json.
@@ -55711,8 +55777,18 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"emailVerified\"")
 			}
-		case "signupSurveyDue":
+		case "timezone":
 			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.Timezone.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"timezone\"")
+			}
+		case "signupSurveyDue":
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				v, err := d.Bool()
 				s.SignupSurveyDue = bool(v)
@@ -55724,7 +55800,7 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"signupSurveyDue\"")
 			}
 		case "acceptancesPending":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				s.AcceptancesPending = make([]SiteSignupItem, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -55742,7 +55818,7 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"acceptancesPending\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -55761,7 +55837,7 @@ func (s *SiteUserResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01111111,
+		0b11111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

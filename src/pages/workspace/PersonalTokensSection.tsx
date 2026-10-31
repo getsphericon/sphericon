@@ -31,8 +31,8 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { PersonalScope, SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
-import { formatDate } from '../../utils/datetime.ts'
 import { can } from '../../utils/permissions.ts'
 import { ScopePicker } from './ScopePicker.tsx'
 
@@ -53,6 +53,7 @@ function expiryOf(lifetime: Lifetime): string | null {
 // members:manage, which the server decides) and mints one of the caller's own (ADR 0061). The mint
 // form offers only the scopes the server says the caller's Role may grant.
 export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceResource }) {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const confirmRevoke = useConfirmation()
   const workspaceId = workspace.id

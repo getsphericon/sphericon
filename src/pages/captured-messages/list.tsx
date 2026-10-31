@@ -8,12 +8,13 @@ import {
   siteCapturedMessagesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
 import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspaceId/captured-messages/index.tsx'
-import { formatDateTime } from '../../utils/datetime.ts'
 
 export function CapturedMessagesListPage() {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const { workspaceId } = capturedMessagesRoute.useParams()
   const navigate = capturedMessagesRoute.useNavigate()

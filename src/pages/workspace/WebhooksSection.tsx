@@ -40,6 +40,7 @@ import type {
   SiteWebhookTestResult,
 } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { AUDIT_TARGET_WEBHOOK_ENDPOINT } from '../../utils/auditFilter.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
@@ -57,6 +58,7 @@ const EVENT_OPTIONS = [
 
 function FailureText({ failure }: { failure: SiteWebhookFailure }) {
   const { t } = useTranslation()
+  const { formatDateTime } = useDateFormat()
   const reason = {
     timeout: t(($) => $.settings.webhooks.errorTimeout),
     blocked_address: t(($) => $.settings.webhooks.errorBlockedAddress),
@@ -68,7 +70,7 @@ function FailureText({ failure }: { failure: SiteWebhookFailure }) {
       {t(($) => $.settings.webhooks.failureSummary, {
         reason,
         count: failure.consecutiveFailures,
-        since: new Date(failure.since).toLocaleString(),
+        since: formatDateTime(failure.since),
       })}
     </Text>
   )
@@ -157,6 +159,7 @@ function TestEventModal({
 
 export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
+  const { formatDateTime } = useDateFormat()
   const confirmDelete = useConfirmation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [testingId, setTestingId] = useState<string | null>(null)
@@ -275,7 +278,7 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
                         persistent_failure: t(($) => $.settings.webhooks.disabledPersistentFailure),
                       }[record.disabledReason]
                     }
-                    {record.disabledAt ? ` (${new Date(record.disabledAt).toLocaleString()})` : ''}
+                    {record.disabledAt ? ` (${formatDateTime(record.disabledAt)})` : ''}
                   </Text>
                 ) : null}
                 {record.failure ? (

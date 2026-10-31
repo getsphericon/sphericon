@@ -10,10 +10,13 @@ import (
 )
 
 // ProfileChange is what a User asks to change on their own profile. A nil Name keeps the name;
-// an empty NewPassword keeps the password, and then CurrentPassword is not read. The email is
-// the login identity and changes through its own confirmed link, not here.
+// a nil Timezone keeps the User time zone (ADR 0068) unless ClearTimezone clears it; an empty
+// NewPassword keeps the password, and then CurrentPassword is not read. The email is the login
+// identity and changes through its own confirmed link, not here.
 type ProfileChange struct {
 	Name            *string
+	Timezone        *string
+	ClearTimezone   bool
 	NewPassword     string
 	CurrentPassword string
 }
@@ -81,20 +84,26 @@ type newPasswordForm struct {
 	NewPassword string `json:"newPassword" validate:"password_not_blank,password_length"`
 }
 
-// ChangeProfile changes the name and/or the password of the User u. A blank name is refused;
-// a new password is checked against the password rule before the current one is proven, so a
+// ChangeProfile changes the name, the time zone and/or the password of the User u. A blank name
+// is refused, and so is a time zone the zone database does not know (ErrUnknownZone); a new
+// password is checked against the password rule before the current one is proven, so a
 // refused one costs no hash, and it needs the current password, proven through prove. A
 // refused field is a *validation.FieldsError, and prove's refusal (a wrong current password, a
 // running throttle delay) comes back as it is. Nothing is written unless every rule holds; a change that asks for nothing writes
 // nothing and returns u.
 func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChange, prove Prove) (ProfileChanged, error) {
-	var name, hash *string
+	w := profileWrite{Timezone: c.Timezone, ClearTimezone: c.ClearTimezone && c.Timezone == nil}
 	if c.Name != nil {
 		trimmed := strings.TrimSpace(*c.Name)
 		if trimmed == "" {
 			return ProfileChanged{}, validation.Refused("name", i18n.T("errors.name_empty", nil))
 		}
-		name = &trimmed
+		w.Name = &trimmed
+	}
+	if c.Timezone != nil {
+		if err := checkZone(*c.Timezone); err != nil {
+			return ProfileChanged{}, err
+		}
 	}
 	if c.NewPassword != "" {
 		if err := validation.Form(newPasswordForm{NewPassword: c.NewPassword}); err != nil {
@@ -110,14 +119,14 @@ func (a *Accounts) ChangeProfile(ctx context.Context, u *ent.User, c ProfileChan
 		if err != nil {
 			return ProfileChanged{}, err
 		}
-		hash = &h
+		w.PasswordHash = &h
 	}
-	if name == nil && hash == nil {
+	if w == (profileWrite{}) {
 		return ProfileChanged{User: u}, nil
 	}
-	saved, err := a.updateProfile(ctx, u.ID, name, hash, false)
+	saved, err := a.updateProfile(ctx, u.ID, w, false)
 	if err != nil {
 		return ProfileChanged{}, err
 	}
-	return ProfileChanged{User: saved, PasswordChanged: hash != nil}, nil
+	return ProfileChanged{User: saved, PasswordChanged: w.PasswordHash != nil}, nil
 }

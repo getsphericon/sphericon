@@ -2274,6 +2274,51 @@ func (o NilString) Or(d string) string {
 	return d
 }
 
+// NewNilTimeZoneName returns new NilTimeZoneName with value set to v.
+func NewNilTimeZoneName(v TimeZoneName) NilTimeZoneName {
+	return NilTimeZoneName{
+		Value: v,
+	}
+}
+
+// NilTimeZoneName is nullable TimeZoneName.
+type NilTimeZoneName struct {
+	Value TimeZoneName
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilTimeZoneName) SetTo(v TimeZoneName) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilTimeZoneName) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilTimeZoneName) SetToNull() {
+	o.Null = true
+	var v TimeZoneName
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilTimeZoneName) Get() (v TimeZoneName, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilTimeZoneName) Or(d TimeZoneName) TimeZoneName {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptAttributionWindowDays returns new OptAttributionWindowDays with value set to v.
 func NewOptAttributionWindowDays(v AttributionWindowDays) OptAttributionWindowDays {
 	return OptAttributionWindowDays{
@@ -23602,6 +23647,9 @@ func (s *SiteUpdateIntegrationInputParams) init() SiteUpdateIntegrationInputPara
 type SiteUpdateMeInput struct {
 	// New display name.
 	Name OptString `json:"name"`
+	// New User time zone, an IANA name (422 when the zone database does not know it); null clears it, so
+	// the app follows the browser again.
+	Timezone OptNilTimeZoneName `json:"timezone"`
 	// Current password — required when changing the password.
 	CurrentPassword OptString `json:"currentPassword"`
 	// New password.
@@ -23611,6 +23659,11 @@ type SiteUpdateMeInput struct {
 // GetName returns the value of Name.
 func (s *SiteUpdateMeInput) GetName() OptString {
 	return s.Name
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *SiteUpdateMeInput) GetTimezone() OptNilTimeZoneName {
+	return s.Timezone
 }
 
 // GetCurrentPassword returns the value of CurrentPassword.
@@ -23626,6 +23679,11 @@ func (s *SiteUpdateMeInput) GetNewPassword() OptString {
 // SetName sets the value of Name.
 func (s *SiteUpdateMeInput) SetName(val OptString) {
 	s.Name = val
+}
+
+// SetTimezone sets the value of Timezone.
+func (s *SiteUpdateMeInput) SetTimezone(val OptNilTimeZoneName) {
+	s.Timezone = val
 }
 
 // SetCurrentPassword sets the value of CurrentPassword.
@@ -23903,6 +23961,10 @@ type SiteUserResource struct {
 	Email EmailAddress `json:"email"`
 	// Whether the user has confirmed ownership of their email.
 	EmailVerified bool `json:"emailVerified"`
+	// The User time zone (ADR 0068): the IANA zone the app shows times in and the User's mail prints dates
+	// in. Null follows the browser in the app and is UTC in mail. Reports count in the Workspace time
+	// zone, never this one.
+	Timezone NilTimeZoneName `json:"timezone"`
 	// Whether the User owes the Sign-up survey: computed on the server, so the app reads this one field
 	// and never the Instance setting. True after a public sign-up on an Instance that asks, until the
 	// survey is answered.
@@ -23935,6 +23997,11 @@ func (s *SiteUserResource) GetEmail() EmailAddress {
 // GetEmailVerified returns the value of EmailVerified.
 func (s *SiteUserResource) GetEmailVerified() bool {
 	return s.EmailVerified
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *SiteUserResource) GetTimezone() NilTimeZoneName {
+	return s.Timezone
 }
 
 // GetSignupSurveyDue returns the value of SignupSurveyDue.
@@ -23970,6 +24037,11 @@ func (s *SiteUserResource) SetEmail(val EmailAddress) {
 // SetEmailVerified sets the value of EmailVerified.
 func (s *SiteUserResource) SetEmailVerified(val bool) {
 	s.EmailVerified = val
+}
+
+// SetTimezone sets the value of Timezone.
+func (s *SiteUserResource) SetTimezone(val NilTimeZoneName) {
+	s.Timezone = val
 }
 
 // SetSignupSurveyDue sets the value of SignupSurveyDue.

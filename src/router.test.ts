@@ -209,6 +209,7 @@ const user = (signupSurveyDue: boolean, acceptancesPending: typeof termsPending 
   name: 'Test User',
   email: 'user@example.test',
   emailVerified: true,
+  timezone: null,
   signupSurveyDue,
   acceptancesPending: [...acceptancesPending],
   createdAt: '2026-01-01T00:00:00Z',

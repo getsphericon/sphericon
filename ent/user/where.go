@@ -115,6 +115,11 @@ func SignupSurveyDueAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSignupSurveyDueAt, v))
 }
 
+// Timezone applies equality check predicate on the "timezone" field. It's identical to TimezoneEQ.
+func Timezone(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldTimezone, v))
+}
+
 // FeedPosition applies equality check predicate on the "feed_position" field. It's identical to FeedPositionEQ.
 func FeedPosition(v int64) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldFeedPosition, v))
@@ -758,6 +763,81 @@ func SignupSurveyDueAtIsNil() predicate.User {
 // SignupSurveyDueAtNotNil applies the NotNil predicate on the "signup_survey_due_at" field.
 func SignupSurveyDueAtNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldSignupSurveyDueAt))
+}
+
+// TimezoneEQ applies the EQ predicate on the "timezone" field.
+func TimezoneEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldTimezone, v))
+}
+
+// TimezoneNEQ applies the NEQ predicate on the "timezone" field.
+func TimezoneNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldTimezone, v))
+}
+
+// TimezoneIn applies the In predicate on the "timezone" field.
+func TimezoneIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldTimezone, vs...))
+}
+
+// TimezoneNotIn applies the NotIn predicate on the "timezone" field.
+func TimezoneNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldTimezone, vs...))
+}
+
+// TimezoneGT applies the GT predicate on the "timezone" field.
+func TimezoneGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldTimezone, v))
+}
+
+// TimezoneGTE applies the GTE predicate on the "timezone" field.
+func TimezoneGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldTimezone, v))
+}
+
+// TimezoneLT applies the LT predicate on the "timezone" field.
+func TimezoneLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldTimezone, v))
+}
+
+// TimezoneLTE applies the LTE predicate on the "timezone" field.
+func TimezoneLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldTimezone, v))
+}
+
+// TimezoneContains applies the Contains predicate on the "timezone" field.
+func TimezoneContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldTimezone, v))
+}
+
+// TimezoneHasPrefix applies the HasPrefix predicate on the "timezone" field.
+func TimezoneHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldTimezone, v))
+}
+
+// TimezoneHasSuffix applies the HasSuffix predicate on the "timezone" field.
+func TimezoneHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldTimezone, v))
+}
+
+// TimezoneIsNil applies the IsNil predicate on the "timezone" field.
+func TimezoneIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldTimezone))
+}
+
+// TimezoneNotNil applies the NotNil predicate on the "timezone" field.
+func TimezoneNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldTimezone))
+}
+
+// TimezoneEqualFold applies the EqualFold predicate on the "timezone" field.
+func TimezoneEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldTimezone, v))
+}
+
+// TimezoneContainsFold applies the ContainsFold predicate on the "timezone" field.
+func TimezoneContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldTimezone, v))
 }
 
 // FeedPositionEQ applies the EQ predicate on the "feed_position" field.

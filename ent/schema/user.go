@@ -78,6 +78,14 @@ func (User) Fields() []ent.Field {
 		field.Time("signup_survey_due_at").
 			Optional().
 			Nillable(),
+		// The User time zone (ADR 0068): the IANA name the app shows the User's times in and the
+		// User's mail prints its dates in. NULL follows the browser in the app and reads as UTC
+		// in mail. Reports never read it: they count in the Workspace time zone (ADR 0057). The
+		// name is checked against the zone database by internal/accounts.
+		field.String("timezone").
+			Optional().
+			Nillable().
+			NotEmpty(),
 		// The User's place in the service feed of Users (ADR 0062): a position that only grows,
 		// taken whenever the User is created, renamed, changes email or verification, makes a
 		// new decision on the mailings consent item or that item's mark moves. 0 until the first

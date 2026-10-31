@@ -38,6 +38,8 @@ const (
 	FieldSecondFactorLastStep = "second_factor_last_step"
 	// FieldSignupSurveyDueAt holds the string denoting the signup_survey_due_at field in the database.
 	FieldSignupSurveyDueAt = "signup_survey_due_at"
+	// FieldTimezone holds the string denoting the timezone field in the database.
+	FieldTimezone = "timezone"
 	// FieldFeedPosition holds the string denoting the feed_position field in the database.
 	FieldFeedPosition = "feed_position"
 	// EdgeMemberships holds the string denoting the memberships edge name in mutations.
@@ -122,6 +124,7 @@ var Columns = []string{
 	FieldSecondFactorConfirmedAt,
 	FieldSecondFactorLastStep,
 	FieldSignupSurveyDueAt,
+	FieldTimezone,
 	FieldFeedPosition,
 }
 
@@ -150,6 +153,8 @@ var (
 	DefaultSessionEpoch int64
 	// DefaultSecondFactorLastStep holds the default value on creation for the "second_factor_last_step" field.
 	DefaultSecondFactorLastStep int64
+	// TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
+	TimezoneValidator func(string) error
 	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
 	DefaultFeedPosition int64
 )
@@ -220,6 +225,11 @@ func BySecondFactorLastStep(opts ...sql.OrderTermOption) OrderOption {
 // BySignupSurveyDueAt orders the results by the signup_survey_due_at field.
 func BySignupSurveyDueAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSignupSurveyDueAt, opts...).ToFunc()
+}
+
+// ByTimezone orders the results by the timezone field.
+func ByTimezone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTimezone, opts...).ToFunc()
 }
 
 // ByFeedPosition orders the results by the feed_position field.

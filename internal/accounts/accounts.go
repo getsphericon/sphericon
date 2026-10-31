@@ -260,10 +260,7 @@ func (a *Accounts) SetAuditRetention(ctx context.Context, s *ent.Scoped, actor e
 // `workspace.update` Audit entry in the same transaction. A name the zone database does not
 // know is refused with ErrUnknownZone. The caller has checked the role.
 func (a *Accounts) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.Actor, name string) (*ent.Workspace, error) {
-	if _, err := reportday.Load(name); err != nil {
-		if errors.Is(err, reportday.ErrUnknownZone) {
-			return nil, fmt.Errorf("%w: %w", ErrUnknownZone, err)
-		}
+	if err := checkZone(name); err != nil {
 		return nil, err
 	}
 	var updated *ent.Workspace
@@ -296,9 +293,20 @@ func (a *Accounts) SetTimezone(ctx context.Context, s *ent.Scoped, actor events.
 // ErrUnknownCurrency refuses a Reporting currency code that is not in ISO 4217.
 var ErrUnknownCurrency = validation.RefuseField("reportingCurrency", "accounts: unknown currency code", "errors.currency_unknown")
 
-// ErrUnknownZone refuses a Workspace time zone the zone database does not know. It wraps
-// reportday.ErrUnknownZone.
+// ErrUnknownZone refuses a Workspace or a User time zone the zone database does not know. It
+// wraps reportday.ErrUnknownZone.
 var ErrUnknownZone = validation.RefuseField("timezone", "accounts: unknown time zone", "errors.timezone_unknown")
+
+// checkZone refuses with ErrUnknownZone an IANA name the zone database does not know.
+func checkZone(name string) error {
+	if _, err := reportday.Load(name); err != nil {
+		if errors.Is(err, reportday.ErrUnknownZone) {
+			return fmt.Errorf("%w: %w", ErrUnknownZone, err)
+		}
+		return err
+	}
+	return nil
+}
 
 // SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
 // as it is) and records each real change in one `workspace.update` Audit entry in the same
@@ -679,12 +687,18 @@ func (a *Accounts) verified(ctx context.Context, proven bool, write func(tx *ent
 	}
 }
 
-// updateProfile sets the User's name and/or password hash (nil leaves a field unchanged)
-// and returns the stored User. A password change bumps the session epoch, ending every
-// session issued before it (ADR 0020), and is recorded as an Audit entry in every Workspace
-// the User belongs to, in the same transaction. proven also stamps the address as proven (a
-// reset link was followed, which was mailed to it).
-func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHash *string, proven bool) (*ent.User, error) {
+// profileWrite is what updateProfile writes: a nil Name, PasswordHash or Timezone leaves that
+// field unchanged, and ClearTimezone clears the User time zone.
+type profileWrite struct {
+	Name, PasswordHash, Timezone *string
+	ClearTimezone                bool
+}
+
+// updateProfile writes w to the User and returns the stored User. A password change bumps the
+// session epoch, ending every session issued before it (ADR 0020), and is recorded as an Audit
+// entry in every Workspace the User belongs to, in the same transaction. proven also stamps the
+// address as proven (a reset link was followed, which was mailed to it).
+func (a *Accounts) updateProfile(ctx context.Context, id int64, w profileWrite, proven bool) (*ent.User, error) {
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		// The mailed link proves the address; only a stamp from empty is a domain-join step,
@@ -697,13 +711,13 @@ func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHa
 			}
 			stamped = n > 0
 		}
-		upd := tx.User.UpdateOneID(id)
-		if name != nil {
-			upd = upd.SetName(*name)
+		upd := tx.User.UpdateOneID(id).SetNillableName(w.Name).SetNillableTimezone(w.Timezone)
+		if w.ClearTimezone {
+			upd = upd.ClearTimezone()
 		}
-		if passwordHash != nil {
+		if w.PasswordHash != nil {
 			// A new password ends every session issued before it (ADR 0020).
-			upd = upd.SetPasswordHash(*passwordHash).AddSessionEpoch(1)
+			upd = upd.SetPasswordHash(*w.PasswordHash).AddSessionEpoch(1)
 		}
 		u, err := upd.Save(ctx)
 		if err != nil {
@@ -715,7 +729,7 @@ func (a *Accounts) updateProfile(ctx context.Context, id int64, name, passwordHa
 				return err
 			}
 		}
-		if passwordHash == nil {
+		if w.PasswordHash == nil {
 			return nil
 		}
 		return RecordUserAction(ctx, tx, pub, u, events.ActionUserPasswordChange, map[string]any{"password": "changed"})
@@ -745,7 +759,7 @@ func (a *Accounts) ResetPassword(ctx context.Context, id int64, passwordHash str
 		}
 		// A concurrent link verified the User first: this is now a plain password change.
 	}
-	u, err = a.updateProfile(ctx, id, nil, &passwordHash, true)
+	u, err = a.updateProfile(ctx, id, profileWrite{PasswordHash: &passwordHash}, true)
 	return u, false, err
 }
 

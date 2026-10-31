@@ -232,6 +232,26 @@ func (_u *UserUpdate) ClearSignupSurveyDueAt() *UserUpdate {
 	return _u
 }
 
+// SetTimezone sets the "timezone" field.
+func (_u *UserUpdate) SetTimezone(v string) *UserUpdate {
+	_u.mutation.SetTimezone(v)
+	return _u
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableTimezone(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetTimezone(*v)
+	}
+	return _u
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (_u *UserUpdate) ClearTimezone() *UserUpdate {
+	_u.mutation.ClearTimezone()
+	return _u
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (_u *UserUpdate) SetFeedPosition(v int64) *UserUpdate {
 	_u.mutation.ResetFeedPosition()
@@ -547,6 +567,11 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Timezone(); ok {
+		if err := user.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -624,6 +649,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SignupSurveyDueAtCleared() {
 		_spec.ClearField(user.FieldSignupSurveyDueAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Timezone(); ok {
+		_spec.SetField(user.FieldTimezone, field.TypeString, value)
+	}
+	if _u.mutation.TimezoneCleared() {
+		_spec.ClearField(user.FieldTimezone, field.TypeString)
 	}
 	if value, ok := _u.mutation.FeedPosition(); ok {
 		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)
@@ -1148,6 +1179,26 @@ func (_u *UserUpdateOne) ClearSignupSurveyDueAt() *UserUpdateOne {
 	return _u
 }
 
+// SetTimezone sets the "timezone" field.
+func (_u *UserUpdateOne) SetTimezone(v string) *UserUpdateOne {
+	_u.mutation.SetTimezone(v)
+	return _u
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableTimezone(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetTimezone(*v)
+	}
+	return _u
+}
+
+// ClearTimezone clears the value of the "timezone" field.
+func (_u *UserUpdateOne) ClearTimezone() *UserUpdateOne {
+	_u.mutation.ClearTimezone()
+	return _u
+}
+
 // SetFeedPosition sets the "feed_position" field.
 func (_u *UserUpdateOne) SetFeedPosition(v int64) *UserUpdateOne {
 	_u.mutation.ResetFeedPosition()
@@ -1476,6 +1527,11 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Timezone(); ok {
+		if err := user.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "User.timezone": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1570,6 +1626,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.SignupSurveyDueAtCleared() {
 		_spec.ClearField(user.FieldSignupSurveyDueAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Timezone(); ok {
+		_spec.SetField(user.FieldTimezone, field.TypeString, value)
+	}
+	if _u.mutation.TimezoneCleared() {
+		_spec.ClearField(user.FieldTimezone, field.TypeString)
 	}
 	if value, ok := _u.mutation.FeedPosition(); ok {
 		_spec.SetField(user.FieldFeedPosition, field.TypeInt64, value)

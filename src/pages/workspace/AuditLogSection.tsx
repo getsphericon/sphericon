@@ -33,13 +33,13 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
 import { zRetentionDays, zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
+import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as auditLogRoute } from '../../routes/workspaces/$workspaceId/settings/audit-log.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 import { auditQuery } from '../../utils/auditFilter.ts'
 import type { AuditFilter } from '../../utils/auditFilter.ts'
-import { formatDateTime } from '../../utils/datetime.ts'
 
 const PAGE_SIZE = 25
 // The API answers 402 without an Enterprise license and 403 to a plain member; in both
@@ -122,6 +122,7 @@ function DiffView({ diff }: { diff: Record<string, unknown> }) {
 // EntryRows is one entry; when it carries a diff, a chevron expands it beneath the row so
 // the list stays scannable.
 function EntryRows({ entry }: { entry: SiteAuditEntryResource }) {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const diff = entry.diff && Object.keys(entry.diff).length > 0 ? entry.diff : null

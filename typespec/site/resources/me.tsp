@@ -17,6 +17,11 @@ model SiteUserResource {
   /** Whether the user has confirmed ownership of their email */
   emailVerified: boolean;
 
+  /** The User time zone (ADR 0068): the IANA zone the app shows times in and the User's mail
+   * prints dates in. Null follows the browser in the app and is UTC in mail. Reports count in
+   * the Workspace time zone, never this one. */
+  timezone: TimeZoneName | null;
+
   /** Whether the User owes the Sign-up survey: computed on the server, so the app reads this
    * one field and never the Instance setting. True after a public sign-up on an Instance that
    * asks, until the survey is answered. */
@@ -48,6 +53,10 @@ model SiteEmailChangeInput {
 model SiteUpdateMeInput {
   /** New display name */
   name?: string;
+
+  /** New User time zone, an IANA name (422 when the zone database does not know it); null
+   * clears it, so the app follows the browser again */
+  timezone?: TimeZoneName | null;
 
   /** Current password — required when changing the password */
   currentPassword?: string;
@@ -129,7 +138,7 @@ namespace SiteUser {
     @body body: SiteUserResource;
   };
 
-  /** Update the authenticated user's profile (name and/or password). A password
+  /** Update the authenticated user's profile (name, time zone and/or password). A password
    * change ends every session of the user (ADR 0020); the acting one continues
    * under the fresh session cookie set in this response. A wrong current password feeds the
    * Login throttle, which answers 429 even for a right one while its delay runs. */

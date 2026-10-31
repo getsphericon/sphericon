@@ -63,6 +63,7 @@ const ME = {
   name: 'Ann',
   email: 'ann@example.com',
   emailVerified: true,
+  timezone: null,
   signupSurveyDue: false,
   acceptancesPending: [],
   createdAt: '2026-01-01T00:00:00Z',

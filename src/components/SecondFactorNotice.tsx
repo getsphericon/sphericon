@@ -2,15 +2,16 @@ import { Alert, Button, Card, Divider, Group, Stack, Text, Title } from '@mantin
 import { useTranslation } from 'react-i18next'
 
 import type { SiteWorkspaceResource } from '../generated/site/types.gen.ts'
+import { useDateFormat } from '../hooks/useDateFormat.ts'
 import { useLiftSecondFactorRequirement } from '../hooks/useSecondFactorRequirement.ts'
 import { Route as securityRoute } from '../routes/account/security.tsx'
-import { formatDate } from '../utils/datetime.ts'
 import { can } from '../utils/permissions.ts'
 import { ButtonLink } from './RouterLink.tsx'
 
 // SecondFactorGraceBanner reminds the User, on every page of the Workspace, of the
 // date by which they must set up a Second factor.
 export function SecondFactorGraceBanner({ endsAt }: { endsAt: string }) {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   return (
     <Alert color="yellow" title={t(($) => $.secondFactorRequirement.graceTitle)} mb="md">

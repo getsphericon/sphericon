@@ -63,6 +63,17 @@ func TestSecondFactorReminderIsSentOnceADayBeforeTheDeadline(t *testing.T) {
 		"Nina's later Membership has its own deadline; Sam, with a Second factor, gets nothing")
 }
 
+// The deadline is printed in the User time zone (ADR 0068), with the zone's name.
+func TestSecondFactorReminderShowsTheDeadlineInTheUserTimeZone(t *testing.T) {
+	env := testhelper.Setup(t)
+	require.NoError(t, env.DB.User.UpdateOneID(fixtures.UmbrellaOwnerRitaID).SetTimezone("Europe/Berlin").Exec(t.Context()))
+
+	remind(t, env, ritaDeadline.Add(-12*time.Hour))
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Contains(t, msgs[0].Text, "2026-03-08 01:00 Europe/Berlin")
+}
+
 func TestNoSecondFactorReminderForAUserWhoEnrolledOrWhoseGraceEnded(t *testing.T) {
 	env := testhelper.Setup(t)
 	_, err := env.DB.User.UpdateOneID(fixtures.UmbrellaMemberNinaID).

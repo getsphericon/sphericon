@@ -2466,6 +2466,7 @@ var (
 		{Name: "second_factor_confirmed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "second_factor_last_step", Type: field.TypeInt64, Default: 0},
 		{Name: "signup_survey_due_at", Type: field.TypeTime, Nullable: true},
+		{Name: "timezone", Type: field.TypeString, Nullable: true},
 		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
 	}
 	// UsersTable holds the schema information for the "users" table.
@@ -2477,7 +2478,7 @@ var (
 			{
 				Name:    "user_feed_position_id",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[13], UsersColumns[0]},
+				Columns: []*schema.Column{UsersColumns[14], UsersColumns[0]},
 			},
 		},
 	}
