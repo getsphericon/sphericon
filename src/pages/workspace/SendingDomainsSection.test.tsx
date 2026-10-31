@@ -5,6 +5,7 @@ import {
   handleSiteSendingDomainsCreate,
   handleSiteSendingDomainsArchive,
   handleSiteSendingDomainsList,
+  handleSiteSendingDomainsUnarchive,
   handleSiteSendingDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
@@ -323,4 +324,55 @@ test('verifies a domain from its records modal and offers the agent prompt', asy
   await screen.getByRole('button', { name: 'Verify now' }).click()
 
   await expect.poll(() => verified).toBe(true)
+})
+
+// The list answers by the view asked: the kept domains, or the archived ones.
+const byView = (kept: SiteSendingDomainResource[], archived: SiteSendingDomainResource[]) =>
+  handleSiteSendingDomainsList(({ request }) => {
+    const items = new URL(request.url).searchParams.get('archived') === 'true' ? archived : kept
+    return HttpResponse.json({
+      items,
+      page: 1,
+      pageSize: 20,
+      totalItems: items.length,
+      totalPages: 1,
+    })
+  })
+
+test('switches to the archived domains and restores one', async () => {
+  const restored: string[] = []
+  worker.use(
+    byView(
+      [domain()],
+      [domain({ id: '9', domain: 'old.acme.com', archivedAt: '2026-02-01T00:00:00Z' })],
+    ),
+    handleSiteSendingDomainsUnarchive(({ params }) => {
+      restored.push(params.id)
+      return HttpResponse.json(domain({ id: '9', domain: 'old.acme.com' }))
+    }),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await expect.element(screen.getByText('mail.acme.com')).toBeInTheDocument()
+  await screen.getByText('Archived', { exact: true }).click()
+  await expect.element(screen.getByText('old.acme.com')).toBeInTheDocument()
+  await expect.element(screen.getByText('mail.acme.com')).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'More actions' }).click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Remove' })).not.toBeInTheDocument()
+  await screen.getByRole('menuitem', { name: 'Restore' }).click()
+
+  await expect.poll(() => restored).toEqual(['9'])
+})
+
+test('an empty archive of domains says so', async () => {
+  worker.use(byView([domain()], []))
+  const { screen } = await renderWithRouter(
+    <SendingDomainsSection workspaceId={WORKSPACE_ID} canEdit />,
+  )
+
+  await screen.getByText('Archived', { exact: true }).click()
+
+  await expect.element(screen.getByText('No archived domains')).toBeInTheDocument()
 })
