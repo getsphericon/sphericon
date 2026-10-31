@@ -9,6 +9,9 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/go-faster/jx"
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
@@ -35,11 +38,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/go-faster/jx"
-	"github.com/samber/lo"
 )
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
@@ -377,6 +379,28 @@ type Converter interface {
 	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) externalapi.WebhookDisabledReason
 	// goverter:enum:transform value
 	WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) externalapi.WebhookErrorKind
+	// A page of a list, with its page, size and totals, as the surface answers it.
+	AutomationsListPage(source pagination.Page[*ent.Automation]) externalapi.AutomationsListOK
+	BroadcastsListPage(source pagination.Page[*ent.Broadcast]) externalapi.BroadcastsListOK
+	CapturedMessagesListPage(source pagination.Page[*ent.CapturedMessage]) externalapi.CapturedMessagesListOK
+	ContactsListPage(source pagination.Page[*ent.Contact]) externalapi.ContactsListOK
+	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) externalapi.EnrollmentsListOK
+	// goverter:skipCopySameType
+	EventActionsListPage(source pagination.Page[externalapi.EventActionResource]) externalapi.EventActionsListOK
+	// goverter:skipCopySameType
+	IntegrationsListPage(source pagination.Page[externalapi.IntegrationResource]) externalapi.IntegrationsListOK
+	RulesListPage(source pagination.Page[*ent.Rule]) externalapi.RulesListOK
+	RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) externalapi.RuleFiringsListOK
+	SegmentsListPage(source pagination.Page[*ent.Segment]) externalapi.SegmentsListOK
+	// goverter:skipCopySameType
+	SendingDomainsListPage(source pagination.Page[externalapi.SendingDomainResource]) externalapi.SendingDomainsListOK
+	// goverter:skipCopySameType
+	TagsListPage(source pagination.Page[externalapi.TagResource]) externalapi.TagsListOK
+	// goverter:skipCopySameType
+	TagsListForContactPage(source pagination.Page[externalapi.TagResource]) externalapi.TagsListForContactOK
+	TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) externalapi.TemplatesListOK
+	// goverter:skipCopySameType
+	WebhooksListPage(source pagination.Page[externalapi.WebhookResource]) externalapi.WebhooksListOK
 }
 
 // ExportMapper adapts the Converter to contactexport.Mapper.

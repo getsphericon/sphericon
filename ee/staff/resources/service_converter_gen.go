@@ -8,6 +8,7 @@ import (
 	usage "github.com/getsphericon/sphericon/ee/usage"
 	ent "github.com/getsphericon/sphericon/ent"
 	service "github.com/getsphericon/sphericon/gen/service"
+	pagination "github.com/getsphericon/sphericon/internal/pagination"
 )
 
 type ServiceConverterImpl struct{}
@@ -64,6 +65,15 @@ func (c *ServiceConverterImpl) UsageFigureToResource(source usage.Figure) servic
 	serviceapiUsageFigure.Final = source.Final
 	serviceapiUsageFigure.ComputedAt = serviceTimestamp(source.ComputedAt)
 	return serviceapiUsageFigure
+}
+func (c *ServiceConverterImpl) UsageListPage(source pagination.Page[service.WorkspaceUsageResource]) service.ServiceUsageListOK {
+	var serviceapiServiceUsageListOK service.ServiceUsageListOK
+	serviceapiServiceUsageListOK.Items = source.Items
+	serviceapiServiceUsageListOK.Page = count(source.Page)
+	serviceapiServiceUsageListOK.PageSize = count(source.PageSize)
+	serviceapiServiceUsageListOK.TotalItems = count(source.TotalItems)
+	serviceapiServiceUsageListOK.TotalPages = count(source.TotalPages)
+	return serviceapiServiceUsageListOK
 }
 func (c *ServiceConverterImpl) UsageMetricToResource(source usage.Metric) service.UsageMetric {
 	var serviceapiUsageMetric service.UsageMetric

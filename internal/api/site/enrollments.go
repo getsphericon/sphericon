@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -18,13 +17,8 @@ func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteE
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteEnrollmentsListOK{
-		Items:      mapper.EnrollmentsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.EnrollmentsListPage(page)
+	return &out, nil
 }
 
 func (h *Handlers) SiteEnrollmentsGet(ctx context.Context, params siteapi.SiteEnrollmentsGetParams) (siteapi.SiteEnrollmentsGetRes, error) {

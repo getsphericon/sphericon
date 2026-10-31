@@ -6,7 +6,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -18,13 +17,8 @@ func (h *Handlers) SiteTagsList(ctx context.Context, params siteapi.SiteTagsList
 		return nil, err
 	}
 	page := siteTagsPage(all, params.Page, params.PageSize)
-	return &siteapi.SiteTagsListOK{
-		Items:      page.Items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.TagsListPage(page)
+	return &out, nil
 }
 
 func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.SiteTagsListForContactParams) (siteapi.SiteTagsListForContactRes, error) {
@@ -36,13 +30,8 @@ func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.Si
 		return nil, err
 	}
 	page := siteTagsPage(mine, params.Page, params.PageSize)
-	return &siteapi.SiteTagsListForContactOK{
-		Items:      page.Items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.TagsListForContactPage(page)
+	return &out, nil
 }
 
 func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.ApplyTagInput, params siteapi.SiteTagsApplyParams) (siteapi.SiteTagsApplyRes, error) {

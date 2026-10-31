@@ -36,13 +36,8 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 			return nil, err
 		}
 	}
-	return &externalapi.IntegrationsListOK{
-		Items:      items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.IntegrationsListPage(pagination.WithItems(page, items))
+	return &out, nil
 }
 
 // IntegrationsCreate stores a new Integration; credentials are sealed and never returned.

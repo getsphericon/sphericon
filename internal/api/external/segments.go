@@ -15,13 +15,8 @@ func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.Segments
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.SegmentsListOK{
-		Items:      mapper.SegmentsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.SegmentsListPage(page)
+	return &out, nil
 }
 
 func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSegmentInput) (externalapi.SegmentsCreateRes, error) {

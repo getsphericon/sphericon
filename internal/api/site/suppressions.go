@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
@@ -17,14 +16,8 @@ func (h *Handlers) SiteSuppressionsList(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	resources := mapper.SuppressionsToResources(page.Items)
-	return &siteapi.SiteSuppressionsListOK{
-		Items:      resources,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.SuppressionsListPage(page)
+	return &out, nil
 }
 
 func (h *Handlers) SiteSuppressionsCreate(ctx context.Context, req *siteapi.SiteCreateSuppressionInput, _ siteapi.SiteSuppressionsCreateParams) (siteapi.SiteSuppressionsCreateRes, error) {

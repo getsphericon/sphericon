@@ -8,7 +8,6 @@ import (
 	"github.com/getsphericon/sphericon/ee/usage"
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -37,13 +36,8 @@ func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceap
 	for _, w := range page.Items {
 		items = append(items, usageResource(w, publicIDs[w.WorkspaceID]))
 	}
-	return &serviceapi.ServiceUsageListOK{
-		Items:      items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := serviceMapper.UsageListPage(pagination.WithItems(page, items))
+	return &out, nil
 }
 
 // badPeriodProblem is the 400 answered for a period that is not a month written YYYY-MM.

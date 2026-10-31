@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -24,17 +23,12 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteAutomationsListOK{
-		Items: lo.Map(page.Items, func(a *ent.Automation, _ int) siteapi.SiteAutomationResource {
-			res := mapper.AutomationToResource(a)
-			res.Revenue = siteapi.NewOptSiteMessageRevenue(mapper.MessageRevenueToResource(revenue.Of(a.ID)))
-			return res
-		}),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.AutomationsListPage(pagination.WithItems(page, lo.Map(page.Items, func(a *ent.Automation, _ int) siteapi.SiteAutomationResource {
+		res := mapper.AutomationToResource(a)
+		res.Revenue = siteapi.NewOptSiteMessageRevenue(mapper.MessageRevenueToResource(revenue.Of(a.ID)))
+		return res
+	})))
+	return &out, nil
 }
 
 func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (siteapi.SiteAutomationsCreateRes, error) {

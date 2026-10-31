@@ -8,7 +8,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -20,13 +19,8 @@ func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteCont
 		return nil, err
 	}
 
-	return &siteapi.SiteContactsListOK{
-		Items:      mapper.ContactsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.ContactsListPage(page)
+	return &out, nil
 }
 
 func (h *Handlers) SiteContactsCreate(ctx context.Context, req *siteapi.SiteCreateContactInput, _ siteapi.SiteContactsCreateParams) (siteapi.SiteContactsCreateRes, error) {

@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
@@ -65,17 +64,8 @@ func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.St
 	if err != nil {
 		return nil, err
 	}
-	items := make([]staffeeapi.StaffWorkspaceResource, 0, len(page.Items))
-	for _, w := range page.Items {
-		items = append(items, staffMapper.WorkspaceToResource(w))
-	}
-	return &staffeeapi.StaffWorkspacesListOK{
-		Items:      items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := staffMapper.WorkspacesListPage(page)
+	return &out, nil
 }
 
 func review(p staffeeapi.OptStaffWorkspaceReview) abuse.Review {
