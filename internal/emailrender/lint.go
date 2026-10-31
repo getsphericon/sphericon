@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"maps"
 	"math"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
+	"github.com/mazznoer/csscolorparser"
+	"github.com/tdewolff/parse/v2"
+	"github.com/tdewolff/parse/v2/css"
 	"golang.org/x/net/html"
 )
 
@@ -197,7 +199,7 @@ func (l *linter) contrast(n *html.Node, el string) {
 }
 
 // inherited returns the value of the CSS property on n or its nearest ancestor that sets it
-// (falling back to the legacy HTML attribute when legacy is not nil), normalized. A "transparent"
+// (falling back to the legacy HTML attribute when legacy is not nil), normalized. A transparent
 // value is skipped. ok is false when the nearest value is not a plain color the check can use.
 func inherited(n *html.Node, prop string, legacy func(*html.Node) string) (string, bool) {
 	for m := n; m != nil; m = m.Parent {
@@ -213,6 +215,9 @@ func inherited(n *html.Node, prop string, legacy func(*html.Node) string) (strin
 			continue
 		}
 		c, ok := normalizeColor(v)
+		if ok && c == "" {
+			continue // a transparent color shows what is behind it
+		}
 		if prop == "background" && !ok {
 			return "", false
 		}
@@ -221,25 +226,33 @@ func inherited(n *html.Node, prop string, legacy func(*html.Node) string) (strin
 	return "", true
 }
 
-// declared parses the element's inline style into property -> value (lower-case property).
+// declared parses the element's inline style into property -> value (lower-case property), with
+// tdewolff/parse's CSS parser, which keeps a value that holds commas or parentheses whole.
 func declared(n *html.Node) map[string]string {
 	out := map[string]string{}
 	style := attr(n, "style")
 	if style == "" {
 		return out
 	}
-	for _, decl := range splitDeclarations(style) {
-		if prop, value, ok := strings.Cut(decl, ":"); ok {
-			out[strings.ToLower(strings.TrimSpace(prop))] = strings.TrimSpace(value)
+	p := css.NewParser(parse.NewInputString(style), true)
+	for {
+		gt, _, data := p.Next()
+		switch gt {
+		case css.ErrorGrammar:
+			return out
+		case css.DeclarationGrammar:
+			var value strings.Builder
+			for _, t := range p.Values() {
+				value.Write(t.Data)
+			}
+			out[strings.ToLower(string(data))] = strings.TrimSpace(value.String())
+		default:
 		}
 	}
-	return out
 }
 
 // neutral colors are allowed in any message: white and black belong to no brand.
 var neutral = map[string]bool{"#ffffff": true, "#000000": true}
-
-var colorToken = regexp.MustCompile(`(?i)#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|\b(?:white|black|red|green|blue|gray|grey|yellow|orange|purple|silver|navy|teal|maroon|olive|lime|aqua|fuchsia)\b`)
 
 // colorsOf lists the normalized colors an element sets: its text color when it has text of its
 // own (a wrapper's color is only inherited by what it holds), its background declarations and
@@ -247,8 +260,8 @@ var colorToken = regexp.MustCompile(`(?i)#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|\b(?:wh
 func colorsOf(n *html.Node, text bool) []string {
 	var out []string
 	add := func(value string) {
-		for _, tok := range colorToken.FindAllString(value, -1) {
-			if c, ok := normalizeColor(strings.ToLower(tok)); ok && !slices.Contains(out, c) {
+		for _, c := range colorsIn(value) {
+			if !slices.Contains(out, c) {
 				out = append(out, c)
 			}
 		}
@@ -266,31 +279,45 @@ func colorsOf(n *html.Node, text bool) []string {
 	return out
 }
 
-// splitDeclarations splits an inline style on the semicolons outside parentheses and quotes.
-// (The CSS parser the project already depends on, douceur, drops the value of a declaration
-// that holds a comma, such as a font-family list, so it cannot be used here.)
-func splitDeclarations(style string) []string {
+// colorsIn lists the normalized colors a CSS value names, such as the color among a background
+// shorthand's image, position and repeat: each hash, word and function of the value that is a
+// color. A fully transparent color names none.
+func colorsIn(value string) []string {
 	var out []string
-	depth, start := 0, 0
-	var quote rune
-	for i, r := range style {
-		switch {
-		case quote != 0:
-			if r == quote {
-				quote = 0
-			}
-		case r == '"' || r == '\'':
-			quote = r
-		case r == '(':
-			depth++
-		case r == ')':
-			depth = max(depth-1, 0)
-		case r == ';' && depth == 0:
-			out = append(out, style[start:i])
-			start = i + 1
+	try := func(candidate string) {
+		if c, ok := normalizeColor(candidate); ok && c != "" {
+			out = append(out, c)
 		}
 	}
-	return append(out, style[start:])
+	l := css.NewLexer(parse.NewInputString(value))
+	for {
+		tt, data := l.Next()
+		switch tt {
+		case css.ErrorToken:
+			return out
+		case css.HashToken, css.IdentToken:
+			try(string(data))
+		case css.FunctionToken:
+			var fn strings.Builder
+			fn.Write(data)
+			for depth := 1; depth > 0; {
+				tt, data = l.Next()
+				if tt == css.ErrorToken {
+					return out
+				}
+				fn.Write(data)
+				switch tt {
+				case css.FunctionToken, css.LeftParenthesisToken:
+					depth++
+				case css.RightParenthesisToken:
+					depth--
+				default:
+				}
+			}
+			try(fn.String())
+		default:
+		}
+	}
 }
 
 // fontOf is the element's own font-family list (style, or <font face>).
@@ -405,65 +432,29 @@ func clip(s string, n int) string {
 	return string([]rune(s)[:n]) + "…"
 }
 
-var (
-	namedColors = map[string]string{"white": "#ffffff", "black": "#000000"}
-	colorWord   = regexp.MustCompile(`^[a-z]+$`)
-	rgbColor    = regexp.MustCompile(`^rgba?\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*(?:[,/]\s*[\d.]+%?\s*)?\)$`)
-)
-
-// normalizeColor turns #rgb, #rrggbb, rgb(…) and white/black into #rrggbb. Other named
-// colors stay as the name, so they compare equal only to themselves; ok is false for anything
-// that is not a color value at all (a keyword such as currentcolor).
+// normalizeColor turns any CSS color (a hash of 3, 4, 6 or 8 digits, a name, rgb(), hsl() and
+// the other functions mazznoer/csscolorparser reads) into #rrggbb: its alpha is not considered.
+// A fully transparent color is "" and ok; ok is false for anything that is not a color value
+// (a keyword such as currentcolor).
 func normalizeColor(v string) (string, bool) {
-	v = strings.ToLower(strings.TrimSpace(v))
-	if c, ok := namedColors[v]; ok {
-		return c, true
-	}
-	if m := rgbColor.FindStringSubmatch(v); m != nil {
-		var rgb [3]int
-		for i := range rgb {
-			n, err := strconv.Atoi(m[i+1])
-			if err != nil || n > 255 {
-				return "", false
-			}
-			rgb[i] = n
-		}
-		return fmt.Sprintf("#%02x%02x%02x", rgb[0], rgb[1], rgb[2]), true
-	}
-	if strings.HasPrefix(v, "#") {
-		switch len(v) {
-		case 4:
-			return "#" + strings.Repeat(string(v[1]), 2) + strings.Repeat(string(v[2]), 2) + strings.Repeat(string(v[3]), 2), isHex(v[1:])
-		case 7:
-			return v, isHex(v[1:])
-		}
+	c, err := csscolorparser.Parse(strings.TrimSpace(v))
+	if err != nil {
 		return "", false
 	}
-	if colorWord.MatchString(v) && v != "currentcolor" {
-		return v, true
+	if c.A == 0 {
+		return "", true
 	}
-	return "", false
+	r, g, b, _ := c.RGBA255()
+	return fmt.Sprintf("#%02x%02x%02x", r, g, b), true
 }
 
-func isHex(s string) bool {
-	_, err := strconv.ParseUint(s, 16, 32)
-	return err == nil
-}
-
-// parseColor reads a normalized #rrggbb; named colors other than white and black are unknown.
+// parseColor reads a normalized #rrggbb into its channels, each from 0 to 1.
 func parseColor(c string) ([3]float64, bool) {
-	if len(c) != 7 || c[0] != '#' {
+	parsed, err := csscolorparser.Parse(c)
+	if err != nil || c == "" {
 		return [3]float64{}, false
 	}
-	var out [3]float64
-	for i := range out {
-		v, err := strconv.ParseUint(c[1+2*i:3+2*i], 16, 8)
-		if err != nil {
-			return out, false
-		}
-		out[i] = float64(v) / 255
-	}
-	return out, true
+	return [3]float64{parsed.R, parsed.G, parsed.B}, true
 }
 
 func luminance(c [3]float64) float64 {
@@ -492,7 +483,7 @@ func (b *Brand) normalized() *Brand {
 	}
 	out := &Brand{}
 	for _, c := range b.Colors {
-		if n, ok := normalizeColor(c); ok {
+		if n, ok := normalizeColor(c); ok && n != "" {
 			out.Colors = append(out.Colors, n)
 		}
 	}
