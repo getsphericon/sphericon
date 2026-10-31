@@ -49,7 +49,8 @@ func reportDue(row *ent.InstanceState, now time.Time) bool {
 
 // Sender sends the daily Telemetry report (ADR 0032). It sends nothing in a development
 // environment or from a build that is not a release, and otherwise only while the effective
-// setting is on, the Owner's notice is acknowledged and a report is due.
+// setting is on, a Staff member acknowledged the notice in the console (ADR 0063: an Instance
+// without a Staff member sends nothing) and a report is due.
 type Sender struct {
 	mod     *Module
 	client  *telemetryapi.Client

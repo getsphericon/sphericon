@@ -44,6 +44,44 @@ func (UnimplementedHandler) StaffAuthSecondFactor(ctx context.Context, req *Staf
 	return r, ht.ErrNotImplemented
 }
 
+// StaffInstanceAcknowledgeNotice implements StaffInstance_acknowledgeNotice operation.
+//
+// Acknowledge the one-time Telemetry report notice: the first report waits for it. The first
+// acknowledgement stands, and a repeat changes nothing.
+//
+// POST /instance/notice/acknowledge
+func (UnimplementedHandler) StaffInstanceAcknowledgeNotice(ctx context.Context) (r StaffInstanceAcknowledgeNoticeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// StaffInstanceGetState implements StaffInstance_getState operation.
+//
+// The Instance's own settings and state.
+//
+// GET /instance
+func (UnimplementedHandler) StaffInstanceGetState(ctx context.Context) (r StaffInstanceGetStateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// StaffInstancePreviewTelemetryReport implements StaffInstance_previewTelemetryReport operation.
+//
+// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
+// schema describes, built by the code that sends it. Works whether or not sending is on.
+//
+// GET /instance/telemetry/preview
+func (UnimplementedHandler) StaffInstancePreviewTelemetryReport(ctx context.Context) (r StaffInstancePreviewTelemetryReportRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// StaffInstanceSetTelemetry implements StaffInstance_setTelemetry operation.
+//
+// Switch the Telemetry report on or off. Answers 409 while the environment decides.
+//
+// PUT /instance/telemetry
+func (UnimplementedHandler) StaffInstanceSetTelemetry(ctx context.Context, req *StaffInstanceTelemetryInput) (r StaffInstanceSetTelemetryRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // StaffMeGet implements StaffMe_get operation.
 //
 // The authenticated Staff member.

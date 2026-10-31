@@ -13,6 +13,22 @@ type StaffAuthSecondFactorRes interface {
 	staffAuthSecondFactorRes()
 }
 
+type StaffInstanceAcknowledgeNoticeRes interface {
+	staffInstanceAcknowledgeNoticeRes()
+}
+
+type StaffInstanceGetStateRes interface {
+	staffInstanceGetStateRes()
+}
+
+type StaffInstancePreviewTelemetryReportRes interface {
+	staffInstancePreviewTelemetryReportRes()
+}
+
+type StaffInstanceSetTelemetryRes interface {
+	staffInstanceSetTelemetryRes()
+}
+
 type StaffMeGetRes interface {
 	staffMeGetRes()
 }

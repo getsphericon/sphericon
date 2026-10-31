@@ -1,22 +1,14 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 
-import { handleSiteInstanceGetState } from '../generated/site/msw.gen.ts'
-import type { SiteInstanceState } from '../generated/site/types.gen.ts'
+import { handleSiteInstanceGetRelease } from '../generated/site/msw.gen.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'
 import { UpdateBanner } from './UpdateBanner.tsx'
 
-const state = (over: Partial<SiteInstanceState> = {}): SiteInstanceState => ({
-  telemetry: { enabled: true, locked: false },
-  noticeAcknowledged: true,
-  telemetrySchemaUrl: 'https://docs.example.test/telemetry-schema',
-  ...over,
-})
-
 test('an owner is told which release is newer', async () => {
-  worker.use(handleSiteInstanceGetState(() => HttpResponse.json(state({ latestRelease: '0.4.0' }))))
+  worker.use(handleSiteInstanceGetRelease(() => HttpResponse.json({ latestRelease: '0.4.0' })))
   const { screen } = await renderWithRouter(<UpdateBanner />)
 
   await expect.element(screen.getByText('A new version is available')).toBeInTheDocument()
@@ -24,14 +16,14 @@ test('an owner is told which release is newer', async () => {
 })
 
 test('no banner without a newer release', async () => {
-  worker.use(handleSiteInstanceGetState({ body: state() }))
+  worker.use(handleSiteInstanceGetRelease({ body: {} }))
   const { screen } = await renderWithRouter(<UpdateBanner />)
 
   await expect.poll(() => screen.getByText('A new version is available').query()).toBeNull()
 })
 
-test('someone who is not an owner of the oldest workspace sees no banner', async () => {
-  worker.use(handleSiteInstanceGetState(() => problem(403)))
+test('someone who owns no workspace sees no banner', async () => {
+  worker.use(handleSiteInstanceGetRelease(() => problem(403)))
   const { screen } = await renderWithRouter(<UpdateBanner />)
 
   await expect.poll(() => screen.getByText('A new version is available').query()).toBeNull()

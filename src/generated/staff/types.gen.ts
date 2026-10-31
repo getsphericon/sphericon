@@ -12,13 +12,6 @@ export type BadRequestProblem = {
   body: ProblemDetails;
 };
 
-/**
- * RFC 7807 conflict response
- */
-export type ConflictProblem = {
-  body: ProblemDetails;
-};
-
 export type EmailAddress = string;
 
 /**
@@ -274,6 +267,75 @@ export type StaffEnrolment = {
    */
   qrCode: string;
 };
+
+/**
+ * The Instance's own settings and state, which belong to no Workspace (ADR 0063): what a Staff
+ * member sees and decides about the Instance itself.
+ */
+export type StaffInstanceState = {
+  /**
+   * The Telemetry report setting
+   */
+  telemetry: StaffInstanceTelemetry;
+  /**
+   * Whether a Staff member acknowledged the one-time notice about the Telemetry report. No report
+   * is sent before.
+   */
+  noticeAcknowledged: boolean;
+  /**
+   * The newest stable release (a bare version such as `0.4.0`) when the Release check found
+   * one newer than the running version; absent otherwise, and always absent for a build whose
+   * version is not a release or in the saas Mode, which makes no Release check.
+   */
+  latestRelease?: string;
+  /**
+   * When the Instance's license key expired, set only while it has lapsed: the Instance then
+   * runs the open-source core, and nothing Enterprise is deleted (ADR 0035).
+   */
+  licenseExpiredAt?: Timestamp;
+  /**
+   * The page that documents the schema of the Telemetry report
+   */
+  telemetrySchemaUrl: string;
+};
+
+/**
+ * The Telemetry report setting as it applies right now (ADR 0032)
+ */
+export type StaffInstanceTelemetry = {
+  /**
+   * Whether the Instance sends the Telemetry report
+   */
+  enabled: boolean;
+  /**
+   * Whether the environment decides, which makes the switch in the console read-only
+   */
+  locked: boolean;
+  /**
+   * What decides, set when locked
+   */
+  lockedBy?: StaffInstanceTelemetryLock;
+};
+
+/**
+ * Switch the Telemetry report on or off
+ */
+export type StaffInstanceTelemetryInput = {
+  /**
+   * The Staff member's choice
+   */
+  enabled: boolean;
+};
+
+/**
+ * Why the environment, not the Staff member, decides the Telemetry report
+ */
+export const StaffInstanceTelemetryLock = { ENVIRONMENT: 'environment', DO_NOT_TRACK: 'do_not_track' } as const;
+
+/**
+ * Why the environment, not the Staff member, decides the Telemetry report
+ */
+export type StaffInstanceTelemetryLock = typeof StaffInstanceTelemetryLock[keyof typeof StaffInstanceTelemetryLock];
 
 /**
  * Save the draft of an item's Legal document
@@ -613,6 +675,112 @@ export type StaffAuthSecondFactorResponses = {
 };
 
 export type StaffAuthSecondFactorResponse = StaffAuthSecondFactorResponses[keyof StaffAuthSecondFactorResponses];
+
+export type StaffInstanceGetStateData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/instance';
+};
+
+export type StaffInstanceGetStateErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+};
+
+export type StaffInstanceGetStateError = StaffInstanceGetStateErrors[keyof StaffInstanceGetStateErrors];
+
+export type StaffInstanceGetStateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffInstanceState;
+};
+
+export type StaffInstanceGetStateResponse = StaffInstanceGetStateResponses[keyof StaffInstanceGetStateResponses];
+
+export type StaffInstanceAcknowledgeNoticeData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/instance/notice/acknowledge';
+};
+
+export type StaffInstanceAcknowledgeNoticeErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+};
+
+export type StaffInstanceAcknowledgeNoticeError = StaffInstanceAcknowledgeNoticeErrors[keyof StaffInstanceAcknowledgeNoticeErrors];
+
+export type StaffInstanceAcknowledgeNoticeResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffInstanceState;
+};
+
+export type StaffInstanceAcknowledgeNoticeResponse = StaffInstanceAcknowledgeNoticeResponses[keyof StaffInstanceAcknowledgeNoticeResponses];
+
+export type StaffInstanceSetTelemetryData = {
+  body: StaffInstanceTelemetryInput;
+  path?: never;
+  query?: never;
+  url: '/instance/telemetry';
+};
+
+export type StaffInstanceSetTelemetryErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 conflict response
+   */
+  409: ProblemDetails;
+};
+
+export type StaffInstanceSetTelemetryError = StaffInstanceSetTelemetryErrors[keyof StaffInstanceSetTelemetryErrors];
+
+export type StaffInstanceSetTelemetryResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffInstanceState;
+};
+
+export type StaffInstanceSetTelemetryResponse = StaffInstanceSetTelemetryResponses[keyof StaffInstanceSetTelemetryResponses];
+
+export type StaffInstancePreviewTelemetryReportData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/instance/telemetry/preview';
+};
+
+export type StaffInstancePreviewTelemetryReportErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+};
+
+export type StaffInstancePreviewTelemetryReportError = StaffInstancePreviewTelemetryReportErrors[keyof StaffInstancePreviewTelemetryReportErrors];
+
+export type StaffInstancePreviewTelemetryReportResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: {
+    [key: string]: unknown;
+  };
+};
+
+export type StaffInstancePreviewTelemetryReportResponse = StaffInstancePreviewTelemetryReportResponses[keyof StaffInstancePreviewTelemetryReportResponses];
 
 export type StaffMeGetData = {
   body?: never;

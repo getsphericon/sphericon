@@ -55,7 +55,7 @@ func releaseEnv(t *testing.T, version, url string, edit ...func(*config.Config))
 	return env, &now
 }
 
-func TestReleaseCheckStoresANewerReleaseAndTheStateShowsItToAnOwner(t *testing.T) {
+func TestReleaseCheckStoresANewerReleaseAndTheBannerShowsItToAnOwner(t *testing.T) {
 	_, url := newReleases(t, "v0.2.0")
 	env, now := releaseEnv(t, "0.1.0", url)
 
@@ -67,9 +67,8 @@ func TestReleaseCheckStoresANewerReleaseAndTheStateShowsItToAnOwner(t *testing.T
 	assert.Equal(t, "0.2.0", *row.LatestRelease)
 	require.NotNil(t, row.LatestReleaseCheckedAt)
 	assert.True(t, row.LatestReleaseCheckedAt.Equal(*now))
-	state := instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail))
-	assert.Equal(t, "0.2.0", state.LatestRelease.Value)
-	requireInstanceForbidden(t, env.SiteActor(t, fixtures.MemberMaryEmail))
+	assert.Equal(t, "0.2.0", latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).Value)
+	requireReleaseRefused(t, env.SiteActor(t, fixtures.MemberMaryEmail))
 }
 
 func TestReleaseCheckNeverStoresAnEqualOlderOrPrerelease(t *testing.T) {
@@ -84,7 +83,7 @@ func TestReleaseCheckNeverStoresAnEqualOlderOrPrerelease(t *testing.T) {
 			require.NoError(t, err)
 			assert.Nil(t, row.LatestRelease)
 			assert.Nil(t, row.LatestReleaseCheckedAt)
-			assert.False(t, instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).LatestRelease.Set)
+			assert.False(t, latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).Set)
 		})
 	}
 }
@@ -104,7 +103,7 @@ func TestReleaseCheckKeepsThePreviousResultWhenTheSourceIsDown(t *testing.T) {
 	require.NotNil(t, row.LatestRelease)
 	assert.Equal(t, "0.2.0", *row.LatestRelease)
 	assert.True(t, row.LatestReleaseCheckedAt.Equal(first))
-	assert.Equal(t, "0.2.0", instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).LatestRelease.Value)
+	assert.Equal(t, "0.2.0", latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).Value)
 }
 
 func TestReleaseCheckSwitchedOffAsksNobodyAndShowsNothing(t *testing.T) {
@@ -138,9 +137,10 @@ func TestReleaseCheckIgnoresTheTelemetrySwitches(t *testing.T) {
 
 	require.NoError(t, env.Instance.CheckRelease(t.Context()))
 
-	state := instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail))
-	assert.Equal(t, "0.2.0", state.LatestRelease.Value)
-	assert.False(t, state.Telemetry.Enabled)
+	setting, err := env.Instance.Setting(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, "0.2.0", latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).Value)
+	assert.False(t, setting.Enabled)
 }
 
 func TestAReleaseThatIsNoLongerNewerIsNotShownAfterAnUpgrade(t *testing.T) {
@@ -149,7 +149,7 @@ func TestAReleaseThatIsNoLongerNewerIsNotShownAfterAnUpgrade(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, env.DB.InstanceState.UpdateOneID(row.ID).SetLatestRelease("0.2.0").Exec(t.Context()))
 
-	assert.False(t, instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).LatestRelease.Set)
+	assert.False(t, latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).Set)
 }
 
 func TestABuildThatIsNotAReleaseNeitherAsksNorShowsABanner(t *testing.T) {
@@ -167,7 +167,7 @@ func TestABuildThatIsNotAReleaseNeitherAsksNorShowsABanner(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, row.LatestRelease)
 	assert.False(t, asked.Load())
-	assert.False(t, instanceState(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).LatestRelease.Set)
+	assert.False(t, latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).Set)
 }
 
 func TestADevelopmentEnvironmentNeverAsksForANewerRelease(t *testing.T) {

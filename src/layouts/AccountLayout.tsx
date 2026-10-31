@@ -1,6 +1,4 @@
 import { AccountNavbar } from '../components/AccountNavbar.tsx'
-import { InstanceNotice } from '../components/InstanceNotice.tsx'
-import { LicenseBanner } from '../components/LicenseBanner.tsx'
 import { UpdateBanner } from '../components/UpdateBanner.tsx'
 import { UserMenu } from '../components/UserMenu.tsx'
 import { DashboardShell } from './DashboardShell.tsx'
@@ -12,13 +10,7 @@ export function AccountLayout() {
     <DashboardShell
       sidebar={<AccountNavbar />}
       headerRight={<UserMenu />}
-      banner={
-        <>
-          <LicenseBanner />
-          <UpdateBanner />
-          <InstanceNotice />
-        </>
-      }
+      banner={<UpdateBanner />}
     />
   )
 }

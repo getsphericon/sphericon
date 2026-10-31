@@ -83,9 +83,9 @@ var matrix = []cell{
 	{accounts.PermOwnersManage, membership.RoleOwner, true},
 	{accounts.PermOwnersManage, membership.RoleAdmin, false},
 	{accounts.PermOwnersManage, membership.RoleMember, false},
-	{accounts.PermInstanceManage, membership.RoleOwner, true},
-	{accounts.PermInstanceManage, membership.RoleAdmin, false},
-	{accounts.PermInstanceManage, membership.RoleMember, false},
+	{accounts.PermReleaseRead, membership.RoleOwner, true},
+	{accounts.PermReleaseRead, membership.RoleAdmin, false},
+	{accounts.PermReleaseRead, membership.RoleMember, false},
 }
 
 func TestAllowsFollowsEveryCellOfThePermissionMatrix(t *testing.T) {
@@ -103,6 +103,15 @@ func TestRequireRefusesEveryCellAllowsDenies(t *testing.T) {
 	}
 }
 
+// Refusal is the refusal a Role without the Permission gets, for an operation that found no
+// Membership holding it at all.
+func TestRefusalIsWhatEveryRoleWithoutThePermissionIsRefused(t *testing.T) {
+	denied := lo.Filter(matrix, func(c cell, _ int) bool { return !c.allowed })
+	for _, c := range denied {
+		assert.Equal(t, accounts.Require(c.role, c.permission), accounts.Refusal(c.permission), "%s for %s", c.permission, c.role)
+	}
+}
+
 func TestTheMatrixCoversEveryPermissionOfTheContract(t *testing.T) {
 	inMatrix := lo.Uniq(lo.Map(matrix, func(c cell, _ int) string { return string(c.permission) }))
 	contract := lo.Map(siteapi.Permission("").AllValues(), func(p siteapi.Permission, _ int) string { return string(p) })
@@ -112,6 +121,6 @@ func TestTheMatrixCoversEveryPermissionOfTheContract(t *testing.T) {
 func TestPermissionsListsWhatARoleHoldsInTableOrder(t *testing.T) {
 	all := lo.Map(siteapi.Permission("").AllValues(), func(p siteapi.Permission, _ int) accounts.Permission { return accounts.Permission(p) })
 	assert.Equal(t, all, accounts.Permissions(membership.RoleOwner))
-	assert.Equal(t, lo.Without(all, accounts.PermAccountLinkOpen, accounts.PermWorkspaceDelete, accounts.PermOwnersManage, accounts.PermInstanceManage), accounts.Permissions(membership.RoleAdmin))
+	assert.Equal(t, lo.Without(all, accounts.PermAccountLinkOpen, accounts.PermWorkspaceDelete, accounts.PermOwnersManage, accounts.PermReleaseRead), accounts.Permissions(membership.RoleAdmin))
 	assert.Empty(t, accounts.Permissions(membership.RoleMember))
 }

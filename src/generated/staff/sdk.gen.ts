@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupItemsArchiveData, StaffSignupItemsArchiveErrors, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateErrors, StaffSignupItemsCreateResponses, StaffSignupItemsGetData, StaffSignupItemsGetErrors, StaffSignupItemsGetResponses, StaffSignupItemsListData, StaffSignupItemsListErrors, StaffSignupItemsListResponses, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsErrors, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishErrors, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderErrors, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftErrors, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateErrors, StaffSignupItemsUpdateResponses } from './types.gen.ts';
-import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffSignupItemsArchivePath, zStaffSignupItemsCreateBody, zStaffSignupItemsGetPath, zStaffSignupItemsListVersionsPath, zStaffSignupItemsPublishBody, zStaffSignupItemsPublishPath, zStaffSignupItemsReorderBody, zStaffSignupItemsSaveDraftBody, zStaffSignupItemsSaveDraftPath, zStaffSignupItemsUpdateBody, zStaffSignupItemsUpdatePath } from './zod.gen.ts';
+import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeErrors, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceGetStateData, StaffInstanceGetStateErrors, StaffInstanceGetStateResponses, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportErrors, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryErrors, StaffInstanceSetTelemetryResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupItemsArchiveData, StaffSignupItemsArchiveErrors, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateErrors, StaffSignupItemsCreateResponses, StaffSignupItemsGetData, StaffSignupItemsGetErrors, StaffSignupItemsGetResponses, StaffSignupItemsListData, StaffSignupItemsListErrors, StaffSignupItemsListResponses, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsErrors, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishErrors, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderErrors, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftErrors, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateErrors, StaffSignupItemsUpdateResponses } from './types.gen.ts';
+import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffInstanceSetTelemetryBody, zStaffSignupItemsArchivePath, zStaffSignupItemsCreateBody, zStaffSignupItemsGetPath, zStaffSignupItemsListVersionsPath, zStaffSignupItemsPublishBody, zStaffSignupItemsPublishPath, zStaffSignupItemsReorderBody, zStaffSignupItemsSaveDraftBody, zStaffSignupItemsSaveDraftPath, zStaffSignupItemsUpdateBody, zStaffSignupItemsUpdatePath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -77,6 +77,85 @@ export const staffAuthSecondFactor = <ThrowOnError extends boolean = false>(opti
     'Content-Type': 'application/json',
     ...options.headers
   }
+});
+
+/**
+ * The Instance's own settings and state
+ */
+export const staffInstanceGetState = <ThrowOnError extends boolean = false>(options?: Options<StaffInstanceGetStateData, ThrowOnError>): RequestResult<StaffInstanceGetStateResponses, StaffInstanceGetStateErrors, ThrowOnError> => (options?.client ?? client).get<StaffInstanceGetStateResponses, StaffInstanceGetStateErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/instance',
+  ...options
+});
+
+/**
+ * Acknowledge the one-time Telemetry report notice: the first report waits for it. The first
+ * acknowledgement stands, and a repeat changes nothing.
+ */
+export const staffInstanceAcknowledgeNotice = <ThrowOnError extends boolean = false>(options?: Options<StaffInstanceAcknowledgeNoticeData, ThrowOnError>): RequestResult<StaffInstanceAcknowledgeNoticeResponses, StaffInstanceAcknowledgeNoticeErrors, ThrowOnError> => (options?.client ?? client).post<StaffInstanceAcknowledgeNoticeResponses, StaffInstanceAcknowledgeNoticeErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/instance/notice/acknowledge',
+  ...options
+});
+
+/**
+ * Switch the Telemetry report on or off. Answers 409 while the environment decides.
+ */
+export const staffInstanceSetTelemetry = <ThrowOnError extends boolean = false>(options: Options<StaffInstanceSetTelemetryData, ThrowOnError>): RequestResult<StaffInstanceSetTelemetryResponses, StaffInstanceSetTelemetryErrors, ThrowOnError> => (options.client ?? client).put<StaffInstanceSetTelemetryResponses, StaffInstanceSetTelemetryErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: zStaffInstanceSetTelemetryBody,
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/instance/telemetry',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the
+ * published schema describes, built by the code that sends it. Works whether or not sending is
+ * on.
+ */
+export const staffInstancePreviewTelemetryReport = <ThrowOnError extends boolean = false>(options?: Options<StaffInstancePreviewTelemetryReportData, ThrowOnError>): RequestResult<StaffInstancePreviewTelemetryReportResponses, StaffInstancePreviewTelemetryReportErrors, ThrowOnError> => (options?.client ?? client).get<StaffInstancePreviewTelemetryReportResponses, StaffInstancePreviewTelemetryReportErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/instance/telemetry/preview',
+  ...options
 });
 
 /**

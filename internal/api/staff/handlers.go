@@ -1,5 +1,6 @@
-// Package staff is the core /staff surface (ADR 0026, ADR 0063): the Staff member's sign-in and
-// the signed-in Staff member, served on every Instance in both Modes and without a License key.
+// Package staff is the core /staff surface (ADR 0026, ADR 0063): the Staff member's sign-in, the
+// signed-in Staff member and the Instance's own settings (its Sign-up items and its Telemetry
+// report), served on every Instance in both Modes and without a License key.
 // The Enterprise sections of the console are a contract of their own (gen/staffee, ee/staff),
 // served under the same prefix: Server falls through to them for every path this surface does
 // not route.
@@ -12,6 +13,7 @@ import (
 
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/api/staff/resources"
+	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/login"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
@@ -28,13 +30,17 @@ type Surface struct {
 	security *SecurityHandler
 }
 
-// NewSurface builds the surface over the Staff member module and the Sign-up items, or nil while the Staff sign-in is off (no Staff member
-// secret), in which case nothing under /staff is served.
-func NewSurface(m *staffmembers.Module, items *signupitems.Module) *Surface {
+// NewSurface builds the surface over the Staff member module, the Sign-up items and the Instance
+// state, or nil while the Staff sign-in is off (no Staff member secret), in which case nothing
+// under /staff is served.
+func NewSurface(m *staffmembers.Module, items *signupitems.Module, inst *instance.Module) *Surface {
 	if m.Sessions() == nil {
 		return nil
 	}
-	return &Surface{handlers: &Handlers{module: m, sessions: m.Sessions(), items: items}, security: &SecurityHandler{sessions: m.Sessions()}}
+	return &Surface{
+		handlers: &Handlers{module: m, sessions: m.Sessions(), items: items, instance: inst},
+		security: &SecurityHandler{sessions: m.Sessions()},
+	}
 }
 
 // Server builds the ogen server under the /staff prefix. opts carry what the composition root
@@ -50,6 +56,7 @@ type Handlers struct {
 	module   *staffmembers.Module
 	sessions *staffmembers.Sessions
 	items    *signupitems.Module
+	instance *instance.Module
 }
 
 var _ staffapi.Handler = (*Handlers)(nil)

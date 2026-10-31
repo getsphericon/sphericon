@@ -561,32 +561,13 @@ type Handler interface {
 	//
 	// DELETE /me/identities/{id}
 	SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (SiteIdentitiesUnlinkRes, error)
-	// SiteInstanceAcknowledgeNotice implements SiteInstance_acknowledgeNotice operation.
+	// SiteInstanceGetRelease implements SiteInstance_getRelease operation.
 	//
-	// Acknowledge the one-time Telemetry report notice. Idempotent.
+	// The newer release the Release check found, for its banner. Refused (403) to a User who holds
+	// `release:read` in no live Workspace.
 	//
-	// POST /instance/notice/acknowledge
-	SiteInstanceAcknowledgeNotice(ctx context.Context) (SiteInstanceAcknowledgeNoticeRes, error)
-	// SiteInstanceGetState implements SiteInstance_getState operation.
-	//
-	// Read the Instance state. Refused to everyone but the Owners of the oldest Workspace.
-	//
-	// GET /instance
-	SiteInstanceGetState(ctx context.Context) (SiteInstanceGetStateRes, error)
-	// SiteInstancePreviewTelemetryReport implements SiteInstance_previewTelemetryReport operation.
-	//
-	// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
-	// schema describes, built by the code that sends it. Works whether or not sending is on. Refused to
-	// everyone but the Owners of the oldest Workspace.
-	//
-	// GET /instance/telemetry/preview
-	SiteInstancePreviewTelemetryReport(ctx context.Context) (SiteInstancePreviewTelemetryReportRes, error)
-	// SiteInstanceSetTelemetry implements SiteInstance_setTelemetry operation.
-	//
-	// Switch the Telemetry report on or off. Answers 409 while the environment decides.
-	//
-	// PUT /instance/telemetry
-	SiteInstanceSetTelemetry(ctx context.Context, req *SiteInstanceTelemetryInput) (SiteInstanceSetTelemetryRes, error)
+	// GET /instance/release
+	SiteInstanceGetRelease(ctx context.Context) (SiteInstanceGetReleaseRes, error)
 	// SiteIntegrationsArchive implements SiteIntegrations_archive operation.
 	//
 	// Archive an integration: it leaves the list and gives up the default, and can be restored (it does

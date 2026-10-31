@@ -6,11 +6,21 @@ package resources
 import (
 	ent "github.com/getsphericon/sphericon/ent"
 	staff "github.com/getsphericon/sphericon/gen/staff"
+	instance "github.com/getsphericon/sphericon/internal/instance"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
 )
 
 type ConverterImpl struct{}
 
+func (c *ConverterImpl) InstanceStateToResource(source instance.State) staff.StaffInstanceState {
+	var staffapiStaffInstanceState staff.StaffInstanceState
+	staffapiStaffInstanceState.Telemetry = c.instanceSettingToStaffapiStaffInstanceTelemetry(source.Telemetry)
+	staffapiStaffInstanceState.NoticeAcknowledged = source.NoticeAcknowledged
+	staffapiStaffInstanceState.LatestRelease = optString(source.LatestRelease)
+	staffapiStaffInstanceState.LicenseExpiredAt = optLapse(source.LicenseExpiredAt)
+	staffapiStaffInstanceState.TelemetrySchemaUrl = source.TelemetrySchemaURL
+	return staffapiStaffInstanceState
+}
 func (c *ConverterImpl) SignupItemToResource(source signupitems.Item) staff.StaffSignupItemResource {
 	var staffapiStaffSignupItemResource staff.StaffSignupItemResource
 	staffapiStaffSignupItemResource.ID = staff.EntityId(source.ID)
@@ -59,4 +69,11 @@ func (c *ConverterImpl) VersionsToResources(source []signupitems.Version) []staf
 		}
 	}
 	return staffapiStaffLegalDocumentVersionList
+}
+func (c *ConverterImpl) instanceSettingToStaffapiStaffInstanceTelemetry(source instance.Setting) staff.StaffInstanceTelemetry {
+	var staffapiStaffInstanceTelemetry staff.StaffInstanceTelemetry
+	staffapiStaffInstanceTelemetry.Enabled = source.Enabled
+	staffapiStaffInstanceTelemetry.Locked = source.Locked
+	staffapiStaffInstanceTelemetry.LockedBy = optLock(source.LockedBy)
+	return staffapiStaffInstanceTelemetry
 }

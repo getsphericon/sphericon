@@ -28,5 +28,5 @@ const (
 	PermAccountLinkOpen      Permission = "account_link:open"
 	PermWorkspaceDelete      Permission = "workspace:delete"
 	PermOwnersManage         Permission = "owners:manage"
-	PermInstanceManage       Permission = "instance:manage"
+	PermReleaseRead          Permission = "release:read"
 )

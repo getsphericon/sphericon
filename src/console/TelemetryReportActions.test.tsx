@@ -1,14 +1,14 @@
 import { expect, test } from 'vitest'
 
-import { handleSiteInstancePreviewTelemetryReport } from '../generated/site/msw.gen.ts'
+import { handleStaffInstancePreviewTelemetryReport } from '../generated/staff/msw.gen.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { worker } from '../test/worker.ts'
 import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 
-test('the Owner reads the report as it would be sent and finds the schema', async () => {
+test('the Staff member reads the report as it would be sent and finds the schema', async () => {
   worker.use(
-    handleSiteInstancePreviewTelemetryReport({
+    handleStaffInstancePreviewTelemetryReport({
       body: { schemaVersion: 1, workspaces: '1-9', webhooksConfigured: false },
     }),
   )
@@ -25,7 +25,7 @@ test('the Owner reads the report as it would be sent and finds the schema', asyn
 })
 
 test('a report that cannot be built says so', async () => {
-  worker.use(handleSiteInstancePreviewTelemetryReport(() => problem(500)))
+  worker.use(handleStaffInstancePreviewTelemetryReport(() => problem(500)))
   const { screen } = await renderWithRouter(
     <TelemetryReportActions schemaUrl="https://docs.example.test/telemetry-schema" />,
   )

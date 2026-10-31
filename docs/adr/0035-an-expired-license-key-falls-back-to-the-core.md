@@ -4,6 +4,10 @@ status: accepted
 
 # An expired license key falls back to the core instead of stopping the Instance
 
+> Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]: the lapse is
+> shown in the Staff console, not in a banner of a Workspace's owner
+> ([[0032-instance-telemetry-report-and-release-check]]).
+
 `licensekey.Parse` treated an expired key like a forged one (`ErrInvalid`), and a key that does not
 verify fails boot so that a mistyped key never runs unlicensed. The result for a Self-hoster whose
 subscription ended is an Instance that will not start after its next restart: sending stops, and the

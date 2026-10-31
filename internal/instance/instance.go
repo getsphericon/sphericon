@@ -1,6 +1,8 @@
 // Package instance owns the Instance's own state (ADR 0032): the one row that no Workspace
-// owns (its random Instance id, the Telemetry report setting, the acknowledged notice) and
-// the rule of who decides about it. It reads across Workspaces, so it holds the raw ent client.
+// owns (its random Instance id, the Telemetry report setting, the acknowledged notice, the
+// Release check's result). A Staff member decides about it in the console (ADR 0063); the
+// banner of a newer release reads the Memberships of every Workspace, so it holds the raw ent
+// client.
 package instance
 
 import (
@@ -14,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -23,7 +24,8 @@ import (
 // stateID is the id of the one Instance state row.
 const stateID int64 = 1
 
-// ErrTelemetryLocked is returned when the Owner tries to change a setting the environment decides.
+// ErrTelemetryLocked is returned when a Staff member tries to change a setting the environment
+// decides.
 var ErrTelemetryLocked = validation.Conflict("instance: the telemetry setting is decided by the environment", "errors.telemetry_locked")
 
 // Environment is what the deployment says about the Instance: its Mode's say over the Telemetry
@@ -47,11 +49,11 @@ func EnvironmentOf(cfg *config.Config) Environment {
 		Dev: cfg.IsDev, SchemaURL: cfg.TelemetrySchemaURL}
 }
 
-// Lock names what decides a setting the Owner cannot change.
+// Lock names what decides a setting the Staff member cannot change.
 type Lock string
 
 const (
-	// LockNone means the Owner decides.
+	// LockNone means the Staff member decides.
 	LockNone Lock = ""
 	// LockEnvironment means the deployment (the saas Mode) decides.
 	LockEnvironment Lock = "environment"
@@ -60,15 +62,15 @@ const (
 )
 
 // Setting is the Telemetry report setting as it applies: whether reports are sent and
-// whether the environment (not the Owner) decides.
+// whether the environment (not the Staff member) decides.
 type Setting struct {
 	Enabled  bool
 	Locked   bool
 	LockedBy Lock
 }
 
-// Effective applies ADR 0032 to the environment and the stored in-app setting (on until
-// an Owner switches it off): off if the Mode says so (saas) or DO_NOT_TRACK=1; on and
+// Effective applies ADR 0032 to the environment and the stored setting (on until a Staff
+// member switches it off in the console): off if the Mode says so (saas) or DO_NOT_TRACK=1; on and
 // locked if the Mode says so; otherwise the stored setting decides. DO_NOT_TRACK
 // only ever switches off. The sender of the report reuses it.
 func Effective(env Environment, stored bool) Setting {
@@ -83,16 +85,22 @@ func Effective(env Environment, stored bool) Setting {
 	return Setting{Enabled: stored}
 }
 
-// State is what an Owner sees about the Instance.
+// State is what a Staff member sees about the Instance.
 type State struct {
 	Telemetry          Setting
 	NoticeAcknowledged bool
-	// LatestRelease is the bare version of a newer stable release, empty when there is none.
-	LatestRelease string
+	// LatestRelease is the bare version of a newer stable release, nil when there is none.
+	LatestRelease *string
 	// LicenseExpiredAt is when the license key expired; zero unless it has lapsed (ADR 0035).
 	LicenseExpiredAt time.Time
-	// SchemaURL is the page that documents the Telemetry report's schema.
-	SchemaURL string
+	// TelemetrySchemaURL is the page that documents the Telemetry report's schema.
+	TelemetrySchemaURL string
+}
+
+// Release is what a Workspace's owner sees of the Instance: the Release check's result.
+type Release struct {
+	// LatestRelease is the bare version of a newer stable release, nil when there is none.
+	LatestRelease *string
 }
 
 // Module is the Instance state and the rules around it.
@@ -148,28 +156,33 @@ func (m *Module) Report(ctx context.Context) (telemetryapi.TelemetryReport, erro
 	return BuildReport(ctx, m.ent, m.host, m.now())
 }
 
-// Authorize is nil when the User's Membership in the oldest existing Workspace holds the
-// Permission instance:manage (an owner, ADR 0061), and otherwise that Permission's refusal (403
-// permission_required). Every owner holds it, but only the holders in the oldest Workspace decide
-// about the Instance: the next oldest when that one is deleted, every holder when there are
-// several, and a transfer follows the Role.
-func (m *Module) Authorize(ctx context.Context, userID int64) error {
-	// No live Workspace, or no Membership in the oldest, is no Role, which holds nothing.
-	var role membership.Role
-	oldest, err := m.ent.Workspace.Query().Where(accounts.Live()).Order(ent.Asc(workspace.FieldID)).FirstID(ctx)
-	if err != nil && !ent.IsNotFound(err) {
-		return err
+// ReleaseFor is the banner of a newer release for the User userID: a User who holds the
+// Permission release:read (an owner, ADR 0061) in a live Workspace is told, everyone else gets
+// that Permission's refusal (403 permission_required). The Instance's settings are not a
+// Workspace's business: they are the Staff console's (ADR 0063).
+func (m *Module) ReleaseFor(ctx context.Context, userID int64) (Release, error) {
+	held, err := m.ent.Membership.Query().
+		Where(membership.UserID(userID), accounts.HoldersOf(accounts.PermReleaseRead), membership.HasWorkspaceWith(accounts.Live())).
+		Exist(ctx)
+	if err != nil {
+		return Release{}, err
 	}
-	if err == nil {
-		mem, err := m.ent.Membership.Query().Where(membership.UserID(userID), membership.WorkspaceID(oldest)).Only(ctx)
-		if err != nil && !ent.IsNotFound(err) {
-			return err
-		}
-		if err == nil {
-			role = mem.Role
-		}
+	if !held {
+		return Release{}, accounts.Refusal(accounts.PermReleaseRead)
 	}
-	return accounts.Require(role, accounts.PermInstanceManage)
+	latest, err := m.LatestRelease(ctx)
+	if err != nil {
+		return Release{}, err
+	}
+	return Release{LatestRelease: present(latest)}, nil
+}
+
+// present is the newer release as the resources carry it: nil when there is none.
+func present(latest string) *string {
+	if latest == "" {
+		return nil
+	}
+	return &latest
 }
 
 // Setting is the effective Telemetry report setting right now.
@@ -181,7 +194,7 @@ func (m *Module) Setting(ctx context.Context) (Setting, error) {
 	return Effective(m.env, row.TelemetryEnabled), nil
 }
 
-// State is the Instance state an Owner sees.
+// State is the Instance state a Staff member sees.
 func (m *Module) State(ctx context.Context) (State, error) {
 	row, err := m.Ensure(ctx)
 	if err != nil {
@@ -190,13 +203,13 @@ func (m *Module) State(ctx context.Context) (State, error) {
 	return State{
 		Telemetry:          Effective(m.env, row.TelemetryEnabled),
 		NoticeAcknowledged: row.NoticeAcknowledgedAt != nil,
-		LatestRelease:      m.newer(row.LatestRelease),
+		LatestRelease:      present(m.newer(row.LatestRelease)),
 		LicenseExpiredAt:   m.host.LicenseExpiredAt,
-		SchemaURL:          m.env.SchemaURL,
+		TelemetrySchemaURL: m.env.SchemaURL,
 	}, nil
 }
 
-// SetTelemetry stores the Owner's choice; ErrTelemetryLocked when the environment decides.
+// SetTelemetry stores the Staff member's choice; ErrTelemetryLocked when the environment decides.
 func (m *Module) SetTelemetry(ctx context.Context, enabled bool) (State, error) {
 	row, err := m.Ensure(ctx)
 	if err != nil {
@@ -211,7 +224,8 @@ func (m *Module) SetTelemetry(ctx context.Context, enabled bool) (State, error) 
 	return m.State(ctx)
 }
 
-// AcknowledgeNotice records that the one-time notice was seen; the first time stands.
+// AcknowledgeNotice records that a Staff member saw the one-time notice; the first time stands.
+// No report is sent before it.
 func (m *Module) AcknowledgeNotice(ctx context.Context) (State, error) {
 	row, err := m.Ensure(ctx)
 	if err != nil {

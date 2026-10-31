@@ -1266,7 +1266,8 @@ func registerAccounts(injector do.Injector) {
 		return workspacedeletion.New(client.Client, bus.Bus), nil
 	})
 
-	// The Instance state and who decides about it (ADR 0032), over the raw client.
+	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
+	// client.
 	do.Provide(injector, func(i do.Injector) (*instance.Module, error) {
 		cfg, err := do.Invoke[*config.Config](i)
 		if err != nil {
@@ -1674,7 +1675,11 @@ func registerHandler(injector do.Injector) {
 		if err != nil {
 			return nil, err
 		}
-		staffAPI, err := server.NewStaffAPI(members, items, edition.StaffSections(bus.Bus, sys.EmailSender))
+		inst, err := do.Invoke[*instance.Module](i)
+		if err != nil {
+			return nil, err
+		}
+		staffAPI, err := server.NewStaffAPI(members, items, inst, edition.StaffSections(bus.Bus, sys.EmailSender))
 		if err != nil {
 			return nil, err
 		}

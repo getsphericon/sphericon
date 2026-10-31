@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-faster/errors"
+	"github.com/go-faster/jx"
 )
 
 type ApiKeyAuth struct {
@@ -455,6 +456,52 @@ func (o OptStaffEnrolment) Or(d StaffEnrolment) StaffEnrolment {
 	return d
 }
 
+// NewOptStaffInstanceTelemetryLock returns new OptStaffInstanceTelemetryLock with value set to v.
+func NewOptStaffInstanceTelemetryLock(v StaffInstanceTelemetryLock) OptStaffInstanceTelemetryLock {
+	return OptStaffInstanceTelemetryLock{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptStaffInstanceTelemetryLock is optional StaffInstanceTelemetryLock.
+type OptStaffInstanceTelemetryLock struct {
+	Value StaffInstanceTelemetryLock
+	Set   bool
+}
+
+// IsSet returns true if OptStaffInstanceTelemetryLock was set.
+func (o OptStaffInstanceTelemetryLock) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptStaffInstanceTelemetryLock) Reset() {
+	var v StaffInstanceTelemetryLock
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptStaffInstanceTelemetryLock) SetTo(v StaffInstanceTelemetryLock) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptStaffInstanceTelemetryLock) Get() (v StaffInstanceTelemetryLock, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptStaffInstanceTelemetryLock) Or(d StaffInstanceTelemetryLock) StaffInstanceTelemetryLock {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptStaffLegalDocumentVersion returns new OptStaffLegalDocumentVersion with value set to v.
 func NewOptStaffLegalDocumentVersion(v StaffLegalDocumentVersion) OptStaffLegalDocumentVersion {
 	return OptStaffLegalDocumentVersion{
@@ -860,11 +907,14 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) staffAuthLoginRes()        {}
-func (*ProblemDetails) staffAuthLogoutRes()       {}
-func (*ProblemDetails) staffAuthSecondFactorRes() {}
-func (*ProblemDetails) staffMeGetRes()            {}
-func (*ProblemDetails) staffSignupItemsListRes()  {}
+func (*ProblemDetails) staffAuthLoginRes()                      {}
+func (*ProblemDetails) staffAuthLogoutRes()                     {}
+func (*ProblemDetails) staffAuthSecondFactorRes()               {}
+func (*ProblemDetails) staffInstanceAcknowledgeNoticeRes()      {}
+func (*ProblemDetails) staffInstanceGetStateRes()               {}
+func (*ProblemDetails) staffInstancePreviewTelemetryReportRes() {}
+func (*ProblemDetails) staffMeGetRes()                          {}
+func (*ProblemDetails) staffSignupItemsListRes()                {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -1062,6 +1112,202 @@ func (s *StaffEnrolment) SetURI(val string) {
 // SetQrCode sets the value of QrCode.
 func (s *StaffEnrolment) SetQrCode(val string) {
 	s.QrCode = val
+}
+
+type StaffInstancePreviewTelemetryReportOK map[string]jx.Raw
+
+func (s *StaffInstancePreviewTelemetryReportOK) init() StaffInstancePreviewTelemetryReportOK {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+func (*StaffInstancePreviewTelemetryReportOK) staffInstancePreviewTelemetryReportRes() {}
+
+type StaffInstanceSetTelemetryConflict ProblemDetails
+
+func (*StaffInstanceSetTelemetryConflict) staffInstanceSetTelemetryRes() {}
+
+type StaffInstanceSetTelemetryUnauthorized ProblemDetails
+
+func (*StaffInstanceSetTelemetryUnauthorized) staffInstanceSetTelemetryRes() {}
+
+// The Instance's own settings and state, which belong to no Workspace (ADR 0063): what a Staff member
+// sees and decides about the Instance itself.
+// Ref: #/components/schemas/StaffInstanceState
+type StaffInstanceState struct {
+	// The Telemetry report setting.
+	Telemetry StaffInstanceTelemetry `json:"telemetry"`
+	// Whether a Staff member acknowledged the one-time notice about the Telemetry report. No report is
+	// sent before.
+	NoticeAcknowledged bool `json:"noticeAcknowledged"`
+	// The newest stable release (a bare version such as `0.4.0`) when the Release check found one newer
+	// than the running version; absent otherwise, and always absent for a build whose version is not a
+	// release or in the saas Mode, which makes no Release check.
+	LatestRelease OptString `json:"latestRelease"`
+	// When the Instance's license key expired, set only while it has lapsed: the Instance then runs the
+	// open-source core, and nothing Enterprise is deleted (ADR 0035).
+	LicenseExpiredAt OptTimestamp `json:"licenseExpiredAt"`
+	// The page that documents the schema of the Telemetry report.
+	TelemetrySchemaUrl string `json:"telemetrySchemaUrl"`
+}
+
+// GetTelemetry returns the value of Telemetry.
+func (s *StaffInstanceState) GetTelemetry() StaffInstanceTelemetry {
+	return s.Telemetry
+}
+
+// GetNoticeAcknowledged returns the value of NoticeAcknowledged.
+func (s *StaffInstanceState) GetNoticeAcknowledged() bool {
+	return s.NoticeAcknowledged
+}
+
+// GetLatestRelease returns the value of LatestRelease.
+func (s *StaffInstanceState) GetLatestRelease() OptString {
+	return s.LatestRelease
+}
+
+// GetLicenseExpiredAt returns the value of LicenseExpiredAt.
+func (s *StaffInstanceState) GetLicenseExpiredAt() OptTimestamp {
+	return s.LicenseExpiredAt
+}
+
+// GetTelemetrySchemaUrl returns the value of TelemetrySchemaUrl.
+func (s *StaffInstanceState) GetTelemetrySchemaUrl() string {
+	return s.TelemetrySchemaUrl
+}
+
+// SetTelemetry sets the value of Telemetry.
+func (s *StaffInstanceState) SetTelemetry(val StaffInstanceTelemetry) {
+	s.Telemetry = val
+}
+
+// SetNoticeAcknowledged sets the value of NoticeAcknowledged.
+func (s *StaffInstanceState) SetNoticeAcknowledged(val bool) {
+	s.NoticeAcknowledged = val
+}
+
+// SetLatestRelease sets the value of LatestRelease.
+func (s *StaffInstanceState) SetLatestRelease(val OptString) {
+	s.LatestRelease = val
+}
+
+// SetLicenseExpiredAt sets the value of LicenseExpiredAt.
+func (s *StaffInstanceState) SetLicenseExpiredAt(val OptTimestamp) {
+	s.LicenseExpiredAt = val
+}
+
+// SetTelemetrySchemaUrl sets the value of TelemetrySchemaUrl.
+func (s *StaffInstanceState) SetTelemetrySchemaUrl(val string) {
+	s.TelemetrySchemaUrl = val
+}
+
+func (*StaffInstanceState) staffInstanceAcknowledgeNoticeRes() {}
+func (*StaffInstanceState) staffInstanceGetStateRes()          {}
+func (*StaffInstanceState) staffInstanceSetTelemetryRes()      {}
+
+// The Telemetry report setting as it applies right now (ADR 0032).
+// Ref: #/components/schemas/StaffInstanceTelemetry
+type StaffInstanceTelemetry struct {
+	// Whether the Instance sends the Telemetry report.
+	Enabled bool `json:"enabled"`
+	// Whether the environment decides, which makes the switch in the console read-only.
+	Locked bool `json:"locked"`
+	// What decides, set when locked.
+	LockedBy OptStaffInstanceTelemetryLock `json:"lockedBy"`
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *StaffInstanceTelemetry) GetEnabled() bool {
+	return s.Enabled
+}
+
+// GetLocked returns the value of Locked.
+func (s *StaffInstanceTelemetry) GetLocked() bool {
+	return s.Locked
+}
+
+// GetLockedBy returns the value of LockedBy.
+func (s *StaffInstanceTelemetry) GetLockedBy() OptStaffInstanceTelemetryLock {
+	return s.LockedBy
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *StaffInstanceTelemetry) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+// SetLocked sets the value of Locked.
+func (s *StaffInstanceTelemetry) SetLocked(val bool) {
+	s.Locked = val
+}
+
+// SetLockedBy sets the value of LockedBy.
+func (s *StaffInstanceTelemetry) SetLockedBy(val OptStaffInstanceTelemetryLock) {
+	s.LockedBy = val
+}
+
+// Switch the Telemetry report on or off.
+// Ref: #/components/schemas/StaffInstanceTelemetryInput
+type StaffInstanceTelemetryInput struct {
+	// The Staff member's choice.
+	Enabled bool `json:"enabled"`
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *StaffInstanceTelemetryInput) GetEnabled() bool {
+	return s.Enabled
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *StaffInstanceTelemetryInput) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+// Why the environment, not the Staff member, decides the Telemetry report.
+// Ref: #/components/schemas/StaffInstanceTelemetryLock
+type StaffInstanceTelemetryLock string
+
+const (
+	StaffInstanceTelemetryLockEnvironment StaffInstanceTelemetryLock = "environment"
+	StaffInstanceTelemetryLockDoNotTrack  StaffInstanceTelemetryLock = "do_not_track"
+)
+
+// AllValues returns all StaffInstanceTelemetryLock values.
+func (StaffInstanceTelemetryLock) AllValues() []StaffInstanceTelemetryLock {
+	return []StaffInstanceTelemetryLock{
+		StaffInstanceTelemetryLockEnvironment,
+		StaffInstanceTelemetryLockDoNotTrack,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StaffInstanceTelemetryLock) MarshalText() ([]byte, error) {
+	switch s {
+	case StaffInstanceTelemetryLockEnvironment:
+		return []byte(s), nil
+	case StaffInstanceTelemetryLockDoNotTrack:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StaffInstanceTelemetryLock) UnmarshalText(data []byte) error {
+	switch StaffInstanceTelemetryLock(data) {
+	case StaffInstanceTelemetryLockEnvironment:
+		*s = StaffInstanceTelemetryLockEnvironment
+		return nil
+	case StaffInstanceTelemetryLockDoNotTrack:
+		*s = StaffInstanceTelemetryLockDoNotTrack
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // Save the draft of an item's Legal document.

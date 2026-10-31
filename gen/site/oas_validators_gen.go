@@ -614,7 +614,7 @@ func (s Permission) Validate() error {
 		return nil
 	case "owners:manage":
 		return nil
-	case "instance:manage":
+	case "release:read":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -4795,86 +4795,6 @@ func (s SiteInboxConfigInputKind) Validate() error {
 func (s SiteInboxConfigKind) Validate() error {
 	switch s {
 	case "inbox":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
-func (s *SiteInstanceSetTelemetryConflict) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteInstanceSetTelemetryForbidden) Validate() error {
-	alias := (*ProblemDetails)(s)
-	if err := alias.Validate(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *SiteInstanceState) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Telemetry.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "telemetry",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s *SiteInstanceTelemetry) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if value, ok := s.LockedBy.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "lockedBy",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s SiteInstanceTelemetryLock) Validate() error {
-	switch s {
-	case "environment":
-		return nil
-	case "do_not_track":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

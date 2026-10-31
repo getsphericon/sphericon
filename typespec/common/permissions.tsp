@@ -65,7 +65,7 @@ enum Permission {
   /** Granting the owner Role, changing or removing an owner, resetting an owner's Second factor */
   ownersManage: "owners:manage",
 
-  /** Reading and changing the Instance state (Telemetry, the notice). Every owner holds it; only
-   * the holders in the oldest Workspace decide about the Instance */
-  instanceManage: "instance:manage",
+  /** Being told of a newer release the Release check found. Held in any live Workspace, it shows the
+   * banner across the app; the Instance's settings are the Staff console's */
+  releaseRead: "release:read",
 }

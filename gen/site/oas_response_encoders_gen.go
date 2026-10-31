@@ -3902,9 +3902,9 @@ func encodeSiteIdentitiesUnlinkResponse(response SiteIdentitiesUnlinkRes, w http
 	}
 }
 
-func encodeSiteInstanceAcknowledgeNoticeResponse(response SiteInstanceAcknowledgeNoticeRes, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteInstanceGetReleaseResponse(response SiteInstanceGetReleaseRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *SiteInstanceState:
+	case *SiteInstanceRelease:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 
@@ -3919,111 +3919,6 @@ func encodeSiteInstanceAcknowledgeNoticeResponse(response SiteInstanceAcknowledg
 	case *ProblemDetails:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteInstanceGetStateResponse(response SiteInstanceGetStateRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteInstanceState:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteInstancePreviewTelemetryReportResponse(response SiteInstancePreviewTelemetryReportRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteInstancePreviewTelemetryReportOK:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *ProblemDetails:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	default:
-		return errors.Errorf("unexpected response type: %T", response)
-	}
-}
-
-func encodeSiteInstanceSetTelemetryResponse(response SiteInstanceSetTelemetryRes, w http.ResponseWriter, span trace.Span) error {
-	switch response := response.(type) {
-	case *SiteInstanceState:
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(200)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInstanceSetTelemetryForbidden:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(403)
-
-		e := new(jx.Encoder)
-		response.Encode(e)
-		if _, err := e.WriteTo(w); err != nil {
-			return errors.Wrap(err, "write")
-		}
-
-		return nil
-
-	case *SiteInstanceSetTelemetryConflict:
-		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(409)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

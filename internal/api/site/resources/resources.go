@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/httpcall"
+	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -335,6 +336,8 @@ type Converter interface {
 	// The optional consents of account settings with the User's current answer (ADR 0062).
 	OptionalConsentToSite(source consentrecords.OptionalConsent) siteapi.SiteOptionalConsent
 	OptionalConsentsToSite(source []consentrecords.OptionalConsent) []siteapi.SiteOptionalConsent
+	// The banner of a newer release, the one part of the Instance a Workspace's owner sees (ADR 0032).
+	InstanceReleaseToResource(source instance.Release) siteapi.SiteInstanceRelease
 }
 
 // ExportMapper adapts the Converter to contactexport.Mapper.
