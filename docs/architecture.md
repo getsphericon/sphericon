@@ -5,9 +5,15 @@ coding standards in `CODING_STANDARDS.md`.
 
 ## Backend architecture
 
-- **DI**: `samber/do` container. `internal/app/app.go` `register()` wires every singleton
-  (config, sql.DB, ent client, email sender, pubsub, the `http.Handler`). Add new
-  dependencies there via `do.Provide`.
+- **DI**: `samber/do` container, the one composition root. `internal/app/container.go`
+  `Container(cfg)` registers every singleton (the clock, the pools, the ent client, the senders,
+  the domain modules, the surfaces' `Deps`, the handlers) as a lazy provider in a `do.Package`;
+  a provider takes what it needs with `do.MustInvoke`. The server (`app.New`), the commands
+  (`app.NewCommandApp`) and the test harness (`testhelper.Setup`) all build from it, the harness
+  replacing only the seams `Container` names (`do.Override`) and setting the rest through the
+  config. A new dependency is a provider there, never a constructor call in a handler, the
+  server package or the harness. No domain module or handler sees the container: `samber/do` is
+  imported by `internal/app`, the harness and `internal/cleanup` (its shutdown report) only.
 - **HTTP**: `internal/server/server.go` `New()` mounts the four public ogen servers (the fifth,
   `/service`, is served by `NewInternal` on the internal listener, which also always serves the
   edge's on-demand TLS `GET /tls/ask`, core, ADR 0038) and the
