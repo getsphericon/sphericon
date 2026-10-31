@@ -60,7 +60,7 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "not a draft", want: "only draft broadcasts can be changed",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsUpdate(t.Context(), &siteapi.SiteUpdateBroadcastInput{Name: siteapi.NewOptString("x")},
+				res, err := c.SiteBroadcastsUpdate(t.Context(), &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("x")},
 					siteapi.SiteBroadcastsUpdateParams{WorkspaceId: ws, ID: site(fixtures.BroadcastSentID)})
 				return res, err
 			},
@@ -73,7 +73,7 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "not sendable", want: "only draft or scheduled broadcasts can be sent or scheduled",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.SiteScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(at)},
+				res, err := c.SiteBroadcastsSchedule(t.Context(), &siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(at)},
 					siteapi.SiteBroadcastsScheduleParams{WorkspaceId: ws, ID: site(fixtures.BroadcastSentID)})
 				return res, err
 			},
@@ -97,7 +97,7 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "blank name", want: "name must not be empty",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.SiteCreateBroadcastInput{Name: " "},
+				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: " "},
 					siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return res, err
 			},
@@ -109,8 +109,8 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "body and document together", want: "write a body or a doc, not both",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.SiteCreateBroadcastInput{
-					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptSiteCreateBroadcastInputDoc(badDoc),
+				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
+					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptCreateBroadcastInputDoc(badDoc),
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return res, err
 			},
@@ -124,7 +124,7 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "unknown segment", want: "segment not found",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.SiteCreateBroadcastInput{
+				res, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
 					Name: "x", SegmentId: siteapi.NewOptNilEntityId(missing),
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return res, err
@@ -150,7 +150,7 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 // The site names the Integration of a Broadcast; the external API has no field for it.
 func TestBroadcastUnknownIntegrationReadsWithoutAPrefix(t *testing.T) {
 	env := testhelper.Setup(t)
-	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteBroadcastsCreate(t.Context(), &siteapi.SiteCreateBroadcastInput{
+	res, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
 		Name: "x", IntegrationId: siteapi.NewOptNilEntityId(99999),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	assert.Equal(t, "integration not found", detailOf(t, res, err))
@@ -188,7 +188,7 @@ func TestTemplateRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "blank name", want: "name must not be empty",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteTemplatesCreate(t.Context(), &siteapi.SiteCreateEmailTemplateInput{Name: ""},
+				res, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{Name: ""},
 					siteapi.SiteTemplatesCreateParams{WorkspaceId: ws})
 				return res, err
 			},
@@ -200,8 +200,8 @@ func TestTemplateRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "body and document together", want: "write a body or a doc, not both",
 			site: func(c *siteapi.Client) (any, error) {
-				res, err := c.SiteTemplatesCreate(t.Context(), &siteapi.SiteCreateEmailTemplateInput{
-					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptSiteCreateEmailTemplateInputDoc(badDoc),
+				res, err := c.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
+					Name: "x", Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptCreateTemplateInputDoc(badDoc),
 				}, siteapi.SiteTemplatesCreateParams{WorkspaceId: ws})
 				return res, err
 			},
@@ -231,14 +231,14 @@ func TestInvalidContentReadsTheSameOnBothSurfaces(t *testing.T) {
 	ext := env.ExternalScoped(t, "templates:write", "broadcasts:write")
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	b1, err1 := site.SiteBroadcastsCreate(t.Context(), &siteapi.SiteCreateBroadcastInput{
-		Name: "x", Doc: siteapi.NewOptSiteCreateBroadcastInputDoc(badDoc),
+	b1, err1 := site.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
+		Name: "x", Doc: siteapi.NewOptCreateBroadcastInputDoc(badDoc),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 	b2, err2 := ext.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
 		Name: "x", Doc: externalapi.NewOptCreateBroadcastInputDoc(badDoc),
 	})
-	t1, err3 := site.SiteTemplatesCreate(t.Context(), &siteapi.SiteCreateEmailTemplateInput{
-		Name: "x", Doc: siteapi.NewOptSiteCreateEmailTemplateInputDoc(badDoc),
+	t1, err3 := site.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
+		Name: "x", Doc: siteapi.NewOptCreateTemplateInputDoc(badDoc),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: ws})
 	t2, err4 := ext.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{
 		Name: "x", Doc: externalapi.NewOptCreateTemplateInputDoc(badDoc),

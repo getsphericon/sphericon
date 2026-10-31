@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/webhook"
 	"github.com/getsphericon/sphericon/internal/webhooks"
@@ -93,7 +94,7 @@ func TestDisablingAnEndpointThatIsOffKeepsItsMomentAndReason(t *testing.T) {
 	require.NoError(t, err)
 
 	off := false
-	got, err := m.Update(context.Background(), acme, fixtures.WebhookCodebasicsGoneID, webhooks.UpdateInput{Enabled: &off})
+	got, err := m.Update(context.Background(), acme, fixtures.WebhookCodebasicsGoneID, webhooks.UpdateInput{Enabled: patch.Set(off)})
 
 	require.NoError(t, err)
 	assert.Equal(t, before.DisabledAt, got.DisabledAt)
@@ -111,11 +112,11 @@ func TestInvalidURLIsRefusedOnCreateAndUpdate(t *testing.T) {
 		require.ErrorIs(t, err, webhooks.ErrInvalidURL, url)
 
 		bad := url
-		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{URL: &bad})
+		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{URL: patch.Set(bad)})
 		require.ErrorIs(t, err, webhooks.ErrInvalidURL, url)
 	}
 	ok := "http://example.com:8080/x"
-	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{URL: &ok})
+	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{URL: patch.Set(ok)})
 	require.NoError(t, err)
 	assert.Equal(t, ok, got.URL)
 }
@@ -131,14 +132,14 @@ func TestUpdateChangesOnlyTheGivenFieldsAndKeepsTheSecret(t *testing.T) {
 	assert.Equal(t, "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", before.Secret)
 
 	off := false
-	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{Enabled: &off})
+	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{Enabled: patch.Set(off)})
 	require.NoError(t, err)
 	assert.NotNil(t, got.DisabledAt)
 	assert.Equal(t, before.URL, got.URL)
 	assert.Equal(t, before.EventTypes, got.EventTypes, "nil event types leave the filter alone")
 	assert.Equal(t, before.Secret, got.Secret)
 
-	got, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{EventTypes: []string{"email.opened"}})
+	got, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{EventTypes: patch.Set([]string{"email.opened"})})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"email.opened"}, got.EventTypes)
 }
@@ -153,14 +154,14 @@ func TestAuditEntryNeedsALicenseOnCreateAndUpdate(t *testing.T) {
 		m := module(env, lic)
 		_, err := m.Create(ctx, acme, webhooks.CreateInput{URL: "https://example.com/a", EventTypes: audit})
 		require.ErrorIs(t, err, webhooks.ErrAuditNeedsLicense, name)
-		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{EventTypes: audit})
+		_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{EventTypes: patch.Set(audit)})
 		require.ErrorIs(t, err, webhooks.ErrAuditNeedsLicense, name)
 	}
 
 	m := module(env, license(true))
 	_, err := m.Create(ctx, acme, webhooks.CreateInput{URL: "https://example.com/a", EventTypes: audit})
 	require.NoError(t, err)
-	_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{EventTypes: audit})
+	_, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhooks.UpdateInput{EventTypes: patch.Set(audit)})
 	require.NoError(t, err)
 }
 
@@ -388,7 +389,7 @@ func TestEnablingClearsTheFailureStateAndTheDisabledReason(t *testing.T) {
 	require.NotNil(t, before.DisabledReason)
 	require.NotNil(t, before.ConsecutiveFailures)
 
-	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsGoneID, webhooks.UpdateInput{Enabled: &on})
+	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsGoneID, webhooks.UpdateInput{Enabled: patch.Set(on)})
 	require.NoError(t, err)
 	assert.Nil(t, got.DisabledAt)
 	assert.Nil(t, got.DisabledReason)

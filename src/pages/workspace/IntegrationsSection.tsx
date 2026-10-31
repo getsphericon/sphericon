@@ -36,7 +36,7 @@ import {
   siteIntegrationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
-  SiteIntegrationConfigInput,
+  IntegrationConfigInput,
   SiteIntegrationProvider,
   SiteIntegrationResource,
   SiteWorkspaceResource,
@@ -110,7 +110,7 @@ function defaultName(values: IntegrationFormValues): string {
   return URL.canParse(endpoint) ? new URL(endpoint).host : `Amazon SES (${values.region.trim()})`
 }
 
-function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput {
+function buildConfig(values: IntegrationFormValues): IntegrationConfigInput {
   if (values.provider === 'ses') {
     return {
       kind: 'ses',

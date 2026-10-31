@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -153,7 +154,7 @@ func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{IntegrationID: new(int64(fixtures.IntegrationAcmeMailgunID))})
+	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{IntegrationID: patch.Set(int64(fixtures.IntegrationAcmeMailgunID))})
 	require.NoError(t, err)
 	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID))
 

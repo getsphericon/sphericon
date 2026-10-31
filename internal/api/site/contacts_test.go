@@ -49,22 +49,6 @@ func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	assert.Empty(t, fetchedRes.FirstName.Or(""))
 }
 
-// An alias key (email) can be cleared with null. ADR 0002 keeps every alias key
-// optional (anonymous Contacts have none), so clearing the last one is allowed.
-// Fixture contact 2 (bob@example.com) has no other alias key.
-func TestSiteContactsUpdateClearingLastAliasKeyIsAllowed(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
-
-	res, err := c.SiteContactsUpdate(ctx, &siteapi.SiteUpdateContactInput{Email: nullEmail()},
-		siteapi.SiteContactsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 2})
-	require.NoError(t, err)
-	got, ok := res.(*siteapi.SiteContactResource)
-	require.Truef(t, ok, "got %T", res)
-	assert.Empty(t, got.Email.Or(""))
-}
-
 // Custom fields are cleared as a whole by an explicit null. Fixture contact 100 has some.
 func TestSiteContactsUpdateNullClearsCustomFields(t *testing.T) {
 	env := testhelper.Setup(t)

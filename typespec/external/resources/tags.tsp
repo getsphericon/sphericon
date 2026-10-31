@@ -17,12 +17,6 @@ model TagResource {
   createdAt: Timestamp;
 }
 
-/** Request body for applying a tag to a contact */
-model ApplyTagInput {
-  /** The label to apply; created on first use */
-  name: string;
-}
-
 @tag("Tags")
 namespace Tags {
   /** List the workspace's tags */

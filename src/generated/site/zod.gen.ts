@@ -45,6 +45,13 @@ export const zApiTokenScope = z.enum([
 ]);
 
 /**
+ * Request body for applying a tag to a contact
+ */
+export const zApplyTagInput = z.object({
+  name: z.string()
+});
+
+/**
  * A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)
  */
 export const zAttributionWindowDays = z.int().gte(1).lte(90);
@@ -64,6 +71,33 @@ export const zContactExportSource = z.enum([
 ]);
 
 /**
+ * Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.
+ */
+export const zCreateSendingDomainInput = z.object({
+  domain: z.string(),
+  dkimSelector: z.exactOptional(z.string())
+});
+
+/**
+ * Request body for creating a template
+ */
+export const zCreateTemplateInput = z.object({
+  name: z.string(),
+  subject: z.exactOptional(z.string()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()))
+});
+
+/**
+ * Request body for creating a webhook endpoint
+ */
+export const zCreateWebhookInput = z.object({
+  url: z.string(),
+  eventTypes: z.exactOptional(z.array(z.string())),
+  enabled: z.exactOptional(z.boolean())
+});
+
+/**
  * An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided
  * by the server, which refuses an unknown one with a reason.
  */
@@ -79,6 +113,20 @@ export const zEmailAddress = z.email().max(320);
  * reaches, so every id the schema admits fits an int64.
  */
 export const zEntityId = z.string().regex(/^[0-9]+$/);
+
+/**
+ * Request body for creating a broadcast
+ */
+export const zCreateBroadcastInput = z.object({
+  name: z.string(),
+  subject: z.exactOptional(z.string()),
+  fromName: z.exactOptional(z.string().nullable()),
+  fromEmail: z.exactOptional(zEmailAddress.nullable()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
+  segmentId: z.exactOptional(zEntityId.nullable()),
+  integrationId: z.exactOptional(zEntityId.nullable())
+});
 
 /**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
@@ -109,6 +157,13 @@ export const zGrantableScope = z.enum([
   'sending_domains:read',
   'integrations:read'
 ]);
+
+/**
+ * The Test inbox takes no credentials: a Workspace has at most one
+ */
+export const zInboxConfigInput = z.object({
+  kind: z.enum(['inbox'])
+});
 
 /**
  * The label a Staff member gives a published Legal document version, unique per item
@@ -142,6 +197,16 @@ export const zLintFinding = z.object({
   element: z.exactOptional(z.string()),
   detail: z.exactOptional(z.string())
 });
+
+/**
+ * A rolling 24-hour Provider limit the caller may set
+ */
+export const zMaxPerDay = z.int().gte(1).lte(100000000);
+
+/**
+ * A per-second Provider limit the caller may set
+ */
+export const zMaxPerSecond = z.int().gte(1).lte(10000);
 
 /**
  * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
@@ -273,6 +338,19 @@ export const zSendScope = z.enum([
   'automations:publish',
   'mcp:send'
 ]);
+
+/**
+ * SES credentials
+ */
+export const zSesConfigInput = z.object({
+  kind: z.enum(['ses']),
+  region: z.string(),
+  accessKeyId: z.string(),
+  secretAccessKey: z.string(),
+  from: zEmailAddress,
+  fromName: z.exactOptional(z.string().nullable()),
+  endpoint: z.exactOptional(z.string().nullable())
+});
 
 /**
  * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
@@ -470,13 +548,6 @@ export const zSiteAnalyticsSubscribedPoint = z.object({
 export const zSiteAnalyticsSubscribedPeople = z.object({
   current: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   series: z.array(zSiteAnalyticsSubscribedPoint)
-});
-
-/**
- * Site request body for applying a tag to a contact
- */
-export const zSiteApplyTagInput = z.object({
-  name: z.string()
 });
 
 /**
@@ -686,47 +757,6 @@ export const zSiteCreateAutomationInput = z.object({
 });
 
 /**
- * Site request body for creating a broadcast
- */
-export const zSiteCreateBroadcastInput = z.object({
-  name: z.string(),
-  subject: z.exactOptional(z.string()),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown())),
-  segmentId: z.exactOptional(zEntityId.nullable()),
-  integrationId: z.exactOptional(zEntityId.nullable())
-});
-
-/**
- * Site request body for creating a template
- */
-export const zSiteCreateEmailTemplateInput = z.object({
-  name: z.string(),
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown()))
-});
-
-/**
- * Site request body for adding a sending domain
- */
-export const zSiteCreateSendingDomainInput = z.object({
-  domain: z.string(),
-  dkimSelector: z.exactOptional(z.string())
-});
-
-/**
- * Site request body for creating a webhook endpoint
- */
-export const zSiteCreateWebhookEndpointInput = z.object({
-  url: z.string(),
-  eventTypes: z.exactOptional(z.array(z.string())),
-  enabled: z.exactOptional(z.boolean())
-});
-
-/**
  * Create a Workspace (ADR 0043)
  */
 export const zSiteCreateWorkspaceInput = z.object({
@@ -872,13 +902,6 @@ export const zSiteInboxConfig = z.object({
 });
 
 /**
- * The Test inbox takes no credentials: a Workspace has at most one
- */
-export const zSiteInboxConfigInput = z.object({
-  kind: z.enum(['inbox'])
-});
-
-/**
  * What the Release check found (ADR 0032): the one part of the Instance's state a Workspace Owner
  * sees. The Instance's settings are the Staff console's (ADR 0063).
  */
@@ -964,16 +987,6 @@ export const zSiteLoginSecondFactorInput = z.object({
   challenge: z.string(),
   code: z.string()
 });
-
-/**
- * A rolling 24-hour Provider limit the user may set
- */
-export const zSiteMaxPerDay = z.int().gte(1).lte(100000000);
-
-/**
- * A per-second Provider limit the user may set
- */
-export const zSiteMaxPerSecond = z.int().gte(1).lte(10000);
 
 /**
  * A User's permission level in a Workspace
@@ -1540,19 +1553,6 @@ export const zSiteSesConfig = z.object({
 });
 
 /**
- * SES credentials
- */
-export const zSiteSesConfigInput = z.object({
-  kind: z.enum(['ses']),
-  region: z.string(),
-  accessKeyId: z.string(),
-  secretAccessKey: z.string(),
-  from: zEmailAddress,
-  fromName: z.exactOptional(z.string().nullable()),
-  endpoint: z.exactOptional(z.string().nullable())
-});
-
-/**
  * Switch domain join on or off
  */
 export const zSiteSetDomainJoinInput = z.object({
@@ -1776,42 +1776,6 @@ export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
 ]);
 
 /**
- * SMTP credentials
- */
-export const zSiteSmtpConfigInput = z.object({
-  kind: z.enum(['smtp']),
-  host: z.string(),
-  port: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  username: z.exactOptional(z.string().nullable()),
-  password: z.exactOptional(z.string().nullable()),
-  from: zEmailAddress,
-  fromName: z.exactOptional(z.string().nullable())
-});
-
-/**
- * Provider config submitted by the UI, discriminated by `kind`.
- */
-export const zSiteIntegrationConfigInput = z.discriminatedUnion('kind', [
-  zSiteSmtpConfigInput.extend({ kind: z.literal('smtp') }),
-  zSiteSesConfigInput.extend({ kind: z.literal('ses') }),
-  zSiteInboxConfigInput.extend({ kind: z.literal('inbox') })
-]);
-
-/**
- * Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
- */
-export const zSiteCreateIntegrationInput = z.object({
-  name: z.string(),
-  enabled: z.exactOptional(z.boolean()),
-  isDefault: z.exactOptional(z.boolean()),
-  maxPerSecond: z.exactOptional(zSiteMaxPerSecond.nullable()),
-  maxPerDay: z.exactOptional(zSiteMaxPerDay.nullable()),
-  config: zSiteIntegrationConfigInput,
-  preset: z.exactOptional(z.string().nullable()),
-  params: z.exactOptional(z.record(z.string(), z.unknown()))
-});
-
-/**
  * The channel a suppression applies to (email today; sms reserved)
  */
 export const zSiteSuppressionChannel = z.enum(['email']);
@@ -1835,25 +1799,11 @@ export const zSiteSuppressionReason = z.enum([
 ]);
 
 /**
- * Site request body for a test send
- */
-export const zSiteTestSendBroadcastInput = z.object({
-  email: zEmailAddress
-});
-
-/**
  * What a test send did: the address the preview went out from
  */
 export const zSiteTestSendBroadcastResult = z.object({
   from: zEmailAddress,
   captured: z.boolean()
-});
-
-/**
- * Request body for sending a sample event to a webhook endpoint
- */
-export const zSiteTestWebhookInput = z.object({
-  eventType: z.string()
 });
 
 /**
@@ -1900,45 +1850,6 @@ export const zSiteUpdateAutomationInput = z.object({
 });
 
 /**
- * Site request body for updating a broadcast
- */
-export const zSiteUpdateBroadcastInput = z.object({
-  name: z.exactOptional(z.string()),
-  subject: z.exactOptional(z.string()),
-  fromName: z.exactOptional(z.string().nullable()),
-  fromEmail: z.exactOptional(zEmailAddress.nullable()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown())),
-  segmentId: z.exactOptional(zEntityId.nullable()),
-  integrationId: z.exactOptional(zEntityId.nullable())
-});
-
-/**
- * Site request body for updating a template
- */
-export const zSiteUpdateEmailTemplateInput = z.object({
-  name: z.exactOptional(z.string()),
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(z.record(z.string(), z.unknown()))
-});
-
-/**
- * Update a workspace integration. Omit `config` to keep stored credentials.
- */
-export const zSiteUpdateIntegrationInput = z.object({
-  name: z.exactOptional(z.string()),
-  enabled: z.exactOptional(z.boolean()),
-  isDefault: z.exactOptional(z.boolean()),
-  maxPerSecond: z.exactOptional(zSiteMaxPerSecond.nullable()),
-  maxPerDay: z.exactOptional(zSiteMaxPerDay.nullable()),
-  config: z.exactOptional(zSiteIntegrationConfigInput.nullable()),
-  preset: z.exactOptional(z.string().nullable()),
-  params: z.exactOptional(z.record(z.string(), z.unknown())),
-  retireSecrets: z.exactOptional(z.boolean())
-});
-
-/**
  * Change a member's role. Only an owner may grant/transfer the owner role.
  */
 export const zSiteUpdateMembershipInput = z.object({
@@ -1958,15 +1869,6 @@ export const zSiteUpdateRevenueSettingsInput = z.object({
  */
 export const zSiteUpdateTokenInput = z.object({
   name: z.string()
-});
-
-/**
- * Site request body for updating a webhook endpoint
- */
-export const zSiteUpdateWebhookEndpointInput = z.object({
-  url: z.exactOptional(z.string()),
-  eventTypes: z.exactOptional(z.array(z.string())),
-  enabled: z.exactOptional(z.boolean())
 });
 
 /**
@@ -2018,10 +1920,75 @@ export const zSiteWebhookTestResult = z.object({
   kind: z.exactOptional(zSiteWebhookErrorKind)
 });
 
+/**
+ * SMTP credentials
+ */
+export const zSmtpConfigInput = z.object({
+  kind: z.enum(['smtp']),
+  host: z.string(),
+  port: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  username: z.exactOptional(z.string().nullable()),
+  password: z.exactOptional(z.string().nullable()),
+  from: zEmailAddress,
+  fromName: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * Provider config submitted by the caller, discriminated by `kind`.
+ */
+export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
+  zSmtpConfigInput.extend({ kind: z.literal('smtp') }),
+  zSesConfigInput.extend({ kind: z.literal('ses') }),
+  zInboxConfigInput.extend({ kind: z.literal('inbox') })
+]);
+
+/**
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
+ */
+export const zCreateIntegrationInput = z.object({
+  name: z.string(),
+  enabled: z.exactOptional(z.boolean()),
+  isDefault: z.exactOptional(z.boolean()),
+  maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
+  maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
+  config: zIntegrationConfigInput,
+  preset: z.exactOptional(z.string().nullable()),
+  params: z.exactOptional(z.record(z.string(), z.unknown()))
+});
+
+/**
+ * Request body for a test send
+ */
+export const zTestSendBroadcastInput = z.object({
+  email: zEmailAddress
+});
+
+/**
+ * Request body for sending a sample event to a webhook endpoint
+ */
+export const zTestWebhookInput = z.object({
+  eventType: z.string()
+});
+
 export const zTimeZoneName = z.string();
 
 /**
- * Site request body for creating a contact
+ * Request body for creating a contact
+ */
+export const zCreateContactInput = z.object({
+  subjectId: z.exactOptional(z.string().nullable()),
+  email: z.exactOptional(zEmailAddress.nullable()),
+  phone: z.exactOptional(z.string().nullable()),
+  firstName: z.exactOptional(z.string().nullable()),
+  lastName: z.exactOptional(z.string().nullable()),
+  timeZone: z.exactOptional(zTimeZoneName.nullable()),
+  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable())
+});
+
+/**
+ * Site request body for creating a contact: the attributes /api takes, and its tags. The app's
+ * contact form sets the tags in the same save; /api tags a contact through its own operations
+ * (`tags_apply`, `tags_remove`), which is why its body has no tags.
  */
 export const zSiteCreateContactInput = z.object({
   subjectId: z.exactOptional(z.string().nullable()),
@@ -2035,7 +2002,9 @@ export const zSiteCreateContactInput = z.object({
 });
 
 /**
- * Site request body for updating a contact
+ * Site request body for updating a contact: the attributes /api takes, and its tag set. The
+ * app's contact form sets the tags in the same save; /api tags a contact through its own
+ * operations (`tags_apply`, `tags_remove`), which is why its body has no tags.
  */
 export const zSiteUpdateContactInput = z.object({
   subjectId: z.exactOptional(z.string().nullable()),
@@ -2208,6 +2177,13 @@ export const zContactExportDocument = z.object({
   events: z.array(zContactExportEvent),
   outboundMessages: z.array(zContactExportOutboundMessage),
   broadcastRecipients: z.array(zContactExportBroadcastRecipient)
+});
+
+/**
+ * Request body for scheduling a broadcast
+ */
+export const zScheduleBroadcastInput = z.object({
+  scheduledAt: zTimestamp
 });
 
 /**
@@ -2699,13 +2675,6 @@ export const zSiteRuleFiringResource = z.object({
 });
 
 /**
- * Site request body for scheduling a broadcast
- */
-export const zSiteScheduleBroadcastInput = z.object({
-  scheduledAt: zTimestamp
-});
-
-/**
  * A suppressed destination: the send path skips it on every surface
  */
 export const zSiteSuppressionResource = z.object({
@@ -2844,6 +2813,67 @@ export const zTokenOnlyScope = z.enum([
   'audit:read',
   'export:read'
 ]);
+
+/**
+ * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
+ */
+export const zUpdateBroadcastInput = z.object({
+  name: z.exactOptional(z.string()),
+  subject: z.exactOptional(z.string()),
+  fromName: z.exactOptional(z.string().nullable()),
+  fromEmail: z.exactOptional(zEmailAddress.nullable()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown())),
+  segmentId: z.exactOptional(zEntityId.nullable()),
+  integrationId: z.exactOptional(zEntityId.nullable())
+});
+
+/**
+ * Request body for updating a contact
+ */
+export const zUpdateContactInput = z.object({
+  subjectId: z.exactOptional(z.string().nullable()),
+  email: z.exactOptional(zEmailAddress.nullable()),
+  phone: z.exactOptional(z.string().nullable()),
+  firstName: z.exactOptional(z.string().nullable()),
+  lastName: z.exactOptional(z.string().nullable()),
+  timeZone: z.exactOptional(zTimeZoneName.nullable()),
+  customFields: z.exactOptional(z.record(z.string(), z.unknown()).nullable())
+});
+
+/**
+ * Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.
+ */
+export const zUpdateIntegrationInput = z.object({
+  name: z.exactOptional(z.string()),
+  enabled: z.exactOptional(z.boolean()),
+  isDefault: z.exactOptional(z.boolean()),
+  maxPerSecond: z.exactOptional(zMaxPerSecond.nullable()),
+  maxPerDay: z.exactOptional(zMaxPerDay.nullable()),
+  config: z.exactOptional(zIntegrationConfigInput),
+  preset: z.exactOptional(z.string().nullable()),
+  params: z.exactOptional(z.record(z.string(), z.unknown())),
+  retireSecrets: z.exactOptional(z.boolean())
+});
+
+/**
+ * Request body for updating a template
+ */
+export const zUpdateTemplateInput = z.object({
+  name: z.exactOptional(z.string()),
+  subject: z.exactOptional(z.string()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(z.record(z.string(), z.unknown()))
+});
+
+/**
+ * Request body for updating a webhook endpoint
+ */
+export const zUpdateWebhookInput = z.object({
+  url: z.exactOptional(z.string()),
+  eventTypes: z.exactOptional(z.array(z.string())),
+  enabled: z.exactOptional(z.boolean())
+});
 
 /**
  * What kind of row a refused removal names as a user of the row (ADR 0049). One value per kind
@@ -4219,7 +4249,7 @@ export const zSiteBroadcastsListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteBroadcastsCreateBody = zSiteCreateBroadcastInput;
+export const zSiteBroadcastsCreateBody = zCreateBroadcastInput;
 
 export const zSiteBroadcastsCreatePath = z.object({
   workspaceId: zWorkspaceId
@@ -4260,7 +4290,7 @@ export const zSiteBroadcastsGetPath = z.object({
  */
 export const zSiteBroadcastsGetResponse = zSiteBroadcastResource;
 
-export const zSiteBroadcastsUpdateBody = zSiteUpdateBroadcastInput;
+export const zSiteBroadcastsUpdateBody = zUpdateBroadcastInput;
 
 export const zSiteBroadcastsUpdatePath = z.object({
   workspaceId: zWorkspaceId,
@@ -4282,7 +4312,7 @@ export const zSiteBroadcastsArchivePath = z.object({
  */
 export const zSiteBroadcastsArchiveResponse = zSiteBroadcastResource;
 
-export const zSiteBroadcastsScheduleBody = zSiteScheduleBroadcastInput;
+export const zSiteBroadcastsScheduleBody = zScheduleBroadcastInput;
 
 export const zSiteBroadcastsSchedulePath = z.object({
   workspaceId: zWorkspaceId,
@@ -4304,7 +4334,7 @@ export const zSiteBroadcastsSendPath = z.object({
  */
 export const zSiteBroadcastsSendResponse = zSiteBroadcastResource;
 
-export const zSiteBroadcastsTestSendBody = zSiteTestSendBroadcastInput;
+export const zSiteBroadcastsTestSendBody = zTestSendBroadcastInput;
 
 export const zSiteBroadcastsTestSendPath = z.object({
   workspaceId: zWorkspaceId,
@@ -4487,7 +4517,7 @@ export const zSiteTagsListForContactResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteTagsApplyBody = zSiteApplyTagInput;
+export const zSiteTagsApplyBody = zApplyTagInput;
 
 export const zSiteTagsApplyPath = z.object({
   workspaceId: zWorkspaceId,
@@ -4634,7 +4664,7 @@ export const zSiteIntegrationsListQuery = z.object({
  */
 export const zSiteIntegrationsListResponse = z.array(zSiteIntegrationResource);
 
-export const zSiteIntegrationsCreateBody = zSiteCreateIntegrationInput;
+export const zSiteIntegrationsCreateBody = zCreateIntegrationInput;
 
 export const zSiteIntegrationsCreatePath = z.object({
   workspaceId: zWorkspaceId
@@ -4655,7 +4685,7 @@ export const zSiteIntegrationsGetPath = z.object({
  */
 export const zSiteIntegrationsGetResponse = zSiteIntegrationResource;
 
-export const zSiteIntegrationsUpdateBody = zSiteUpdateIntegrationInput;
+export const zSiteIntegrationsUpdateBody = zUpdateIntegrationInput;
 
 export const zSiteIntegrationsUpdatePath = z.object({
   workspaceId: zWorkspaceId,
@@ -4979,7 +5009,7 @@ export const zSiteSendingDomainsListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteSendingDomainsCreateBody = zSiteCreateSendingDomainInput;
+export const zSiteSendingDomainsCreateBody = zCreateSendingDomainInput;
 
 export const zSiteSendingDomainsCreatePath = z.object({
   workspaceId: zWorkspaceId
@@ -5131,7 +5161,7 @@ export const zSiteTemplatesListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteTemplatesCreateBody = zSiteCreateEmailTemplateInput;
+export const zSiteTemplatesCreateBody = zCreateTemplateInput;
 
 export const zSiteTemplatesCreatePath = z.object({
   workspaceId: zWorkspaceId
@@ -5162,7 +5192,7 @@ export const zSiteTemplatesGetPath = z.object({
  */
 export const zSiteTemplatesGetResponse = zSiteEmailTemplateResource;
 
-export const zSiteTemplatesUpdateBody = zSiteUpdateEmailTemplateInput;
+export const zSiteTemplatesUpdateBody = zUpdateTemplateInput;
 
 export const zSiteTemplatesUpdatePath = z.object({
   workspaceId: zWorkspaceId,
@@ -5267,7 +5297,7 @@ export const zSiteWebhooksListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteWebhooksCreateBody = zSiteCreateWebhookEndpointInput;
+export const zSiteWebhooksCreateBody = zCreateWebhookInput;
 
 export const zSiteWebhooksCreatePath = z.object({
   workspaceId: zWorkspaceId
@@ -5298,7 +5328,7 @@ export const zSiteWebhooksGetPath = z.object({
  */
 export const zSiteWebhooksGetResponse = zSiteWebhookEndpointResource;
 
-export const zSiteWebhooksUpdateBody = zSiteUpdateWebhookEndpointInput;
+export const zSiteWebhooksUpdateBody = zUpdateWebhookInput;
 
 export const zSiteWebhooksUpdatePath = z.object({
   workspaceId: zWorkspaceId,
@@ -5320,7 +5350,7 @@ export const zSiteWebhooksRegenerateSecretPath = z.object({
  */
 export const zSiteWebhooksRegenerateSecretResponse = zSiteWebhookEndpointResource;
 
-export const zSiteWebhooksTestBody = zSiteTestWebhookInput;
+export const zSiteWebhooksTestBody = zTestWebhookInput;
 
 export const zSiteWebhooksTestPath = z.object({
   workspaceId: zWorkspaceId,

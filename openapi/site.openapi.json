@@ -5588,7 +5588,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteCreateBroadcastInput"
+                "$ref": "#/components/schemas/CreateBroadcastInput"
               }
             }
           }
@@ -5760,7 +5760,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteUpdateBroadcastInput"
+                "$ref": "#/components/schemas/UpdateBroadcastInput"
               }
             }
           }
@@ -5935,7 +5935,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteScheduleBroadcastInput"
+                "$ref": "#/components/schemas/ScheduleBroadcastInput"
               }
             }
           }
@@ -6105,7 +6105,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteTestSendBroadcastInput"
+                "$ref": "#/components/schemas/TestSendBroadcastInput"
               }
             }
           }
@@ -6982,7 +6982,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteApplyTagInput"
+                "$ref": "#/components/schemas/ApplyTagInput"
               }
             }
           }
@@ -7730,7 +7730,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteCreateIntegrationInput"
+                "$ref": "#/components/schemas/CreateIntegrationInput"
               }
             }
           }
@@ -7864,7 +7864,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteUpdateIntegrationInput"
+                "$ref": "#/components/schemas/UpdateIntegrationInput"
               }
             }
           }
@@ -10541,7 +10541,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteCreateSendingDomainInput"
+                "$ref": "#/components/schemas/CreateSendingDomainInput"
               }
             }
           }
@@ -11335,7 +11335,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteCreateEmailTemplateInput"
+                "$ref": "#/components/schemas/CreateTemplateInput"
               }
             }
           }
@@ -11449,7 +11449,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteUpdateEmailTemplateInput"
+                "$ref": "#/components/schemas/UpdateTemplateInput"
               }
             }
           }
@@ -12033,7 +12033,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteCreateWebhookEndpointInput"
+                "$ref": "#/components/schemas/CreateWebhookInput"
               }
             }
           }
@@ -12167,7 +12167,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteUpdateWebhookEndpointInput"
+                "$ref": "#/components/schemas/UpdateWebhookInput"
               }
             }
           }
@@ -12352,7 +12352,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SiteTestWebhookInput"
+                "$ref": "#/components/schemas/TestWebhookInput"
               }
             }
           }
@@ -13057,6 +13057,17 @@
         ],
         "description": "Every API token scope: the one vocabulary of the external API"
       },
+      "ApplyTagInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The label to apply; created on first use"
+          }
+        },
+        "description": "Request body for applying a tag to a contact"
+      },
       "AttributionWindowDays": {
         "type": "integer",
         "format": "int32",
@@ -13704,6 +13715,227 @@
         },
         "description": "An anonymous device (visitor) bound to the contact"
       },
+      "CreateBroadcastInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Internal broadcast name"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sender display name; null or omitted means the integration's default"
+          },
+          "fromEmail": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Null or omitted means the integration's default."
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+          },
+          "segmentId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Target segment; null or omitted means all contacts. An archived segment is refused with 422."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Sending integration; null or omitted means the workspace default. An archived integration is refused with 422."
+          }
+        },
+        "description": "Request body for creating a broadcast"
+      },
+      "CreateContactInput": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The customer's own user id — an alias key"
+          },
+          "email": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "Email address — optional; any alias key may be absent"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number — an alias key"
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true,
+            "description": "First name"
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last name"
+          },
+          "timeZone": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "nullable": true,
+            "description": "IANA time zone identifier"
+          },
+          "customFields": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "Typed custom field values keyed by the field's machine key"
+          }
+        },
+        "description": "Request body for creating a contact"
+      },
+      "CreateIntegrationInput": {
+        "type": "object",
+        "required": ["name", "config"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "maxPerSecond": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerSecond"
+              }
+            ],
+            "nullable": true,
+            "description": "Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it"
+          },
+          "maxPerDay": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerDay"
+              }
+            ],
+            "nullable": true,
+            "description": "Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it"
+          },
+          "config": {
+            "$ref": "#/components/schemas/IntegrationConfigInput"
+          },
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first"
+          }
+        },
+        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409."
+      },
+      "CreateSendingDomainInput": {
+        "type": "object",
+        "required": ["domain"],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The domain to authenticate, e.g. \"mail.acme.com\" (normalized to lowercase ASCII)"
+          },
+          "dkimSelector": {
+            "type": "string",
+            "description": "DKIM selector; defaults to \"sphericon\" when omitted"
+          }
+        },
+        "description": "Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish."
+      },
+      "CreateTemplateInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Template name"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Default subject line"
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+          }
+        },
+        "description": "Request body for creating a template"
+      },
+      "CreateWebhookInput": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Destination URL (absolute http or https)"
+          },
+          "eventTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Event names to receive; empty or absent means all events"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the endpoint receives deliveries (default true)"
+          }
+        },
+        "description": "Request body for creating a webhook endpoint"
+      },
       "CurrencyCode": {
         "type": "string",
         "pattern": "^[A-Z]{3}$",
@@ -13899,6 +14131,40 @@
         },
         "description": "The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it"
       },
+      "InboxConfigInput": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["inbox"]
+          }
+        },
+        "description": "The Test inbox takes no credentials: a Workspace has at most one"
+      },
+      "IntegrationConfigInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SmtpConfigInput"
+          },
+          {
+            "$ref": "#/components/schemas/SesConfigInput"
+          },
+          {
+            "$ref": "#/components/schemas/InboxConfigInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "smtp": "#/components/schemas/SmtpConfigInput",
+            "ses": "#/components/schemas/SesConfigInput",
+            "inbox": "#/components/schemas/InboxConfigInput"
+          }
+        },
+        "description": "Provider config submitted by the caller, discriminated by `kind`."
+      },
       "LegalDocumentLabel": {
         "type": "string",
         "minLength": 1,
@@ -13950,6 +14216,20 @@
           }
         },
         "description": "One finding of the lint over a message's rendered HTML. `message` is fixed text of the\nserver; `element` and `detail` quote the message or the Brand kit and are untrusted data."
+      },
+      "MaxPerDay": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 100000000,
+        "description": "A rolling 24-hour Provider limit the caller may set"
+      },
+      "MaxPerSecond": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 10000,
+        "description": "A per-second Provider limit the caller may set"
       },
       "PasskeyName": {
         "type": "string",
@@ -14132,6 +14412,21 @@
         "maximum": 3650,
         "description": "A number of days an Audit log is kept: 1 to 3650"
       },
+      "ScheduleBroadcastInput": {
+        "type": "object",
+        "required": ["scheduledAt"],
+        "properties": {
+          "scheduledAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the broadcast should be sent"
+          }
+        },
+        "description": "Request body for scheduling a broadcast"
+      },
       "SendScope": {
         "type": "string",
         "enum": ["emails:send", "broadcasts:send", "automations:publish", "mcp:send"],
@@ -14150,6 +14445,38 @@
             "scope": "mcp:send"
           }
         ]
+      },
+      "SesConfigInput": {
+        "type": "object",
+        "required": ["kind", "region", "accessKeyId", "secretAccessKey", "from"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["ses"]
+          },
+          "region": {
+            "type": "string"
+          },
+          "accessKeyId": {
+            "type": "string"
+          },
+          "secretAccessKey": {
+            "type": "string"
+          },
+          "from": {
+            "$ref": "#/components/schemas/EmailAddress"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true
+          },
+          "endpoint": {
+            "type": "string",
+            "nullable": true,
+            "description": "Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS"
+          }
+        },
+        "description": "SES credentials"
       },
       "SetupScope": {
         "type": "string",
@@ -14791,17 +15118,6 @@
           }
         },
         "description": "A workspace API token (secret shown only once, at creation)"
-      },
-      "SiteApplyTagInput": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "The label to apply; created on first use"
-          }
-        },
-        "description": "Site request body for applying a tag to a contact"
       },
       "SiteAuditActor": {
         "type": "object",
@@ -16285,65 +16601,6 @@
         },
         "description": "Site request body for creating an automation"
       },
-      "SiteCreateBroadcastInput": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Internal broadcast name"
-          },
-          "subject": {
-            "type": "string",
-            "description": "Email subject line"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true,
-            "description": "Sender display name"
-          },
-          "fromEmail": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EmailAddress"
-              }
-            ],
-            "nullable": true,
-            "description": "Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Empty means the integration's default."
-          },
-          "body": {
-            "type": "string",
-            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
-          },
-          "doc": {
-            "type": "object",
-            "additionalProperties": {},
-            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
-          },
-          "segmentId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Target segment; null/omitted means all contacts"
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Sending integration; null/omitted means the workspace default"
-          }
-        },
-        "description": "Site request body for creating a broadcast"
-      },
       "SiteCreateContactInput": {
         "type": "object",
         "properties": {
@@ -16401,78 +16658,7 @@
             "description": "Tags to give the contact, created on first use"
           }
         },
-        "description": "Site request body for creating a contact"
-      },
-      "SiteCreateEmailTemplateInput": {
-        "type": "object",
-        "required": ["name"],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "subject": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string",
-            "description": "HTML body with Liquid merge tags. Write this or `doc`, not both."
-          },
-          "doc": {
-            "type": "object",
-            "additionalProperties": {},
-            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
-          }
-        },
-        "description": "Site request body for creating a template"
-      },
-      "SiteCreateIntegrationInput": {
-        "type": "object",
-        "required": ["name", "config"],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "isDefault": {
-            "type": "boolean"
-          },
-          "maxPerSecond": {
-            "type": "integer",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteMaxPerSecond"
-              }
-            ],
-            "nullable": true,
-            "description": "Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it"
-          },
-          "maxPerDay": {
-            "type": "integer",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteMaxPerDay"
-              }
-            ],
-            "nullable": true,
-            "description": "Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it"
-          },
-          "config": {
-            "$ref": "#/components/schemas/SiteIntegrationConfigInput"
-          },
-          "preset": {
-            "type": "string",
-            "nullable": true,
-            "description": "Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with"
-          },
-          "params": {
-            "type": "object",
-            "additionalProperties": {},
-            "description": "The Preset's params, validated against its `paramsSchema`: read the schema first"
-          }
-        },
-        "description": "Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409."
+        "description": "Site request body for creating a contact: the attributes /api takes, and its tags. The app's\ncontact form sets the tags in the same save; /api tags a contact through its own operations\n(`tags_apply`, `tags_remove`), which is why its body has no tags."
       },
       "SiteCreateInvitationInput": {
         "type": "object",
@@ -16586,21 +16772,6 @@
         },
         "description": "Site request body for creating a segment"
       },
-      "SiteCreateSendingDomainInput": {
-        "type": "object",
-        "required": ["domain"],
-        "properties": {
-          "domain": {
-            "type": "string",
-            "description": "The domain to authenticate, e.g. \"mail.acme.com\""
-          },
-          "dkimSelector": {
-            "type": "string",
-            "description": "DKIM selector; defaults to \"sphericon\" when omitted"
-          }
-        },
-        "description": "Site request body for adding a sending domain"
-      },
       "SiteCreateSuppressionInput": {
         "type": "object",
         "required": ["destination"],
@@ -16657,25 +16828,6 @@
           }
         },
         "description": "Token creation result — `token` is the full secret, shown only once"
-      },
-      "SiteCreateWebhookEndpointInput": {
-        "type": "object",
-        "required": ["url"],
-        "properties": {
-          "url": {
-            "type": "string"
-          },
-          "eventTypes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "enabled": {
-            "type": "boolean"
-          }
-        },
-        "description": "Site request body for creating a webhook endpoint"
       },
       "SiteCreateWorkspaceInput": {
         "type": "object",
@@ -17280,17 +17432,6 @@
         },
         "description": "The Test inbox has no settings"
       },
-      "SiteInboxConfigInput": {
-        "type": "object",
-        "required": ["kind"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["inbox"]
-          }
-        },
-        "description": "The Test inbox takes no credentials: a Workspace has at most one"
-      },
       "SiteInstanceRelease": {
         "type": "object",
         "properties": {
@@ -17328,29 +17469,6 @@
           }
         },
         "description": "Provider config returned to the UI, discriminated by `kind`. Secrets are omitted."
-      },
-      "SiteIntegrationConfigInput": {
-        "type": "object",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/SiteSmtpConfigInput"
-          },
-          {
-            "$ref": "#/components/schemas/SiteSesConfigInput"
-          },
-          {
-            "$ref": "#/components/schemas/SiteInboxConfigInput"
-          }
-        ],
-        "discriminator": {
-          "propertyName": "kind",
-          "mapping": {
-            "smtp": "#/components/schemas/SiteSmtpConfigInput",
-            "ses": "#/components/schemas/SiteSesConfigInput",
-            "inbox": "#/components/schemas/SiteInboxConfigInput"
-          }
-        },
-        "description": "Provider config submitted by the UI, discriminated by `kind`."
       },
       "SiteIntegrationProvider": {
         "type": "string",
@@ -17772,20 +17890,6 @@
           }
         },
         "description": "The second login step: the challenge from the password step and a code"
-      },
-      "SiteMaxPerDay": {
-        "type": "integer",
-        "format": "int32",
-        "minimum": 1,
-        "maximum": 100000000,
-        "description": "A rolling 24-hour Provider limit the user may set"
-      },
-      "SiteMaxPerSecond": {
-        "type": "integer",
-        "format": "int32",
-        "minimum": 1,
-        "maximum": 10000,
-        "description": "A per-second Provider limit the user may set"
       },
       "SiteMembershipResource": {
         "type": "object",
@@ -19171,21 +19275,6 @@
         },
         "description": "Save the Brand kit: the first save creates it and the starter Templates, a later one replaces\nits values."
       },
-      "SiteScheduleBroadcastInput": {
-        "type": "object",
-        "required": ["scheduledAt"],
-        "properties": {
-          "scheduledAt": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "When the broadcast should be sent"
-          }
-        },
-        "description": "Site request body for scheduling a broadcast"
-      },
       "SiteSecondFactorConfirmInput": {
         "type": "object",
         "required": ["code"],
@@ -19487,38 +19576,6 @@
           }
         },
         "description": "SES config without the secret access key"
-      },
-      "SiteSesConfigInput": {
-        "type": "object",
-        "required": ["kind", "region", "accessKeyId", "secretAccessKey", "from"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["ses"]
-          },
-          "region": {
-            "type": "string"
-          },
-          "accessKeyId": {
-            "type": "string"
-          },
-          "secretAccessKey": {
-            "type": "string"
-          },
-          "from": {
-            "$ref": "#/components/schemas/EmailAddress"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true
-          },
-          "endpoint": {
-            "type": "string",
-            "nullable": true,
-            "description": "Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS"
-          }
-        },
-        "description": "SES credentials"
       },
       "SiteSetDomainJoinInput": {
         "type": "object",
@@ -19863,39 +19920,6 @@
         },
         "description": "SMTP config without the password"
       },
-      "SiteSmtpConfigInput": {
-        "type": "object",
-        "required": ["kind", "host", "port", "from"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["smtp"]
-          },
-          "host": {
-            "type": "string"
-          },
-          "port": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "username": {
-            "type": "string",
-            "nullable": true
-          },
-          "password": {
-            "type": "string",
-            "nullable": true
-          },
-          "from": {
-            "$ref": "#/components/schemas/EmailAddress"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "description": "SMTP credentials"
-      },
       "SiteSoleOwnedWorkspace": {
         "type": "object",
         "required": ["id", "name"],
@@ -20013,21 +20037,6 @@
         },
         "description": "A Tag: a presence-only, workspace-scoped label on Contacts (auto-created on first use)."
       },
-      "SiteTestSendBroadcastInput": {
-        "type": "object",
-        "required": ["email"],
-        "properties": {
-          "email": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EmailAddress"
-              }
-            ],
-            "description": "Address to send the rendered preview to"
-          }
-        },
-        "description": "Site request body for a test send"
-      },
       "SiteTestSendBroadcastResult": {
         "type": "object",
         "required": ["from", "captured"],
@@ -20046,17 +20055,6 @@
           }
         },
         "description": "What a test send did: the address the preview went out from"
-      },
-      "SiteTestWebhookInput": {
-        "type": "object",
-        "required": ["eventType"],
-        "properties": {
-          "eventType": {
-            "type": "string",
-            "description": "The event name the sample carries, for example `contact.created`"
-          }
-        },
-        "description": "Request body for sending a sample event to a webhook endpoint"
       },
       "SiteTrackingReason": {
         "type": "string",
@@ -20252,64 +20250,6 @@
         },
         "description": "Site request body for updating an automation. The name changes at once; the trigger, steps\nand integration write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and publishing makes the draft live."
       },
-      "SiteUpdateBroadcastInput": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "Internal broadcast name"
-          },
-          "subject": {
-            "type": "string",
-            "description": "Email subject line"
-          },
-          "fromName": {
-            "type": "string",
-            "nullable": true,
-            "description": "Sender display name"
-          },
-          "fromEmail": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EmailAddress"
-              }
-            ],
-            "nullable": true,
-            "description": "Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable."
-          },
-          "body": {
-            "type": "string",
-            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
-          },
-          "doc": {
-            "type": "object",
-            "additionalProperties": {},
-            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
-          },
-          "segmentId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Target segment; null means all contacts"
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "Sending integration; null means the workspace default"
-          }
-        },
-        "description": "Site request body for updating a broadcast"
-      },
       "SiteUpdateContactInput": {
         "type": "object",
         "properties": {
@@ -20367,85 +20307,7 @@
             "description": "The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps them"
           }
         },
-        "description": "Site request body for updating a contact"
-      },
-      "SiteUpdateEmailTemplateInput": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "subject": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string",
-            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
-          },
-          "doc": {
-            "type": "object",
-            "additionalProperties": {},
-            "description": "The editor's JSON document, an opaque object checked by the server. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422."
-          }
-        },
-        "description": "Site request body for updating a template"
-      },
-      "SiteUpdateIntegrationInput": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "isDefault": {
-            "type": "boolean"
-          },
-          "maxPerSecond": {
-            "type": "integer",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteMaxPerSecond"
-              }
-            ],
-            "nullable": true,
-            "description": "Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it"
-          },
-          "maxPerDay": {
-            "type": "integer",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteMaxPerDay"
-              }
-            ],
-            "nullable": true,
-            "description": "Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it"
-          },
-          "config": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteIntegrationConfigInput"
-              }
-            ],
-            "nullable": true
-          },
-          "preset": {
-            "type": "string",
-            "nullable": true,
-            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over"
-          },
-          "params": {
-            "type": "object",
-            "additionalProperties": {},
-            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)"
-          },
-          "retireSecrets": {
-            "type": "boolean",
-            "description": "Stop accepting the retiring value of every rotating secret"
-          }
-        },
-        "description": "Update a workspace integration. Omit `config` to keep stored credentials."
+        "description": "Site request body for updating a contact: the attributes /api takes, and its tag set. The\napp's contact form sets the tags in the same save; /api tags a contact through its own\noperations (`tags_apply`, `tags_remove`), which is why its body has no tags."
       },
       "SiteUpdateMeInput": {
         "type": "object",
@@ -20561,24 +20423,6 @@
           }
         },
         "description": "Rename an API token"
-      },
-      "SiteUpdateWebhookEndpointInput": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string"
-          },
-          "eventTypes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "enabled": {
-            "type": "boolean"
-          }
-        },
-        "description": "Site request body for updating a webhook endpoint"
       },
       "SiteUpdateWorkspaceInput": {
         "type": "object",
@@ -21019,6 +20863,65 @@
         },
         "description": "Set the Workspace time zone"
       },
+      "SmtpConfigInput": {
+        "type": "object",
+        "required": ["kind", "host", "port", "from"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["smtp"]
+          },
+          "host": {
+            "type": "string"
+          },
+          "port": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "from": {
+            "$ref": "#/components/schemas/EmailAddress"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "description": "SMTP credentials"
+      },
+      "TestSendBroadcastInput": {
+        "type": "object",
+        "required": ["email"],
+        "properties": {
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "Address to send the rendered preview to"
+          }
+        },
+        "description": "Request body for a test send"
+      },
+      "TestWebhookInput": {
+        "type": "object",
+        "required": ["eventType"],
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "description": "The event name the sample carries, for example `contact.created`"
+          }
+        },
+        "description": "Request body for sending a sample event to a webhook endpoint"
+      },
       "TimeZoneName": {
         "type": "string"
       },
@@ -21038,6 +20941,212 @@
           "export:read"
         ],
         "description": "Scopes only an API token can hold, never an OAuth grant"
+      },
+      "UpdateBroadcastInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Internal broadcast name"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject line"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sender display name; null goes back to the integration's default"
+          },
+          "fromEmail": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null goes back to the integration's default."
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+          },
+          "segmentId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Target segment; null means all contacts. An archived segment is refused with 422."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Sending integration; null means the workspace default. An archived integration is refused with 422."
+          }
+        },
+        "description": "Request body for updating a draft broadcast: an omitted field keeps its value, null clears it"
+      },
+      "UpdateContactInput": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The customer's own user id — an alias key"
+          },
+          "email": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "Email address — an alias key"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number — an alias key"
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true,
+            "description": "First name"
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Last name"
+          },
+          "timeZone": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "nullable": true,
+            "description": "IANA time zone identifier"
+          },
+          "customFields": {
+            "type": "object",
+            "additionalProperties": {},
+            "nullable": true,
+            "description": "Typed custom field values keyed by the field's machine key"
+          }
+        },
+        "description": "Request body for updating a contact"
+      },
+      "UpdateIntegrationInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "maxPerSecond": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerSecond"
+              }
+            ],
+            "nullable": true,
+            "description": "Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it"
+          },
+          "maxPerDay": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerDay"
+              }
+            ],
+            "nullable": true,
+            "description": "Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it"
+          },
+          "config": {
+            "$ref": "#/components/schemas/IntegrationConfigInput"
+          },
+          "preset": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over"
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)"
+          },
+          "retireSecrets": {
+            "type": "boolean",
+            "description": "Stop accepting the retiring value of every rotating secret"
+          }
+        },
+        "description": "Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret."
+      },
+      "UpdateTemplateInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Template name"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Default subject line"
+          },
+          "body": {
+            "type": "string",
+            "description": "HTML body. Writing only a body clears the stored document. Write this or `doc`, not both."
+          },
+          "doc": {
+            "type": "object",
+            "additionalProperties": {},
+            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+          }
+        },
+        "description": "Request body for updating a template"
+      },
+      "UpdateWebhookInput": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Destination URL (absolute http or https)"
+          },
+          "eventTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Event names to receive; empty means all events"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the endpoint receives deliveries"
+          }
+        },
+        "description": "Request body for updating a webhook endpoint"
       },
       "UsedBy": {
         "type": "object",

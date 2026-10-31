@@ -5386,24 +5386,29 @@ func (s *CreateAutomationInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
 }
 
-// Request body for creating a broadcast (always created as a draft).
+// Request body for creating a broadcast.
 // Ref: #/components/schemas/CreateBroadcastInput
 type CreateBroadcastInput struct {
 	// Internal broadcast name.
 	Name string `json:"name"`
 	// Email subject line.
 	Subject OptString `json:"subject"`
-	// Sender display name.
-	FromName OptString `json:"fromName"`
+	// Sender display name; null or omitted means the integration's default.
+	FromName OptNilString `json:"fromName"`
 	// Sender email address: its domain must be a verified Sending domain of the workspace, or the write is
-	// a 422. Omit it for the integration's default.
-	FromEmail OptEmailAddress `json:"fromEmail"`
+	// a 422. Null or omitted means the integration's default.
+	FromEmail OptNilEmailAddress `json:"fromEmail"`
 	// HTML body with Liquid merge tags. Write this or `doc`, not both.
 	Body OptString `json:"body"`
 	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
 	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
 	// a 422 with the reason and nothing is stored.
 	Doc OptCreateBroadcastInputDoc `json:"doc"`
+	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
+	SegmentId OptNilEntityId `json:"segmentId"`
+	// Sending integration; null or omitted means the workspace default. An archived integration is refused
+	// with 422.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -5417,12 +5422,12 @@ func (s *CreateBroadcastInput) GetSubject() OptString {
 }
 
 // GetFromName returns the value of FromName.
-func (s *CreateBroadcastInput) GetFromName() OptString {
+func (s *CreateBroadcastInput) GetFromName() OptNilString {
 	return s.FromName
 }
 
 // GetFromEmail returns the value of FromEmail.
-func (s *CreateBroadcastInput) GetFromEmail() OptEmailAddress {
+func (s *CreateBroadcastInput) GetFromEmail() OptNilEmailAddress {
 	return s.FromEmail
 }
 
@@ -5436,6 +5441,16 @@ func (s *CreateBroadcastInput) GetDoc() OptCreateBroadcastInputDoc {
 	return s.Doc
 }
 
+// GetSegmentId returns the value of SegmentId.
+func (s *CreateBroadcastInput) GetSegmentId() OptNilEntityId {
+	return s.SegmentId
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *CreateBroadcastInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetName sets the value of Name.
 func (s *CreateBroadcastInput) SetName(val string) {
 	s.Name = val
@@ -5447,12 +5462,12 @@ func (s *CreateBroadcastInput) SetSubject(val OptString) {
 }
 
 // SetFromName sets the value of FromName.
-func (s *CreateBroadcastInput) SetFromName(val OptString) {
+func (s *CreateBroadcastInput) SetFromName(val OptNilString) {
 	s.FromName = val
 }
 
 // SetFromEmail sets the value of FromEmail.
-func (s *CreateBroadcastInput) SetFromEmail(val OptEmailAddress) {
+func (s *CreateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
 	s.FromEmail = val
 }
 
@@ -5464,6 +5479,16 @@ func (s *CreateBroadcastInput) SetBody(val OptString) {
 // SetDoc sets the value of Doc.
 func (s *CreateBroadcastInput) SetDoc(val OptCreateBroadcastInputDoc) {
 	s.Doc = val
+}
+
+// SetSegmentId sets the value of SegmentId.
+func (s *CreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
+	s.SegmentId = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
@@ -9837,6 +9862,52 @@ func (o OptInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewOptIntegrationConfigInput returns new OptIntegrationConfigInput with value set to v.
+func NewOptIntegrationConfigInput(v IntegrationConfigInput) OptIntegrationConfigInput {
+	return OptIntegrationConfigInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptIntegrationConfigInput is optional IntegrationConfigInput.
+type OptIntegrationConfigInput struct {
+	Value IntegrationConfigInput
+	Set   bool
+}
+
+// IsSet returns true if OptIntegrationConfigInput was set.
+func (o OptIntegrationConfigInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptIntegrationConfigInput) Reset() {
+	var v IntegrationConfigInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptIntegrationConfigInput) SetTo(v IntegrationConfigInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptIntegrationConfigInput) Get() (v IntegrationConfigInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptIntegrationConfigInput) Or(d IntegrationConfigInput) IntegrationConfigInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptLintEmailInputDoc returns new OptLintEmailInputDoc with value set to v.
 func NewOptLintEmailInputDoc(v LintEmailInputDoc) OptLintEmailInputDoc {
 	return OptLintEmailInputDoc{
@@ -10557,74 +10628,6 @@ func (o OptNilInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilInt32) Or(d int32) int32 {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilIntegrationConfigInput returns new OptNilIntegrationConfigInput with value set to v.
-func NewOptNilIntegrationConfigInput(v IntegrationConfigInput) OptNilIntegrationConfigInput {
-	return OptNilIntegrationConfigInput{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilIntegrationConfigInput is optional nullable IntegrationConfigInput.
-type OptNilIntegrationConfigInput struct {
-	Value IntegrationConfigInput
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilIntegrationConfigInput was set.
-func (o OptNilIntegrationConfigInput) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilIntegrationConfigInput) Reset() {
-	var v IntegrationConfigInput
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilIntegrationConfigInput) SetTo(v IntegrationConfigInput) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilIntegrationConfigInput) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilIntegrationConfigInput) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v IntegrationConfigInput
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilIntegrationConfigInput) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilIntegrationConfigInput) Get() (v IntegrationConfigInput, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilIntegrationConfigInput) Or(d IntegrationConfigInput) IntegrationConfigInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -16335,24 +16338,29 @@ func (s *UpdateAutomationInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
 }
 
-// Request body for updating a draft broadcast.
+// Request body for updating a draft broadcast: an omitted field keeps its value, null clears it.
 // Ref: #/components/schemas/UpdateBroadcastInput
 type UpdateBroadcastInput struct {
 	// Internal broadcast name.
 	Name OptString `json:"name"`
 	// Email subject line.
 	Subject OptString `json:"subject"`
-	// Sender display name.
-	FromName OptString `json:"fromName"`
+	// Sender display name; null goes back to the integration's default.
+	FromName OptNilString `json:"fromName"`
 	// Sender email address: a changed value must be on a verified Sending domain of the workspace, or the
-	// write is a 422. An unchanged one is not re-checked.
-	FromEmail OptEmailAddress `json:"fromEmail"`
+	// write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays
+	// editable. Null goes back to the integration's default.
+	FromEmail OptNilEmailAddress `json:"fromEmail"`
 	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
 	Body OptString `json:"body"`
 	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
 	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
 	// a 422 with the reason and nothing is stored.
 	Doc OptUpdateBroadcastInputDoc `json:"doc"`
+	// Target segment; null means all contacts. An archived segment is refused with 422.
+	SegmentId OptNilEntityId `json:"segmentId"`
+	// Sending integration; null means the workspace default. An archived integration is refused with 422.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetName returns the value of Name.
@@ -16366,12 +16374,12 @@ func (s *UpdateBroadcastInput) GetSubject() OptString {
 }
 
 // GetFromName returns the value of FromName.
-func (s *UpdateBroadcastInput) GetFromName() OptString {
+func (s *UpdateBroadcastInput) GetFromName() OptNilString {
 	return s.FromName
 }
 
 // GetFromEmail returns the value of FromEmail.
-func (s *UpdateBroadcastInput) GetFromEmail() OptEmailAddress {
+func (s *UpdateBroadcastInput) GetFromEmail() OptNilEmailAddress {
 	return s.FromEmail
 }
 
@@ -16385,6 +16393,16 @@ func (s *UpdateBroadcastInput) GetDoc() OptUpdateBroadcastInputDoc {
 	return s.Doc
 }
 
+// GetSegmentId returns the value of SegmentId.
+func (s *UpdateBroadcastInput) GetSegmentId() OptNilEntityId {
+	return s.SegmentId
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *UpdateBroadcastInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetName sets the value of Name.
 func (s *UpdateBroadcastInput) SetName(val OptString) {
 	s.Name = val
@@ -16396,12 +16414,12 @@ func (s *UpdateBroadcastInput) SetSubject(val OptString) {
 }
 
 // SetFromName sets the value of FromName.
-func (s *UpdateBroadcastInput) SetFromName(val OptString) {
+func (s *UpdateBroadcastInput) SetFromName(val OptNilString) {
 	s.FromName = val
 }
 
 // SetFromEmail sets the value of FromEmail.
-func (s *UpdateBroadcastInput) SetFromEmail(val OptEmailAddress) {
+func (s *UpdateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
 	s.FromEmail = val
 }
 
@@ -16413,6 +16431,16 @@ func (s *UpdateBroadcastInput) SetBody(val OptString) {
 // SetDoc sets the value of Doc.
 func (s *UpdateBroadcastInput) SetDoc(val OptUpdateBroadcastInputDoc) {
 	s.Doc = val
+}
+
+// SetSegmentId sets the value of SegmentId.
+func (s *UpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
+	s.SegmentId = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *UpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
 }
 
 // The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
@@ -16542,8 +16570,8 @@ type UpdateIntegrationInput struct {
 	MaxPerSecond OptNilMaxPerSecond `json:"maxPerSecond"`
 	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit
 	// to keep. An SES Integration with an `endpoint` cannot be left without it.
-	MaxPerDay OptNilMaxPerDay              `json:"maxPerDay"`
-	Config    OptNilIntegrationConfigInput `json:"config"`
+	MaxPerDay OptNilMaxPerDay           `json:"maxPerDay"`
+	Config    OptIntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
 	// secret carries over.
 	Preset OptNilString `json:"preset"`
@@ -16580,7 +16608,7 @@ func (s *UpdateIntegrationInput) GetMaxPerDay() OptNilMaxPerDay {
 }
 
 // GetConfig returns the value of Config.
-func (s *UpdateIntegrationInput) GetConfig() OptNilIntegrationConfigInput {
+func (s *UpdateIntegrationInput) GetConfig() OptIntegrationConfigInput {
 	return s.Config
 }
 
@@ -16625,7 +16653,7 @@ func (s *UpdateIntegrationInput) SetMaxPerDay(val OptNilMaxPerDay) {
 }
 
 // SetConfig sets the value of Config.
-func (s *UpdateIntegrationInput) SetConfig(val OptNilIntegrationConfigInput) {
+func (s *UpdateIntegrationInput) SetConfig(val OptIntegrationConfigInput) {
 	s.Config = val
 }
 
@@ -16739,7 +16767,8 @@ func (s *UpdateSegmentInput) SetCondition(val OptConditionGroup) {
 }
 
 // Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM record,
-// so the domain becomes unverified until the new record is published.
+// so the domain becomes unverified until the new record is published. The app has no such edit yet, so
+// this body is /api's own.
 // Ref: #/components/schemas/UpdateSendingDomainInput
 type UpdateSendingDomainInput struct {
 	// New DKIM selector.

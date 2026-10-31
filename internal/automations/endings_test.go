@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -171,7 +172,7 @@ func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{
-		ExitEvents: &[]string{"card_removed"}, ClearGoal: true,
+		ExitEvents: &[]string{"card_removed"}, GoalEvent: patch.Clear[string](),
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, fixtures.AutomationPaymentRecoveryID)
@@ -273,7 +274,7 @@ func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	updated, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{
-		ExitEvents: &[]string{}, GoalEvent: new("invoice_paid"),
+		ExitEvents: &[]string{}, GoalEvent: patch.Set("invoice_paid"),
 	})
 	require.NoError(t, err)
 
@@ -284,7 +285,7 @@ func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	assert.Equal(t, []string{recoveryExit, "plan_downgraded", "email.clicked"}, live.ExitEvents)
 	assert.Equal(t, new(recoveryGoal), live.GoalEvent)
 
-	cleared, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{ClearGoal: true})
+	cleared, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{GoalEvent: patch.Clear[string]()})
 	require.NoError(t, err)
 	_, draft = automations.LiveAndDraft(cleared)
 	assert.Nil(t, draft.GoalEvent)

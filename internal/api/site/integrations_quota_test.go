@@ -35,10 +35,10 @@ func TestSiteIntegrationsSaveDiscoversTheSESQuota(t *testing.T) {
 	ctx := context.Background()
 	env.SES.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
-		MaxPerDay: siteapi.NewOptNilSiteMaxPerDay(1000),
+		MaxPerDay: siteapi.NewOptNilMaxPerDay(1000),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	status := reread(t, c, created.(*siteapi.SiteIntegrationResource).ID)
@@ -59,7 +59,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	ctx := context.Background()
 	env.SES.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "SES", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -74,8 +74,8 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 
 	// A manual value takes over as the only ceiling, and the warning stays.
 	upd := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID}
-	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(5),
+	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(5),
 	}, upd)
 	require.NoError(t, err)
 	status = reread(t, c, res.ID)
@@ -84,8 +84,8 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 		status.Warnings, "one ceiling is enough to stop the unlimited warning; the quota warning stays")
 
 	// The permission is granted and the Integration is saved again: the warning clears.
-	resave := &siteapi.SiteUpdateIntegrationInput{
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(sesInput("eu-west-1", "AKIA1234", "")),
+	resave := &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA1234", "")),
 	}
 	env.SES.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	_, err = c.SiteIntegrationsUpdate(ctx, resave, upd)
@@ -111,7 +111,7 @@ func TestSiteIntegrationsSMTPSaveDoesNotLookUpAQuota(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	env.SES.SetQuotaErr(errors.New("must not be asked"))
 
-	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
 		Name: "SMTP", Config: smtpInput("smtp.example.com", "pw"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)

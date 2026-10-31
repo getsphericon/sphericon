@@ -19,7 +19,7 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	ctx := context.Background()
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name: "Primary SMTP", Config: smtpInput("smtp.acme.test", "pw"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
@@ -44,15 +44,15 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("create validates", func(t *testing.T) {
-		r1, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{Name: "x", Config: smtpInput("h", "p")},
+		r1, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "x", Config: smtpInput("h", "p")},
 			siteapi.SiteIntegrationsCreateParams{WorkspaceId: foreign})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsCreateNotFound{}, r1)
-		r2, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{Name: "   ", Config: smtpInput("h", "p")},
+		r2, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "   ", Config: smtpInput("h", "p")},
 			siteapi.SiteIntegrationsCreateParams{WorkspaceId: acme})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsCreateUnprocessableEntity{}, r2)
-		r3, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{Name: "bad", Config: smtpInput("", "p")},
+		r3, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{Name: "bad", Config: smtpInput("", "p")},
 			siteapi.SiteIntegrationsCreateParams{WorkspaceId: acme})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsCreateUnprocessableEntity{}, r3, "an SMTP config without a host is rejected")
@@ -71,18 +71,18 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		in := &siteapi.SiteUpdateIntegrationInput{Name: siteapi.NewOptString("Renamed")}
+		in := &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString("Renamed")}
 		r1, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: foreign, ID: row.ID})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, r1)
 		r3, err := c.SiteIntegrationsUpdate(ctx, in, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: idStr(99999)})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateNotFound{}, r3)
-		r4, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{Name: siteapi.NewOptString(" ")},
+		r4, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Name: siteapi.NewOptString(" ")},
 			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: row.ID})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, r4)
-		r5, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("", "p"))},
+		r5, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Config: siteapi.NewOptIntegrationConfigInput(smtpInput("", "p"))},
 			siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: row.ID})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, r5, "an invalid config is rejected")
@@ -92,7 +92,7 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 		assert.Equal(t, "Primary SMTP", stored.Name, "rejected updates changed nothing")
 
 		// Enabled toggles and demoting a non-default keep working.
-		r6, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+		r6, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 			Enabled: siteapi.NewOptBool(false), IsDefault: siteapi.NewOptBool(false),
 		}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: acme, ID: row.ID})
 		require.NoError(t, err)

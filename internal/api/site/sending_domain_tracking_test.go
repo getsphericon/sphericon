@@ -22,7 +22,7 @@ func TestSiteSendingDomainShowsTheTrackingRecordPending(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteSendingDomainsCreate(context.Background(), &siteapi.SiteCreateSendingDomainInput{Domain: "marketing.example.com"},
+	res, err := c.SiteSendingDomainsCreate(context.Background(), &siteapi.CreateSendingDomainInput{Domain: "marketing.example.com"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	created, ok := res.(*siteapi.SiteSendingDomainResource)

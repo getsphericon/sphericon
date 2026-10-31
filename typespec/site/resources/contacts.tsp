@@ -45,55 +45,25 @@ model SiteContactResource {
   updatedAt: Timestamp;
 }
 
-/** Site request body for creating a contact */
+/**
+ * Site request body for creating a contact: the attributes /api takes, and its tags. The app's
+ * contact form sets the tags in the same save; /api tags a contact through its own operations
+ * (`tags_apply`, `tags_remove`), which is why its body has no tags.
+ */
 model SiteCreateContactInput {
-  /** The customer's own user id — an alias key */
-  subjectId?: string | null;
-
-  /** Email address — optional; any alias key may be absent */
-  email?: EmailAddress | null;
-
-  /** Phone number — an alias key */
-  phone?: string | null;
-
-  /** First name */
-  firstName?: string | null;
-
-  /** Last name */
-  lastName?: string | null;
-
-  /** IANA time zone identifier */
-  timeZone?: TimeZoneName | null;
-
-  /** Typed custom field values keyed by the field's machine key */
-  customFields?: Record<unknown> | null;
+  ...CreateContactInput;
 
   /** Tags to give the contact, created on first use */
   tags?: string[];
 }
 
-/** Site request body for updating a contact */
+/**
+ * Site request body for updating a contact: the attributes /api takes, and its tag set. The
+ * app's contact form sets the tags in the same save; /api tags a contact through its own
+ * operations (`tags_apply`, `tags_remove`), which is why its body has no tags.
+ */
 model SiteUpdateContactInput {
-  /** The customer's own user id — an alias key */
-  subjectId?: string | null;
-
-  /** Email address — an alias key */
-  email?: EmailAddress | null;
-
-  /** Phone number — an alias key */
-  phone?: string | null;
-
-  /** First name */
-  firstName?: string | null;
-
-  /** Last name */
-  lastName?: string | null;
-
-  /** IANA time zone identifier */
-  timeZone?: TimeZoneName | null;
-
-  /** Typed custom field values keyed by the field's machine key */
-  customFields?: Record<unknown> | null;
+  ...UpdateContactInput;
 
   /** The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps them */
   tags?: string[];

@@ -46,9 +46,7 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteC
 	in := automations.CreateInput{
 		Name: req.Name, TriggerEvent: req.TriggerEvent, ExitEvents: req.ExitEvents,
 		GoalEvent: convert.StringPtr(req.GoalEvent), IntegrationID: convert.Int64Ptr(req.IntegrationId),
-	}
-	if req.Steps != nil {
-		in.Steps = resources.AutomationSteps(req.Steps)
+		Steps: inputs.AutomationSteps(req.Steps),
 	}
 	a, err := h.automations.Create(ctx, ws, in)
 	if err != nil {
@@ -80,20 +78,16 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 
 	id := int64(params.ID)
 	in := automations.UpdateInput{
-		Name:         convert.StringPtr(req.Name),
-		TriggerEvent: convert.StringPtr(req.TriggerEvent),
-		// JSON Merge Patch, as for the Integration: an explicit null removes the goal event.
-		GoalEvent: convert.StringPtr(req.GoalEvent),
-		ClearGoal: req.GoalEvent.IsNull(),
-		// JSON Merge Patch: an explicit null clears the Integration, an absent key keeps it.
-		IntegrationID:    convert.Int64Ptr(req.IntegrationId),
-		ClearIntegration: req.IntegrationId.IsNull(),
+		Name:          convert.StringPtr(req.Name),
+		TriggerEvent:  convert.StringPtr(req.TriggerEvent),
+		GoalEvent:     convert.StringPatch(req.GoalEvent),
+		IntegrationID: convert.Int64Patch(req.IntegrationId),
 	}
 	if req.ExitEvents != nil {
 		in.ExitEvents = &req.ExitEvents
 	}
 	if req.Steps != nil {
-		steps := resources.AutomationSteps(req.Steps)
+		steps := inputs.AutomationSteps(req.Steps)
 		in.Steps = &steps
 	}
 	a, err := h.automations.Update(ctx, ws, id, in)
@@ -121,11 +115,7 @@ func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.Si
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.automations.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	a, err := h.automations.Get(ctx, ws, id)
+	a, err := h.automations.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -138,11 +128,7 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.automations.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	a, err := h.automations.Get(ctx, ws, id)
+	a, err := h.automations.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}

@@ -8,10 +8,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
 
 // The Sending domain operations are thin adapters over internal/sendingdomains, the
@@ -38,9 +36,7 @@ func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.Se
 
 // SendingDomainsCreate adds a Sending domain; the DKIM keypair is minted and sealed.
 func (h *Handlers) SendingDomainsCreate(ctx context.Context, req *externalapi.CreateSendingDomainInput) (externalapi.SendingDomainsCreateRes, error) {
-	row, err := h.sendingDomains.Create(ctx, auth.TokenScoped(ctx), sendingdomains.CreateInput{
-		Domain: req.Domain, Selector: req.DkimSelector.Or(""),
-	})
+	row, err := h.sendingDomains.Create(ctx, auth.TokenScoped(ctx), inputs.SendingDomainCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -62,9 +58,7 @@ func (h *Handlers) SendingDomainsGet(ctx context.Context, params externalapi.Sen
 // SendingDomainsUpdate changes the DKIM selector, which unverifies the domain.
 func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.UpdateSendingDomainInput, params externalapi.SendingDomainsUpdateParams) (externalapi.SendingDomainsUpdateRes, error) {
 	id := int64(params.ID)
-	row, err := h.sendingDomains.Update(ctx, auth.TokenScoped(ctx), id, sendingdomains.UpdateInput{
-		Selector: convert.Ptr(req.DkimSelector),
-	})
+	row, err := h.sendingDomains.Update(ctx, auth.TokenScoped(ctx), id, inputs.SendingDomainUpdate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +71,7 @@ func (h *Handlers) SendingDomainsUpdate(ctx context.Context, req *externalapi.Up
 func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi.SendingDomainsArchiveParams) (externalapi.SendingDomainsArchiveRes, error) {
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
-	err := h.sendingDomains.Archive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	row, err := h.sendingDomains.Get(ctx, s, id)
+	row, err := h.sendingDomains.Archive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +83,7 @@ func (h *Handlers) SendingDomainsArchive(ctx context.Context, params externalapi
 func (h *Handlers) SendingDomainsUnarchive(ctx context.Context, params externalapi.SendingDomainsUnarchiveParams) (externalapi.SendingDomainsUnarchiveRes, error) {
 	id := int64(params.ID)
 	s := auth.TokenScoped(ctx)
-	err := h.sendingDomains.Unarchive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	row, err := h.sendingDomains.Get(ctx, s, id)
+	row, err := h.sendingDomains.Unarchive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

@@ -487,7 +487,7 @@ func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params Si
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/broadcasts
-func (UnimplementedHandler) SiteBroadcastsCreate(ctx context.Context, req *SiteCreateBroadcastInput, params SiteBroadcastsCreateParams) (r SiteBroadcastsCreateRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsCreate(ctx context.Context, req *CreateBroadcastInput, params SiteBroadcastsCreateParams) (r SiteBroadcastsCreateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -525,7 +525,7 @@ func (UnimplementedHandler) SiteBroadcastsList(ctx context.Context, params SiteB
 // rescheduling keeps it. An archived segment is refused.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
-func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *SiteScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (r SiteBroadcastsScheduleRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (r SiteBroadcastsScheduleRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -546,7 +546,7 @@ func (UnimplementedHandler) SiteBroadcastsSend(ctx context.Context, params SiteB
 // address is refused with 422, the System sender's caps answer 429.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
-func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (r SiteBroadcastsTestSendRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (r SiteBroadcastsTestSendRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -564,7 +564,7 @@ func (UnimplementedHandler) SiteBroadcastsUnarchive(ctx context.Context, params 
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/broadcasts/{id}
-func (UnimplementedHandler) SiteBroadcastsUpdate(ctx context.Context, req *SiteUpdateBroadcastInput, params SiteBroadcastsUpdateParams) (r SiteBroadcastsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteBroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (r SiteBroadcastsUpdateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -824,7 +824,7 @@ func (UnimplementedHandler) SiteIntegrationsArchive(ctx context.Context, params 
 // Create an integration. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/integrations
-func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *SiteCreateIntegrationInput, params SiteIntegrationsCreateParams) (r SiteIntegrationsCreateRes, _ error) {
+func (UnimplementedHandler) SiteIntegrationsCreate(ctx context.Context, req *CreateIntegrationInput, params SiteIntegrationsCreateParams) (r SiteIntegrationsCreateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -871,7 +871,7 @@ func (UnimplementedHandler) SiteIntegrationsUnarchive(ctx context.Context, param
 // Update an integration. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/integrations/{id}
-func (UnimplementedHandler) SiteIntegrationsUpdate(ctx context.Context, req *SiteUpdateIntegrationInput, params SiteIntegrationsUpdateParams) (r SiteIntegrationsUpdateRes, _ error) {
+func (UnimplementedHandler) SiteIntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (r SiteIntegrationsUpdateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1512,7 +1512,7 @@ func (UnimplementedHandler) SiteSendingDomainsArchive(ctx context.Context, param
 // Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains
-func (UnimplementedHandler) SiteSendingDomainsCreate(ctx context.Context, req *SiteCreateSendingDomainInput, params SiteSendingDomainsCreateParams) (r SiteSendingDomainsCreateRes, _ error) {
+func (UnimplementedHandler) SiteSendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (r SiteSendingDomainsCreateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1611,7 +1611,7 @@ func (UnimplementedHandler) SiteSuppressionsList(ctx context.Context, params Sit
 // Apply a tag to a contact, creating the tag on first use. Idempotent.
 //
 // POST /workspaces/{workspaceId}/contacts/{contactId}/tags
-func (UnimplementedHandler) SiteTagsApply(ctx context.Context, req *SiteApplyTagInput, params SiteTagsApplyParams) (r SiteTagsApplyRes, _ error) {
+func (UnimplementedHandler) SiteTagsApply(ctx context.Context, req *ApplyTagInput, params SiteTagsApplyParams) (r SiteTagsApplyRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1656,7 +1656,7 @@ func (UnimplementedHandler) SiteTagsRemove(ctx context.Context, params SiteTagsR
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/templates
-func (UnimplementedHandler) SiteTemplatesCreate(ctx context.Context, req *SiteCreateEmailTemplateInput, params SiteTemplatesCreateParams) (r SiteTemplatesCreateRes, _ error) {
+func (UnimplementedHandler) SiteTemplatesCreate(ctx context.Context, req *CreateTemplateInput, params SiteTemplatesCreateParams) (r SiteTemplatesCreateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1692,7 +1692,7 @@ func (UnimplementedHandler) SiteTemplatesList(ctx context.Context, params SiteTe
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/templates/{id}
-func (UnimplementedHandler) SiteTemplatesUpdate(ctx context.Context, req *SiteUpdateEmailTemplateInput, params SiteTemplatesUpdateParams) (r SiteTemplatesUpdateRes, _ error) {
+func (UnimplementedHandler) SiteTemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params SiteTemplatesUpdateParams) (r SiteTemplatesUpdateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1830,7 +1830,7 @@ func (UnimplementedHandler) SiteUserUpdateMe(ctx context.Context, req *SiteUpdat
 // Create a webhook endpoint. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks
-func (UnimplementedHandler) SiteWebhooksCreate(ctx context.Context, req *SiteCreateWebhookEndpointInput, params SiteWebhooksCreateParams) (r SiteWebhooksCreateRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksCreate(ctx context.Context, req *CreateWebhookInput, params SiteWebhooksCreateParams) (r SiteWebhooksCreateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1877,7 +1877,7 @@ func (UnimplementedHandler) SiteWebhooksRegenerateSecret(ctx context.Context, pa
 // Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/test
-func (UnimplementedHandler) SiteWebhooksTest(ctx context.Context, req *SiteTestWebhookInput, params SiteWebhooksTestParams) (r SiteWebhooksTestRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksTest(ctx context.Context, req *TestWebhookInput, params SiteWebhooksTestParams) (r SiteWebhooksTestRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1886,7 +1886,7 @@ func (UnimplementedHandler) SiteWebhooksTest(ctx context.Context, req *SiteTestW
 // Update a webhook endpoint. Owners and admins only.
 //
 // PUT /workspaces/{workspaceId}/webhooks/{id}
-func (UnimplementedHandler) SiteWebhooksUpdate(ctx context.Context, req *SiteUpdateWebhookEndpointInput, params SiteWebhooksUpdateParams) (r SiteWebhooksUpdateRes, _ error) {
+func (UnimplementedHandler) SiteWebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params SiteWebhooksUpdateParams) (r SiteWebhooksUpdateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

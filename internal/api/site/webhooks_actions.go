@@ -21,7 +21,7 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 
 // SiteWebhooksTest sends a sample event to the endpoint and returns what the receiver
 // answered, at once.
-func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.SiteTestWebhookInput, params siteapi.SiteWebhooksTestParams) (siteapi.SiteWebhooksTestRes, error) {
+func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.TestWebhookInput, params siteapi.SiteWebhooksTestParams) (siteapi.SiteWebhooksTestRes, error) {
 	scoped := workspaceScope(ctx)
 	res, err := h.webhooks.TestSend(ctx, scoped, int64(params.ID), req.EventType)
 	if err != nil {

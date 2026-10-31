@@ -7,7 +7,7 @@ import {
   siteBroadcastsListQueryKey,
   siteBroadcastsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { zSiteCreateBroadcastInput } from '../../generated/site/zod.gen.ts'
+import { zCreateBroadcastInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
@@ -19,7 +19,7 @@ import { DeliveryBlock } from './DeliveryBlock.tsx'
 // list or the Workspace default. The document is held as JSON text; a blank one is absent,
 // so a source-only save writes a body.
 const broadcastSchema = resourceFormSchema(
-  zSiteCreateBroadcastInput
+  zCreateBroadcastInput
     .pick({
       subject: true,
       fromName: true,

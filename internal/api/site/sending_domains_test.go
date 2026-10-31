@@ -21,13 +21,13 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	// Invalid domain is rejected.
-	bad, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "not a domain"},
+	bad, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "not a domain"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsCreateUnprocessableEntity{}, bad)
 
 	// Create mints a keypair and returns the DNS records to publish.
-	created, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "Marketing.Example.COM"},
+	created, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "Marketing.Example.COM"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res, ok := created.(*siteapi.SiteSendingDomainResource)
@@ -54,7 +54,7 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	assert.NotEmpty(t, row.DkimPrivateKeyEncrypted)
 
 	// Adding the same domain again conflicts.
-	dup, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "marketing.example.com"},
+	dup, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "marketing.example.com"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsCreateConflict{}, dup)

@@ -23,7 +23,7 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	updateParams := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID}
 
 	create := func(from string) siteapi.SiteBroadcastsCreateRes {
-		res, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+		res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 			Name: "from check", FromEmail: siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(from)),
 		}, createParams)
 		require.NoError(t, err)
@@ -43,16 +43,16 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	require.True(t, ok)
 	assert.Contains(t, problem.Detail.Or(""), fixtures.SendingDomainUnverifiedDomain, "the refusal names the domain")
 
-	res, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{Name: "no from"}, createParams)
+	res, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "no from"}, createParams)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastResource{}, res)
 
-	badUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	badUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain),
 	}, updateParams)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, badUpd)
-	okUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	okUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		FromEmail: siteapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainVerifiedDomain),
 	}, updateParams)
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	// The draft's From lost its verification: the subject is still editable, with or without
 	// the unchanged From in the request.
 	lost := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftFromLostDomainID}
-	for _, in := range []*siteapi.SiteUpdateBroadcastInput{
+	for _, in := range []*siteapi.UpdateBroadcastInput{
 		{Subject: siteapi.NewOptString("New subject")},
 		{
 			Subject:   siteapi.NewOptString("Newer subject"),

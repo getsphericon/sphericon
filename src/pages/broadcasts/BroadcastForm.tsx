@@ -12,7 +12,7 @@ import {
   siteSendingDomainsListOptions,
   siteTemplatesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteCreateBroadcastInput } from '../../generated/site/types.gen.ts'
+import type { CreateBroadcastInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
@@ -24,7 +24,7 @@ export function BroadcastForm({
   form,
   isPending,
   onSubmit,
-}: ResourceFormProps<SiteCreateBroadcastInput>) {
+}: ResourceFormProps<CreateBroadcastInput>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
 
@@ -107,7 +107,7 @@ export function BroadcastForm({
 
   // A message written in the editor is its document and the server builds the body; sending
   // both is a 422.
-  const submit = (payload: SiteCreateBroadcastInput) => {
+  const submit = (payload: CreateBroadcastInput) => {
     const { doc: written, name, subject, fromName, fromEmail, segmentId, integrationId } = payload
     onSubmit(
       written

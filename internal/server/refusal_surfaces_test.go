@@ -180,7 +180,7 @@ func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 		{
 			name: "refused",
 			site: func(ctx context.Context, c *siteapi.Client) error {
-				_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{Name: siteapi.NewOptString("x")},
+				_, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Name: siteapi.NewOptString("x")},
 					siteapi.SiteBroadcastsUpdateParams{WorkspaceId: ws, ID: fixtures.BroadcastSentID})
 				return err
 			},
@@ -209,7 +209,7 @@ func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 		{
 			name: "refused on a field",
 			site: func(ctx context.Context, c *siteapi.Client) error {
-				_, err := c.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{URL: "not-a-url"},
+				_, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "not-a-url"},
 					siteapi.SiteWebhooksCreateParams{WorkspaceId: ws})
 				return err
 			},
@@ -239,14 +239,14 @@ func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 
 func TestAConflictRefusalAnswers409AlikeOnBothSurfaces(t *testing.T) {
 	k := newKindSurfaces(t)
-	inbox := siteapi.SiteIntegrationConfigInput{OneOf: siteapi.NewSiteInboxConfigInputSiteIntegrationConfigInputSum(
-		siteapi.SiteInboxConfigInput{Kind: siteapi.SiteInboxConfigInputKindInbox})}
+	inbox := siteapi.IntegrationConfigInput{OneOf: siteapi.NewInboxConfigInputIntegrationConfigInputSum(
+		siteapi.InboxConfigInput{Kind: siteapi.InboxConfigInputKindInbox})}
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
-	kept, err := k.site.SiteIntegrationsCreate(t.Context(), &siteapi.SiteCreateIntegrationInput{Name: "Kept inbox", Config: inbox}, params)
+	kept, err := k.site.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{Name: "Kept inbox", Config: inbox}, params)
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteIntegrationResource{}, kept)
 
-	_, err = k.site.SiteIntegrationsCreate(t.Context(), &siteapi.SiteCreateIntegrationInput{Name: "Second inbox", Config: inbox}, params)
+	_, err = k.site.SiteIntegrationsCreate(t.Context(), &siteapi.CreateIntegrationInput{Name: "Second inbox", Config: inbox}, params)
 	require.NoError(t, err)
 	_, err = k.ext.IntegrationsCreate(t.Context(), &externalapi.CreateIntegrationInput{Name: "Second inbox", Config: externalapi.IntegrationConfigInput{
 		OneOf: externalapi.NewInboxConfigInputIntegrationConfigInputSum(externalapi.InboxConfigInput{Kind: externalapi.InboxConfigInputKindInbox}),
@@ -265,7 +265,7 @@ func TestContentThatCannotRenderAnswers422AlikeOnBothSurfaces(t *testing.T) {
 	k := newKindSurfaces(t)
 	const broken = "{% if %}"
 
-	_, err := k.site.SiteTemplatesCreate(t.Context(), &siteapi.SiteCreateEmailTemplateInput{Name: "Broken", Body: siteapi.NewOptString(broken)},
+	_, err := k.site.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{Name: "Broken", Body: siteapi.NewOptString(broken)},
 		siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	_, err = k.ext.TemplatesCreate(t.Context(), &externalapi.CreateTemplateInput{Name: "Broken", Body: externalapi.NewOptString(broken)})
@@ -328,7 +328,7 @@ func TestAHeldTestSendAnswers422AlikeOnBothSurfaces(t *testing.T) {
 	extClient := env.ExternalVia(t, env.ScopedBearer(t,
 		string(externalapi.ApiTokenScopeBroadcastsRead), string(externalapi.ApiTokenScopeBroadcastsWrite)), capture(&ext))
 
-	_, err := siteClient.SiteBroadcastsTestSend(t.Context(), &siteapi.SiteTestSendBroadcastInput{Email: fixtures.OwnerJohnEmail},
+	_, err := siteClient.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: fixtures.OwnerJohnEmail},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 	_, err = extClient.BroadcastsTestSend(t.Context(), &externalapi.TestSendBroadcastInput{Email: fixtures.OwnerJohnEmail},
@@ -349,7 +349,7 @@ func TestRestoringASendingDomainAddedAgainAnswers409AlikeOnBothSurfaces(t *testi
 	var site, ext answer
 	siteClient := env.SiteActorVia(t, fixtures.OwnerJohnEmail, capture(&site))
 	extClient := env.ExternalVia(t, env.ScopedBearer(t, string(externalapi.ApiTokenScopeSendingDomainsWrite)), capture(&ext))
-	again, err := siteClient.SiteSendingDomainsCreate(t.Context(), &siteapi.SiteCreateSendingDomainInput{Domain: fixtures.SendingDomainArchivedDomain},
+	again, err := siteClient.SiteSendingDomainsCreate(t.Context(), &siteapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainArchivedDomain},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteSendingDomainResource{}, again)

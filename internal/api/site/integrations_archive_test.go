@@ -111,7 +111,7 @@ func TestSiteIntegrationsArchivingTheDefaultClearsItAndRestoreDoesNotReturnIt(t 
 	assert.Empty(t, defaults)
 
 	// The restored Integration can be promoted by hand.
-	promoted, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
+	promoted, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
 		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: workspace, ID: id})
 	require.NoError(t, err)
 	assert.True(t, promoted.(*siteapi.SiteIntegrationResource).IsDefault)
@@ -122,7 +122,7 @@ func TestSiteIntegrationsArchivedOneCannotBecomeTheDefault(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got, err := c.SiteIntegrationsUpdate(context.Background(), &siteapi.SiteUpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
+	got, err := c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
 		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.IntegrationAcmeArchivedID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, got)

@@ -7,10 +7,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/templates"
 )
 
 func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTemplatesListParams) (siteapi.SiteTemplatesListRes, error) {
@@ -32,15 +30,10 @@ func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTem
 	}, nil
 }
 
-func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.SiteCreateEmailTemplateInput, _ siteapi.SiteTemplatesCreateParams) (siteapi.SiteTemplatesCreateRes, error) {
+func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.CreateTemplateInput, _ siteapi.SiteTemplatesCreateParams) (siteapi.SiteTemplatesCreateRes, error) {
 	scoped := workspaceScope(ctx)
 
-	tpl, err := h.templates.Create(ctx, scoped, templates.CreateInput{
-		Name:    req.Name,
-		Subject: convert.StringPtr(req.Subject),
-		Body:    convert.StringPtr(req.Body),
-		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
-	})
+	tpl, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -63,17 +56,12 @@ func (h *Handlers) SiteTemplatesGet(ctx context.Context, params siteapi.SiteTemp
 	return &res, nil
 }
 
-func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.SiteUpdateEmailTemplateInput, params siteapi.SiteTemplatesUpdateParams) (siteapi.SiteTemplatesUpdateRes, error) {
+func (h *Handlers) SiteTemplatesUpdate(ctx context.Context, req *siteapi.UpdateTemplateInput, params siteapi.SiteTemplatesUpdateParams) (siteapi.SiteTemplatesUpdateRes, error) {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
-	tpl, err := h.templates.Update(ctx, scoped, id, templates.UpdateInput{
-		Name:    convert.StringPtr(req.Name),
-		Subject: convert.StringPtr(req.Subject),
-		Body:    convert.StringPtr(req.Body),
-		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
-	})
+	tpl, err := h.templates.Update(ctx, scoped, id, inputs.TemplateUpdate(req))
 	if err != nil {
 		return nil, err
 	}

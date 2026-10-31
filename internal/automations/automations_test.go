@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -214,7 +215,8 @@ func TestAnArchivedAutomationIsNeitherPublishedNorDeactivated(t *testing.T) {
 	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer())
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, m.Archive(ctx, acme, fixtures.AutomationNotifySlackID))
+	_, err := m.Archive(ctx, acme, fixtures.AutomationNotifySlackID)
+	require.NoError(t, err)
 	before, err := m.Get(ctx, acme, fixtures.AutomationNotifySlackID)
 	require.NoError(t, err)
 
@@ -272,11 +274,11 @@ func TestAnAutomationSavesAndClearsTheIntegrationItSendsThrough(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, new(int64(fixtures.IntegrationAcmeMailgunID)), draftIntegration(t, renamed), "an update that does not name an Integration keeps it")
 
-	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{IntegrationID: new(int64(fixtures.IntegrationAcmeDefaultID))})
+	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{IntegrationID: patch.Set(int64(fixtures.IntegrationAcmeDefaultID))})
 	require.NoError(t, err)
 	assert.Equal(t, new(int64(fixtures.IntegrationAcmeDefaultID)), draftIntegration(t, moved))
 
-	cleared, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{ClearIntegration: true})
+	cleared, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{IntegrationID: patch.Clear[int64]()})
 	require.NoError(t, err)
 	assert.Nil(t, draftIntegration(t, cleared), "cleared, the Automation sends through the default")
 }
@@ -293,7 +295,7 @@ func TestAnAutomationRefusesAnIntegrationThatIsMissingOrArchived(t *testing.T) {
 		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", TriggerEvent: "signup", IntegrationID: &id})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 
-		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{IntegrationID: &id})
+		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{IntegrationID: patch.Set(id)})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 	}
 	assert.Equal(t, before, automationNames(t, env), "a refused save stores nothing")

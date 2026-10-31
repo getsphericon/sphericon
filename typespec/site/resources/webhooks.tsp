@@ -84,26 +84,6 @@ model SiteWebhookEndpointResource {
   updatedAt: Timestamp;
 }
 
-/** Site request body for creating a webhook endpoint */
-model SiteCreateWebhookEndpointInput {
-  url: string;
-  eventTypes?: string[];
-  enabled?: boolean;
-}
-
-/** Site request body for updating a webhook endpoint */
-model SiteUpdateWebhookEndpointInput {
-  url?: string;
-  eventTypes?: string[];
-  enabled?: boolean;
-}
-
-/** Request body for sending a sample event to a webhook endpoint */
-model SiteTestWebhookInput {
-  /** The event name the sample carries, for example `contact.created` */
-  eventType: string;
-}
-
 /** What the receiver answered to a test delivery. The endpoint's failure state is not touched. */
 model SiteWebhookTestResult {
   /** Whether the receiver answered 2xx */
@@ -144,7 +124,7 @@ interface SiteWebhooks {
   @extension("x-required-permissions", #[Permission.webhooksManage])
   create(
     ...ResourceCollectionParameters<SiteWebhookEndpointResource>,
-    @body body: SiteCreateWebhookEndpointInput,
+    @body body: CreateWebhookInput,
   ):
     | {
         @statusCode statusCode: 201;
@@ -172,7 +152,7 @@ interface SiteWebhooks {
   @extension("x-required-permissions", #[Permission.webhooksManage])
   update(
     ...ResourceParameters<SiteWebhookEndpointResource>,
-    @body body: SiteUpdateWebhookEndpointInput,
+    @body body: UpdateWebhookInput,
   ):
     | SiteWebhookEndpointResource
     | BadRequestProblem
@@ -207,7 +187,7 @@ interface SiteWebhooks {
   @extension("x-required-permissions", #[Permission.webhooksManage])
   test(
     ...ResourceParameters<SiteWebhookEndpointResource>,
-    @body body: SiteTestWebhookInput,
+    @body body: TestWebhookInput,
   ):
     | SiteWebhookTestResult
     | BadRequestProblem

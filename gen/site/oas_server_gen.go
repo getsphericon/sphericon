@@ -350,7 +350,7 @@ type Handler interface {
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts
-	SiteBroadcastsCreate(ctx context.Context, req *SiteCreateBroadcastInput, params SiteBroadcastsCreateParams) (SiteBroadcastsCreateRes, error)
+	SiteBroadcastsCreate(ctx context.Context, req *CreateBroadcastInput, params SiteBroadcastsCreateParams) (SiteBroadcastsCreateRes, error)
 	// SiteBroadcastsDelete implements SiteBroadcasts_delete operation.
 	//
 	// Delete a resource from the site UI.
@@ -376,7 +376,7 @@ type Handler interface {
 	// rescheduling keeps it. An archived segment is refused.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
-	SiteBroadcastsSchedule(ctx context.Context, req *SiteScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error)
+	SiteBroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (SiteBroadcastsScheduleRes, error)
 	// SiteBroadcastsSend implements SiteBroadcasts_send operation.
 	//
 	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
@@ -391,7 +391,7 @@ type Handler interface {
 	// address is refused with 422, the System sender's caps answer 429.
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/test-send
-	SiteBroadcastsTestSend(ctx context.Context, req *SiteTestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
+	SiteBroadcastsTestSend(ctx context.Context, req *TestSendBroadcastInput, params SiteBroadcastsTestSendParams) (SiteBroadcastsTestSendRes, error)
 	// SiteBroadcastsUnarchive implements SiteBroadcasts_unarchive operation.
 	//
 	// Restore an archived broadcast to the list.
@@ -403,7 +403,7 @@ type Handler interface {
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/broadcasts/{id}
-	SiteBroadcastsUpdate(ctx context.Context, req *SiteUpdateBroadcastInput, params SiteBroadcastsUpdateParams) (SiteBroadcastsUpdateRes, error)
+	SiteBroadcastsUpdate(ctx context.Context, req *UpdateBroadcastInput, params SiteBroadcastsUpdateParams) (SiteBroadcastsUpdateRes, error)
 	// SiteCapturedMessagesDelete implements SiteCapturedMessages_delete operation.
 	//
 	// Delete one Captured message. Every member may delete.
@@ -582,7 +582,7 @@ type Handler interface {
 	// Create an integration. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/integrations
-	SiteIntegrationsCreate(ctx context.Context, req *SiteCreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error)
+	SiteIntegrationsCreate(ctx context.Context, req *CreateIntegrationInput, params SiteIntegrationsCreateParams) (SiteIntegrationsCreateRes, error)
 	// SiteIntegrationsGet implements SiteIntegrations_get operation.
 	//
 	// Get an integration by id.
@@ -614,7 +614,7 @@ type Handler interface {
 	// Update an integration. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/integrations/{id}
-	SiteIntegrationsUpdate(ctx context.Context, req *SiteUpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error)
+	SiteIntegrationsUpdate(ctx context.Context, req *UpdateIntegrationInput, params SiteIntegrationsUpdateParams) (SiteIntegrationsUpdateRes, error)
 	// SiteInvitationsCreate implements SiteInvitations_create operation.
 	//
 	// Invite an email address; the accept link is returned once.
@@ -1066,7 +1066,7 @@ type Handler interface {
 	// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains
-	SiteSendingDomainsCreate(ctx context.Context, req *SiteCreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error)
+	SiteSendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (SiteSendingDomainsCreateRes, error)
 	// SiteSendingDomainsGet implements SiteSendingDomains_get operation.
 	//
 	// Get a sending domain by ID for the site UI.
@@ -1135,7 +1135,7 @@ type Handler interface {
 	// Apply a tag to a contact, creating the tag on first use. Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/contacts/{contactId}/tags
-	SiteTagsApply(ctx context.Context, req *SiteApplyTagInput, params SiteTagsApplyParams) (SiteTagsApplyRes, error)
+	SiteTagsApply(ctx context.Context, req *ApplyTagInput, params SiteTagsApplyParams) (SiteTagsApplyRes, error)
 	// SiteTagsDelete implements SiteTags_delete operation.
 	//
 	// Delete a tag from the catalogue, unless a segment rule or an automation step names it.
@@ -1165,7 +1165,7 @@ type Handler interface {
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/templates
-	SiteTemplatesCreate(ctx context.Context, req *SiteCreateEmailTemplateInput, params SiteTemplatesCreateParams) (SiteTemplatesCreateRes, error)
+	SiteTemplatesCreate(ctx context.Context, req *CreateTemplateInput, params SiteTemplatesCreateParams) (SiteTemplatesCreateRes, error)
 	// SiteTemplatesDelete implements SiteTemplates_delete operation.
 	//
 	// Delete a resource from the site UI.
@@ -1189,7 +1189,7 @@ type Handler interface {
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/templates/{id}
-	SiteTemplatesUpdate(ctx context.Context, req *SiteUpdateEmailTemplateInput, params SiteTemplatesUpdateParams) (SiteTemplatesUpdateRes, error)
+	SiteTemplatesUpdate(ctx context.Context, req *UpdateTemplateInput, params SiteTemplatesUpdateParams) (SiteTemplatesUpdateRes, error)
 	// SiteTokensCreate implements SiteTokens_create operation.
 	//
 	// Create an API token; the full secret is returned once. Owners and admins only.
@@ -1288,7 +1288,7 @@ type Handler interface {
 	// Create a webhook endpoint. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks
-	SiteWebhooksCreate(ctx context.Context, req *SiteCreateWebhookEndpointInput, params SiteWebhooksCreateParams) (SiteWebhooksCreateRes, error)
+	SiteWebhooksCreate(ctx context.Context, req *CreateWebhookInput, params SiteWebhooksCreateParams) (SiteWebhooksCreateRes, error)
 	// SiteWebhooksDelete implements SiteWebhooks_delete operation.
 	//
 	// Delete a webhook endpoint. Owners and admins only.
@@ -1320,13 +1320,13 @@ type Handler interface {
 	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/test
-	SiteWebhooksTest(ctx context.Context, req *SiteTestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error)
+	SiteWebhooksTest(ctx context.Context, req *TestWebhookInput, params SiteWebhooksTestParams) (SiteWebhooksTestRes, error)
 	// SiteWebhooksUpdate implements SiteWebhooks_update operation.
 	//
 	// Update a webhook endpoint. Owners and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/webhooks/{id}
-	SiteWebhooksUpdate(ctx context.Context, req *SiteUpdateWebhookEndpointInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error)
+	SiteWebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params SiteWebhooksUpdateParams) (SiteWebhooksUpdateRes, error)
 	// SiteWorkspacesAccountLink implements SiteWorkspaces_accountLink operation.
 	//
 	// Mint an Account link token (Owner only). Answers 404 when the installation has no Account link

@@ -83,36 +83,6 @@ model WebhookResource {
   updatedAt: Timestamp;
 }
 
-/** Request body for creating a webhook endpoint */
-model CreateWebhookInput {
-  /** Destination URL (absolute http or https) */
-  url: string;
-
-  /** Event names to receive; empty or absent means all events */
-  eventTypes?: string[];
-
-  /** Whether the endpoint receives deliveries (default true) */
-  enabled?: boolean;
-}
-
-/** Request body for updating a webhook endpoint */
-model UpdateWebhookInput {
-  /** Destination URL (absolute http or https) */
-  url?: string;
-
-  /** Event names to receive; empty means all events */
-  eventTypes?: string[];
-
-  /** Whether the endpoint receives deliveries */
-  enabled?: boolean;
-}
-
-/** Request body for sending a sample event to a webhook endpoint */
-model TestWebhookInput {
-  /** The event name the sample carries, for example `contact.created` */
-  eventType: string;
-}
-
 /** What the receiver answered to a test delivery. The endpoint's failure state is not touched. */
 model WebhookTestResult {
   /** Whether the receiver answered 2xx */

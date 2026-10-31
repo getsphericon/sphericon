@@ -5,7 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/webhooks"
@@ -35,11 +34,7 @@ func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.Webhooks
 func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWebhookInput) (externalapi.WebhooksCreateRes, error) {
 	// The signing secret is generated server-side and kept sealed; it is shown
 	// only in the app, never through /api.
-	e, err := h.webhooks.Create(ctx, auth.TokenScoped(ctx), webhooks.CreateInput{
-		URL:        req.URL,
-		EventTypes: req.EventTypes,
-		Enabled:    convert.Ptr(req.Enabled),
-	})
+	e, err := h.webhooks.Create(ctx, auth.TokenScoped(ctx), inputs.WebhookCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -61,11 +56,7 @@ func (h *Handlers) WebhooksGet(ctx context.Context, params externalapi.WebhooksG
 func (h *Handlers) WebhooksUpdate(ctx context.Context, req *externalapi.UpdateWebhookInput, params externalapi.WebhooksUpdateParams) (externalapi.WebhooksUpdateRes, error) {
 	id := int64(params.ID)
 
-	e, err := h.webhooks.Update(ctx, auth.TokenScoped(ctx), id, webhooks.UpdateInput{
-		URL:        convert.StringPtr(req.URL),
-		EventTypes: req.EventTypes,
-		Enabled:    convert.Ptr(req.Enabled),
-	})
+	e, err := h.webhooks.Update(ctx, auth.TokenScoped(ctx), id, inputs.WebhookUpdate(req))
 	if err != nil {
 		return nil, err
 	}

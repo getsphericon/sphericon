@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -38,11 +37,7 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.CreateBroadcastInput) (externalapi.BroadcastsCreateRes, error) {
 	ws := auth.TokenScoped(ctx)
 
-	b, err := h.broadcasts.Create(ctx, ws, broadcasts.Fields{
-		Name: &req.Name, Subject: convert.StringPtr(req.Subject), FromName: convert.StringPtr(req.FromName),
-		FromEmail: convert.StringPtr(req.FromEmail), Body: convert.StringPtr(req.Body),
-		Doc: convert.DocJSON(req.Doc.Value, req.Doc.Set),
-	})
+	b, err := h.broadcasts.Create(ctx, ws, inputs.BroadcastCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -62,12 +57,7 @@ func (h *Handlers) BroadcastsGet(ctx context.Context, params externalapi.Broadca
 
 func (h *Handlers) BroadcastsUpdate(ctx context.Context, req *externalapi.UpdateBroadcastInput, params externalapi.BroadcastsUpdateParams) (externalapi.BroadcastsUpdateRes, error) {
 	id := int64(params.ID)
-	b, err := h.broadcasts.Update(ctx, auth.TokenScoped(ctx), id,
-		broadcasts.Fields{
-			Name: convert.StringPtr(req.Name), Subject: convert.StringPtr(req.Subject), FromName: convert.StringPtr(req.FromName),
-			FromEmail: convert.StringPtr(req.FromEmail), Body: convert.StringPtr(req.Body),
-			Doc: convert.DocJSON(req.Doc.Value, req.Doc.Set),
-		})
+	b, err := h.broadcasts.Update(ctx, auth.TokenScoped(ctx), id, inputs.BroadcastUpdate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +78,7 @@ func (h *Handlers) BroadcastsDelete(ctx context.Context, params externalapi.Broa
 func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.BroadcastsArchiveParams) (externalapi.BroadcastsArchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.broadcasts.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	b, err := h.broadcasts.Get(ctx, ws, id)
+	b, err := h.broadcasts.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -104,11 +90,7 @@ func (h *Handlers) BroadcastsArchive(ctx context.Context, params externalapi.Bro
 func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.BroadcastsUnarchiveParams) (externalapi.BroadcastsUnarchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.broadcasts.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	b, err := h.broadcasts.Get(ctx, ws, id)
+	b, err := h.broadcasts.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -118,12 +100,7 @@ func (h *Handlers) BroadcastsUnarchive(ctx context.Context, params externalapi.B
 
 func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.SetBroadcastSegmentInput, params externalapi.BroadcastsSetSegmentParams) (externalapi.BroadcastsSetSegmentRes, error) {
 	id := int64(params.ID)
-	var segmentID *int64
-	if !req.SegmentId.Null {
-		sid := int64(req.SegmentId.Value)
-		segmentID = &sid
-	}
-	b, err := h.broadcasts.SetSegment(ctx, auth.TokenScoped(ctx), id, segmentID)
+	b, err := h.broadcasts.SetSegment(ctx, auth.TokenScoped(ctx), id, convert.Int64Ptr(req.SegmentId))
 	if err != nil {
 		return nil, err
 	}

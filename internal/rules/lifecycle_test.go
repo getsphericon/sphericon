@@ -30,7 +30,8 @@ func TestArchiveHidesARuleFromTheListAndStopsItFiring(t *testing.T) {
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
 
-	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleTagClickedID))
+	_, err := m.Archive(ctx, acme(env), fixtures.RuleTagClickedID)
+	require.NoError(t, err)
 
 	kept, err := m.List(ctx, acme(env), pagination.Params{Page: 1, PageSize: 100}, false)
 	require.NoError(t, err)
@@ -52,9 +53,11 @@ func TestArchivingAnArchivedRuleChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleInactiveID))
+	_, err := m.Archive(ctx, acme(env), fixtures.RuleInactiveID)
+	require.NoError(t, err)
 
-	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleInactiveID))
+	_, err = m.Archive(ctx, acme(env), fixtures.RuleInactiveID)
+	require.NoError(t, err)
 
 	got, err := m.Get(ctx, acme(env), fixtures.RuleInactiveID)
 	require.NoError(t, err)
@@ -74,7 +77,7 @@ func TestPublishingAndArchivingARuleAtOnceNeverLeaveItArchivedAndActive(t *testi
 	var publishErr, archiveErr error
 	var wg sync.WaitGroup
 	wg.Go(func() { _, publishErr = m.Publish(t.Context(), s, fixtures.RuleInactiveID) })
-	wg.Go(func() { archiveErr = m.Archive(t.Context(), s, fixtures.RuleInactiveID) })
+	wg.Go(func() { _, archiveErr = m.Archive(t.Context(), s, fixtures.RuleInactiveID) })
 	wg.Wait()
 
 	got, err := m.Get(t.Context(), s, fixtures.RuleInactiveID)
@@ -156,8 +159,10 @@ func TestAnArchivedRuleUsesNoTag(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus)
-	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleVipOnlyID))
-	require.NoError(t, m.Archive(ctx, acme(env), fixtures.RuleMultiTriggerID))
+	_, err := m.Archive(ctx, acme(env), fixtures.RuleVipOnlyID)
+	require.NoError(t, err)
+	_, err = m.Archive(ctx, acme(env), fixtures.RuleMultiTriggerID)
+	require.NoError(t, err)
 
 	using, err := rules.UsingTag(ctx, acme(env), "vip")
 
@@ -247,7 +252,8 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	require.NoError(t, err)
 	_, err = m.Deactivate(ctx, s, r.ID)
 	require.NoError(t, err)
-	require.NoError(t, m.Archive(ctx, s, r.ID))
+	_, err = m.Archive(ctx, s, r.ID)
+	require.NoError(t, err)
 
 	entries := lo.FilterMap(env.OutboxEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
 		e, ok := ev.(*events.AuditEntry)

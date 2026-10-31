@@ -38,38 +38,12 @@ model SiteEmailTemplateResource {
   updatedAt: Timestamp;
 }
 
-/** Site request body for creating a template */
-model SiteCreateEmailTemplateInput {
-  name: string;
-  subject?: string;
-
-  /** HTML body with Liquid merge tags. Write this or `doc`, not both. */
-  body?: string;
-
-  /** The editor's JSON document, an opaque object checked by the server. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422. */
-  doc?: Record<unknown>;
-}
-
-/** Site request body for updating a template */
-model SiteUpdateEmailTemplateInput {
-  name?: string;
-  subject?: string;
-
-  /** HTML body. Writing only a body clears the stored document. Write this or `doc`, not both. */
-  body?: string;
-
-  /** The editor's JSON document, an opaque object checked by the server. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422. */
-  doc?: Record<unknown>;
-}
-
 @tag("Site Templates")
 interface SiteTemplates
   extends WorkspaceCrud<
       SiteEmailTemplateResource,
-      SiteCreateEmailTemplateInput,
-      SiteUpdateEmailTemplateInput
+      CreateTemplateInput,
+      UpdateTemplateInput
     > {}
 
 @@extension(SiteTemplates.create, "x-required-permissions", #[]);

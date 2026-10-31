@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import type { SiteIntegrationProvider } from '../../generated/site/types.gen.ts'
-import { zSiteMaxPerDay, zSiteMaxPerSecond } from '../../generated/site/zod.gen.ts'
+import { zMaxPerDay, zMaxPerSecond } from '../../generated/site/zod.gen.ts'
 
 // A limit field holds a number, or an empty string when the user left it blank
 // (blank means "no limit").
@@ -14,12 +14,12 @@ export const NO_LIMITS: ProviderLimitValues = { maxPerSecond: '', maxPerDay: '' 
 
 // The contract's bounds (TypeSpec -> zod) are the single source for the inputs' range.
 export const PER_SECOND = {
-  min: zSiteMaxPerSecond.minValue ?? 1,
-  max: zSiteMaxPerSecond.maxValue ?? 1,
+  min: zMaxPerSecond.minValue ?? 1,
+  max: zMaxPerSecond.maxValue ?? 1,
 }
 export const PER_DAY = {
-  min: zSiteMaxPerDay.minValue ?? 1,
-  max: zSiteMaxPerDay.maxValue ?? 1,
+  min: zMaxPerDay.minValue ?? 1,
+  max: zMaxPerDay.maxValue ?? 1,
 }
 
 // The API field for a form value: null (no limit) for a blank input.
@@ -47,7 +47,7 @@ export function useProviderLimitValidators<Values>(
   required: (values: Values) => boolean = () => false,
 ) {
   const { t } = useTranslation()
-  const check = (schema: typeof zSiteMaxPerSecond, bounds: { min: number; max: number }) => {
+  const check = (schema: typeof zMaxPerSecond, bounds: { min: number; max: number }) => {
     return (value: number | string, values: Values) => {
       if (value === '') {
         return required(values) ? t(($) => $.settings.integrations.providerLimit.required) : null
@@ -58,7 +58,7 @@ export function useProviderLimitValidators<Values>(
     }
   }
   return {
-    maxPerSecond: check(zSiteMaxPerSecond, PER_SECOND),
-    maxPerDay: check(zSiteMaxPerDay, PER_DAY),
+    maxPerSecond: check(zMaxPerSecond, PER_SECOND),
+    maxPerDay: check(zMaxPerDay, PER_DAY),
   }
 }

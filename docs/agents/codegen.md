@@ -16,6 +16,7 @@ src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
 ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
 ent + gen/{site,external,staff,staffee,service}  ──goverter──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/staff/resources/{staff,service}_converter_gen.go
+gen/{site,external} request bodies  ──goverter──▶ internal/api/{site,external}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/patch fields)
 packages/emaildoc (pinned @react-email/editor) ──esbuild──▶ internal/emaildoc/assets/{emaildoc.js,schema.json}  (`mise run build:emaildoc`; not part of `generate`)
 openapi/service (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ ee/staff/service_scopes_gen.go (`ServiceOperationScopes`)
 openapi/external (`x-required-scopes` per operation, declared in TypeSpec) ──cmd/scopegen──▶ internal/api/auth/external_scopes_gen.go (`ExternalOperationScopes`)
@@ -28,6 +29,10 @@ fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
 
+- **goverter** also maps request bodies → module inputs (`Inputs` in each surface's
+  `resources/inputs.go`): an update becomes the module's patch (`internal/patch`: an absent key
+  keeps, null clears, a value sets). Its extends only bind this surface's Opt types to the shared
+  helpers of `internal/convert`.
 - **goverter** maps ent entities → ogen resource DTOs. The `Converter` interface and its
   `// goverter:extend` helpers (ids, timestamps, optionals) are hand-written in
   each package's `resources.go`; the impl (`ConverterImpl`) is generated. Adding a DTO
@@ -43,4 +48,4 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 Generated files carry a header (`Code generated … DO NOT EDIT`, or `// @ts-nocheck` on the
 frontend) and are flagged `linguist-generated` in `.gitattributes` (GitHub collapses them in
 diffs). Generated code lives in dedicated dirs — `internal/` is otherwise hand-written, its
-only generated files being the three `converter_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_{scopes,permissions}_gen.go`, `internal/accounts/{permissions,grant_permissions}_gen.go`, `internal/apitokens/scopes_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.
+only generated files being the three `converter_gen.go`, the two `inputs_gen.go`, `ee/staff/resources/{staff,service}_converter_gen.go`, `ee/staff/service_scopes_gen.go`, `internal/api/site/access_gen.go`, `internal/api/auth/external_{scopes,permissions}_gen.go`, `internal/accounts/{permissions,grant_permissions}_gen.go`, `internal/apitokens/scopes_gen.go`, `internal/fixtures/catalog_gen.go`, the moq `*_gen_test.go` mocks and `internal/emaildoc/assets/`.

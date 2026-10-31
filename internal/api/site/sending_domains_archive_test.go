@@ -81,7 +81,7 @@ func TestSiteSendingDomainsArchivedNameIsReusableAndUnarchiveConflicts(t *testin
 	id := int64(fixtures.SendingDomainUnverifiedID)
 	require.IsType(t, &siteapi.SiteSendingDomainResource{}, archiveSendingDomain(t, c, id))
 
-	again, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain},
+	again, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainUnverifiedDomain},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	created, ok := again.(*siteapi.SiteSendingDomainResource)

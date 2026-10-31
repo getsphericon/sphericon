@@ -20,14 +20,14 @@ func TestSiteSendingDomainsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteSendingDomainsCreate(ctx,
-		&siteapi.SiteCreateSendingDomainInput{Domain: "roles.acme.test"},
+		&siteapi.CreateSendingDomainInput{Domain: "roles.acme.test"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	id := created.(*siteapi.SiteSendingDomainResource).ID
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	made, err := member.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "attacker.example"},
+	made, err := member.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "attacker.example"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteSendingDomainsCreateForbidden), made)

@@ -1215,7 +1215,7 @@ func (s *Server) decodeSiteBrandKitSaveRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteBroadcastsCreateRequest(r *http.Request) (
-	req *SiteCreateBroadcastInput,
+	req *CreateBroadcastInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1262,7 +1262,7 @@ func (s *Server) decodeSiteBroadcastsCreateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteCreateBroadcastInput
+		var request CreateBroadcastInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1294,7 +1294,7 @@ func (s *Server) decodeSiteBroadcastsCreateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteBroadcastsScheduleRequest(r *http.Request) (
-	req *SiteScheduleBroadcastInput,
+	req *ScheduleBroadcastInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1341,7 +1341,7 @@ func (s *Server) decodeSiteBroadcastsScheduleRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteScheduleBroadcastInput
+		var request ScheduleBroadcastInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1365,7 +1365,7 @@ func (s *Server) decodeSiteBroadcastsScheduleRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteBroadcastsTestSendRequest(r *http.Request) (
-	req *SiteTestSendBroadcastInput,
+	req *TestSendBroadcastInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1412,7 +1412,7 @@ func (s *Server) decodeSiteBroadcastsTestSendRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteTestSendBroadcastInput
+		var request TestSendBroadcastInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1444,7 +1444,7 @@ func (s *Server) decodeSiteBroadcastsTestSendRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteBroadcastsUpdateRequest(r *http.Request) (
-	req *SiteUpdateBroadcastInput,
+	req *UpdateBroadcastInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1491,7 +1491,7 @@ func (s *Server) decodeSiteBroadcastsUpdateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteUpdateBroadcastInput
+		var request UpdateBroadcastInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1752,7 +1752,7 @@ func (s *Server) decodeSiteDomainJoinSetRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteIntegrationsCreateRequest(r *http.Request) (
-	req *SiteCreateIntegrationInput,
+	req *CreateIntegrationInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1799,7 +1799,7 @@ func (s *Server) decodeSiteIntegrationsCreateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteCreateIntegrationInput
+		var request CreateIntegrationInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1831,7 +1831,7 @@ func (s *Server) decodeSiteIntegrationsCreateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteIntegrationsUpdateRequest(r *http.Request) (
-	req *SiteUpdateIntegrationInput,
+	req *UpdateIntegrationInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1878,7 +1878,7 @@ func (s *Server) decodeSiteIntegrationsUpdateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteUpdateIntegrationInput
+		var request UpdateIntegrationInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3576,7 +3576,7 @@ func (s *Server) decodeSiteSegmentsUpdateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteSendingDomainsCreateRequest(r *http.Request) (
-	req *SiteCreateSendingDomainInput,
+	req *CreateSendingDomainInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3623,7 +3623,7 @@ func (s *Server) decodeSiteSendingDomainsCreateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteCreateSendingDomainInput
+		var request CreateSendingDomainInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3805,7 +3805,7 @@ func (s *Server) decodeSiteSuppressionsCreateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteTagsApplyRequest(r *http.Request) (
-	req *SiteApplyTagInput,
+	req *ApplyTagInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3852,7 +3852,7 @@ func (s *Server) decodeSiteTagsApplyRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteApplyTagInput
+		var request ApplyTagInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3876,7 +3876,7 @@ func (s *Server) decodeSiteTagsApplyRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteTemplatesCreateRequest(r *http.Request) (
-	req *SiteCreateEmailTemplateInput,
+	req *CreateTemplateInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3923,7 +3923,7 @@ func (s *Server) decodeSiteTemplatesCreateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteCreateEmailTemplateInput
+		var request CreateTemplateInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3947,7 +3947,7 @@ func (s *Server) decodeSiteTemplatesCreateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteTemplatesUpdateRequest(r *http.Request) (
-	req *SiteUpdateEmailTemplateInput,
+	req *UpdateTemplateInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3994,7 +3994,7 @@ func (s *Server) decodeSiteTemplatesUpdateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteUpdateEmailTemplateInput
+		var request UpdateTemplateInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4555,7 +4555,7 @@ func (s *Server) decodeSiteUserUpdateMeRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteWebhooksCreateRequest(r *http.Request) (
-	req *SiteCreateWebhookEndpointInput,
+	req *CreateWebhookInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4602,7 +4602,7 @@ func (s *Server) decodeSiteWebhooksCreateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteCreateWebhookEndpointInput
+		var request CreateWebhookInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4626,7 +4626,7 @@ func (s *Server) decodeSiteWebhooksCreateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteWebhooksTestRequest(r *http.Request) (
-	req *SiteTestWebhookInput,
+	req *TestWebhookInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4673,7 +4673,7 @@ func (s *Server) decodeSiteWebhooksTestRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteTestWebhookInput
+		var request TestWebhookInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -4697,7 +4697,7 @@ func (s *Server) decodeSiteWebhooksTestRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteWebhooksUpdateRequest(r *http.Request) (
-	req *SiteUpdateWebhookEndpointInput,
+	req *UpdateWebhookInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4744,7 +4744,7 @@ func (s *Server) decodeSiteWebhooksUpdateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteUpdateWebhookEndpointInput
+		var request UpdateWebhookInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err

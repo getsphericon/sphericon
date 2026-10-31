@@ -16,12 +16,6 @@ model SiteTagResource {
   createdAt: Timestamp;
 }
 
-/** Site request body for applying a tag to a contact */
-model SiteApplyTagInput {
-  /** The label to apply; created on first use */
-  name: string;
-}
-
 @route("/workspaces/{workspaceId}")
 @tag("Site Tags")
 namespace SiteTags {
@@ -56,7 +50,7 @@ namespace SiteTags {
   op apply(
     @path workspaceId: WorkspaceId,
     @path contactId: EntityId,
-    @body body: SiteApplyTagInput,
+    @body body: ApplyTagInput,
   ):
     | SiteTagResource
     | BadRequestProblem

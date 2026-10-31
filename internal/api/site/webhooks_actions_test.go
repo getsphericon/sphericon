@@ -57,7 +57,7 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteWebhooksTestParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 
-	res, err := owner.SiteWebhooksTest(ctx, &siteapi.SiteTestWebhookInput{EventType: "email.opened"}, params)
+	res, err := owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "email.opened"}, params)
 	require.NoError(t, err)
 	got, ok := res.(*siteapi.SiteWebhookTestResult)
 	require.Truef(t, ok, "got %T", res)
@@ -74,7 +74,7 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	require.Len(t, entries, 1)
 	assert.Equal(t, "webhook_endpoint", entries[0].Target.Type)
 
-	blank, err := owner.SiteWebhooksTest(ctx, &siteapi.SiteTestWebhookInput{EventType: ""}, params)
+	blank, err := owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: ""}, params)
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksTestUnprocessableEntity), blank)
 }

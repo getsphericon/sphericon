@@ -1401,7 +1401,7 @@ export type CreateAutomationInput = {
 };
 
 /**
- * Request body for creating a broadcast (always created as a draft)
+ * Request body for creating a broadcast
  */
 export type CreateBroadcastInput = {
   /**
@@ -1413,13 +1413,13 @@ export type CreateBroadcastInput = {
    */
   subject?: string;
   /**
-   * Sender display name
+   * Sender display name; null or omitted means the integration's default
    */
-  fromName?: string;
+  fromName?: string | null;
   /**
-   * Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Omit it for the integration's default.
+   * Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Null or omitted means the integration's default.
    */
-  fromEmail?: EmailAddress;
+  fromEmail?: EmailAddress | null;
   /**
    * HTML body with Liquid merge tags. Write this or `doc`, not both.
    */
@@ -1431,6 +1431,14 @@ export type CreateBroadcastInput = {
   doc?: {
     [key: string]: unknown;
   };
+  /**
+   * Target segment; null or omitted means all contacts. An archived segment is refused with 422.
+   */
+  segmentId?: EntityId | null;
+  /**
+   * Sending integration; null or omitted means the workspace default. An archived integration is refused with 422.
+   */
+  integrationId?: EntityId | null;
 };
 
 /**
@@ -3693,7 +3701,7 @@ export type UpdateAutomationInput = {
 };
 
 /**
- * Request body for updating a draft broadcast
+ * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
  */
 export type UpdateBroadcastInput = {
   /**
@@ -3705,13 +3713,13 @@ export type UpdateBroadcastInput = {
    */
   subject?: string;
   /**
-   * Sender display name
+   * Sender display name; null goes back to the integration's default
    */
-  fromName?: string;
+  fromName?: string | null;
   /**
-   * Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked.
+   * Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null goes back to the integration's default.
    */
-  fromEmail?: EmailAddress;
+  fromEmail?: EmailAddress | null;
   /**
    * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
    */
@@ -3723,6 +3731,14 @@ export type UpdateBroadcastInput = {
   doc?: {
     [key: string]: unknown;
   };
+  /**
+   * Target segment; null means all contacts. An archived segment is refused with 422.
+   */
+  segmentId?: EntityId | null;
+  /**
+   * Sending integration; null means the workspace default. An archived integration is refused with 422.
+   */
+  integrationId?: EntityId | null;
 };
 
 /**
@@ -3776,7 +3792,7 @@ export type UpdateIntegrationInput = {
    * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
    */
   maxPerDay?: MaxPerDay | null;
-  config?: IntegrationConfigInput | null;
+  config?: IntegrationConfigInput;
   /**
    * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over
    */
@@ -3824,7 +3840,9 @@ export type UpdateSegmentInput = {
 };
 
 /**
- * Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM record, so the domain becomes unverified until the new record is published.
+ * Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM
+ * record, so the domain becomes unverified until the new record is published. The app has no
+ * such edit yet, so this body is /api's own.
  */
 export type UpdateSendingDomainInput = {
   /**

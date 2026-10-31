@@ -25,19 +25,19 @@ func TestAccessAndConfigEntitiesAreAuditedWithoutSecrets(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	domain, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "audited.example.com"},
+	domain, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "audited.example.com"},
 		siteapi.SiteSendingDomainsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteSendingDomainResource{}, domain)
 
-	integration, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	integration, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name:   "Audited SMTP",
 		Config: smtpInput("smtp.example.com", "integration-pass-9"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteIntegrationResource{}, integration)
 
-	hook, err := c.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{URL: "https://user:pw-9@example.com/audited?token=url-secret-7#frag"},
+	hook, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "https://user:pw-9@example.com/audited?token=url-secret-7#frag"},
 		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	hookResp, ok := hook.(*siteapi.SiteWebhookEndpointResource)

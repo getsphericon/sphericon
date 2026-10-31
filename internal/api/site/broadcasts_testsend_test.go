@@ -21,7 +21,7 @@ import (
 // Globex has no verified Sending domain and Jane owns it: the Test send falls back to the
 // System sender (ADR 0041).
 func testSendAsJane(_ *testhelper.TestEnv, c *siteapi.Client, to string) (siteapi.SiteBroadcastsTestSendRes, error) {
-	return c.SiteBroadcastsTestSend(context.Background(), &siteapi.SiteTestSendBroadcastInput{Email: siteapi.EmailAddress(to)},
+	return c.SiteBroadcastsTestSend(context.Background(), &siteapi.TestSendBroadcastInput{Email: siteapi.EmailAddress(to)},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.BroadcastGlobexID)})
 }
 
@@ -124,7 +124,7 @@ func TestSiteTestSendLeavesTheSentEmailStepTodo(t *testing.T) {
 	require.NoError(t, err)
 	c := env.SiteActor(t, fixtures.OwnerSallyEmail)
 
-	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.SiteTestSendBroadcastInput{Email: siteapi.EmailAddress(fixtures.OwnerSallyEmail)},
+	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.EmailAddress(fixtures.OwnerSallyEmail)},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.HooliPublicID, ID: idStr(fixtures.BroadcastHooliID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)
@@ -181,7 +181,7 @@ func TestSiteTestSendWithAVerifiedDomainKeepsTheOrdinaryPath(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.SiteTestSendBroadcastInput{Email: "anyone@example.com"},
+	res, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: "anyone@example.com"},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 

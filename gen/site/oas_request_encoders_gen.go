@@ -235,7 +235,7 @@ func encodeSiteBrandKitSaveRequest(
 }
 
 func encodeSiteBroadcastsCreateRequest(
-	req *SiteCreateBroadcastInput,
+	req *CreateBroadcastInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -249,7 +249,7 @@ func encodeSiteBroadcastsCreateRequest(
 }
 
 func encodeSiteBroadcastsScheduleRequest(
-	req *SiteScheduleBroadcastInput,
+	req *ScheduleBroadcastInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -263,7 +263,7 @@ func encodeSiteBroadcastsScheduleRequest(
 }
 
 func encodeSiteBroadcastsTestSendRequest(
-	req *SiteTestSendBroadcastInput,
+	req *TestSendBroadcastInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -277,7 +277,7 @@ func encodeSiteBroadcastsTestSendRequest(
 }
 
 func encodeSiteBroadcastsUpdateRequest(
-	req *SiteUpdateBroadcastInput,
+	req *UpdateBroadcastInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -333,7 +333,7 @@ func encodeSiteDomainJoinSetRequest(
 }
 
 func encodeSiteIntegrationsCreateRequest(
-	req *SiteCreateIntegrationInput,
+	req *CreateIntegrationInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -347,7 +347,7 @@ func encodeSiteIntegrationsCreateRequest(
 }
 
 func encodeSiteIntegrationsUpdateRequest(
-	req *SiteUpdateIntegrationInput,
+	req *UpdateIntegrationInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -669,7 +669,7 @@ func encodeSiteSegmentsUpdateRequest(
 }
 
 func encodeSiteSendingDomainsCreateRequest(
-	req *SiteCreateSendingDomainInput,
+	req *CreateSendingDomainInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -711,7 +711,7 @@ func encodeSiteSuppressionsCreateRequest(
 }
 
 func encodeSiteTagsApplyRequest(
-	req *SiteApplyTagInput,
+	req *ApplyTagInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -725,7 +725,7 @@ func encodeSiteTagsApplyRequest(
 }
 
 func encodeSiteTemplatesCreateRequest(
-	req *SiteCreateEmailTemplateInput,
+	req *CreateTemplateInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -739,7 +739,7 @@ func encodeSiteTemplatesCreateRequest(
 }
 
 func encodeSiteTemplatesUpdateRequest(
-	req *SiteUpdateEmailTemplateInput,
+	req *UpdateTemplateInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -851,7 +851,7 @@ func encodeSiteUserUpdateMeRequest(
 }
 
 func encodeSiteWebhooksCreateRequest(
-	req *SiteCreateWebhookEndpointInput,
+	req *CreateWebhookInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -865,7 +865,7 @@ func encodeSiteWebhooksCreateRequest(
 }
 
 func encodeSiteWebhooksTestRequest(
-	req *SiteTestWebhookInput,
+	req *TestWebhookInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -879,7 +879,7 @@ func encodeSiteWebhooksTestRequest(
 }
 
 func encodeSiteWebhooksUpdateRequest(
-	req *SiteUpdateWebhookEndpointInput,
+	req *UpdateWebhookInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

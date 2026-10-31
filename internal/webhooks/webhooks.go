@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/ownernotice"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
 	"github.com/getsphericon/sphericon/internal/webhook"
@@ -61,11 +62,12 @@ type CreateInput struct {
 	Enabled    *bool
 }
 
-// UpdateInput changes only what is set: a nil field is left alone.
+// UpdateInput is a patch of an endpoint: a field that keeps is left alone. None of the fields can
+// be cleared; an empty EventTypes receives every event.
 type UpdateInput struct {
-	URL        *string
-	EventTypes []string
-	Enabled    *bool
+	URL        patch.Field[string]
+	EventTypes patch.Field[[]string]
+	Enabled    patch.Field[bool]
 }
 
 // Module is the webhooks module. Every call receives the Workspace-scoped client.
@@ -256,20 +258,21 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (End
 
 // Update applies the set fields. An unknown id is ErrNotFound.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (Endpoint, error) {
-	if in.URL != nil && !validURL(*in.URL) {
+	if u, ok := in.URL.Get(); ok && !validURL(u) {
 		return Endpoint{}, ErrInvalidURL
 	}
-	if err := m.checkTypes(in.EventTypes); err != nil {
+	types, _ := in.EventTypes.Get()
+	if err := m.checkTypes(types); err != nil {
 		return Endpoint{}, err
 	}
 	build := func() *ent.WebhookEndpointScopedUpdateOne {
-		upd := s.WebhookEndpoint().UpdateOneID(id).SetNillableURL(in.URL)
-		if in.EventTypes != nil {
-			upd = upd.SetEventTypes(in.EventTypes)
-		}
+		upd := s.WebhookEndpoint().UpdateOneID(id)
+		patch.ApplySet(in.URL, upd.SetURL)
+		patch.ApplySet(in.EventTypes, upd.SetEventTypes)
 		return upd
 	}
-	if in.Enabled == nil {
+	enabled, toggles := in.Enabled.Get()
+	if !toggles {
 		e, err := build().Save(ctx)
 		if err != nil {
 			return Endpoint{}, missing(err)
@@ -278,7 +281,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	// Whoever flips the switch decides now: the reason it last turned itself off no longer
 	// applies, and enabling starts the failure run over (ADR 0039).
-	if *in.Enabled {
+	if enabled {
 		e, err := build().ClearDisabledAt().ClearDisabledReason().
 			ClearConsecutiveFailures().ClearFailingSince().ClearLastErrorKind().
 			ClearLastErrorStatus().ClearLastFailureAt().Save(ctx)

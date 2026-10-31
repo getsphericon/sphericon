@@ -8071,7 +8071,7 @@ func (s *Server) handleSiteBroadcastsCreateRequest(args [1]string, argsEscaped b
 		}
 
 		type (
-			Request  = *SiteCreateBroadcastInput
+			Request  = *CreateBroadcastInput
 			Params   = SiteBroadcastsCreateParams
 			Response = SiteBroadcastsCreateRes
 		)
@@ -8860,7 +8860,7 @@ func (s *Server) handleSiteBroadcastsScheduleRequest(args [2]string, argsEscaped
 		}
 
 		type (
-			Request  = *SiteScheduleBroadcastInput
+			Request  = *ScheduleBroadcastInput
 			Params   = SiteBroadcastsScheduleParams
 			Response = SiteBroadcastsScheduleRes
 		)
@@ -9260,7 +9260,7 @@ func (s *Server) handleSiteBroadcastsTestSendRequest(args [2]string, argsEscaped
 		}
 
 		type (
-			Request  = *SiteTestSendBroadcastInput
+			Request  = *TestSendBroadcastInput
 			Params   = SiteBroadcastsTestSendParams
 			Response = SiteBroadcastsTestSendRes
 		)
@@ -9657,7 +9657,7 @@ func (s *Server) handleSiteBroadcastsUpdateRequest(args [2]string, argsEscaped b
 		}
 
 		type (
-			Request  = *SiteUpdateBroadcastInput
+			Request  = *UpdateBroadcastInput
 			Params   = SiteBroadcastsUpdateParams
 			Response = SiteBroadcastsUpdateRes
 		)
@@ -14869,7 +14869,7 @@ func (s *Server) handleSiteIntegrationsCreateRequest(args [1]string, argsEscaped
 		}
 
 		type (
-			Request  = *SiteCreateIntegrationInput
+			Request  = *CreateIntegrationInput
 			Params   = SiteIntegrationsCreateParams
 			Response = SiteIntegrationsCreateRes
 		)
@@ -15841,7 +15841,7 @@ func (s *Server) handleSiteIntegrationsUpdateRequest(args [2]string, argsEscaped
 		}
 
 		type (
-			Request  = *SiteUpdateIntegrationInput
+			Request  = *UpdateIntegrationInput
 			Params   = SiteIntegrationsUpdateParams
 			Response = SiteIntegrationsUpdateRes
 		)
@@ -27608,7 +27608,7 @@ func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscap
 		}
 
 		type (
-			Request  = *SiteCreateSendingDomainInput
+			Request  = *CreateSendingDomainInput
 			Params   = SiteSendingDomainsCreateParams
 			Response = SiteSendingDomainsCreateRes
 		)
@@ -29561,7 +29561,7 @@ func (s *Server) handleSiteTagsApplyRequest(args [2]string, argsEscaped bool, w 
 		}
 
 		type (
-			Request  = *SiteApplyTagInput
+			Request  = *ApplyTagInput
 			Params   = SiteTagsApplyParams
 			Response = SiteTagsApplyRes
 		)
@@ -30543,7 +30543,7 @@ func (s *Server) handleSiteTemplatesCreateRequest(args [1]string, argsEscaped bo
 		}
 
 		type (
-			Request  = *SiteCreateEmailTemplateInput
+			Request  = *CreateTemplateInput
 			Params   = SiteTemplatesCreateParams
 			Response = SiteTemplatesCreateRes
 		)
@@ -31326,7 +31326,7 @@ func (s *Server) handleSiteTemplatesUpdateRequest(args [2]string, argsEscaped bo
 		}
 
 		type (
-			Request  = *SiteUpdateEmailTemplateInput
+			Request  = *UpdateTemplateInput
 			Params   = SiteTemplatesUpdateParams
 			Response = SiteTemplatesUpdateRes
 		)
@@ -33809,7 +33809,7 @@ func (s *Server) handleSiteWebhooksCreateRequest(args [1]string, argsEscaped boo
 		}
 
 		type (
-			Request  = *SiteCreateWebhookEndpointInput
+			Request  = *CreateWebhookInput
 			Params   = SiteWebhooksCreateParams
 			Response = SiteWebhooksCreateRes
 		)
@@ -34785,7 +34785,7 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 		}
 
 		type (
-			Request  = *SiteTestWebhookInput
+			Request  = *TestWebhookInput
 			Params   = SiteWebhooksTestParams
 			Response = SiteWebhooksTestRes
 		)
@@ -34991,7 +34991,7 @@ func (s *Server) handleSiteWebhooksUpdateRequest(args [2]string, argsEscaped boo
 		}
 
 		type (
-			Request  = *SiteUpdateWebhookEndpointInput
+			Request  = *UpdateWebhookInput
 			Params   = SiteWebhooksUpdateParams
 			Response = SiteWebhooksUpdateRes
 		)

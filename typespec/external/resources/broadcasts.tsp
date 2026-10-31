@@ -65,60 +65,10 @@ model BroadcastResource {
   updatedAt: Timestamp;
 }
 
-/** Request body for creating a broadcast (always created as a draft) */
-model CreateBroadcastInput {
-  /** Internal broadcast name */
-  name: string;
-
-  /** Email subject line */
-  subject?: string;
-
-  /** Sender display name */
-  fromName?: string;
-
-  /** Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Omit it for the integration's default. */
-  fromEmail?: EmailAddress;
-
-  /** HTML body with Liquid merge tags. Write this or `doc`, not both. */
-  body?: string;
-
-  /** The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored. */
-  doc?: Record<unknown>;
-}
-
-/** Request body for updating a draft broadcast */
-model UpdateBroadcastInput {
-  /** Internal broadcast name */
-  name?: string;
-
-  /** Email subject line */
-  subject?: string;
-
-  /** Sender display name */
-  fromName?: string;
-
-  /** Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked. */
-  fromEmail?: EmailAddress;
-
-  /** HTML body. Writing only a body clears the stored document. Write this or `doc`, not both. */
-  body?: string;
-
-  /** The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored. */
-  doc?: Record<unknown>;
-}
-
 /** Request body for setting a broadcast's Segment */
 model SetBroadcastSegmentInput {
   /** The Segment to send to; null means all contacts */
   segmentId: EntityId | null;
-}
-
-/** Request body for a test send */
-model TestSendBroadcastInput {
-  /** Address to send the rendered preview to */
-  email: EmailAddress;
 }
 
 /** Delivery report of a broadcast */
@@ -170,12 +120,6 @@ model BroadcastReport {
 
   /** Unique clicks ÷ messages sent (0-1) */
   clickRate: float32;
-}
-
-/** Request body for scheduling a broadcast */
-model ScheduleBroadcastInput {
-  /** When the broadcast should be sent */
-  scheduledAt: Timestamp;
 }
 
 /** Filter of the broadcast list */

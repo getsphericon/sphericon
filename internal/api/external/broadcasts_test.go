@@ -68,6 +68,29 @@ func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 }
 
 // The one pagination smoke of the external surface: the envelope is copied from the module's page.
+// The /api body of an update is a merge patch with the fields /site has: a null clears the
+// Segment and the From name, an absent key keeps them.
+func TestExternalBroadcastsUpdateClearsANullAndKeepsAnAbsentField(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, authorScopes...)
+	ctx := context.Background()
+	params := externalapi.BroadcastsUpdateParams{ID: draftBroadcast}
+
+	_, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
+		SegmentId: externalapi.NewOptNilEntityId(proSegment), FromName: externalapi.NewOptNilString("Acme"),
+	}, params)
+	require.NoError(t, err)
+
+	var none externalapi.OptNilString
+	none.SetToNull()
+	res, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{FromName: none}, params)
+	require.NoError(t, err)
+	got, ok := res.(*externalapi.BroadcastResource)
+	require.Truef(t, ok, "got %T", res)
+	assert.Empty(t, got.FromName.Or(""), "a null clears the From name")
+	assert.Equal(t, externalapi.NewOptNilEntityId(proSegment), got.SegmentId, "an absent Segment is kept")
+}
+
 func TestExternalBroadcastsListPaginates(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, authorScopes...)

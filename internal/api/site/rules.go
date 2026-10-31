@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -38,7 +37,7 @@ func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateR
 	in := rules.CreateInput{
 		Name:          req.Name,
 		TriggerEvents: req.TriggerEvents,
-		Actions:       resources.RuleActions(req.Actions),
+		Actions:       inputs.RuleActions(req.Actions),
 	}
 	def, err := condition.EncodeOptional(req.Condition)
 	if err != nil {
@@ -72,7 +71,7 @@ func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateR
 		in.TriggerEvents = &req.TriggerEvents
 	}
 	if req.Actions != nil {
-		actions := resources.RuleActions(req.Actions)
+		actions := inputs.RuleActions(req.Actions)
 		in.Actions = &actions
 	}
 	def, err := condition.EncodeOptional(req.Condition)
@@ -104,11 +103,7 @@ func (h *Handlers) SiteRulesArchive(ctx context.Context, params siteapi.SiteRule
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.rules.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	r, err := h.rules.Get(ctx, ws, id)
+	r, err := h.rules.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -121,11 +116,7 @@ func (h *Handlers) SiteRulesUnarchive(ctx context.Context, params siteapi.SiteRu
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.rules.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	r, err := h.rules.Get(ctx, ws, id)
+	r, err := h.rules.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}

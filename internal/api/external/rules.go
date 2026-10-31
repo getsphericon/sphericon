@@ -8,7 +8,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -39,7 +38,7 @@ func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleI
 	in := rules.CreateInput{
 		Name:          req.Name,
 		TriggerEvents: req.TriggerEvents,
-		Actions:       resources.RuleActions(req.Actions),
+		Actions:       inputs.RuleActions(req.Actions),
 	}
 	def, err := condition.EncodeOptional(req.Condition)
 	if err != nil {
@@ -69,7 +68,7 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 		in.TriggerEvents = &req.TriggerEvents
 	}
 	if req.Actions != nil {
-		actions := resources.RuleActions(req.Actions)
+		actions := inputs.RuleActions(req.Actions)
 		in.Actions = &actions
 	}
 	def, err := condition.EncodeOptional(req.Condition)
@@ -98,11 +97,7 @@ func (h *Handlers) RulesDelete(ctx context.Context, params externalapi.RulesDele
 func (h *Handlers) RulesArchive(ctx context.Context, params externalapi.RulesArchiveParams) (externalapi.RulesArchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.rules.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	r, err := h.rules.Get(ctx, ws, id)
+	r, err := h.rules.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -114,11 +109,7 @@ func (h *Handlers) RulesArchive(ctx context.Context, params externalapi.RulesArc
 func (h *Handlers) RulesUnarchive(ctx context.Context, params externalapi.RulesUnarchiveParams) (externalapi.RulesUnarchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.rules.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	r, err := h.rules.Get(ctx, ws, id)
+	r, err := h.rules.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}

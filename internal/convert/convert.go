@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 
 	"github.com/go-faster/jx"
+
+	"github.com/getsphericon/sphericon/internal/patch"
 )
 
 // RawMap decodes an ogen Record<unknown> body (map of raw JSON values) into a plain
@@ -59,6 +61,72 @@ func StringPtr[T ~string, O getter[T]](o O) *string {
 		return &s
 	}
 	return nil
+}
+
+// option is implemented by every ogen Opt*/OptNil* value type: IsSet reports whether the key was
+// present, and Get whether it carried a value (an OptNil's explicit null is present, without one).
+type option[T any] interface {
+	getter[T]
+	IsSet() bool
+}
+
+// Patch is a request field as a patch field (JSON Merge Patch): an absent key keeps the stored
+// value, an explicit null clears it, a value sets it. An Opt that cannot be null never clears.
+func Patch[T any, O option[T]](o O) patch.Field[T] {
+	v, ok := o.Get()
+	return patch.Of(v, o.IsSet(), o.IsSet() && !ok)
+}
+
+// StringPatch is Patch for a named string (an EmailAddress, a TimeZoneName), as a plain string.
+func StringPatch[T ~string, O option[T]](o O) patch.Field[string] {
+	return patch.Map(Patch(o), func(v T) string { return string(v) })
+}
+
+// Int64Patch is Patch for a named int64 (an EntityId), as a plain int64.
+func Int64Patch[T ~int64, O option[T]](o O) patch.Field[int64] {
+	return patch.Map(Patch(o), func(v T) int64 { return int64(v) })
+}
+
+// IntPatch is Patch for a named int32 (a limit), as an int.
+func IntPatch[T ~int32, O option[T]](o O) patch.Field[int] {
+	return patch.Map(Patch(o), func(v T) int { return int(v) })
+}
+
+// ListPatch is a list field that cannot be null as a patch field: an absent key (a nil slice)
+// keeps the stored list, any list (empty included) replaces it.
+func ListPatch[S ~[]E, E any](list S) patch.Field[[]E] {
+	if list == nil {
+		return patch.Keep[[]E]()
+	}
+	return patch.Set([]E(list))
+}
+
+// StringsPatch is ListPatch for a list of named strings, as plain strings.
+func StringsPatch[S ~[]E, E ~string](list S) patch.Field[[]string] {
+	if list == nil {
+		return patch.Keep[[]string]()
+	}
+	out := make([]string, len(list))
+	for i, v := range list {
+		out[i] = string(v)
+	}
+	return patch.Set(out)
+}
+
+// DocPatch is an opaque editor-document field as a patch field of the JSON the modules render: an
+// absent key keeps the stored document.
+func DocPatch[M ~map[string]jx.Raw, O option[M]](o O) patch.Field[json.RawMessage] {
+	v, ok := o.Get()
+	if !ok {
+		return patch.Keep[json.RawMessage]()
+	}
+	return patch.Set(DocJSON(v, true))
+}
+
+// MapPatch is an opaque object field (a Record of raw JSON values) as a patch field of plain values:
+// an absent key keeps, an explicit null clears.
+func MapPatch[M ~map[string]jx.Raw, O option[M]](o O) patch.Field[map[string]any] {
+	return patch.Map(Patch(o), RawMap[M])
 }
 
 // DocJSON is the opaque editor-document object of a write as the JSON the modules render; nil when

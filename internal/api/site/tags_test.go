@@ -42,7 +42,7 @@ func TestSiteTagsListApplyRemove(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"newsletter", "vip"}, siteTagNames(mine.(*siteapi.SiteTagsListForContactOK).Items))
 
-	applied, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "churn-risk"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
+	applied, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "churn-risk"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
 	tag, ok := applied.(*siteapi.SiteTagResource)
 	require.Truef(t, ok, "got %T", applied)
@@ -60,10 +60,10 @@ func TestSiteTagsListApplyRemove(t *testing.T) {
 	assert.Empty(t, mine.(*siteapi.SiteTagsListForContactOK).Items)
 
 	// Errors: unknown contact, blank name, unknown workspace.
-	nf, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "x"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: 999999})
+	nf, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "x"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: 999999})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTagsApplyNotFound{}, nf)
-	blank, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: " "}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
+	blank, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: " "}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactBobID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTagsApplyUnprocessableEntity{}, blank)
 	ws, err := c.SiteTagsList(ctx, siteapi.SiteTagsListParams{WorkspaceId: "NoSuchWs"})
@@ -76,7 +76,7 @@ func TestSiteTagsApplyRefusesAForeignContact(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	got, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "brand-new"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactGlobexID)})
+	got, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "brand-new"}, siteapi.SiteTagsApplyParams{WorkspaceId: fixtures.AcmePublicID, ContactId: idStr(fixtures.ContactGlobexID)})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTagsApplyNotFound{}, got)
 

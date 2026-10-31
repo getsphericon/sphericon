@@ -23,21 +23,21 @@ func TestSiteSendingDomainsErrorBranches(t *testing.T) {
 	foreignID := idStr(fixtures.SendingDomainGlobexID)
 
 	// Create: foreign workspaceID, invalid domain, duplicate.
-	r1, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "new.example.com"}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: foreign})
+	r1, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "new.example.com"}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsCreateNotFound{}, r1)
-	r2, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "localhost"}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: acme})
+	r2, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "localhost"}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsCreateUnprocessableEntity{}, r2)
-	r2b, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: "a..example.com"}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: acme})
+	r2b, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: "a..example.com"}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsCreateUnprocessableEntity{}, r2b, "an empty label is invalid")
-	r3, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{Domain: fixtures.SendingDomainVerifiedDomain}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: acme})
+	r3, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainVerifiedDomain}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteSendingDomainsCreateConflict{}, r3, "a duplicate domain is a conflict")
 
 	// Create with an explicit selector persists it.
-	r4, err := c.SiteSendingDomainsCreate(ctx, &siteapi.SiteCreateSendingDomainInput{
+	r4, err := c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{
 		Domain: " Mail.Example.COM. ", DkimSelector: siteapi.NewOptString(" sel1 "),
 	}, siteapi.SiteSendingDomainsCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
@@ -111,18 +111,18 @@ func TestSiteTagsErrorBranches(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteTagsListForContactOK{}, l4)
 
 	// Applying.
-	a1, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "t"}, siteapi.SiteTagsApplyParams{WorkspaceId: foreign, ContactId: alice})
+	a1, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "t"}, siteapi.SiteTagsApplyParams{WorkspaceId: foreign, ContactId: alice})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTagsApplyNotFound{}, a1)
-	a3, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "t"}, siteapi.SiteTagsApplyParams{WorkspaceId: acme, ContactId: missing})
+	a3, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "t"}, siteapi.SiteTagsApplyParams{WorkspaceId: acme, ContactId: missing})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTagsApplyNotFound{}, a3)
-	a4, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "   "}, siteapi.SiteTagsApplyParams{WorkspaceId: acme, ContactId: alice})
+	a4, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "   "}, siteapi.SiteTagsApplyParams{WorkspaceId: acme, ContactId: alice})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTagsApplyUnprocessableEntity{}, a4)
 
 	// Applying then removing a tag round-trips through the contact's tag list.
-	applied, err := c.SiteTagsApply(ctx, &siteapi.SiteApplyTagInput{Name: "round-trip"}, siteapi.SiteTagsApplyParams{WorkspaceId: acme, ContactId: alice})
+	applied, err := c.SiteTagsApply(ctx, &siteapi.ApplyTagInput{Name: "round-trip"}, siteapi.SiteTagsApplyParams{WorkspaceId: acme, ContactId: alice})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTagResource{}, applied)
 	listed, err := c.SiteTagsListForContact(ctx, siteapi.SiteTagsListForContactParams{WorkspaceId: acme, ContactId: alice})

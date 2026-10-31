@@ -9,7 +9,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
 )
 
 // sendingDomainResource maps the row, then attaches the DNS records the user publishes, which
@@ -45,10 +44,10 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 	}, nil
 }
 
-func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.SiteCreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (siteapi.SiteSendingDomainsCreateRes, error) {
+func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.CreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (siteapi.SiteSendingDomainsCreateRes, error) {
 	s := workspaceScope(ctx)
 
-	d, err := h.sendingDomains.Create(ctx, s, sendingdomains.CreateInput{Domain: req.Domain, Selector: req.DkimSelector.Or("")})
+	d, err := h.sendingDomains.Create(ctx, s, inputs.SendingDomainCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +73,7 @@ func (h *Handlers) SiteSendingDomainsArchive(ctx context.Context, params siteapi
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.sendingDomains.Archive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	d, err := h.sendingDomains.Get(ctx, s, id)
+	d, err := h.sendingDomains.Archive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -91,11 +86,7 @@ func (h *Handlers) SiteSendingDomainsUnarchive(ctx context.Context, params sitea
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.sendingDomains.Unarchive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	d, err := h.sendingDomains.Get(ctx, s, id)
+	d, err := h.sendingDomains.Unarchive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}

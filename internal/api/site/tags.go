@@ -47,7 +47,7 @@ func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.Si
 	}, nil
 }
 
-func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.SiteApplyTagInput, params siteapi.SiteTagsApplyParams) (siteapi.SiteTagsApplyRes, error) {
+func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.ApplyTagInput, params siteapi.SiteTagsApplyParams) (siteapi.SiteTagsApplyRes, error) {
 	scoped := workspaceScope(ctx)
 	id := int64(params.ContactId)
 

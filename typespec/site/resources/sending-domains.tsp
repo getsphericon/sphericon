@@ -107,15 +107,6 @@ model SiteSendingDomainResource {
   updatedAt: Timestamp;
 }
 
-/** Site request body for adding a sending domain */
-model SiteCreateSendingDomainInput {
-  /** The domain to authenticate, e.g. "mail.acme.com" */
-  domain: string;
-
-  /** DKIM selector; defaults to "sphericon" when omitted */
-  dkimSelector?: string;
-}
-
 /** Filter of the sending domain list */
 model SiteSendingDomainsListFilter {
   /** true lists the archived sending domains instead of the kept ones; the default hides them */
@@ -146,7 +137,7 @@ interface SiteSendingDomains {
   @extension("x-required-permissions", #[Permission.sendingDomainsManage])
   create(
     ...ResourceCollectionParameters<SiteSendingDomainResource>,
-    @body body: SiteCreateSendingDomainInput,
+    @body body: CreateSendingDomainInput,
   ):
     | {
         @statusCode statusCode: 201;

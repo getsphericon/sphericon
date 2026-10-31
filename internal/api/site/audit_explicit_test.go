@@ -288,7 +288,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	_, err = owner.SiteAuditExport(ctx, siteapi.SiteAuditExportParams{WorkspaceId: fixtures.AcmePublicID}) // audit_log.export
 	require.NoError(t, err)
 
-	_, err = owner.SiteWebhooksTest(ctx, &siteapi.SiteTestWebhookInput{EventType: "contact.created"}, // webhook_endpoint.test
+	_, err = owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "contact.created"}, // webhook_endpoint.test
 		siteapi.SiteWebhooksTestParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)})
 	require.NoError(t, err)
 
