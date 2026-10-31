@@ -192,6 +192,8 @@ type Converter interface {
 	// goverter:map Opened OpenedCount
 	// goverter:map Clicked ClickedCount
 	AnalyticsEmailToResource(source analytics.Email) siteapi.SiteAnalyticsEmail
+	// The Events and Clicks by link reports are lists, which goverter cannot map onto their
+	// envelopes: the handler builds those, of one list each.
 	// goverter:useEmptyOnNil:slice
 	AnalyticsEventActionsToResources(source []analytics.EventAction) []siteapi.SiteAnalyticsEventAction
 	// goverter:useEmptyOnNil:slice
