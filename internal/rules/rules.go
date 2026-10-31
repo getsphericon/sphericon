@@ -401,14 +401,15 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 // Archive discards a Rule (ADR 0049, internal/drafts): it leaves the lists and acts on nothing, and
 // its Firings stay. Archiving also deactivates it under the lock Publish takes, so no Rule is ever
 // archived and active, and restoring it brings back an inactive Rule that cannot start firing
-// before someone publishes it again. Archiving an archived Rule changes nothing.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
+// before someone publishes it again. Archiving an archived Rule changes nothing. It returns the
+// Rule.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
 	return m.life.Archive(ctx, s, id)
 }
 
 // Unarchive brings an archived Rule back to the lists, inactive. Restoring one that is not
-// archived changes nothing.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+// archived changes nothing. It returns the Rule.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Rule, error) {
 	return m.life.Unarchive(ctx, s, id)
 }
 

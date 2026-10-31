@@ -5,7 +5,7 @@ import * as z from 'zod'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
-import type { SiteCreateEmailTemplateInput } from '../../generated/site/types.gen.ts'
+import type { CreateTemplateInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
@@ -15,7 +15,7 @@ export function TemplateForm({
   form,
   isPending,
   onSubmit,
-}: ResourceFormProps<SiteCreateEmailTemplateInput>) {
+}: ResourceFormProps<CreateTemplateInput>) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
   // The form holds the document as JSON text; a blank or unreadable text is no document.
@@ -26,7 +26,7 @@ export function TemplateForm({
   }, [docText])
   // A message written in the editor is its document and the server builds the body; sending
   // both is a 422.
-  const submit = (payload: SiteCreateEmailTemplateInput) => {
+  const submit = (payload: CreateTemplateInput) => {
     const { doc: written, name, subject } = payload
     onSubmit(written ? { name, ...(subject !== undefined && { subject }), doc: written } : payload)
   }

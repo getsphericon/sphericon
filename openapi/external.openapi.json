@@ -15537,15 +15537,18 @@
           },
           "fromName": {
             "type": "string",
-            "description": "Sender display name"
+            "nullable": true,
+            "description": "Sender display name; null or omitted means the integration's default"
           },
           "fromEmail": {
+            "type": "string",
             "allOf": [
               {
                 "$ref": "#/components/schemas/EmailAddress"
               }
             ],
-            "description": "Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Omit it for the integration's default."
+            "nullable": true,
+            "description": "Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Null or omitted means the integration's default."
           },
           "body": {
             "type": "string",
@@ -15555,9 +15558,29 @@
             "type": "object",
             "additionalProperties": {},
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+          },
+          "segmentId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Target segment; null or omitted means all contacts. An archived segment is refused with 422."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Sending integration; null or omitted means the workspace default. An archived integration is refused with 422."
           }
         },
-        "description": "Request body for creating a broadcast (always created as a draft)"
+        "description": "Request body for creating a broadcast"
       },
       "CreateContactInput": {
         "type": "object",
@@ -18778,15 +18801,18 @@
           },
           "fromName": {
             "type": "string",
-            "description": "Sender display name"
+            "nullable": true,
+            "description": "Sender display name; null goes back to the integration's default"
           },
           "fromEmail": {
+            "type": "string",
             "allOf": [
               {
                 "$ref": "#/components/schemas/EmailAddress"
               }
             ],
-            "description": "Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked."
+            "nullable": true,
+            "description": "Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null goes back to the integration's default."
           },
           "body": {
             "type": "string",
@@ -18796,9 +18822,29 @@
             "type": "object",
             "additionalProperties": {},
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
+          },
+          "segmentId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Target segment; null means all contacts. An archived segment is refused with 422."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "Sending integration; null means the workspace default. An archived integration is refused with 422."
           }
         },
-        "description": "Request body for updating a draft broadcast"
+        "description": "Request body for updating a draft broadcast: an omitted field keeps its value, null clears it"
       },
       "UpdateContactInput": {
         "type": "object",
@@ -18885,12 +18931,7 @@
             "description": "Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it"
           },
           "config": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/IntegrationConfigInput"
-              }
-            ],
-            "nullable": true
+            "$ref": "#/components/schemas/IntegrationConfigInput"
           },
           "preset": {
             "type": "string",
@@ -18962,7 +19003,7 @@
             "description": "New DKIM selector"
           }
         },
-        "description": "Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM record, so the domain becomes unverified until the new record is published."
+        "description": "Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM\nrecord, so the domain becomes unverified until the new record is published. The app has no\nsuch edit yet, so this body is /api's own."
       },
       "UpdateTemplateInput": {
         "type": "object",

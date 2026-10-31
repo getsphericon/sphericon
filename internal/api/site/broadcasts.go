@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -73,22 +72,10 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 	}, nil
 }
 
-func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.SiteCreateBroadcastInput, _ siteapi.SiteBroadcastsCreateParams) (siteapi.SiteBroadcastsCreateRes, error) {
+func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.CreateBroadcastInput, _ siteapi.SiteBroadcastsCreateParams) (siteapi.SiteBroadcastsCreateRes, error) {
 	ws := workspaceScope(ctx)
 
-	segmentID := convert.Int64Ptr(req.SegmentId)
-	integrationID := convert.Int64Ptr(req.IntegrationId)
-
-	b, err := h.broadcasts.Create(ctx, ws, broadcasts.Fields{
-		Name:          &req.Name,
-		Subject:       convert.StringPtr(req.Subject),
-		FromName:      convert.StringPtr(req.FromName),
-		FromEmail:     convert.StringPtr(req.FromEmail),
-		Body:          convert.StringPtr(req.Body),
-		Doc:           convert.DocJSON(req.Doc.Value, req.Doc.Set),
-		SegmentID:     segmentID,
-		IntegrationID: integrationID,
-	})
+	b, err := h.broadcasts.Create(ctx, ws, inputs.BroadcastCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -117,30 +104,12 @@ func (h *Handlers) SiteBroadcastsGet(ctx context.Context, params siteapi.SiteBro
 	return &res, nil
 }
 
-func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.SiteUpdateBroadcastInput, params siteapi.SiteBroadcastsUpdateParams) (siteapi.SiteBroadcastsUpdateRes, error) {
+func (h *Handlers) SiteBroadcastsUpdate(ctx context.Context, req *siteapi.UpdateBroadcastInput, params siteapi.SiteBroadcastsUpdateParams) (siteapi.SiteBroadcastsUpdateRes, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
-	segmentID := convert.Int64Ptr(req.SegmentId)
-	integrationID := convert.Int64Ptr(req.IntegrationId)
-
-	// JSON Merge Patch: an explicit null clears the field, an absent key keeps it.
-	b, err := h.broadcasts.Update(ctx, ws, id, broadcasts.Fields{
-		Name:          convert.StringPtr(req.Name),
-		Subject:       convert.StringPtr(req.Subject),
-		FromName:      convert.StringPtr(req.FromName),
-		FromEmail:     convert.StringPtr(req.FromEmail),
-		Body:          convert.StringPtr(req.Body),
-		Doc:           convert.DocJSON(req.Doc.Value, req.Doc.Set),
-		SegmentID:     segmentID,
-		IntegrationID: integrationID,
-
-		ClearFromName:    req.FromName.IsNull(),
-		ClearFromEmail:   req.FromEmail.IsNull(),
-		ClearSegment:     req.SegmentId.IsNull(),
-		ClearIntegration: req.IntegrationId.IsNull(),
-	})
+	b, err := h.broadcasts.Update(ctx, ws, id, inputs.BroadcastUpdate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -171,11 +140,7 @@ func (h *Handlers) SiteBroadcastsArchive(ctx context.Context, params siteapi.Sit
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.broadcasts.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	b, err := h.broadcasts.Get(ctx, ws, id)
+	b, err := h.broadcasts.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -191,11 +156,7 @@ func (h *Handlers) SiteBroadcastsUnarchive(ctx context.Context, params siteapi.S
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.broadcasts.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	b, err := h.broadcasts.Get(ctx, ws, id)
+	b, err := h.broadcasts.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +186,7 @@ func (h *Handlers) SiteBroadcastsSend(ctx context.Context, params siteapi.SiteBr
 }
 
 // SiteBroadcastsSchedule schedules a draft broadcast to send at a future time.
-func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.SiteScheduleBroadcastInput, params siteapi.SiteBroadcastsScheduleParams) (siteapi.SiteBroadcastsScheduleRes, error) {
+func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.ScheduleBroadcastInput, params siteapi.SiteBroadcastsScheduleParams) (siteapi.SiteBroadcastsScheduleRes, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -244,7 +205,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Site
 // SiteBroadcastsTestSend renders the broadcast with sample merge data and sends
 // it to a single address — no recipient rows, no tracking (a token would point
 // at a nonexistent recipient). Used to preview the rendered email.
-func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.SiteTestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (siteapi.SiteBroadcastsTestSendRes, error) {
+func (h *Handlers) SiteBroadcastsTestSend(ctx context.Context, req *siteapi.TestSendBroadcastInput, params siteapi.SiteBroadcastsTestSendParams) (siteapi.SiteBroadcastsTestSendRes, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)

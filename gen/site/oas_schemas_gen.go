@@ -309,6 +309,23 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	}
 }
 
+// Request body for applying a tag to a contact.
+// Ref: #/components/schemas/ApplyTagInput
+type ApplyTagInput struct {
+	// The label to apply; created on first use.
+	Name string `json:"name"`
+}
+
+// GetName returns the value of Name.
+func (s *ApplyTagInput) GetName() string {
+	return s.Name
+}
+
+// SetName sets the value of Name.
+func (s *ApplyTagInput) SetName(val string) {
+	s.Name = val
+}
+
 type AttributionWindowDays int32
 
 // The contact's engagement with one broadcast (how its send ended is in `outboundMessages`).
@@ -1413,6 +1430,377 @@ func (s *ContactExportVisitor) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+// Request body for creating a broadcast.
+// Ref: #/components/schemas/CreateBroadcastInput
+type CreateBroadcastInput struct {
+	// Internal broadcast name.
+	Name string `json:"name"`
+	// Email subject line.
+	Subject OptString `json:"subject"`
+	// Sender display name; null or omitted means the integration's default.
+	FromName OptNilString `json:"fromName"`
+	// Sender email address: its domain must be a verified Sending domain of the workspace, or the write is
+	// a 422. Null or omitted means the integration's default.
+	FromEmail OptNilEmailAddress `json:"fromEmail"`
+	// HTML body with Liquid merge tags. Write this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptCreateBroadcastInputDoc `json:"doc"`
+	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
+	SegmentId OptNilEntityId `json:"segmentId"`
+	// Sending integration; null or omitted means the workspace default. An archived integration is refused
+	// with 422.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetName returns the value of Name.
+func (s *CreateBroadcastInput) GetName() string {
+	return s.Name
+}
+
+// GetSubject returns the value of Subject.
+func (s *CreateBroadcastInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetFromName returns the value of FromName.
+func (s *CreateBroadcastInput) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// GetFromEmail returns the value of FromEmail.
+func (s *CreateBroadcastInput) GetFromEmail() OptNilEmailAddress {
+	return s.FromEmail
+}
+
+// GetBody returns the value of Body.
+func (s *CreateBroadcastInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *CreateBroadcastInput) GetDoc() OptCreateBroadcastInputDoc {
+	return s.Doc
+}
+
+// GetSegmentId returns the value of SegmentId.
+func (s *CreateBroadcastInput) GetSegmentId() OptNilEntityId {
+	return s.SegmentId
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *CreateBroadcastInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// SetName sets the value of Name.
+func (s *CreateBroadcastInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *CreateBroadcastInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *CreateBroadcastInput) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *CreateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
+	s.FromEmail = val
+}
+
+// SetBody sets the value of Body.
+func (s *CreateBroadcastInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *CreateBroadcastInput) SetDoc(val OptCreateBroadcastInputDoc) {
+	s.Doc = val
+}
+
+// SetSegmentId sets the value of SegmentId.
+func (s *CreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
+	s.SegmentId = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *CreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+// a 422 with the reason and nothing is stored.
+type CreateBroadcastInputDoc map[string]jx.Raw
+
+func (s *CreateBroadcastInputDoc) init() CreateBroadcastInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox
+// (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused
+// with 409.
+// Ref: #/components/schemas/CreateIntegrationInput
+type CreateIntegrationInput struct {
+	Name      string  `json:"name"`
+	Enabled   OptBool `json:"enabled"`
+	IsDefault OptBool `json:"isDefault"`
+	// Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES
+	// Integration with an `endpoint`, which requires it.
+	MaxPerSecond OptNilMaxPerSecond `json:"maxPerSecond"`
+	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit,
+	// except on an SES Integration with an `endpoint`, which requires it.
+	MaxPerDay OptNilMaxPerDay        `json:"maxPerDay"`
+	Config    IntegrationConfigInput `json:"config"`
+	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
+	Preset OptNilString `json:"preset"`
+	// The Preset's params, validated against its `paramsSchema`: read the schema first.
+	Params OptCreateIntegrationInputParams `json:"params"`
+}
+
+// GetName returns the value of Name.
+func (s *CreateIntegrationInput) GetName() string {
+	return s.Name
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *CreateIntegrationInput) GetEnabled() OptBool {
+	return s.Enabled
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *CreateIntegrationInput) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetMaxPerSecond returns the value of MaxPerSecond.
+func (s *CreateIntegrationInput) GetMaxPerSecond() OptNilMaxPerSecond {
+	return s.MaxPerSecond
+}
+
+// GetMaxPerDay returns the value of MaxPerDay.
+func (s *CreateIntegrationInput) GetMaxPerDay() OptNilMaxPerDay {
+	return s.MaxPerDay
+}
+
+// GetConfig returns the value of Config.
+func (s *CreateIntegrationInput) GetConfig() IntegrationConfigInput {
+	return s.Config
+}
+
+// GetPreset returns the value of Preset.
+func (s *CreateIntegrationInput) GetPreset() OptNilString {
+	return s.Preset
+}
+
+// GetParams returns the value of Params.
+func (s *CreateIntegrationInput) GetParams() OptCreateIntegrationInputParams {
+	return s.Params
+}
+
+// SetName sets the value of Name.
+func (s *CreateIntegrationInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *CreateIntegrationInput) SetEnabled(val OptBool) {
+	s.Enabled = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *CreateIntegrationInput) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetMaxPerSecond sets the value of MaxPerSecond.
+func (s *CreateIntegrationInput) SetMaxPerSecond(val OptNilMaxPerSecond) {
+	s.MaxPerSecond = val
+}
+
+// SetMaxPerDay sets the value of MaxPerDay.
+func (s *CreateIntegrationInput) SetMaxPerDay(val OptNilMaxPerDay) {
+	s.MaxPerDay = val
+}
+
+// SetConfig sets the value of Config.
+func (s *CreateIntegrationInput) SetConfig(val IntegrationConfigInput) {
+	s.Config = val
+}
+
+// SetPreset sets the value of Preset.
+func (s *CreateIntegrationInput) SetPreset(val OptNilString) {
+	s.Preset = val
+}
+
+// SetParams sets the value of Params.
+func (s *CreateIntegrationInput) SetParams(val OptCreateIntegrationInputParams) {
+	s.Params = val
+}
+
+// The Preset's params, validated against its `paramsSchema`: read the schema first.
+type CreateIntegrationInputParams map[string]jx.Raw
+
+func (s *CreateIntegrationInputParams) init() CreateIntegrationInputParams {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.
+// Ref: #/components/schemas/CreateSendingDomainInput
+type CreateSendingDomainInput struct {
+	// The domain to authenticate, e.g. "mail.acme.com" (normalized to lowercase ASCII).
+	Domain string `json:"domain"`
+	// DKIM selector; defaults to "sphericon" when omitted.
+	DkimSelector OptString `json:"dkimSelector"`
+}
+
+// GetDomain returns the value of Domain.
+func (s *CreateSendingDomainInput) GetDomain() string {
+	return s.Domain
+}
+
+// GetDkimSelector returns the value of DkimSelector.
+func (s *CreateSendingDomainInput) GetDkimSelector() OptString {
+	return s.DkimSelector
+}
+
+// SetDomain sets the value of Domain.
+func (s *CreateSendingDomainInput) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetDkimSelector sets the value of DkimSelector.
+func (s *CreateSendingDomainInput) SetDkimSelector(val OptString) {
+	s.DkimSelector = val
+}
+
+// Request body for creating a template.
+// Ref: #/components/schemas/CreateTemplateInput
+type CreateTemplateInput struct {
+	// Template name.
+	Name string `json:"name"`
+	// Default subject line.
+	Subject OptString `json:"subject"`
+	// HTML body with Liquid merge tags. Write this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptCreateTemplateInputDoc `json:"doc"`
+}
+
+// GetName returns the value of Name.
+func (s *CreateTemplateInput) GetName() string {
+	return s.Name
+}
+
+// GetSubject returns the value of Subject.
+func (s *CreateTemplateInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *CreateTemplateInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *CreateTemplateInput) GetDoc() OptCreateTemplateInputDoc {
+	return s.Doc
+}
+
+// SetName sets the value of Name.
+func (s *CreateTemplateInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *CreateTemplateInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *CreateTemplateInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *CreateTemplateInput) SetDoc(val OptCreateTemplateInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+// a 422 with the reason and nothing is stored.
+type CreateTemplateInputDoc map[string]jx.Raw
+
+func (s *CreateTemplateInputDoc) init() CreateTemplateInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Request body for creating a webhook endpoint.
+// Ref: #/components/schemas/CreateWebhookInput
+type CreateWebhookInput struct {
+	// Destination URL (absolute http or https).
+	URL string `json:"url"`
+	// Event names to receive; empty or absent means all events.
+	EventTypes []string `json:"eventTypes"`
+	// Whether the endpoint receives deliveries (default true).
+	Enabled OptBool `json:"enabled"`
+}
+
+// GetURL returns the value of URL.
+func (s *CreateWebhookInput) GetURL() string {
+	return s.URL
+}
+
+// GetEventTypes returns the value of EventTypes.
+func (s *CreateWebhookInput) GetEventTypes() []string {
+	return s.EventTypes
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *CreateWebhookInput) GetEnabled() OptBool {
+	return s.Enabled
+}
+
+// SetURL sets the value of URL.
+func (s *CreateWebhookInput) SetURL(val string) {
+	s.URL = val
+}
+
+// SetEventTypes sets the value of EventTypes.
+func (s *CreateWebhookInput) SetEventTypes(val []string) {
+	s.EventTypes = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *CreateWebhookInput) SetEnabled(val OptBool) {
+	s.Enabled = val
+}
+
 type CurrencyCode string
 
 type EmailAddress string
@@ -1785,6 +2173,169 @@ func (s *InUseProblemDetailsFields) init() InUseProblemDetailsFields {
 	return m
 }
 
+// The Test inbox takes no credentials: a Workspace has at most one.
+// Ref: #/components/schemas/InboxConfigInput
+type InboxConfigInput struct {
+	Kind InboxConfigInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *InboxConfigInput) GetKind() InboxConfigInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *InboxConfigInput) SetKind(val InboxConfigInputKind) {
+	s.Kind = val
+}
+
+type InboxConfigInputKind string
+
+const (
+	InboxConfigInputKindInbox InboxConfigInputKind = "inbox"
+)
+
+// AllValues returns all InboxConfigInputKind values.
+func (InboxConfigInputKind) AllValues() []InboxConfigInputKind {
+	return []InboxConfigInputKind{
+		InboxConfigInputKindInbox,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s InboxConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case InboxConfigInputKindInbox:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *InboxConfigInputKind) UnmarshalText(data []byte) error {
+	switch InboxConfigInputKind(data) {
+	case InboxConfigInputKindInbox:
+		*s = InboxConfigInputKindInbox
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Provider config submitted by the caller, discriminated by `kind`.
+// Ref: #/components/schemas/IntegrationConfigInput
+type IntegrationConfigInput struct {
+	OneOf IntegrationConfigInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *IntegrationConfigInput) GetOneOf() IntegrationConfigInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *IntegrationConfigInput) SetOneOf(val IntegrationConfigInputSum) {
+	s.OneOf = val
+}
+
+// IntegrationConfigInputSum represents sum type.
+type IntegrationConfigInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type             IntegrationConfigInputSumType
+	SmtpConfigInput  SmtpConfigInput
+	SesConfigInput   SesConfigInput
+	InboxConfigInput InboxConfigInput
+}
+
+// IntegrationConfigInputSumType is oneOf type of IntegrationConfigInputSum.
+type IntegrationConfigInputSumType string
+
+// Possible values for IntegrationConfigInputSumType.
+const (
+	SmtpConfigInputIntegrationConfigInputSum  IntegrationConfigInputSumType = "smtp"
+	SesConfigInputIntegrationConfigInputSum   IntegrationConfigInputSumType = "ses"
+	InboxConfigInputIntegrationConfigInputSum IntegrationConfigInputSumType = "inbox"
+)
+
+// IsSmtpConfigInput reports whether IntegrationConfigInputSum is SmtpConfigInput.
+func (s IntegrationConfigInputSum) IsSmtpConfigInput() bool {
+	return s.Type == SmtpConfigInputIntegrationConfigInputSum
+}
+
+// IsSesConfigInput reports whether IntegrationConfigInputSum is SesConfigInput.
+func (s IntegrationConfigInputSum) IsSesConfigInput() bool {
+	return s.Type == SesConfigInputIntegrationConfigInputSum
+}
+
+// IsInboxConfigInput reports whether IntegrationConfigInputSum is InboxConfigInput.
+func (s IntegrationConfigInputSum) IsInboxConfigInput() bool {
+	return s.Type == InboxConfigInputIntegrationConfigInputSum
+}
+
+// SetSmtpConfigInput sets IntegrationConfigInputSum to SmtpConfigInput.
+func (s *IntegrationConfigInputSum) SetSmtpConfigInput(v SmtpConfigInput) {
+	s.Type = SmtpConfigInputIntegrationConfigInputSum
+	s.SmtpConfigInput = v
+}
+
+// GetSmtpConfigInput returns SmtpConfigInput and true boolean if IntegrationConfigInputSum is SmtpConfigInput.
+func (s IntegrationConfigInputSum) GetSmtpConfigInput() (v SmtpConfigInput, ok bool) {
+	if !s.IsSmtpConfigInput() {
+		return v, false
+	}
+	return s.SmtpConfigInput, true
+}
+
+// NewSmtpConfigInputIntegrationConfigInputSum returns new IntegrationConfigInputSum from SmtpConfigInput.
+func NewSmtpConfigInputIntegrationConfigInputSum(v SmtpConfigInput) IntegrationConfigInputSum {
+	var s IntegrationConfigInputSum
+	s.SetSmtpConfigInput(v)
+	return s
+}
+
+// SetSesConfigInput sets IntegrationConfigInputSum to SesConfigInput.
+func (s *IntegrationConfigInputSum) SetSesConfigInput(v SesConfigInput) {
+	s.Type = SesConfigInputIntegrationConfigInputSum
+	s.SesConfigInput = v
+}
+
+// GetSesConfigInput returns SesConfigInput and true boolean if IntegrationConfigInputSum is SesConfigInput.
+func (s IntegrationConfigInputSum) GetSesConfigInput() (v SesConfigInput, ok bool) {
+	if !s.IsSesConfigInput() {
+		return v, false
+	}
+	return s.SesConfigInput, true
+}
+
+// NewSesConfigInputIntegrationConfigInputSum returns new IntegrationConfigInputSum from SesConfigInput.
+func NewSesConfigInputIntegrationConfigInputSum(v SesConfigInput) IntegrationConfigInputSum {
+	var s IntegrationConfigInputSum
+	s.SetSesConfigInput(v)
+	return s
+}
+
+// SetInboxConfigInput sets IntegrationConfigInputSum to InboxConfigInput.
+func (s *IntegrationConfigInputSum) SetInboxConfigInput(v InboxConfigInput) {
+	s.Type = InboxConfigInputIntegrationConfigInputSum
+	s.InboxConfigInput = v
+}
+
+// GetInboxConfigInput returns InboxConfigInput and true boolean if IntegrationConfigInputSum is InboxConfigInput.
+func (s IntegrationConfigInputSum) GetInboxConfigInput() (v InboxConfigInput, ok bool) {
+	if !s.IsInboxConfigInput() {
+		return v, false
+	}
+	return s.InboxConfigInput, true
+}
+
+// NewInboxConfigInputIntegrationConfigInputSum returns new IntegrationConfigInputSum from InboxConfigInput.
+func NewInboxConfigInputIntegrationConfigInputSum(v InboxConfigInput) IntegrationConfigInputSum {
+	var s IntegrationConfigInputSum
+	s.SetInboxConfigInput(v)
+	return s
+}
+
 type LegalDocumentLabel string
 
 type LegalDocumentMarkdown string
@@ -1913,6 +2464,10 @@ func (s *LintFinding) SetElement(val OptString) {
 func (s *LintFinding) SetDetail(val OptString) {
 	s.Detail = val
 }
+
+type MaxPerDay int32
+
+type MaxPerSecond int32
 
 // NewNilCurrencyCode returns new NilCurrencyCode with value set to v.
 func NewNilCurrencyCode(v CurrencyCode) NilCurrencyCode {
@@ -2411,6 +2966,144 @@ func (o OptBool) Or(d bool) bool {
 	return d
 }
 
+// NewOptCreateBroadcastInputDoc returns new OptCreateBroadcastInputDoc with value set to v.
+func NewOptCreateBroadcastInputDoc(v CreateBroadcastInputDoc) OptCreateBroadcastInputDoc {
+	return OptCreateBroadcastInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCreateBroadcastInputDoc is optional CreateBroadcastInputDoc.
+type OptCreateBroadcastInputDoc struct {
+	Value CreateBroadcastInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptCreateBroadcastInputDoc was set.
+func (o OptCreateBroadcastInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCreateBroadcastInputDoc) Reset() {
+	var v CreateBroadcastInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCreateBroadcastInputDoc) SetTo(v CreateBroadcastInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCreateBroadcastInputDoc) Get() (v CreateBroadcastInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCreateBroadcastInputDoc) Or(d CreateBroadcastInputDoc) CreateBroadcastInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptCreateIntegrationInputParams returns new OptCreateIntegrationInputParams with value set to v.
+func NewOptCreateIntegrationInputParams(v CreateIntegrationInputParams) OptCreateIntegrationInputParams {
+	return OptCreateIntegrationInputParams{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCreateIntegrationInputParams is optional CreateIntegrationInputParams.
+type OptCreateIntegrationInputParams struct {
+	Value CreateIntegrationInputParams
+	Set   bool
+}
+
+// IsSet returns true if OptCreateIntegrationInputParams was set.
+func (o OptCreateIntegrationInputParams) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCreateIntegrationInputParams) Reset() {
+	var v CreateIntegrationInputParams
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCreateIntegrationInputParams) SetTo(v CreateIntegrationInputParams) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCreateIntegrationInputParams) Get() (v CreateIntegrationInputParams, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCreateIntegrationInputParams) Or(d CreateIntegrationInputParams) CreateIntegrationInputParams {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptCreateTemplateInputDoc returns new OptCreateTemplateInputDoc with value set to v.
+func NewOptCreateTemplateInputDoc(v CreateTemplateInputDoc) OptCreateTemplateInputDoc {
+	return OptCreateTemplateInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCreateTemplateInputDoc is optional CreateTemplateInputDoc.
+type OptCreateTemplateInputDoc struct {
+	Value CreateTemplateInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptCreateTemplateInputDoc was set.
+func (o OptCreateTemplateInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCreateTemplateInputDoc) Reset() {
+	var v CreateTemplateInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCreateTemplateInputDoc) SetTo(v CreateTemplateInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCreateTemplateInputDoc) Get() (v CreateTemplateInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCreateTemplateInputDoc) Or(d CreateTemplateInputDoc) CreateTemplateInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCurrencyCode returns new OptCurrencyCode with value set to v.
 func NewOptCurrencyCode(v CurrencyCode) OptCurrencyCode {
 	return OptCurrencyCode{
@@ -2681,6 +3374,52 @@ func (o OptInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptIntegrationConfigInput returns new OptIntegrationConfigInput with value set to v.
+func NewOptIntegrationConfigInput(v IntegrationConfigInput) OptIntegrationConfigInput {
+	return OptIntegrationConfigInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptIntegrationConfigInput is optional IntegrationConfigInput.
+type OptIntegrationConfigInput struct {
+	Value IntegrationConfigInput
+	Set   bool
+}
+
+// IsSet returns true if OptIntegrationConfigInput was set.
+func (o OptIntegrationConfigInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptIntegrationConfigInput) Reset() {
+	var v IntegrationConfigInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptIntegrationConfigInput) SetTo(v IntegrationConfigInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptIntegrationConfigInput) Get() (v IntegrationConfigInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptIntegrationConfigInput) Or(d IntegrationConfigInput) IntegrationConfigInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3021,6 +3760,142 @@ func (o OptNilInt32) Get() (v int32, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilInt32) Or(d int32) int32 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilMaxPerDay returns new OptNilMaxPerDay with value set to v.
+func NewOptNilMaxPerDay(v MaxPerDay) OptNilMaxPerDay {
+	return OptNilMaxPerDay{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilMaxPerDay is optional nullable MaxPerDay.
+type OptNilMaxPerDay struct {
+	Value MaxPerDay
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilMaxPerDay was set.
+func (o OptNilMaxPerDay) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilMaxPerDay) Reset() {
+	var v MaxPerDay
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilMaxPerDay) SetTo(v MaxPerDay) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilMaxPerDay) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilMaxPerDay) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v MaxPerDay
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilMaxPerDay) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilMaxPerDay) Get() (v MaxPerDay, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilMaxPerDay) Or(d MaxPerDay) MaxPerDay {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilMaxPerSecond returns new OptNilMaxPerSecond with value set to v.
+func NewOptNilMaxPerSecond(v MaxPerSecond) OptNilMaxPerSecond {
+	return OptNilMaxPerSecond{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilMaxPerSecond is optional nullable MaxPerSecond.
+type OptNilMaxPerSecond struct {
+	Value MaxPerSecond
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilMaxPerSecond was set.
+func (o OptNilMaxPerSecond) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilMaxPerSecond) Reset() {
+	var v MaxPerSecond
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilMaxPerSecond) SetTo(v MaxPerSecond) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilMaxPerSecond) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilMaxPerSecond) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v MaxPerSecond
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilMaxPerSecond) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilMaxPerSecond) Get() (v MaxPerSecond, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilMaxPerSecond) Or(d MaxPerSecond) MaxPerSecond {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3565,210 +4440,6 @@ func (o OptNilSiteEventResourceProperties) Get() (v SiteEventResourceProperties,
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilSiteEventResourceProperties) Or(d SiteEventResourceProperties) SiteEventResourceProperties {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteIntegrationConfigInput returns new OptNilSiteIntegrationConfigInput with value set to v.
-func NewOptNilSiteIntegrationConfigInput(v SiteIntegrationConfigInput) OptNilSiteIntegrationConfigInput {
-	return OptNilSiteIntegrationConfigInput{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteIntegrationConfigInput is optional nullable SiteIntegrationConfigInput.
-type OptNilSiteIntegrationConfigInput struct {
-	Value SiteIntegrationConfigInput
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteIntegrationConfigInput was set.
-func (o OptNilSiteIntegrationConfigInput) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteIntegrationConfigInput) Reset() {
-	var v SiteIntegrationConfigInput
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteIntegrationConfigInput) SetTo(v SiteIntegrationConfigInput) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteIntegrationConfigInput) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteIntegrationConfigInput) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteIntegrationConfigInput
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteIntegrationConfigInput) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteIntegrationConfigInput) Get() (v SiteIntegrationConfigInput, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteIntegrationConfigInput) Or(d SiteIntegrationConfigInput) SiteIntegrationConfigInput {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteMaxPerDay returns new OptNilSiteMaxPerDay with value set to v.
-func NewOptNilSiteMaxPerDay(v SiteMaxPerDay) OptNilSiteMaxPerDay {
-	return OptNilSiteMaxPerDay{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteMaxPerDay is optional nullable SiteMaxPerDay.
-type OptNilSiteMaxPerDay struct {
-	Value SiteMaxPerDay
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteMaxPerDay was set.
-func (o OptNilSiteMaxPerDay) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteMaxPerDay) Reset() {
-	var v SiteMaxPerDay
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteMaxPerDay) SetTo(v SiteMaxPerDay) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteMaxPerDay) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteMaxPerDay) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteMaxPerDay
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteMaxPerDay) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteMaxPerDay) Get() (v SiteMaxPerDay, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteMaxPerDay) Or(d SiteMaxPerDay) SiteMaxPerDay {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteMaxPerSecond returns new OptNilSiteMaxPerSecond with value set to v.
-func NewOptNilSiteMaxPerSecond(v SiteMaxPerSecond) OptNilSiteMaxPerSecond {
-	return OptNilSiteMaxPerSecond{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteMaxPerSecond is optional nullable SiteMaxPerSecond.
-type OptNilSiteMaxPerSecond struct {
-	Value SiteMaxPerSecond
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteMaxPerSecond was set.
-func (o OptNilSiteMaxPerSecond) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteMaxPerSecond) Reset() {
-	var v SiteMaxPerSecond
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteMaxPerSecond) SetTo(v SiteMaxPerSecond) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteMaxPerSecond) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteMaxPerSecond) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteMaxPerSecond
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteMaxPerSecond) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteMaxPerSecond) Get() (v SiteMaxPerSecond, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteMaxPerSecond) Or(d SiteMaxPerSecond) SiteMaxPerSecond {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -4501,144 +5172,6 @@ func (o OptSiteConditionGroup) Get() (v SiteConditionGroup, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteConditionGroup) Or(d SiteConditionGroup) SiteConditionGroup {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteCreateBroadcastInputDoc returns new OptSiteCreateBroadcastInputDoc with value set to v.
-func NewOptSiteCreateBroadcastInputDoc(v SiteCreateBroadcastInputDoc) OptSiteCreateBroadcastInputDoc {
-	return OptSiteCreateBroadcastInputDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteCreateBroadcastInputDoc is optional SiteCreateBroadcastInputDoc.
-type OptSiteCreateBroadcastInputDoc struct {
-	Value SiteCreateBroadcastInputDoc
-	Set   bool
-}
-
-// IsSet returns true if OptSiteCreateBroadcastInputDoc was set.
-func (o OptSiteCreateBroadcastInputDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteCreateBroadcastInputDoc) Reset() {
-	var v SiteCreateBroadcastInputDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteCreateBroadcastInputDoc) SetTo(v SiteCreateBroadcastInputDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteCreateBroadcastInputDoc) Get() (v SiteCreateBroadcastInputDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteCreateBroadcastInputDoc) Or(d SiteCreateBroadcastInputDoc) SiteCreateBroadcastInputDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteCreateEmailTemplateInputDoc returns new OptSiteCreateEmailTemplateInputDoc with value set to v.
-func NewOptSiteCreateEmailTemplateInputDoc(v SiteCreateEmailTemplateInputDoc) OptSiteCreateEmailTemplateInputDoc {
-	return OptSiteCreateEmailTemplateInputDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteCreateEmailTemplateInputDoc is optional SiteCreateEmailTemplateInputDoc.
-type OptSiteCreateEmailTemplateInputDoc struct {
-	Value SiteCreateEmailTemplateInputDoc
-	Set   bool
-}
-
-// IsSet returns true if OptSiteCreateEmailTemplateInputDoc was set.
-func (o OptSiteCreateEmailTemplateInputDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteCreateEmailTemplateInputDoc) Reset() {
-	var v SiteCreateEmailTemplateInputDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteCreateEmailTemplateInputDoc) SetTo(v SiteCreateEmailTemplateInputDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteCreateEmailTemplateInputDoc) Get() (v SiteCreateEmailTemplateInputDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteCreateEmailTemplateInputDoc) Or(d SiteCreateEmailTemplateInputDoc) SiteCreateEmailTemplateInputDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteCreateIntegrationInputParams returns new OptSiteCreateIntegrationInputParams with value set to v.
-func NewOptSiteCreateIntegrationInputParams(v SiteCreateIntegrationInputParams) OptSiteCreateIntegrationInputParams {
-	return OptSiteCreateIntegrationInputParams{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteCreateIntegrationInputParams is optional SiteCreateIntegrationInputParams.
-type OptSiteCreateIntegrationInputParams struct {
-	Value SiteCreateIntegrationInputParams
-	Set   bool
-}
-
-// IsSet returns true if OptSiteCreateIntegrationInputParams was set.
-func (o OptSiteCreateIntegrationInputParams) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteCreateIntegrationInputParams) Reset() {
-	var v SiteCreateIntegrationInputParams
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteCreateIntegrationInputParams) SetTo(v SiteCreateIntegrationInputParams) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteCreateIntegrationInputParams) Get() (v SiteCreateIntegrationInputParams, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteCreateIntegrationInputParams) Or(d SiteCreateIntegrationInputParams) SiteCreateIntegrationInputParams {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -5427,144 +5960,6 @@ func (o OptSiteTrackingRecord) Or(d SiteTrackingRecord) SiteTrackingRecord {
 	return d
 }
 
-// NewOptSiteUpdateBroadcastInputDoc returns new OptSiteUpdateBroadcastInputDoc with value set to v.
-func NewOptSiteUpdateBroadcastInputDoc(v SiteUpdateBroadcastInputDoc) OptSiteUpdateBroadcastInputDoc {
-	return OptSiteUpdateBroadcastInputDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteUpdateBroadcastInputDoc is optional SiteUpdateBroadcastInputDoc.
-type OptSiteUpdateBroadcastInputDoc struct {
-	Value SiteUpdateBroadcastInputDoc
-	Set   bool
-}
-
-// IsSet returns true if OptSiteUpdateBroadcastInputDoc was set.
-func (o OptSiteUpdateBroadcastInputDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteUpdateBroadcastInputDoc) Reset() {
-	var v SiteUpdateBroadcastInputDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteUpdateBroadcastInputDoc) SetTo(v SiteUpdateBroadcastInputDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteUpdateBroadcastInputDoc) Get() (v SiteUpdateBroadcastInputDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteUpdateBroadcastInputDoc) Or(d SiteUpdateBroadcastInputDoc) SiteUpdateBroadcastInputDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteUpdateEmailTemplateInputDoc returns new OptSiteUpdateEmailTemplateInputDoc with value set to v.
-func NewOptSiteUpdateEmailTemplateInputDoc(v SiteUpdateEmailTemplateInputDoc) OptSiteUpdateEmailTemplateInputDoc {
-	return OptSiteUpdateEmailTemplateInputDoc{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteUpdateEmailTemplateInputDoc is optional SiteUpdateEmailTemplateInputDoc.
-type OptSiteUpdateEmailTemplateInputDoc struct {
-	Value SiteUpdateEmailTemplateInputDoc
-	Set   bool
-}
-
-// IsSet returns true if OptSiteUpdateEmailTemplateInputDoc was set.
-func (o OptSiteUpdateEmailTemplateInputDoc) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteUpdateEmailTemplateInputDoc) Reset() {
-	var v SiteUpdateEmailTemplateInputDoc
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteUpdateEmailTemplateInputDoc) SetTo(v SiteUpdateEmailTemplateInputDoc) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteUpdateEmailTemplateInputDoc) Get() (v SiteUpdateEmailTemplateInputDoc, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteUpdateEmailTemplateInputDoc) Or(d SiteUpdateEmailTemplateInputDoc) SiteUpdateEmailTemplateInputDoc {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteUpdateIntegrationInputParams returns new OptSiteUpdateIntegrationInputParams with value set to v.
-func NewOptSiteUpdateIntegrationInputParams(v SiteUpdateIntegrationInputParams) OptSiteUpdateIntegrationInputParams {
-	return OptSiteUpdateIntegrationInputParams{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteUpdateIntegrationInputParams is optional SiteUpdateIntegrationInputParams.
-type OptSiteUpdateIntegrationInputParams struct {
-	Value SiteUpdateIntegrationInputParams
-	Set   bool
-}
-
-// IsSet returns true if OptSiteUpdateIntegrationInputParams was set.
-func (o OptSiteUpdateIntegrationInputParams) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteUpdateIntegrationInputParams) Reset() {
-	var v SiteUpdateIntegrationInputParams
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteUpdateIntegrationInputParams) SetTo(v SiteUpdateIntegrationInputParams) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteUpdateIntegrationInputParams) Get() (v SiteUpdateIntegrationInputParams, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteUpdateIntegrationInputParams) Or(d SiteUpdateIntegrationInputParams) SiteUpdateIntegrationInputParams {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptSiteWebhookDisabledReason returns new OptSiteWebhookDisabledReason with value set to v.
 func NewOptSiteWebhookDisabledReason(v SiteWebhookDisabledReason) OptSiteWebhookDisabledReason {
 	return OptSiteWebhookDisabledReason{
@@ -5789,6 +6184,144 @@ func (o OptTimestamp) Get() (v Timestamp, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptTimestamp) Or(d Timestamp) Timestamp {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUpdateBroadcastInputDoc returns new OptUpdateBroadcastInputDoc with value set to v.
+func NewOptUpdateBroadcastInputDoc(v UpdateBroadcastInputDoc) OptUpdateBroadcastInputDoc {
+	return OptUpdateBroadcastInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUpdateBroadcastInputDoc is optional UpdateBroadcastInputDoc.
+type OptUpdateBroadcastInputDoc struct {
+	Value UpdateBroadcastInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptUpdateBroadcastInputDoc was set.
+func (o OptUpdateBroadcastInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUpdateBroadcastInputDoc) Reset() {
+	var v UpdateBroadcastInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUpdateBroadcastInputDoc) SetTo(v UpdateBroadcastInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUpdateBroadcastInputDoc) Get() (v UpdateBroadcastInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUpdateBroadcastInputDoc) Or(d UpdateBroadcastInputDoc) UpdateBroadcastInputDoc {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUpdateIntegrationInputParams returns new OptUpdateIntegrationInputParams with value set to v.
+func NewOptUpdateIntegrationInputParams(v UpdateIntegrationInputParams) OptUpdateIntegrationInputParams {
+	return OptUpdateIntegrationInputParams{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUpdateIntegrationInputParams is optional UpdateIntegrationInputParams.
+type OptUpdateIntegrationInputParams struct {
+	Value UpdateIntegrationInputParams
+	Set   bool
+}
+
+// IsSet returns true if OptUpdateIntegrationInputParams was set.
+func (o OptUpdateIntegrationInputParams) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUpdateIntegrationInputParams) Reset() {
+	var v UpdateIntegrationInputParams
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUpdateIntegrationInputParams) SetTo(v UpdateIntegrationInputParams) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUpdateIntegrationInputParams) Get() (v UpdateIntegrationInputParams, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUpdateIntegrationInputParams) Or(d UpdateIntegrationInputParams) UpdateIntegrationInputParams {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUpdateTemplateInputDoc returns new OptUpdateTemplateInputDoc with value set to v.
+func NewOptUpdateTemplateInputDoc(v UpdateTemplateInputDoc) OptUpdateTemplateInputDoc {
+	return OptUpdateTemplateInputDoc{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUpdateTemplateInputDoc is optional UpdateTemplateInputDoc.
+type OptUpdateTemplateInputDoc struct {
+	Value UpdateTemplateInputDoc
+	Set   bool
+}
+
+// IsSet returns true if OptUpdateTemplateInputDoc was set.
+func (o OptUpdateTemplateInputDoc) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUpdateTemplateInputDoc) Reset() {
+	var v UpdateTemplateInputDoc
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUpdateTemplateInputDoc) SetTo(v UpdateTemplateInputDoc) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUpdateTemplateInputDoc) Get() (v UpdateTemplateInputDoc, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUpdateTemplateInputDoc) Or(d UpdateTemplateInputDoc) UpdateTemplateInputDoc {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6617,6 +7150,23 @@ func (*ProblemDetailsHeaders) siteUserUpdateMeRes()                        {}
 
 type RetentionDays int32
 
+// Request body for scheduling a broadcast.
+// Ref: #/components/schemas/ScheduleBroadcastInput
+type ScheduleBroadcastInput struct {
+	// When the broadcast should be sent.
+	ScheduledAt Timestamp `json:"scheduledAt"`
+}
+
+// GetScheduledAt returns the value of ScheduledAt.
+func (s *ScheduleBroadcastInput) GetScheduledAt() Timestamp {
+	return s.ScheduledAt
+}
+
+// SetScheduledAt sets the value of ScheduledAt.
+func (s *ScheduleBroadcastInput) SetScheduledAt(val Timestamp) {
+	s.ScheduledAt = val
+}
+
 // Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them only when the user
 // explicitly opts in. mcp:send is the MCP-specific key: send-class tools are not listed over /mcp
 // without it, so any send-class grant brings it along.
@@ -6670,6 +7220,123 @@ func (s *SendScope) UnmarshalText(data []byte) error {
 		return nil
 	case SendScopeMcpSend:
 		*s = SendScopeMcpSend
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// SES credentials.
+// Ref: #/components/schemas/SesConfigInput
+type SesConfigInput struct {
+	Kind            SesConfigInputKind `json:"kind"`
+	Region          string             `json:"region"`
+	AccessKeyId     string             `json:"accessKeyId"`
+	SecretAccessKey string             `json:"secretAccessKey"`
+	From            EmailAddress       `json:"from"`
+	FromName        OptNilString       `json:"fromName"`
+	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
+	Endpoint OptNilString `json:"endpoint"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SesConfigInput) GetKind() SesConfigInputKind {
+	return s.Kind
+}
+
+// GetRegion returns the value of Region.
+func (s *SesConfigInput) GetRegion() string {
+	return s.Region
+}
+
+// GetAccessKeyId returns the value of AccessKeyId.
+func (s *SesConfigInput) GetAccessKeyId() string {
+	return s.AccessKeyId
+}
+
+// GetSecretAccessKey returns the value of SecretAccessKey.
+func (s *SesConfigInput) GetSecretAccessKey() string {
+	return s.SecretAccessKey
+}
+
+// GetFrom returns the value of From.
+func (s *SesConfigInput) GetFrom() EmailAddress {
+	return s.From
+}
+
+// GetFromName returns the value of FromName.
+func (s *SesConfigInput) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// GetEndpoint returns the value of Endpoint.
+func (s *SesConfigInput) GetEndpoint() OptNilString {
+	return s.Endpoint
+}
+
+// SetKind sets the value of Kind.
+func (s *SesConfigInput) SetKind(val SesConfigInputKind) {
+	s.Kind = val
+}
+
+// SetRegion sets the value of Region.
+func (s *SesConfigInput) SetRegion(val string) {
+	s.Region = val
+}
+
+// SetAccessKeyId sets the value of AccessKeyId.
+func (s *SesConfigInput) SetAccessKeyId(val string) {
+	s.AccessKeyId = val
+}
+
+// SetSecretAccessKey sets the value of SecretAccessKey.
+func (s *SesConfigInput) SetSecretAccessKey(val string) {
+	s.SecretAccessKey = val
+}
+
+// SetFrom sets the value of From.
+func (s *SesConfigInput) SetFrom(val EmailAddress) {
+	s.From = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *SesConfigInput) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+// SetEndpoint sets the value of Endpoint.
+func (s *SesConfigInput) SetEndpoint(val OptNilString) {
+	s.Endpoint = val
+}
+
+type SesConfigInputKind string
+
+const (
+	SesConfigInputKindSes SesConfigInputKind = "ses"
+)
+
+// AllValues returns all SesConfigInputKind values.
+func (SesConfigInputKind) AllValues() []SesConfigInputKind {
+	return []SesConfigInputKind{
+		SesConfigInputKindSes,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SesConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SesConfigInputKindSes:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SesConfigInputKind) UnmarshalText(data []byte) error {
+	switch SesConfigInputKind(data) {
+	case SesConfigInputKindSes:
+		*s = SesConfigInputKindSes
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -8013,23 +8680,6 @@ func (s *SiteApiTokenResource) SetCreatedAt(val Timestamp) {
 }
 
 func (*SiteApiTokenResource) siteTokensUpdateRes() {}
-
-// Site request body for applying a tag to a contact.
-// Ref: #/components/schemas/SiteApplyTagInput
-type SiteApplyTagInput struct {
-	// The label to apply; created on first use.
-	Name string `json:"name"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteApplyTagInput) GetName() string {
-	return s.Name
-}
-
-// SetName sets the value of Name.
-func (s *SiteApplyTagInput) SetName(val string) {
-	s.Name = val
-}
 
 // The actor of an Audit entry.
 // Ref: #/components/schemas/SiteAuditActor
@@ -12162,123 +12812,9 @@ func (s *SiteCreateAutomationInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
 }
 
-// Site request body for creating a broadcast.
-// Ref: #/components/schemas/SiteCreateBroadcastInput
-type SiteCreateBroadcastInput struct {
-	// Internal broadcast name.
-	Name string `json:"name"`
-	// Email subject line.
-	Subject OptString `json:"subject"`
-	// Sender display name.
-	FromName OptNilString `json:"fromName"`
-	// Sender email address: its domain must be a verified Sending domain of the workspace, or the write is
-	// a 422. Empty means the integration's default.
-	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body with Liquid merge tags. Write this or `doc`, not both.
-	Body OptString `json:"body"`
-	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
-	// it in the same save; a document that cannot be rendered is a 422.
-	Doc OptSiteCreateBroadcastInputDoc `json:"doc"`
-	// Target segment; null/omitted means all contacts.
-	SegmentId OptNilEntityId `json:"segmentId"`
-	// Sending integration; null/omitted means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteCreateBroadcastInput) GetName() string {
-	return s.Name
-}
-
-// GetSubject returns the value of Subject.
-func (s *SiteCreateBroadcastInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetFromName returns the value of FromName.
-func (s *SiteCreateBroadcastInput) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetFromEmail returns the value of FromEmail.
-func (s *SiteCreateBroadcastInput) GetFromEmail() OptNilEmailAddress {
-	return s.FromEmail
-}
-
-// GetBody returns the value of Body.
-func (s *SiteCreateBroadcastInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *SiteCreateBroadcastInput) GetDoc() OptSiteCreateBroadcastInputDoc {
-	return s.Doc
-}
-
-// GetSegmentId returns the value of SegmentId.
-func (s *SiteCreateBroadcastInput) GetSegmentId() OptNilEntityId {
-	return s.SegmentId
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *SiteCreateBroadcastInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
-// SetName sets the value of Name.
-func (s *SiteCreateBroadcastInput) SetName(val string) {
-	s.Name = val
-}
-
-// SetSubject sets the value of Subject.
-func (s *SiteCreateBroadcastInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *SiteCreateBroadcastInput) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetFromEmail sets the value of FromEmail.
-func (s *SiteCreateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
-	s.FromEmail = val
-}
-
-// SetBody sets the value of Body.
-func (s *SiteCreateBroadcastInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *SiteCreateBroadcastInput) SetDoc(val OptSiteCreateBroadcastInputDoc) {
-	s.Doc = val
-}
-
-// SetSegmentId sets the value of SegmentId.
-func (s *SiteCreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
-	s.SegmentId = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *SiteCreateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
-}
-
-// The editor's JSON document, an opaque object checked by the server. The server renders the body from
-// it in the same save; a document that cannot be rendered is a 422.
-type SiteCreateBroadcastInputDoc map[string]jx.Raw
-
-func (s *SiteCreateBroadcastInputDoc) init() SiteCreateBroadcastInputDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
-
-// Site request body for creating a contact.
+// Site request body for creating a contact: the attributes /api takes, and its tags. The app's contact
+// form sets the tags in the same save; /api tags a contact through its own operations (`tags_apply`,
+// `tags_remove`), which is why its body has no tags.
 // Ref: #/components/schemas/SiteCreateContactInput
 type SiteCreateContactInput struct {
 	// The customer's own user id — an alias key.
@@ -12383,184 +12919,6 @@ func (s *SiteCreateContactInput) SetTags(val []string) {
 type SiteCreateContactInputCustomFields map[string]jx.Raw
 
 func (s *SiteCreateContactInputCustomFields) init() SiteCreateContactInputCustomFields {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
-
-// Site request body for creating a template.
-// Ref: #/components/schemas/SiteCreateEmailTemplateInput
-type SiteCreateEmailTemplateInput struct {
-	Name    string    `json:"name"`
-	Subject OptString `json:"subject"`
-	// HTML body with Liquid merge tags. Write this or `doc`, not both.
-	Body OptString `json:"body"`
-	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
-	// it in the same save; a document that cannot be rendered is a 422.
-	Doc OptSiteCreateEmailTemplateInputDoc `json:"doc"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteCreateEmailTemplateInput) GetName() string {
-	return s.Name
-}
-
-// GetSubject returns the value of Subject.
-func (s *SiteCreateEmailTemplateInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetBody returns the value of Body.
-func (s *SiteCreateEmailTemplateInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *SiteCreateEmailTemplateInput) GetDoc() OptSiteCreateEmailTemplateInputDoc {
-	return s.Doc
-}
-
-// SetName sets the value of Name.
-func (s *SiteCreateEmailTemplateInput) SetName(val string) {
-	s.Name = val
-}
-
-// SetSubject sets the value of Subject.
-func (s *SiteCreateEmailTemplateInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetBody sets the value of Body.
-func (s *SiteCreateEmailTemplateInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *SiteCreateEmailTemplateInput) SetDoc(val OptSiteCreateEmailTemplateInputDoc) {
-	s.Doc = val
-}
-
-// The editor's JSON document, an opaque object checked by the server. The server renders the body from
-// it in the same save; a document that cannot be rendered is a 422.
-type SiteCreateEmailTemplateInputDoc map[string]jx.Raw
-
-func (s *SiteCreateEmailTemplateInputDoc) init() SiteCreateEmailTemplateInputDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
-
-// Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox
-// (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused
-// with 409.
-// Ref: #/components/schemas/SiteCreateIntegrationInput
-type SiteCreateIntegrationInput struct {
-	Name      string  `json:"name"`
-	Enabled   OptBool `json:"enabled"`
-	IsDefault OptBool `json:"isDefault"`
-	// Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES
-	// Integration with an `endpoint`, which requires it.
-	MaxPerSecond OptNilSiteMaxPerSecond `json:"maxPerSecond"`
-	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit,
-	// except on an SES Integration with an `endpoint`, which requires it.
-	MaxPerDay OptNilSiteMaxPerDay        `json:"maxPerDay"`
-	Config    SiteIntegrationConfigInput `json:"config"`
-	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
-	Preset OptNilString `json:"preset"`
-	// The Preset's params, validated against its `paramsSchema`: read the schema first.
-	Params OptSiteCreateIntegrationInputParams `json:"params"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteCreateIntegrationInput) GetName() string {
-	return s.Name
-}
-
-// GetEnabled returns the value of Enabled.
-func (s *SiteCreateIntegrationInput) GetEnabled() OptBool {
-	return s.Enabled
-}
-
-// GetIsDefault returns the value of IsDefault.
-func (s *SiteCreateIntegrationInput) GetIsDefault() OptBool {
-	return s.IsDefault
-}
-
-// GetMaxPerSecond returns the value of MaxPerSecond.
-func (s *SiteCreateIntegrationInput) GetMaxPerSecond() OptNilSiteMaxPerSecond {
-	return s.MaxPerSecond
-}
-
-// GetMaxPerDay returns the value of MaxPerDay.
-func (s *SiteCreateIntegrationInput) GetMaxPerDay() OptNilSiteMaxPerDay {
-	return s.MaxPerDay
-}
-
-// GetConfig returns the value of Config.
-func (s *SiteCreateIntegrationInput) GetConfig() SiteIntegrationConfigInput {
-	return s.Config
-}
-
-// GetPreset returns the value of Preset.
-func (s *SiteCreateIntegrationInput) GetPreset() OptNilString {
-	return s.Preset
-}
-
-// GetParams returns the value of Params.
-func (s *SiteCreateIntegrationInput) GetParams() OptSiteCreateIntegrationInputParams {
-	return s.Params
-}
-
-// SetName sets the value of Name.
-func (s *SiteCreateIntegrationInput) SetName(val string) {
-	s.Name = val
-}
-
-// SetEnabled sets the value of Enabled.
-func (s *SiteCreateIntegrationInput) SetEnabled(val OptBool) {
-	s.Enabled = val
-}
-
-// SetIsDefault sets the value of IsDefault.
-func (s *SiteCreateIntegrationInput) SetIsDefault(val OptBool) {
-	s.IsDefault = val
-}
-
-// SetMaxPerSecond sets the value of MaxPerSecond.
-func (s *SiteCreateIntegrationInput) SetMaxPerSecond(val OptNilSiteMaxPerSecond) {
-	s.MaxPerSecond = val
-}
-
-// SetMaxPerDay sets the value of MaxPerDay.
-func (s *SiteCreateIntegrationInput) SetMaxPerDay(val OptNilSiteMaxPerDay) {
-	s.MaxPerDay = val
-}
-
-// SetConfig sets the value of Config.
-func (s *SiteCreateIntegrationInput) SetConfig(val SiteIntegrationConfigInput) {
-	s.Config = val
-}
-
-// SetPreset sets the value of Preset.
-func (s *SiteCreateIntegrationInput) SetPreset(val OptNilString) {
-	s.Preset = val
-}
-
-// SetParams sets the value of Params.
-func (s *SiteCreateIntegrationInput) SetParams(val OptSiteCreateIntegrationInputParams) {
-	s.Params = val
-}
-
-// The Preset's params, validated against its `paramsSchema`: read the schema first.
-type SiteCreateIntegrationInputParams map[string]jx.Raw
-
-func (s *SiteCreateIntegrationInputParams) init() SiteCreateIntegrationInputParams {
 	m := *s
 	if m == nil {
 		m = map[string]jx.Raw{}
@@ -12774,35 +13132,6 @@ func (s *SiteCreateSegmentInput) SetCondition(val SiteConditionGroup) {
 	s.Condition = val
 }
 
-// Site request body for adding a sending domain.
-// Ref: #/components/schemas/SiteCreateSendingDomainInput
-type SiteCreateSendingDomainInput struct {
-	// The domain to authenticate, e.g. "mail.acme.com".
-	Domain string `json:"domain"`
-	// DKIM selector; defaults to "sphericon" when omitted.
-	DkimSelector OptString `json:"dkimSelector"`
-}
-
-// GetDomain returns the value of Domain.
-func (s *SiteCreateSendingDomainInput) GetDomain() string {
-	return s.Domain
-}
-
-// GetDkimSelector returns the value of DkimSelector.
-func (s *SiteCreateSendingDomainInput) GetDkimSelector() OptString {
-	return s.DkimSelector
-}
-
-// SetDomain sets the value of Domain.
-func (s *SiteCreateSendingDomainInput) SetDomain(val string) {
-	s.Domain = val
-}
-
-// SetDkimSelector sets the value of DkimSelector.
-func (s *SiteCreateSendingDomainInput) SetDkimSelector(val OptString) {
-	s.DkimSelector = val
-}
-
 // Site request body for manually suppressing a destination.
 // Ref: #/components/schemas/SiteCreateSuppressionInput
 type SiteCreateSuppressionInput struct {
@@ -12898,44 +13227,6 @@ func (s *SiteCreateTokenResponse) SetResource(val SiteApiTokenResource) {
 }
 
 func (*SiteCreateTokenResponse) siteTokensCreateRes() {}
-
-// Site request body for creating a webhook endpoint.
-// Ref: #/components/schemas/SiteCreateWebhookEndpointInput
-type SiteCreateWebhookEndpointInput struct {
-	URL        string   `json:"url"`
-	EventTypes []string `json:"eventTypes"`
-	Enabled    OptBool  `json:"enabled"`
-}
-
-// GetURL returns the value of URL.
-func (s *SiteCreateWebhookEndpointInput) GetURL() string {
-	return s.URL
-}
-
-// GetEventTypes returns the value of EventTypes.
-func (s *SiteCreateWebhookEndpointInput) GetEventTypes() []string {
-	return s.EventTypes
-}
-
-// GetEnabled returns the value of Enabled.
-func (s *SiteCreateWebhookEndpointInput) GetEnabled() OptBool {
-	return s.Enabled
-}
-
-// SetURL sets the value of URL.
-func (s *SiteCreateWebhookEndpointInput) SetURL(val string) {
-	s.URL = val
-}
-
-// SetEventTypes sets the value of EventTypes.
-func (s *SiteCreateWebhookEndpointInput) SetEventTypes(val []string) {
-	s.EventTypes = val
-}
-
-// SetEnabled sets the value of Enabled.
-func (s *SiteCreateWebhookEndpointInput) SetEnabled(val OptBool) {
-	s.Enabled = val
-}
 
 // Create a Workspace (ADR 0043).
 // Ref: #/components/schemas/SiteCreateWorkspaceInput
@@ -14497,56 +14788,6 @@ func (s *SiteInboxConfig) SetKind(val SiteInboxConfigKind) {
 	s.Kind = val
 }
 
-// The Test inbox takes no credentials: a Workspace has at most one.
-// Ref: #/components/schemas/SiteInboxConfigInput
-type SiteInboxConfigInput struct {
-	Kind SiteInboxConfigInputKind `json:"kind"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteInboxConfigInput) GetKind() SiteInboxConfigInputKind {
-	return s.Kind
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteInboxConfigInput) SetKind(val SiteInboxConfigInputKind) {
-	s.Kind = val
-}
-
-type SiteInboxConfigInputKind string
-
-const (
-	SiteInboxConfigInputKindInbox SiteInboxConfigInputKind = "inbox"
-)
-
-// AllValues returns all SiteInboxConfigInputKind values.
-func (SiteInboxConfigInputKind) AllValues() []SiteInboxConfigInputKind {
-	return []SiteInboxConfigInputKind{
-		SiteInboxConfigInputKindInbox,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteInboxConfigInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteInboxConfigInputKindInbox:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteInboxConfigInputKind) UnmarshalText(data []byte) error {
-	switch SiteInboxConfigInputKind(data) {
-	case SiteInboxConfigInputKindInbox:
-		*s = SiteInboxConfigInputKindInbox
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 type SiteInboxConfigKind string
 
 const (
@@ -14660,119 +14901,6 @@ func (s *SiteIntegrationConfig) GetOneOf() SiteIntegrationConfigSum {
 // SetOneOf sets the value of OneOf.
 func (s *SiteIntegrationConfig) SetOneOf(val SiteIntegrationConfigSum) {
 	s.OneOf = val
-}
-
-// Provider config submitted by the UI, discriminated by `kind`.
-// Ref: #/components/schemas/SiteIntegrationConfigInput
-type SiteIntegrationConfigInput struct {
-	OneOf SiteIntegrationConfigInputSum
-}
-
-// GetOneOf returns the value of OneOf.
-func (s *SiteIntegrationConfigInput) GetOneOf() SiteIntegrationConfigInputSum {
-	return s.OneOf
-}
-
-// SetOneOf sets the value of OneOf.
-func (s *SiteIntegrationConfigInput) SetOneOf(val SiteIntegrationConfigInputSum) {
-	s.OneOf = val
-}
-
-// SiteIntegrationConfigInputSum represents sum type.
-type SiteIntegrationConfigInputSum struct {
-	// Type selects the active sum variant, switch on this field.
-	Type                 SiteIntegrationConfigInputSumType
-	SiteSmtpConfigInput  SiteSmtpConfigInput
-	SiteSesConfigInput   SiteSesConfigInput
-	SiteInboxConfigInput SiteInboxConfigInput
-}
-
-// SiteIntegrationConfigInputSumType is oneOf type of SiteIntegrationConfigInputSum.
-type SiteIntegrationConfigInputSumType string
-
-// Possible values for SiteIntegrationConfigInputSumType.
-const (
-	SiteSmtpConfigInputSiteIntegrationConfigInputSum  SiteIntegrationConfigInputSumType = "smtp"
-	SiteSesConfigInputSiteIntegrationConfigInputSum   SiteIntegrationConfigInputSumType = "ses"
-	SiteInboxConfigInputSiteIntegrationConfigInputSum SiteIntegrationConfigInputSumType = "inbox"
-)
-
-// IsSiteSmtpConfigInput reports whether SiteIntegrationConfigInputSum is SiteSmtpConfigInput.
-func (s SiteIntegrationConfigInputSum) IsSiteSmtpConfigInput() bool {
-	return s.Type == SiteSmtpConfigInputSiteIntegrationConfigInputSum
-}
-
-// IsSiteSesConfigInput reports whether SiteIntegrationConfigInputSum is SiteSesConfigInput.
-func (s SiteIntegrationConfigInputSum) IsSiteSesConfigInput() bool {
-	return s.Type == SiteSesConfigInputSiteIntegrationConfigInputSum
-}
-
-// IsSiteInboxConfigInput reports whether SiteIntegrationConfigInputSum is SiteInboxConfigInput.
-func (s SiteIntegrationConfigInputSum) IsSiteInboxConfigInput() bool {
-	return s.Type == SiteInboxConfigInputSiteIntegrationConfigInputSum
-}
-
-// SetSiteSmtpConfigInput sets SiteIntegrationConfigInputSum to SiteSmtpConfigInput.
-func (s *SiteIntegrationConfigInputSum) SetSiteSmtpConfigInput(v SiteSmtpConfigInput) {
-	s.Type = SiteSmtpConfigInputSiteIntegrationConfigInputSum
-	s.SiteSmtpConfigInput = v
-}
-
-// GetSiteSmtpConfigInput returns SiteSmtpConfigInput and true boolean if SiteIntegrationConfigInputSum is SiteSmtpConfigInput.
-func (s SiteIntegrationConfigInputSum) GetSiteSmtpConfigInput() (v SiteSmtpConfigInput, ok bool) {
-	if !s.IsSiteSmtpConfigInput() {
-		return v, false
-	}
-	return s.SiteSmtpConfigInput, true
-}
-
-// NewSiteSmtpConfigInputSiteIntegrationConfigInputSum returns new SiteIntegrationConfigInputSum from SiteSmtpConfigInput.
-func NewSiteSmtpConfigInputSiteIntegrationConfigInputSum(v SiteSmtpConfigInput) SiteIntegrationConfigInputSum {
-	var s SiteIntegrationConfigInputSum
-	s.SetSiteSmtpConfigInput(v)
-	return s
-}
-
-// SetSiteSesConfigInput sets SiteIntegrationConfigInputSum to SiteSesConfigInput.
-func (s *SiteIntegrationConfigInputSum) SetSiteSesConfigInput(v SiteSesConfigInput) {
-	s.Type = SiteSesConfigInputSiteIntegrationConfigInputSum
-	s.SiteSesConfigInput = v
-}
-
-// GetSiteSesConfigInput returns SiteSesConfigInput and true boolean if SiteIntegrationConfigInputSum is SiteSesConfigInput.
-func (s SiteIntegrationConfigInputSum) GetSiteSesConfigInput() (v SiteSesConfigInput, ok bool) {
-	if !s.IsSiteSesConfigInput() {
-		return v, false
-	}
-	return s.SiteSesConfigInput, true
-}
-
-// NewSiteSesConfigInputSiteIntegrationConfigInputSum returns new SiteIntegrationConfigInputSum from SiteSesConfigInput.
-func NewSiteSesConfigInputSiteIntegrationConfigInputSum(v SiteSesConfigInput) SiteIntegrationConfigInputSum {
-	var s SiteIntegrationConfigInputSum
-	s.SetSiteSesConfigInput(v)
-	return s
-}
-
-// SetSiteInboxConfigInput sets SiteIntegrationConfigInputSum to SiteInboxConfigInput.
-func (s *SiteIntegrationConfigInputSum) SetSiteInboxConfigInput(v SiteInboxConfigInput) {
-	s.Type = SiteInboxConfigInputSiteIntegrationConfigInputSum
-	s.SiteInboxConfigInput = v
-}
-
-// GetSiteInboxConfigInput returns SiteInboxConfigInput and true boolean if SiteIntegrationConfigInputSum is SiteInboxConfigInput.
-func (s SiteIntegrationConfigInputSum) GetSiteInboxConfigInput() (v SiteInboxConfigInput, ok bool) {
-	if !s.IsSiteInboxConfigInput() {
-		return v, false
-	}
-	return s.SiteInboxConfigInput, true
-}
-
-// NewSiteInboxConfigInputSiteIntegrationConfigInputSum returns new SiteIntegrationConfigInputSum from SiteInboxConfigInput.
-func NewSiteInboxConfigInputSiteIntegrationConfigInputSum(v SiteInboxConfigInput) SiteIntegrationConfigInputSum {
-	var s SiteIntegrationConfigInputSum
-	s.SetSiteInboxConfigInput(v)
-	return s
 }
 
 // SiteIntegrationConfigSum represents sum type.
@@ -15912,10 +16040,6 @@ func (s *SiteLoginSecondFactorInput) SetChallenge(val string) {
 func (s *SiteLoginSecondFactorInput) SetCode(val string) {
 	s.Code = val
 }
-
-type SiteMaxPerDay int32
-
-type SiteMaxPerSecond int32
 
 // A Membership — the join granting a User access to the workspace with a Role.
 // Ref: #/components/schemas/SiteMembershipResource
@@ -19715,23 +19839,6 @@ func (s *SiteSaveBrandKitInput) SetFooterText(val string) {
 	s.FooterText = val
 }
 
-// Site request body for scheduling a broadcast.
-// Ref: #/components/schemas/SiteScheduleBroadcastInput
-type SiteScheduleBroadcastInput struct {
-	// When the broadcast should be sent.
-	ScheduledAt Timestamp `json:"scheduledAt"`
-}
-
-// GetScheduledAt returns the value of ScheduledAt.
-func (s *SiteScheduleBroadcastInput) GetScheduledAt() Timestamp {
-	return s.ScheduledAt
-}
-
-// SetScheduledAt sets the value of ScheduledAt.
-func (s *SiteScheduleBroadcastInput) SetScheduledAt(val Timestamp) {
-	s.ScheduledAt = val
-}
-
 // SiteSchemaApplyMigrationsNoContent is response for SiteSchemaApplyMigrations operation.
 type SiteSchemaApplyMigrationsNoContent struct{}
 
@@ -20684,123 +20791,6 @@ func (s *SiteSesConfig) SetAccessKeyIdLast4(val OptNilString) {
 	s.AccessKeyIdLast4 = val
 }
 
-// SES credentials.
-// Ref: #/components/schemas/SiteSesConfigInput
-type SiteSesConfigInput struct {
-	Kind            SiteSesConfigInputKind `json:"kind"`
-	Region          string                 `json:"region"`
-	AccessKeyId     string                 `json:"accessKeyId"`
-	SecretAccessKey string                 `json:"secretAccessKey"`
-	From            EmailAddress           `json:"from"`
-	FromName        OptNilString           `json:"fromName"`
-	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
-	Endpoint OptNilString `json:"endpoint"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteSesConfigInput) GetKind() SiteSesConfigInputKind {
-	return s.Kind
-}
-
-// GetRegion returns the value of Region.
-func (s *SiteSesConfigInput) GetRegion() string {
-	return s.Region
-}
-
-// GetAccessKeyId returns the value of AccessKeyId.
-func (s *SiteSesConfigInput) GetAccessKeyId() string {
-	return s.AccessKeyId
-}
-
-// GetSecretAccessKey returns the value of SecretAccessKey.
-func (s *SiteSesConfigInput) GetSecretAccessKey() string {
-	return s.SecretAccessKey
-}
-
-// GetFrom returns the value of From.
-func (s *SiteSesConfigInput) GetFrom() EmailAddress {
-	return s.From
-}
-
-// GetFromName returns the value of FromName.
-func (s *SiteSesConfigInput) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetEndpoint returns the value of Endpoint.
-func (s *SiteSesConfigInput) GetEndpoint() OptNilString {
-	return s.Endpoint
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteSesConfigInput) SetKind(val SiteSesConfigInputKind) {
-	s.Kind = val
-}
-
-// SetRegion sets the value of Region.
-func (s *SiteSesConfigInput) SetRegion(val string) {
-	s.Region = val
-}
-
-// SetAccessKeyId sets the value of AccessKeyId.
-func (s *SiteSesConfigInput) SetAccessKeyId(val string) {
-	s.AccessKeyId = val
-}
-
-// SetSecretAccessKey sets the value of SecretAccessKey.
-func (s *SiteSesConfigInput) SetSecretAccessKey(val string) {
-	s.SecretAccessKey = val
-}
-
-// SetFrom sets the value of From.
-func (s *SiteSesConfigInput) SetFrom(val EmailAddress) {
-	s.From = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *SiteSesConfigInput) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetEndpoint sets the value of Endpoint.
-func (s *SiteSesConfigInput) SetEndpoint(val OptNilString) {
-	s.Endpoint = val
-}
-
-type SiteSesConfigInputKind string
-
-const (
-	SiteSesConfigInputKindSes SiteSesConfigInputKind = "ses"
-)
-
-// AllValues returns all SiteSesConfigInputKind values.
-func (SiteSesConfigInputKind) AllValues() []SiteSesConfigInputKind {
-	return []SiteSesConfigInputKind{
-		SiteSesConfigInputKindSes,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSesConfigInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSesConfigInputKindSes:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSesConfigInputKind) UnmarshalText(data []byte) error {
-	switch SiteSesConfigInputKind(data) {
-	case SiteSesConfigInputKindSes:
-		*s = SiteSesConfigInputKindSes
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 type SiteSesConfigKind string
 
 const (
@@ -21717,122 +21707,6 @@ func (s *SiteSmtpConfig) SetFromName(val OptNilString) {
 	s.FromName = val
 }
 
-// SMTP credentials.
-// Ref: #/components/schemas/SiteSmtpConfigInput
-type SiteSmtpConfigInput struct {
-	Kind     SiteSmtpConfigInputKind `json:"kind"`
-	Host     string                  `json:"host"`
-	Port     int32                   `json:"port"`
-	Username OptNilString            `json:"username"`
-	Password OptNilString            `json:"password"`
-	From     EmailAddress            `json:"from"`
-	FromName OptNilString            `json:"fromName"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteSmtpConfigInput) GetKind() SiteSmtpConfigInputKind {
-	return s.Kind
-}
-
-// GetHost returns the value of Host.
-func (s *SiteSmtpConfigInput) GetHost() string {
-	return s.Host
-}
-
-// GetPort returns the value of Port.
-func (s *SiteSmtpConfigInput) GetPort() int32 {
-	return s.Port
-}
-
-// GetUsername returns the value of Username.
-func (s *SiteSmtpConfigInput) GetUsername() OptNilString {
-	return s.Username
-}
-
-// GetPassword returns the value of Password.
-func (s *SiteSmtpConfigInput) GetPassword() OptNilString {
-	return s.Password
-}
-
-// GetFrom returns the value of From.
-func (s *SiteSmtpConfigInput) GetFrom() EmailAddress {
-	return s.From
-}
-
-// GetFromName returns the value of FromName.
-func (s *SiteSmtpConfigInput) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteSmtpConfigInput) SetKind(val SiteSmtpConfigInputKind) {
-	s.Kind = val
-}
-
-// SetHost sets the value of Host.
-func (s *SiteSmtpConfigInput) SetHost(val string) {
-	s.Host = val
-}
-
-// SetPort sets the value of Port.
-func (s *SiteSmtpConfigInput) SetPort(val int32) {
-	s.Port = val
-}
-
-// SetUsername sets the value of Username.
-func (s *SiteSmtpConfigInput) SetUsername(val OptNilString) {
-	s.Username = val
-}
-
-// SetPassword sets the value of Password.
-func (s *SiteSmtpConfigInput) SetPassword(val OptNilString) {
-	s.Password = val
-}
-
-// SetFrom sets the value of From.
-func (s *SiteSmtpConfigInput) SetFrom(val EmailAddress) {
-	s.From = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *SiteSmtpConfigInput) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-type SiteSmtpConfigInputKind string
-
-const (
-	SiteSmtpConfigInputKindSMTP SiteSmtpConfigInputKind = "smtp"
-)
-
-// AllValues returns all SiteSmtpConfigInputKind values.
-func (SiteSmtpConfigInputKind) AllValues() []SiteSmtpConfigInputKind {
-	return []SiteSmtpConfigInputKind{
-		SiteSmtpConfigInputKindSMTP,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSmtpConfigInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSmtpConfigInputKindSMTP:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSmtpConfigInputKind) UnmarshalText(data []byte) error {
-	switch SiteSmtpConfigInputKind(data) {
-	case SiteSmtpConfigInputKindSMTP:
-		*s = SiteSmtpConfigInputKindSMTP
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 type SiteSmtpConfigKind string
 
 const (
@@ -22537,23 +22411,6 @@ type SiteTemplatesUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteTemplatesUpdateUnprocessableEntity) siteTemplatesUpdateRes() {}
 
-// Site request body for a test send.
-// Ref: #/components/schemas/SiteTestSendBroadcastInput
-type SiteTestSendBroadcastInput struct {
-	// Address to send the rendered preview to.
-	Email EmailAddress `json:"email"`
-}
-
-// GetEmail returns the value of Email.
-func (s *SiteTestSendBroadcastInput) GetEmail() EmailAddress {
-	return s.Email
-}
-
-// SetEmail sets the value of Email.
-func (s *SiteTestSendBroadcastInput) SetEmail(val EmailAddress) {
-	s.Email = val
-}
-
 // What a test send did: the address the preview went out from.
 // Ref: #/components/schemas/SiteTestSendBroadcastResult
 type SiteTestSendBroadcastResult struct {
@@ -22586,23 +22443,6 @@ func (s *SiteTestSendBroadcastResult) SetCaptured(val bool) {
 }
 
 func (*SiteTestSendBroadcastResult) siteBroadcastsTestSendRes() {}
-
-// Request body for sending a sample event to a webhook endpoint.
-// Ref: #/components/schemas/SiteTestWebhookInput
-type SiteTestWebhookInput struct {
-	// The event name the sample carries, for example `contact.created`.
-	EventType string `json:"eventType"`
-}
-
-// GetEventType returns the value of EventType.
-func (s *SiteTestWebhookInput) GetEventType() string {
-	return s.EventType
-}
-
-// SetEventType sets the value of EventType.
-func (s *SiteTestWebhookInput) SetEventType(val string) {
-	s.EventType = val
-}
 
 type SiteTokensCreateForbidden ProblemDetails
 
@@ -23223,124 +23063,9 @@ func (s *SiteUpdateAutomationInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
 }
 
-// Site request body for updating a broadcast.
-// Ref: #/components/schemas/SiteUpdateBroadcastInput
-type SiteUpdateBroadcastInput struct {
-	// Internal broadcast name.
-	Name OptString `json:"name"`
-	// Email subject line.
-	Subject OptString `json:"subject"`
-	// Sender display name.
-	FromName OptNilString `json:"fromName"`
-	// Sender email address: a changed value must be on a verified Sending domain of the workspace, or the
-	// write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays
-	// editable.
-	FromEmail OptNilEmailAddress `json:"fromEmail"`
-	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
-	Body OptString `json:"body"`
-	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
-	// it in the same save; a document that cannot be rendered is a 422.
-	Doc OptSiteUpdateBroadcastInputDoc `json:"doc"`
-	// Target segment; null means all contacts.
-	SegmentId OptNilEntityId `json:"segmentId"`
-	// Sending integration; null means the workspace default.
-	IntegrationId OptNilEntityId `json:"integrationId"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteUpdateBroadcastInput) GetName() OptString {
-	return s.Name
-}
-
-// GetSubject returns the value of Subject.
-func (s *SiteUpdateBroadcastInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetFromName returns the value of FromName.
-func (s *SiteUpdateBroadcastInput) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetFromEmail returns the value of FromEmail.
-func (s *SiteUpdateBroadcastInput) GetFromEmail() OptNilEmailAddress {
-	return s.FromEmail
-}
-
-// GetBody returns the value of Body.
-func (s *SiteUpdateBroadcastInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *SiteUpdateBroadcastInput) GetDoc() OptSiteUpdateBroadcastInputDoc {
-	return s.Doc
-}
-
-// GetSegmentId returns the value of SegmentId.
-func (s *SiteUpdateBroadcastInput) GetSegmentId() OptNilEntityId {
-	return s.SegmentId
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *SiteUpdateBroadcastInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
-// SetName sets the value of Name.
-func (s *SiteUpdateBroadcastInput) SetName(val OptString) {
-	s.Name = val
-}
-
-// SetSubject sets the value of Subject.
-func (s *SiteUpdateBroadcastInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *SiteUpdateBroadcastInput) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetFromEmail sets the value of FromEmail.
-func (s *SiteUpdateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
-	s.FromEmail = val
-}
-
-// SetBody sets the value of Body.
-func (s *SiteUpdateBroadcastInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *SiteUpdateBroadcastInput) SetDoc(val OptSiteUpdateBroadcastInputDoc) {
-	s.Doc = val
-}
-
-// SetSegmentId sets the value of SegmentId.
-func (s *SiteUpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
-	s.SegmentId = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *SiteUpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
-}
-
-// The editor's JSON document, an opaque object checked by the server. The server renders the body from
-// it in the same save; a document that cannot be rendered is a 422.
-type SiteUpdateBroadcastInputDoc map[string]jx.Raw
-
-func (s *SiteUpdateBroadcastInputDoc) init() SiteUpdateBroadcastInputDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
-
-// Site request body for updating a contact.
+// Site request body for updating a contact: the attributes /api takes, and its tag set. The app's
+// contact form sets the tags in the same save; /api tags a contact through its own operations
+// (`tags_apply`, `tags_remove`), which is why its body has no tags.
 // Ref: #/components/schemas/SiteUpdateContactInput
 type SiteUpdateContactInput struct {
 	// The customer's own user id — an alias key.
@@ -23446,197 +23171,6 @@ func (s *SiteUpdateContactInput) SetTags(val []string) {
 type SiteUpdateContactInputCustomFields map[string]jx.Raw
 
 func (s *SiteUpdateContactInputCustomFields) init() SiteUpdateContactInputCustomFields {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
-
-// Site request body for updating a template.
-// Ref: #/components/schemas/SiteUpdateEmailTemplateInput
-type SiteUpdateEmailTemplateInput struct {
-	Name    OptString `json:"name"`
-	Subject OptString `json:"subject"`
-	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
-	Body OptString `json:"body"`
-	// The editor's JSON document, an opaque object checked by the server. The server renders the body from
-	// it in the same save; a document that cannot be rendered is a 422.
-	Doc OptSiteUpdateEmailTemplateInputDoc `json:"doc"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteUpdateEmailTemplateInput) GetName() OptString {
-	return s.Name
-}
-
-// GetSubject returns the value of Subject.
-func (s *SiteUpdateEmailTemplateInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetBody returns the value of Body.
-func (s *SiteUpdateEmailTemplateInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *SiteUpdateEmailTemplateInput) GetDoc() OptSiteUpdateEmailTemplateInputDoc {
-	return s.Doc
-}
-
-// SetName sets the value of Name.
-func (s *SiteUpdateEmailTemplateInput) SetName(val OptString) {
-	s.Name = val
-}
-
-// SetSubject sets the value of Subject.
-func (s *SiteUpdateEmailTemplateInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetBody sets the value of Body.
-func (s *SiteUpdateEmailTemplateInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *SiteUpdateEmailTemplateInput) SetDoc(val OptSiteUpdateEmailTemplateInputDoc) {
-	s.Doc = val
-}
-
-// The editor's JSON document, an opaque object checked by the server. The server renders the body from
-// it in the same save; a document that cannot be rendered is a 422.
-type SiteUpdateEmailTemplateInputDoc map[string]jx.Raw
-
-func (s *SiteUpdateEmailTemplateInputDoc) init() SiteUpdateEmailTemplateInputDoc {
-	m := *s
-	if m == nil {
-		m = map[string]jx.Raw{}
-		*s = m
-	}
-	return m
-}
-
-// Update a workspace integration. Omit `config` to keep stored credentials.
-// Ref: #/components/schemas/SiteUpdateIntegrationInput
-type SiteUpdateIntegrationInput struct {
-	Name      OptString `json:"name"`
-	Enabled   OptBool   `json:"enabled"`
-	IsDefault OptBool   `json:"isDefault"`
-	// Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES
-	// Integration with an `endpoint` cannot be left without it.
-	MaxPerSecond OptNilSiteMaxPerSecond `json:"maxPerSecond"`
-	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit
-	// to keep. An SES Integration with an `endpoint` cannot be left without it.
-	MaxPerDay OptNilSiteMaxPerDay              `json:"maxPerDay"`
-	Config    OptNilSiteIntegrationConfigInput `json:"config"`
-	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
-	// secret carries over.
-	Preset OptNilString `json:"preset"`
-	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
-	// rotates it (the old one stays valid until retired).
-	Params OptSiteUpdateIntegrationInputParams `json:"params"`
-	// Stop accepting the retiring value of every rotating secret.
-	RetireSecrets OptBool `json:"retireSecrets"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteUpdateIntegrationInput) GetName() OptString {
-	return s.Name
-}
-
-// GetEnabled returns the value of Enabled.
-func (s *SiteUpdateIntegrationInput) GetEnabled() OptBool {
-	return s.Enabled
-}
-
-// GetIsDefault returns the value of IsDefault.
-func (s *SiteUpdateIntegrationInput) GetIsDefault() OptBool {
-	return s.IsDefault
-}
-
-// GetMaxPerSecond returns the value of MaxPerSecond.
-func (s *SiteUpdateIntegrationInput) GetMaxPerSecond() OptNilSiteMaxPerSecond {
-	return s.MaxPerSecond
-}
-
-// GetMaxPerDay returns the value of MaxPerDay.
-func (s *SiteUpdateIntegrationInput) GetMaxPerDay() OptNilSiteMaxPerDay {
-	return s.MaxPerDay
-}
-
-// GetConfig returns the value of Config.
-func (s *SiteUpdateIntegrationInput) GetConfig() OptNilSiteIntegrationConfigInput {
-	return s.Config
-}
-
-// GetPreset returns the value of Preset.
-func (s *SiteUpdateIntegrationInput) GetPreset() OptNilString {
-	return s.Preset
-}
-
-// GetParams returns the value of Params.
-func (s *SiteUpdateIntegrationInput) GetParams() OptSiteUpdateIntegrationInputParams {
-	return s.Params
-}
-
-// GetRetireSecrets returns the value of RetireSecrets.
-func (s *SiteUpdateIntegrationInput) GetRetireSecrets() OptBool {
-	return s.RetireSecrets
-}
-
-// SetName sets the value of Name.
-func (s *SiteUpdateIntegrationInput) SetName(val OptString) {
-	s.Name = val
-}
-
-// SetEnabled sets the value of Enabled.
-func (s *SiteUpdateIntegrationInput) SetEnabled(val OptBool) {
-	s.Enabled = val
-}
-
-// SetIsDefault sets the value of IsDefault.
-func (s *SiteUpdateIntegrationInput) SetIsDefault(val OptBool) {
-	s.IsDefault = val
-}
-
-// SetMaxPerSecond sets the value of MaxPerSecond.
-func (s *SiteUpdateIntegrationInput) SetMaxPerSecond(val OptNilSiteMaxPerSecond) {
-	s.MaxPerSecond = val
-}
-
-// SetMaxPerDay sets the value of MaxPerDay.
-func (s *SiteUpdateIntegrationInput) SetMaxPerDay(val OptNilSiteMaxPerDay) {
-	s.MaxPerDay = val
-}
-
-// SetConfig sets the value of Config.
-func (s *SiteUpdateIntegrationInput) SetConfig(val OptNilSiteIntegrationConfigInput) {
-	s.Config = val
-}
-
-// SetPreset sets the value of Preset.
-func (s *SiteUpdateIntegrationInput) SetPreset(val OptNilString) {
-	s.Preset = val
-}
-
-// SetParams sets the value of Params.
-func (s *SiteUpdateIntegrationInput) SetParams(val OptSiteUpdateIntegrationInputParams) {
-	s.Params = val
-}
-
-// SetRetireSecrets sets the value of RetireSecrets.
-func (s *SiteUpdateIntegrationInput) SetRetireSecrets(val OptBool) {
-	s.RetireSecrets = val
-}
-
-// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
-// rotates it (the old one stays valid until retired).
-type SiteUpdateIntegrationInputParams map[string]jx.Raw
-
-func (s *SiteUpdateIntegrationInputParams) init() SiteUpdateIntegrationInputParams {
 	m := *s
 	if m == nil {
 		m = map[string]jx.Raw{}
@@ -23840,44 +23374,6 @@ func (s *SiteUpdateTokenInput) GetName() string {
 // SetName sets the value of Name.
 func (s *SiteUpdateTokenInput) SetName(val string) {
 	s.Name = val
-}
-
-// Site request body for updating a webhook endpoint.
-// Ref: #/components/schemas/SiteUpdateWebhookEndpointInput
-type SiteUpdateWebhookEndpointInput struct {
-	URL        OptString `json:"url"`
-	EventTypes []string  `json:"eventTypes"`
-	Enabled    OptBool   `json:"enabled"`
-}
-
-// GetURL returns the value of URL.
-func (s *SiteUpdateWebhookEndpointInput) GetURL() OptString {
-	return s.URL
-}
-
-// GetEventTypes returns the value of EventTypes.
-func (s *SiteUpdateWebhookEndpointInput) GetEventTypes() []string {
-	return s.EventTypes
-}
-
-// GetEnabled returns the value of Enabled.
-func (s *SiteUpdateWebhookEndpointInput) GetEnabled() OptBool {
-	return s.Enabled
-}
-
-// SetURL sets the value of URL.
-func (s *SiteUpdateWebhookEndpointInput) SetURL(val OptString) {
-	s.URL = val
-}
-
-// SetEventTypes sets the value of EventTypes.
-func (s *SiteUpdateWebhookEndpointInput) SetEventTypes(val []string) {
-	s.EventTypes = val
-}
-
-// SetEnabled sets the value of Enabled.
-func (s *SiteUpdateWebhookEndpointInput) SetEnabled(val OptBool) {
-	s.Enabled = val
 }
 
 // Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM
@@ -25128,9 +24624,515 @@ type SiteWorkspacesUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesUpdateUnprocessableEntity) siteWorkspacesUpdateRes() {}
 
+// SMTP credentials.
+// Ref: #/components/schemas/SmtpConfigInput
+type SmtpConfigInput struct {
+	Kind     SmtpConfigInputKind `json:"kind"`
+	Host     string              `json:"host"`
+	Port     int32               `json:"port"`
+	Username OptNilString        `json:"username"`
+	Password OptNilString        `json:"password"`
+	From     EmailAddress        `json:"from"`
+	FromName OptNilString        `json:"fromName"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SmtpConfigInput) GetKind() SmtpConfigInputKind {
+	return s.Kind
+}
+
+// GetHost returns the value of Host.
+func (s *SmtpConfigInput) GetHost() string {
+	return s.Host
+}
+
+// GetPort returns the value of Port.
+func (s *SmtpConfigInput) GetPort() int32 {
+	return s.Port
+}
+
+// GetUsername returns the value of Username.
+func (s *SmtpConfigInput) GetUsername() OptNilString {
+	return s.Username
+}
+
+// GetPassword returns the value of Password.
+func (s *SmtpConfigInput) GetPassword() OptNilString {
+	return s.Password
+}
+
+// GetFrom returns the value of From.
+func (s *SmtpConfigInput) GetFrom() EmailAddress {
+	return s.From
+}
+
+// GetFromName returns the value of FromName.
+func (s *SmtpConfigInput) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// SetKind sets the value of Kind.
+func (s *SmtpConfigInput) SetKind(val SmtpConfigInputKind) {
+	s.Kind = val
+}
+
+// SetHost sets the value of Host.
+func (s *SmtpConfigInput) SetHost(val string) {
+	s.Host = val
+}
+
+// SetPort sets the value of Port.
+func (s *SmtpConfigInput) SetPort(val int32) {
+	s.Port = val
+}
+
+// SetUsername sets the value of Username.
+func (s *SmtpConfigInput) SetUsername(val OptNilString) {
+	s.Username = val
+}
+
+// SetPassword sets the value of Password.
+func (s *SmtpConfigInput) SetPassword(val OptNilString) {
+	s.Password = val
+}
+
+// SetFrom sets the value of From.
+func (s *SmtpConfigInput) SetFrom(val EmailAddress) {
+	s.From = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *SmtpConfigInput) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+type SmtpConfigInputKind string
+
+const (
+	SmtpConfigInputKindSMTP SmtpConfigInputKind = "smtp"
+)
+
+// AllValues returns all SmtpConfigInputKind values.
+func (SmtpConfigInputKind) AllValues() []SmtpConfigInputKind {
+	return []SmtpConfigInputKind{
+		SmtpConfigInputKindSMTP,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmtpConfigInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SmtpConfigInputKindSMTP:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmtpConfigInputKind) UnmarshalText(data []byte) error {
+	switch SmtpConfigInputKind(data) {
+	case SmtpConfigInputKindSMTP:
+		*s = SmtpConfigInputKindSMTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Request body for a test send.
+// Ref: #/components/schemas/TestSendBroadcastInput
+type TestSendBroadcastInput struct {
+	// Address to send the rendered preview to.
+	Email EmailAddress `json:"email"`
+}
+
+// GetEmail returns the value of Email.
+func (s *TestSendBroadcastInput) GetEmail() EmailAddress {
+	return s.Email
+}
+
+// SetEmail sets the value of Email.
+func (s *TestSendBroadcastInput) SetEmail(val EmailAddress) {
+	s.Email = val
+}
+
+// Request body for sending a sample event to a webhook endpoint.
+// Ref: #/components/schemas/TestWebhookInput
+type TestWebhookInput struct {
+	// The event name the sample carries, for example `contact.created`.
+	EventType string `json:"eventType"`
+}
+
+// GetEventType returns the value of EventType.
+func (s *TestWebhookInput) GetEventType() string {
+	return s.EventType
+}
+
+// SetEventType sets the value of EventType.
+func (s *TestWebhookInput) SetEventType(val string) {
+	s.EventType = val
+}
+
 type TimeZoneName string
 
 type Timestamp time.Time
+
+// Request body for updating a draft broadcast: an omitted field keeps its value, null clears it.
+// Ref: #/components/schemas/UpdateBroadcastInput
+type UpdateBroadcastInput struct {
+	// Internal broadcast name.
+	Name OptString `json:"name"`
+	// Email subject line.
+	Subject OptString `json:"subject"`
+	// Sender display name; null goes back to the integration's default.
+	FromName OptNilString `json:"fromName"`
+	// Sender email address: a changed value must be on a verified Sending domain of the workspace, or the
+	// write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays
+	// editable. Null goes back to the integration's default.
+	FromEmail OptNilEmailAddress `json:"fromEmail"`
+	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptUpdateBroadcastInputDoc `json:"doc"`
+	// Target segment; null means all contacts. An archived segment is refused with 422.
+	SegmentId OptNilEntityId `json:"segmentId"`
+	// Sending integration; null means the workspace default. An archived integration is refused with 422.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetName returns the value of Name.
+func (s *UpdateBroadcastInput) GetName() OptString {
+	return s.Name
+}
+
+// GetSubject returns the value of Subject.
+func (s *UpdateBroadcastInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetFromName returns the value of FromName.
+func (s *UpdateBroadcastInput) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// GetFromEmail returns the value of FromEmail.
+func (s *UpdateBroadcastInput) GetFromEmail() OptNilEmailAddress {
+	return s.FromEmail
+}
+
+// GetBody returns the value of Body.
+func (s *UpdateBroadcastInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *UpdateBroadcastInput) GetDoc() OptUpdateBroadcastInputDoc {
+	return s.Doc
+}
+
+// GetSegmentId returns the value of SegmentId.
+func (s *UpdateBroadcastInput) GetSegmentId() OptNilEntityId {
+	return s.SegmentId
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *UpdateBroadcastInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// SetName sets the value of Name.
+func (s *UpdateBroadcastInput) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *UpdateBroadcastInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *UpdateBroadcastInput) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *UpdateBroadcastInput) SetFromEmail(val OptNilEmailAddress) {
+	s.FromEmail = val
+}
+
+// SetBody sets the value of Body.
+func (s *UpdateBroadcastInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *UpdateBroadcastInput) SetDoc(val OptUpdateBroadcastInputDoc) {
+	s.Doc = val
+}
+
+// SetSegmentId sets the value of SegmentId.
+func (s *UpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
+	s.SegmentId = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *UpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+// a 422 with the reason and nothing is stored.
+type UpdateBroadcastInputDoc map[string]jx.Raw
+
+func (s *UpdateBroadcastInputDoc) init() UpdateBroadcastInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep
+// the stored secret.
+// Ref: #/components/schemas/UpdateIntegrationInput
+type UpdateIntegrationInput struct {
+	Name      OptString `json:"name"`
+	Enabled   OptBool   `json:"enabled"`
+	IsDefault OptBool   `json:"isDefault"`
+	// Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES
+	// Integration with an `endpoint` cannot be left without it.
+	MaxPerSecond OptNilMaxPerSecond `json:"maxPerSecond"`
+	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit
+	// to keep. An SES Integration with an `endpoint` cannot be left without it.
+	MaxPerDay OptNilMaxPerDay           `json:"maxPerDay"`
+	Config    OptIntegrationConfigInput `json:"config"`
+	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no
+	// secret carries over.
+	Preset OptNilString `json:"preset"`
+	// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
+	// rotates it (the old one stays valid until retired).
+	Params OptUpdateIntegrationInputParams `json:"params"`
+	// Stop accepting the retiring value of every rotating secret.
+	RetireSecrets OptBool `json:"retireSecrets"`
+}
+
+// GetName returns the value of Name.
+func (s *UpdateIntegrationInput) GetName() OptString {
+	return s.Name
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *UpdateIntegrationInput) GetEnabled() OptBool {
+	return s.Enabled
+}
+
+// GetIsDefault returns the value of IsDefault.
+func (s *UpdateIntegrationInput) GetIsDefault() OptBool {
+	return s.IsDefault
+}
+
+// GetMaxPerSecond returns the value of MaxPerSecond.
+func (s *UpdateIntegrationInput) GetMaxPerSecond() OptNilMaxPerSecond {
+	return s.MaxPerSecond
+}
+
+// GetMaxPerDay returns the value of MaxPerDay.
+func (s *UpdateIntegrationInput) GetMaxPerDay() OptNilMaxPerDay {
+	return s.MaxPerDay
+}
+
+// GetConfig returns the value of Config.
+func (s *UpdateIntegrationInput) GetConfig() OptIntegrationConfigInput {
+	return s.Config
+}
+
+// GetPreset returns the value of Preset.
+func (s *UpdateIntegrationInput) GetPreset() OptNilString {
+	return s.Preset
+}
+
+// GetParams returns the value of Params.
+func (s *UpdateIntegrationInput) GetParams() OptUpdateIntegrationInputParams {
+	return s.Params
+}
+
+// GetRetireSecrets returns the value of RetireSecrets.
+func (s *UpdateIntegrationInput) GetRetireSecrets() OptBool {
+	return s.RetireSecrets
+}
+
+// SetName sets the value of Name.
+func (s *UpdateIntegrationInput) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *UpdateIntegrationInput) SetEnabled(val OptBool) {
+	s.Enabled = val
+}
+
+// SetIsDefault sets the value of IsDefault.
+func (s *UpdateIntegrationInput) SetIsDefault(val OptBool) {
+	s.IsDefault = val
+}
+
+// SetMaxPerSecond sets the value of MaxPerSecond.
+func (s *UpdateIntegrationInput) SetMaxPerSecond(val OptNilMaxPerSecond) {
+	s.MaxPerSecond = val
+}
+
+// SetMaxPerDay sets the value of MaxPerDay.
+func (s *UpdateIntegrationInput) SetMaxPerDay(val OptNilMaxPerDay) {
+	s.MaxPerDay = val
+}
+
+// SetConfig sets the value of Config.
+func (s *UpdateIntegrationInput) SetConfig(val OptIntegrationConfigInput) {
+	s.Config = val
+}
+
+// SetPreset sets the value of Preset.
+func (s *UpdateIntegrationInput) SetPreset(val OptNilString) {
+	s.Preset = val
+}
+
+// SetParams sets the value of Params.
+func (s *UpdateIntegrationInput) SetParams(val OptUpdateIntegrationInputParams) {
+	s.Params = val
+}
+
+// SetRetireSecrets sets the value of RetireSecrets.
+func (s *UpdateIntegrationInput) SetRetireSecrets(val OptBool) {
+	s.RetireSecrets = val
+}
+
+// The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value
+// rotates it (the old one stays valid until retired).
+type UpdateIntegrationInputParams map[string]jx.Raw
+
+func (s *UpdateIntegrationInputParams) init() UpdateIntegrationInputParams {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Request body for updating a template.
+// Ref: #/components/schemas/UpdateTemplateInput
+type UpdateTemplateInput struct {
+	// Template name.
+	Name OptString `json:"name"`
+	// Default subject line.
+	Subject OptString `json:"subject"`
+	// HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+	// a 422 with the reason and nothing is stored.
+	Doc OptUpdateTemplateInputDoc `json:"doc"`
+}
+
+// GetName returns the value of Name.
+func (s *UpdateTemplateInput) GetName() OptString {
+	return s.Name
+}
+
+// GetSubject returns the value of Subject.
+func (s *UpdateTemplateInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *UpdateTemplateInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *UpdateTemplateInput) GetDoc() OptUpdateTemplateInputDoc {
+	return s.Doc
+}
+
+// SetName sets the value of Name.
+func (s *UpdateTemplateInput) SetName(val OptString) {
+	s.Name = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *UpdateTemplateInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *UpdateTemplateInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *UpdateTemplateInput) SetDoc(val OptUpdateTemplateInputDoc) {
+	s.Doc = val
+}
+
+// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+// returns. The server renders the body from it in the same save; a document that cannot be rendered is
+// a 422 with the reason and nothing is stored.
+type UpdateTemplateInputDoc map[string]jx.Raw
+
+func (s *UpdateTemplateInputDoc) init() UpdateTemplateInputDoc {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+// Request body for updating a webhook endpoint.
+// Ref: #/components/schemas/UpdateWebhookInput
+type UpdateWebhookInput struct {
+	// Destination URL (absolute http or https).
+	URL OptString `json:"url"`
+	// Event names to receive; empty means all events.
+	EventTypes []string `json:"eventTypes"`
+	// Whether the endpoint receives deliveries.
+	Enabled OptBool `json:"enabled"`
+}
+
+// GetURL returns the value of URL.
+func (s *UpdateWebhookInput) GetURL() OptString {
+	return s.URL
+}
+
+// GetEventTypes returns the value of EventTypes.
+func (s *UpdateWebhookInput) GetEventTypes() []string {
+	return s.EventTypes
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *UpdateWebhookInput) GetEnabled() OptBool {
+	return s.Enabled
+}
+
+// SetURL sets the value of URL.
+func (s *UpdateWebhookInput) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetEventTypes sets the value of EventTypes.
+func (s *UpdateWebhookInput) SetEventTypes(val []string) {
+	s.EventTypes = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *UpdateWebhookInput) SetEnabled(val OptBool) {
+	s.Enabled = val
+}
 
 // A row that uses the one a removal was refused for: what a client shows to say what to change first.
 // Ref: #/components/schemas/UsedBy

@@ -8,7 +8,33 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/patch"
 )
+
+// optNilInt mimics an ogen OptNilInt: absent, null or a value.
+type optNilInt struct {
+	v         int
+	set, null bool
+}
+
+func (o optNilInt) Get() (int, bool) { return o.v, o.set && !o.null }
+func (o optNilInt) IsSet() bool      { return o.set }
+
+func TestPatchKeepsAnAbsentKeyClearsANullAndSetsAValue(t *testing.T) {
+	assert.True(t, convert.Patch[int](optNilInt{}).IsKeep())
+	assert.True(t, convert.Patch[int](optNilInt{set: true, null: true}).IsClear())
+	assert.Equal(t, patch.Set(7), convert.Patch[int](optNilInt{v: 7, set: true}))
+}
+
+func TestStringPatchCoercesANamedString(t *testing.T) {
+	assert.Equal(t, patch.Set("Europe/Berlin"), convert.StringPatch[zone](optZone{v: "Europe/Berlin", set: true}))
+	assert.True(t, convert.StringPatch[zone](optZone{}).IsKeep())
+}
+
+func TestListPatchKeepsANilListAndSetsAnEmptyOne(t *testing.T) {
+	assert.True(t, convert.ListPatch([]string(nil)).IsKeep())
+	assert.Equal(t, patch.Set([]string{}), convert.ListPatch([]string{}))
+}
 
 // optInt mimics an ogen OptInt: Get reports the value and whether it is set.
 type optInt struct {
@@ -26,6 +52,7 @@ type optZone struct {
 }
 
 func (o optZone) Get() (zone, bool) { return o.v, o.set }
+func (o optZone) IsSet() bool       { return o.set }
 
 func TestRawMapDecodesValues(t *testing.T) {
 	type rawRecord map[string]jx.Raw

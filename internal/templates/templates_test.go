@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -73,7 +74,7 @@ func TestUpdateRefusesABlankNameAndLeavesTheRow(t *testing.T) {
 	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 
-	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: new("")})
+	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: patch.Set("")})
 	require.ErrorIs(t, err, templates.ErrBlankName)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
 }
@@ -83,12 +84,12 @@ func TestUpdateChangesGivenFieldsOnly(t *testing.T) {
 	m := templates.New(testhelper.Renderer())
 	ctx := context.Background()
 
-	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Subject: new("Changed")})
+	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Subject: patch.Set("Changed")})
 	require.NoError(t, err)
 	assert.Equal(t, "Changed", got.Subject)
 	assert.Equal(t, fixtures.TemplateWelcomeName, got.Name)
 
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID, templates.UpdateInput{Subject: new("x")})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateGlobexID, templates.UpdateInput{Subject: patch.Set("x")})
 	assert.ErrorIs(t, err, templates.ErrNotFound)
 }
 
@@ -125,7 +126,7 @@ func TestUpdateRefusesAWhitespaceName(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := templates.New(testhelper.Renderer()).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: new("  ")})
+	_, err := templates.New(testhelper.Renderer()).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.TemplateWelcomeID, templates.UpdateInput{Name: patch.Set("  ")})
 	require.ErrorIs(t, err, templates.ErrBlankName)
 	assert.Equal(t, fixtures.TemplateWelcomeName, env.DB.EmailTemplate.GetX(ctx, fixtures.TemplateWelcomeID).Name)
 }

@@ -61,8 +61,8 @@ func (w *Workspace) createBroadcast(b Broadcast) externalapi.EntityId {
 		Subject: externalapi.NewOptString(b.Subject),
 	}
 	if !b.WithoutFrom {
-		in.FromName = externalapi.NewOptString(w.FromName)
-		in.FromEmail = externalapi.NewOptEmailAddress(externalapi.EmailAddress(w.FromEmail))
+		in.FromName = externalapi.NewOptNilString(w.FromName)
+		in.FromEmail = externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(w.FromEmail))
 	}
 	if len(b.Doc) > 0 {
 		in.Doc = externalapi.NewOptCreateBroadcastInputDoc(docObject[externalapi.CreateBroadcastInputDoc](w.t, b.Doc))

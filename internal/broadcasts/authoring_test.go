@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -50,7 +51,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 
 func TestCreateReportsErrors(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Create(canceled(), env.DB.Scoped(fixtures.AcmeID), broadcasts.Fields{})
+	_, err := broadcasts.New(env.Bus, testhelper.Renderer()).Create(canceled(), env.DB.Scoped(fixtures.AcmeID), broadcasts.CreateInput{})
 	assert.Error(t, err)
 }
 
@@ -59,7 +60,7 @@ func TestCreateMakesADraftWithTheGivenFields(t *testing.T) {
 	name, subject, body, from := "N", "S", "<p></p>", "a@"+fixtures.SendingDomainVerifiedDomain
 
 	b, err := broadcasts.New(env.Bus, testhelper.Renderer()).Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
-		broadcasts.Fields{Name: &name, Subject: &subject, Body: &body, FromEmail: &from})
+		broadcasts.CreateInput{Name: &name, Subject: &subject, Body: &body, FromEmail: &from})
 	require.NoError(t, err)
 	assert.Equal(t, broadcast.StatusDraft, b.Status)
 	assert.Equal(t, "N", b.Name)
@@ -76,16 +77,16 @@ func TestUpdateOnlyEditsDraftsAndKeepsUnsetFields(t *testing.T) {
 	subject := "New subject"
 
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
-	b, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.Fields{Subject: &subject})
+	b, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Subject: patch.Set(subject)})
 	require.NoError(t, err)
 	assert.Equal(t, "New subject", b.Subject)
 	assert.Equal(t, before.Name, b.Name, "unset fields keep the stored value")
 
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, broadcasts.Fields{Subject: &subject})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, broadcasts.UpdateInput{Subject: patch.Set(subject)})
 	require.ErrorIs(t, err, broadcasts.ErrNotDraft)
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID, broadcasts.Fields{Subject: &subject})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Subject: patch.Set(subject)})
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
-	_, err = m.Update(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.Fields{Subject: &subject})
+	_, err = m.Update(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.UpdateInput{Subject: patch.Set(subject)})
 	assert.Error(t, err)
 }
 
@@ -218,16 +219,61 @@ func TestArchiveKeepsABroadcastAddressableAndIsWorkspaceScoped(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	require.NoError(t, m.Archive(ctx, s, fixtures.BroadcastFailedID))
+	archived, err := m.Archive(ctx, s, fixtures.BroadcastFailedID)
+	require.NoError(t, err)
+	assert.NotNil(t, archived.DiscardedAt, "Archive returns the archived Broadcast")
 	got, err := m.Get(ctx, s, fixtures.BroadcastFailedID)
 	require.NoError(t, err, "an archived Broadcast is still addressable by id")
 	assert.NotNil(t, got.DiscardedAt)
 
-	require.ErrorIs(t, m.Archive(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastFailedID), broadcasts.ErrNotFound,
-		"another Workspace's Broadcast is not found")
-	require.ErrorIs(t, m.Archive(ctx, s, fixtures.BroadcastDraftID), broadcasts.ErrNotArchivable)
+	_, err = m.Archive(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.BroadcastFailedID)
+	require.ErrorIs(t, err, broadcasts.ErrNotFound, "another Workspace's Broadcast is not found")
+	_, err = m.Archive(ctx, s, fixtures.BroadcastDraftID)
+	require.ErrorIs(t, err, broadcasts.ErrNotArchivable)
 	_, err = m.Get(ctx, s, fixtures.BroadcastDraftID)
 	assert.NoError(t, err)
+}
+
+func TestArchiveAndUnarchiveReturnTheBroadcast(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	_, err := m.Archive(ctx, s, fixtures.BroadcastFailedID)
+	require.NoError(t, err)
+	again, err := m.Archive(ctx, s, fixtures.BroadcastFailedID)
+	require.NoError(t, err)
+	assert.NotNil(t, again.DiscardedAt, "archiving an archived Broadcast returns it as it is")
+
+	restored, err := m.Unarchive(ctx, s, fixtures.BroadcastFailedID)
+	require.NoError(t, err)
+	assert.Equal(t, int64(fixtures.BroadcastFailedID), restored.ID)
+	assert.Nil(t, restored.DiscardedAt, "Unarchive returns the restored Broadcast")
+}
+
+func TestUpdatePatchClearsANullAndKeepsAnAbsentField(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := broadcasts.New(env.Bus, testhelper.Renderer())
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	seg := int64(fixtures.SegmentProPlanID)
+	_, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{
+		FromName: patch.Set("Acme"), SegmentID: patch.Set(seg),
+	})
+	require.NoError(t, err)
+
+	b, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{
+		FromName: patch.Clear[string](), Subject: patch.Set("Only the subject"),
+	})
+	require.NoError(t, err)
+	assert.Nil(t, b.FromName, "a clear drops the stored value")
+	require.NotNil(t, b.SegmentID, "an absent field keeps the stored value")
+	assert.Equal(t, seg, *b.SegmentID)
+
+	cleared, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{SegmentID: patch.Clear[int64]()})
+	require.NoError(t, err)
+	assert.Nil(t, cleared.SegmentID, "a cleared Segment means all contacts")
 }
 
 func TestCreateAndUpdateRefuseABlankName(t *testing.T) {
@@ -237,10 +283,10 @@ func TestCreateAndUpdateRefuseABlankName(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	for _, name := range []string{"", "  \t\n"} {
-		_, err := m.Create(ctx, s, broadcasts.Fields{Name: &name})
+		_, err := m.Create(ctx, s, broadcasts.CreateInput{Name: &name})
 		require.ErrorIs(t, err, broadcasts.ErrBlankName)
 
-		_, err = m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.Fields{Name: &name})
+		_, err = m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Name: patch.Set(name)})
 		require.ErrorIs(t, err, broadcasts.ErrBlankName)
 		assert.Equal(t, fixtures.BroadcastDraftName, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Name)
 	}

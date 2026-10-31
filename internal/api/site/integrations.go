@@ -2,12 +2,10 @@ package site
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
@@ -39,27 +37,14 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.Site
 
 // SiteIntegrationsCreate stores a new provider integration; credentials are
 // encrypted at rest and never returned. Owners and admins only.
-func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.SiteCreateIntegrationInput, _ siteapi.SiteIntegrationsCreateParams) (siteapi.SiteIntegrationsCreateRes, error) {
+func (h *Handlers) SiteIntegrationsCreate(ctx context.Context, req *siteapi.CreateIntegrationInput, _ siteapi.SiteIntegrationsCreateParams) (siteapi.SiteIntegrationsCreateRes, error) {
 	s := workspaceScope(ctx)
 
-	cfg, err := configInput(req.Config)
+	in, err := inputs.IntegrationCreate(req)
 	if err != nil {
 		return nil, err
 	}
-	inParams, err := integrations.ParamsOf(req.Params.Or(nil))
-	var row *ent.Integration
-	if err == nil {
-		row, err = h.integrations.Create(ctx, s, integrations.CreateInput{
-			Name:         req.Name,
-			Enabled:      convert.Ptr(req.Enabled),
-			IsDefault:    req.IsDefault.Or(false),
-			MaxPerSecond: integrations.LimitOf(req.MaxPerSecond),
-			MaxPerDay:    integrations.LimitOf(req.MaxPerDay),
-			Config:       cfg,
-			Preset:       integrations.PresetOf(req.Preset).Name,
-			Params:       inParams,
-		})
-	}
+	row, err := h.integrations.Create(ctx, s, in)
 	if err != nil {
 		return nil, err
 	}
@@ -91,33 +76,16 @@ func (h *Handlers) SiteIntegrationsGet(ctx context.Context, params siteapi.SiteI
 // Within a supplied config, blank secret fields (password, secret access key)
 // keep the stored secret rather than clearing it, since secrets are never echoed
 // back on read — so a partial edit cannot accidentally wipe a credential.
-func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.SiteUpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (siteapi.SiteIntegrationsUpdateRes, error) {
+func (h *Handlers) SiteIntegrationsUpdate(ctx context.Context, req *siteapi.UpdateIntegrationInput, params siteapi.SiteIntegrationsUpdateParams) (siteapi.SiteIntegrationsUpdateRes, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
-	in := integrations.UpdateInput{
-		Name:          convert.Ptr(req.Name),
-		Enabled:       convert.Ptr(req.Enabled),
-		IsDefault:     convert.Ptr(req.IsDefault),
-		MaxPerSecond:  integrations.LimitOf(req.MaxPerSecond),
-		MaxPerDay:     integrations.LimitOf(req.MaxPerDay),
-		Preset:        integrations.PresetOf(req.Preset),
-		RetireSecrets: req.RetireSecrets.Or(false),
+	in, err := inputs.IntegrationUpdate(req)
+	if err != nil {
+		return nil, err
 	}
-	if c, ok := req.Config.Get(); ok {
-		cfg, err := configInput(c)
-		if err != nil {
-			return nil, err
-		}
-		in.Config = &cfg
-	}
-	var updated *ent.Integration
-	inParams, err := integrations.ParamsOf(req.Params.Or(nil))
-	if err == nil {
-		in.Params = inParams
-		updated, err = h.integrations.Update(ctx, s, id, in)
-	}
+	updated, err := h.integrations.Update(ctx, s, id, in)
 	if err != nil {
 		return nil, err
 	}
@@ -163,11 +131,7 @@ func (h *Handlers) SiteIntegrationsArchive(ctx context.Context, params siteapi.S
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.integrations.Archive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	row, err := h.integrations.Get(ctx, s, id)
+	row, err := h.integrations.Archive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -184,11 +148,7 @@ func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.integrations.Unarchive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	row, err := h.integrations.Get(ctx, s, id)
+	row, err := h.integrations.Unarchive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -198,31 +158,6 @@ func (h *Handlers) SiteIntegrationsUnarchive(ctx context.Context, params siteapi
 	}
 	return &res, nil
 }
-
-// --- helpers ---
-
-// configInput maps the typed config union onto the module's provider-neutral input.
-func configInput(in siteapi.SiteIntegrationConfigInput) (integrations.ConfigInput, error) {
-	switch in.OneOf.Type {
-	case siteapi.SiteSmtpConfigInputSiteIntegrationConfigInputSum:
-		c := in.OneOf.SiteSmtpConfigInput
-		return integrations.ConfigInput{SMTP: &integrations.SMTPConfig{
-			Host: c.Host, Port: int(c.Port), Username: c.Username.Or(""), Password: c.Password.Or(""),
-			From: string(c.From), FromName: c.FromName.Or(""),
-		}}, nil
-	case siteapi.SiteSesConfigInputSiteIntegrationConfigInputSum:
-		c := in.OneOf.SiteSesConfigInput
-		return integrations.ConfigInput{SES: &integrations.SESConfig{
-			Region: c.Region, AccessKeyID: c.AccessKeyId, SecretAccessKey: c.SecretAccessKey,
-			From: string(c.From), FromName: c.FromName.Or(""), Endpoint: c.Endpoint.Or(""),
-		}}, nil
-	case siteapi.SiteInboxConfigInputSiteIntegrationConfigInputSum:
-		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
-	}
-	return integrations.ConfigInput{}, errUnknownProvider
-}
-
-var errUnknownProvider = errors.New("unsupported provider")
 
 // integrationToResource maps the row with goverter, then attaches what the mapper cannot
 // see: the decrypted config and params (redacted), the hook URL and the Provider limit.

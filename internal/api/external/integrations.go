@@ -2,13 +2,11 @@ package external
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -49,25 +47,12 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 
 // IntegrationsCreate stores a new Integration; credentials are sealed and never returned.
 func (h *Handlers) IntegrationsCreate(ctx context.Context, req *externalapi.CreateIntegrationInput) (externalapi.IntegrationsCreateRes, error) {
-	cfg, err := configInput(req.Config)
+	in, err := inputs.IntegrationCreate(req)
 	if err != nil {
 		return nil, err
 	}
 	s := auth.TokenScoped(ctx)
-	inParams, err := integrations.ParamsOf(req.Params.Or(nil))
-	var row *ent.Integration
-	if err == nil {
-		row, err = h.integrations.Create(ctx, s, integrations.CreateInput{
-			Name:         req.Name,
-			Enabled:      convert.Ptr(req.Enabled),
-			IsDefault:    req.IsDefault.Or(false),
-			MaxPerSecond: integrations.LimitOf(req.MaxPerSecond),
-			MaxPerDay:    integrations.LimitOf(req.MaxPerDay),
-			Config:       cfg,
-			Preset:       integrations.PresetOf(req.Preset).Name,
-			Params:       inParams,
-		})
-	}
+	row, err := h.integrations.Create(ctx, s, in)
 	if err != nil {
 		return nil, err
 	}
@@ -97,29 +82,12 @@ func (h *Handlers) IntegrationsGet(ctx context.Context, params externalapi.Integ
 // blank secret fields inside a supplied config keep the stored secret.
 func (h *Handlers) IntegrationsUpdate(ctx context.Context, req *externalapi.UpdateIntegrationInput, params externalapi.IntegrationsUpdateParams) (externalapi.IntegrationsUpdateRes, error) {
 	id := int64(params.ID)
-	in := integrations.UpdateInput{
-		Name:          convert.Ptr(req.Name),
-		Enabled:       convert.Ptr(req.Enabled),
-		IsDefault:     convert.Ptr(req.IsDefault),
-		MaxPerSecond:  integrations.LimitOf(req.MaxPerSecond),
-		MaxPerDay:     integrations.LimitOf(req.MaxPerDay),
-		Preset:        integrations.PresetOf(req.Preset),
-		RetireSecrets: req.RetireSecrets.Or(false),
-	}
-	if c, ok := req.Config.Get(); ok {
-		cfg, err := configInput(c)
-		if err != nil {
-			return nil, err
-		}
-		in.Config = &cfg
+	in, err := inputs.IntegrationUpdate(req)
+	if err != nil {
+		return nil, err
 	}
 	s := auth.TokenScoped(ctx)
-	var row *ent.Integration
-	inParams, err := integrations.ParamsOf(req.Params.Or(nil))
-	if err == nil {
-		in.Params = inParams
-		row, err = h.integrations.Update(ctx, s, id, in)
-	}
+	row, err := h.integrations.Update(ctx, s, id, in)
 	if err != nil {
 		return nil, err
 	}
@@ -168,27 +136,7 @@ func (h *Handlers) PresetsList(_ context.Context) (externalapi.PresetsListRes, e
 func (h *Handlers) IntegrationsArchive(ctx context.Context, params externalapi.IntegrationsArchiveParams) (externalapi.IntegrationsArchiveRes, error) {
 	s := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.integrations.Archive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	return h.archivedOrRestored(ctx, s, id)
-}
-
-// IntegrationsUnarchive restores an archived Integration to the list. It is not the default.
-func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi.IntegrationsUnarchiveParams) (externalapi.IntegrationsUnarchiveRes, error) {
-	s := auth.TokenScoped(ctx)
-	id := int64(params.ID)
-	err := h.integrations.Unarchive(ctx, s, id)
-	if err != nil {
-		return nil, err
-	}
-	return h.archivedOrRestored(ctx, s, id)
-}
-
-// archivedOrRestored reads the Integration back after an archive or an unarchive.
-func (h *Handlers) archivedOrRestored(ctx context.Context, s *ent.Scoped, id int64) (*externalapi.IntegrationResource, error) {
-	row, err := h.integrations.Get(ctx, s, id)
+	row, err := h.integrations.Archive(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -199,25 +147,19 @@ func (h *Handlers) archivedOrRestored(ctx context.Context, s *ent.Scoped, id int
 	return &res, nil
 }
 
-// configInput maps the typed config union onto the module's provider-neutral input.
-func configInput(in externalapi.IntegrationConfigInput) (integrations.ConfigInput, error) {
-	switch in.OneOf.Type {
-	case externalapi.SmtpConfigInputIntegrationConfigInputSum:
-		c := in.OneOf.SmtpConfigInput
-		return integrations.ConfigInput{SMTP: &integrations.SMTPConfig{
-			Host: c.Host, Port: int(c.Port), Username: c.Username.Or(""), Password: c.Password.Or(""),
-			From: string(c.From), FromName: c.FromName.Or(""),
-		}}, nil
-	case externalapi.SesConfigInputIntegrationConfigInputSum:
-		c := in.OneOf.SesConfigInput
-		return integrations.ConfigInput{SES: &integrations.SESConfig{
-			Region: c.Region, AccessKeyID: c.AccessKeyId, SecretAccessKey: c.SecretAccessKey,
-			From: string(c.From), FromName: c.FromName.Or(""), Endpoint: c.Endpoint.Or(""),
-		}}, nil
-	case externalapi.InboxConfigInputIntegrationConfigInputSum:
-		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil
+// IntegrationsUnarchive restores an archived Integration to the list. It is not the default.
+func (h *Handlers) IntegrationsUnarchive(ctx context.Context, params externalapi.IntegrationsUnarchiveParams) (externalapi.IntegrationsUnarchiveRes, error) {
+	s := auth.TokenScoped(ctx)
+	id := int64(params.ID)
+	row, err := h.integrations.Unarchive(ctx, s, id)
+	if err != nil {
+		return nil, err
 	}
-	return integrations.ConfigInput{}, errors.New("unsupported provider")
+	res, err := h.integrationOne(ctx, s, row)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
 }
 
 // integrationOne renders a single row with its 24-hour usage.

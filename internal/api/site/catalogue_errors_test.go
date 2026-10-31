@@ -195,10 +195,10 @@ func TestSiteTemplatesErrorBranches(t *testing.T) {
 	known := idStr(fixtures.TemplateWelcomeID)
 	missing := idStr(99999)
 
-	r1, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{Name: "x"}, siteapi.SiteTemplatesCreateParams{WorkspaceId: foreign})
+	r1, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{Name: "x"}, siteapi.SiteTemplatesCreateParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTemplatesCreateNotFound{}, r1)
-	r2, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
+	r2, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name: "Fresh", Subject: siteapi.NewOptString("S"), Body: siteapi.NewOptString("<p></p>"),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
@@ -220,7 +220,7 @@ func TestSiteTemplatesErrorBranches(t *testing.T) {
 	require.Truef(t, ok, "got %T", g4)
 	assert.Equal(t, fixtures.TemplateWelcomeName, got.Name)
 
-	rename := &siteapi.SiteUpdateEmailTemplateInput{Name: siteapi.NewOptString("Renamed")}
+	rename := &siteapi.UpdateTemplateInput{Name: siteapi.NewOptString("Renamed")}
 	u1, err := c.SiteTemplatesUpdate(ctx, rename, siteapi.SiteTemplatesUpdateParams{WorkspaceId: foreign, ID: known})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteTemplatesUpdateNotFound{}, u1)
@@ -263,13 +263,13 @@ func TestSiteWebhooksErrorBranches(t *testing.T) {
 	missing := idStr(99999)
 	events := []string{"contact.created"}
 
-	r1, err := c.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{URL: "https://x.test/h", EventTypes: events}, siteapi.SiteWebhooksCreateParams{WorkspaceId: foreign})
+	r1, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "https://x.test/h", EventTypes: events}, siteapi.SiteWebhooksCreateParams{WorkspaceId: foreign})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWebhooksCreateNotFound{}, r1)
-	r2, err := c.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{URL: "not a url", EventTypes: events}, siteapi.SiteWebhooksCreateParams{WorkspaceId: acme})
+	r2, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "not a url", EventTypes: events}, siteapi.SiteWebhooksCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWebhooksCreateUnprocessableEntity{}, r2)
-	r3, err := c.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{URL: "https://x.test/h", EventTypes: events, Enabled: siteapi.NewOptBool(false)}, siteapi.SiteWebhooksCreateParams{WorkspaceId: acme})
+	r3, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "https://x.test/h", EventTypes: events, Enabled: siteapi.NewOptBool(false)}, siteapi.SiteWebhooksCreateParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	created, ok := r3.(*siteapi.SiteWebhookEndpointResource)
 	require.Truef(t, ok, "got %T", r3)
@@ -290,17 +290,17 @@ func TestSiteWebhooksErrorBranches(t *testing.T) {
 	require.Truef(t, ok, "got %T", g4)
 	assert.Equal(t, fixtures.WebhookCodebasicsURL, got.URL)
 
-	off := &siteapi.SiteUpdateWebhookEndpointInput{Enabled: siteapi.NewOptBool(false)}
+	off := &siteapi.UpdateWebhookInput{Enabled: siteapi.NewOptBool(false)}
 	u1, err := c.SiteWebhooksUpdate(ctx, off, siteapi.SiteWebhooksUpdateParams{WorkspaceId: foreign, ID: known})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWebhooksUpdateNotFound{}, u1)
 	u3, err := c.SiteWebhooksUpdate(ctx, off, siteapi.SiteWebhooksUpdateParams{WorkspaceId: acme, ID: missing})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWebhooksUpdateNotFound{}, u3)
-	u4, err := c.SiteWebhooksUpdate(ctx, &siteapi.SiteUpdateWebhookEndpointInput{URL: siteapi.NewOptString("nope")}, siteapi.SiteWebhooksUpdateParams{WorkspaceId: acme, ID: known})
+	u4, err := c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{URL: siteapi.NewOptString("nope")}, siteapi.SiteWebhooksUpdateParams{WorkspaceId: acme, ID: known})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWebhooksUpdateUnprocessableEntity{}, u4)
-	u5, err := c.SiteWebhooksUpdate(ctx, &siteapi.SiteUpdateWebhookEndpointInput{
+	u5, err := c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{
 		URL: siteapi.NewOptString("https://new.test/h"), Enabled: siteapi.NewOptBool(false), EventTypes: events,
 	}, siteapi.SiteWebhooksUpdateParams{WorkspaceId: acme, ID: known})
 	require.NoError(t, err)

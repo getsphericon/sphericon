@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/lifecycle"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -145,27 +146,35 @@ var (
 	ErrBlankName = validation.Refuse("broadcasts: name must not be empty", "errors.name_empty")
 )
 
-// Fields are the author-editable content of a Broadcast. A nil field is "not
-// provided": Create falls back to the schema default, Update keeps the stored value.
-// The Clear flags are JSON Merge Patch nulls for Update: they drop the stored value.
-// SegmentID and IntegrationID reference rows of the same Workspace; the scoped
-// client refuses a foreign one with ent.ErrNotInWorkspace.
-type Fields struct {
+// CreateInput is a new draft Broadcast. A nil field is "not provided": it takes the schema
+// default. SegmentID and IntegrationID reference rows of the same Workspace; the scoped client
+// refuses a foreign one with ent.ErrNotInWorkspace.
+type CreateInput struct {
 	Name      *string
 	Subject   *string
 	FromName  *string
 	FromEmail *string
 	Body      *string
 	// Doc is the editor's JSON document, empty when the Broadcast is written as HTML. The body is
-	// built from it in the same save (ADR 0040); a Body alone clears the stored document.
+	// built from it in the same save (ADR 0040).
 	Doc           json.RawMessage
 	SegmentID     *int64
 	IntegrationID *int64
+}
 
-	ClearFromName    bool
-	ClearFromEmail   bool
-	ClearSegment     bool
-	ClearIntegration bool
+// UpdateInput is a patch of a draft Broadcast: a field that keeps leaves the stored value, a clear
+// drops it. Name, Subject, Body and Doc cannot be cleared; a Body alone clears the stored
+// document. FromName and FromEmail clear to the Integration's default, SegmentID to all contacts
+// and IntegrationID to the Workspace default.
+type UpdateInput struct {
+	Name          patch.Field[string]
+	Subject       patch.Field[string]
+	FromName      patch.Field[string]
+	FromEmail     patch.Field[string]
+	Body          patch.Field[string]
+	Doc           patch.Field[json.RawMessage]
+	SegmentID     patch.Field[int64]
+	IntegrationID patch.Field[int64]
 }
 
 // checkName refuses a given name that is blank after trimming; an absent name is not checked.
@@ -199,7 +208,7 @@ func setsFrom(from, stored *string) bool {
 // Create makes a draft Broadcast. Nothing here schedules or sends. A blank name is ErrBlankName; a
 // subject, body or document that cannot render is emailrender.ErrInvalidContent; the body is
 // stored sanitized.
-func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broadcast, error) {
+func (m *Module) Create(ctx context.Context, s *ent.Scoped, f CreateInput) (*ent.Broadcast, error) {
 	if err := checkName(f.Name); err != nil {
 		return nil, err
 	}
@@ -207,7 +216,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 	if err != nil {
 		return nil, err
 	}
-	if err := m.checkRefs(ctx, s, f); err != nil {
+	if err := m.checkRefs(ctx, s, f.SegmentID, f.IntegrationID); err != nil {
 		return nil, err
 	}
 	if setsFrom(f.FromEmail, nil) {
@@ -238,9 +247,9 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, f Fields) (*ent.Broa
 
 // checkRefs refuses a Segment or Integration that is missing or archived: an archived row leaves
 // new work (ADR 0049). A Broadcast already pointing at one keeps it as history.
-func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, f Fields) error {
-	if f.SegmentID != nil {
-		ok, err := s.Segment().Query().Where(segment.ID(*f.SegmentID)).Exist(ctx)
+func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, segmentID, integrationID *int64) error {
+	if segmentID != nil {
+		ok, err := s.Segment().Query().Where(segment.ID(*segmentID)).Exist(ctx)
 		if err != nil {
 			return err
 		}
@@ -248,8 +257,8 @@ func (m *Module) checkRefs(ctx context.Context, s *ent.Scoped, f Fields) error {
 			return ErrSegmentNotFound
 		}
 	}
-	if f.IntegrationID != nil {
-		ok, err := messaging.IntegrationKept(ctx, s, *f.IntegrationID)
+	if integrationID != nil {
+		ok, err := messaging.IntegrationKept(ctx, s, *integrationID)
 		if err != nil {
 			return err
 		}
@@ -285,55 +294,45 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, a
 		})
 }
 
-// Update edits a draft. The UPDATE only matches a draft row, so a Broadcast that was
-// claimed for sending in the meantime is never edited. A blank name is ErrBlankName.
-func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f Fields) (*ent.Broadcast, error) {
-	if err := checkName(f.Name); err != nil {
+// Update applies a patch to a draft and returns it. The UPDATE only matches a draft row, so a
+// Broadcast that was claimed for sending in the meantime is never edited. A blank name is
+// ErrBlankName; a Segment or Integration set here is checked as on Create, and a From email set
+// to a new value must be on a verified Sending domain.
+func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateInput) (*ent.Broadcast, error) {
+	if err := checkName(f.Name.Ptr()); err != nil {
 		return nil, err
 	}
-	c, err := emailrender.ResolveContent(ctx, m.renderer, f.Subject, f.Body, f.Doc, ErrBodyAndDoc)
+	doc, _ := f.Doc.Get()
+	c, err := emailrender.ResolveContent(ctx, m.renderer, f.Subject.Ptr(), f.Body.Ptr(), doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
 	}
-	if err := m.checkRefs(ctx, s, f); err != nil {
+	if err := m.checkRefs(ctx, s, f.SegmentID.Ptr(), f.IntegrationID.Ptr()); err != nil {
 		return nil, err
 	}
-	if f.FromEmail != nil {
+	if from, ok := f.FromEmail.Get(); ok {
 		cur, err := m.Get(ctx, s, id)
 		if err != nil {
 			return nil, err
 		}
-		if setsFrom(f.FromEmail, cur.FromEmail) {
-			if err := checkFrom(ctx, s, *f.FromEmail); err != nil {
+		if setsFrom(&from, cur.FromEmail) {
+			if err := checkFrom(ctx, s, from); err != nil {
 				return nil, err
 			}
 		}
 	}
-	u := s.Broadcast().Update().Where(draftOf(id)).
-		SetNillableName(f.Name).
-		SetNillableSubject(f.Subject).
-		SetNillableFromName(f.FromName).
-		SetNillableFromEmail(f.FromEmail).
-		SetNillableBody(c.Body).
-		SetNillableSegmentID(f.SegmentID).
-		SetNillableIntegrationID(f.IntegrationID)
+	u := s.Broadcast().Update().Where(draftOf(id)).SetNillableBody(c.Body)
+	patch.ApplySet(f.Name, u.SetName)
+	patch.ApplySet(f.Subject, u.SetSubject)
+	patch.Apply(f.FromName, u.SetFromName, u.ClearFromName)
+	patch.Apply(f.FromEmail, u.SetFromEmail, u.ClearFromEmail)
+	patch.Apply(f.SegmentID, u.SetSegmentID, u.ClearSegmentID)
+	patch.Apply(f.IntegrationID, u.SetIntegrationID, u.ClearIntegrationID)
 	switch {
 	case c.Authored != nil:
-		u.SetDoc(f.Doc).SetEditorVersion(c.Authored.EditorVersion)
+		u.SetDoc(doc).SetEditorVersion(c.Authored.EditorVersion)
 	case c.Body != nil:
 		u.ClearDoc().ClearEditorVersion()
-	}
-	if f.ClearFromName {
-		u.ClearFromName()
-	}
-	if f.ClearFromEmail {
-		u.ClearFromEmail()
-	}
-	if f.ClearSegment {
-		u.ClearSegmentID()
-	}
-	if f.ClearIntegration {
-		u.ClearIntegrationID()
 	}
 	return m.editDraft(ctx, s, id, u)
 }
@@ -374,33 +373,36 @@ func (m *Module) DeleteDraft(ctx context.Context, s *ent.Scoped, id int64) error
 	return nil
 }
 
-// Archive discards a sent or failed Broadcast (ADR 0049): it leaves the lists but its Recipients,
-// report, tracking and figures stay. A draft is purged (DeleteDraft) and a scheduled or sending
-// Broadcast is work in flight, so both are ErrNotArchivable. Archiving an archived Broadcast
-// changes nothing.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
+// Archive discards a sent or failed Broadcast (ADR 0049) and returns it: it leaves the lists but
+// its Recipients, report, tracking and figures stay. A draft is purged (DeleteDraft) and a
+// scheduled or sending Broadcast is work in flight, so both are ErrNotArchivable. Archiving an
+// archived Broadcast changes nothing.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	err := s.Broadcast().Discard(ctx, id, broadcast.StatusIn(broadcast.StatusSent, broadcast.StatusFailed))
-	if !ent.IsNotFound(err) {
-		return err
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, err
 	}
 	b, err := m.Get(ctx, s, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if b.Status != broadcast.StatusSent && b.Status != broadcast.StatusFailed {
-		return ErrNotArchivable
+		return nil, ErrNotArchivable
 	}
-	return nil
+	return b, nil
 }
 
-// Unarchive brings an archived Broadcast back to the lists. Restoring a Broadcast that is not
-// archived changes nothing.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+// Unarchive brings an archived Broadcast back to the lists and returns it. Restoring a Broadcast
+// that is not archived changes nothing.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Broadcast, error) {
 	err := s.Broadcast().Restore(ctx, id)
 	if ent.IsNotFound(err) {
-		return ErrNotFound
+		return nil, ErrNotFound
 	}
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return m.Get(ctx, s, id)
 }
 
 // Report is a Broadcast's delivery report: its status, why it is held and its Stats. The

@@ -15611,15 +15611,29 @@ func (s *CreateBroadcastInput) encodeFields(e *jx.Encoder) {
 			s.Doc.Encode(e)
 		}
 	}
+	{
+		if s.SegmentId.Set {
+			e.FieldStart("segmentId")
+			s.SegmentId.Encode(e)
+		}
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfCreateBroadcastInput = [6]string{
+var jsonFieldsNameOfCreateBroadcastInput = [8]string{
 	0: "name",
 	1: "subject",
 	2: "fromName",
 	3: "fromEmail",
 	4: "body",
 	5: "doc",
+	6: "segmentId",
+	7: "integrationId",
 }
 
 // Decode decodes CreateBroadcastInput from json.
@@ -15692,6 +15706,26 @@ func (s *CreateBroadcastInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "segmentId":
+			if err := func() error {
+				s.SegmentId.Reset()
+				if err := s.SegmentId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"segmentId\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
 			return d.Skip()
@@ -26529,6 +26563,39 @@ func (s *OptInt32) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes IntegrationConfigInput as json.
+func (o OptIntegrationConfigInput) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes IntegrationConfigInput from json.
+func (o *OptIntegrationConfigInput) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptIntegrationConfigInput to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptIntegrationConfigInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptIntegrationConfigInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes LintEmailInputDoc as json.
 func (o OptLintEmailInputDoc) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -27057,55 +27124,6 @@ func (s OptNilInt32) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilInt32) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes IntegrationConfigInput as json.
-func (o OptNilIntegrationConfigInput) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes IntegrationConfigInput from json.
-func (o *OptNilIntegrationConfigInput) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilIntegrationConfigInput to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v IntegrationConfigInput
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilIntegrationConfigInput) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilIntegrationConfigInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -42762,15 +42780,29 @@ func (s *UpdateBroadcastInput) encodeFields(e *jx.Encoder) {
 			s.Doc.Encode(e)
 		}
 	}
+	{
+		if s.SegmentId.Set {
+			e.FieldStart("segmentId")
+			s.SegmentId.Encode(e)
+		}
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfUpdateBroadcastInput = [6]string{
+var jsonFieldsNameOfUpdateBroadcastInput = [8]string{
 	0: "name",
 	1: "subject",
 	2: "fromName",
 	3: "fromEmail",
 	4: "body",
 	5: "doc",
+	6: "segmentId",
+	7: "integrationId",
 }
 
 // Decode decodes UpdateBroadcastInput from json.
@@ -42840,6 +42872,26 @@ func (s *UpdateBroadcastInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "segmentId":
+			if err := func() error {
+				s.SegmentId.Reset()
+				if err := s.SegmentId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"segmentId\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
 			return d.Skip()

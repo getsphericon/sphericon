@@ -22,7 +22,7 @@ func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 
 	create := func(from string) externalapi.BroadcastsCreateRes {
 		res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-			Name: "from check", FromEmail: externalapi.NewOptEmailAddress(externalapi.EmailAddress(from)),
+			Name: "from check", FromEmail: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(from)),
 		})
 		require.NoError(t, err)
 		return res
@@ -32,7 +32,7 @@ func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	assert.IsType(t, &externalapi.BroadcastsCreateUnprocessableEntity{}, create("news@"+fixtures.SendingDomainGlobexDomain))
 
 	refused, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{
-		FromEmail: externalapi.NewOptEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain),
+		FromEmail: externalapi.NewOptNilEmailAddress("news@" + fixtures.SendingDomainUnverifiedDomain),
 	}, externalapi.BroadcastsUpdateParams{ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.BroadcastsUpdateUnprocessableEntity{}, refused)

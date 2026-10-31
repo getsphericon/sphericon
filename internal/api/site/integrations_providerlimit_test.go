@@ -27,9 +27,9 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 	assert.True(t, def.MaxPerDay.Null)
 
 	upd := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: def.ID}
-	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(14),
-		MaxPerDay:    siteapi.NewOptNilSiteMaxPerDay(50000),
+	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(14),
+		MaxPerDay:    siteapi.NewOptNilMaxPerDay(50000),
 	}, upd)
 	require.NoError(t, err)
 	res := updated.(*siteapi.SiteIntegrationResource)
@@ -37,8 +37,8 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 	assert.Equal(t, int32(50000), res.MaxPerDay.Or(0))
 
 	// Omitting a limit keeps it; null clears it.
-	partial, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		MaxPerDay: siteapi.OptNilSiteMaxPerDay{Set: true, Null: true},
+	partial, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		MaxPerDay: siteapi.OptNilMaxPerDay{Set: true, Null: true},
 	}, upd)
 	require.NoError(t, err)
 	partialRes := partial.(*siteapi.SiteIntegrationResource)
@@ -46,9 +46,9 @@ func TestSiteIntegrationsProviderLimitRoundTrips(t *testing.T) {
 	assert.True(t, partialRes.MaxPerDay.Null, "null: cleared")
 
 	// Create accepts the limits too.
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name: "Limited SMTP", Config: smtpInput("smtp.example.com", "pw"),
-		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(2),
+		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(2),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.Equal(t, int32(2), created.(*siteapi.SiteIntegrationResource).MaxPerSecond.Or(0))
@@ -62,11 +62,11 @@ func TestSiteIntegrationsProviderLimitIsBounded(t *testing.T) {
 	ctx := context.Background()
 	upd := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 1}
 
-	for name, in := range map[string]*siteapi.SiteUpdateIntegrationInput{
-		"zero per second":   {MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(0)},
-		"negative per day":  {MaxPerDay: siteapi.NewOptNilSiteMaxPerDay(-5)},
-		"too fast":          {MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(10001)},
-		"too many in a day": {MaxPerDay: siteapi.NewOptNilSiteMaxPerDay(100000001)},
+	for name, in := range map[string]*siteapi.UpdateIntegrationInput{
+		"zero per second":   {MaxPerSecond: siteapi.NewOptNilMaxPerSecond(0)},
+		"negative per day":  {MaxPerDay: siteapi.NewOptNilMaxPerDay(-5)},
+		"too fast":          {MaxPerSecond: siteapi.NewOptNilMaxPerSecond(10001)},
+		"too many in a day": {MaxPerDay: siteapi.NewOptNilMaxPerDay(100000001)},
 	} {
 		t.Run(name, func(t *testing.T) {
 			res, err := c.SiteIntegrationsUpdate(ctx, in, upd)
@@ -79,9 +79,9 @@ func TestSiteIntegrationsProviderLimitIsBounded(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, got.(*siteapi.SiteIntegrationResource).MaxPerSecond.Null, "a rejected update changed nothing")
 
-	edge, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(10000),
-		MaxPerDay:    siteapi.NewOptNilSiteMaxPerDay(100000000),
+	edge, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(10000),
+		MaxPerDay:    siteapi.NewOptNilMaxPerDay(100000000),
 	}, upd)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteIntegrationResource{}, edge, "the bounds themselves are allowed")
@@ -105,8 +105,8 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	assert.Equal(t, int32(2), status.SentLast24h)
 
 	// A manual limit is the effective one, sourced "manual", and the warning goes.
-	upd, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(14),
+	upd, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(14),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
 	require.NoError(t, err)
 	status = upd.(*siteapi.SiteIntegrationResource).ProviderLimit
@@ -128,10 +128,10 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 
 // postboxInput is an SES Integration with its own endpoint: an SES-compatible service
 // (Yandex Cloud Postbox) that has no quota call, so the user gives its Provider limit.
-func postboxInput() siteapi.SiteIntegrationConfigInput {
-	return siteapi.SiteIntegrationConfigInput{
-		OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
-			Kind: siteapi.SiteSesConfigInputKindSes, Region: "ru-central1", AccessKeyId: "AKIA1234",
+func postboxInput() siteapi.IntegrationConfigInput {
+	return siteapi.IntegrationConfigInput{
+		OneOf: siteapi.NewSesConfigInputIntegrationConfigInputSum(siteapi.SesConfigInput{
+			Kind: siteapi.SesConfigInputKindSes, Region: "ru-central1", AccessKeyId: "AKIA1234",
 			SecretAccessKey: "secret", From: "noreply@acme.test",
 			Endpoint: siteapi.NewOptNilString("https://postbox.cloud.yandex.net"),
 		}),
@@ -162,16 +162,16 @@ func TestSiteIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	for name, tc := range map[string]struct {
-		in      siteapi.SiteCreateIntegrationInput
+		in      siteapi.CreateIntegrationInput
 		missing []string
 	}{
-		"neither": {siteapi.SiteCreateIntegrationInput{}, []string{"maxPerDay", "maxPerSecond"}},
-		"no daily": {siteapi.SiteCreateIntegrationInput{
-			MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(1),
+		"neither": {siteapi.CreateIntegrationInput{}, []string{"maxPerDay", "maxPerSecond"}},
+		"no daily": {siteapi.CreateIntegrationInput{
+			MaxPerSecond: siteapi.NewOptNilMaxPerSecond(1),
 		}, []string{"maxPerDay"}},
-		"null per second": {siteapi.SiteCreateIntegrationInput{
-			MaxPerSecond: siteapi.OptNilSiteMaxPerSecond{Set: true, Null: true},
-			MaxPerDay:    siteapi.NewOptNilSiteMaxPerDay(200),
+		"null per second": {siteapi.CreateIntegrationInput{
+			MaxPerSecond: siteapi.OptNilMaxPerSecond{Set: true, Null: true},
+			MaxPerDay:    siteapi.NewOptNilMaxPerDay(200),
 		}, []string{"maxPerSecond"}},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -183,10 +183,10 @@ func TestSiteIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
 		})
 	}
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name: "Postbox", Params: sesTopicParams, Config: postboxInput(),
-		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(1),
-		MaxPerDay:    siteapi.NewOptNilSiteMaxPerDay(200),
+		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(1),
+		MaxPerDay:    siteapi.NewOptNilMaxPerDay(200),
 	}, params)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteIntegrationResource{}, created, "both values: saved")
@@ -201,27 +201,27 @@ func TestSiteIntegrationsSesCompatibleKeepsTheProviderLimit(t *testing.T) {
 	// The fixture's AWS SES Integration has no endpoint and no limit.
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.IntegrationAcmeSesID}
 
-	moved, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(postboxInput()),
+	moved, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(postboxInput()),
 	}, params)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"maxPerDay", "maxPerSecond"}, refusedFields(t, moved))
 
-	movedWithLimits, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		Config:       siteapi.NewOptNilSiteIntegrationConfigInput(postboxInput()),
-		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(1),
-		MaxPerDay:    siteapi.NewOptNilSiteMaxPerDay(200),
+	movedWithLimits, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config:       siteapi.NewOptIntegrationConfigInput(postboxInput()),
+		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(1),
+		MaxPerDay:    siteapi.NewOptNilMaxPerDay(200),
 	}, params)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteIntegrationResource{}, movedWithLimits)
 
-	cleared, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		MaxPerDay: siteapi.OptNilSiteMaxPerDay{Set: true, Null: true},
+	cleared, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		MaxPerDay: siteapi.OptNilMaxPerDay{Set: true, Null: true},
 	}, params)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"maxPerDay"}, refusedFields(t, cleared))
 
-	renamed, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+	renamed, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Name: siteapi.NewOptString("Postbox (prod)"),
 	}, params)
 	require.NoError(t, err)

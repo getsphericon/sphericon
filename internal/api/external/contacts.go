@@ -35,7 +35,7 @@ func (h *Handlers) ContactsList(ctx context.Context, params externalapi.Contacts
 }
 
 func (h *Handlers) ContactsCreate(ctx context.Context, req *externalapi.CreateContactInput) (externalapi.ContactsCreateRes, error) {
-	c, err := h.contacts.Create(ctx, auth.TokenScoped(ctx), contact.SourceAPI, createContactAttributes(req))
+	c, err := h.contacts.Create(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (h *Handlers) ContactsGet(ctx context.Context, params externalapi.ContactsG
 func (h *Handlers) ContactsUpdate(ctx context.Context, req *externalapi.UpdateContactInput, params externalapi.ContactsUpdateParams) (externalapi.ContactsUpdateRes, error) {
 	id := int64(params.ID)
 
-	c, err := h.contacts.Update(ctx, auth.TokenScoped(ctx), id, updateContactAttributes(req))
+	c, err := h.contacts.Update(ctx, auth.TokenScoped(ctx), id, inputs.ContactUpdate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -102,21 +102,9 @@ func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.Conta
 
 // ContactsBatchUpsert upserts each Contact independently and reports a per-item result.
 func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (externalapi.ContactsBatchUpsertRes, error) {
-	items := make([]contacts.Attributes, len(req.Contacts))
-	for i := range req.Contacts {
-		c := &req.Contacts[i]
-		items[i] = contacts.Attributes{
-			SubjectID: convert.StringPtr(c.SubjectId),
-			Email:     convert.StringPtr(c.Email),
-			Phone:     convert.StringPtr(c.Phone),
-			FirstName: convert.StringPtr(c.FirstName),
-			LastName:  convert.StringPtr(c.LastName),
-			TimeZone:  convert.StringPtr(c.TimeZone),
-		}
-		if v, ok := c.CustomFields.Get(); ok {
-			items[i].CustomFields = convert.RawMap(v)
-		}
-	}
+	items := lo.Map(req.Contacts, func(c externalapi.UpsertContactInput, _ int) contacts.Attributes {
+		return inputs.ContactUpsert(c)
+	})
 	outcomes := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, items)
 
 	results := make([]externalapi.ContactBatchItemResult, len(outcomes))
@@ -145,44 +133,4 @@ func itemError(err error) string {
 		return shown
 	}
 	return "internal error"
-}
-
-func createContactAttributes(req *externalapi.CreateContactInput) contacts.Attributes {
-	attrs := contacts.Attributes{
-		SubjectID: convert.StringPtr(req.SubjectId),
-		Email:     convert.StringPtr(req.Email),
-		Phone:     convert.StringPtr(req.Phone),
-		FirstName: convert.StringPtr(req.FirstName),
-		LastName:  convert.StringPtr(req.LastName),
-		TimeZone:  convert.StringPtr(req.TimeZone),
-	}
-	if v, ok := req.CustomFields.Get(); ok {
-		attrs.CustomFields = convert.RawMap(v)
-	}
-	return attrs
-}
-
-func updateContactAttributes(req *externalapi.UpdateContactInput) contacts.Attributes {
-	attrs := contacts.Attributes{
-		SubjectID: convert.StringPtr(req.SubjectId),
-		Email:     convert.StringPtr(req.Email),
-		Phone:     convert.StringPtr(req.Phone),
-		FirstName: convert.StringPtr(req.FirstName),
-		LastName:  convert.StringPtr(req.LastName),
-		TimeZone:  convert.StringPtr(req.TimeZone),
-		// JSON Merge Patch: an explicit null clears the field, an absent key keeps it.
-		Cleared: contacts.Cleared{
-			SubjectID:    req.SubjectId.IsNull(),
-			Email:        req.Email.IsNull(),
-			Phone:        req.Phone.IsNull(),
-			FirstName:    req.FirstName.IsNull(),
-			LastName:     req.LastName.IsNull(),
-			TimeZone:     req.TimeZone.IsNull(),
-			CustomFields: req.CustomFields.IsNull(),
-		},
-	}
-	if v, ok := req.CustomFields.Get(); ok {
-		attrs.CustomFields = convert.RawMap(v)
-	}
-	return attrs
 }

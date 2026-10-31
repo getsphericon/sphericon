@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -44,10 +45,11 @@ type CreateInput struct {
 	Condition *string
 }
 
-// UpdateInput changes a Segment; nil fields are left as they are.
+// UpdateInput is a patch of a Segment: a field that keeps leaves the stored value. Neither field
+// can be cleared; an empty Condition matches all contacts.
 type UpdateInput struct {
-	Name      *string
-	Condition *string
+	Name      patch.Field[string]
+	Condition patch.Field[string]
 }
 
 // Validate checks a condition against the Contact attributes and the Workspace's Custom
@@ -87,14 +89,14 @@ func (s *Module) Get(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segmen
 
 // Update validates a changed condition exactly as Create does, then applies the change.
 func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
-	if in.Condition != nil {
-		if err := s.Validate(ctx, ws, *in.Condition); err != nil {
+	if cond, ok := in.Condition.Get(); ok {
+		if err := s.Validate(ctx, ws, cond); err != nil {
 			return nil, err
 		}
 	}
-	q := ws.Segment().UpdateOneID(id).
-		SetNillableName(in.Name).
-		SetNillableCondition(in.Condition)
+	q := ws.Segment().UpdateOneID(id)
+	patch.ApplySet(in.Name, q.SetName)
+	patch.ApplySet(in.Condition, q.SetCondition)
 	seg, err := q.Save(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
@@ -173,9 +175,9 @@ func (s *Module) List(ctx context.Context, ws *ent.Scoped, p pagination.Params, 
 // Archive discards a Segment (ADR 0049), unless a draft Broadcast uses it: then it returns an
 // *inuse.Error naming those Broadcasts. A Broadcast past draft holds a copy of the Segment's
 // Condition (ADR 0065) and keeps its reference only as provenance, so it does not block. A missing
-// Segment is ErrNotFound; archiving an archived one changes nothing.
-func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) error {
-	return s.bus.WithinScopedTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
+// Segment is ErrNotFound; archiving an archived one changes nothing. It returns the Segment.
+func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segment, error) {
+	err := s.bus.WithinScopedTx(ctx, ws, func(ts *ent.Scoped, _ events.Publisher) error {
 		seg, err := ts.Segment().Get(ctx, id)
 		if ent.IsNotFound(err) {
 			return ErrNotFound
@@ -198,14 +200,21 @@ func (s *Module) Archive(ctx context.Context, ws *ent.Scoped, id int64) error {
 		}
 		return ts.Segment().Discard(ctx, id)
 	})
+	if err != nil {
+		return nil, err
+	}
+	return s.Get(ctx, ws, id)
 }
 
-// Unarchive brings an archived Segment back to the lists. Restoring one that is not archived
-// changes nothing; a missing Segment is ErrNotFound.
-func (s *Module) Unarchive(ctx context.Context, ws *ent.Scoped, id int64) error {
+// Unarchive brings an archived Segment back to the lists and returns it. Restoring one that is not
+// archived changes nothing; a missing Segment is ErrNotFound.
+func (s *Module) Unarchive(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segment, error) {
 	err := ws.Segment().Restore(ctx, id)
 	if ent.IsNotFound(err) {
-		return ErrNotFound
+		return nil, ErrNotFound
 	}
-	return err
+	if err != nil {
+		return nil, err
+	}
+	return s.Get(ctx, ws, id)
 }

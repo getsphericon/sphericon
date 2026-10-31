@@ -61,8 +61,8 @@ type kind struct {
 	publish    func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	revert     func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	deactivate func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
-	archive    func(ctx context.Context, s *ent.Scoped, id int64) error
-	unarchive  func(ctx context.Context, s *ent.Scoped, id int64) error
+	archive    func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
+	unarchive  func(ctx context.Context, s *ent.Scoped, id int64) (view, error)
 	// versions are the numbers of the object's versions, in order.
 	versions func(t *testing.T, id int64) []int
 
@@ -109,8 +109,12 @@ func automationKind(env *testhelper.TestEnv) kind {
 		deactivate: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return automationView(m.Deactivate(ctx, s, id))
 		},
-		archive:   m.Archive,
-		unarchive: m.Unarchive,
+		archive: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
+			return automationView(m.Archive(ctx, s, id))
+		},
+		unarchive: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
+			return automationView(m.Unarchive(ctx, s, id))
+		},
 		versions: func(t *testing.T, id int64) []int {
 			t.Helper()
 			rows, err := env.DB.AutomationVersion.Query().
@@ -164,8 +168,12 @@ func ruleKind(env *testhelper.TestEnv) kind {
 		deactivate: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return ruleView(m.Deactivate(ctx, s, id))
 		},
-		archive:   m.Archive,
-		unarchive: m.Unarchive,
+		archive: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
+			return ruleView(m.Archive(ctx, s, id))
+		},
+		unarchive: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
+			return ruleView(m.Unarchive(ctx, s, id))
+		},
 		versions: func(t *testing.T, id int64) []int {
 			t.Helper()
 			rows, err := env.DB.RuleVersion.Query().
@@ -371,8 +379,8 @@ func TestAnotherWorkspacesObjectIsNotFound(t *testing.T) {
 			_, publishErr := k.publish(ctx, s, k.foreign)
 			_, revertErr := k.revert(ctx, s, k.foreign)
 			_, deactivateErr := k.deactivate(ctx, s, k.foreign)
-			archiveErr := k.archive(ctx, s, k.foreign)
-			unarchiveErr := k.unarchive(ctx, s, k.foreign)
+			_, archiveErr := k.archive(ctx, s, k.foreign)
+			_, unarchiveErr := k.unarchive(ctx, s, k.foreign)
 
 			require.ErrorIs(t, getErr, k.errNotFound)
 			require.ErrorIs(t, editErr, k.errNotFound)
@@ -432,14 +440,18 @@ func TestArchiveLeavesTheObjectInactiveAndUnarchiveDoesNotRearmIt(t *testing.T) 
 			require.NoError(t, err)
 			require.True(t, before.active)
 
-			require.NoError(t, k.archive(ctx, acme(env), k.live))
-			archived, err := k.get(ctx, acme(env), k.live)
+			archived, err := k.archive(ctx, acme(env), k.live)
 			require.NoError(t, err)
 			_, publishErr := k.publish(ctx, acme(env), k.live)
-			require.NoError(t, k.archive(ctx, acme(env), k.live), "archiving an archived object changes nothing")
-			require.NoError(t, k.unarchive(ctx, acme(env), k.live))
-			restored, err := k.get(ctx, acme(env), k.live)
+			again, err := k.archive(ctx, acme(env), k.live)
+			require.NoError(t, err, "archiving an archived object changes nothing")
+			restored, err := k.unarchive(ctx, acme(env), k.live)
 			require.NoError(t, err)
+			stored, err := k.get(ctx, acme(env), k.live)
+			require.NoError(t, err)
+
+			assert.Equal(t, archived, again, "archiving it again returns it as it is")
+			assert.Equal(t, stored, restored, "Unarchive returns the object as it is stored")
 
 			assert.True(t, archived.archived)
 			assert.False(t, archived.active, "an archived object acts on nothing")

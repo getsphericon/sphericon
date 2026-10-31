@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -25,7 +26,7 @@ func TestCreatePersistsAndPublishesContactCreated(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	c, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{
+	c, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
 		Email:        new("  New.Person@Example.com "),
 		FirstName:    new("New"),
 		CustomFields: map[string]any{"plan": "pro"},
@@ -43,7 +44,7 @@ func TestCreateConflictOnAliasKey(t *testing.T) {
 	m := contacts.New(env.Bus)
 
 	// Case and whitespace do not make a different email.
-	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Email: new(" ALICE@example.com ")})
+	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Email: new(" ALICE@example.com ")})
 	require.ErrorIs(t, err, contacts.ErrEmailTaken)
 	assert.Equal(t, contacts.FieldEmail, contacts.ErrEmailTaken.Field())
 	assert.Equal(t, "email already exists", contacts.ErrEmailTaken.Message())
@@ -52,20 +53,20 @@ func TestCreateConflictOnAliasKey(t *testing.T) {
 func TestCreateConflictOnPhone(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
-	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15550001")})
+	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15550001")})
 	require.NoError(t, err)
 
-	_, err = m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15550001")})
+	_, err = m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15550001")})
 	require.ErrorIs(t, err, contacts.ErrPhoneTaken)
 }
 
 func TestCreateConflictOnSubjectID(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
-	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{SubjectID: new("user-new-1")})
+	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{SubjectID: new("user-new-1")})
 	require.NoError(t, err)
 
-	_, err = m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{SubjectID: new("user-new-1")})
+	_, err = m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{SubjectID: new("user-new-1")})
 	require.ErrorIs(t, err, contacts.ErrSubjectIDTaken)
 }
 
@@ -73,7 +74,7 @@ func TestUpdateChangesOnlyGivenAttributes(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.Attributes{LastName: new("Jones")})
+	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{LastName: patch.Set("Jones")})
 	require.NoError(t, err)
 	assert.Equal(t, "Jones", lo.FromPtr(c.LastName))
 	assert.Equal(t, "Alice", lo.FromPtr(c.FirstName), "untouched attribute stays")
@@ -85,10 +86,10 @@ func TestUpdateNotFoundAcrossWorkspaces(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, contacts.Attributes{})
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, contacts.UpdateInput{})
 	require.ErrorIs(t, err, contacts.ErrNotFound)
 
-	_, err = m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, contacts.Attributes{LastName: new("X")})
+	_, err = m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, contacts.UpdateInput{LastName: patch.Set("X")})
 	assert.ErrorIs(t, err, contacts.ErrNotFound, "another workspace cannot touch the contact")
 }
 
@@ -96,7 +97,7 @@ func TestUpdateConflict(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.Attributes{Email: new("bob@example.com")})
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Email: patch.Set("bob@example.com")})
 	require.ErrorIs(t, err, contacts.ErrEmailTaken)
 }
 

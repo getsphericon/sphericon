@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
@@ -53,17 +54,17 @@ func TestUpdateValidatesLikeCreate(t *testing.T) {
 	m := segments.New(env.Bus)
 	ctx := context.Background()
 
-	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Condition: new(badCondition)})
+	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Condition: patch.Set(badCondition)})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 
 	// An invalid definition is rejected and leaves the row untouched.
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Condition: new(badCondition)})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Condition: patch.Set(badCondition)})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 	s, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
 	assert.NotEqual(t, badCondition, *s.Condition)
 
-	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: new("Renamed")})
+	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: patch.Set("Renamed")})
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", got.Name)
 }
@@ -72,7 +73,7 @@ func TestUpdateIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := segments.New(env.Bus)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: new("x")})
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID, segments.UpdateInput{Name: patch.Set("x")})
 	require.ErrorIs(t, err, segments.ErrNotFound)
 }
 

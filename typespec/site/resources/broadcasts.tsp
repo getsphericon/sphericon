@@ -177,74 +177,6 @@ model SiteBroadcastResource {
   updatedAt: Timestamp;
 }
 
-/** Site request body for creating a broadcast */
-model SiteCreateBroadcastInput {
-  /** Internal broadcast name */
-  name: string;
-
-  /** Email subject line */
-  subject?: string;
-
-  /** Sender display name */
-  fromName?: string | null;
-
-  /** Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Empty means the integration's default. */
-  fromEmail?: EmailAddress | null;
-
-  /** HTML body with Liquid merge tags. Write this or `doc`, not both. */
-  body?: string;
-
-  /** The editor's JSON document, an opaque object checked by the server. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422. */
-  doc?: Record<unknown>;
-
-  /** Target segment; null/omitted means all contacts */
-  segmentId?: EntityId | null;
-
-  /** Sending integration; null/omitted means the workspace default */
-  integrationId?: EntityId | null;
-}
-
-/** Site request body for updating a broadcast */
-model SiteUpdateBroadcastInput {
-  /** Internal broadcast name */
-  name?: string;
-
-  /** Email subject line */
-  subject?: string;
-
-  /** Sender display name */
-  fromName?: string | null;
-
-  /** Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. */
-  fromEmail?: EmailAddress | null;
-
-  /** HTML body. Writing only a body clears the stored document. Write this or `doc`, not both. */
-  body?: string;
-
-  /** The editor's JSON document, an opaque object checked by the server. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422. */
-  doc?: Record<unknown>;
-
-  /** Target segment; null means all contacts */
-  segmentId?: EntityId | null;
-
-  /** Sending integration; null means the workspace default */
-  integrationId?: EntityId | null;
-}
-
-/** Site request body for scheduling a broadcast */
-model SiteScheduleBroadcastInput {
-  /** When the broadcast should be sent */
-  scheduledAt: Timestamp;
-}
-
-/** Site request body for a test send */
-model SiteTestSendBroadcastInput {
-  /** Address to send the rendered preview to */
-  email: EmailAddress;
-}
-
 /** What a test send did: the address the preview went out from */
 model SiteTestSendBroadcastResult {
   /**
@@ -274,8 +206,8 @@ model SiteBroadcastsListFilter {
 interface SiteBroadcasts
   extends WorkspaceCrud<
       SiteBroadcastResource,
-      SiteCreateBroadcastInput,
-      SiteUpdateBroadcastInput,
+      CreateBroadcastInput,
+      UpdateBroadcastInput,
       never,
       UnprocessableEntityProblem,
       SiteBroadcastsListFilter
@@ -319,7 +251,7 @@ interface SiteBroadcasts
   @extension("x-required-permissions", #[])
   schedule(
     ...ResourceParameters<SiteBroadcastResource>,
-    @body body: SiteScheduleBroadcastInput,
+    @body body: ScheduleBroadcastInput,
   ):
     | SiteBroadcastResource
     | BadRequestProblem
@@ -336,7 +268,7 @@ interface SiteBroadcasts
   @extension("x-required-permissions", #[])
   testSend(
     ...ResourceParameters<SiteBroadcastResource>,
-    @body body: SiteTestSendBroadcastInput,
+    @body body: TestSendBroadcastInput,
   ):
     | SiteTestSendBroadcastResult
     | BadRequestProblem

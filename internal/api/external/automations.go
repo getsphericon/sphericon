@@ -8,7 +8,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -34,9 +33,7 @@ func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.Creat
 	in := automations.CreateInput{
 		Name: req.Name, TriggerEvent: req.TriggerEvent, ExitEvents: req.ExitEvents,
 		GoalEvent: convert.StringPtr(req.GoalEvent), IntegrationID: convert.Int64Ptr(req.IntegrationId),
-	}
-	if req.Steps != nil {
-		in.Steps = resources.AutomationSteps(req.Steps)
+		Steps: inputs.AutomationSteps(req.Steps),
 	}
 	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), in)
 	if err != nil {
@@ -60,20 +57,16 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 	id := int64(params.ID)
 
 	in := automations.UpdateInput{
-		Name:         convert.StringPtr(req.Name),
-		TriggerEvent: convert.StringPtr(req.TriggerEvent),
-		// JSON Merge Patch, as for the Integration: an explicit null removes the goal event.
-		GoalEvent: convert.StringPtr(req.GoalEvent),
-		ClearGoal: req.GoalEvent.IsNull(),
-		// JSON Merge Patch: an explicit null clears the Integration, an absent key keeps it.
-		IntegrationID:    convert.Int64Ptr(req.IntegrationId),
-		ClearIntegration: req.IntegrationId.IsNull(),
+		Name:          convert.StringPtr(req.Name),
+		TriggerEvent:  convert.StringPtr(req.TriggerEvent),
+		GoalEvent:     convert.StringPatch(req.GoalEvent),
+		IntegrationID: convert.Int64Patch(req.IntegrationId),
 	}
 	if req.ExitEvents != nil {
 		in.ExitEvents = &req.ExitEvents
 	}
 	if req.Steps != nil {
-		steps := resources.AutomationSteps(req.Steps)
+		steps := inputs.AutomationSteps(req.Steps)
 		in.Steps = &steps
 	}
 	a, err := h.automations.Update(ctx, auth.TokenScoped(ctx), id, in)
@@ -97,11 +90,7 @@ func (h *Handlers) AutomationsDelete(ctx context.Context, params externalapi.Aut
 func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.AutomationsArchiveParams) (externalapi.AutomationsArchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.automations.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	a, err := h.automations.Get(ctx, ws, id)
+	a, err := h.automations.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -113,11 +102,7 @@ func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.Au
 func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.AutomationsUnarchiveParams) (externalapi.AutomationsUnarchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.automations.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	a, err := h.automations.Get(ctx, ws, id)
+	a, err := h.automations.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}

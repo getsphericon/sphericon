@@ -52,6 +52,16 @@ export const ApiTokenScope = {
 export type ApiTokenScope = typeof ApiTokenScope[keyof typeof ApiTokenScope];
 
 /**
+ * Request body for applying a tag to a contact
+ */
+export type ApplyTagInput = {
+  /**
+   * The label to apply; created on first use
+   */
+  name: string;
+};
+
+/**
  * A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)
  */
 export type AttributionWindowDays = number;
@@ -460,6 +470,168 @@ export type ContactExportVisitor = {
 };
 
 /**
+ * Request body for creating a broadcast
+ */
+export type CreateBroadcastInput = {
+  /**
+   * Internal broadcast name
+   */
+  name: string;
+  /**
+   * Email subject line
+   */
+  subject?: string;
+  /**
+   * Sender display name; null or omitted means the integration's default
+   */
+  fromName?: string | null;
+  /**
+   * Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Null or omitted means the integration's default.
+   */
+  fromEmail?: EmailAddress | null;
+  /**
+   * HTML body with Liquid merge tags. Write this or `doc`, not both.
+   */
+  body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Target segment; null or omitted means all contacts. An archived segment is refused with 422.
+   */
+  segmentId?: EntityId | null;
+  /**
+   * Sending integration; null or omitted means the workspace default. An archived integration is refused with 422.
+   */
+  integrationId?: EntityId | null;
+};
+
+/**
+ * Request body for creating a contact
+ */
+export type CreateContactInput = {
+  /**
+   * The customer's own user id — an alias key
+   */
+  subjectId?: string | null;
+  /**
+   * Email address — optional; any alias key may be absent
+   */
+  email?: EmailAddress | null;
+  /**
+   * Phone number — an alias key
+   */
+  phone?: string | null;
+  /**
+   * First name
+   */
+  firstName?: string | null;
+  /**
+   * Last name
+   */
+  lastName?: string | null;
+  /**
+   * IANA time zone identifier
+   */
+  timeZone?: TimeZoneName | null;
+  /**
+   * Typed custom field values keyed by the field's machine key
+   */
+  customFields?: {
+    [key: string]: unknown;
+  } | null;
+};
+
+/**
+ * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
+ */
+export type CreateIntegrationInput = {
+  name: string;
+  enabled?: boolean;
+  isDefault?: boolean;
+  /**
+   * Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it
+   */
+  maxPerSecond?: MaxPerSecond | null;
+  /**
+   * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it
+   */
+  maxPerDay?: MaxPerDay | null;
+  config: IntegrationConfigInput;
+  /**
+   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with
+   */
+  preset?: string | null;
+  /**
+   * The Preset's params, validated against its `paramsSchema`: read the schema first
+   */
+  params?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
+ * Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.
+ */
+export type CreateSendingDomainInput = {
+  /**
+   * The domain to authenticate, e.g. "mail.acme.com" (normalized to lowercase ASCII)
+   */
+  domain: string;
+  /**
+   * DKIM selector; defaults to "sphericon" when omitted
+   */
+  dkimSelector?: string;
+};
+
+/**
+ * Request body for creating a template
+ */
+export type CreateTemplateInput = {
+  /**
+   * Template name
+   */
+  name: string;
+  /**
+   * Default subject line
+   */
+  subject?: string;
+  /**
+   * HTML body with Liquid merge tags. Write this or `doc`, not both.
+   */
+  body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
+ * Request body for creating a webhook endpoint
+ */
+export type CreateWebhookInput = {
+  /**
+   * Destination URL (absolute http or https)
+   */
+  url: string;
+  /**
+   * Event names to receive; empty or absent means all events
+   */
+  eventTypes?: Array<string>;
+  /**
+   * Whether the endpoint receives deliveries (default true)
+   */
+  enabled?: boolean;
+};
+
+/**
  * An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided
  * by the server, which refuses an unknown one with a reason.
  */
@@ -572,6 +744,24 @@ export type InUseProblemDetails = {
 };
 
 /**
+ * The Test inbox takes no credentials: a Workspace has at most one
+ */
+export type InboxConfigInput = {
+  kind: 'inbox';
+};
+
+/**
+ * Provider config submitted by the caller, discriminated by `kind`.
+ */
+export type IntegrationConfigInput = ({
+  kind: 'smtp';
+} & SmtpConfigInput) | ({
+  kind: 'ses';
+} & SesConfigInput) | ({
+  kind: 'inbox';
+} & InboxConfigInput);
+
+/**
  * The label a Staff member gives a published Legal document version, unique per item
  */
 export type LegalDocumentLabel = string;
@@ -620,6 +810,16 @@ export type LintFinding = {
    */
   detail?: string;
 };
+
+/**
+ * A rolling 24-hour Provider limit the caller may set
+ */
+export type MaxPerDay = number;
+
+/**
+ * A per-second Provider limit the caller may set
+ */
+export type MaxPerSecond = number;
 
 /**
  * What a User calls a Passkey, to tell it from their others: 1 to 100 characters. Surrounding
@@ -815,6 +1015,16 @@ export type ProblemDetails = {
 export type RetentionDays = number;
 
 /**
+ * Request body for scheduling a broadcast
+ */
+export type ScheduleBroadcastInput = {
+  /**
+   * When the broadcast should be sent
+   */
+  scheduledAt: Timestamp;
+};
+
+/**
  * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
  * only when the user explicitly opts in. mcp:send is the MCP-specific key: send-class
  * tools are not listed over /mcp without it, so any send-class grant brings it along.
@@ -832,6 +1042,22 @@ export const SendScope = {
  * tools are not listed over /mcp without it, so any send-class grant brings it along.
  */
 export type SendScope = typeof SendScope[keyof typeof SendScope];
+
+/**
+ * SES credentials
+ */
+export type SesConfigInput = {
+  kind: 'ses';
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  from: EmailAddress;
+  fromName?: string | null;
+  /**
+   * Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS
+   */
+  endpoint?: string | null;
+};
 
 /**
  * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
@@ -1346,16 +1572,6 @@ export type SiteApiTokenResource = {
    * Creation timestamp
    */
   createdAt: Timestamp;
-};
-
-/**
- * Site request body for applying a tag to a contact
- */
-export type SiteApplyTagInput = {
-  /**
-   * The label to apply; created on first use
-   */
-  name: string;
 };
 
 /**
@@ -2426,48 +2642,9 @@ export type SiteCreateAutomationInput = {
 };
 
 /**
- * Site request body for creating a broadcast
- */
-export type SiteCreateBroadcastInput = {
-  /**
-   * Internal broadcast name
-   */
-  name: string;
-  /**
-   * Email subject line
-   */
-  subject?: string;
-  /**
-   * Sender display name
-   */
-  fromName?: string | null;
-  /**
-   * Sender email address: its domain must be a verified Sending domain of the workspace, or the write is a 422. Empty means the integration's default.
-   */
-  fromEmail?: EmailAddress | null;
-  /**
-   * HTML body with Liquid merge tags. Write this or `doc`, not both.
-   */
-  body?: string;
-  /**
-   * The editor's JSON document, an opaque object checked by the server. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422.
-   */
-  doc?: {
-    [key: string]: unknown;
-  };
-  /**
-   * Target segment; null/omitted means all contacts
-   */
-  segmentId?: EntityId | null;
-  /**
-   * Sending integration; null/omitted means the workspace default
-   */
-  integrationId?: EntityId | null;
-};
-
-/**
- * Site request body for creating a contact
+ * Site request body for creating a contact: the attributes /api takes, and its tags. The app's
+ * contact form sets the tags in the same save; /api tags a contact through its own operations
+ * (`tags_apply`, `tags_remove`), which is why its body has no tags.
  */
 export type SiteCreateContactInput = {
   /**
@@ -2504,53 +2681,6 @@ export type SiteCreateContactInput = {
    * Tags to give the contact, created on first use
    */
   tags?: Array<string>;
-};
-
-/**
- * Site request body for creating a template
- */
-export type SiteCreateEmailTemplateInput = {
-  name: string;
-  subject?: string;
-  /**
-   * HTML body with Liquid merge tags. Write this or `doc`, not both.
-   */
-  body?: string;
-  /**
-   * The editor's JSON document, an opaque object checked by the server. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422.
-   */
-  doc?: {
-    [key: string]: unknown;
-  };
-};
-
-/**
- * Create a workspace integration. The provider/channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409.
- */
-export type SiteCreateIntegrationInput = {
-  name: string;
-  enabled?: boolean;
-  isDefault?: boolean;
-  /**
-   * Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it
-   */
-  maxPerSecond?: SiteMaxPerSecond | null;
-  /**
-   * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it
-   */
-  maxPerDay?: SiteMaxPerDay | null;
-  config: SiteIntegrationConfigInput;
-  /**
-   * Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with
-   */
-  preset?: string | null;
-  /**
-   * The Preset's params, validated against its `paramsSchema`: read the schema first
-   */
-  params?: {
-    [key: string]: unknown;
-  };
 };
 
 /**
@@ -2621,20 +2751,6 @@ export type SiteCreateSegmentInput = {
 };
 
 /**
- * Site request body for adding a sending domain
- */
-export type SiteCreateSendingDomainInput = {
-  /**
-   * The domain to authenticate, e.g. "mail.acme.com"
-   */
-  domain: string;
-  /**
-   * DKIM selector; defaults to "sphericon" when omitted
-   */
-  dkimSelector?: string;
-};
-
-/**
  * Site request body for manually suppressing a destination
  */
 export type SiteCreateSuppressionInput = {
@@ -2663,15 +2779,6 @@ export type SiteCreateTokenInput = {
 export type SiteCreateTokenResponse = {
   token: string;
   resource: SiteApiTokenResource;
-};
-
-/**
- * Site request body for creating a webhook endpoint
- */
-export type SiteCreateWebhookEndpointInput = {
-  url: string;
-  eventTypes?: Array<string>;
-  enabled?: boolean;
 };
 
 /**
@@ -3143,13 +3250,6 @@ export type SiteInboxConfig = {
 };
 
 /**
- * The Test inbox takes no credentials: a Workspace has at most one
- */
-export type SiteInboxConfigInput = {
-  kind: 'inbox';
-};
-
-/**
  * What the Release check found (ADR 0032): the one part of the Instance's state a Workspace Owner
  * sees. The Instance's settings are the Staff console's (ADR 0063).
  */
@@ -3182,17 +3282,6 @@ export type SiteIntegrationConfig = ({
 } & SiteSesConfig) | ({
   kind: 'inbox';
 } & SiteInboxConfig);
-
-/**
- * Provider config submitted by the UI, discriminated by `kind`.
- */
-export type SiteIntegrationConfigInput = ({
-  kind: 'smtp';
-} & SiteSmtpConfigInput) | ({
-  kind: 'ses';
-} & SiteSesConfigInput) | ({
-  kind: 'inbox';
-} & SiteInboxConfigInput);
 
 /**
  * Concrete sending provider
@@ -3484,16 +3573,6 @@ export type SiteLoginSecondFactorInput = {
    */
   code: string;
 };
-
-/**
- * A rolling 24-hour Provider limit the user may set
- */
-export type SiteMaxPerDay = number;
-
-/**
- * A per-second Provider limit the user may set
- */
-export type SiteMaxPerSecond = number;
 
 /**
  * A Membership — the join granting a User access to the workspace with a Role
@@ -4545,16 +4624,6 @@ export type SiteSaveBrandKitInput = {
 };
 
 /**
- * Site request body for scheduling a broadcast
- */
-export type SiteScheduleBroadcastInput = {
-  /**
-   * When the broadcast should be sent
-   */
-  scheduledAt: Timestamp;
-};
-
-/**
  * Proof of the User's password (or a fresh provider login or Passkey check) and a code from the authenticator app
  */
 export type SiteSecondFactorConfirmInput = {
@@ -4755,22 +4824,6 @@ export type SiteSesConfig = {
    * Last 4 chars of the access key id, for recognition
    */
   accessKeyIdLast4?: string | null;
-};
-
-/**
- * SES credentials
- */
-export type SiteSesConfigInput = {
-  kind: 'ses';
-  region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  from: EmailAddress;
-  fromName?: string | null;
-  /**
-   * Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS
-   */
-  endpoint?: string | null;
 };
 
 /**
@@ -5088,19 +5141,6 @@ export type SiteSmtpConfig = {
 };
 
 /**
- * SMTP credentials
- */
-export type SiteSmtpConfigInput = {
-  kind: 'smtp';
-  host: string;
-  port: number;
-  username?: string | null;
-  password?: string | null;
-  from: EmailAddress;
-  fromName?: string | null;
-};
-
-/**
  * A Workspace the User is the only Owner of, which blocks User deletion
  */
 export type SiteSoleOwnedWorkspace = {
@@ -5193,16 +5233,6 @@ export type SiteTagResource = {
 };
 
 /**
- * Site request body for a test send
- */
-export type SiteTestSendBroadcastInput = {
-  /**
-   * Address to send the rendered preview to
-   */
-  email: EmailAddress;
-};
-
-/**
  * What a test send did: the address the preview went out from
  */
 export type SiteTestSendBroadcastResult = {
@@ -5216,16 +5246,6 @@ export type SiteTestSendBroadcastResult = {
    * preview was captured there, not sent to the address named.
    */
   captured: boolean;
-};
-
-/**
- * Request body for sending a sample event to a webhook endpoint
- */
-export type SiteTestWebhookInput = {
-  /**
-   * The event name the sample carries, for example `contact.created`
-   */
-  eventType: string;
 };
 
 /**
@@ -5377,48 +5397,9 @@ export type SiteUpdateAutomationInput = {
 };
 
 /**
- * Site request body for updating a broadcast
- */
-export type SiteUpdateBroadcastInput = {
-  /**
-   * Internal broadcast name
-   */
-  name?: string;
-  /**
-   * Email subject line
-   */
-  subject?: string;
-  /**
-   * Sender display name
-   */
-  fromName?: string | null;
-  /**
-   * Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable.
-   */
-  fromEmail?: EmailAddress | null;
-  /**
-   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
-   */
-  body?: string;
-  /**
-   * The editor's JSON document, an opaque object checked by the server. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422.
-   */
-  doc?: {
-    [key: string]: unknown;
-  };
-  /**
-   * Target segment; null means all contacts
-   */
-  segmentId?: EntityId | null;
-  /**
-   * Sending integration; null means the workspace default
-   */
-  integrationId?: EntityId | null;
-};
-
-/**
- * Site request body for updating a contact
+ * Site request body for updating a contact: the attributes /api takes, and its tag set. The
+ * app's contact form sets the tags in the same save; /api tags a contact through its own
+ * operations (`tags_apply`, `tags_remove`), which is why its body has no tags.
  */
 export type SiteUpdateContactInput = {
   /**
@@ -5455,57 +5436,6 @@ export type SiteUpdateContactInput = {
    * The contact's complete tag set when given: tags not listed are removed from it, an absent key keeps them
    */
   tags?: Array<string>;
-};
-
-/**
- * Site request body for updating a template
- */
-export type SiteUpdateEmailTemplateInput = {
-  name?: string;
-  subject?: string;
-  /**
-   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
-   */
-  body?: string;
-  /**
-   * The editor's JSON document, an opaque object checked by the server. The server renders the
-   * body from it in the same save; a document that cannot be rendered is a 422.
-   */
-  doc?: {
-    [key: string]: unknown;
-  };
-};
-
-/**
- * Update a workspace integration. Omit `config` to keep stored credentials.
- */
-export type SiteUpdateIntegrationInput = {
-  name?: string;
-  enabled?: boolean;
-  isDefault?: boolean;
-  /**
-   * Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
-   */
-  maxPerSecond?: SiteMaxPerSecond | null;
-  /**
-   * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
-   */
-  maxPerDay?: SiteMaxPerDay | null;
-  config?: SiteIntegrationConfigInput | null;
-  /**
-   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over
-   */
-  preset?: string | null;
-  /**
-   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)
-   */
-  params?: {
-    [key: string]: unknown;
-  };
-  /**
-   * Stop accepting the retiring value of every rotating secret
-   */
-  retireSecrets?: boolean;
 };
 
 /**
@@ -5588,15 +5518,6 @@ export type SiteUpdateSegmentInput = {
  */
 export type SiteUpdateTokenInput = {
   name: string;
-};
-
-/**
- * Site request body for updating a webhook endpoint
- */
-export type SiteUpdateWebhookEndpointInput = {
-  url?: string;
-  eventTypes?: Array<string>;
-  enabled?: boolean;
 };
 
 /**
@@ -5943,6 +5864,39 @@ export type SiteWorkspaceTimezoneInput = {
   timezone: TimeZoneName;
 };
 
+/**
+ * SMTP credentials
+ */
+export type SmtpConfigInput = {
+  kind: 'smtp';
+  host: string;
+  port: number;
+  username?: string | null;
+  password?: string | null;
+  from: EmailAddress;
+  fromName?: string | null;
+};
+
+/**
+ * Request body for a test send
+ */
+export type TestSendBroadcastInput = {
+  /**
+   * Address to send the rendered preview to
+   */
+  email: EmailAddress;
+};
+
+/**
+ * Request body for sending a sample event to a webhook endpoint
+ */
+export type TestWebhookInput = {
+  /**
+   * The event name the sample carries, for example `contact.created`
+   */
+  eventType: string;
+};
+
 export type TimeZoneName = string;
 
 export type Timestamp = string;
@@ -5964,6 +5918,158 @@ export const TokenOnlyScope = {
  * Scopes only an API token can hold, never an OAuth grant
  */
 export type TokenOnlyScope = typeof TokenOnlyScope[keyof typeof TokenOnlyScope];
+
+/**
+ * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
+ */
+export type UpdateBroadcastInput = {
+  /**
+   * Internal broadcast name
+   */
+  name?: string;
+  /**
+   * Email subject line
+   */
+  subject?: string;
+  /**
+   * Sender display name; null goes back to the integration's default
+   */
+  fromName?: string | null;
+  /**
+   * Sender email address: a changed value must be on a verified Sending domain of the workspace, or the write is a 422. An unchanged one is not re-checked, so a draft whose domain lost verification stays editable. Null goes back to the integration's default.
+   */
+  fromEmail?: EmailAddress | null;
+  /**
+   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
+   */
+  body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Target segment; null means all contacts. An archived segment is refused with 422.
+   */
+  segmentId?: EntityId | null;
+  /**
+   * Sending integration; null means the workspace default. An archived integration is refused with 422.
+   */
+  integrationId?: EntityId | null;
+};
+
+/**
+ * Request body for updating a contact
+ */
+export type UpdateContactInput = {
+  /**
+   * The customer's own user id — an alias key
+   */
+  subjectId?: string | null;
+  /**
+   * Email address — an alias key
+   */
+  email?: EmailAddress | null;
+  /**
+   * Phone number — an alias key
+   */
+  phone?: string | null;
+  /**
+   * First name
+   */
+  firstName?: string | null;
+  /**
+   * Last name
+   */
+  lastName?: string | null;
+  /**
+   * IANA time zone identifier
+   */
+  timeZone?: TimeZoneName | null;
+  /**
+   * Typed custom field values keyed by the field's machine key
+   */
+  customFields?: {
+    [key: string]: unknown;
+  } | null;
+};
+
+/**
+ * Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.
+ */
+export type UpdateIntegrationInput = {
+  name?: string;
+  enabled?: boolean;
+  isDefault?: boolean;
+  /**
+   * Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
+   */
+  maxPerSecond?: MaxPerSecond | null;
+  /**
+   * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
+   */
+  maxPerDay?: MaxPerDay | null;
+  config?: IntegrationConfigInput;
+  /**
+   * Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no secret carries over
+   */
+  preset?: string | null;
+  /**
+   * The Preset's params. A secret that is blank, omitted or `********` stays as saved; a new value rotates it (the old one stays valid until retired)
+   */
+  params?: {
+    [key: string]: unknown;
+  };
+  /**
+   * Stop accepting the retiring value of every rotating secret
+   */
+  retireSecrets?: boolean;
+};
+
+/**
+ * Request body for updating a template
+ */
+export type UpdateTemplateInput = {
+  /**
+   * Template name
+   */
+  name?: string;
+  /**
+   * Default subject line
+   */
+  subject?: string;
+  /**
+   * HTML body. Writing only a body clears the stored document. Write this or `doc`, not both.
+   */
+  body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the
+   * body from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored.
+   */
+  doc?: {
+    [key: string]: unknown;
+  };
+};
+
+/**
+ * Request body for updating a webhook endpoint
+ */
+export type UpdateWebhookInput = {
+  /**
+   * Destination URL (absolute http or https)
+   */
+  url?: string;
+  /**
+   * Event names to receive; empty means all events
+   */
+  eventTypes?: Array<string>;
+  /**
+   * Whether the endpoint receives deliveries
+   */
+  enabled?: boolean;
+};
 
 /**
  * A row that uses the one a removal was refused for: what a client shows to say what to
@@ -9246,7 +9352,7 @@ export type SiteBroadcastsListResponses = {
 export type SiteBroadcastsListResponse = SiteBroadcastsListResponses[keyof SiteBroadcastsListResponses];
 
 export type SiteBroadcastsCreateData = {
-  body: SiteCreateBroadcastInput;
+  body: CreateBroadcastInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -9395,7 +9501,7 @@ export type SiteBroadcastsGetResponses = {
 export type SiteBroadcastsGetResponse = SiteBroadcastsGetResponses[keyof SiteBroadcastsGetResponses];
 
 export type SiteBroadcastsUpdateData = {
-  body: SiteUpdateBroadcastInput;
+  body: UpdateBroadcastInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -9481,7 +9587,7 @@ export type SiteBroadcastsArchiveResponses = {
 export type SiteBroadcastsArchiveResponse = SiteBroadcastsArchiveResponses[keyof SiteBroadcastsArchiveResponses];
 
 export type SiteBroadcastsScheduleData = {
-  body: SiteScheduleBroadcastInput;
+  body: ScheduleBroadcastInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -9567,7 +9673,7 @@ export type SiteBroadcastsSendResponses = {
 export type SiteBroadcastsSendResponse = SiteBroadcastsSendResponses[keyof SiteBroadcastsSendResponses];
 
 export type SiteBroadcastsTestSendData = {
-  body: SiteTestSendBroadcastInput;
+  body: TestSendBroadcastInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -10211,7 +10317,7 @@ export type SiteTagsListForContactResponses = {
 export type SiteTagsListForContactResponse = SiteTagsListForContactResponses[keyof SiteTagsListForContactResponses];
 
 export type SiteTagsApplyData = {
-  body: SiteApplyTagInput;
+  body: ApplyTagInput;
   path: {
     workspaceId: WorkspaceId;
     contactId: EntityId;
@@ -10706,7 +10812,7 @@ export type SiteIntegrationsListResponses = {
 export type SiteIntegrationsListResponse = SiteIntegrationsListResponses[keyof SiteIntegrationsListResponses];
 
 export type SiteIntegrationsCreateData = {
-  body: SiteCreateIntegrationInput;
+  body: CreateIntegrationInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -10788,7 +10894,7 @@ export type SiteIntegrationsGetResponses = {
 export type SiteIntegrationsGetResponse = SiteIntegrationsGetResponses[keyof SiteIntegrationsGetResponses];
 
 export type SiteIntegrationsUpdateData = {
-  body: SiteUpdateIntegrationInput;
+  body: UpdateIntegrationInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -12675,7 +12781,7 @@ export type SiteSendingDomainsListResponses = {
 export type SiteSendingDomainsListResponse = SiteSendingDomainsListResponses[keyof SiteSendingDomainsListResponses];
 
 export type SiteSendingDomainsCreateData = {
-  body: SiteCreateSendingDomainInput;
+  body: CreateSendingDomainInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -13250,7 +13356,7 @@ export type SiteTemplatesListResponses = {
 export type SiteTemplatesListResponse = SiteTemplatesListResponses[keyof SiteTemplatesListResponses];
 
 export type SiteTemplatesCreateData = {
-  body: SiteCreateEmailTemplateInput;
+  body: CreateTemplateInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -13363,7 +13469,7 @@ export type SiteTemplatesGetResponses = {
 export type SiteTemplatesGetResponse = SiteTemplatesGetResponses[keyof SiteTemplatesGetResponses];
 
 export type SiteTemplatesUpdateData = {
-  body: SiteUpdateEmailTemplateInput;
+  body: UpdateTemplateInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -13739,7 +13845,7 @@ export type SiteWebhooksListResponses = {
 export type SiteWebhooksListResponse = SiteWebhooksListResponses[keyof SiteWebhooksListResponses];
 
 export type SiteWebhooksCreateData = {
-  body: SiteCreateWebhookEndpointInput;
+  body: CreateWebhookInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -13864,7 +13970,7 @@ export type SiteWebhooksGetResponses = {
 export type SiteWebhooksGetResponse = SiteWebhooksGetResponses[keyof SiteWebhooksGetResponses];
 
 export type SiteWebhooksUpdateData = {
-  body: SiteUpdateWebhookEndpointInput;
+  body: UpdateWebhookInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested
@@ -13954,7 +14060,7 @@ export type SiteWebhooksRegenerateSecretResponses = {
 export type SiteWebhooksRegenerateSecretResponse = SiteWebhooksRegenerateSecretResponses[keyof SiteWebhooksRegenerateSecretResponses];
 
 export type SiteWebhooksTestData = {
-  body: SiteTestWebhookInput;
+  body: TestWebhookInput;
   path: {
     /**
      * The Workspace id: its short opaque public address and the route key for nested

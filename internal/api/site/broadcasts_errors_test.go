@@ -23,17 +23,17 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 	acme, foreign := siteapi.WorkspaceId(fixtures.AcmePublicID), siteapi.WorkspaceId(fixtures.GlobexPublicID)
 	draft := idStr(fixtures.BroadcastDraftID)
 	missing := idStr(99999)
-	when := siteapi.SiteScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))}
-	testSend := siteapi.SiteTestSendBroadcastInput{Email: "preview@example.com"}
+	when := siteapi.ScheduleBroadcastInput{ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))}
+	testSend := siteapi.TestSendBroadcastInput{Email: "preview@example.com"}
 
 	t.Run("foreign workspace", func(t *testing.T) {
-		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{Name: "x"}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: foreign})
+		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x"}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: foreign})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsCreateNotFound{}, r1)
 		r2, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: foreign, ID: draft})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsGetNotFound{}, r2)
-		r3, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: foreign, ID: draft})
+		r3, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: foreign, ID: draft})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsUpdateNotFound{}, r3)
 		r4, err := c.SiteBroadcastsDelete(ctx, siteapi.SiteBroadcastsDeleteParams{WorkspaceId: foreign, ID: draft})
@@ -54,7 +54,7 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 		r1, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: acme, ID: missing})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsGetNotFound{}, r1)
-		r2, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: missing})
+		r2, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: missing})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsUpdateNotFound{}, r2)
 		r3, err := c.SiteBroadcastsDelete(ctx, siteapi.SiteBroadcastsDeleteParams{WorkspaceId: acme, ID: missing})
@@ -84,21 +84,21 @@ func TestSiteBroadcastsErrorBranches(t *testing.T) {
 
 	t.Run("invalid segment and integration references are 422", func(t *testing.T) {
 		bad := siteapi.NewOptNilEntityId(99999999) // no such row in any workspace
-		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{Name: "x", SegmentId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
+		r1, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", SegmentId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, r1)
-		r2, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{Name: "x", IntegrationId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
+		r2, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "x", IntegrationId: bad}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, r2)
-		r3, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{SegmentId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
+		r3, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{SegmentId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, r3)
-		r4, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{IntegrationId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
+		r4, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{IntegrationId: bad}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: acme, ID: draft})
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, r4)
 		count, err := env.DB.Broadcast.Query().Count(ctx)
 		require.NoError(t, err)
-		again, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{Name: "ok"}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
+		again, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "ok"}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: acme})
 		require.NoError(t, err)
 		require.IsType(t, &siteapi.SiteBroadcastResource{}, again)
 		after, err := env.DB.Broadcast.Query().Count(ctx)
@@ -148,7 +148,7 @@ func TestSiteBroadcastsTestSendDeliversPreview(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	res, err := c.SiteBroadcastsTestSend(ctx, &siteapi.SiteTestSendBroadcastInput{Email: "preview@example.com"},
+	res, err := c.SiteBroadcastsTestSend(ctx, &siteapi.TestSendBroadcastInput{Email: "preview@example.com"},
 		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteTestSendBroadcastResult{}, res)

@@ -21,7 +21,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:    "Spring sale",
 		Subject: siteapi.NewOptString("Big news"),
 		Body:    siteapi.NewOptString("<p>Hi {{ first_name }}</p>"),
@@ -42,7 +42,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update renames a draft.
-	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Name: siteapi.NewOptString("Spring sale (v2)"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 
 	// Schedule moves it to scheduled with a future time.
 	when := time.Now().Add(24 * time.Hour)
-	sched, err := c.SiteBroadcastsSchedule(ctx, &siteapi.SiteScheduleBroadcastInput{
+	sched, err := c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{
 		ScheduledAt: siteapi.Timestamp(when),
 	}, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
@@ -74,7 +74,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteBroadcastsSendUnprocessableEntity{}, again)
 
 	// Editing a non-draft broadcast is rejected with 422.
-	badUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	badUpd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Name: siteapi.NewOptString("nope"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: 100}
 
 	// Absent keys keep values: set the segment, the sender stays.
-	res, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	res, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		SegmentId:     siteapi.NewOptNilEntityId(1),
 		IntegrationId: siteapi.NewOptNilEntityId(1),
 	}, params)
@@ -132,7 +132,7 @@ func TestSiteBroadcastsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	var nullSeg, nullIntegration siteapi.OptNilEntityId
 	nullSeg.SetToNull()
 	nullIntegration.SetToNull()
-	res, err = c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	res, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		FromName:      nullString(),
 		FromEmail:     nullEmail(),
 		SegmentId:     nullSeg,
@@ -157,13 +157,13 @@ func TestSiteBroadcastsCreateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	workspaceID := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
-	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "forged", SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
 	}, workspaceID)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
 
-	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "forged", IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
 	}, workspaceID)
 	require.NoError(t, err)
@@ -179,13 +179,13 @@ func TestSiteBroadcastsUpdateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
 	}, params)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, got)
 
-	got, err = c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	got, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
 	}, params)
 	require.NoError(t, err)

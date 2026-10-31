@@ -21,17 +21,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func inboxInput() siteapi.SiteIntegrationConfigInput {
-	return siteapi.SiteIntegrationConfigInput{
-		OneOf: siteapi.NewSiteInboxConfigInputSiteIntegrationConfigInputSum(siteapi.SiteInboxConfigInput{
-			Kind: siteapi.SiteInboxConfigInputKindInbox,
+func inboxInput() siteapi.IntegrationConfigInput {
+	return siteapi.IntegrationConfigInput{
+		OneOf: siteapi.NewInboxConfigInputIntegrationConfigInputSum(siteapi.InboxConfigInput{
+			Kind: siteapi.InboxConfigInputKindInbox,
 		}),
 	}
 }
 
 func createInbox(t *testing.T, c *siteapi.Client) siteapi.SiteIntegrationsCreateRes {
 	t.Helper()
-	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
+	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
 		Name: "Test inbox", Config: inboxInput(),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -41,7 +41,7 @@ func createInbox(t *testing.T, c *siteapi.Client) siteapi.SiteIntegrationsCreate
 // makeDefault picks an Integration as its Workspace's default, the way any Integration is chosen.
 func makeDefault(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId, id int64) {
 	t.Helper()
-	res, err := c.SiteIntegrationsUpdate(context.Background(), &siteapi.SiteUpdateIntegrationInput{
+	res, err := c.SiteIntegrationsUpdate(context.Background(), &siteapi.UpdateIntegrationInput{
 		IsDefault: siteapi.NewOptBool(true),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: workspace, ID: idStr(id)})
 	require.NoError(t, err)
@@ -288,7 +288,7 @@ func TestDisablingTheTestInboxStopsCapturingAndKeepsWhatWasCaptured(t *testing.T
 	kept := env.DB.CapturedMessage.Query().Where(capturedmessage.OutboundMessageID(int64(sent.ID))).OnlyX(t.Context())
 	before := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(t.Context())
 
-	disabled, err := jane.SiteIntegrationsUpdate(t.Context(), &siteapi.SiteUpdateIntegrationInput{
+	disabled, err := jane.SiteIntegrationsUpdate(t.Context(), &siteapi.UpdateIntegrationInput{
 		Enabled: siteapi.NewOptBool(false),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.IntegrationGlobexInboxID)})
 	require.NoError(t, err)

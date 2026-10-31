@@ -20,13 +20,13 @@ func TestSiteBroadcastsCreateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 	workspaceID := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 	before := env.DB.Broadcast.Query().CountX(ctx)
 
-	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+	got, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "retired", SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentArchivedID)),
 	}, workspaceID)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsCreateUnprocessableEntity{}, got)
 
-	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+	got, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "retired", IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeArchivedID)),
 	}, workspaceID)
 	require.NoError(t, err)
@@ -43,13 +43,13 @@ func TestSiteBroadcastsUpdateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 	params := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)}
 	before := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 
-	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	got, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentArchivedID)),
 	}, params)
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteBroadcastsUpdateUnprocessableEntity{}, got)
 
-	got, err = c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	got, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeArchivedID)),
 	}, params)
 	require.NoError(t, err)

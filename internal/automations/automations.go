@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/inuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -309,16 +310,14 @@ type CreateInput struct {
 type UpdateInput struct {
 	Name         *string
 	TriggerEvent *string
-	// ExitEvents replaces the exit events; GoalEvent sets the goal event and ClearGoal removes it.
-	// Neither leaves them alone.
+	// ExitEvents replaces the exit events; nil leaves them alone.
 	ExitEvents *[]string
-	GoalEvent  *string
-	ClearGoal  bool
-	Steps      *[]Step
-	// IntegrationID moves the Automation to that Integration; ClearIntegration goes back to
-	// the Workspace default. Neither leaves it alone.
-	IntegrationID    *int64
-	ClearIntegration bool
+	// GoalEvent sets the goal event, and a clear removes it.
+	GoalEvent patch.Field[string]
+	Steps     *[]Step
+	// IntegrationID moves the Automation to that Integration, and a clear goes back to the
+	// Workspace default.
+	IntegrationID patch.Field[int64]
 }
 
 // LiveAndDraft returns the Automation's live version and its draft, each nil when it has none.
@@ -409,7 +408,10 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		}
 		return a.ID, nil
 	}
-	e := edit{trigger: &in.TriggerEvent, exits: &in.ExitEvents, goal: in.GoalEvent, integrationID: in.IntegrationID}
+	e := edit{
+		trigger: &in.TriggerEvent, exits: &in.ExitEvents, goal: patch.FromPtr(in.GoalEvent),
+		integrationID: patch.FromPtr(in.IntegrationID),
+	}
 	if in.Steps != nil {
 		e.steps = &steps
 	}
@@ -423,10 +425,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // nothing. An edit of the Trigger, exit or goal events checks the three together (validateEvents),
 // so a new Trigger equal to a stored exit or goal event is refused too. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
-	e := edit{
-		trigger: in.TriggerEvent, exits: in.ExitEvents, goal: in.GoalEvent, clearGoal: in.ClearGoal,
-		integrationID: in.IntegrationID, clearIntegration: in.ClearIntegration,
-	}
+	e := edit{trigger: in.TriggerEvent, exits: in.ExitEvents, goal: in.GoalEvent, integrationID: in.IntegrationID}
 	if in.Steps != nil {
 		built, err := m.build(ctx, *in.Steps)
 		if err != nil {
@@ -446,13 +445,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // edit is a change of an Automation's definition; nil fields keep the base's. The steps are built
 // (their documents rendered) before the transaction.
 type edit struct {
-	trigger          *string
-	exits            *[]string
-	goal             *string
-	clearGoal        bool
-	integrationID    *int64
-	clearIntegration bool
-	steps            *[]Step
+	trigger       *string
+	exits         *[]string
+	goal          patch.Field[string]
+	integrationID patch.Field[int64]
+	steps         *[]Step
 }
 
 // definition is the content of an Automation version as stored: its Trigger, the events that end
@@ -495,26 +492,18 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 	if e.exits != nil {
 		def.exits = normalizeExits(*e.exits)
 	}
-	switch {
-	case e.clearGoal:
-		def.goal = nil
-	case e.goal != nil:
-		def.goal = normalizeGoal(e.goal)
-	}
-	if e.trigger != nil || e.exits != nil || e.goal != nil || e.clearGoal {
+	def.goal = normalizeGoal(e.goal.Over(def.goal))
+	if e.trigger != nil || e.exits != nil || e.goal.Changes() {
 		if err := validateEvents(def); err != nil {
 			return definition{}, err
 		}
 	}
-	switch {
-	case e.clearIntegration:
-		def.integrationID = nil
-	case e.integrationID != nil:
-		if err := checkIntegration(ctx, ts, e.integrationID); err != nil {
+	if id, ok := e.integrationID.Get(); ok {
+		if err := checkIntegration(ctx, ts, &id); err != nil {
 			return definition{}, err
 		}
-		def.integrationID = e.integrationID
 	}
+	def.integrationID = e.integrationID.Over(def.integrationID)
 	if e.steps != nil {
 		if err := validate(*e.steps); err != nil {
 			return definition{}, err
@@ -682,14 +671,14 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 // nobody, and its Enrollments stay. It also makes the Automation inactive, so Unarchive never
 // re-arms it without a Publish. An Automation with active Enrollments, or one a kept Rule enrolls
 // Contacts in, is refused with an *inuse.Error naming them. Archiving an archived Automation
-// changes nothing.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
+// changes nothing. It returns the Automation.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Archive(ctx, s, id)
 }
 
 // Unarchive brings an archived Automation back to the lists, inactive: only Publish makes it
-// enroll again. Restoring one that is not archived changes nothing.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+// enroll again. Restoring one that is not archived changes nothing. It returns the Automation.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Unarchive(ctx, s, id)
 }
 

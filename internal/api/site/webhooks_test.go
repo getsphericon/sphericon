@@ -19,13 +19,13 @@ func TestSiteWebhooksCRUD(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	// Invalid URL is rejected.
-	bad, err := c.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{URL: "not-a-url"},
+	bad, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "not-a-url"},
 		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteWebhooksCreateUnprocessableEntity{}, bad)
 
 	// Create with an event filter.
-	created, err := c.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{
+	created, err := c.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{
 		URL:        "https://example.com/hook",
 		EventTypes: []string{"contact.created"},
 	}, siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
@@ -45,7 +45,7 @@ func TestSiteWebhooksCRUD(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update: disable and broaden to all events.
-	upd, err := c.SiteWebhooksUpdate(ctx, &siteapi.SiteUpdateWebhookEndpointInput{
+	upd, err := c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{
 		Enabled:    siteapi.NewOptBool(false),
 		EventTypes: []string{},
 	}, siteapi.SiteWebhooksUpdateParams{WorkspaceId: workspaceID, ID: res.ID})

@@ -31,6 +31,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
+	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -63,24 +65,31 @@ var taken = []struct {
 	err   error
 }{{FieldSubjectID, ErrSubjectIDTaken}, {FieldPhone, ErrPhoneTaken}, {FieldEmail, ErrEmailTaken}}
 
-// Attributes are the writable attributes of a Contact. A nil pointer (or nil
-// CustomFields) means "not given": Create leaves it unset, Update leaves it as is.
+// Attributes are the writable attributes of a new or upserted Contact. A nil pointer (or nil
+// CustomFields) means "not given": the Contact has none.
 type Attributes struct {
 	SubjectID, Email, Phone       *string
 	FirstName, LastName, TimeZone *string
 	// CustomFields are declared by use (ADR 0006) and stored typed.
 	CustomFields map[string]any
-	// Cleared lists the attributes an Update must clear (JSON Merge Patch: an
-	// explicit null clears, an absent key keeps). ADR 0002 keeps every alias key
-	// optional, so clearing even the last one is valid. Ignored by Create and Upsert.
-	Cleared Cleared
 }
 
-// Cleared flags the attributes an Update clears.
-type Cleared struct {
-	SubjectID, Email, Phone       bool
-	FirstName, LastName, TimeZone bool
-	CustomFields                  bool
+// CreateInput is a new Contact: its Attributes and the Tags it is given, created on first use.
+type CreateInput struct {
+	Attributes
+
+	Tags []string
+}
+
+// UpdateInput is a patch of a Contact (JSON Merge Patch): a field that keeps leaves the stored
+// value, a clear drops it. ADR 0002 keeps every alias key optional, so clearing even the last one
+// is valid; an alias key set blank keeps the stored one. A set CustomFields replaces the stored
+// set, and set Tags become the Contact's complete tag set.
+type UpdateInput struct {
+	SubjectID, Email, Phone       patch.Field[string]
+	FirstName, LastName, TimeZone patch.Field[string]
+	CustomFields                  patch.Field[map[string]any]
+	Tags                          patch.Field[[]string]
 }
 
 // Result is the outcome of an Upsert.
@@ -98,11 +107,11 @@ type Module struct {
 // New builds the module.
 func New(bus *events.Bus) *Module { return &Module{bus: bus} }
 
-// Create makes a Contact from the given door (its Contact source, kept for good) and
-// publishes contact.created in one transaction. An alias key already taken in the
-// Workspace yields its conflict (ErrEmailTaken and its kin).
-func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, attrs Attributes) (*ent.Contact, error) {
-	attrs = attrs.normalized()
+// Create makes a Contact from the given door (its Contact source, kept for good), gives it its
+// Tags and publishes contact.created in one transaction, and returns it with its Tags. An alias
+// key already taken in the Workspace yields its conflict (ErrEmailTaken and its kin).
+func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, in CreateInput) (*ent.Contact, error) {
+	attrs := in.normalized()
 	var c *ent.Contact
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		typed, err := EnsureCustomFields(ctx, ts, attrs.CustomFields)
@@ -124,67 +133,55 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if err != nil {
 			return err
 		}
-		return publishCreated(ctx, pub, ts.WorkspaceID(), c)
+		if err := publishCreated(ctx, pub, ts.WorkspaceID(), c); err != nil {
+			return err
+		}
+		if len(in.Tags) == 0 {
+			return nil
+		}
+		return tags.New().Set(ctx, ts, c.ID, in.Tags)
 	})
 	if err != nil {
 		return nil, domainError(err)
 	}
-	return c, nil
+	return m.Get(ctx, s, c.ID)
 }
 
-// Update changes the given attributes of a Contact; CustomFields, when given,
-// replace the stored set. ErrNotFound when the Contact is not in the Workspace.
-func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, attrs Attributes) (*ent.Contact, error) {
-	attrs = attrs.normalized()
-	var c *ent.Contact
+// Update applies a patch to a Contact, its Tags included, in one transaction and returns it with
+// its Tags. ErrNotFound when the Contact is not in the Workspace.
+func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Contact, error) {
+	in = in.normalized()
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		q := ts.Contact().UpdateOneID(id).
-			SetNillableSubjectID(attrs.SubjectID).
-			SetNillableEmail(attrs.Email).
-			SetNillablePhone(attrs.Phone).
-			SetNillableFirstName(attrs.FirstName).
-			SetNillableLastName(attrs.LastName).
-			SetNillableTimeZone(attrs.TimeZone)
-		attrs.Cleared.applyTo(q)
-		if attrs.CustomFields != nil {
-			typed, err := EnsureCustomFields(ctx, ts, attrs.CustomFields)
+		q := ts.Contact().UpdateOneID(id)
+		patch.Apply(in.SubjectID, q.SetSubjectID, q.ClearSubjectID)
+		patch.Apply(in.Email, q.SetEmail, q.ClearEmail)
+		patch.Apply(in.Phone, q.SetPhone, q.ClearPhone)
+		patch.Apply(in.FirstName, q.SetFirstName, q.ClearFirstName)
+		patch.Apply(in.LastName, q.SetLastName, q.ClearLastName)
+		patch.Apply(in.TimeZone, q.SetTimeZone, q.ClearTimeZone)
+		if fields, ok := in.CustomFields.Get(); ok {
+			typed, err := EnsureCustomFields(ctx, ts, fields)
 			if err != nil {
 				return err
 			}
-			q = q.SetCustomFields(typed)
+			q.SetCustomFields(typed)
 		}
-		var err error
-		c, err = q.Save(ctx)
-		return err
+		if in.CustomFields.IsClear() {
+			q.ClearCustomFields()
+		}
+		if err := q.Exec(ctx); err != nil {
+			return err
+		}
+		names, ok := in.Tags.Get()
+		if !ok {
+			return nil
+		}
+		return tags.New().Set(ctx, ts, id, names)
 	})
 	if err != nil {
 		return nil, domainError(err)
 	}
-	return c, nil
-}
-
-func (c Cleared) applyTo(q *ent.ContactScopedUpdateOne) {
-	if c.SubjectID {
-		q.ClearSubjectID()
-	}
-	if c.Email {
-		q.ClearEmail()
-	}
-	if c.Phone {
-		q.ClearPhone()
-	}
-	if c.FirstName {
-		q.ClearFirstName()
-	}
-	if c.LastName {
-		q.ClearLastName()
-	}
-	if c.TimeZone {
-		q.ClearTimeZone()
-	}
-	if c.CustomFields {
-		q.ClearCustomFields()
-	}
+	return m.Get(ctx, s, id)
 }
 
 // Upsert resolves the Contact by any present alias key (subject_id, email, phone)
@@ -378,6 +375,26 @@ func publishCreated(ctx context.Context, pub events.Publisher, workspaceID int64
 
 // normalized trims alias keys, lower-cases the email and drops blank ones, so
 // "Alice@X.com " and "alice@x.com" are the same alias key everywhere.
+// normalized trims the alias keys and lowercases the email; one set blank keeps the stored value.
+func (in UpdateInput) normalized() UpdateInput {
+	in.SubjectID = trimmedPatch(in.SubjectID)
+	in.Phone = trimmedPatch(in.Phone)
+	in.Email = patch.Map(trimmedPatch(in.Email), strings.ToLower)
+	return in
+}
+
+func trimmedPatch(f patch.Field[string]) patch.Field[string] {
+	v, ok := f.Get()
+	if !ok {
+		return f
+	}
+	t := trimmed(&v)
+	if t == nil {
+		return patch.Keep[string]()
+	}
+	return patch.Set(*t)
+}
+
 func (a Attributes) normalized() Attributes {
 	a.SubjectID = trimmed(a.SubjectID)
 	a.Phone = trimmed(a.Phone)

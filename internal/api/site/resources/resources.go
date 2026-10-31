@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
+	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/dkimstate"
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/instance"
@@ -663,7 +664,7 @@ func automationSteps(v *ent.AutomationVersion) []siteapi.SiteAutomationStep {
 		default:
 			step.Subject = siteapi.NewOptString(s.Subject)
 			step.Body = siteapi.NewOptString(s.Body)
-			if doc := stepDoc(s.Doc); doc != nil {
+			if doc := convert.DocObject[siteapi.SiteAutomationStepDoc](s.Doc); doc != nil {
 				step.Doc = siteapi.NewOptSiteAutomationStepDoc(doc)
 				step.EditorVersion = siteapi.NewOptString(s.EditorVersion)
 			}
@@ -671,65 +672,6 @@ func automationSteps(v *ent.AutomationVersion) []siteapi.SiteAutomationStep {
 		steps = append(steps, step)
 	}
 	return steps
-}
-
-// AutomationSteps converts the typed steps DTO to the automations module's steps.
-func AutomationSteps(steps []siteapi.SiteAutomationStep) []automations.Step {
-	out := make([]automations.Step, 0, len(steps))
-	for i := range steps {
-		s := &steps[i]
-		out = append(out, automations.Step{
-			Type:    string(s.Type),
-			Subject: s.Subject.Or(""),
-			Body:    s.Body.Or(""),
-			Doc:     docJSON(s.Doc),
-			Seconds: int(s.Seconds.Or(0)),
-			Tag:     s.Tag.Or(""),
-
-			ID:  s.ID.Or(""),
-			URL: s.URL.Or(""),
-			Headers: lo.Map(s.Headers, func(h siteapi.SiteAutomationHttpHeader, _ int) automations.Header {
-				return automations.Header{Name: h.Name, Value: h.Value.Or("")}
-			}),
-			Secret:      s.Secret.Or(""),
-			ClearSecret: s.ClearSecret.Or(false),
-		})
-	}
-	return out
-}
-
-// stepDoc is an email step's stored editor document as the opaque object of the contract; nil
-// for a step written as HTML.
-func stepDoc(doc json.RawMessage) siteapi.SiteAutomationStepDoc {
-	if len(doc) == 0 {
-		return nil
-	}
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(doc, &fields); err != nil {
-		return nil
-	}
-	out := make(siteapi.SiteAutomationStepDoc, len(fields))
-	for k, v := range fields {
-		out[k] = jx.Raw(v)
-	}
-	return out
-}
-
-// docJSON is a request's opaque document object as the JSON the module renders; nil when the
-// step names none. An empty object is a document (an invalid one), not an absent one.
-func docJSON(o siteapi.OptSiteAutomationStepDoc) json.RawMessage {
-	if !o.Set {
-		return nil
-	}
-	raw := make(map[string]json.RawMessage, len(o.Value))
-	for k, v := range o.Value {
-		raw[k] = json.RawMessage(v)
-	}
-	b, err := json.Marshal(raw)
-	if err != nil {
-		return nil
-	}
-	return b
 }
 
 // segmentCondition decodes the stored rule group into the typed DTO. A segment with no
@@ -964,20 +906,6 @@ func ruleActions(stored string) []siteapi.SiteRuleAction {
 			})
 		}
 		return out
-	})
-}
-
-// RuleActions converts the typed Actions DTO to the Rule module's Actions.
-func RuleActions(actions []siteapi.SiteRuleAction) []rules.Action {
-	return lo.Map(actions, func(a siteapi.SiteRuleAction, _ int) rules.Action {
-		return rules.Action{
-			Type: rules.ActionType(a.Type), Tag: a.Tag.Or(""), AutomationID: int64(a.AutomationId.Or(0)),
-			ID: a.ID.Or(""), URL: a.URL.Or(""), Body: a.Body.Or(""),
-			Headers: lo.Map(a.Headers, func(h siteapi.SiteAutomationHttpHeader, _ int) httpcall.Header {
-				return httpcall.Header{Name: h.Name, Value: h.Value.Or("")}
-			}),
-			Secret: a.Secret.Or(""), ClearSecret: a.ClearSecret.Or(false),
-		}
 	})
 }
 

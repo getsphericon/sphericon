@@ -35,15 +35,10 @@ func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebh
 	}, nil
 }
 
-func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.SiteCreateWebhookEndpointInput, _ siteapi.SiteWebhooksCreateParams) (siteapi.SiteWebhooksCreateRes, error) {
+func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.CreateWebhookInput, _ siteapi.SiteWebhooksCreateParams) (siteapi.SiteWebhooksCreateRes, error) {
 	scoped := workspaceScope(ctx)
 
-	enabled, hasEnabled := req.Enabled.Get()
-	e, err := h.webhooks.Create(ctx, scoped, webhooks.CreateInput{
-		URL:        req.URL,
-		EventTypes: req.EventTypes,
-		Enabled:    lo.Ternary(hasEnabled, &enabled, nil),
-	})
+	e, err := h.webhooks.Create(ctx, scoped, inputs.WebhookCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -63,18 +58,12 @@ func (h *Handlers) SiteWebhooksGet(ctx context.Context, params siteapi.SiteWebho
 	return &res, nil
 }
 
-func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.SiteUpdateWebhookEndpointInput, params siteapi.SiteWebhooksUpdateParams) (siteapi.SiteWebhooksUpdateRes, error) {
+func (h *Handlers) SiteWebhooksUpdate(ctx context.Context, req *siteapi.UpdateWebhookInput, params siteapi.SiteWebhooksUpdateParams) (siteapi.SiteWebhooksUpdateRes, error) {
 	scoped := workspaceScope(ctx)
 
 	id := int64(params.ID)
 
-	url, hasURL := req.URL.Get()
-	enabled, hasEnabled := req.Enabled.Get()
-	e, err := h.webhooks.Update(ctx, scoped, id, webhooks.UpdateInput{
-		URL:        lo.Ternary(hasURL, &url, nil),
-		EventTypes: req.EventTypes,
-		Enabled:    lo.Ternary(hasEnabled, &enabled, nil),
-	})
+	e, err := h.webhooks.Update(ctx, scoped, id, inputs.WebhookUpdate(req))
 	if err != nil {
 		return nil, err
 	}

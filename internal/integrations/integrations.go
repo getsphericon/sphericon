@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/messaging/ses"
 	"github.com/getsphericon/sphericon/internal/messaging/smtp"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -145,52 +146,34 @@ type ConfigInput struct {
 	Inbox *InboxConfig
 }
 
-// Limit is a Provider limit in a request: unset keeps the stored value (update) or
-// means no limit (create); Value nil with Set true clears it.
-type Limit struct {
-	Set   bool
-	Value *int
-}
-
-// LimitOf reads a Provider limit from an optional-nullable request field (the generated
-// OptNil types of either API): omitted is unset, null clears, a number sets.
-func LimitOf[T ~int32](in interface {
-	Get() (T, bool)
-	IsSet() bool
-}) Limit {
-	v, ok := in.Get()
-	if !ok {
-		return Limit{Set: in.IsSet()}
-	}
-	n := int(v)
-	return Limit{Set: true, Value: &n}
-}
-
-// CreateInput is a new Integration. Enabled defaults to true when nil.
+// CreateInput is a new Integration. Enabled defaults to true when nil; a nil Provider limit
+// is no limit.
 type CreateInput struct {
 	Name         string
 	Enabled      *bool
 	IsDefault    bool
-	MaxPerSecond Limit
-	MaxPerDay    Limit
+	MaxPerSecond *int
+	MaxPerDay    *int
 	Config       ConfigInput
 	// Preset and Params are the inbound side (ADR 0037); Params without a Preset is refused.
 	Preset *string
 	Params map[string]any
 }
 
-// UpdateInput is a partial edit; nil fields keep the stored value. A nil Config keeps the
-// credentials; inside a supplied Config, blank secrets keep the stored secret.
+// UpdateInput is a patch of an Integration: a field that keeps leaves the stored value. A Provider
+// limit clears to no limit. An absent Config leaves the credentials as they are; inside a set Config,
+// blank secrets keep the stored secret. Name, Enabled, IsDefault and Config cannot be cleared.
 type UpdateInput struct {
-	Name         *string
-	Enabled      *bool
-	IsDefault    *bool
-	MaxPerSecond Limit
-	MaxPerDay    Limit
-	Config       *ConfigInput
-	// Preset, Params and RetireSecrets edit the inbound side; see sealInbound.
-	Preset        PresetChange
-	Params        map[string]any
+	Name         patch.Field[string]
+	Enabled      patch.Field[bool]
+	IsDefault    patch.Field[bool]
+	MaxPerSecond patch.Field[int]
+	MaxPerDay    patch.Field[int]
+	Config       patch.Field[ConfigInput]
+	// Preset, Params and RetireSecrets edit the inbound side; see sealInbound. A Preset clears to
+	// none; Params are merged over the stored ones.
+	Preset        patch.Field[string]
+	Params        patch.Field[map[string]any]
 	RetireSecrets bool
 }
 
@@ -205,7 +188,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		return nil, err
 	}
 	if in.Config.SES != nil {
-		if err := requireProviderLimit(in.Config.SES.Endpoint, in.MaxPerSecond.Value, in.MaxPerDay.Value); err != nil {
+		if err := requireProviderLimit(in.Config.SES.Endpoint, in.MaxPerSecond, in.MaxPerDay); err != nil {
 			return nil, err
 		}
 	}
@@ -223,7 +206,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		presetName = new(string)
 		*presetName = "ses"
 	}
-	inb, err := m.sealInbound(nil, inboundChange{preset: PresetChange{Set: presetName != nil, Name: presetName}, params: in.Params})
+	inb, err := m.sealInbound(nil, inboundChange{preset: patch.FromPtr(presetName), params: in.Params})
 	if err != nil {
 		return nil, err
 	}
@@ -251,8 +234,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 			SetNillablePreset(inb.preset).
 			SetEnabled(enabled).
 			SetIsDefault(in.IsDefault).
-			SetNillableMaxPerSecond(in.MaxPerSecond.Value).
-			SetNillableMaxPerDay(in.MaxPerDay.Value)
+			SetNillableMaxPerSecond(in.MaxPerSecond).
+			SetNillableMaxPerDay(in.MaxPerDay)
 		if inb.sealed != nil {
 			create.SetParamsEncrypted(*inb.sealed)
 		}
@@ -276,14 +259,14 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	// Validate and collect the changes up front so a refusal short-circuits before the
 	// transaction opens.
 	var name *string
-	if in.Name != nil {
-		n, err := validName(*in.Name)
+	if raw, ok := in.Name.Get(); ok {
+		n, err := validName(raw)
 		if err != nil {
 			return nil, err
 		}
 		name = &n
 	}
-	sealed, err := m.sealEditedConfig(row, in.Config)
+	sealed, err := m.sealEditedConfig(row, in.Config.Ptr())
 	if err != nil {
 		return nil, err
 	}
@@ -291,14 +274,16 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return nil, err
 	}
 
-	inb, err := m.sealInbound(row, inboundChange{preset: in.Preset, params: in.Params, retireSecrets: in.RetireSecrets})
+	params, _ := in.Params.Get()
+	inb, err := m.sealInbound(row, inboundChange{preset: in.Preset, params: params, retireSecrets: in.RetireSecrets})
 	if err != nil {
 		return nil, err
 	}
 
 	// Promoting to default touches sibling rows, so it clears the channel's current
 	// default first, in the same transaction as the update.
-	promote := in.IsDefault != nil && *in.IsDefault && !row.IsDefault
+	isDefault, _ := in.IsDefault.Get()
+	promote := isDefault && !row.IsDefault
 	if promote && row.DiscardedAt != nil {
 		return nil, &validation.Error{Field: "isDefault", Message: i18n.T("errors.integration_archived_default", nil)}
 	}
@@ -360,9 +345,7 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	if name != nil {
 		upd.SetName(*name)
 	}
-	if in.Enabled != nil {
-		upd.SetEnabled(*in.Enabled)
-	}
+	patch.ApplySet(in.Enabled, upd.SetEnabled)
 	if sealed != nil {
 		upd.SetConfigEncrypted(*sealed)
 	}
@@ -373,11 +356,9 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 			upd.SetPreset(*inb.preset).SetParamsEncrypted(*inb.sealed)
 		}
 	}
-	applyLimit(in.MaxPerSecond, upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
-	applyLimit(in.MaxPerDay, upd.SetMaxPerDay, upd.ClearMaxPerDay)
-	if in.IsDefault != nil {
-		upd.SetIsDefault(*in.IsDefault)
-	}
+	patch.Apply(in.MaxPerSecond, upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
+	patch.Apply(in.MaxPerDay, upd.SetMaxPerDay, upd.ClearMaxPerDay)
+	patch.ApplySet(in.IsDefault, upd.SetIsDefault)
 }
 
 // Archive discards an Integration (ADR 0049), unless live work uses it: then it returns an
@@ -385,9 +366,10 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 // and the default one when it names none; an active Automation that sends email uses the one it
 // names, and the default one when it names none. A sent or failed Broadcast is history and does not
 // block. An archived Integration gives up the default: its channel has none until another is
-// picked. Archiving an archived Integration changes nothing. An unknown id is ErrNotFound.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return missing(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+// picked. Archiving an archived Integration changes nothing. An unknown id is ErrNotFound. It
+// returns the Integration.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+	err := missing(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.Integration().Get(ctx, id)
 		if err != nil {
 			return err
@@ -409,13 +391,20 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 		}
 		return ts.Integration().Discard(ctx, id)
 	}))
+	if err != nil {
+		return nil, err
+	}
+	return m.Get(ctx, s, id)
 }
 
-// Unarchive brings an archived Integration back to the lists. It does not become the default
-// again. Restoring an Integration that is not archived changes nothing. An unknown id is
-// ErrNotFound.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return conflictOf(missing(s.Integration().Restore(ctx, id)))
+// Unarchive brings an archived Integration back to the lists and returns it. It does not become
+// the default again. Restoring an Integration that is not archived changes nothing. An unknown id
+// is ErrNotFound.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+	if err := conflictOf(missing(s.Integration().Restore(ctx, id))); err != nil {
+		return nil, err
+	}
+	return m.Get(ctx, s, id)
 }
 
 // liveUsers is the live work that uses the Integration.
@@ -446,15 +435,6 @@ func liveUsers(ctx context.Context, s *ent.Scoped, row *ent.Integration) ([]inus
 	return append(users, sending...), nil
 }
 
-func applyLimit[T any](l Limit, set func(int) T, unset func() T) {
-	switch {
-	case l.Value != nil:
-		set(*l.Value)
-	case l.Set:
-		unset()
-	}
-}
-
 // requireProviderLimit refuses an SES Integration with its own endpoint that is left without
 // either Provider limit value (ADR 0067): an SES-compatible service has no quota call, so the
 // customer gives what their provider account allows. AWS SES (no endpoint) reports its own.
@@ -483,8 +463,8 @@ func (m *Module) keepsProviderLimit(row *ent.Integration, in UpdateInput) error 
 		return nil
 	}
 	var endpoint string
-	if in.Config != nil && in.Config.SES != nil {
-		endpoint = in.Config.SES.Endpoint
+	if cfg, ok := in.Config.Get(); ok && cfg.SES != nil {
+		endpoint = cfg.SES.Endpoint
 	} else {
 		stored, err := m.Redact(row)
 		if err != nil {
@@ -492,15 +472,7 @@ func (m *Module) keepsProviderLimit(row *ent.Integration, in UpdateInput) error 
 		}
 		endpoint = stored.SES.Endpoint
 	}
-	return requireProviderLimit(endpoint, in.MaxPerSecond.after(row.MaxPerSecond), in.MaxPerDay.after(row.MaxPerDay))
-}
-
-// after is the limit an edit leaves: the request's when it names one, else the stored one.
-func (l Limit) after(stored *int) *int {
-	if l.Set {
-		return l.Value
-	}
-	return stored
+	return requireProviderLimit(endpoint, in.MaxPerSecond.Over(row.MaxPerSecond), in.MaxPerDay.Over(row.MaxPerDay))
 }
 
 func validName(raw string) (string, error) {

@@ -159,7 +159,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	}
 	cfg := blankPassword("smtp.example.com")
 	edited, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{
-		Config:       externalapi.NewOptNilIntegrationConfigInput(cfg),
+		Config:       externalapi.NewOptIntegrationConfigInput(cfg),
 		MaxPerSecond: externalapi.OptNilMaxPerSecond{Null: true, Set: true},
 	}, externalapi.IntegrationsUpdateParams{ID: created.ID})
 	require.NoError(t, err)
@@ -175,7 +175,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 
 	// Pointing the Integration at another host without the password is refused: the stored
 	// secret is never sent to a destination it was not saved for.
-	moved, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptNilIntegrationConfigInput(blankPassword("attacker.example"))},
+	moved, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(blankPassword("attacker.example"))},
 		externalapi.IntegrationsUpdateParams{ID: created.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, moved)
@@ -184,7 +184,7 @@ func TestExternalIntegrationsUpdateKeepsCredentialsAndRedacts(t *testing.T) {
 	sesCfg := externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
 		Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
 	})}
-	mismatch, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptNilIntegrationConfigInput(sesCfg)},
+	mismatch, err := c.IntegrationsUpdate(ctx, &externalapi.UpdateIntegrationInput{Config: externalapi.NewOptIntegrationConfigInput(sesCfg)},
 		externalapi.IntegrationsUpdateParams{ID: created.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &externalapi.IntegrationsUpdateUnprocessableEntity{}, mismatch)

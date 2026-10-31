@@ -15,10 +15,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func smtpInput(host, password string) siteapi.SiteIntegrationConfigInput {
-	return siteapi.SiteIntegrationConfigInput{
-		OneOf: siteapi.NewSiteSmtpConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSmtpConfigInput{
-			Kind:     siteapi.SiteSmtpConfigInputKindSMTP,
+func smtpInput(host, password string) siteapi.IntegrationConfigInput {
+	return siteapi.IntegrationConfigInput{
+		OneOf: siteapi.NewSmtpConfigInputIntegrationConfigInputSum(siteapi.SmtpConfigInput{
+			Kind:     siteapi.SmtpConfigInputKindSMTP,
 			Host:     host,
 			Port:     587,
 			Username: siteapi.NewOptNilString("smtp-user"),
@@ -30,14 +30,14 @@ func smtpInput(host, password string) siteapi.SiteIntegrationConfigInput {
 
 // sesTopicParams names the SNS topic an SES Integration needs to be saved (the `ses`
 // Preset requires one).
-var sesTopicParams = siteapi.NewOptSiteCreateIntegrationInputParams(siteapi.SiteCreateIntegrationInputParams{
+var sesTopicParams = siteapi.NewOptCreateIntegrationInputParams(siteapi.CreateIntegrationInputParams{
 	"topic_arn": jx.Raw(`"arn:aws:sns:eu-west-1:123456789012:acme-ses-events"`),
 })
 
-func sesInput(region, accessKey, secret string) siteapi.SiteIntegrationConfigInput {
-	return siteapi.SiteIntegrationConfigInput{
-		OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
-			Kind:            siteapi.SiteSesConfigInputKindSes,
+func sesInput(region, accessKey, secret string) siteapi.IntegrationConfigInput {
+	return siteapi.IntegrationConfigInput{
+		OneOf: siteapi.NewSesConfigInputIntegrationConfigInputSum(siteapi.SesConfigInput{
+			Kind:            siteapi.SesConfigInputKindSes,
 			Region:          region,
 			AccessKeyId:     accessKey,
 			SecretAccessKey: secret,
@@ -54,14 +54,14 @@ func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 
 	// SES integration targeting an SES-compatible endpoint (e.g. Yandex Postbox), which
 	// takes its Provider limit.
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params:       sesTopicParams,
 		Name:         "Postbox",
-		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(1),
-		MaxPerDay:    siteapi.NewOptNilSiteMaxPerDay(200),
-		Config: siteapi.SiteIntegrationConfigInput{
-			OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
-				Kind:            siteapi.SiteSesConfigInputKindSes,
+		MaxPerSecond: siteapi.NewOptNilMaxPerSecond(1),
+		MaxPerDay:    siteapi.NewOptNilMaxPerDay(200),
+		Config: siteapi.IntegrationConfigInput{
+			OneOf: siteapi.NewSesConfigInputIntegrationConfigInputSum(siteapi.SesConfigInput{
+				Kind:            siteapi.SesConfigInputKindSes,
 				Region:          "ru-central1",
 				AccessKeyId:     "AKIA1234",
 				SecretAccessKey: "secret",
@@ -79,7 +79,7 @@ func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 	assert.Equal(t, "https://postbox.cloud.yandex.net", sesOut.Endpoint.Or(""))
 
 	// An SES integration without an endpoint reads back with the endpoint unset.
-	plain, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	plain, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "AWS",
 		Config: sesInput("eu-west-1", "AKIA5678", "secret"),
@@ -96,7 +96,7 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name:   "Primary SMTP",
 		Config: smtpInput("smtp.example.com", "s3cret-pass"),
 	}, params)
@@ -130,9 +130,9 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update name + re-supply credentials.
-	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Name:   siteapi.NewOptString("Renamed SMTP"),
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("smtp2.example.com", "new-pass")),
+		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("smtp2.example.com", "new-pass")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
 	updRes := updated.(*siteapi.SiteIntegrationResource)
@@ -149,7 +149,7 @@ func TestSiteIntegrationsRejectsWrongProviderOnUpdate(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name:   "SMTP",
 		Config: smtpInput("smtp.example.com", "pw"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -157,8 +157,8 @@ func TestSiteIntegrationsRejectsWrongProviderOnUpdate(t *testing.T) {
 	res := created.(*siteapi.SiteIntegrationResource)
 
 	// Swapping the config to a different provider kind is rejected.
-	got, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(sesInput("eu-west-1", "AKIA", "secret")),
+	got, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA", "secret")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteIntegrationsUpdateUnprocessableEntity{}, got)
@@ -170,7 +170,7 @@ func TestSiteIntegrationsSingleDefaultPerChannel(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
-	first, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	first, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name:      "First",
 		IsDefault: siteapi.NewOptBool(true),
 		Config:    smtpInput("smtp1.example.com", "pw"),
@@ -178,7 +178,7 @@ func TestSiteIntegrationsSingleDefaultPerChannel(t *testing.T) {
 	require.NoError(t, err)
 	firstID := first.(*siteapi.SiteIntegrationResource).ID
 
-	second, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	second, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params:    sesTopicParams,
 		Name:      "Second",
 		IsDefault: siteapi.NewOptBool(true),
@@ -207,7 +207,7 @@ func TestSiteIntegrationsPromoteViaUpdate(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
-	first, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	first, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name:      "First",
 		IsDefault: siteapi.NewOptBool(true),
 		Config:    smtpInput("smtp1.example.com", "pw"),
@@ -215,7 +215,7 @@ func TestSiteIntegrationsPromoteViaUpdate(t *testing.T) {
 	require.NoError(t, err)
 	firstID := first.(*siteapi.SiteIntegrationResource).ID
 
-	second, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	second, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "Second",
 		Config: sesInput("eu-west-1", "AKIA1234", "secret"),
@@ -225,7 +225,7 @@ func TestSiteIntegrationsPromoteViaUpdate(t *testing.T) {
 
 	// Promote the second to default via update; this must demote the first in the
 	// same transaction (see promote path in SiteIntegrationsUpdate).
-	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+	updated, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		IsDefault: siteapi.NewOptBool(true),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: secondID})
 	require.NoError(t, err)
@@ -253,7 +253,7 @@ func TestSiteIntegrationsScopedToWorkspace(t *testing.T) {
 
 func createSMTP(t *testing.T, c *siteapi.Client, host, password string) siteapi.EntityId {
 	t.Helper()
-	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
 		Name:   "Primary SMTP",
 		Config: smtpInput(host, password),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -267,14 +267,14 @@ func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	id := createSMTP(t, env.SiteActor(t, fixtures.OwnerJohnEmail), "smtp.example.com", "s3cret-pass")
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 
-	created, err := member.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := member.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name: "Mine", Config: smtpInput("attacker.example", "pw"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteIntegrationsCreateForbidden), created)
 
-	updated, err := member.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("attacker.example", "")),
+	updated, err := member.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("attacker.example", "")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteIntegrationsUpdateForbidden), updated)
@@ -289,7 +289,7 @@ func TestSiteIntegrationsWritesNeedAnOwnerOrAdmin(t *testing.T) {
 	assert.IsType(t, new(siteapi.SiteIntegrationResource), got)
 
 	// An admin manages them.
-	ok, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
+	ok, err := env.SiteActor(t, fixtures.AdminAliceEmail).SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
 		Name: siteapi.NewOptString("Renamed"),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
@@ -304,22 +304,22 @@ func TestSiteIntegrationsBlankSecretIsKeptOnlyForTheSameDestination(t *testing.T
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id}
 
 	// Same host, port and username: the blank password keeps the stored one.
-	kept, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("smtp.example.com", "")),
+	kept, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("smtp.example.com", "")),
 	}, params)
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteIntegrationResource), kept)
 
 	// A new host with a blank password is refused rather than sent the stored secret.
-	moved, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("attacker.example", "")),
+	moved, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("attacker.example", "")),
 	}, params)
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteIntegrationsUpdateUnprocessableEntity), moved)
 
 	// Supplying the password again is how a destination changes.
-	ok, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(smtpInput("smtp2.example.com", "new-pass")),
+	ok, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(smtpInput("smtp2.example.com", "new-pass")),
 	}, params)
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteIntegrationResource), ok)
@@ -329,25 +329,25 @@ func TestSiteIntegrationsSesBlankSecretFollowsRegionAndKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "AWS", Config: sesInput("eu-west-1", "AKIA1234", "secret"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.(*siteapi.SiteIntegrationResource).ID}
 
-	kept, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-		Config: siteapi.NewOptNilSiteIntegrationConfigInput(sesInput("eu-west-1", "AKIA1234", "")),
+	kept, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA1234", "")),
 	}, params)
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteIntegrationResource), kept)
 
-	for name, cfg := range map[string]siteapi.SiteIntegrationConfigInput{
+	for name, cfg := range map[string]siteapi.IntegrationConfigInput{
 		"new key id": sesInput("eu-west-1", "AKIA9999", ""),
 		"new region": sesInput("us-east-1", "AKIA1234", ""),
 	} {
-		res, err := c.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{
-			Config: siteapi.NewOptNilSiteIntegrationConfigInput(cfg),
+		res, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{
+			Config: siteapi.NewOptIntegrationConfigInput(cfg),
 		}, params)
 		require.NoError(t, err, name)
 		assert.IsType(t, new(siteapi.SiteIntegrationsUpdateUnprocessableEntity), res, name)
@@ -357,12 +357,12 @@ func TestSiteIntegrationsSesBlankSecretFollowsRegionAndKey(t *testing.T) {
 func TestSiteIntegrationsRefuseAnInsecureSesEndpoint(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.SiteCreateIntegrationInput{
+	res, err := c.SiteIntegrationsCreate(context.Background(), &siteapi.CreateIntegrationInput{
 		Params: sesTopicParams,
 		Name:   "Bad",
-		Config: siteapi.SiteIntegrationConfigInput{
-			OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
-				Kind: siteapi.SiteSesConfigInputKindSes, Region: "r", AccessKeyId: "AKIA1", SecretAccessKey: "s",
+		Config: siteapi.IntegrationConfigInput{
+			OneOf: siteapi.NewSesConfigInputIntegrationConfigInputSum(siteapi.SesConfigInput{
+				Kind: siteapi.SesConfigInputKindSes, Region: "r", AccessKeyId: "AKIA1", SecretAccessKey: "s",
 				From: "noreply@acme.test", Endpoint: siteapi.NewOptNilString("http://169.254.169.254"),
 			}),
 		},

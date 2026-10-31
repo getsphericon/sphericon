@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/liveuse"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/secrets"
 	"github.com/getsphericon/sphericon/internal/sending"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -119,10 +120,10 @@ type CreateInput struct {
 	Selector string
 }
 
-// UpdateInput is a partial edit; nil fields keep the stored value. The domain name is
-// immutable: the key is minted for it.
+// UpdateInput is a patch of a Sending domain: a field that keeps leaves the stored value. The
+// domain name is immutable: the key is minted for it. The selector cannot be cleared.
 type UpdateInput struct {
-	Selector *string
+	Selector patch.Field[string]
 }
 
 // Create validates the domain, mints its DKIM keypair and stores the row with the
@@ -175,9 +176,10 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // domain becomes unverified until the new record is published and checked.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.SendingDomain, error) {
 	var selector string
-	if in.Selector != nil {
+	given, changes := in.Selector.Get()
+	if changes {
 		var err error
-		if selector, err = validSelector(*in.Selector); err != nil {
+		if selector, err = validSelector(given); err != nil {
 			return nil, err
 		}
 	}
@@ -189,7 +191,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			return notFound(err)
 		}
 		row = cur
-		if in.Selector == nil || selector == cur.DkimSelector {
+		if !changes || selector == cur.DkimSelector {
 			return nil
 		}
 		if dkimstate.Is(cur) {
@@ -218,9 +220,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // of the default Integration's configured one; an active Automation that sends email uses the
 // domain of that configured From, as its steps carry no From of their own. A sent or failed
 // Broadcast is history and does not block. Archiving an archived domain changes nothing; an
-// unknown id is ErrNotFound.
-func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+// unknown id is ErrNotFound. It returns the domain.
+func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.SendingDomain().Get(ctx, id)
 		if err != nil {
 			return notFound(err)
@@ -237,14 +239,18 @@ func (m *Module) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
 		}
 		return ts.SendingDomain().Discard(ctx, id)
 	})
+	if err != nil {
+		return nil, err
+	}
+	return m.Get(ctx, s, id)
 }
 
 // Unarchive brings an archived Sending domain back and starts a new DNS check. The Tracking
 // domain starts over from pending, so the host serves again only once the check proves it:
 // the certificate and the serving state are not restored. It returns ErrAddedAgain when the
 // Workspace added the same domain again meanwhile. Restoring a domain that is not archived
-// changes nothing; an unknown id is ErrNotFound.
-func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
+// changes nothing; an unknown id is ErrNotFound. It returns the domain as the restore left it.
+func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	restored := false
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		row, err := ts.SendingDomain().Get(ctx, id)
@@ -271,12 +277,17 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
 		return ts.SendingDomain().Undiscard(ctx, id)
 	})
 	if db.IsUniqueViolation(err) {
-		return ErrAddedAgain
+		return nil, ErrAddedAgain
 	}
-	if err != nil || !restored {
-		return err
+	if err != nil {
+		return nil, err
 	}
-	return m.verify.EnqueueSendingDomainVerify(ctx, id)
+	if restored {
+		if err := m.verify.EnqueueSendingDomainVerify(ctx, id); err != nil {
+			return nil, err
+		}
+	}
+	return m.Get(ctx, s, id)
 }
 
 // liveUsers is the live work whose From address is on the domain.

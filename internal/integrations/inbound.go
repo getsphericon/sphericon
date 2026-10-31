@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/credentials"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
@@ -25,47 +26,12 @@ import (
 // blank, or nothing, leaves the stored secret as it is.
 const SecretMask = "********"
 
-// PresetChange is the Preset of a write: unset keeps the stored one, Name nil removes it.
-type PresetChange struct {
-	Set  bool
-	Name *string
-}
-
-// PresetOf reads the Preset of an optional-nullable request field (the generated
-// OptNilString of either API).
-func PresetOf(in interface {
-	Get() (string, bool)
-	IsSet() bool
-}) PresetChange {
-	v, ok := in.Get()
-	if !ok {
-		return PresetChange{Set: in.IsSet()}
-	}
-	return PresetChange{Set: true, Name: &v}
-}
-
 // Presets is the registry of Presets the Instance offers.
 func (m *Module) Presets() *preset.Registry { return m.presets }
 
 // HookURL is where the provider posts this Integration's callbacks.
 func (m *Module) HookURL(row *ent.Integration) string {
 	return strings.TrimRight(m.appURL, "/") + "/hooks/" + row.IngestKey
-}
-
-// ParamsOf turns the opaque params object of a request into Go values.
-func ParamsOf[M ~map[string]jx.Raw](raw M) (map[string]any, error) {
-	if raw == nil {
-		return nil, nil
-	}
-	out := make(map[string]any, len(raw))
-	for k, v := range raw {
-		var x any
-		if err := json.Unmarshal(v, &x); err != nil {
-			return nil, &validation.Error{Field: "params", Message: err.Error()}
-		}
-		out[k] = x
-	}
-	return out, nil
 }
 
 // RawOf renders params as the opaque object of a response.
@@ -152,7 +118,7 @@ type inbound struct {
 // stored ones (nil: unchanged) and whether the retiring secret of every rotating pair is
 // dropped.
 type inboundChange struct {
-	preset        PresetChange
+	preset        patch.Field[string]
 	params        map[string]any
 	retireSecrets bool
 }
@@ -167,10 +133,7 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 	if row != nil {
 		prevName = row.Preset
 	}
-	name := prevName
-	if in.preset.Set {
-		name = in.preset.Name
-	}
+	name := in.preset.Over(prevName)
 	changed := !samePreset(prevName, name)
 	if row != nil && !changed && in.params == nil && !in.retireSecrets {
 		return inbound{}, nil

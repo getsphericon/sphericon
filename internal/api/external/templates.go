@@ -6,10 +6,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/samber/lo"
 )
 
@@ -31,12 +29,7 @@ func (h *Handlers) TemplatesList(ctx context.Context, params externalapi.Templat
 
 func (h *Handlers) TemplatesCreate(ctx context.Context, req *externalapi.CreateTemplateInput) (externalapi.TemplatesCreateRes, error) {
 	scoped := auth.TokenScoped(ctx)
-	tpl, err := h.templates.Create(ctx, scoped, templates.CreateInput{
-		Name:    req.Name,
-		Subject: convert.StringPtr(req.Subject),
-		Body:    convert.StringPtr(req.Body),
-		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
-	})
+	tpl, err := h.templates.Create(ctx, scoped, inputs.TemplateCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +53,7 @@ func (h *Handlers) TemplatesUpdate(ctx context.Context, req *externalapi.UpdateT
 	id := int64(params.ID)
 
 	scoped := auth.TokenScoped(ctx)
-	tpl, err := h.templates.Update(ctx, scoped, id, templates.UpdateInput{
-		Name:    convert.StringPtr(req.Name),
-		Subject: convert.StringPtr(req.Subject),
-		Body:    convert.StringPtr(req.Body),
-		Doc:     convert.DocJSON(req.Doc.Value, req.Doc.Set),
-	})
+	tpl, err := h.templates.Update(ctx, scoped, id, inputs.TemplateUpdate(req))
 	if err != nil {
 		return nil, err
 	}

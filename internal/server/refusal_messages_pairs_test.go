@@ -86,7 +86,7 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "tag name is required", want: "name is required",
 			site: func(c *siteapi.Client) (any, error) {
-				return c.SiteTagsApply(t.Context(), &siteapi.SiteApplyTagInput{Name: " "},
+				return c.SiteTagsApply(t.Context(), &siteapi.ApplyTagInput{Name: " "},
 					siteapi.SiteTagsApplyParams{WorkspaceId: ws, ContactId: fixtures.ContactAliceID})
 			},
 			ext: func(c *externalapi.Client) (any, error) {
@@ -96,7 +96,7 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "tag contact not found", want: "contact not found",
 			site: func(c *siteapi.Client) (any, error) {
-				return c.SiteTagsApply(t.Context(), &siteapi.SiteApplyTagInput{Name: "vip"},
+				return c.SiteTagsApply(t.Context(), &siteapi.ApplyTagInput{Name: "vip"},
 					siteapi.SiteTagsApplyParams{WorkspaceId: ws, ContactId: missing})
 			},
 			ext: func(c *externalapi.Client) (any, error) {
@@ -124,7 +124,7 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "webhook url", want: "url must be an absolute http or https URL",
 			site: func(c *siteapi.Client) (any, error) {
-				return c.SiteWebhooksCreate(t.Context(), &siteapi.SiteCreateWebhookEndpointInput{URL: "not a url", EventTypes: []string{"contact.created"}},
+				return c.SiteWebhooksCreate(t.Context(), &siteapi.CreateWebhookInput{URL: "not a url", EventTypes: []string{"contact.created"}},
 					siteapi.SiteWebhooksCreateParams{WorkspaceId: ws})
 			},
 			ext: func(c *externalapi.Client) (any, error) {
@@ -134,7 +134,7 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "webhook event type", want: "the event type must be 1 to 100 characters",
 			site: func(c *siteapi.Client) (any, error) {
-				return c.SiteWebhooksTest(t.Context(), &siteapi.SiteTestWebhookInput{EventType: " "},
+				return c.SiteWebhooksTest(t.Context(), &siteapi.TestWebhookInput{EventType: " "},
 					siteapi.SiteWebhooksTestParams{WorkspaceId: ws, ID: missing})
 			},
 			ext: func(c *externalapi.Client) (any, error) {
@@ -301,7 +301,7 @@ func TestContactAndSendingRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "sending domain already added", want: "this domain is already added",
 			site: func(c *siteapi.Client) (any, error) {
-				return c.SiteSendingDomainsCreate(t.Context(), &siteapi.SiteCreateSendingDomainInput{Domain: fixtures.SendingDomainCodebasicsDomain},
+				return c.SiteSendingDomainsCreate(t.Context(), &siteapi.CreateSendingDomainInput{Domain: fixtures.SendingDomainCodebasicsDomain},
 					siteapi.SiteSendingDomainsCreateParams{WorkspaceId: ws})
 			},
 			ext: func(c *externalapi.Client) (any, error) {

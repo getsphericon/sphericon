@@ -19,7 +19,7 @@ func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 	m := contacts.New(env.Bus)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	byHand, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.Attributes{Email: new("door-hand@example.com")})
+	byHand, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.CreateInput{Email: new("door-hand@example.com")})
 	require.NoError(t, err)
 	viaAPI, err := m.Upsert(context.Background(), acme, contact.SourceAPI, contacts.Attributes{Email: new("door-api@example.com")})
 	require.NoError(t, err)
@@ -36,7 +36,7 @@ func TestALaterUpsertLeavesTheSourceUnchanged(t *testing.T) {
 	m := contacts.New(env.Bus)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	created, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.Attributes{Email: new("same-person@example.com")})
+	created, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.CreateInput{Email: new("same-person@example.com")})
 	require.NoError(t, err)
 	again, err := m.Upsert(context.Background(), acme, contact.SourceTracker, contacts.Attributes{Email: new("same-person@example.com"), FirstName: new("Sam")})
 	require.NoError(t, err)

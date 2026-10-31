@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/emaildoc"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -77,14 +78,14 @@ type CreateInput struct {
 	Prepared *emailrender.Authored
 }
 
-// UpdateInput changes a Template; nil fields are left as they are. A Doc is rendered to the
-// body in the same save and stored with it; a Body alone clears the stored document, so the two
-// never disagree.
+// UpdateInput is a patch of a Template: a field that keeps leaves the stored value. A Doc is
+// rendered to the body in the same save and stored with it; a Body alone clears the stored
+// document, so the two never disagree. None of the fields can be cleared.
 type UpdateInput struct {
-	Name    *string
-	Subject *string
-	Body    *string
-	Doc     json.RawMessage
+	Name    patch.Field[string]
+	Subject patch.Field[string]
+	Body    patch.Field[string]
+	Doc     patch.Field[json.RawMessage]
 }
 
 // List returns a page of the Workspace's Templates, ascending by id (a catalogue).
@@ -133,20 +134,21 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 
 // Update applies the given fields. A blank name is ErrBlankName.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.EmailTemplate, error) {
-	if err := checkName(in.Name); err != nil {
+	if err := checkName(in.Name.Ptr()); err != nil {
 		return nil, err
 	}
-	c, err := emailrender.ResolveContent(ctx, m.renderer, in.Subject, in.Body, in.Doc, ErrBodyAndDoc)
+	doc, _ := in.Doc.Get()
+	c, err := emailrender.ResolveContent(ctx, m.renderer, in.Subject.Ptr(), in.Body.Ptr(), doc, ErrBodyAndDoc)
 	if err != nil {
 		return nil, err
 	}
 	update := s.EmailTemplate().UpdateOneID(id).
-		SetNillableName(in.Name).
-		SetNillableSubject(in.Subject).
+		SetNillableName(in.Name.Ptr()).
+		SetNillableSubject(in.Subject.Ptr()).
 		SetNillableBody(c.Body)
 	switch {
 	case c.Authored != nil:
-		update.SetDoc(in.Doc).SetEditorVersion(c.Authored.EditorVersion)
+		update.SetDoc(doc).SetEditorVersion(c.Authored.EditorVersion)
 	case c.Body != nil:
 		update.ClearDoc().ClearEditorVersion()
 	}

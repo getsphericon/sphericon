@@ -76,31 +76,6 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 	return steps
 }
 
-// AutomationSteps converts the typed steps DTO to the automations module's steps.
-func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
-	out := make([]automations.Step, 0, len(steps))
-	for i := range steps {
-		s := &steps[i]
-		out = append(out, automations.Step{
-			Type:    string(s.Type),
-			Subject: s.Subject.Or(""),
-			Body:    s.Body.Or(""),
-			Doc:     convert.DocJSON(s.Doc.Value, s.Doc.Set),
-			Seconds: int(s.Seconds.Or(0)),
-			Tag:     s.Tag.Or(""),
-
-			ID:  s.ID.Or(""),
-			URL: s.URL.Or(""),
-			Headers: lo.Map(s.Headers, func(h externalapi.AutomationHttpHeader, _ int) automations.Header {
-				return automations.Header{Name: h.Name, Value: h.Value.Or("")}
-			}),
-			Secret:      s.Secret.Or(""),
-			ClearSecret: s.ClearSecret.Or(false),
-		})
-	}
-	return out
-}
-
 // Converter maps ent entities to external API resources. goverter generates the
 // implementation; the extends below cover the conversions it can't infer.
 //
@@ -624,20 +599,6 @@ func ruleActions(stored string) []externalapi.RuleAction {
 			})
 		}
 		return out
-	})
-}
-
-// RuleActions converts the typed Actions DTO to the Rule module's Actions.
-func RuleActions(actions []externalapi.RuleAction) []rules.Action {
-	return lo.Map(actions, func(a externalapi.RuleAction, _ int) rules.Action {
-		return rules.Action{
-			Type: rules.ActionType(a.Type), Tag: a.Tag.Or(""), AutomationID: int64(a.AutomationId.Or(0)),
-			ID: a.ID.Or(""), URL: a.URL.Or(""), Body: a.Body.Or(""),
-			Headers: lo.Map(a.Headers, func(h externalapi.AutomationHttpHeader, _ int) httpcall.Header {
-				return httpcall.Header{Name: h.Name, Value: h.Value.Or("")}
-			}),
-			Secret: a.Secret.Or(""), ClearSecret: a.ClearSecret.Or(false),
-		}
 	})
 }
 

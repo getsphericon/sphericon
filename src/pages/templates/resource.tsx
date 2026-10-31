@@ -7,7 +7,7 @@ import {
   siteTemplatesListQueryKey,
   siteTemplatesUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { zSiteCreateEmailTemplateInput } from '../../generated/site/zod.gen.ts'
+import { zCreateTemplateInput } from '../../generated/site/zod.gen.ts'
 import { defineResource } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
@@ -16,7 +16,7 @@ import { TemplateForm } from './TemplateForm.tsx'
 
 // The document is held as JSON text; a blank one is absent, so a source-only save writes a body.
 const templateSchema = resourceFormSchema(
-  zSiteCreateEmailTemplateInput
+  zCreateTemplateInput
     .pick({ name: true, subject: true, body: true })
     .extend({ doc: z.exactOptional(docCodec) }),
 )

@@ -9,10 +9,8 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/segments"
 )
 
 func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.SegmentsListParams) (externalapi.SegmentsListRes, error) {
@@ -33,14 +31,11 @@ func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.Segments
 
 func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSegmentInput) (externalapi.SegmentsCreateRes, error) {
 	ws := auth.TokenScoped(ctx)
-	def, err := condition.Encode(&req.Condition)
+	in, err := inputs.SegmentCreate(req)
 	if err != nil {
 		return nil, err
 	}
-	s, err := h.segments.Create(ctx, ws, segments.CreateInput{
-		Name:      req.Name,
-		Condition: &def,
-	})
+	s, err := h.segments.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
@@ -62,11 +57,10 @@ func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsG
 func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSegmentInput, params externalapi.SegmentsUpdateParams) (externalapi.SegmentsUpdateRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	cond, err := condition.EncodeOptional(req.Condition)
+	in, err := inputs.SegmentUpdate(req)
 	if err != nil {
 		return nil, err
 	}
-	in := segments.UpdateInput{Name: convert.StringPtr(req.Name), Condition: cond}
 	s, err := h.segments.Update(ctx, ws, id, in)
 	if err != nil {
 		return nil, err
@@ -79,11 +73,7 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.SegmentsArchiveParams) (externalapi.SegmentsArchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.segments.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	s, err := h.segments.Get(ctx, ws, id)
+	s, err := h.segments.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -95,11 +85,7 @@ func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.Segme
 func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.SegmentsUnarchiveParams) (externalapi.SegmentsUnarchiveRes, error) {
 	ws := auth.TokenScoped(ctx)
 	id := int64(params.ID)
-	err := h.segments.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	s, err := h.segments.Get(ctx, ws, id)
+	s, err := h.segments.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}

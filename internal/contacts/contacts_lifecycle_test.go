@@ -8,10 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -28,8 +30,8 @@ func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	c, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.Attributes{
-		CustomFields: map[string]any{"vip": true, "visits": float64(3), "plan": "pro", "": "ignored"},
+	c, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{
+		CustomFields: patch.Set(map[string]any{"vip": true, "visits": float64(3), "plan": "pro", "": "ignored"}),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]any{"vip": true, "visits": float64(3), "plan": "pro"}, c.CustomFields, "the blank key is dropped")
@@ -37,8 +39,8 @@ func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 	assert.Equal(t, customfield.TypeNumber, fieldType(t, env, "visits"))
 	assert.Equal(t, customfield.TypeString, fieldType(t, env, "plan"))
 
-	replaced, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.Attributes{
-		CustomFields: map[string]any{"plan": "free"},
+	replaced, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{
+		CustomFields: patch.Set(map[string]any{"plan": "free"}),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]any{"plan": "free"}, replaced.CustomFields, "the given set replaces the stored one")
@@ -49,16 +51,18 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	full, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{
+	full, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
 		SubjectID: new("user-1"), Email: new("clear.me@example.com"), Phone: new("+15559990"),
 		FirstName: new("Clear"), LastName: new("Me"), TimeZone: new("Europe/Berlin"),
 		CustomFields: map[string]any{"plan": "pro"},
 	})
 	require.NoError(t, err)
 
-	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), full.ID, contacts.Attributes{Cleared: contacts.Cleared{
-		SubjectID: true, Email: true, Phone: true, FirstName: true, LastName: true, TimeZone: true, CustomFields: true,
-	}})
+	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), full.ID, contacts.UpdateInput{
+		SubjectID: patch.Clear[string](), Email: patch.Clear[string](), Phone: patch.Clear[string](),
+		FirstName: patch.Clear[string](), LastName: patch.Clear[string](), TimeZone: patch.Clear[string](),
+		CustomFields: patch.Clear[map[string]any](),
+	})
 	require.NoError(t, err)
 	assert.Nil(t, cleared.SubjectID)
 	assert.Nil(t, cleared.Email)
@@ -71,6 +75,42 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	stored, err := env.DB.Contact.Get(ctx, full.ID)
 	require.NoError(t, err)
 	assert.Nil(t, stored.Email, "clearing is persisted")
+}
+
+func TestCreateAndUpdateSetTheTagsAndReturnTheContactWithThem(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := contacts.New(env.Bus)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	created, err := m.Create(ctx, s, contact.SourceManual, contacts.CreateInput{
+		Email: new("tagged@example.com"), Tags: []string{"beta", "alpha"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"alpha", "beta"}, tagNames(created), "Create returns the Contact with its tags")
+
+	renamed, err := m.Update(ctx, s, created.ID, contacts.UpdateInput{FirstName: patch.Set("Tag")})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"alpha", "beta"}, tagNames(renamed), "absent tags keep the tag set")
+
+	retagged, err := m.Update(ctx, s, created.ID, contacts.UpdateInput{Tags: patch.Set([]string{"gamma"})})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"gamma"}, tagNames(retagged), "set tags become the complete tag set")
+	assert.Equal(t, "Tag", lo.FromPtr(retagged.FirstName))
+}
+
+func TestUpdateKeepsAnAliasKeySetBlank(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := contacts.New(env.Bus)
+
+	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID,
+		contacts.UpdateInput{Email: patch.Set("  ")})
+	require.NoError(t, err)
+	assert.Equal(t, fixtures.ContactAliceEmail, lo.FromPtr(c.Email))
+}
+
+func tagNames(c *ent.Contact) []string {
+	return lo.Map(c.Edges.Tags, func(t *ent.Tag, _ int) string { return t.Name })
 }
 
 func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
@@ -102,7 +142,7 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15557770")})
+	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15557770")})
 	require.NoError(t, err)
 
 	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{
@@ -137,9 +177,9 @@ func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 	m := contacts.New(env.Bus)
 	ctx := context.Background()
 
-	bySubject, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{SubjectID: new("resolve-subject")})
+	bySubject, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{SubjectID: new("resolve-subject")})
 	require.NoError(t, err)
-	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.Attributes{Phone: new("+15558880")})
+	byPhone, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+15558880")})
 	require.NoError(t, err)
 
 	got, err := contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new(" resolve-subject "), lo.ToPtr(fixtures.ContactAliceEmail), nil)

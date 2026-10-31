@@ -24,12 +24,12 @@ func TestSiteContentChangesAreAudited(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	created, err := c.SiteTemplatesCreate(ctx,
-		&siteapi.SiteCreateEmailTemplateInput{Name: "Audited template", Subject: siteapi.NewOptString("Hi")},
+		&siteapi.CreateTemplateInput{Name: "Audited template", Subject: siteapi.NewOptString("Hi")},
 		siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	tmplID := created.(*siteapi.SiteEmailTemplateResource).ID
 
-	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.SiteUpdateEmailTemplateInput{Subject: siteapi.NewOptString("Hello")},
+	_, err = c.SiteTemplatesUpdate(ctx, &siteapi.UpdateTemplateInput{Subject: siteapi.NewOptString("Hello")},
 		siteapi.SiteTemplatesUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})
 	require.NoError(t, err)
 	_, err = c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})

@@ -22,15 +22,15 @@ func TestAnAutomationStepThroughTheTestInboxIsSentAndCapturedWithoutAVerifiedDom
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	created, err := owner.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
+	created, err := owner.SiteIntegrationsCreate(ctx, &siteapi.CreateIntegrationInput{
 		Name: "Test inbox",
-		Config: siteapi.SiteIntegrationConfigInput{
-			OneOf: siteapi.NewSiteInboxConfigInputSiteIntegrationConfigInputSum(siteapi.SiteInboxConfigInput{Kind: siteapi.SiteInboxConfigInputKindInbox}),
+		Config: siteapi.IntegrationConfigInput{
+			OneOf: siteapi.NewInboxConfigInputIntegrationConfigInputSum(siteapi.InboxConfigInput{Kind: siteapi.InboxConfigInputKindInbox}),
 		},
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	inbox := created.(*siteapi.SiteIntegrationResource)
-	chosen, err := owner.SiteIntegrationsUpdate(ctx, &siteapi.SiteUpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
+	chosen, err := owner.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{IsDefault: siteapi.NewOptBool(true)},
 		siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: inbox.ID})
 	require.NoError(t, err)
 	require.IsType(t, &siteapi.SiteIntegrationResource{}, chosen)

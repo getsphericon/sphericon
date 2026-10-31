@@ -19,7 +19,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	tpl, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
+	tpl, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name: "Broken", Body: siteapi.NewOptString("<p>{% if %}</p>"),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
@@ -27,7 +27,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	require.Truef(t, ok, "got %T", tpl)
 	assert.Contains(t, refused.Detail.Or(""), "render body")
 
-	bc, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+	bc, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "Broken", Body: siteapi.NewOptString("<div><span>hi</div>"),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
@@ -35,7 +35,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	require.Truef(t, ok, "got %T", bc)
 	assert.Contains(t, refusedBroadcast.Detail.Or(""), "<span> is never closed")
 
-	upd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{
+	upd, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{
 		Subject: siteapi.NewOptString("{% if %}"),
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	require.NoError(t, err)

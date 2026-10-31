@@ -20,7 +20,7 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteWebhooksCreate(ctx,
-		&siteapi.SiteCreateWebhookEndpointInput{URL: "https://example.com/hook"},
+		&siteapi.CreateWebhookInput{URL: "https://example.com/hook"},
 		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	id := created.(*siteapi.SiteWebhookEndpointResource).ID
@@ -35,12 +35,12 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksGetForbidden), got)
 
-	made, err := member.SiteWebhooksCreate(ctx, &siteapi.SiteCreateWebhookEndpointInput{URL: "https://attacker.example/hook"},
+	made, err := member.SiteWebhooksCreate(ctx, &siteapi.CreateWebhookInput{URL: "https://attacker.example/hook"},
 		siteapi.SiteWebhooksCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksCreateForbidden), made)
 
-	updated, err := member.SiteWebhooksUpdate(ctx, &siteapi.SiteUpdateWebhookEndpointInput{URL: siteapi.NewOptString("https://attacker.example/hook")},
+	updated, err := member.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{URL: siteapi.NewOptString("https://attacker.example/hook")},
 		siteapi.SiteWebhooksUpdateParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksUpdateForbidden), updated)
@@ -49,7 +49,7 @@ func TestSiteWebhooksNeedAnOwnerOrAdmin(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksRegenerateSecretForbidden), regenerated)
 
-	tested, err := member.SiteWebhooksTest(ctx, &siteapi.SiteTestWebhookInput{EventType: "contact.created"},
+	tested, err := member.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: "contact.created"},
 		siteapi.SiteWebhooksTestParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 	assert.IsType(t, new(siteapi.SiteWebhooksTestForbidden), tested)

@@ -105,16 +105,11 @@ model SendingDomainResource {
   updatedAt: Timestamp;
 }
 
-/** Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish. */
-model CreateSendingDomainInput {
-  /** The domain to authenticate, e.g. "mail.acme.com" (normalized to lowercase ASCII) */
-  domain: string;
-
-  /** DKIM selector; defaults to "sphericon" when omitted */
-  dkimSelector?: string;
-}
-
-/** Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM record, so the domain becomes unverified until the new record is published. */
+/**
+ * Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM
+ * record, so the domain becomes unverified until the new record is published. The app has no
+ * such edit yet, so this body is /api's own.
+ */
 model UpdateSendingDomainInput {
   /** New DKIM selector */
   dkimSelector?: string;

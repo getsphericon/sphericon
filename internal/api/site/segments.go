@@ -8,10 +8,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/segments"
 )
 
 func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegmentsListParams) (siteapi.SiteSegmentsListRes, error) {
@@ -36,14 +34,11 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCreateSegmentInput, _ siteapi.SiteSegmentsCreateParams) (siteapi.SiteSegmentsCreateRes, error) {
 	ws := workspaceScope(ctx)
 
-	def, err := condition.Encode(&req.Condition)
+	in, err := inputs.SegmentCreate(req)
 	if err != nil {
 		return nil, err
 	}
-	s, err := h.segments.Create(ctx, ws, segments.CreateInput{
-		Name:      req.Name,
-		Condition: &def,
-	})
+	s, err := h.segments.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +62,7 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpda
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	in := segments.UpdateInput{Name: convert.StringPtr(req.Name)}
-	var err error
-	in.Condition, err = condition.EncodeOptional(req.Condition)
+	in, err := inputs.SegmentUpdate(req)
 	if err != nil {
 		return nil, err
 	}
@@ -87,11 +80,7 @@ func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteS
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.segments.Archive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	s, err := h.segments.Get(ctx, ws, id)
+	s, err := h.segments.Archive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}
@@ -104,11 +93,7 @@ func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.Sit
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	err := h.segments.Unarchive(ctx, ws, id)
-	if err != nil {
-		return nil, err
-	}
-	s, err := h.segments.Get(ctx, ws, id)
+	s, err := h.segments.Unarchive(ctx, ws, id)
 	if err != nil {
 		return nil, err
 	}

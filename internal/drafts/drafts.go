@@ -267,9 +267,10 @@ func (l *Lifecycle[O, V, E, B]) Deactivate(ctx context.Context, s *ent.Scoped, i
 // Archive discards the object (ADR 0049): it leaves the lists and acts on nothing, and its history
 // stays. It also makes the object inactive, under the same lock as Publish, so an archived object
 // is never active and restoring it brings it back inactive. The definition may refuse it while
-// live work still needs the object. Archiving an archived object changes nothing.
-func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+// live work still needs the object. Archiving an archived object changes nothing. It returns the
+// object.
+func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
+	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
@@ -288,12 +289,16 @@ func (l *Lifecycle[O, V, E, B]) Archive(ctx context.Context, s *ent.Scoped, id i
 		}
 		return store.Discard(ctx, id)
 	})
+	if err != nil {
+		return nil, err
+	}
+	return l.Get(ctx, s, id)
 }
 
 // Unarchive brings an archived object back to the lists, inactive: only Publish arms it again.
-// Restoring one that is not archived changes nothing.
-func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
-	return l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+// Restoring one that is not archived changes nothing. It returns the object.
+func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (*O, error) {
+	err := l.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		store := l.def.Store(ts)
 		st, err := l.lock(ctx, store, id)
 		if err != nil {
@@ -309,6 +314,10 @@ func (l *Lifecycle[O, V, E, B]) Unarchive(ctx context.Context, s *ent.Scoped, id
 		}
 		return store.Undiscard(ctx, id)
 	})
+	if err != nil {
+		return nil, err
+	}
+	return l.Get(ctx, s, id)
 }
 
 // lock takes the object's row for the rest of the transaction, archived or not, so the moves of

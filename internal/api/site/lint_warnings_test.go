@@ -35,7 +35,7 @@ func TestSiteTemplateSaveReturnsWarningsAndStoresTheContent(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
+	created, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name: "Warned", Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestSiteTemplateSaveWithoutABrandKitSkipsBrandWarnings(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)
 
-	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.SiteCreateEmailTemplateInput{
+	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{
 		Name: "Warned", Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
@@ -88,7 +88,7 @@ func TestSiteTemplateSaveRefusesOnlyWhatCannotRender(t *testing.T) {
 	ctx := context.Background()
 	before := env.DB.EmailTemplate.Query().CountX(ctx)
 
-	res, err := c.SiteTemplatesCreate(ctx, &siteapi.SiteCreateEmailTemplateInput{
+	res, err := c.SiteTemplatesCreate(ctx, &siteapi.CreateTemplateInput{
 		Name: "Broken", Body: siteapi.NewOptString("<div><span>unclosed</div>"),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.SiteCreateBroadcastInput{
+	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "Warned", Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody),
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
@@ -112,7 +112,7 @@ func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 	assert.Len(t, got[siteapi.LintCodeOffBrandFont], 1)
 
 	// A write of the subject alone lints what is stored.
-	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.SiteUpdateBroadcastInput{Subject: siteapi.NewOptString("Hello")},
+	updated, err := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Subject: siteapi.NewOptString("Hello")},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})
 	require.NoError(t, err)
 	upd, ok := updated.(*siteapi.SiteBroadcastResource)
@@ -124,7 +124,7 @@ func TestSiteTemplateSaveOfACleanMessageHasNoWarnings(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.SiteCreateEmailTemplateInput{
+	created, err := c.SiteTemplatesCreate(context.Background(), &siteapi.CreateTemplateInput{
 		Name: "Clean", Body: siteapi.NewOptString(
 			`<p style="color:#202124;font-family:Arial, sans-serif">Hi</p><img src="https://cdn.example.com/a.png" alt="A">`),
 	}, siteapi.SiteTemplatesCreateParams{WorkspaceId: fixtures.AcmePublicID})
