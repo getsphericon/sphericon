@@ -3,11 +3,16 @@ package resources
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/accounts"
+	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/brandkit"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
+	"github.com/getsphericon/sphericon/internal/consentrecords"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
@@ -15,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -53,6 +59,11 @@ import (
 // goverter:extend maxPerDayPtrIn
 // goverter:extend integrationConfigIn
 // goverter:extend integrationConfigPatch
+// goverter:extend int32ToInt
+// goverter:extend listPtrIn
+// goverter:extend timestampPtrIn
+// goverter:extend automationStepsPtrIn
+// goverter:extend ruleActionsPtrIn
 type Inputs interface {
 	// goverter:map Doc | createTemplateDoc
 	// goverter:ignore Prepared
@@ -93,7 +104,27 @@ type Inputs interface {
 	// goverter:ignore EditorVersion
 	AutomationStep(source siteapi.SiteAutomationStep) automations.Step
 	AutomationSteps(source []siteapi.SiteAutomationStep) []automations.Step
+	AutomationCreate(source *siteapi.SiteCreateAutomationInput) automations.CreateInput
+	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
+
 	RuleActions(source []siteapi.SiteRuleAction) []rules.Action
+	// goverter:map Condition | ruleConditionIn
+	RuleCreate(source *siteapi.SiteCreateRuleInput) (rules.CreateInput, error)
+	// goverter:map Condition | ruleConditionIn
+	RuleUpdate(source *siteapi.SiteUpdateRuleInput) (rules.UpdateInput, error)
+
+	TokenCreate(source *siteapi.SiteCreateTokenInput) apitokens.Input
+	PersonalTokenCreate(source *siteapi.SiteCreatePersonalTokenInput) apitokens.PersonalInput
+
+	BrandKitSave(source *siteapi.SiteSaveBrandKitInput) brandkit.Input
+
+	SignUp(source *siteapi.SiteSignUpInput) signup.Input
+	SignupAnswers(source []siteapi.SiteSignupItemAnswer) []consentrecords.Answer
+	ReAcceptances(source []siteapi.SiteAcceptance) []consentrecords.ReAcceptance
+
+	// The inviting User is the session's, not the request's: the handler sets it.
+	// goverter:ignore InvitedBy
+	InvitationCreate(source *siteapi.SiteCreateInvitationInput) accounts.InviteInput
 }
 
 func stringPatch(o siteapi.OptString) patch.Field[string]            { return convert.Patch(o) }
@@ -119,6 +150,46 @@ func int32In(o siteapi.OptInt32) int                                  { return i
 func entityIDIn(o siteapi.OptEntityId) int64                          { return int64(o.Or(0)) }
 func maxPerSecondPtrIn(o siteapi.OptNilMaxPerSecond) *int             { return intPtr(o) }
 func maxPerDayPtrIn(o siteapi.OptNilMaxPerDay) *int                   { return intPtr(o) }
+func int32ToInt(v int32) int                                          { return int(v) }
+
+// listPtrIn is a list an update replaces: an omitted list (nil) keeps the stored one.
+func listPtrIn(list []string) *[]string {
+	if list == nil {
+		return nil
+	}
+	return &list
+}
+
+func timestampPtrIn(o siteapi.OptNilTimestamp) *time.Time {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	t := time.Time(v)
+	return &t
+}
+
+// automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
+func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]automations.Step {
+	if steps == nil {
+		return nil
+	}
+	out := c.AutomationSteps(steps)
+	return &out
+}
+
+// ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.
+func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleAction) *[]rules.Action {
+	if actions == nil {
+		return nil
+	}
+	out := c.RuleActions(actions)
+	return &out
+}
+
+func ruleConditionIn(o siteapi.OptSiteConditionGroup) (*string, error) {
+	return condition.EncodeOptional(o)
+}
 func createTemplateDoc(o siteapi.OptCreateTemplateInputDoc) json.RawMessage {
 	return convert.DocJSON(o.Value, o.Set)
 }

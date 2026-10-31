@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/getsphericon/sphericon/ent/invitation"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -46,11 +45,11 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	}
 
 	a := auth.GetSiteAuth(ctx)
+	in := inputs.InvitationCreate(req)
+	in.InvitedBy = a.UserID
 	// Token, hash, expiry and the upsert are the accounts operation's; the site only
 	// maps its refusals.
-	inv, token, err := h.accounts.Invite(ctx, s, h.actor(ctx), accounts.InviteInput{
-		Email: string(req.Email), Role: invitation.Role(req.Role), InvitedBy: a.UserID,
-	})
+	inv, token, err := h.accounts.Invite(ctx, s, h.actor(ctx), in)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +137,7 @@ func (h *Handlers) SitePublicInvitationsAccept(ctx context.Context, req *siteapi
 	}
 
 	err = h.accounts.AcceptInvitation(ctx, inv, accounts.InvitationAcceptance{
-		Name: strings.TrimSpace(name), Password: password, SignupItems: signupAnswers(req.SignupItems), SessionEmail: sessionEmail,
+		Name: strings.TrimSpace(name), Password: password, SignupItems: inputs.SignupAnswers(req.SignupItems), SessionEmail: sessionEmail,
 	})
 	if err != nil {
 		return nil, err

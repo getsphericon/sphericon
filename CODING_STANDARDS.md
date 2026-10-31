@@ -50,6 +50,11 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   must map through a goverter converter (it calls a `...Converter`/`...ConverterImpl` method, directly or
   through a package function that does) or be registered in the converter (`goverter:extend`, or named in
   a `goverter:map ... | helper` line). Add the mapping to the surface's `Converter` instead; test files are not checked.
+  The input direction is checked too: a struct literal of a module input (a struct named `...Input` of a package
+  under `internal/`) in the `/site` or `/api` handler package is a finding. Add a method to the surface's `Inputs`
+  (`resources/inputs.go`) and call it; a field the request does not carry (the actor) is a `goverter:ignore` with
+  its reason, assigned by the handler after the call, and a value of the request outside the mapped part (a
+  batch's flag on each of its Events) is a `goverter:context` argument.
 - **Rule 6, `check:copies` (`cmd/contractcopy`, in `check`).** It reads the generated `openapi/*.openapi.json`
   and fails on a hand-written copy of its values: a Go list, `case` list or TypeScript array or union of
   literals that restates an enum (all of its values, or three or more that are a quarter of a larger one),

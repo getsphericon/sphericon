@@ -9,7 +9,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
@@ -30,12 +29,7 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 
 // AutomationsCreate always stores an inactive Automation: publishing is the send-class operation.
 func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.CreateAutomationInput) (externalapi.AutomationsCreateRes, error) {
-	in := automations.CreateInput{
-		Name: req.Name, TriggerEvent: req.TriggerEvent, ExitEvents: req.ExitEvents,
-		GoalEvent: convert.StringPtr(req.GoalEvent), IntegrationID: convert.Int64Ptr(req.IntegrationId),
-		Steps: inputs.AutomationSteps(req.Steps),
-	}
-	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), in)
+	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), inputs.AutomationCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -55,21 +49,7 @@ func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.Automa
 
 func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.UpdateAutomationInput, params externalapi.AutomationsUpdateParams) (externalapi.AutomationsUpdateRes, error) {
 	id := int64(params.ID)
-
-	in := automations.UpdateInput{
-		Name:          convert.StringPtr(req.Name),
-		TriggerEvent:  convert.StringPtr(req.TriggerEvent),
-		GoalEvent:     convert.StringPatch(req.GoalEvent),
-		IntegrationID: convert.Int64Patch(req.IntegrationId),
-	}
-	if req.ExitEvents != nil {
-		in.ExitEvents = &req.ExitEvents
-	}
-	if req.Steps != nil {
-		steps := inputs.AutomationSteps(req.Steps)
-		in.Steps = &steps
-	}
-	a, err := h.automations.Update(ctx, auth.TokenScoped(ctx), id, in)
+	a, err := h.automations.Update(ctx, auth.TokenScoped(ctx), id, inputs.AutomationUpdate(req))
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/apitokens"
@@ -25,11 +24,7 @@ func (h *Handlers) SitePersonalTokensList(ctx context.Context, _ siteapi.SitePer
 // SitePersonalTokensCreate mints a Personal token of the caller's own. The full secret is returned
 // once; only its SHA-256 hash and public prefix are stored.
 func (h *Handlers) SitePersonalTokensCreate(ctx context.Context, req *siteapi.SiteCreatePersonalTokenInput, _ siteapi.SitePersonalTokensCreateParams) (siteapi.SitePersonalTokensCreateRes, error) {
-	in := apitokens.PersonalInput{Name: req.Name, Scopes: req.Scopes}
-	if v, ok := req.ExpiresAt.Get(); ok {
-		in.ExpiresAt = new(time.Time(v))
-	}
-	minted, err := apitokens.MintPersonal(ctx, workspaceScope(ctx), callerMembership(ctx), in)
+	minted, err := apitokens.MintPersonal(ctx, workspaceScope(ctx), callerMembership(ctx), inputs.PersonalTokenCreate(req))
 	if err != nil {
 		return nil, err
 	}

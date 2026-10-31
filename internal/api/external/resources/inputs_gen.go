@@ -5,9 +5,11 @@ package resources
 
 import (
 	external "github.com/getsphericon/sphericon/gen/external"
+	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
+	eventlog "github.com/getsphericon/sphericon/internal/eventlog"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	rules "github.com/getsphericon/sphericon/internal/rules"
@@ -19,6 +21,37 @@ import (
 
 type InputsImpl struct{}
 
+func (c *InputsImpl) ApiTokenCreate(source *external.CreateApiTokenInput) apitokens.Input {
+	var apitokensInput apitokens.Input
+	if source != nil {
+		apitokensInput.Name = (*source).Name
+		if (*source).Scopes != nil {
+			apitokensInput.Scopes = make([]string, len((*source).Scopes))
+			for i := 0; i < len((*source).Scopes); i++ {
+				apitokensInput.Scopes[i] = string((*source).Scopes[i])
+			}
+		}
+		apitokensInput.ExpiresAt = timestampPtrIn((*source).ExpiresAt)
+	}
+	return apitokensInput
+}
+func (c *InputsImpl) AutomationCreate(source *external.CreateAutomationInput) automations.CreateInput {
+	var automationsCreateInput automations.CreateInput
+	if source != nil {
+		automationsCreateInput.Name = (*source).Name
+		automationsCreateInput.TriggerEvent = (*source).TriggerEvent
+		if (*source).ExitEvents != nil {
+			automationsCreateInput.ExitEvents = make([]string, len((*source).ExitEvents))
+			for i := 0; i < len((*source).ExitEvents); i++ {
+				automationsCreateInput.ExitEvents[i] = (*source).ExitEvents[i]
+			}
+		}
+		automationsCreateInput.GoalEvent = nilStringPtrIn((*source).GoalEvent)
+		automationsCreateInput.Steps = c.AutomationSteps((*source).Steps)
+		automationsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
+	}
+	return automationsCreateInput
+}
 func (c *InputsImpl) AutomationStep(source external.AutomationStep) automations.Step {
 	var automationsStep automations.Step
 	automationsStep.Type = string(source.Type)
@@ -48,6 +81,18 @@ func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automat
 		}
 	}
 	return automationsStepList
+}
+func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) automations.UpdateInput {
+	var automationsUpdateInput automations.UpdateInput
+	if source != nil {
+		automationsUpdateInput.Name = stringPtrIn((*source).Name)
+		automationsUpdateInput.TriggerEvent = stringPtrIn((*source).TriggerEvent)
+		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
+		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
+		automationsUpdateInput.Steps = automationStepsPtrIn(c, (*source).Steps)
+		automationsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
+	}
+	return automationsUpdateInput
 }
 func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) broadcasts.CreateInput {
 	var broadcastsCreateInput broadcasts.CreateInput
@@ -120,6 +165,36 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 	contactsAttributes.CustomFields = upsertContactFields(source.CustomFields)
 	return contactsAttributes
 }
+func (c *InputsImpl) Event(source external.EventInput, context bool) (eventlog.Input, error) {
+	var eventlogInput eventlog.Input
+	eventlogInput.SubjectID = source.SubjectId
+	eventlogInput.Email = nilEmailPtrIn(source.Email)
+	eventlogInput.Phone = nilStringPtrIn(source.Phone)
+	eventlogInput.Action = source.Action
+	eventlogInput.OccurredAt = timestampIn(source.OccurredAt)
+	mapStringUnknown, err := eventPropertiesIn(source.Properties)
+	if err != nil {
+		return eventlogInput, err
+	}
+	eventlogInput.Properties = mapStringUnknown
+	eventlogInput.ClientEventID = nilStringIn(source.ClientEventId)
+	eventlogInput.Backfill = backfillIn(context)
+	return eventlogInput, nil
+}
+func (c *InputsImpl) Events(source []external.EventInput, context bool) ([]eventlog.Input, error) {
+	var eventlogInputList []eventlog.Input
+	if source != nil {
+		eventlogInputList = make([]eventlog.Input, len(source))
+		for i := 0; i < len(source); i++ {
+			eventlogInput, err := c.Event(source[i], context)
+			if err != nil {
+				return nil, err
+			}
+			eventlogInputList[i] = eventlogInput
+		}
+	}
+	return eventlogInputList, nil
+}
 func (c *InputsImpl) IntegrationCreate(source *external.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
 	if source != nil {
@@ -166,6 +241,39 @@ func (c *InputsImpl) RuleActions(source []external.RuleAction) []rules.Action {
 		}
 	}
 	return rulesActionList
+}
+func (c *InputsImpl) RuleCreate(source *external.CreateRuleInput) (rules.CreateInput, error) {
+	var rulesCreateInput rules.CreateInput
+	if source != nil {
+		rulesCreateInput.Name = (*source).Name
+		if (*source).TriggerEvents != nil {
+			rulesCreateInput.TriggerEvents = make([]string, len((*source).TriggerEvents))
+			for i := 0; i < len((*source).TriggerEvents); i++ {
+				rulesCreateInput.TriggerEvents[i] = (*source).TriggerEvents[i]
+			}
+		}
+		pString, err := ruleConditionIn((*source).Condition)
+		if err != nil {
+			return rulesCreateInput, err
+		}
+		rulesCreateInput.Condition = pString
+		rulesCreateInput.Actions = c.RuleActions((*source).Actions)
+	}
+	return rulesCreateInput, nil
+}
+func (c *InputsImpl) RuleUpdate(source *external.UpdateRuleInput) (rules.UpdateInput, error) {
+	var rulesUpdateInput rules.UpdateInput
+	if source != nil {
+		rulesUpdateInput.Name = stringPtrIn((*source).Name)
+		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
+		pString, err := ruleConditionIn((*source).Condition)
+		if err != nil {
+			return rulesUpdateInput, err
+		}
+		rulesUpdateInput.Condition = pString
+		rulesUpdateInput.Actions = ruleActionsPtrIn(c, (*source).Actions)
+	}
+	return rulesUpdateInput, nil
 }
 func (c *InputsImpl) SegmentCreate(source *external.CreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput

@@ -1,15 +1,19 @@
 package resources
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"time"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/apitokens"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/convert"
+	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/patch"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -53,6 +57,12 @@ import (
 // goverter:extend maxPerDayPtrIn
 // goverter:extend integrationConfigIn
 // goverter:extend integrationConfigPatch
+// goverter:extend listPtrIn
+// goverter:extend nilStringIn
+// goverter:extend timestampIn
+// goverter:extend timestampPtrIn
+// goverter:extend automationStepsPtrIn
+// goverter:extend ruleActionsPtrIn
 type Inputs interface {
 	// goverter:map Doc | createTemplateDoc
 	// goverter:ignore Prepared
@@ -100,8 +110,28 @@ type Inputs interface {
 	// goverter:ignore EditorVersion
 	AutomationStep(source externalapi.AutomationStep) automations.Step
 	AutomationSteps(source []externalapi.AutomationStep) []automations.Step
+	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
+	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
+
 	RuleActions(source []externalapi.RuleAction) []rules.Action
+	// goverter:map Condition | ruleConditionIn
+	RuleCreate(source *externalapi.CreateRuleInput) (rules.CreateInput, error)
+	// goverter:map Condition | ruleConditionIn
+	RuleUpdate(source *externalapi.UpdateRuleInput) (rules.UpdateInput, error)
+
+	ApiTokenCreate(source *externalapi.CreateApiTokenInput) apitokens.Input
+
+	// Backfill is the batch's flag, not an Event's: it is passed along and holds for each Event.
+	// goverter:context backfill
+	// goverter:map Properties | eventPropertiesIn
+	// goverter:map Backfill | backfillIn
+	Event(source externalapi.EventInput, backfill bool) (eventlog.Input, error)
+	// goverter:context backfill
+	Events(source []externalapi.EventInput, backfill bool) ([]eventlog.Input, error)
 }
+
+// goverter:context backfill
+func backfillIn(backfill bool) bool { return backfill }
 
 func stringPatch(o externalapi.OptString) patch.Field[string]       { return convert.Patch(o) }
 func nilStringPatch(o externalapi.OptNilString) patch.Field[string] { return convert.Patch(o) }
@@ -128,6 +158,72 @@ func int32In(o externalapi.OptInt32) int                                  { retu
 func entityIDIn(o externalapi.OptEntityId) int64                          { return int64(o.Or(0)) }
 func maxPerSecondPtrIn(o externalapi.OptNilMaxPerSecond) *int             { return intPtr(o) }
 func maxPerDayPtrIn(o externalapi.OptNilMaxPerDay) *int                   { return intPtr(o) }
+func nilStringIn(o externalapi.OptNilString) string                       { return o.Or("") }
+
+// listPtrIn is a list an update replaces: an omitted list (nil) keeps the stored one.
+func listPtrIn(list []string) *[]string {
+	if list == nil {
+		return nil
+	}
+	return &list
+}
+
+// timestampIn is a moment the request may leave out: the zero time when absent.
+func timestampIn(o externalapi.OptNilTimestamp) time.Time {
+	v, _ := o.Get()
+	return time.Time(v)
+}
+
+func timestampPtrIn(o externalapi.OptNilTimestamp) *time.Time {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	t := time.Time(v)
+	return &t
+}
+
+// automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
+func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]automations.Step {
+	if steps == nil {
+		return nil
+	}
+	out := c.AutomationSteps(steps)
+	return &out
+}
+
+// ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.
+func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleAction) *[]rules.Action {
+	if actions == nil {
+		return nil
+	}
+	out := c.RuleActions(actions)
+	return &out
+}
+
+func ruleConditionIn(o externalapi.OptConditionGroup) (*string, error) {
+	return condition.EncodeOptional(o)
+}
+
+// eventPropertiesIn decodes each property keeping numbers as the text that was sent: an amount of
+// an order Event is checked for its decimal places (ADR 0064), which a float64 would blur.
+func eventPropertiesIn(o externalapi.OptNilEventInputProperties) (map[string]any, error) {
+	props, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	out := make(map[string]any, len(props))
+	for key, raw := range props {
+		dec := json.NewDecoder(bytes.NewReader(raw))
+		dec.UseNumber()
+		var value any
+		if err := dec.Decode(&value); err != nil {
+			return nil, err
+		}
+		out[key] = value
+	}
+	return out, nil
+}
 func createTemplateDoc(o externalapi.OptCreateTemplateInputDoc) json.RawMessage {
 	return convert.DocJSON(o.Value, o.Set)
 }

@@ -7,11 +7,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/condition"
-	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/rules"
 )
 
 func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesListParams) (siteapi.SiteRulesListRes, error) {
@@ -34,16 +31,10 @@ func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesLi
 func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateRuleInput, _ siteapi.SiteRulesCreateParams) (siteapi.SiteRulesCreateRes, error) {
 	ws := workspaceScope(ctx)
 
-	in := rules.CreateInput{
-		Name:          req.Name,
-		TriggerEvents: req.TriggerEvents,
-		Actions:       inputs.RuleActions(req.Actions),
-	}
-	def, err := condition.EncodeOptional(req.Condition)
+	in, err := inputs.RuleCreate(req)
 	if err != nil {
 		return nil, err
 	}
-	in.Condition = def
 	r, err := h.rules.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
@@ -66,19 +57,10 @@ func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGet
 func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateRuleInput, params siteapi.SiteRulesUpdateParams) (siteapi.SiteRulesUpdateRes, error) {
 	ws := workspaceScope(ctx)
 
-	in := rules.UpdateInput{Name: convert.StringPtr(req.Name)}
-	if req.TriggerEvents != nil {
-		in.TriggerEvents = &req.TriggerEvents
-	}
-	if req.Actions != nil {
-		actions := inputs.RuleActions(req.Actions)
-		in.Actions = &actions
-	}
-	def, err := condition.EncodeOptional(req.Condition)
+	in, err := inputs.RuleUpdate(req)
 	if err != nil {
 		return nil, err
 	}
-	in.Condition = def
 	r, err := h.rules.Update(ctx, ws, int64(params.ID), in)
 	if err != nil {
 		return nil, err

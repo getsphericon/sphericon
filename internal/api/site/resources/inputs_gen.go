@@ -4,21 +4,44 @@
 package resources
 
 import (
+	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	site "github.com/getsphericon/sphericon/gen/site"
+	accounts "github.com/getsphericon/sphericon/internal/accounts"
+	apitokens "github.com/getsphericon/sphericon/internal/apitokens"
 	automations "github.com/getsphericon/sphericon/internal/automations"
+	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
+	consentrecords "github.com/getsphericon/sphericon/internal/consentrecords"
 	contacts "github.com/getsphericon/sphericon/internal/contacts"
 	httpcall "github.com/getsphericon/sphericon/internal/httpcall"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	segments "github.com/getsphericon/sphericon/internal/segments"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
+	signup "github.com/getsphericon/sphericon/internal/signup"
 	templates "github.com/getsphericon/sphericon/internal/templates"
 	webhooks "github.com/getsphericon/sphericon/internal/webhooks"
 )
 
 type InputsImpl struct{}
 
+func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) automations.CreateInput {
+	var automationsCreateInput automations.CreateInput
+	if source != nil {
+		automationsCreateInput.Name = (*source).Name
+		automationsCreateInput.TriggerEvent = (*source).TriggerEvent
+		if (*source).ExitEvents != nil {
+			automationsCreateInput.ExitEvents = make([]string, len((*source).ExitEvents))
+			for i := 0; i < len((*source).ExitEvents); i++ {
+				automationsCreateInput.ExitEvents[i] = (*source).ExitEvents[i]
+			}
+		}
+		automationsCreateInput.GoalEvent = nilStringPtrIn((*source).GoalEvent)
+		automationsCreateInput.Steps = c.AutomationSteps((*source).Steps)
+		automationsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
+	}
+	return automationsCreateInput
+}
 func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automations.Step {
 	var automationsStep automations.Step
 	automationsStep.Type = string(source.Type)
@@ -48,6 +71,33 @@ func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automat
 		}
 	}
 	return automationsStepList
+}
+func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) automations.UpdateInput {
+	var automationsUpdateInput automations.UpdateInput
+	if source != nil {
+		automationsUpdateInput.Name = stringPtrIn((*source).Name)
+		automationsUpdateInput.TriggerEvent = stringPtrIn((*source).TriggerEvent)
+		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
+		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
+		automationsUpdateInput.Steps = automationStepsPtrIn(c, (*source).Steps)
+		automationsUpdateInput.IntegrationID = nilEntityIDPatch((*source).IntegrationId)
+	}
+	return automationsUpdateInput
+}
+func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkit.Input {
+	var brandkitInput brandkit.Input
+	if source != nil {
+		brandkitInput.AccentColor = (*source).AccentColor
+		brandkitInput.TextColor = (*source).TextColor
+		brandkitInput.BackgroundColor = (*source).BackgroundColor
+		brandkitInput.HeadingFont = (*source).HeadingFont
+		brandkitInput.BodyFont = (*source).BodyFont
+		brandkitInput.LogoURL = (*source).LogoUrl
+		brandkitInput.ButtonTextColor = (*source).ButtonTextColor
+		brandkitInput.ButtonRadius = int32ToInt((*source).ButtonRadius)
+		brandkitInput.FooterText = (*source).FooterText
+	}
+	return brandkitInput
 }
 func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) broadcasts.CreateInput {
 	var broadcastsCreateInput broadcasts.CreateInput
@@ -153,6 +203,38 @@ func (c *InputsImpl) IntegrationUpdate(source *site.UpdateIntegrationInput) (int
 	}
 	return integrationsUpdateInput, nil
 }
+func (c *InputsImpl) InvitationCreate(source *site.SiteCreateInvitationInput) accounts.InviteInput {
+	var accountsInviteInput accounts.InviteInput
+	if source != nil {
+		accountsInviteInput.Email = string((*source).Email)
+		accountsInviteInput.Role = invitation.Role((*source).Role)
+	}
+	return accountsInviteInput
+}
+func (c *InputsImpl) PersonalTokenCreate(source *site.SiteCreatePersonalTokenInput) apitokens.PersonalInput {
+	var apitokensPersonalInput apitokens.PersonalInput
+	if source != nil {
+		apitokensPersonalInput.Name = (*source).Name
+		if (*source).Scopes != nil {
+			apitokensPersonalInput.Scopes = make([]site.PersonalScope, len((*source).Scopes))
+			for i := 0; i < len((*source).Scopes); i++ {
+				apitokensPersonalInput.Scopes[i] = site.PersonalScope((*source).Scopes[i])
+			}
+		}
+		apitokensPersonalInput.ExpiresAt = timestampPtrIn((*source).ExpiresAt)
+	}
+	return apitokensPersonalInput
+}
+func (c *InputsImpl) ReAcceptances(source []site.SiteAcceptance) []consentrecords.ReAcceptance {
+	var consentrecordsReAcceptanceList []consentrecords.ReAcceptance
+	if source != nil {
+		consentrecordsReAcceptanceList = make([]consentrecords.ReAcceptance, len(source))
+		for i := 0; i < len(source); i++ {
+			consentrecordsReAcceptanceList[i] = c.siteapiSiteAcceptanceToConsentrecordsReAcceptance(source[i])
+		}
+	}
+	return consentrecordsReAcceptanceList
+}
 func (c *InputsImpl) RuleActions(source []site.SiteRuleAction) []rules.Action {
 	var rulesActionList []rules.Action
 	if source != nil {
@@ -162,6 +244,39 @@ func (c *InputsImpl) RuleActions(source []site.SiteRuleAction) []rules.Action {
 		}
 	}
 	return rulesActionList
+}
+func (c *InputsImpl) RuleCreate(source *site.SiteCreateRuleInput) (rules.CreateInput, error) {
+	var rulesCreateInput rules.CreateInput
+	if source != nil {
+		rulesCreateInput.Name = (*source).Name
+		if (*source).TriggerEvents != nil {
+			rulesCreateInput.TriggerEvents = make([]string, len((*source).TriggerEvents))
+			for i := 0; i < len((*source).TriggerEvents); i++ {
+				rulesCreateInput.TriggerEvents[i] = (*source).TriggerEvents[i]
+			}
+		}
+		pString, err := ruleConditionIn((*source).Condition)
+		if err != nil {
+			return rulesCreateInput, err
+		}
+		rulesCreateInput.Condition = pString
+		rulesCreateInput.Actions = c.RuleActions((*source).Actions)
+	}
+	return rulesCreateInput, nil
+}
+func (c *InputsImpl) RuleUpdate(source *site.SiteUpdateRuleInput) (rules.UpdateInput, error) {
+	var rulesUpdateInput rules.UpdateInput
+	if source != nil {
+		rulesUpdateInput.Name = stringPtrIn((*source).Name)
+		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
+		pString, err := ruleConditionIn((*source).Condition)
+		if err != nil {
+			return rulesUpdateInput, err
+		}
+		rulesUpdateInput.Condition = pString
+		rulesUpdateInput.Actions = ruleActionsPtrIn(c, (*source).Actions)
+	}
+	return rulesUpdateInput, nil
 }
 func (c *InputsImpl) SegmentCreate(source *site.SiteCreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput
@@ -195,6 +310,26 @@ func (c *InputsImpl) SendingDomainCreate(source *site.CreateSendingDomainInput) 
 	}
 	return sendingdomainsCreateInput
 }
+func (c *InputsImpl) SignUp(source *site.SiteSignUpInput) signup.Input {
+	var signupInput signup.Input
+	if source != nil {
+		signupInput.Name = (*source).Name
+		signupInput.Email = string((*source).Email)
+		signupInput.Password = stringIn((*source).Password)
+		signupInput.SignupItems = c.SignupAnswers((*source).SignupItems)
+	}
+	return signupInput
+}
+func (c *InputsImpl) SignupAnswers(source []site.SiteSignupItemAnswer) []consentrecords.Answer {
+	var consentrecordsAnswerList []consentrecords.Answer
+	if source != nil {
+		consentrecordsAnswerList = make([]consentrecords.Answer, len(source))
+		for i := 0; i < len(source); i++ {
+			consentrecordsAnswerList[i] = c.siteapiSiteSignupItemAnswerToConsentrecordsAnswer(source[i])
+		}
+	}
+	return consentrecordsAnswerList
+}
 func (c *InputsImpl) TemplateCreate(source *site.CreateTemplateInput) templates.CreateInput {
 	var templatesCreateInput templates.CreateInput
 	if source != nil {
@@ -214,6 +349,20 @@ func (c *InputsImpl) TemplateUpdate(source *site.UpdateTemplateInput) templates.
 		templatesUpdateInput.Doc = updateTemplateDoc((*source).Doc)
 	}
 	return templatesUpdateInput
+}
+func (c *InputsImpl) TokenCreate(source *site.SiteCreateTokenInput) apitokens.Input {
+	var apitokensInput apitokens.Input
+	if source != nil {
+		apitokensInput.Name = (*source).Name
+		if (*source).Scopes != nil {
+			apitokensInput.Scopes = make([]string, len((*source).Scopes))
+			for i := 0; i < len((*source).Scopes); i++ {
+				apitokensInput.Scopes[i] = string((*source).Scopes[i])
+			}
+		}
+		apitokensInput.ExpiresAt = timestampPtrIn((*source).ExpiresAt)
+	}
+	return apitokensInput
 }
 func (c *InputsImpl) WebhookCreate(source *site.CreateWebhookInput) webhooks.CreateInput {
 	var webhooksCreateInput webhooks.CreateInput
@@ -238,6 +387,12 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhooks.Upd
 	}
 	return webhooksUpdateInput
 }
+func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
+	var consentrecordsReAcceptance consentrecords.ReAcceptance
+	consentrecordsReAcceptance.Key = string(source.Key)
+	consentrecordsReAcceptance.Version = string(source.Version)
+	return consentrecordsReAcceptance
+}
 func (c *InputsImpl) siteapiSiteAutomationHttpHeaderToHttpcallHeader(source site.SiteAutomationHttpHeader) httpcall.Header {
 	var httpcallHeader httpcall.Header
 	httpcallHeader.Name = source.Name
@@ -261,4 +416,11 @@ func (c *InputsImpl) siteapiSiteRuleActionToRulesAction(source site.SiteRuleActi
 	rulesAction.Secret = stringIn(source.Secret)
 	rulesAction.ClearSecret = boolIn(source.ClearSecret)
 	return rulesAction
+}
+func (c *InputsImpl) siteapiSiteSignupItemAnswerToConsentrecordsAnswer(source site.SiteSignupItemAnswer) consentrecords.Answer {
+	var consentrecordsAnswer consentrecords.Answer
+	consentrecordsAnswer.Key = string(source.Key)
+	consentrecordsAnswer.Version = string(source.Version)
+	consentrecordsAnswer.Accepted = boolIn(source.Accepted)
+	return consentrecordsAnswer
 }
