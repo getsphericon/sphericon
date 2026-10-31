@@ -8,7 +8,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
@@ -30,19 +29,13 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 	if err != nil {
 		return nil, err
 	}
-	items := make([]externalapi.IntegrationResource, len(page.Items))
-	for i, row := range page.Items {
-		if items[i], err = h.integrationResource(row, limits[row.ID]); err != nil {
-			return nil, err
-		}
+	resources, err := pagination.MapErr(page, func(row *ent.Integration) (externalapi.IntegrationResource, error) {
+		return h.integrationResource(row, limits[row.ID])
+	})
+	if err != nil {
+		return nil, err
 	}
-	return &externalapi.IntegrationsListOK{
-		Items:      items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.IntegrationsListPage(resources), nil
 }
 
 // IntegrationsCreate stores a new Integration; credentials are sealed and never returned.
@@ -126,9 +119,7 @@ func (h *Handlers) PresetsList(_ context.Context) (externalapi.PresetsListRes, e
 			ParamsSchema: externalapi.PresetResourceParamsSchema(integrations.RawOf(p.ParamsSchema())),
 		})
 	}
-	return &externalapi.PresetsListOK{
-		Items: items, Page: 1, PageSize: narrow.Int32(len(items)), TotalItems: narrow.Int32(len(items)), TotalPages: 1,
-	}, nil
+	return mapper.PresetsListPage(pagination.Whole(items)), nil
 }
 
 // IntegrationsArchive archives an Integration (ADR 0049): it leaves the list and gives up the

@@ -1,0 +1,38 @@
+id: no-hand-paged-response
+valid:
+  - |
+    func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {
+    	page, err := h.contacts.List(ctx, workspaceScope(ctx), pagination.ParamsOf(params.Page, params.PageSize), contacts.Filter{})
+    	if err != nil {
+    		return nil, err
+    	}
+    	return mapper.ContactsListPage(page), nil
+    }
+  - |
+    func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebhooksListParams) (siteapi.SiteWebhooksListRes, error) {
+    	page, err := h.webhooks.List(ctx, workspaceScope(ctx), pagination.ParamsOf(params.Page, params.PageSize))
+    	if err != nil {
+    		return nil, err
+    	}
+    	return mapper.WebhooksListPage(pagination.Map(page, webhookResource)), nil
+    }
+invalid:
+  - |
+    func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {
+    	page, err := h.contacts.List(ctx, workspaceScope(ctx), pagination.ParamsOf(params.Page, params.PageSize), contacts.Filter{})
+    	if err != nil {
+    		return nil, err
+    	}
+    	return &siteapi.SiteContactsListOK{
+    		Items:      mapper.ContactsToResources(page.Items),
+    		Page:       narrow.Int32(page.Page),
+    		PageSize:   narrow.Int32(page.PageSize),
+    		TotalItems: narrow.Int32(page.TotalItems),
+    		TotalPages: narrow.Int32(page.TotalPages),
+    	}, nil
+    }
+  - |
+    func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFieldsListRes, error) {
+    	items := mapper.CustomFieldsToResources(fields)
+    	return &externalapi.CustomFieldsListOK{Items: items, Page: 1, PageSize: narrow.Int32(len(items)), TotalItems: narrow.Int32(len(items)), TotalPages: 1}, nil
+    }

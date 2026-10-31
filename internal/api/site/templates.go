@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -16,13 +15,7 @@ func (h *Handlers) SiteTemplatesList(ctx context.Context, params siteapi.SiteTem
 		return nil, err
 	}
 
-	return &siteapi.SiteTemplatesListOK{
-		Items:      mapper.EmailTemplatesToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.TemplatesListPage(page), nil
 }
 
 func (h *Handlers) SiteTemplatesCreate(ctx context.Context, req *siteapi.CreateTemplateInput, _ siteapi.SiteTemplatesCreateParams) (siteapi.SiteTemplatesCreateRes, error) {

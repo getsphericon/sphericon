@@ -3,10 +3,8 @@ package site
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -17,14 +15,7 @@ func (h *Handlers) SiteTagsList(ctx context.Context, params siteapi.SiteTagsList
 	if err != nil {
 		return nil, err
 	}
-	page := siteTagsPage(all, params.Page, params.PageSize)
-	return &siteapi.SiteTagsListOK{
-		Items:      page.Items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.TagsListPage(pagination.Paginate(all, convert.Ptr(params.Page), convert.Ptr(params.PageSize))), nil
 }
 
 func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.SiteTagsListForContactParams) (siteapi.SiteTagsListForContactRes, error) {
@@ -35,14 +26,7 @@ func (h *Handlers) SiteTagsListForContact(ctx context.Context, params siteapi.Si
 	if err != nil {
 		return nil, err
 	}
-	page := siteTagsPage(mine, params.Page, params.PageSize)
-	return &siteapi.SiteTagsListForContactOK{
-		Items:      page.Items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.TagsListForContactPage(pagination.Paginate(mine, convert.Ptr(params.Page), convert.Ptr(params.PageSize))), nil
 }
 
 func (h *Handlers) SiteTagsApply(ctx context.Context, req *siteapi.ApplyTagInput, params siteapi.SiteTagsApplyParams) (siteapi.SiteTagsApplyRes, error) {
@@ -78,10 +62,4 @@ func (h *Handlers) SiteTagsDelete(ctx context.Context, params siteapi.SiteTagsDe
 		return nil, err
 	}
 	return &siteapi.SiteTagsDeleteNoContent{}, nil
-}
-
-// siteTagsPage maps and pages a small in-memory tag set.
-func siteTagsPage(items []*ent.Tag, page, pageSize siteapi.OptInt32) pagination.Page[siteapi.SiteTagResource] {
-	resources := mapper.TagsToResources(items)
-	return pagination.Paginate(resources, convert.Ptr(page), convert.Ptr(pageSize))
 }

@@ -6,7 +6,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -15,13 +14,7 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.AutomationsListOK{
-		Items:      mapper.AutomationsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.AutomationsListPage(page), nil
 }
 
 // AutomationsCreate always stores an inactive Automation: publishing is the send-class operation.

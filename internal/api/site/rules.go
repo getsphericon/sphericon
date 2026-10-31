@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -15,13 +14,7 @@ func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesLi
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteRulesListOK{
-		Items:      mapper.RulesToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.RulesListPage(page), nil
 }
 
 // SiteRulesCreate always stores a draft.
@@ -159,11 +152,5 @@ func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteR
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteRuleFiringsListOK{
-		Items:      mapper.RuleFiringsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.RuleFiringsListPage(page), nil
 }

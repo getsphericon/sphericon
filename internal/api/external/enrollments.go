@@ -5,7 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -18,13 +17,7 @@ func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.Enrol
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.EnrollmentsListOK{
-		Items:      mapper.EnrollmentsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.EnrollmentsListPage(page), nil
 }
 
 func (h *Handlers) EnrollmentsGet(ctx context.Context, params externalapi.EnrollmentsGetParams) (externalapi.EnrollmentsGetRes, error) {

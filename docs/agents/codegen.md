@@ -41,7 +41,12 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   A list of resources is a list method of the `Converter` (`ContactsToResources(source
   []*ent.Contact) []…`) marked `// goverter:useEmptyOnNil:slice`, so no rows answer `[]`, never
   null; a handler does not wrap the single-item method in `lo.Map` or a loop (ast-grep rule
-  `no-hand-mapped-list`). `annotate:unmapped` writes a
+  `no-hand-mapped-list`). A paged list response is a page method of the `Converter` from the
+  module's page (`ContactsListPage(source pagination.Page[*ent.Contact]) *…ContactsListOK`, also
+  `useEmptyOnNil:slice`), named after the response, so the handler returns it and writes no
+  envelope (ast-grep rule `no-hand-paged-response`). Items the handler maps itself (an extra per
+  item) go through `pagination.Map`/`MapErr` first and the method, taking a page of resources, is
+  marked `goverter:skipCopySameType`; an unpaginated list is `pagination.Whole(items)`. `annotate:unmapped` writes a
   `// Field: ignore` line into the generated code for each field the converter leaves to the
   handler. The extends' bodies are the generic helpers of `internal/convert` (`Opt`, `Nil`, `OptVia`, …),
   which hold the absent-or-null rule once for every surface.

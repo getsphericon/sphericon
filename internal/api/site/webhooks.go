@@ -3,10 +3,7 @@ package site
 import (
 	"context"
 
-	"github.com/samber/lo"
-
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/webhooks"
 )
@@ -26,13 +23,7 @@ func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebh
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteWebhooksListOK{
-		Items:      lo.Map(page.Items, func(e webhooks.Endpoint, _ int) siteapi.SiteWebhookEndpointResource { return webhookResource(e) }),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.WebhooksListPage(pagination.Map(page, webhookResource)), nil
 }
 
 func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.CreateWebhookInput, _ siteapi.SiteWebhooksCreateParams) (siteapi.SiteWebhooksCreateRes, error) {

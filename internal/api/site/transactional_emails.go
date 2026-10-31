@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -18,12 +17,5 @@ func (h *Handlers) SiteTransactionalEmailsList(ctx context.Context, params sitea
 		return nil, err
 	}
 
-	res := mapper.TransactionalMessagesToResources(page.Items)
-	return &siteapi.SiteTransactionalEmailsListOK{
-		Items:      res,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.TransactionalEmailsListPage(page), nil
 }
