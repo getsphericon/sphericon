@@ -334,15 +334,17 @@ usage = 'arg "[packages]" var=#true help="packages to mutate (default: eligibili
 run = 'eval "set -- $usage_packages"; [ $# -gt 0 ] || set -- ./internal/eligibility/... ./internal/providerlimit/...; go tool go-mutesting --workers 3 --quiet --no-diffs --min-msi 75 "$@"'
 
 ["test:fuzz"]
-description = "Go native fuzzing of the parsers that take outside input (FUZZTIME per target, default 30s); a crash lands in the package's testdata/fuzz as a regression"
-env = { FUZZTIME = "30s" }
-run = [
-  "go test ./internal/emaildoc -run '^$' -fuzz '^FuzzPrepare' -fuzztime $FUZZTIME",
-  "go test ./internal/preset -run '^$' -fuzz '^FuzzParse' -fuzztime $FUZZTIME",
-  "go test ./ee/licensekey -run '^$' -fuzz '^FuzzParseOf' -fuzztime $FUZZTIME",
-  "go test ./internal/validation -run '^$' -fuzz '^FuzzAccountEmail$' -fuzztime $FUZZTIME",
-  "go test ./internal/validation -run '^$' -fuzz '^FuzzPassword$' -fuzztime $FUZZTIME",
-]
+description = "Go native fuzzing of the parsers that take outside input: every Fuzz target of cmd/, internal/ and ee/, found by name (FUZZTIME per target, default 30s); a crash lands in the package's testdata/fuzz as a regression"
+# Go fuzzes one target per run, so each `func Fuzz...` is run on its own. The targets are found,
+# not listed: a new one is fuzzed without a change here. FUZZTIME is read from the caller's
+# environment (the nightly sets it); a task `env` would override the caller's value.
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+grep -rEo --include='*_test.go' '^func Fuzz[A-Za-z0-9_]+' cmd internal ee | sort -u | while IFS=: read -r file decl; do
+  go test "./$(dirname "$file")" -run '^$' -fuzz "^${decl#func }\$" -fuzztime "${FUZZTIME:-30s}"
+done
+'''
 
 ["test:cover"]
 description = "Go tests with coverage over cmd/ and internal/ (ee/ too), failing under the total in .testcoverage.yml"
