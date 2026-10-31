@@ -1,4 +1,5 @@
 import { HttpResponse } from 'msw'
+import { StrictMode } from 'react'
 import { expect, test, vi } from 'vitest'
 
 import { handleSiteAuthConfirmEmailChange } from '../../generated/site/msw.gen.ts'
@@ -13,7 +14,7 @@ import { ConfirmEmailChangePage } from './confirm-email-change.tsx'
 const mount = routeMount(confirmEmailChangeRoute)
 const MOUNT = { ...mount, initialPath: `${mount.initialPath}?token=tok-c` }
 
-test('confirms the new email on mount and links to sign in', async () => {
+test('confirms the new email once, under StrictMode too, and links to sign in', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthConfirmEmailChange(async ({ request }) => {
@@ -21,7 +22,12 @@ test('confirms the new email on mount and links to sign in', async () => {
       return HttpResponse.json({})
     }),
   )
-  const { screen } = await renderWithRouter(<ConfirmEmailChangePage />, MOUNT)
+  const { screen } = await renderWithRouter(
+    <StrictMode>
+      <ConfirmEmailChangePage />
+    </StrictMode>,
+    MOUNT,
+  )
 
   await expect.element(screen.getByText('Email updated')).toBeInTheDocument()
   expect(bodies).toEqual([{ token: 'tok-c' }])

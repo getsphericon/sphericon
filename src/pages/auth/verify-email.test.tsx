@@ -1,4 +1,5 @@
 import { HttpResponse } from 'msw'
+import { StrictMode } from 'react'
 import { expect, test, vi } from 'vitest'
 
 import { handleSiteAuthVerifyEmail } from '../../generated/site/msw.gen.ts'
@@ -24,7 +25,7 @@ async function fillAndSubmit(
   await screen.getByRole('button', { name: 'Set password' }).click()
 }
 
-test('sends the token alone first and opens the workspace the answer names when it is accepted', async () => {
+test('sends the token alone, once under StrictMode too, and opens the workspace the answer names', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAuthVerifyEmail(async ({ request }) => {
@@ -32,7 +33,12 @@ test('sends the token alone first and opens the workspace the answer names when 
       return HttpResponse.json({ landingWorkspaceId: LANDING })
     }),
   )
-  const { screen, navigate } = await renderWithRouter(<VerifyEmailPage />, MOUNT)
+  const { screen, navigate } = await renderWithRouter(
+    <StrictMode>
+      <VerifyEmailPage />
+    </StrictMode>,
+    MOUNT,
+  )
 
   await vi.waitFor(() =>
     expect(navigate).toHaveBeenCalledWith({

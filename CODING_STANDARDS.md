@@ -186,12 +186,15 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 ## Frontend
 
 - **Never disable a lint rule** (no `off`, no `oxlint-disable`/ignore comments): fix the code;
-  configure a rule's own options only when it has them.
+  configure a rule's own options only when it has them. The one exception is the workflow
+  builder's `<style>`, below.
 - **No custom CSS anywhere in the repo.** Style the frontend exclusively through Mantine — components, style
   props (`p`, `c`, `w`, responsive object syntax), the color system, the theme, and the
   configured breakpoints. Do not add custom `.css`/CSS-module files, inline `style={{…}}`,
   hardcoded colors, or CSS-in-JS (styled-components/emotion). The only CSS imports are the
-  library stylesheets in `src/main.tsx`.
+  library stylesheets in `src/main.tsx`, and the workflow builder's, whose global resets must not
+  outlive the builder: `AutomationBuilder.tsx` renders it as a `<style>` element, the one file
+  `react/forbid-elements` lets one in (an override in `oxlint.config.ts`).
 - **A pull request runs the logic tests; the UI tests run nightly (rule 12).** `*.test.ts` files
   are logic and run on every pull request (`mise run test:frontend:logic`). `*.test.tsx` files
   render pages in Chromium: they are written only for a critical path and run, sharded, with the
