@@ -602,7 +602,6 @@ export default interface Resources {
         "draftTitle": "Draft",
         "labelDescription": "Unique among the versions of this item, such as a date",
         "labelLabel": "Version label",
-        "labelRequired": "Enter a label",
         "loadError": "Could not load the sign-up item",
         "mailingsError": "Could not change the mailings consent",
         "noVersion": "No version is published yet: visitors do not see this item.",
@@ -620,7 +619,6 @@ export default interface Resources {
         "titleDescription": "What the sign-up form shows. A new title is not a new version of the document.",
         "titleError": "Could not change the title",
         "titleLabel": "Title",
-        "titleRequired": "Enter a title",
         "titleSaved": "Title saved",
         "versionColumns": {
           "label": "Label",
@@ -636,13 +634,10 @@ export default interface Resources {
           "error": "Could not add the item",
           "keyDescription": "Lower-case letters, digits and hyphens; the address of its public page. It never changes.",
           "keyLabel": "Key",
-          "keyRequired": "Enter a key",
           "kindLabel": "Kind",
-          "kindRequired": "Choose a kind",
           "submit": "Add item",
           "title": "Add an item",
-          "titleLabel": "Title",
-          "titleRequired": "Enter a title"
+          "titleLabel": "Title"
         },
         "archivedBadge": "Archived",
         "columns": {
@@ -750,7 +745,6 @@ export default interface Resources {
           "error": "Could not suspend the workspace",
           "reasonDescription": "The workspace owner is told this reason.",
           "reasonLabel": "Reason",
-          "reasonRequired": "A reason is required",
           "title": "Suspend sending",
           "unchanged": "Nothing changed: sending was already suspended.",
           "warning": "All outbound sending from this workspace stops until you lift the suspension. Sign-in, the dashboard, API reads and tracking keep working."

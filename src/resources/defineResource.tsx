@@ -1,12 +1,10 @@
 import { Modal, Stack, Title } from '@mantine/core'
-import { schemaResolver, useForm } from '@mantine/form'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type * as z from 'zod'
 
 import { LeaveDialog } from '../components/LeaveDialog.tsx'
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
@@ -15,27 +13,13 @@ import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import type { ApiErrorLike } from '../utils/apiErrors.ts'
 import type { FormValues, ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
+import { useSchemaForm } from './schemaForm.ts'
+import type { SchemaForm } from './schemaForm.ts'
 
 // The form a resource's form component receives. Validation comes from the schema (parse
 // direction, errors only); the same schema yields the payload via transformValues once
-// validation has passed. (@mantine/form's own form type is not importable, its .d.mts
-// re-exports a missing file, so it is derived from the hook; the members typed by the
-// validation rules are left out, they are the module's business.)
-export type ResourceForm<TPayload> = Omit<
-  ReturnType<typeof useForm<FormValues, TPayload>>,
-  'validate' | 'validateField' | 'isValid'
->
-
-function useResourceForm<TPayload>(
-  initialValues: FormValues,
-  schema: z.ZodType<TPayload, FormValues>,
-) {
-  return useForm<FormValues, TPayload>({
-    initialValues,
-    validate: schemaResolver(schema, { sync: true }),
-    transformValues: (values) => schema.parse(values),
-  })
-}
+// validation has passed.
+export type ResourceForm<TPayload> = SchemaForm<FormValues, TPayload>
 
 // What a resource's form component receives. `form` validates through the resource's form
 // schema and `onSubmit` is handed the normalized API payload; the component only renders
@@ -128,7 +112,7 @@ export function defineResource<
     const { workspaceId } = workspaceRoute.useParams()
     const texts = resource.texts(t)
 
-    const form = useResourceForm(resource.schema.blank, resource.schema.create)
+    const form = useSchemaForm(resource.schema.create, resource.schema.blank)
 
     const mutation = useResourceMutation({
       mutation: resource.createMutation(),
@@ -162,7 +146,7 @@ export function defineResource<
     const { workspaceId } = workspaceRoute.useParams()
     const texts = resource.texts(t)
 
-    const form = useResourceForm(resource.schema.blank, resource.schema.create)
+    const form = useSchemaForm(resource.schema.create, resource.schema.blank)
 
     const mutation = useResourceMutation({
       mutation: resource.createMutation(),
@@ -209,7 +193,7 @@ export function defineResource<
 
     const values = (from: TResource) =>
       resource.schema.toValues(resource.editedValues?.(from) ?? from)
-    const form = useResourceForm(values(loaded), resource.schema.update)
+    const form = useSchemaForm(resource.schema.update, values(loaded))
 
     const mutation = useResourceMutation({
       mutation: resource.updateMutation(),

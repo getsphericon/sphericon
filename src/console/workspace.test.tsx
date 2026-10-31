@@ -274,7 +274,7 @@ test('suspending needs a reason, and sends it only after the confirm button', as
   await screen.getByRole('button', { name: 'Suspend sending' }).click()
   const dialog = screen.getByRole('dialog')
   await dialog.getByRole('button', { name: 'Suspend sending' }).click()
-  await expect.element(dialog.getByText('A reason is required')).toBeInTheDocument()
+  await expect.element(dialog.getByText('This field is required')).toBeInTheDocument()
   expect(suspended).toEqual([])
 
   await dialog.getByRole('textbox', { name: /Reason/ }).fill('  abuse report ')
