@@ -753,3 +753,40 @@ func TestConfigLoadRefusesAValueThatBreaksItsRule(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigLoadProfileDefaults(t *testing.T) {
+	for profile, want := range map[string]struct {
+		limits       config.RateLimits
+		logFormat    string
+		privateHosts bool
+	}{
+		"":            {config.DefaultRateLimits, "text", true},
+		"development": {config.DefaultRateLimits, "text", true},
+		"test":        {config.DefaultRateLimits, "text", true},
+		"e2e":         {config.RateLimits{}, "json", true},
+		"production":  {config.DefaultRateLimits, "json", false},
+	} {
+		t.Run(profile, func(t *testing.T) {
+			t.Setenv("DATABASE_URL", "postgres://x")
+			t.Setenv("SPHERICON_JWT_SECRET", strongSecret)
+			cfg, err := config.Load(profile)
+			require.NoError(t, err)
+			assert.Equal(t, want.limits, cfg.RateLimits)
+			assert.Equal(t, want.logFormat, cfg.LogFormat)
+			assert.Equal(t, want.privateHosts, cfg.SMTPAllowPrivateHosts)
+		})
+	}
+}
+
+func TestConfigLoadAVariableReplacesItsProfileDefault(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE", "7")
+	t.Setenv("SPHERICON_LOG_FORMAT", "json")
+	t.Setenv("SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS", "false")
+
+	cfg, err := config.Load("e2e")
+	require.NoError(t, err)
+	assert.Equal(t, config.RateLimits{LoginIP: 7}, cfg.RateLimits)
+	assert.Equal(t, "json", cfg.LogFormat)
+	assert.False(t, cfg.SMTPAllowPrivateHosts)
+}

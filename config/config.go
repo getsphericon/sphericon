@@ -40,36 +40,36 @@ type BodyLimits struct {
 type RateLimits struct {
 	// Human caps the public human-facing endpoints (signup, invitation accept,
 	// consent confirm) per client IP and endpoint.
-	Human int
+	Human int `env:"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE" validate:"gte=0"`
 	// APIBurst caps /api and /mcp per Workspace per second (one shared budget).
-	APIBurst int
+	APIBurst int `env:"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND" validate:"gte=0"`
 	// APIPerMinute caps /api and /mcp per Workspace per minute, stacked on APIBurst.
-	APIPerMinute int
+	APIPerMinute int `env:"SPHERICON_RATE_LIMIT_API_PER_MINUTE" validate:"gte=0"`
 	// FailedAuth caps failed credential checks (bearer token, collect key) per
 	// client IP per minute; successful ones are not counted.
-	FailedAuth int
+	FailedAuth int `env:"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE" validate:"gte=0"`
 	// Tracking caps how many opens and clicks one client IP may have recorded per
 	// minute. It never refuses a recipient: over it the event is not recorded.
-	Tracking int
+	Tracking int `env:"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE" validate:"gte=0"`
 	// LoginFailures is how many failed logins one account may have within 15 minutes
 	// before login answers 429 with an exponentially growing delay (no lockout).
-	LoginFailures int
+	LoginFailures int `env:"SPHERICON_RATE_LIMIT_LOGIN_FAILURES" validate:"gte=0"`
 	// LoginIP caps login requests per client IP per minute.
-	LoginIP int
+	LoginIP int `env:"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE" validate:"gte=0"`
 	// Collect caps /collect per Workspace per minute (a budget of its own, apart
 	// from /api and /mcp).
-	Collect int
+	Collect int `env:"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE" validate:"gte=0"`
 	// CollectIP caps /collect per client IP per minute.
-	CollectIP int
+	CollectIP int `env:"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE" validate:"gte=0"`
 	// ServicePerMinute caps the internal listener's service endpoints per Service
 	// credential per minute.
-	ServicePerMinute int
+	ServicePerMinute int `env:"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE" validate:"gte=0"`
 	// ForgotAddress is how many mails one address may be sent per hour by each of
 	// forgot-password, registration and an email-change request (ADR 0031). Over it
 	// the request is still answered 202 and nothing is sent.
-	ForgotAddress int
+	ForgotAddress int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR" validate:"gte=0"`
 	// ForgotIP caps forgot-password requests per client IP per hour (429 over it).
-	ForgotIP int
+	ForgotIP int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR" validate:"gte=0"`
 }
 
 // DefaultRateLimits are the production budgets.
@@ -306,8 +306,8 @@ type Config struct {
 
 // environment is every variable Load reads, with the defaults that do not depend on
 // the environment name and the rules each value must hold on its own (`validate`, checked by
-// validateEnvironment). Those that do (rate limits in the e2e profile, the log
-// format, SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS) are seeded into the variable map by seedDefaults.
+// validateEnvironment). Those that do (the rate limits, the log format,
+// SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS) are set by profileDefaults before the variables are read.
 type environment struct {
 	DatabaseURL string `env:"DATABASE_URL,required,notEmpty"`
 	Port        string `env:"PORT" envDefault:"3000"`
@@ -352,18 +352,8 @@ type environment struct {
 	CollectMaxBodyBytes  int64 `env:"SPHERICON_COLLECT_MAX_BODY_BYTES" envDefault:"512000" validate:"gt=0"`
 	CollectMaxEventBytes int64 `env:"SPHERICON_COLLECT_MAX_EVENT_BYTES" envDefault:"32768" validate:"gt=0"`
 
-	RateLimitHuman         int `env:"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE" validate:"gte=0"`
-	RateLimitAPIBurst      int `env:"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND" validate:"gte=0"`
-	RateLimitAPIPerMinute  int `env:"SPHERICON_RATE_LIMIT_API_PER_MINUTE" validate:"gte=0"`
-	RateLimitFailedAuth    int `env:"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE" validate:"gte=0"`
-	RateLimitTracking      int `env:"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE" validate:"gte=0"`
-	RateLimitLoginFailures int `env:"SPHERICON_RATE_LIMIT_LOGIN_FAILURES" validate:"gte=0"`
-	RateLimitLoginIP       int `env:"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE" validate:"gte=0"`
-	RateLimitCollect       int `env:"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE" validate:"gte=0"`
-	RateLimitCollectIP     int `env:"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE" validate:"gte=0"`
-	RateLimitService       int `env:"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE" validate:"gte=0"`
-	RateLimitForgotAddress int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR" validate:"gte=0"`
-	RateLimitForgotIP      int `env:"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR" validate:"gte=0"`
+	// RateLimits carry their variables and rules on their own fields.
+	RateLimits RateLimits
 
 	OutboxFloorDays             int `env:"SPHERICON_OUTBOX_RETENTION_FLOOR_DAYS" envDefault:"7" validate:"gte=0"`
 	EventsRetentionDays         int `env:"SPHERICON_EVENTS_RETENTION_DAYS" envDefault:"400" validate:"gte=0"`
@@ -472,10 +462,10 @@ func Port(envName string) (string, error) {
 	return e.Port, nil
 }
 
-// parseEnvironment reads the variables into the environment and refuses a value that breaks its
-// field's rule.
-func parseEnvironment(vars map[string]string) (environment, error) {
-	var e environment
+// parseEnvironment reads the variables over the defaults of the envName profile and refuses a
+// value that breaks its field's rule.
+func parseEnvironment(vars map[string]string, envName string) (environment, error) {
+	e := profileDefaults(envName)
 	if err := env.ParseWithOptions(&e, env.Options{Environment: vars}); err != nil {
 		return environment{}, fmt.Errorf("read environment: %w", err)
 	}
@@ -492,9 +482,7 @@ func Load(envName string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	seedDefaults(vars, envName)
-
-	e, err := parseEnvironment(vars)
+	e, err := parseEnvironment(vars, envName)
 	if err != nil {
 		return nil, err
 	}
@@ -574,20 +562,7 @@ func Load(envName string) (*Config, error) {
 			Collect:      e.CollectMaxBodyBytes,
 			CollectEvent: e.CollectMaxEventBytes,
 		},
-		RateLimits: RateLimits{
-			Human:            e.RateLimitHuman,
-			APIBurst:         e.RateLimitAPIBurst,
-			APIPerMinute:     e.RateLimitAPIPerMinute,
-			FailedAuth:       e.RateLimitFailedAuth,
-			Tracking:         e.RateLimitTracking,
-			LoginFailures:    e.RateLimitLoginFailures,
-			LoginIP:          e.RateLimitLoginIP,
-			Collect:          e.RateLimitCollect,
-			CollectIP:        e.RateLimitCollectIP,
-			ServicePerMinute: e.RateLimitService,
-			ForgotAddress:    e.RateLimitForgotAddress,
-			ForgotIP:         e.RateLimitForgotIP,
-		},
+		RateLimits: e.RateLimits,
 		DBPool: DBPool{
 			MaxOpenConns:    e.DBMaxOpenConns,
 			MaxIdleConns:    maxIdle,
@@ -744,40 +719,21 @@ func readSecretFiles(vars map[string]string) error {
 	return nil
 }
 
-// seedDefaults fills the variables whose default depends on the environment name,
-// unless the process or a file set them (an empty value counts as unset): the rate
-// limits (all disabled in the e2e profile, which polls freely), the log format
-// (human-readable in development, JSON elsewhere) and SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS.
-func seedDefaults(vars map[string]string, envName string) {
-	limits := DefaultRateLimits
+// profileDefaults is the environment before the variables are read, holding the defaults that
+// depend on the environment name; a variable that is set (not empty) replaces its default. The
+// e2e profile has no rate limits (it polls freely), development and tests log as text, and the
+// non-production profiles may reach a private SMTP host (a local Mailpit), which production
+// refuses.
+func profileDefaults(envName string) environment {
+	e := environment{RateLimits: DefaultRateLimits, LogFormat: "json"}
 	if isE2E(envName) {
-		limits = RateLimits{}
+		e.RateLimits = RateLimits{}
 	}
-	logFormat := "json"
 	if isDevEnv(envName) {
-		logFormat = "text"
+		e.LogFormat = "text"
 	}
-	for key, value := range map[string]string{
-		"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE":                     strconv.Itoa(limits.Human),
-		"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND":                 strconv.Itoa(limits.APIBurst),
-		"SPHERICON_RATE_LIMIT_API_PER_MINUTE":                       strconv.Itoa(limits.APIPerMinute),
-		"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE":               strconv.Itoa(limits.FailedAuth),
-		"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE":                  strconv.Itoa(limits.Tracking),
-		"SPHERICON_RATE_LIMIT_LOGIN_FAILURES":                       strconv.Itoa(limits.LoginFailures),
-		"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE":                  strconv.Itoa(limits.LoginIP),
-		"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE":                   strconv.Itoa(limits.Collect),
-		"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE":                strconv.Itoa(limits.CollectIP),
-		"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE":                   strconv.Itoa(limits.ServicePerMinute),
-		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR": strconv.Itoa(limits.ForgotAddress),
-		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR":          strconv.Itoa(limits.ForgotIP),
-		"SPHERICON_LOG_FORMAT":                                      logFormat,
-		// Allowed in development, tests and the e2e suite (a local Mailpit), refused in production.
-		"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS": strconv.FormatBool(isDevEnv(envName) || isE2E(envName)),
-	} {
-		if vars[key] == "" {
-			vars[key] = value
-		}
-	}
+	e.SMTPAllowPrivateHosts = isDevEnv(envName) || isE2E(envName)
+	return e
 }
 
 // JWTVerifySecrets are the secrets a session or a mailed link is also accepted under besides
