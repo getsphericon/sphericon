@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -144,9 +145,12 @@ func newApp(cfg *config.Config, o options) (*App, error) {
 	if err != nil {
 		return nil, abort(injector, err)
 	}
-	// Operational gauges (outbox lag, queue depth), read on scrape; the container takes them
-	// off the meter when it shuts down.
+	// Operational gauges (outbox lag, dead letters, queue depth), read on scrape; the container
+	// takes them off the meter when it shuts down.
 	if _, err := do.Invoke[*outboxLagGauge](injector); err != nil {
+		return nil, abort(injector, err)
+	}
+	if _, err := do.Invoke[*deadLetterGauge](injector); err != nil {
 		return nil, abort(injector, err)
 	}
 	if _, err := do.Invoke[*queueDepthGauge](injector); err != nil {
@@ -517,6 +521,24 @@ func (a *App) ResetStaffTOTP(ctx context.Context, email string) error {
 		return err
 	}
 	return members.ResetTOTP(ctx, email)
+}
+
+// ReplayDeadLetters runs the dead letters of a consumer group through that group's handler and
+// returns how many it replayed (events.ReplayDeadLetters).
+func (a *App) ReplayDeadLetters(ctx context.Context, group string) (int, error) {
+	handlers, err := do.Invoke[events.ConsumerHandlers](a.injector)
+	if err != nil {
+		return 0, err
+	}
+	handle, ok := handlers.Of(group)
+	if !ok {
+		return 0, fmt.Errorf("no consumer group %q; the groups are %s", group, strings.Join(events.ConsumerGroups(), ", "))
+	}
+	client, err := do.Invoke[*ent.Client](a.injector)
+	if err != nil {
+		return 0, err
+	}
+	return events.ReplayDeadLetters(ctx, client, group, handle)
 }
 
 // IssueServiceCredential creates a Service credential (ADR 0026) and returns it with its

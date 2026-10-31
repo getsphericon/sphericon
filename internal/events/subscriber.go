@@ -12,6 +12,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	watermillsql "github.com/ThreeDotsLabs/watermill-sql/v4/pkg/sql"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -70,14 +71,25 @@ type WebhookDispatcher interface {
 // NewRouter builds the watermill router that hosts the domain-event subscribers.
 // The events package owns its full consume-side runtime (router + per-group
 // subscribers); the producer side is Bus. Run the returned router in a goroutine
-// and Close it on shutdown.
-func NewRouter() (*message.Router, error) {
+// and Close it on shutdown. db is where a dead letter is written (deadletters.go).
+func NewRouter(db *sql.DB, opts ...RouterOption) (*message.Router, error) {
+	cfg := routerConfig{retry: defaultRetry()}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 	router, err := message.NewRouter(message.RouterConfig{}, watermill.NewSlogLogger(slog.Default()))
 	if err != nil {
 		return nil, err
 	}
-	// Per-handler OTel spans + metrics (global providers; no-op when disabled).
-	router.AddMiddleware(otelMiddleware())
+	dead, err := deadLetters(db)
+	if err != nil {
+		return nil, err
+	}
+	// The first is the outermost: the dead-lettering of an event the retries gave up on, over the
+	// per-handler OTel spans + metrics (global providers; no-op when disabled), which so count an
+	// event that failed past its retries as one error, over the retries, over the recovery of a
+	// panic into an error.
+	router.AddMiddleware(dead, otelMiddleware(), cfg.retry.Middleware, middleware.Recoverer)
 	return router, nil
 }
 
@@ -116,42 +128,55 @@ func ConsumerGroups() []string {
 // RegisterSubscribers wires the domain-event consumers onto the shared watermill
 // router. Each consumer gets its OWN subscriber with a distinct consumer group
 // (see ConsumerGroups), so every subscriber receives every event (fan-out) rather
-// than competing for messages. Add new subscribers to the table below and to
-// ConsumerGroups without touching producers.
-//
-// extra are consumers owned outside core (the Enterprise audit subscriber, ee/): each
-// gets its own consumer group like the built-in ones, and its group is listed in
+// than competing for messages. Add new subscribers to Handlers and to
+// ConsumerGroups without touching producers; an extra consumer's group is listed in
 // ConsumerGroups so the outbox prune waits for it.
 //
 // opts tune every subscriber it builds (see SubscribeOption).
-func RegisterSubscribers(router *message.Router, db *sql.DB, client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, orders OrderRecorder, extra []Consumer, opts ...SubscribeOption) error {
-	handlers := map[string]struct {
-		name    string
-		handler message.NoPublishHandlerFunc
-	}{
-		GroupPersist:     {"persist_event", persistConsumer(client)},
-		GroupAutomations: {"enroll_automations", AutomationsConsumer(enroller)},
-		GroupRules:       {"evaluate_rules", RulesConsumer(client, rules)},
-		GroupWebhooks:    {"dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
-		GroupSuppression: {"update_suppression", suppressionConsumer(client)},
-		GroupOrders:      {"record_orders", ordersConsumer(client, orders)},
-	}
-	for _, group := range coreGroups() {
-		h := handlers[group]
-		sub, err := NewSubscriber(db, group, opts...)
+func RegisterSubscribers(router *message.Router, db *sql.DB, handlers ConsumerHandlers, opts ...SubscribeOption) error {
+	for _, h := range handlers {
+		sub, err := NewSubscriber(db, h.Group, opts...)
 		if err != nil {
-			return fmt.Errorf("%s subscriber: %w", group, err)
+			return fmt.Errorf("%s subscriber: %w", h.Group, err)
 		}
-		router.AddConsumerHandler(h.name, TopicDomainEvents, sub, h.handler)
-	}
-	for _, c := range extra {
-		sub, err := NewSubscriber(db, c.Name, opts...)
-		if err != nil {
-			return fmt.Errorf("%s subscriber: %w", c.Name, err)
-		}
-		router.AddConsumerHandler(c.Name, TopicDomainEvents, sub, c.Handler())
+		router.AddConsumerHandler(h.Name, TopicDomainEvents, sub, h.Handle).AddMiddleware(inGroup(h.Group))
 	}
 	return nil
+}
+
+// ConsumerHandler is one consumer group's handler: Name is its router handler name.
+type ConsumerHandler struct {
+	Group  string
+	Name   string
+	Handle message.NoPublishHandlerFunc
+}
+
+// ConsumerHandlers is every consumer group's handler, in registration order.
+type ConsumerHandlers []ConsumerHandler
+
+// Of is the handler of group, false when no group has that name.
+func (hs ConsumerHandlers) Of(group string) (message.NoPublishHandlerFunc, bool) {
+	h, ok := lo.Find(hs, func(h ConsumerHandler) bool { return h.Group == group })
+	return h.Handle, ok
+}
+
+// Handlers builds the handler of every consumer group: the core ones over their dependencies,
+// then extra, the consumers owned outside core (the Enterprise audit subscriber, ee/), each its
+// own group named like its handler. RegisterSubscribers runs them on the router, and
+// ReplayDeadLetters runs one group's dead letters through its handler.
+func Handlers(client *ent.Client, enroller Enroller, rules RuleEvaluator, dispatcher WebhookDispatcher, orders OrderRecorder, extra []Consumer) ConsumerHandlers {
+	hs := ConsumerHandlers{
+		{GroupPersist, "persist_event", persistConsumer(client)},
+		{GroupAutomations, "enroll_automations", AutomationsConsumer(enroller)},
+		{GroupRules, "evaluate_rules", RulesConsumer(client, rules)},
+		{GroupWebhooks, "dispatch_webhooks", WebhooksConsumer(client, dispatcher)},
+		{GroupSuppression, "update_suppression", suppressionConsumer(client)},
+		{GroupOrders, "record_orders", ordersConsumer(client, orders)},
+	}
+	for _, c := range extra {
+		hs = append(hs, ConsumerHandler{c.Name, c.Name, c.Handler()})
+	}
+	return hs
 }
 
 // Consumer is a bus subscriber registered from outside the events package. Name is

@@ -105,6 +105,9 @@ type OrderMovement func(*sql.Selector)
 // OutboundMessage is the predicate function for outboundmessage builders.
 type OutboundMessage func(*sql.Selector)
 
+// OutboxDeadLetter is the predicate function for outboxdeadletter builders.
+type OutboxDeadLetter func(*sql.Selector)
+
 // OutboxMessage is the predicate function for outboxmessage builders.
 type OutboxMessage func(*sql.Selector)
 

@@ -78,6 +78,16 @@ groups:
           description: The oldest unprocessed domain event for {{ $labels.consumer_group }} is older than 5 minutes.
           runbook_url: https://getsphericon.com/docs/operations/runbook#sphericonoutboxlaghigh
 
+      - alert: SphericonDomainEventsDeadLettered
+        expr: max by (consumer_group) (outbox_dead_letters) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $value }} domain events of {{ $labels.consumer_group }} are dead-lettered'
+          description: The {{ $labels.consumer_group }} handler gave up on these events after its retries. Fix the cause, then run `sphericon events replay {{ $labels.consumer_group }}`.
+          runbook_url: https://getsphericon.com/docs/operations/runbook#sphericondomaineventsdeadlettered
+
       - alert: SphericonEventHandlerErrors
         expr: |
           sum by (handler) (rate(watermill_messages_processed_total{error="true"}[10m]))

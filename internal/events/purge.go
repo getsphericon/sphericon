@@ -24,7 +24,7 @@ import (
 // The job deletes go through the RiverJob skipped entity (river's table; ent only
 // generates its client): river's Tx API has no args predicate, so ent matches the args.
 type QueuePurger interface {
-	// PurgeOutbox deletes the Workspace's outbox envelopes that name the Contact,
+	// PurgeOutbox deletes the Workspace's outbox envelopes and dead letters that name the Contact,
 	// by id or by one of its destinations (matched case-insensitively).
 	PurgeOutbox(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 	// PurgeJobs deletes the river jobs of kind that are not running and whose
@@ -46,17 +46,22 @@ func (p *txPublisher) PurgeOutbox(ctx context.Context, workspaceID, contactID in
 	if contactID != 0 {
 		id = strconv.FormatInt(contactID, 10)
 	}
-	_, err := p.client.OutboxMessage.Delete().Where(outboxNamesSubject(workspaceID, id, lowered)).Exec(ctx)
+	names := namesSubject(workspaceID, id, lowered)
+	if _, err := p.client.OutboxMessage.Delete().Where(predicate.OutboxMessage(names)).Exec(ctx); err != nil {
+		return err
+	}
+	// A dead letter is an outbox envelope that waits to be replayed: the same payload.
+	_, err := p.client.OutboxDeadLetter.Delete().Where(predicate.OutboxDeadLetter(names)).Exec(ctx)
 	return err
 }
 
-// outboxNamesSubject selects a Workspace's outbox envelopes that name a data subject. The
-// payload is the JSON-encoded Envelope; events name the Contact as data.contactId and the
-// address as data.email. The paths are ent's JSON predicates; only the case-insensitive
-// address match is written by hand (the lower() of a JSON path has no predicate), around
-// ent's own path expression.
-func outboxNamesSubject(workspaceID int64, contactID string, lowered []string) predicate.OutboxMessage {
-	return predicate.OutboxMessage(func(s *sql.Selector) {
+// namesSubject selects a Workspace's outbox envelopes (or dead letters, which have the same
+// payload column) that name a data subject. The payload is the JSON-encoded Envelope; events
+// name the Contact as data.contactId and the address as data.email. The paths are ent's JSON
+// predicates; only the case-insensitive address match is written by hand (the lower() of a
+// JSON path has no predicate), around ent's own path expression.
+func namesSubject(workspaceID int64, contactID string, lowered []string) func(*sql.Selector) {
+	return func(s *sql.Selector) {
 		payload := s.C(outboxmessage.FieldPayload)
 		s.Where(sql.And(
 			sqljson.ValueEQ(payload, workspaceID, sqljson.Path("workspaceId"), sqljson.Cast("bigint")),
@@ -71,7 +76,7 @@ func outboxNamesSubject(workspaceID int64, contactID string, lowered []string) p
 				}),
 			),
 		))
-	})
+	}
 }
 
 // argInts selects river jobs whose args integer field key is one of ids.

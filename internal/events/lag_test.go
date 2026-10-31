@@ -39,3 +39,18 @@ func TestOutboxLagIsReportedPerConsumerGroup(t *testing.T) {
 		assert.GreaterOrEqual(t, scrape.Value(t, "outbox_lag_seconds", map[string]string{"consumer_group": g}), 120.0, g)
 	}
 }
+
+// The dead letters are counted per registered consumer group, labelled by group only.
+func TestDeadLettersAreReportedPerConsumerGroup(t *testing.T) {
+	env := testhelper.Setup(t)
+	metricstest.StartMetrics(t)
+	unregister, err := events.RegisterDeadLetterGauge(env.DB)
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Report("unregister the gauge", unregister()) })
+	env.DB.OutboxDeadLetter.Create().SetUUID("dead-1").SetCreatedAt(time.Now()).SetTransactionID("1").
+		SetPayload([]byte(`{}`)).SetMetadata([]byte(`{"consumer_group":"webhooks"}`)).ExecX(t.Context())
+
+	scrape := metricstest.ScrapeMetrics(t)
+	assert.InDelta(t, 1.0, scrape.Value(t, "outbox_dead_letters", map[string]string{"consumer_group": events.GroupWebhooks}), 0)
+	assert.Zero(t, scrape.Value(t, "outbox_dead_letters", map[string]string{"consumer_group": events.GroupPersist}))
+}

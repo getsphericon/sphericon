@@ -156,3 +156,31 @@ func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *tes
 	require.NotNil(t, kept.FailureExcerpt)
 	assert.Equal(t, "ben@initech.test rejected", *kept.FailureExcerpt)
 }
+
+// A dead letter naming the erased Contact, by id or by address, goes with its outbox envelopes.
+func TestExternalContactsEraseClearsDeadLetters(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
+		for _, ev := range []events.DomainEvent{
+			&events.EmailEngagement{Action: events.NameEmailSent, WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Email: "erin@initech.test"},
+			&events.ContactCreated{WorkspaceID: fixtures.InitechID, Email: "Erin@Initech.test"},
+			&events.EmailEngagement{Action: events.NameEmailSent, WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Email: "ben@initech.test"},
+		} {
+			if err := pub.Publish(ctx, ev); err != nil {
+				return err
+			}
+		}
+		return nil
+	}))
+	for _, row := range env.DB.OutboxMessage.Query().AllX(ctx) {
+		env.DB.OutboxDeadLetter.Create().SetUUID(row.UUID).SetCreatedAt(row.CreatedAt).SetTransactionID(row.TransactionID).
+			SetPayload(row.Payload).SetMetadata([]byte(`{"consumer_group":"webhooks"}`)).ExecX(ctx)
+	}
+
+	eraseErasable(t, env)
+
+	left := env.DB.OutboxDeadLetter.Query().AllX(ctx)
+	require.Len(t, left, 1, "only the bystander's dead letter is left")
+	assert.Contains(t, string(left[0].Payload), "ben@initech.test")
+}

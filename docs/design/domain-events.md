@@ -140,8 +140,13 @@ Email}`) marshaled into `Payload`. Consumers unmarshal by `Name`+`Version`.
   as best-effort.
 - **Versioning** — additive payload changes bump `Version`; consumers handle known
   versions. No in-place breaking changes.
-- **Poison messages** — bus retries with backoff, then dead-letter (watermill
-  middleware); never block the topic.
+- **Poison messages** — a failing handler is retried with backoff (watermill `Retry`, about
+  four minutes), a panic first recovered into an error (`Recoverer`); past the retries the event
+  goes to the `domain_events_dead_letters` topic (watermill `PoisonQueue`) with its consumer
+  group and error, and the group moves on. The topic is shared by every group, so a dead letter
+  is never published back to it: `sphericon events replay <group>` runs a group's dead letters
+  through that group's handler alone. `outbox_dead_letters` counts them per group and
+  `SphericonDomainEventsDeadLettered` alerts on any.
 - **Testing** — naturally inert under go-txdb: the outbox insert rolls back with
   the test's transaction and the watermill router isn't running, so no subscriber
   fires. Engine/consumer logic is unit-tested by calling the handler directly
