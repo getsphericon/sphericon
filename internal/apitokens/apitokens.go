@@ -8,9 +8,11 @@
 // OAuth issuing (internal/oauthserver) keeps its own flow: its scopes are fixed by
 // the consent screen, and it only shares the credential generators in
 // internal/credentials. What it issues is a Connection, an API token tied to the
-// approving User's Membership (ADR 0061): the Workspace's API tokens below are the rows
-// without one, and a Connection is listed and revoked through Connections and
-// RevokeConnection instead.
+// approving User's Membership and naming the client approved (ADR 0061). A Personal token
+// is a User's own token that names no client, minted by hand (MintPersonal). The
+// Workspace's API tokens below are the rows without a Membership; a Connection is listed
+// and revoked through Connections and RevokeConnection, a Personal token through
+// PersonalTokens and RevokePersonal. Which row is which is decided once, in kinds.go.
 package apitokens
 
 import (
@@ -76,17 +78,32 @@ type Minted struct {
 // been authorized to hold that power: a Membership whose Role holds tokens:manage on /site,
 // or the bootstrap secret. A token minting another token goes through MintWithin.
 func Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
-	name := strings.TrimSpace(in.Name)
-	if name == "" {
-		return Minted{}, nameEmpty()
+	name, scopes, err := checked(in)
+	if err != nil {
+		return Minted{}, err
 	}
-	scopes := slices.Compact(slices.Sorted(slices.Values(in.Scopes)))
+	return mint(ctx, s, name, scopes, in.ExpiresAt, nil)
+}
+
+// checked is the trimmed name and the sorted, distinct scopes of in, or the refusal of a blank
+// name or a scope outside the vocabulary.
+func checked(in Input) (name string, scopes []string, err error) {
+	name = strings.TrimSpace(in.Name)
+	if name == "" {
+		return "", nil, nameEmpty()
+	}
+	scopes = slices.Compact(slices.Sorted(slices.Values(in.Scopes)))
 	for _, sc := range scopes {
 		if !validScope(sc) {
-			return Minted{}, unknownScope(sc)
+			return "", nil, unknownScope(sc)
 		}
 	}
+	return name, scopes, nil
+}
 
+// mint stores a token of name and scopes, the Workspace's when owner is nil and otherwise that
+// Membership's own, and returns it with its secret.
+func mint(ctx context.Context, s *ent.Scoped, name string, scopes []string, expiresAt *time.Time, owner *int64) (Minted, error) {
 	prefix, err := credentials.GenerateTokenPrefix()
 	if err != nil {
 		return Minted{}, err
@@ -100,10 +117,9 @@ func Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
 		SetName(name).
 		SetPrefix(prefix).
 		SetSecretHash(credentials.HashSecret(secret)).
-		SetScopes(scopes)
-	if in.ExpiresAt != nil {
-		create = create.SetExpiresAt(*in.ExpiresAt)
-	}
+		SetScopes(scopes).
+		SetNillableExpiresAt(expiresAt).
+		SetNillableMembershipID(owner)
 	token, err := create.Save(ctx)
 	if err != nil {
 		return Minted{}, err
@@ -127,7 +143,7 @@ func MintWithin(ctx context.Context, s *ent.Scoped, minter []string, in Input) (
 // not among them. A revoked token stays listed, marked by its revoked_at. Both the /site
 // settings screen and the /api token read call it, so the shape of the query is written once.
 func List(ctx context.Context, s *ent.Scoped) ([]*ent.ApiToken, error) {
-	return s.ApiToken().Query().Where(apitoken.MembershipIDIsNil()).Order(ent.Asc(apitoken.FieldID)).All(ctx)
+	return s.ApiToken().Query().Where(isWorkspaceToken()).Order(ent.Asc(apitoken.FieldID)).All(ctx)
 }
 
 // Get returns the Workspace's token with the id, revoked or not and Connection or not (the
@@ -144,11 +160,12 @@ func Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.ApiToken, error) {
 	return token, nil
 }
 
-// Revoke retires an active API token (it stays listed with revoked_at). A token that
-// is unknown, belongs to another Workspace, is a Connection or is already revoked is ErrNotFound.
+// Revoke retires an active API token (it stays listed with revoked_at). A token that is unknown,
+// belongs to another Workspace, is a User's (a Connection or a Personal token) or is already
+// revoked is ErrNotFound.
 func Revoke(ctx context.Context, s *ent.Scoped, id int64) error {
 	n, err := s.ApiToken().Update().
-		Where(apitoken.ID(id), apitoken.MembershipIDIsNil(), apitoken.RevokedAtIsNil()).
+		Where(apitoken.ID(id), isWorkspaceToken(), apitoken.RevokedAtIsNil()).
 		SetRevokedAt(time.Now()).
 		Save(ctx)
 	if err != nil {
@@ -160,16 +177,16 @@ func Revoke(ctx context.Context, s *ent.Scoped, id int64) error {
 	return nil
 }
 
-// Rename changes the name of an active API token and returns the updated row. A token that
-// is unknown, belongs to another Workspace, is a Connection or is revoked is ErrNotFound; a
-// blank name is a *validation.Error on `name`.
+// Rename changes the name of an active API token and returns the updated row. A token that is
+// unknown, belongs to another Workspace, is a User's (a Connection or a Personal token) or is
+// revoked is ErrNotFound; a blank name is a *validation.Error on `name`.
 func Rename(ctx context.Context, s *ent.Scoped, id int64, name string) (*ent.ApiToken, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, nameEmpty()
 	}
 	n, err := s.ApiToken().Update().
-		Where(apitoken.ID(id), apitoken.MembershipIDIsNil(), apitoken.RevokedAtIsNil()).
+		Where(apitoken.ID(id), isWorkspaceToken(), apitoken.RevokedAtIsNil()).
 		SetName(name).
 		Save(ctx)
 	if err != nil {

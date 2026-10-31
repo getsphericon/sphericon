@@ -105,6 +105,11 @@ func MembershipID(v int64) predicate.ApiToken {
 	return predicate.ApiToken(sql.FieldEQ(FieldMembershipID, v))
 }
 
+// OauthClientID applies equality check predicate on the "oauth_client_id" field. It's identical to OauthClientIDEQ.
+func OauthClientID(v int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldEQ(FieldOauthClientID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ApiToken {
 	return predicate.ApiToken(sql.FieldEQ(FieldCreatedAt, v))
@@ -580,6 +585,36 @@ func MembershipIDNotNil() predicate.ApiToken {
 	return predicate.ApiToken(sql.FieldNotNull(FieldMembershipID))
 }
 
+// OauthClientIDEQ applies the EQ predicate on the "oauth_client_id" field.
+func OauthClientIDEQ(v int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldEQ(FieldOauthClientID, v))
+}
+
+// OauthClientIDNEQ applies the NEQ predicate on the "oauth_client_id" field.
+func OauthClientIDNEQ(v int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldNEQ(FieldOauthClientID, v))
+}
+
+// OauthClientIDIn applies the In predicate on the "oauth_client_id" field.
+func OauthClientIDIn(vs ...int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldIn(FieldOauthClientID, vs...))
+}
+
+// OauthClientIDNotIn applies the NotIn predicate on the "oauth_client_id" field.
+func OauthClientIDNotIn(vs ...int64) predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldNotIn(FieldOauthClientID, vs...))
+}
+
+// OauthClientIDIsNil applies the IsNil predicate on the "oauth_client_id" field.
+func OauthClientIDIsNil() predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldIsNull(FieldOauthClientID))
+}
+
+// OauthClientIDNotNil applies the NotNil predicate on the "oauth_client_id" field.
+func OauthClientIDNotNil() predicate.ApiToken {
+	return predicate.ApiToken(sql.FieldNotNull(FieldOauthClientID))
+}
+
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
@@ -618,6 +653,29 @@ func HasMembership() predicate.ApiToken {
 func HasMembershipWith(preds ...predicate.Membership) predicate.ApiToken {
 	return predicate.ApiToken(func(s *sql.Selector) {
 		step := newMembershipStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOauthClient applies the HasEdge predicate on the "oauth_client" edge.
+func HasOauthClient() predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, OauthClientTable, OauthClientColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOauthClientWith applies the HasEdge predicate on the "oauth_client" edge with a given conditions (other predicates).
+func HasOauthClientWith(preds ...predicate.OAuthClient) predicate.ApiToken {
+	return predicate.ApiToken(func(s *sql.Selector) {
+		step := newOauthClientStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

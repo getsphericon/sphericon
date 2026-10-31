@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
@@ -118,6 +119,21 @@ func (_c *OAuthClientCreate) AddRefreshTokens(v ...*OAuthRefreshToken) *OAuthCli
 		ids[i] = v[i].ID
 	}
 	return _c.AddRefreshTokenIDs(ids...)
+}
+
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (_c *OAuthClientCreate) AddConnectionIDs(ids ...int64) *OAuthClientCreate {
+	_c.mutation.AddConnectionIDs(ids...)
+	return _c
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (_c *OAuthClientCreate) AddConnections(v ...*ApiToken) *OAuthClientCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddConnectionIDs(ids...)
 }
 
 // Mutation returns the OAuthClientMutation object of the builder.
@@ -274,6 +290,22 @@ func (_c *OAuthClientCreate) createSpec() (*OAuthClient, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oauthrefreshtoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ConnectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oauthclient.ConnectionsTable,
+			Columns: []string{oauthclient.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

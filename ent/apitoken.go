@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -42,6 +43,8 @@ type ApiToken struct {
 	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
 	// MembershipID holds the value of the "membership_id" field.
 	MembershipID *int64 `json:"membership_id,omitempty"`
+	// OauthClientID holds the value of the "oauth_client_id" field.
+	OauthClientID *int64 `json:"oauth_client_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ApiTokenQuery when eager-loading is set.
 	Edges        ApiTokenEdges `json:"edges"`
@@ -54,9 +57,11 @@ type ApiTokenEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Membership holds the value of the membership edge.
 	Membership *Membership `json:"membership,omitempty"`
+	// OauthClient holds the value of the oauth_client edge.
+	OauthClient *OAuthClient `json:"oauth_client,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -81,6 +86,17 @@ func (e ApiTokenEdges) MembershipOrErr() (*Membership, error) {
 	return nil, &NotLoadedError{edge: "membership"}
 }
 
+// OauthClientOrErr returns the OauthClient value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ApiTokenEdges) OauthClientOrErr() (*OAuthClient, error) {
+	if e.OauthClient != nil {
+		return e.OauthClient, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: oauthclient.Label}
+	}
+	return nil, &NotLoadedError{edge: "oauth_client"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*ApiToken) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -88,7 +104,7 @@ func (*ApiToken) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case apitoken.FieldScopes:
 			values[i] = new([]byte)
-		case apitoken.FieldID, apitoken.FieldWorkspaceID, apitoken.FieldMembershipID:
+		case apitoken.FieldID, apitoken.FieldWorkspaceID, apitoken.FieldMembershipID, apitoken.FieldOauthClientID:
 			values[i] = new(sql.NullInt64)
 		case apitoken.FieldName, apitoken.FieldPrefix, apitoken.FieldSecretHash:
 			values[i] = new(sql.NullString)
@@ -187,6 +203,13 @@ func (_m *ApiToken) assignValues(columns []string, values []any) error {
 				_m.MembershipID = new(int64)
 				*_m.MembershipID = value.Int64
 			}
+		case apitoken.FieldOauthClientID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field oauth_client_id", values[i])
+			} else if value.Valid {
+				_m.OauthClientID = new(int64)
+				*_m.OauthClientID = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -208,6 +231,11 @@ func (_m *ApiToken) QueryWorkspace() *WorkspaceQuery {
 // QueryMembership queries the "membership" edge of the ApiToken entity.
 func (_m *ApiToken) QueryMembership() *MembershipQuery {
 	return NewApiTokenClient(_m.config).QueryMembership(_m)
+}
+
+// QueryOauthClient queries the "oauth_client" edge of the ApiToken entity.
+func (_m *ApiToken) QueryOauthClient() *OAuthClientQuery {
+	return NewApiTokenClient(_m.config).QueryOauthClient(_m)
 }
 
 // Update returns a builder for updating this ApiToken.
@@ -270,6 +298,11 @@ func (_m *ApiToken) String() string {
 	builder.WriteString(", ")
 	if v := _m.MembershipID; v != nil {
 		builder.WriteString("membership_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.OauthClientID; v != nil {
+		builder.WriteString("oauth_client_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')

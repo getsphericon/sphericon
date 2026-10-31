@@ -6,8 +6,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
-	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/validation"
 )
 
@@ -21,7 +19,7 @@ var ErrConnectionNotFound = validation.NotFound("apitokens: connection not found
 // a Connection, so every surface that lists them gets it.
 func Connections(ctx context.Context, s *ent.Scoped, caller *ent.Membership) ([]*ent.ApiToken, error) {
 	return s.ApiToken().Query().
-		Where(visibleTo(caller), apitoken.RevokedAtIsNil()).
+		Where(isConnection(), visibleTo(caller), apitoken.RevokedAtIsNil()).
 		WithMembership(func(q *ent.MembershipQuery) { q.WithUser() }).
 		Order(ent.Asc(apitoken.FieldID)).
 		All(ctx)
@@ -32,7 +30,7 @@ func Connections(ctx context.Context, s *ent.Scoped, caller *ent.Membership) ([]
 // Connection the caller may not see is ErrConnectionNotFound, as an unknown one is.
 func RevokeConnection(ctx context.Context, s *ent.Scoped, caller *ent.Membership, id int64) error {
 	n, err := s.ApiToken().Update().
-		Where(apitoken.ID(id), visibleTo(caller), apitoken.RevokedAtIsNil()).
+		Where(apitoken.ID(id), isConnection(), visibleTo(caller), apitoken.RevokedAtIsNil()).
 		SetRevokedAt(time.Now()).
 		Save(ctx)
 	if err != nil {
@@ -42,12 +40,4 @@ func RevokeConnection(ctx context.Context, s *ent.Scoped, caller *ent.Membership
 		return ErrConnectionNotFound
 	}
 	return nil
-}
-
-// visibleTo is the Connections caller may see and revoke.
-func visibleTo(caller *ent.Membership) predicate.ApiToken {
-	if accounts.Allows(caller.Role, accounts.PermMembersManage) {
-		return apitoken.MembershipIDNotNil()
-	}
-	return apitoken.MembershipID(caller.ID)
 }

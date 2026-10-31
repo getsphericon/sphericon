@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/oauthrefreshtoken"
@@ -114,6 +115,21 @@ func (_u *OAuthClientUpdate) AddRefreshTokens(v ...*OAuthRefreshToken) *OAuthCli
 	return _u.AddRefreshTokenIDs(ids...)
 }
 
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (_u *OAuthClientUpdate) AddConnectionIDs(ids ...int64) *OAuthClientUpdate {
+	_u.mutation.AddConnectionIDs(ids...)
+	return _u
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (_u *OAuthClientUpdate) AddConnections(v ...*ApiToken) *OAuthClientUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConnectionIDs(ids...)
+}
+
 // Mutation returns the OAuthClientMutation object of the builder.
 func (_u *OAuthClientUpdate) Mutation() *OAuthClientMutation {
 	return _u.mutation
@@ -159,6 +175,27 @@ func (_u *OAuthClientUpdate) RemoveRefreshTokens(v ...*OAuthRefreshToken) *OAuth
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRefreshTokenIDs(ids...)
+}
+
+// ClearConnections clears all "connections" edges to the ApiToken entity.
+func (_u *OAuthClientUpdate) ClearConnections() *OAuthClientUpdate {
+	_u.mutation.ClearConnections()
+	return _u
+}
+
+// RemoveConnectionIDs removes the "connections" edge to ApiToken entities by IDs.
+func (_u *OAuthClientUpdate) RemoveConnectionIDs(ids ...int64) *OAuthClientUpdate {
+	_u.mutation.RemoveConnectionIDs(ids...)
+	return _u
+}
+
+// RemoveConnections removes "connections" edges to ApiToken entities.
+func (_u *OAuthClientUpdate) RemoveConnections(v ...*ApiToken) *OAuthClientUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConnectionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -335,6 +372,51 @@ func (_u *OAuthClientUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ConnectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oauthclient.ConnectionsTable,
+			Columns: []string{oauthclient.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConnectionsIDs(); len(nodes) > 0 && !_u.mutation.ConnectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oauthclient.ConnectionsTable,
+			Columns: []string{oauthclient.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConnectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oauthclient.ConnectionsTable,
+			Columns: []string{oauthclient.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -439,6 +521,21 @@ func (_u *OAuthClientUpdateOne) AddRefreshTokens(v ...*OAuthRefreshToken) *OAuth
 	return _u.AddRefreshTokenIDs(ids...)
 }
 
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by IDs.
+func (_u *OAuthClientUpdateOne) AddConnectionIDs(ids ...int64) *OAuthClientUpdateOne {
+	_u.mutation.AddConnectionIDs(ids...)
+	return _u
+}
+
+// AddConnections adds the "connections" edges to the ApiToken entity.
+func (_u *OAuthClientUpdateOne) AddConnections(v ...*ApiToken) *OAuthClientUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConnectionIDs(ids...)
+}
+
 // Mutation returns the OAuthClientMutation object of the builder.
 func (_u *OAuthClientUpdateOne) Mutation() *OAuthClientMutation {
 	return _u.mutation
@@ -484,6 +581,27 @@ func (_u *OAuthClientUpdateOne) RemoveRefreshTokens(v ...*OAuthRefreshToken) *OA
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveRefreshTokenIDs(ids...)
+}
+
+// ClearConnections clears all "connections" edges to the ApiToken entity.
+func (_u *OAuthClientUpdateOne) ClearConnections() *OAuthClientUpdateOne {
+	_u.mutation.ClearConnections()
+	return _u
+}
+
+// RemoveConnectionIDs removes the "connections" edge to ApiToken entities by IDs.
+func (_u *OAuthClientUpdateOne) RemoveConnectionIDs(ids ...int64) *OAuthClientUpdateOne {
+	_u.mutation.RemoveConnectionIDs(ids...)
+	return _u
+}
+
+// RemoveConnections removes "connections" edges to ApiToken entities.
+func (_u *OAuthClientUpdateOne) RemoveConnections(v ...*ApiToken) *OAuthClientUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConnectionIDs(ids...)
 }
 
 // Where appends a list predicates to the OAuthClientUpdate builder.
@@ -683,6 +801,51 @@ func (_u *OAuthClientUpdateOne) sqlSave(ctx context.Context) (_node *OAuthClient
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oauthrefreshtoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConnectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oauthclient.ConnectionsTable,
+			Columns: []string{oauthclient.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConnectionsIDs(); len(nodes) > 0 && !_u.mutation.ConnectionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oauthclient.ConnectionsTable,
+			Columns: []string{oauthclient.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConnectionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oauthclient.ConnectionsTable,
+			Columns: []string{oauthclient.ConnectionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(apitoken.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

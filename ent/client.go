@@ -877,6 +877,22 @@ func (c *ApiTokenClient) QueryMembership(_m *ApiToken) *MembershipQuery {
 	return query
 }
 
+// QueryOauthClient queries the oauth_client edge of a ApiToken.
+func (c *ApiTokenClient) QueryOauthClient(_m *ApiToken) *OAuthClientQuery {
+	query := (&OAuthClientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apitoken.Table, apitoken.FieldID, id),
+			sqlgraph.To(oauthclient.Table, oauthclient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, apitoken.OauthClientTable, apitoken.OauthClientColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ApiTokenClient) Hooks() []Hook {
 	return c.hooks.ApiToken
@@ -5404,6 +5420,22 @@ func (c *OAuthClientClient) QueryRefreshTokens(_m *OAuthClient) *OAuthRefreshTok
 			sqlgraph.From(oauthclient.Table, oauthclient.FieldID, id),
 			sqlgraph.To(oauthrefreshtoken.Table, oauthrefreshtoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, oauthclient.RefreshTokensTable, oauthclient.RefreshTokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryConnections queries the connections edge of a OAuthClient.
+func (c *OAuthClientClient) QueryConnections(_m *OAuthClient) *ApiTokenQuery {
+	query := (&ApiTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oauthclient.Table, oauthclient.FieldID, id),
+			sqlgraph.To(apitoken.Table, apitoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, oauthclient.ConnectionsTable, oauthclient.ConnectionsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

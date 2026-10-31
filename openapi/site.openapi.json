@@ -52,6 +52,9 @@
       "name": "Site Connections"
     },
     {
+      "name": "Site Personal Tokens"
+    },
+    {
       "name": "Site Integrations"
     },
     {
@@ -8835,6 +8838,191 @@
         "x-required-permissions": ["second_factor:manage"]
       }
     },
+    "/workspaces/{workspaceId}/personal-token-scopes": {
+      "get": {
+        "operationId": "SitePersonalTokens_grantableScopes",
+        "description": "The scopes the caller's Role may grant to a Personal token in the Workspace, in the\nvocabulary's order: the mint form offers these and no other.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonalScope"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Personal Tokens"],
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/personal-tokens": {
+      "get": {
+        "operationId": "SitePersonalTokens_list",
+        "description": "List the active Personal tokens the caller may see: their own, or every member's with\nmembers:manage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SitePersonalTokenResourceParentKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SitePersonalTokenResource"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Personal Tokens"],
+        "x-required-permissions": []
+      },
+      "post": {
+        "operationId": "SitePersonalTokens_create",
+        "description": "Mint a Personal token of the caller's own; the full secret is returned once. Any member may\nmint one, with the scopes their Role may grant: another is refused (403 permission_required).\nA scope that is no `PersonalScope` (a token-only scope such as `tokens:write`) is not a request\nthis operation decodes (400).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SitePersonalTokenResourceParentKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The request has succeeded and a new resource has been created as a result.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteCreatePersonalTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "RFC 7807 forbidden response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RFC 7807 validation response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Personal Tokens"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteCreatePersonalTokenInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": []
+      }
+    },
+    "/workspaces/{workspaceId}/personal-tokens/{id}": {
+      "delete": {
+        "operationId": "SitePersonalTokens_delete",
+        "description": "Revoke a Personal token: the caller's own, or anyone's with members:manage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SitePersonalTokenResourceKey.workspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/SitePersonalTokenResourceKey.id"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Personal Tokens"],
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/revenue-settings": {
       "get": {
         "operationId": "SiteWorkspaces_getRevenueSettings",
@@ -12746,6 +12934,33 @@
           "$ref": "#/components/schemas/WorkspaceId"
         }
       },
+      "SitePersonalTokenResourceKey.id": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Unique identifier",
+        "schema": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
+      "SitePersonalTokenResourceKey.workspaceId": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
+      "SitePersonalTokenResourceParentKey": {
+        "name": "workspaceId",
+        "in": "path",
+        "required": true,
+        "description": "The Workspace id: its short opaque public address and the route key for nested\nworkspace resources (ADR 0043)",
+        "schema": {
+          "$ref": "#/components/schemas/WorkspaceId"
+        }
+      },
       "SiteRuleResourceKey.id": {
         "name": "id",
         "in": "path",
@@ -13879,6 +14094,40 @@
           "instance:manage"
         ],
         "description": "A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY \"Permission\"),\nwritten `resource:verb` like the API token scopes. A Role is a set of them; the table\nfrom Role to Permissions lives in the server, and the client reads a Membership's\nPermissions from its Workspace instead of computing them."
+      },
+      "PersonalScope": {
+        "type": "string",
+        "enum": [
+          "contacts:read",
+          "contacts:write",
+          "contacts:export",
+          "suppressions:write",
+          "events:read",
+          "events:write",
+          "segments:read",
+          "segments:write",
+          "broadcasts:read",
+          "broadcasts:write",
+          "automations:read",
+          "automations:write",
+          "enrollments:read",
+          "templates:read",
+          "templates:write",
+          "webhooks:read",
+          "webhooks:write",
+          "webhooks:regenerate",
+          "webhooks:test",
+          "custom_fields:read",
+          "sending_domains:read",
+          "integrations:read",
+          "emails:send",
+          "broadcasts:send",
+          "automations:publish",
+          "mcp:send",
+          "sending_domains:write",
+          "integrations:write"
+        ],
+        "description": "The scopes a User may give a credential of their own: a Connection by consenting, a Personal\ntoken by minting it (ADR 0061). The authorization server advertises these and no other, and the\nPersonal token form offers them. Each still needs the Permission its enum declares in\n`x-grant-permissions`; the token-only scopes are never a User's to give. Only /site names it,\nso it is declared here and not with the external vocabulary."
       },
       "ProblemCode": {
         "type": "string",
@@ -16338,6 +16587,45 @@
         },
         "description": "Invite creation result. `inviteUrl` is the one-time accept link — shown so the\nUI can offer \"copy link\"; an email is also sent best-effort."
       },
+      "SiteCreatePersonalTokenInput": {
+        "type": "object",
+        "required": ["name", "scopes"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonalScope"
+            },
+            "description": "Each one a scope the caller's Role may grant (`grantableScopes`)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "description": "Mint a Personal token of the caller's own"
+      },
+      "SiteCreatePersonalTokenResponse": {
+        "type": "object",
+        "required": ["token", "resource"],
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "resource": {
+            "$ref": "#/components/schemas/SitePersonalTokenResource"
+          }
+        },
+        "description": "Personal token creation result: `token` is the full secret, shown only once"
+      },
       "SiteCreateRuleInput": {
         "type": "object",
         "required": ["name", "triggerEvents"],
@@ -18356,6 +18644,83 @@
           }
         },
         "description": "A Sign-in provider's sign-up held for the Sign-up items (ADR 0062): who the provider proved,\nfor the screen that asks the items. No User exists yet."
+      },
+      "SitePersonalTokenResource": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "scopes",
+          "userId",
+          "userName",
+          "userEmail",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable label"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "Public prefix (the secret is never returned after creation)"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonalScope"
+            },
+            "description": "Granted scopes"
+          },
+          "expiresAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "Expiry, if set"
+          },
+          "userId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The User the Personal token belongs to"
+          },
+          "userName": {
+            "type": "string",
+            "description": "That User's display name"
+          },
+          "userEmail": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "That User's email"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "Creation timestamp"
+          }
+        },
+        "description": "A Personal token: a User's own bearer credential for the external API in this Workspace, for\nthe scripts and tools they run (ADR 0061: a Connection without the application). It belongs to\nthat User's Membership, can do no more than the User's current Role allows and ends with the\nMembership. Its secret is shown only once, at creation. Personal tokens are neither the\nWorkspace's API tokens nor Connections and are listed with neither."
       },
       "SitePresetResource": {
         "type": "object",

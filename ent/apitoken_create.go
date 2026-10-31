@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -138,6 +139,20 @@ func (_c *ApiTokenCreate) SetNillableMembershipID(v *int64) *ApiTokenCreate {
 	return _c
 }
 
+// SetOauthClientID sets the "oauth_client_id" field.
+func (_c *ApiTokenCreate) SetOauthClientID(v int64) *ApiTokenCreate {
+	_c.mutation.SetOauthClientID(v)
+	return _c
+}
+
+// SetNillableOauthClientID sets the "oauth_client_id" field if the given value is not nil.
+func (_c *ApiTokenCreate) SetNillableOauthClientID(v *int64) *ApiTokenCreate {
+	if v != nil {
+		_c.SetOauthClientID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ApiTokenCreate) SetID(v int64) *ApiTokenCreate {
 	_c.mutation.SetID(v)
@@ -152,6 +167,11 @@ func (_c *ApiTokenCreate) SetWorkspace(v *Workspace) *ApiTokenCreate {
 // SetMembership sets the "membership" edge to the Membership entity.
 func (_c *ApiTokenCreate) SetMembership(v *Membership) *ApiTokenCreate {
 	return _c.SetMembershipID(v.ID)
+}
+
+// SetOauthClient sets the "oauth_client" edge to the OAuthClient entity.
+func (_c *ApiTokenCreate) SetOauthClient(v *OAuthClient) *ApiTokenCreate {
+	return _c.SetOauthClientID(v.ID)
 }
 
 // Mutation returns the ApiTokenMutation object of the builder.
@@ -347,6 +367,23 @@ func (_c *ApiTokenCreate) createSpec() (*ApiToken, *sqlgraph.CreateSpec) {
 		_node.MembershipID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.OauthClientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   apitoken.OauthClientTable,
+			Columns: []string{apitoken.OauthClientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oauthclient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.OauthClientID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -538,6 +575,9 @@ func (u *ApiTokenUpsertOne) UpdateNewValues() *ApiTokenUpsertOne {
 		}
 		if _, exists := u.create.mutation.MembershipID(); exists {
 			s.SetIgnore(apitoken.FieldMembershipID)
+		}
+		if _, exists := u.create.mutation.OauthClientID(); exists {
+			s.SetIgnore(apitoken.FieldOauthClientID)
 		}
 	}))
 	return u
@@ -893,6 +933,9 @@ func (u *ApiTokenUpsertBulk) UpdateNewValues() *ApiTokenUpsertBulk {
 			}
 			if _, exists := b.mutation.MembershipID(); exists {
 				s.SetIgnore(apitoken.FieldMembershipID)
+			}
+			if _, exists := b.mutation.OauthClientID(); exists {
+				s.SetIgnore(apitoken.FieldOauthClientID)
 			}
 		}
 	}))

@@ -497,6 +497,44 @@ func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site
 	}
 	return pSiteapiSitePendingSignup
 }
+func (c *ConverterImpl) PersonalTokenToResource(source *ent.ApiToken) site.SitePersonalTokenResource {
+	var siteapiSitePersonalTokenResource site.SitePersonalTokenResource
+	if source != nil {
+		siteapiSitePersonalTokenResource.ID = site.EntityId((*source).ID)
+		siteapiSitePersonalTokenResource.Name = (*source).Name
+		siteapiSitePersonalTokenResource.Prefix = (*source).Prefix
+		if (*source).Scopes != nil {
+			siteapiSitePersonalTokenResource.Scopes = make([]site.PersonalScope, len((*source).Scopes))
+			for i := 0; i < len((*source).Scopes); i++ {
+				siteapiSitePersonalTokenResource.Scopes[i] = site.PersonalScope((*source).Scopes[i])
+			}
+		}
+		siteapiSitePersonalTokenResource.ExpiresAt = optNilTimestamp((*source).ExpiresAt)
+		var pInt64 *int64
+		if (*source).Edges.Membership != nil {
+			pInt64 = &(*source).Edges.Membership.UserID
+		}
+		if pInt64 != nil {
+			siteapiSitePersonalTokenResource.UserId = site.EntityId(*pInt64)
+		}
+		var pString *string
+		if (*source).Edges.Membership != nil && (*source).Edges.Membership.Edges.User != nil {
+			pString = &(*source).Edges.Membership.Edges.User.Name
+		}
+		if pString != nil {
+			siteapiSitePersonalTokenResource.UserName = *pString
+		}
+		var pString2 *string
+		if (*source).Edges.Membership != nil && (*source).Edges.Membership.Edges.User != nil {
+			pString2 = &(*source).Edges.Membership.Edges.User.Email
+		}
+		if pString2 != nil {
+			siteapiSitePersonalTokenResource.UserEmail = site.EmailAddress(*pString2)
+		}
+		siteapiSitePersonalTokenResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSitePersonalTokenResource
+}
 func (c *ConverterImpl) RevenueSettingsToResource(source *ent.Workspace) site.SiteRevenueSettingsResource {
 	var siteapiSiteRevenueSettingsResource site.SiteRevenueSettingsResource
 	if source != nil {

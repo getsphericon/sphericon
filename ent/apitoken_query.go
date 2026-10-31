@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
@@ -21,13 +22,14 @@ import (
 // ApiTokenQuery is the builder for querying ApiToken entities.
 type ApiTokenQuery struct {
 	config
-	ctx            *QueryContext
-	order          []apitoken.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.ApiToken
-	withWorkspace  *WorkspaceQuery
-	withMembership *MembershipQuery
-	modifiers      []func(*sql.Selector)
+	ctx             *QueryContext
+	order           []apitoken.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.ApiToken
+	withWorkspace   *WorkspaceQuery
+	withMembership  *MembershipQuery
+	withOauthClient *OAuthClientQuery
+	modifiers       []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *ApiTokenQuery) QueryMembership() *MembershipQuery {
 			sqlgraph.From(apitoken.Table, apitoken.FieldID, selector),
 			sqlgraph.To(membership.Table, membership.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, apitoken.MembershipTable, apitoken.MembershipColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOauthClient chains the current query on the "oauth_client" edge.
+func (_q *ApiTokenQuery) QueryOauthClient() *OAuthClientQuery {
+	query := (&OAuthClientClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(apitoken.Table, apitoken.FieldID, selector),
+			sqlgraph.To(oauthclient.Table, oauthclient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, apitoken.OauthClientTable, apitoken.OauthClientColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (_q *ApiTokenQuery) Clone() *ApiTokenQuery {
 		return nil
 	}
 	return &ApiTokenQuery{
-		config:         _q.config,
-		ctx:            _q.ctx.Clone(),
-		order:          append([]apitoken.OrderOption{}, _q.order...),
-		inters:         append([]Interceptor{}, _q.inters...),
-		predicates:     append([]predicate.ApiToken{}, _q.predicates...),
-		withWorkspace:  _q.withWorkspace.Clone(),
-		withMembership: _q.withMembership.Clone(),
+		config:          _q.config,
+		ctx:             _q.ctx.Clone(),
+		order:           append([]apitoken.OrderOption{}, _q.order...),
+		inters:          append([]Interceptor{}, _q.inters...),
+		predicates:      append([]predicate.ApiToken{}, _q.predicates...),
+		withWorkspace:   _q.withWorkspace.Clone(),
+		withMembership:  _q.withMembership.Clone(),
+		withOauthClient: _q.withOauthClient.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -328,6 +353,17 @@ func (_q *ApiTokenQuery) WithMembership(opts ...func(*MembershipQuery)) *ApiToke
 		opt(query)
 	}
 	_q.withMembership = query
+	return _q
+}
+
+// WithOauthClient tells the query-builder to eager-load the nodes that are connected to
+// the "oauth_client" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ApiTokenQuery) WithOauthClient(opts ...func(*OAuthClientQuery)) *ApiTokenQuery {
+	query := (&OAuthClientClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOauthClient = query
 	return _q
 }
 
@@ -409,9 +445,10 @@ func (_q *ApiTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Api
 	var (
 		nodes       = []*ApiToken{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withWorkspace != nil,
 			_q.withMembership != nil,
+			_q.withOauthClient != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -444,6 +481,12 @@ func (_q *ApiTokenQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Api
 	if query := _q.withMembership; query != nil {
 		if err := _q.loadMembership(ctx, query, nodes, nil,
 			func(n *ApiToken, e *Membership) { n.Edges.Membership = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOauthClient; query != nil {
+		if err := _q.loadOauthClient(ctx, query, nodes, nil,
+			func(n *ApiToken, e *OAuthClient) { n.Edges.OauthClient = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -511,6 +554,38 @@ func (_q *ApiTokenQuery) loadMembership(ctx context.Context, query *MembershipQu
 	}
 	return nil
 }
+func (_q *ApiTokenQuery) loadOauthClient(ctx context.Context, query *OAuthClientQuery, nodes []*ApiToken, init func(*ApiToken), assign func(*ApiToken, *OAuthClient)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*ApiToken)
+	for i := range nodes {
+		if nodes[i].OauthClientID == nil {
+			continue
+		}
+		fk := *nodes[i].OauthClientID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(oauthclient.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "oauth_client_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *ApiTokenQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -545,6 +620,9 @@ func (_q *ApiTokenQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withMembership != nil {
 			_spec.Node.AddColumnOnce(apitoken.FieldMembershipID)
+		}
+		if _q.withOauthClient != nil {
+			_spec.Node.AddColumnOnce(apitoken.FieldOauthClientID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

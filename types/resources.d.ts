@@ -1341,7 +1341,6 @@ export default interface Resources {
         "revokeError": "Failed to revoke the connection",
         "revokeLabel": "Revoke {{name}}",
         "scopes": "Permissions",
-        "scopesCount": "{{count}} scope" | "{{count}} scopes",
         "title": "Connected applications",
         "user": "Member"
       },
@@ -1521,6 +1520,28 @@ export default interface Resources {
         "webhooks": "Webhooks"
       },
       "nodeSdkLink": "Node SDK (@sphericon/node)",
+      "personalTokens": {
+        "create": "Create personal token",
+        "createError": "Failed to create the personal token",
+        "created": "Created",
+        "description": "Your own tokens for the scripts and tools you run. Each acts as you and can do no more than your role allows; it ends when you leave the workspace.",
+        "descriptionManager": "Members' own tokens for the scripts and tools they run. Each acts as its member and can do no more than that member's role allows.",
+        "empty": "No personal tokens",
+        "expires": "Expires",
+        "inDays": "In {{count}} day" | "In {{count}} days",
+        "loadError": "Failed to load personal tokens",
+        "nameLabel": "Token name",
+        "never": "Never",
+        "revoke": "Revoke",
+        "revokeConfirmDescription": "Scripts using this token lose access at once.",
+        "revokeConfirmTitle": "Revoke this personal token?",
+        "revokeError": "Failed to revoke the personal token",
+        "revokeLabel": "Revoke {{name}}",
+        "scopes": "Scopes",
+        "secretNotice": "Copy this token now — it won't be shown again.",
+        "title": "Personal tokens",
+        "user": "Member"
+      },
       "postalAddressDescription": "Shown in the footer of every marketing email. US law (CAN-SPAM) requires a valid physical postal address.",
       "postalAddressLabel": "Postal address",
       "postalAddressPlaceholder": "Acme Inc, 123 Main St, Springfield, IL 62704, USA",
@@ -1558,6 +1579,7 @@ export default interface Resources {
         "windowLabel": "Attribution window (days)"
       },
       "saved": "Workspace updated",
+      "scopesCount": "{{count}} scope" | "{{count}} scopes",
       "sendEventsDescription": "The snippet above tracks page views in the browser. To send events yourself, use an SDK or the API.",
       "sendEventsGuideLink": "How to send events",
       "sendEventsTitle": "Send events from your code",
@@ -1630,7 +1652,6 @@ export default interface Resources {
         "revokeConfirmTitle": "Revoke token?",
         "revokeError": "Failed to revoke token",
         "revoked": "Revoked",
-        "scopesCount": "{{count}} scope" | "{{count}} scopes",
         "scopesLabel": "Scopes",
         "secretNotice": "Copy this token now — it won't be shown again."
       },

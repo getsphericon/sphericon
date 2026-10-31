@@ -36,10 +36,14 @@ const (
 	FieldLastUsedAt = "last_used_at"
 	// FieldMembershipID holds the string denoting the membership_id field in the database.
 	FieldMembershipID = "membership_id"
+	// FieldOauthClientID holds the string denoting the oauth_client_id field in the database.
+	FieldOauthClientID = "oauth_client_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeMembership holds the string denoting the membership edge name in mutations.
 	EdgeMembership = "membership"
+	// EdgeOauthClient holds the string denoting the oauth_client edge name in mutations.
+	EdgeOauthClient = "oauth_client"
 	// Table holds the table name of the apitoken in the database.
 	Table = "api_tokens"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -56,6 +60,13 @@ const (
 	MembershipInverseTable = "memberships"
 	// MembershipColumn is the table column denoting the membership relation/edge.
 	MembershipColumn = "membership_id"
+	// OauthClientTable is the table that holds the oauth_client relation/edge.
+	OauthClientTable = "api_tokens"
+	// OauthClientInverseTable is the table name for the OAuthClient entity.
+	// It exists in this package in order to avoid circular dependency with the "oauthclient" package.
+	OauthClientInverseTable = "oauth_clients"
+	// OauthClientColumn is the table column denoting the oauth_client relation/edge.
+	OauthClientColumn = "oauth_client_id"
 )
 
 // Columns holds all SQL columns for apitoken fields.
@@ -72,6 +83,7 @@ var Columns = []string{
 	FieldRevokedAt,
 	FieldLastUsedAt,
 	FieldMembershipID,
+	FieldOauthClientID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -159,6 +171,11 @@ func ByMembershipID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMembershipID, opts...).ToFunc()
 }
 
+// ByOauthClientID orders the results by the oauth_client_id field.
+func ByOauthClientID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOauthClientID, opts...).ToFunc()
+}
+
 // ByWorkspaceField orders the results by workspace field.
 func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -170,6 +187,13 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByMembershipField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newMembershipStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByOauthClientField orders the results by oauth_client field.
+func ByOauthClientField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOauthClientStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newWorkspaceStep() *sqlgraph.Step {
@@ -184,5 +208,12 @@ func newMembershipStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MembershipInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, MembershipTable, MembershipColumn),
+	)
+}
+func newOauthClientStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OauthClientInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, OauthClientTable, OauthClientColumn),
 	)
 }

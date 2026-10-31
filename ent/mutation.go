@@ -158,27 +158,29 @@ const (
 // ApiTokenMutation represents an operation that mutates the ApiToken nodes in the graph.
 type ApiTokenMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	created_at        *time.Time
-	updated_at        *time.Time
-	name              *string
-	prefix            *string
-	secret_hash       *string
-	scopes            *[]string
-	appendscopes      []string
-	expires_at        *time.Time
-	revoked_at        *time.Time
-	last_used_at      *time.Time
-	clearedFields     map[string]struct{}
-	workspace         *int64
-	clearedworkspace  bool
-	membership        *int64
-	clearedmembership bool
-	done              bool
-	oldValue          func(context.Context) (*ApiToken, error)
-	predicates        []predicate.ApiToken
+	op                  Op
+	typ                 string
+	id                  *int64
+	created_at          *time.Time
+	updated_at          *time.Time
+	name                *string
+	prefix              *string
+	secret_hash         *string
+	scopes              *[]string
+	appendscopes        []string
+	expires_at          *time.Time
+	revoked_at          *time.Time
+	last_used_at        *time.Time
+	clearedFields       map[string]struct{}
+	workspace           *int64
+	clearedworkspace    bool
+	membership          *int64
+	clearedmembership   bool
+	oauth_client        *int64
+	clearedoauth_client bool
+	done                bool
+	oldValue            func(context.Context) (*ApiToken, error)
+	predicates          []predicate.ApiToken
 }
 
 var _ ent.Mutation = (*ApiTokenMutation)(nil)
@@ -748,6 +750,55 @@ func (m *ApiTokenMutation) ResetMembershipID() {
 	delete(m.clearedFields, apitoken.FieldMembershipID)
 }
 
+// SetOauthClientID sets the "oauth_client_id" field.
+func (m *ApiTokenMutation) SetOauthClientID(i int64) {
+	m.oauth_client = &i
+}
+
+// OauthClientID returns the value of the "oauth_client_id" field in the mutation.
+func (m *ApiTokenMutation) OauthClientID() (r int64, exists bool) {
+	v := m.oauth_client
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOauthClientID returns the old "oauth_client_id" field's value of the ApiToken entity.
+// If the ApiToken object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ApiTokenMutation) OldOauthClientID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOauthClientID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOauthClientID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOauthClientID: %w", err)
+	}
+	return oldValue.OauthClientID, nil
+}
+
+// ClearOauthClientID clears the value of the "oauth_client_id" field.
+func (m *ApiTokenMutation) ClearOauthClientID() {
+	m.oauth_client = nil
+	m.clearedFields[apitoken.FieldOauthClientID] = struct{}{}
+}
+
+// OauthClientIDCleared returns if the "oauth_client_id" field was cleared in this mutation.
+func (m *ApiTokenMutation) OauthClientIDCleared() bool {
+	_, ok := m.clearedFields[apitoken.FieldOauthClientID]
+	return ok
+}
+
+// ResetOauthClientID resets all changes to the "oauth_client_id" field.
+func (m *ApiTokenMutation) ResetOauthClientID() {
+	m.oauth_client = nil
+	delete(m.clearedFields, apitoken.FieldOauthClientID)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *ApiTokenMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -802,6 +853,33 @@ func (m *ApiTokenMutation) ResetMembership() {
 	m.clearedmembership = false
 }
 
+// ClearOauthClient clears the "oauth_client" edge to the OAuthClient entity.
+func (m *ApiTokenMutation) ClearOauthClient() {
+	m.clearedoauth_client = true
+	m.clearedFields[apitoken.FieldOauthClientID] = struct{}{}
+}
+
+// OauthClientCleared reports if the "oauth_client" edge to the OAuthClient entity was cleared.
+func (m *ApiTokenMutation) OauthClientCleared() bool {
+	return m.OauthClientIDCleared() || m.clearedoauth_client
+}
+
+// OauthClientIDs returns the "oauth_client" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OauthClientID instead. It exists only for internal usage by the builders.
+func (m *ApiTokenMutation) OauthClientIDs() (ids []int64) {
+	if id := m.oauth_client; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOauthClient resets all changes to the "oauth_client" edge.
+func (m *ApiTokenMutation) ResetOauthClient() {
+	m.oauth_client = nil
+	m.clearedoauth_client = false
+}
+
 // Where appends a list predicates to the ApiTokenMutation builder.
 func (m *ApiTokenMutation) Where(ps ...predicate.ApiToken) {
 	m.predicates = append(m.predicates, ps...)
@@ -836,7 +914,7 @@ func (m *ApiTokenMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ApiTokenMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, apitoken.FieldCreatedAt)
 	}
@@ -870,6 +948,9 @@ func (m *ApiTokenMutation) Fields() []string {
 	if m.membership != nil {
 		fields = append(fields, apitoken.FieldMembershipID)
 	}
+	if m.oauth_client != nil {
+		fields = append(fields, apitoken.FieldOauthClientID)
+	}
 	return fields
 }
 
@@ -900,6 +981,8 @@ func (m *ApiTokenMutation) Field(name string) (ent.Value, bool) {
 		return m.LastUsedAt()
 	case apitoken.FieldMembershipID:
 		return m.MembershipID()
+	case apitoken.FieldOauthClientID:
+		return m.OauthClientID()
 	}
 	return nil, false
 }
@@ -931,6 +1014,8 @@ func (m *ApiTokenMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldLastUsedAt(ctx)
 	case apitoken.FieldMembershipID:
 		return m.OldMembershipID(ctx)
+	case apitoken.FieldOauthClientID:
+		return m.OldOauthClientID(ctx)
 	}
 	return nil, fmt.Errorf("unknown ApiToken field %s", name)
 }
@@ -1017,6 +1102,13 @@ func (m *ApiTokenMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMembershipID(v)
 		return nil
+	case apitoken.FieldOauthClientID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOauthClientID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ApiToken field %s", name)
 }
@@ -1062,6 +1154,9 @@ func (m *ApiTokenMutation) ClearedFields() []string {
 	if m.FieldCleared(apitoken.FieldMembershipID) {
 		fields = append(fields, apitoken.FieldMembershipID)
 	}
+	if m.FieldCleared(apitoken.FieldOauthClientID) {
+		fields = append(fields, apitoken.FieldOauthClientID)
+	}
 	return fields
 }
 
@@ -1087,6 +1182,9 @@ func (m *ApiTokenMutation) ClearField(name string) error {
 		return nil
 	case apitoken.FieldMembershipID:
 		m.ClearMembershipID()
+		return nil
+	case apitoken.FieldOauthClientID:
+		m.ClearOauthClientID()
 		return nil
 	}
 	return fmt.Errorf("unknown ApiToken nullable field %s", name)
@@ -1129,18 +1227,24 @@ func (m *ApiTokenMutation) ResetField(name string) error {
 	case apitoken.FieldMembershipID:
 		m.ResetMembershipID()
 		return nil
+	case apitoken.FieldOauthClientID:
+		m.ResetOauthClientID()
+		return nil
 	}
 	return fmt.Errorf("unknown ApiToken field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ApiTokenMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.workspace != nil {
 		edges = append(edges, apitoken.EdgeWorkspace)
 	}
 	if m.membership != nil {
 		edges = append(edges, apitoken.EdgeMembership)
+	}
+	if m.oauth_client != nil {
+		edges = append(edges, apitoken.EdgeOauthClient)
 	}
 	return edges
 }
@@ -1157,13 +1261,17 @@ func (m *ApiTokenMutation) AddedIDs(name string) []ent.Value {
 		if id := m.membership; id != nil {
 			return []ent.Value{*id}
 		}
+	case apitoken.EdgeOauthClient:
+		if id := m.oauth_client; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ApiTokenMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -1175,12 +1283,15 @@ func (m *ApiTokenMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ApiTokenMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedworkspace {
 		edges = append(edges, apitoken.EdgeWorkspace)
 	}
 	if m.clearedmembership {
 		edges = append(edges, apitoken.EdgeMembership)
+	}
+	if m.clearedoauth_client {
+		edges = append(edges, apitoken.EdgeOauthClient)
 	}
 	return edges
 }
@@ -1193,6 +1304,8 @@ func (m *ApiTokenMutation) EdgeCleared(name string) bool {
 		return m.clearedworkspace
 	case apitoken.EdgeMembership:
 		return m.clearedmembership
+	case apitoken.EdgeOauthClient:
+		return m.clearedoauth_client
 	}
 	return false
 }
@@ -1207,6 +1320,9 @@ func (m *ApiTokenMutation) ClearEdge(name string) error {
 	case apitoken.EdgeMembership:
 		m.ClearMembership()
 		return nil
+	case apitoken.EdgeOauthClient:
+		m.ClearOauthClient()
+		return nil
 	}
 	return fmt.Errorf("unknown ApiToken unique edge %s", name)
 }
@@ -1220,6 +1336,9 @@ func (m *ApiTokenMutation) ResetEdge(name string) error {
 		return nil
 	case apitoken.EdgeMembership:
 		m.ResetMembership()
+		return nil
+	case apitoken.EdgeOauthClient:
+		m.ResetOauthClient()
 		return nil
 	}
 	return fmt.Errorf("unknown ApiToken edge %s", name)
@@ -27458,6 +27577,9 @@ type OAuthClientMutation struct {
 	refresh_tokens        map[int64]struct{}
 	removedrefresh_tokens map[int64]struct{}
 	clearedrefresh_tokens bool
+	connections           map[int64]struct{}
+	removedconnections    map[int64]struct{}
+	clearedconnections    bool
 	done                  bool
 	oldValue              func(context.Context) (*OAuthClient, error)
 	predicates            []predicate.OAuthClient
@@ -27919,6 +28041,60 @@ func (m *OAuthClientMutation) ResetRefreshTokens() {
 	m.removedrefresh_tokens = nil
 }
 
+// AddConnectionIDs adds the "connections" edge to the ApiToken entity by ids.
+func (m *OAuthClientMutation) AddConnectionIDs(ids ...int64) {
+	if m.connections == nil {
+		m.connections = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.connections[ids[i]] = struct{}{}
+	}
+}
+
+// ClearConnections clears the "connections" edge to the ApiToken entity.
+func (m *OAuthClientMutation) ClearConnections() {
+	m.clearedconnections = true
+}
+
+// ConnectionsCleared reports if the "connections" edge to the ApiToken entity was cleared.
+func (m *OAuthClientMutation) ConnectionsCleared() bool {
+	return m.clearedconnections
+}
+
+// RemoveConnectionIDs removes the "connections" edge to the ApiToken entity by IDs.
+func (m *OAuthClientMutation) RemoveConnectionIDs(ids ...int64) {
+	if m.removedconnections == nil {
+		m.removedconnections = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.connections, ids[i])
+		m.removedconnections[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedConnections returns the removed IDs of the "connections" edge to the ApiToken entity.
+func (m *OAuthClientMutation) RemovedConnectionsIDs() (ids []int64) {
+	for id := range m.removedconnections {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ConnectionsIDs returns the "connections" edge IDs in the mutation.
+func (m *OAuthClientMutation) ConnectionsIDs() (ids []int64) {
+	for id := range m.connections {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetConnections resets all changes to the "connections" edge.
+func (m *OAuthClientMutation) ResetConnections() {
+	m.connections = nil
+	m.clearedconnections = false
+	m.removedconnections = nil
+}
+
 // Where appends a list predicates to the OAuthClientMutation builder.
 func (m *OAuthClientMutation) Where(ps ...predicate.OAuthClient) {
 	m.predicates = append(m.predicates, ps...)
@@ -28146,12 +28322,15 @@ func (m *OAuthClientMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OAuthClientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.codes != nil {
 		edges = append(edges, oauthclient.EdgeCodes)
 	}
 	if m.refresh_tokens != nil {
 		edges = append(edges, oauthclient.EdgeRefreshTokens)
+	}
+	if m.connections != nil {
+		edges = append(edges, oauthclient.EdgeConnections)
 	}
 	return edges
 }
@@ -28172,18 +28351,27 @@ func (m *OAuthClientMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case oauthclient.EdgeConnections:
+		ids := make([]ent.Value, 0, len(m.connections))
+		for id := range m.connections {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OAuthClientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedcodes != nil {
 		edges = append(edges, oauthclient.EdgeCodes)
 	}
 	if m.removedrefresh_tokens != nil {
 		edges = append(edges, oauthclient.EdgeRefreshTokens)
+	}
+	if m.removedconnections != nil {
+		edges = append(edges, oauthclient.EdgeConnections)
 	}
 	return edges
 }
@@ -28204,18 +28392,27 @@ func (m *OAuthClientMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case oauthclient.EdgeConnections:
+		ids := make([]ent.Value, 0, len(m.removedconnections))
+		for id := range m.removedconnections {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OAuthClientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedcodes {
 		edges = append(edges, oauthclient.EdgeCodes)
 	}
 	if m.clearedrefresh_tokens {
 		edges = append(edges, oauthclient.EdgeRefreshTokens)
+	}
+	if m.clearedconnections {
+		edges = append(edges, oauthclient.EdgeConnections)
 	}
 	return edges
 }
@@ -28228,6 +28425,8 @@ func (m *OAuthClientMutation) EdgeCleared(name string) bool {
 		return m.clearedcodes
 	case oauthclient.EdgeRefreshTokens:
 		return m.clearedrefresh_tokens
+	case oauthclient.EdgeConnections:
+		return m.clearedconnections
 	}
 	return false
 }
@@ -28249,6 +28448,9 @@ func (m *OAuthClientMutation) ResetEdge(name string) error {
 		return nil
 	case oauthclient.EdgeRefreshTokens:
 		m.ResetRefreshTokens()
+		return nil
+	case oauthclient.EdgeConnections:
+		m.ResetConnections()
 		return nil
 	}
 	return fmt.Errorf("unknown OAuthClient edge %s", name)

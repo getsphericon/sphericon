@@ -58,8 +58,8 @@ func (Membership) Edges() []ent.Edge {
 			Field("user_id").
 			Required().
 			Unique(),
-		// A Connection, and the authorization code that mints one, ends with the Membership it
-		// was approved under (ADR 0061).
+		// A Connection, a Personal token and the authorization code that mints a Connection end
+		// with the Membership they belong to (ADR 0061).
 		edge.To("connections", ApiToken.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("oauth_codes", OAuthCode.Type).

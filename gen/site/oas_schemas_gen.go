@@ -5977,6 +5977,235 @@ func (s *Permission) UnmarshalText(data []byte) error {
 	}
 }
 
+// The scopes a User may give a credential of their own: a Connection by consenting, a Personal token
+// by minting it (ADR 0061). The authorization server advertises these and no other, and the Personal
+// token form offers them. Each still needs the Permission its enum declares in `x-grant-permissions`;
+// the token-only scopes are never a User's to give. Only /site names it, so it is declared here and
+// not with the external vocabulary.
+// Ref: #/components/schemas/PersonalScope
+type PersonalScope string
+
+const (
+	PersonalScopeContactsRead        PersonalScope = "contacts:read"
+	PersonalScopeContactsWrite       PersonalScope = "contacts:write"
+	PersonalScopeContactsExport      PersonalScope = "contacts:export"
+	PersonalScopeSuppressionsWrite   PersonalScope = "suppressions:write"
+	PersonalScopeEventsRead          PersonalScope = "events:read"
+	PersonalScopeEventsWrite         PersonalScope = "events:write"
+	PersonalScopeSegmentsRead        PersonalScope = "segments:read"
+	PersonalScopeSegmentsWrite       PersonalScope = "segments:write"
+	PersonalScopeBroadcastsRead      PersonalScope = "broadcasts:read"
+	PersonalScopeBroadcastsWrite     PersonalScope = "broadcasts:write"
+	PersonalScopeAutomationsRead     PersonalScope = "automations:read"
+	PersonalScopeAutomationsWrite    PersonalScope = "automations:write"
+	PersonalScopeEnrollmentsRead     PersonalScope = "enrollments:read"
+	PersonalScopeTemplatesRead       PersonalScope = "templates:read"
+	PersonalScopeTemplatesWrite      PersonalScope = "templates:write"
+	PersonalScopeWebhooksRead        PersonalScope = "webhooks:read"
+	PersonalScopeWebhooksWrite       PersonalScope = "webhooks:write"
+	PersonalScopeWebhooksRegenerate  PersonalScope = "webhooks:regenerate"
+	PersonalScopeWebhooksTest        PersonalScope = "webhooks:test"
+	PersonalScopeCustomFieldsRead    PersonalScope = "custom_fields:read"
+	PersonalScopeSendingDomainsRead  PersonalScope = "sending_domains:read"
+	PersonalScopeIntegrationsRead    PersonalScope = "integrations:read"
+	PersonalScopeEmailsSend          PersonalScope = "emails:send"
+	PersonalScopeBroadcastsSend      PersonalScope = "broadcasts:send"
+	PersonalScopeAutomationsPublish  PersonalScope = "automations:publish"
+	PersonalScopeMcpSend             PersonalScope = "mcp:send"
+	PersonalScopeSendingDomainsWrite PersonalScope = "sending_domains:write"
+	PersonalScopeIntegrationsWrite   PersonalScope = "integrations:write"
+)
+
+// AllValues returns all PersonalScope values.
+func (PersonalScope) AllValues() []PersonalScope {
+	return []PersonalScope{
+		PersonalScopeContactsRead,
+		PersonalScopeContactsWrite,
+		PersonalScopeContactsExport,
+		PersonalScopeSuppressionsWrite,
+		PersonalScopeEventsRead,
+		PersonalScopeEventsWrite,
+		PersonalScopeSegmentsRead,
+		PersonalScopeSegmentsWrite,
+		PersonalScopeBroadcastsRead,
+		PersonalScopeBroadcastsWrite,
+		PersonalScopeAutomationsRead,
+		PersonalScopeAutomationsWrite,
+		PersonalScopeEnrollmentsRead,
+		PersonalScopeTemplatesRead,
+		PersonalScopeTemplatesWrite,
+		PersonalScopeWebhooksRead,
+		PersonalScopeWebhooksWrite,
+		PersonalScopeWebhooksRegenerate,
+		PersonalScopeWebhooksTest,
+		PersonalScopeCustomFieldsRead,
+		PersonalScopeSendingDomainsRead,
+		PersonalScopeIntegrationsRead,
+		PersonalScopeEmailsSend,
+		PersonalScopeBroadcastsSend,
+		PersonalScopeAutomationsPublish,
+		PersonalScopeMcpSend,
+		PersonalScopeSendingDomainsWrite,
+		PersonalScopeIntegrationsWrite,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s PersonalScope) MarshalText() ([]byte, error) {
+	switch s {
+	case PersonalScopeContactsRead:
+		return []byte(s), nil
+	case PersonalScopeContactsWrite:
+		return []byte(s), nil
+	case PersonalScopeContactsExport:
+		return []byte(s), nil
+	case PersonalScopeSuppressionsWrite:
+		return []byte(s), nil
+	case PersonalScopeEventsRead:
+		return []byte(s), nil
+	case PersonalScopeEventsWrite:
+		return []byte(s), nil
+	case PersonalScopeSegmentsRead:
+		return []byte(s), nil
+	case PersonalScopeSegmentsWrite:
+		return []byte(s), nil
+	case PersonalScopeBroadcastsRead:
+		return []byte(s), nil
+	case PersonalScopeBroadcastsWrite:
+		return []byte(s), nil
+	case PersonalScopeAutomationsRead:
+		return []byte(s), nil
+	case PersonalScopeAutomationsWrite:
+		return []byte(s), nil
+	case PersonalScopeEnrollmentsRead:
+		return []byte(s), nil
+	case PersonalScopeTemplatesRead:
+		return []byte(s), nil
+	case PersonalScopeTemplatesWrite:
+		return []byte(s), nil
+	case PersonalScopeWebhooksRead:
+		return []byte(s), nil
+	case PersonalScopeWebhooksWrite:
+		return []byte(s), nil
+	case PersonalScopeWebhooksRegenerate:
+		return []byte(s), nil
+	case PersonalScopeWebhooksTest:
+		return []byte(s), nil
+	case PersonalScopeCustomFieldsRead:
+		return []byte(s), nil
+	case PersonalScopeSendingDomainsRead:
+		return []byte(s), nil
+	case PersonalScopeIntegrationsRead:
+		return []byte(s), nil
+	case PersonalScopeEmailsSend:
+		return []byte(s), nil
+	case PersonalScopeBroadcastsSend:
+		return []byte(s), nil
+	case PersonalScopeAutomationsPublish:
+		return []byte(s), nil
+	case PersonalScopeMcpSend:
+		return []byte(s), nil
+	case PersonalScopeSendingDomainsWrite:
+		return []byte(s), nil
+	case PersonalScopeIntegrationsWrite:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *PersonalScope) UnmarshalText(data []byte) error {
+	switch PersonalScope(data) {
+	case PersonalScopeContactsRead:
+		*s = PersonalScopeContactsRead
+		return nil
+	case PersonalScopeContactsWrite:
+		*s = PersonalScopeContactsWrite
+		return nil
+	case PersonalScopeContactsExport:
+		*s = PersonalScopeContactsExport
+		return nil
+	case PersonalScopeSuppressionsWrite:
+		*s = PersonalScopeSuppressionsWrite
+		return nil
+	case PersonalScopeEventsRead:
+		*s = PersonalScopeEventsRead
+		return nil
+	case PersonalScopeEventsWrite:
+		*s = PersonalScopeEventsWrite
+		return nil
+	case PersonalScopeSegmentsRead:
+		*s = PersonalScopeSegmentsRead
+		return nil
+	case PersonalScopeSegmentsWrite:
+		*s = PersonalScopeSegmentsWrite
+		return nil
+	case PersonalScopeBroadcastsRead:
+		*s = PersonalScopeBroadcastsRead
+		return nil
+	case PersonalScopeBroadcastsWrite:
+		*s = PersonalScopeBroadcastsWrite
+		return nil
+	case PersonalScopeAutomationsRead:
+		*s = PersonalScopeAutomationsRead
+		return nil
+	case PersonalScopeAutomationsWrite:
+		*s = PersonalScopeAutomationsWrite
+		return nil
+	case PersonalScopeEnrollmentsRead:
+		*s = PersonalScopeEnrollmentsRead
+		return nil
+	case PersonalScopeTemplatesRead:
+		*s = PersonalScopeTemplatesRead
+		return nil
+	case PersonalScopeTemplatesWrite:
+		*s = PersonalScopeTemplatesWrite
+		return nil
+	case PersonalScopeWebhooksRead:
+		*s = PersonalScopeWebhooksRead
+		return nil
+	case PersonalScopeWebhooksWrite:
+		*s = PersonalScopeWebhooksWrite
+		return nil
+	case PersonalScopeWebhooksRegenerate:
+		*s = PersonalScopeWebhooksRegenerate
+		return nil
+	case PersonalScopeWebhooksTest:
+		*s = PersonalScopeWebhooksTest
+		return nil
+	case PersonalScopeCustomFieldsRead:
+		*s = PersonalScopeCustomFieldsRead
+		return nil
+	case PersonalScopeSendingDomainsRead:
+		*s = PersonalScopeSendingDomainsRead
+		return nil
+	case PersonalScopeIntegrationsRead:
+		*s = PersonalScopeIntegrationsRead
+		return nil
+	case PersonalScopeEmailsSend:
+		*s = PersonalScopeEmailsSend
+		return nil
+	case PersonalScopeBroadcastsSend:
+		*s = PersonalScopeBroadcastsSend
+		return nil
+	case PersonalScopeAutomationsPublish:
+		*s = PersonalScopeAutomationsPublish
+		return nil
+	case PersonalScopeMcpSend:
+		*s = PersonalScopeMcpSend
+		return nil
+	case PersonalScopeSendingDomainsWrite:
+		*s = PersonalScopeSendingDomainsWrite
+		return nil
+	case PersonalScopeIntegrationsWrite:
+		*s = PersonalScopeIntegrationsWrite
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
 type ProblemCode string
@@ -6274,6 +6503,9 @@ func (*ProblemDetails) sitePasskeyLoginBeginRes()              {}
 func (*ProblemDetails) sitePasskeyLoginFinishRes()             {}
 func (*ProblemDetails) sitePasskeysBeginCheckRes()             {}
 func (*ProblemDetails) sitePasskeysBeginRegistrationRes()      {}
+func (*ProblemDetails) sitePersonalTokensDeleteRes()           {}
+func (*ProblemDetails) sitePersonalTokensGrantableScopesRes()  {}
+func (*ProblemDetails) sitePersonalTokensListRes()             {}
 func (*ProblemDetails) sitePublicInvitationsLookupRes()        {}
 func (*ProblemDetails) sitePublicUnsubscribesPerformRes()      {}
 func (*ProblemDetails) siteSchemaApplyMigrationsRes()          {}
@@ -12343,6 +12575,74 @@ func (s *SiteCreateInvitationResponse) SetResource(val SiteInvitationResource) {
 
 func (*SiteCreateInvitationResponse) siteInvitationsCreateRes() {}
 
+// Mint a Personal token of the caller's own.
+// Ref: #/components/schemas/SiteCreatePersonalTokenInput
+type SiteCreatePersonalTokenInput struct {
+	Name string `json:"name"`
+	// Each one a scope the caller's Role may grant (`grantableScopes`).
+	Scopes    []PersonalScope `json:"scopes"`
+	ExpiresAt OptNilTimestamp `json:"expiresAt"`
+}
+
+// GetName returns the value of Name.
+func (s *SiteCreatePersonalTokenInput) GetName() string {
+	return s.Name
+}
+
+// GetScopes returns the value of Scopes.
+func (s *SiteCreatePersonalTokenInput) GetScopes() []PersonalScope {
+	return s.Scopes
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *SiteCreatePersonalTokenInput) GetExpiresAt() OptNilTimestamp {
+	return s.ExpiresAt
+}
+
+// SetName sets the value of Name.
+func (s *SiteCreatePersonalTokenInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetScopes sets the value of Scopes.
+func (s *SiteCreatePersonalTokenInput) SetScopes(val []PersonalScope) {
+	s.Scopes = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *SiteCreatePersonalTokenInput) SetExpiresAt(val OptNilTimestamp) {
+	s.ExpiresAt = val
+}
+
+// Personal token creation result: `token` is the full secret, shown only once.
+// Ref: #/components/schemas/SiteCreatePersonalTokenResponse
+type SiteCreatePersonalTokenResponse struct {
+	Token    string                    `json:"token"`
+	Resource SitePersonalTokenResource `json:"resource"`
+}
+
+// GetToken returns the value of Token.
+func (s *SiteCreatePersonalTokenResponse) GetToken() string {
+	return s.Token
+}
+
+// GetResource returns the value of Resource.
+func (s *SiteCreatePersonalTokenResponse) GetResource() SitePersonalTokenResource {
+	return s.Resource
+}
+
+// SetToken sets the value of Token.
+func (s *SiteCreatePersonalTokenResponse) SetToken(val string) {
+	s.Token = val
+}
+
+// SetResource sets the value of Resource.
+func (s *SiteCreatePersonalTokenResponse) SetResource(val SitePersonalTokenResource) {
+	s.Resource = val
+}
+
+func (*SiteCreatePersonalTokenResponse) sitePersonalTokensCreateRes() {}
+
 // Site request body for creating a Rule: it is created inactive, with its definition as the draft.
 // Ref: #/components/schemas/SiteCreateRuleInput
 type SiteCreateRuleInput struct {
@@ -17802,6 +18102,152 @@ func (s *SitePendingSignup) SetName(val string) {
 }
 
 func (*SitePendingSignup) siteAuthSigninPendingRes() {}
+
+// A Personal token: a User's own bearer credential for the external API in this Workspace, for the
+// scripts and tools they run (ADR 0061: a Connection without the application). It belongs to that
+// User's Membership, can do no more than the User's current Role allows and ends with the Membership.
+// Its secret is shown only once, at creation. Personal tokens are neither the Workspace's API tokens
+// nor Connections and are listed with neither.
+// Ref: #/components/schemas/SitePersonalTokenResource
+type SitePersonalTokenResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// Human-readable label.
+	Name string `json:"name"`
+	// Public prefix (the secret is never returned after creation).
+	Prefix string `json:"prefix"`
+	// Granted scopes.
+	Scopes []PersonalScope `json:"scopes"`
+	// Expiry, if set.
+	ExpiresAt OptNilTimestamp `json:"expiresAt"`
+	// The User the Personal token belongs to.
+	UserId EntityId `json:"userId"`
+	// That User's display name.
+	UserName string `json:"userName"`
+	// That User's email.
+	UserEmail EmailAddress `json:"userEmail"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SitePersonalTokenResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *SitePersonalTokenResource) GetName() string {
+	return s.Name
+}
+
+// GetPrefix returns the value of Prefix.
+func (s *SitePersonalTokenResource) GetPrefix() string {
+	return s.Prefix
+}
+
+// GetScopes returns the value of Scopes.
+func (s *SitePersonalTokenResource) GetScopes() []PersonalScope {
+	return s.Scopes
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *SitePersonalTokenResource) GetExpiresAt() OptNilTimestamp {
+	return s.ExpiresAt
+}
+
+// GetUserId returns the value of UserId.
+func (s *SitePersonalTokenResource) GetUserId() EntityId {
+	return s.UserId
+}
+
+// GetUserName returns the value of UserName.
+func (s *SitePersonalTokenResource) GetUserName() string {
+	return s.UserName
+}
+
+// GetUserEmail returns the value of UserEmail.
+func (s *SitePersonalTokenResource) GetUserEmail() EmailAddress {
+	return s.UserEmail
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SitePersonalTokenResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SitePersonalTokenResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *SitePersonalTokenResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetPrefix sets the value of Prefix.
+func (s *SitePersonalTokenResource) SetPrefix(val string) {
+	s.Prefix = val
+}
+
+// SetScopes sets the value of Scopes.
+func (s *SitePersonalTokenResource) SetScopes(val []PersonalScope) {
+	s.Scopes = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *SitePersonalTokenResource) SetExpiresAt(val OptNilTimestamp) {
+	s.ExpiresAt = val
+}
+
+// SetUserId sets the value of UserId.
+func (s *SitePersonalTokenResource) SetUserId(val EntityId) {
+	s.UserId = val
+}
+
+// SetUserName sets the value of UserName.
+func (s *SitePersonalTokenResource) SetUserName(val string) {
+	s.UserName = val
+}
+
+// SetUserEmail sets the value of UserEmail.
+func (s *SitePersonalTokenResource) SetUserEmail(val EmailAddress) {
+	s.UserEmail = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SitePersonalTokenResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+type SitePersonalTokensCreateBadRequest ProblemDetails
+
+func (*SitePersonalTokensCreateBadRequest) sitePersonalTokensCreateRes() {}
+
+type SitePersonalTokensCreateForbidden ProblemDetails
+
+func (*SitePersonalTokensCreateForbidden) sitePersonalTokensCreateRes() {}
+
+type SitePersonalTokensCreateNotFound ProblemDetails
+
+func (*SitePersonalTokensCreateNotFound) sitePersonalTokensCreateRes() {}
+
+type SitePersonalTokensCreateUnprocessableEntity ProblemDetails
+
+func (*SitePersonalTokensCreateUnprocessableEntity) sitePersonalTokensCreateRes() {}
+
+// SitePersonalTokensDeleteNoContent is response for SitePersonalTokensDelete operation.
+type SitePersonalTokensDeleteNoContent struct{}
+
+func (*SitePersonalTokensDeleteNoContent) sitePersonalTokensDeleteRes() {}
+
+type SitePersonalTokensGrantableScopesOKApplicationJSON []PersonalScope
+
+func (*SitePersonalTokensGrantableScopesOKApplicationJSON) sitePersonalTokensGrantableScopesRes() {}
+
+type SitePersonalTokensListOKApplicationJSON []SitePersonalTokenResource
+
+func (*SitePersonalTokensListOKApplicationJSON) sitePersonalTokensListRes() {}
 
 // A Preset the Instance offers.
 // Ref: #/components/schemas/SitePresetResource

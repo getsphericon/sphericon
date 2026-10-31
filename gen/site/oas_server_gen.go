@@ -831,6 +831,34 @@ type Handler interface {
 	//
 	// PATCH /me/passkeys/{id}
 	SitePasskeysRename(ctx context.Context, req *SitePasskeyRenameInput, params SitePasskeysRenameParams) (SitePasskeysRenameRes, error)
+	// SitePersonalTokensCreate implements SitePersonalTokens_create operation.
+	//
+	// Mint a Personal token of the caller's own; the full secret is returned once. Any member may mint
+	// one, with the scopes their Role may grant: another is refused (403 permission_required). A scope
+	// that is no `PersonalScope` (a token-only scope such as `tokens:write`) is not a request this
+	// operation decodes (400).
+	//
+	// POST /workspaces/{workspaceId}/personal-tokens
+	SitePersonalTokensCreate(ctx context.Context, req *SiteCreatePersonalTokenInput, params SitePersonalTokensCreateParams) (SitePersonalTokensCreateRes, error)
+	// SitePersonalTokensDelete implements SitePersonalTokens_delete operation.
+	//
+	// Revoke a Personal token: the caller's own, or anyone's with members:manage.
+	//
+	// DELETE /workspaces/{workspaceId}/personal-tokens/{id}
+	SitePersonalTokensDelete(ctx context.Context, params SitePersonalTokensDeleteParams) (SitePersonalTokensDeleteRes, error)
+	// SitePersonalTokensGrantableScopes implements SitePersonalTokens_grantableScopes operation.
+	//
+	// The scopes the caller's Role may grant to a Personal token in the Workspace, in the vocabulary's
+	// order: the mint form offers these and no other.
+	//
+	// GET /workspaces/{workspaceId}/personal-token-scopes
+	SitePersonalTokensGrantableScopes(ctx context.Context, params SitePersonalTokensGrantableScopesParams) (SitePersonalTokensGrantableScopesRes, error)
+	// SitePersonalTokensList implements SitePersonalTokens_list operation.
+	//
+	// List the active Personal tokens the caller may see: their own, or every member's with members:manage.
+	//
+	// GET /workspaces/{workspaceId}/personal-tokens
+	SitePersonalTokensList(ctx context.Context, params SitePersonalTokensListParams) (SitePersonalTokensListRes, error)
 	// SitePresetsList implements SitePresets_list operation.
 	//
 	// List the Presets the Instance offers, with the params schema of each.
