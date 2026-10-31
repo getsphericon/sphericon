@@ -3,6 +3,7 @@ import { ModalsProvider } from '@mantine/modals'
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
+import { lazy, Suspense } from 'react'
 import { I18nextProvider } from 'react-i18next'
 
 import { NotificationsProvider } from './components/NotificationsProvider.tsx'
@@ -10,6 +11,10 @@ import { editorCssVariablesResolver } from './editorCssVariables.ts'
 import { i18n } from './i18n.ts'
 import type { AppRouter } from './router.ts'
 import { theme } from './theme.ts'
+
+const Devtools = import.meta.env.DEV
+  ? lazy(async () => import('./Devtools.tsx').then((module) => ({ default: module.Devtools })))
+  : null
 
 // The app's providers around the router. It lives apart from main.tsx so an edit here hot-reloads:
 // main.tsx is the entry and owns the long-lived queryClient and router, which a refresh must keep.
@@ -29,6 +34,11 @@ export function App({ queryClient, router }: { queryClient: QueryClient; router:
           </ModalsProvider>
         </MantineProvider>
       </I18nextProvider>
+      {Devtools ? (
+        <Suspense>
+          <Devtools router={router} />
+        </Suspense>
+      ) : null}
     </QueryClientProvider>
   )
 }

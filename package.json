@@ -64,6 +64,8 @@
     "@commitlint/types": "^21.2.3",
     "@hey-api/openapi-ts": "0.0.0-next-20260930190945",
     "@size-limit/file": "^14.3.0",
+    "@tanstack/react-query-devtools": "^5.105.0",
+    "@tanstack/react-router-devtools": "^1.167.2",
     "@tanstack/router-cli": "^1.167.46",
     "@tanstack/router-plugin": "^1.168.48",
     "@types/file-saver": "^2.0.7",
