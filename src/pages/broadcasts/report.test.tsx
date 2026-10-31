@@ -38,6 +38,8 @@ const STATS = {
   revenue: { reportingCurrency: 'USD', orders: 11, amount: 4550 },
 }
 
+const DAY_MS = 86_400_000
+
 const BROADCAST = {
   id: '5',
   name: 'Big news',
@@ -120,7 +122,7 @@ test('shows how far a sending broadcast has got', async () => {
       HttpResponse.json({
         ...BROADCAST,
         status: 'sending',
-        progress: { processedCount: 120, remainingCount: 80 },
+        progress: { processedCount: 120, remainingCount: 80, limitedBy: null },
       }),
     ),
     handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
@@ -129,6 +131,33 @@ test('shows how far a sending broadcast has got', async () => {
   const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
 
   await expect.element(screen.getByText('Sent 120 of 200')).toBeInTheDocument()
+})
+
+test('says a sending broadcast is slowed by the Send cap and when it will finish', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...BROADCAST,
+        status: 'sending',
+        progress: {
+          processedCount: 50,
+          remainingCount: 150,
+          estimatedCompletionAt: new Date(Date.now() + 2 * DAY_MS + 60_000).toISOString(),
+          limitedBy: 'sendCap',
+        },
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Sent 50 of 200')).toBeInTheDocument()
+  await expect.element(screen.getByText('about 2 days remaining')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/Slowed by the Send cap set by the platform/))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Sending is on hold')).not.toBeInTheDocument()
 })
 
 test('shows the orders and the net revenue credited to the broadcast', async () => {

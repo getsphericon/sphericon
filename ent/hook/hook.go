@@ -249,6 +249,18 @@ func (f HoldFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HoldMutation", m)
 }
 
+// The InstanceAuditEntryFunc type is an adapter to allow the use of ordinary
+// function as InstanceAuditEntry mutator.
+type InstanceAuditEntryFunc func(context.Context, *ent.InstanceAuditEntryMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f InstanceAuditEntryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.InstanceAuditEntryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InstanceAuditEntryMutation", m)
+}
+
 // The InstanceStateFunc type is an adapter to allow the use of ordinary
 // function as InstanceState mutator.
 type InstanceStateFunc func(context.Context, *ent.InstanceStateMutation) (ent.Value, error)
@@ -595,6 +607,18 @@ func (f SegmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SegmentMutation", m)
+}
+
+// The SendCapLimiterFunc type is an adapter to allow the use of ordinary
+// function as SendCapLimiter mutator.
+type SendCapLimiterFunc func(context.Context, *ent.SendCapLimiterMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SendCapLimiterFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SendCapLimiterMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendCapLimiterMutation", m)
 }
 
 // The SendingDomainFunc type is an adapter to allow the use of ordinary

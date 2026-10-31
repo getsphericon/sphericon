@@ -409,6 +409,9 @@ export default interface Resources {
       "openedLabel": "Opened",
       "progress": {
         "almostDone": "almost done",
+        "limitedByProviderLimit": "Paced by the Provider limit of its Integration",
+        "limitedBySendCap": "Slowed by the Send cap set by the platform: the rest goes out as the 24-hour window frees up",
+        "remainingDays": "about {{count}} day remaining" | "about {{count}} days remaining",
         "remainingHours": "about {{count}} hour remaining" | "about {{count}} hours remaining",
         "remainingMinutes": "about {{count}} minute remaining" | "about {{count}} minutes remaining",
         "summary": "Sent {{processed}} of {{total}}"
@@ -420,6 +423,8 @@ export default interface Resources {
       "segmentAll": "All contacts",
       "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
+      "sendCapWarning": "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count}} day. You can still send or schedule it." | "This audience of {{audience, number}} contacts is more than the Send cap set by the platform ({{perDay, number}} per 24 hours) lets out within a day, so it will go out over about {{count}} days. You can still send or schedule it.",
+      "sendCapWarningError": "Could not read the Send cap",
       "sendNow": "Send now",
       "stats": {
         "bounced": "Bounced",
@@ -518,6 +523,38 @@ export default interface Resources {
         "title": "Staff console"
       },
       "instance": {
+        "auditLog": {
+          "action": "Action",
+          "actor": "By",
+          "change": "{{field}}: {{from}} → {{to}}",
+          "changes": "Change",
+          "description": "The changes Staff members made to this instance's own settings.",
+          "empty": "No recorded changes",
+          "loadError": "Could not load the instance audit log",
+          "loadMore": "Load more",
+          "noValue": "none",
+          "time": "Time",
+          "title": "Instance audit log"
+        },
+        "defaultSendCap": {
+          "change": "Change default",
+          "description": "Every workspace created from now on starts with this Send cap. Changing or removing it leaves the Send caps of existing workspaces as they are.",
+          "error": "Could not change the default Send cap",
+          "formDescription": "Every workspace created from now on starts with this many messages per 24 hours. Existing workspaces keep their own Send cap.",
+          "formTitle": "Default Send cap",
+          "missing": "New workspaces have no Send cap. Set a default so every new workspace starts with a bounded daily volume.",
+          "missingTitle": "No default Send cap",
+          "none": "No default: new workspaces have no Send cap.",
+          "remove": "Remove default",
+          "removeDescription": "Workspaces created from now on will have no Send cap. Existing workspaces keep their own.",
+          "removeTitle": "Remove the default Send cap?",
+          "removed": "Default Send cap removed",
+          "saved": "Default Send cap saved",
+          "set": "Set default",
+          "title": "Default Send cap",
+          "unchanged": "Nothing changed: the default Send cap was already that.",
+          "value": "{{perDay, number}} messages per 24 hours"
+        },
         "licenseExpired": {
           "description": "The Enterprise license key of this instance expired on {{date}}, so it runs the open-source core. Nothing was deleted: set a valid `SPHERICON_LICENSE_KEY` and restart to restore the Enterprise features with their data.",
           "title": "The license key has expired"
@@ -578,6 +615,10 @@ export default interface Resources {
         "jobs": "Job queue",
         "signupItems": "Sign-up items",
         "workspaces": "Workspaces"
+      },
+      "sendCapForm": {
+        "invalid": "Enter a whole number from {{min, number}} to {{max, number}}.",
+        "perDayLabel": "Messages per 24 hours"
       },
       "signupItem": {
         "archive": "Archive",
@@ -657,6 +698,7 @@ export default interface Resources {
         "reorderError": "Could not change the order",
         "title": "Sign-up items"
       },
+      "unchangedTitle": "No change",
       "workspace": {
         "abuse": {
           "clearedAt": "Last cleared",
@@ -729,6 +771,25 @@ export default interface Resources {
           "window": "Last {{hours}} hours"
         },
         "reason": "Reason",
+        "sendCap": {
+          "change": "Change Send cap",
+          "description": "The most messages this workspace may send in a rolling 24 hours, across all its integrations. Sends beyond it wait for the window to free up; transactional mail is never delayed.",
+          "error": "Could not change the Send cap",
+          "formDescription": "Messages beyond this in any 24 hours are deferred, not refused. A change reaches sends already waiting within minutes.",
+          "formTitle": "Send cap",
+          "none": "No Send cap: only its Provider limits bound its sending.",
+          "remove": "Remove Send cap",
+          "removeDescription": "The workspace will be limited only by its Provider limits. Customers will see this change recorded as Sphericon staff.",
+          "removeTitle": "Remove the Send cap?",
+          "removed": "Send cap removed",
+          "saved": "Send cap saved",
+          "sent": "Sent in the last 24 hours: {{sent, number}}",
+          "sentOf": "Sent in the last 24 hours: {{sent, number}} of {{perDay, number}}",
+          "set": "Set Send cap",
+          "title": "Send cap",
+          "unchanged": "Nothing changed: the Send cap was already that.",
+          "value": "{{perDay, number}} messages per 24 hours"
+        },
         "suspend": {
           "button": "Suspend sending",
           "cancel": "Cancel",
@@ -744,7 +805,6 @@ export default interface Resources {
         "suspendedAt": "Suspended at",
         "suspendedBy": "Suspended by",
         "suspensionTitle": "Suspension",
-        "unchangedTitle": "No change",
         "unsuspend": {
           "button": "Lift suspension",
           "confirm": "Lift suspension",
@@ -1598,6 +1658,14 @@ export default interface Resources {
       },
       "saved": "Workspace updated",
       "scopesCount": "{{count}} scope" | "{{count}} scopes",
+      "sendCap": {
+        "description": "The platform sets the most messages this workspace may send in any 24 hours, across all its providers, transactional mail included. Messages beyond it wait until the 24-hour window frees up; transactional mail is never delayed. It is not a Provider limit, which you set for each provider.",
+        "perDay": "{{perDay, number}} per 24 hours",
+        "sentLast24h": "Sent in the last 24 h",
+        "sentOf": "Sent in the last 24 h: {{sent, number}} / {{perDay, number}}",
+        "setByPlatform": "Set by the platform",
+        "title": "Send cap"
+      },
       "sendEventsDescription": "The snippet above tracks page views in the browser. To send events yourself, use an SDK or the API.",
       "sendEventsGuideLink": "How to send events",
       "sendEventsTitle": "Send events from your code",

@@ -54,6 +54,8 @@ type Tx struct {
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
 	Hold *HoldClient
+	// InstanceAuditEntry is the client for interacting with the InstanceAuditEntry builders.
+	InstanceAuditEntry *InstanceAuditEntryClient
 	// InstanceState is the client for interacting with the InstanceState builders.
 	InstanceState *InstanceStateClient
 	// Integration is the client for interacting with the Integration builders.
@@ -112,6 +114,8 @@ type Tx struct {
 	SchemaState *SchemaStateClient
 	// Segment is the client for interacting with the Segment builders.
 	Segment *SegmentClient
+	// SendCapLimiter is the client for interacting with the SendCapLimiter builders.
+	SendCapLimiter *SendCapLimiterClient
 	// SendingDomain is the client for interacting with the SendingDomain builders.
 	SendingDomain *SendingDomainClient
 	// ServiceCredential is the client for interacting with the ServiceCredential builders.
@@ -295,6 +299,7 @@ func (tx *Tx) init() {
 	tx.Event = NewEventClient(tx.config)
 	tx.HeldOrderEvent = NewHeldOrderEventClient(tx.config)
 	tx.Hold = NewHoldClient(tx.config)
+	tx.InstanceAuditEntry = NewInstanceAuditEntryClient(tx.config)
 	tx.InstanceState = NewInstanceStateClient(tx.config)
 	tx.Integration = NewIntegrationClient(tx.config)
 	tx.Invitation = NewInvitationClient(tx.config)
@@ -324,6 +329,7 @@ func (tx *Tx) init() {
 	tx.RuleVersionTrigger = NewRuleVersionTriggerClient(tx.config)
 	tx.SchemaState = NewSchemaStateClient(tx.config)
 	tx.Segment = NewSegmentClient(tx.config)
+	tx.SendCapLimiter = NewSendCapLimiterClient(tx.config)
 	tx.SendingDomain = NewSendingDomainClient(tx.config)
 	tx.ServiceCredential = NewServiceCredentialClient(tx.config)
 	tx.SignupItem = NewSignupItemClient(tx.config)

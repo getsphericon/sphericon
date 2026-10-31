@@ -2,6 +2,7 @@ package providerlimit
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -158,6 +159,24 @@ func Usage(ctx context.Context, s *ent.Scoped, now time.Time) (map[int64]int, er
 		out[r.IntegrationID] = r.Count
 	}
 	return out, nil
+}
+
+// SendCapDrain is how long the Workspace's Send cap of sendCap messages per 24 hours takes, from
+// now, to let n more messages out: zero when its bucket already holds n tokens, otherwise the
+// messages beyond the bucket's current tokens at sendCap per 24 hours (a bucket in debt from
+// Transactional sends takes longer). A Workspace that has not sent under its Send cap yet has a
+// full bucket.
+func SendCapDrain(ctx context.Context, s *ent.Scoped, sendCap, n int, now time.Time) (time.Duration, error) {
+	b := workspaceBucket(sendCap)
+	fill, refilledAt := 1.0, now
+	row, err := s.SendCapLimiter().Query().Only(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return 0, err
+	}
+	if row != nil {
+		fill, refilledAt = row.DayFill, row.RefilledAt
+	}
+	return time.Duration(math.Ceil(b.secondsUntil(n, fill, refilledAt, now))) * time.Second, nil
 }
 
 // Status is an Integration's Provider limit as shown to a user: the ceilings as

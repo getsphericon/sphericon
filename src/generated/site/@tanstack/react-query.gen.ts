@@ -3803,6 +3803,24 @@ export const siteSegmentsCreateMutation = (options?: Partial<Options<SiteSegment
   return mutationOptions;
 };
 
+export const siteSegmentsPreviewQueryKey = (options: Options<SiteSegmentsPreviewData>) => createQueryKey('siteSegmentsPreview', options, false, ['Site Segments']);
+
+/**
+ * Preview how many active contacts match a rule definition
+ */
+export const siteSegmentsPreviewOptions = (options: Options<SiteSegmentsPreviewData>) => queryOptions<SiteSegmentsPreviewResponse, SiteSegmentsPreviewError, SiteSegmentsPreviewResponse, ReturnType<typeof siteSegmentsPreviewQueryKey>>({
+  queryFn: async ({ queryKey, signal }) => {
+    const { data } = await siteSegmentsPreview({
+      ...options,
+      ...queryKey[0],
+      signal,
+      throwOnError: true
+    });
+    return data;
+  },
+  queryKey: siteSegmentsPreviewQueryKey(options)
+});
+
 export const siteSegmentsPreviewMutationKey = (options?: Partial<Options<SiteSegmentsPreviewData>>) => createMutationKey('siteSegmentsPreview', options, ['Site Segments']);
 
 /**

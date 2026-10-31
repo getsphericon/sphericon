@@ -19,6 +19,7 @@ import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/ro
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
 import { joinEmail, splitEmail } from '../../utils/emailAddress.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
+import { SendCapWarning } from './SendCapWarning.tsx'
 
 export function BroadcastForm({
   form,
@@ -179,6 +180,11 @@ export function BroadcastForm({
         <Alert color="blue" variant="light">
           {t(($) => $.broadcasts.segmentNote)}
         </Alert>
+        <SendCapWarning
+          workspaceId={workspaceId}
+          segmentId={form.values.segmentId}
+          segments={segmentsQuery.data?.items}
+        />
 
         {templates.length > 0 ? (
           <Select

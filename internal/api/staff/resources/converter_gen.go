@@ -14,6 +14,36 @@ import (
 
 type ConverterImpl struct{}
 
+func (c *ConverterImpl) DefaultSendCapChangeToResource(source instance.DefaultSendCapChange) staff.StaffDefaultSendCapChange {
+	var staffapiStaffDefaultSendCapChange staff.StaffDefaultSendCapChange
+	staffapiStaffDefaultSendCapChange.Changed = source.Changed
+	staffapiStaffDefaultSendCapChange.DefaultSendCap = c.DefaultSendCapToResource(source.DefaultSendCap)
+	return staffapiStaffDefaultSendCapChange
+}
+func (c *ConverterImpl) DefaultSendCapToResource(source instance.DefaultSendCap) staff.StaffDefaultSendCap {
+	var staffapiStaffDefaultSendCap staff.StaffDefaultSendCap
+	staffapiStaffDefaultSendCap.PerDay = nilMaxPerDay(source.PerDay)
+	return staffapiStaffDefaultSendCap
+}
+func (c *ConverterImpl) InstanceAuditEntriesToResources(source []*ent.InstanceAuditEntry) []staff.StaffInstanceAuditEntryResource {
+	var staffapiStaffInstanceAuditEntryResourceList []staff.StaffInstanceAuditEntryResource
+	staffapiStaffInstanceAuditEntryResourceList = make([]staff.StaffInstanceAuditEntryResource, len(source))
+	for i := 0; i < len(source); i++ {
+		staffapiStaffInstanceAuditEntryResourceList[i] = c.InstanceAuditEntryToResource(source[i])
+	}
+	return staffapiStaffInstanceAuditEntryResourceList
+}
+func (c *ConverterImpl) InstanceAuditEntryToResource(source *ent.InstanceAuditEntry) staff.StaffInstanceAuditEntryResource {
+	var staffapiStaffInstanceAuditEntryResource staff.StaffInstanceAuditEntryResource
+	if source != nil {
+		staffapiStaffInstanceAuditEntryResource.ID = staff.EntityId((*source).ID)
+		staffapiStaffInstanceAuditEntryResource.OccurredAt = timestamp((*source).CreatedAt)
+		staffapiStaffInstanceAuditEntryResource.Actor = c.StaffMemberToResource((*source).Edges.StaffMember)
+		staffapiStaffInstanceAuditEntryResource.Action = (*source).Action
+		staffapiStaffInstanceAuditEntryResource.Diff = instanceAuditDiff((*source).Diff)
+	}
+	return staffapiStaffInstanceAuditEntryResource
+}
 func (c *ConverterImpl) InstanceStateToResource(source instance.State) staff.StaffInstanceState {
 	var staffapiStaffInstanceState staff.StaffInstanceState
 	staffapiStaffInstanceState.Telemetry = c.instanceSettingToStaffapiStaffInstanceTelemetry(source.Telemetry)
@@ -21,6 +51,7 @@ func (c *ConverterImpl) InstanceStateToResource(source instance.State) staff.Sta
 	staffapiStaffInstanceState.LatestRelease = optString(source.LatestRelease)
 	staffapiStaffInstanceState.LicenseExpiredAt = optLapse(source.LicenseExpiredAt)
 	staffapiStaffInstanceState.TelemetrySchemaUrl = source.TelemetrySchemaURL
+	staffapiStaffInstanceState.DefaultSendCap = optDefaultSendCap(c, source.DefaultSendCap)
 	return staffapiStaffInstanceState
 }
 func (c *ConverterImpl) InstanceTelemetryLockToResource(source instance.Lock) staff.StaffInstanceTelemetryLock {

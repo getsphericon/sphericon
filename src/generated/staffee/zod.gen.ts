@@ -15,6 +15,11 @@ export const zEmailAddress = z.email().max(320);
 export const zEntityId = z.string().regex(/^[0-9]+$/);
 
 /**
+ * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
+ */
+export const zMaxPerDay = z.int().gte(1).lte(100000000);
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum([
@@ -161,6 +166,31 @@ export const zStaffDeliverability = z.object({
   volumeFloor: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   sendVolume: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   domains: z.array(zStaffDomainRates)
+});
+
+/**
+ * A Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
+ * all its Integrations, set by a Staff member and never by the Workspace
+ */
+export const zStaffSendCap = z.object({
+  perDay: zMaxPerDay.nullable(),
+  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The outcome of setting or clearing a Send cap: the Send cap as it now stands, and whether
+ * anything changed (setting the same value, or clearing a Workspace with none, changes nothing)
+ */
+export const zStaffSendCapChange = z.object({
+  changed: z.boolean(),
+  sendCap: zStaffSendCap
+});
+
+/**
+ * The Send cap a Staff member sets on a Workspace
+ */
+export const zStaffSendCapInput = z.object({
+  perDay: zMaxPerDay
 });
 
 /**
@@ -454,7 +484,8 @@ export const zStaffWorkspaceDetailResource = z.object({
   warned: z.boolean(),
   holds: z.array(zStaffHold),
   deliverability: zStaffDeliverability,
-  abuse: zStaffAbuse
+  abuse: zStaffAbuse,
+  sendCap: z.exactOptional(zStaffSendCap)
 });
 
 /**
@@ -575,6 +606,26 @@ export const zStaffWorkspacesExemptPath = z.object({
  * The request has succeeded.
  */
 export const zStaffWorkspacesExemptResponse = zStaffExemptionChange;
+
+export const zStaffWorkspacesClearSendCapPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffWorkspacesClearSendCapResponse = zStaffSendCapChange;
+
+export const zStaffWorkspacesSetSendCapBody = zStaffSendCapInput;
+
+export const zStaffWorkspacesSetSendCapPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffWorkspacesSetSendCapResponse = zStaffSendCapChange;
 
 export const zStaffWorkspacesSuspendBody = zStaffSuspendInput;
 

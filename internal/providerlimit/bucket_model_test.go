@@ -84,13 +84,15 @@ func TestProviderLimiterFollowsTheTokenBucketModel(t *testing.T) {
 			limits.PerDay = new(rapid.IntRange(1, 5000).Draw(t, "per day"))
 		}
 		model := &bucketModel{limits: limits, second: 1, day: 1, at: start}
+		reservation := providerlimit.Reservation{IntegrationID: fixtures.IntegrationAcmeDefaultID, Limits: limits}
 		now := start
 
 		t.Repeat(map[string]func(*rapid.T){
 			"reserve": func(t *rapid.T) {
 				granted, borderline := model.shortBy(now)
 
-				wait, err := providerlimit.Reserve(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now)
+				short, err := providerlimit.Reserve(t.Context(), s, env.Bus.WithinAuditTx, reservation, now)
+				wait := short.Wait
 
 				if err != nil {
 					t.Fatalf("reserve at %v: %v", now, err)
@@ -103,14 +105,14 @@ func TestProviderLimiterFollowsTheTokenBucketModel(t *testing.T) {
 					return
 				}
 				now = now.Add(wait)
-				again, err := providerlimit.Reserve(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now)
-				if err != nil || again != 0 {
+				again, err := providerlimit.Reserve(t.Context(), s, env.Bus.WithinAuditTx, reservation, now)
+				if err != nil || again.Wait != 0 {
 					t.Fatalf("after the reported wait of %v the reservation still waits %v (error %v)", wait, again, err)
 				}
 				model.take(now)
 			},
 			"spend": func(t *rapid.T) {
-				if err := providerlimit.Spend(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now); err != nil {
+				if err := providerlimit.Spend(t.Context(), s, env.Bus.WithinAuditTx, reservation, now); err != nil {
 					t.Fatalf("spend at %v: %v", now, err)
 				}
 				model.take(now)

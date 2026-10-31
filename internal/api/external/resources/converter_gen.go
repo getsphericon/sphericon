@@ -1027,6 +1027,15 @@ func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []external.Se
 	}
 	return externalapiSegmentResourceList
 }
+func (c *ConverterImpl) SendCapStatusToResource(source *providerlimit.SendCapStatus) external.OptNilSendCap {
+	return optNilSendCap(c, source)
+}
+func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) external.SendCap {
+	var externalapiSendCap external.SendCap
+	externalapiSendCap.PerDay = maxPerDay(source.PerDay)
+	externalapiSendCap.SentLast24h = count(source.Sent24h)
+	return externalapiSendCap
+}
 func (c *ConverterImpl) SendingDomainRatesListPage(source pagination.Page[external.SendingDomainRatesResource]) *external.SendingDomainRatesListOK {
 	var externalapiSendingDomainRatesListOK external.SendingDomainRatesListOK
 	externalapiSendingDomainRatesListOK.Items = source.Items
@@ -1298,6 +1307,16 @@ func (c *ConverterImpl) WebhooksListPage(source pagination.Page[external.Webhook
 	externalapiWebhooksListOK.TotalItems = count(source.TotalItems)
 	externalapiWebhooksListOK.TotalPages = count(source.TotalPages)
 	return &externalapiWebhooksListOK
+}
+func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.WorkspaceResource {
+	var externalapiWorkspaceResource external.WorkspaceResource
+	if source != nil {
+		externalapiWorkspaceResource.ID = external.WorkspaceId((*source).PublicID)
+		externalapiWorkspaceResource.Name = (*source).Name
+		externalapiWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
+		// externalapiWorkspaceResource.SendCap: ignore
+	}
+	return externalapiWorkspaceResource
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute

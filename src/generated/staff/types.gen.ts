@@ -108,6 +108,11 @@ export type LegalDocumentLabel = string;
 export type LegalDocumentMarkdown = string;
 
 /**
+ * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
+ */
+export type MaxPerDay = number;
+
+/**
  * RFC 7807 payment required response: the feature needs an Enterprise license
  */
 export type PaymentRequiredProblem = {
@@ -244,6 +249,36 @@ export type SignupItemKind = typeof SignupItemKind[keyof typeof SignupItemKind];
 export type SignupItemTitle = string;
 
 /**
+ * The default Send cap (ADR 0067): copied onto every Workspace created from now on. Changing it
+ * leaves the Send caps of existing Workspaces as they are.
+ */
+export type StaffDefaultSendCap = {
+  /**
+   * Messages per rolling 24 hours; null when new Workspaces get no Send cap
+   */
+  perDay: MaxPerDay | null;
+};
+
+/**
+ * The outcome of setting or clearing the default Send cap: the default as it now stands, and
+ * whether anything changed (setting the same value, or clearing none, changes nothing)
+ */
+export type StaffDefaultSendCapChange = {
+  changed: boolean;
+  defaultSendCap: StaffDefaultSendCap;
+};
+
+/**
+ * The default Send cap a Staff member sets
+ */
+export type StaffDefaultSendCapInput = {
+  /**
+   * Messages per rolling 24 hours
+   */
+  perDay: MaxPerDay;
+};
+
+/**
  * A TOTP secret awaiting its first confirming code
  */
 export type StaffEnrolment = {
@@ -259,6 +294,47 @@ export type StaffEnrolment = {
    * PNG data URI of the URI
    */
   qrCode: string;
+};
+
+/**
+ * A page of the Instance audit log, newest first
+ */
+export type StaffInstanceAuditEntryList = {
+  items: Array<StaffInstanceAuditEntryResource>;
+  /**
+   * Pass as `cursor` for the next page; absent on the last page
+   */
+  nextCursor?: string | null;
+};
+
+/**
+ * One entry of the Instance audit log (ADR 0070): a Staff member changed a setting of the
+ * Instance itself
+ */
+export type StaffInstanceAuditEntryResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * When the change was made
+   */
+  occurredAt: Timestamp;
+  /**
+   * The Staff member who made it
+   */
+  actor: StaffResource;
+  /**
+   * What was changed, as `instance.<what>_change`
+   */
+  action: string;
+  /**
+   * The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there
+   * was no value, `to` where it was cleared
+   */
+  diff: {
+    [key: string]: unknown;
+  };
 };
 
 /**
@@ -290,6 +366,10 @@ export type StaffInstanceState = {
    * The page that documents the schema of the Telemetry report
    */
   telemetrySchemaUrl: string;
+  /**
+   * The Send cap every new Workspace starts with; absent on an Instance that has no Send caps
+   */
+  defaultSendCap?: StaffDefaultSendCap;
 };
 
 /**
@@ -701,6 +781,106 @@ export type StaffInstanceGetStateResponses = {
 };
 
 export type StaffInstanceGetStateResponse = StaffInstanceGetStateResponses[keyof StaffInstanceGetStateResponses];
+
+export type StaffInstanceListAuditEntriesData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Cursor from a previous page
+     */
+    cursor?: string;
+    /**
+     * Page size
+     */
+    limit?: number;
+  };
+  url: '/instance/audit-entries';
+};
+
+export type StaffInstanceListAuditEntriesErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+};
+
+export type StaffInstanceListAuditEntriesError = StaffInstanceListAuditEntriesErrors[keyof StaffInstanceListAuditEntriesErrors];
+
+export type StaffInstanceListAuditEntriesResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffInstanceAuditEntryList;
+};
+
+export type StaffInstanceListAuditEntriesResponse = StaffInstanceListAuditEntriesResponses[keyof StaffInstanceListAuditEntriesResponses];
+
+export type StaffInstanceClearDefaultSendCapData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/instance/default-send-cap';
+};
+
+export type StaffInstanceClearDefaultSendCapErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type StaffInstanceClearDefaultSendCapError = StaffInstanceClearDefaultSendCapErrors[keyof StaffInstanceClearDefaultSendCapErrors];
+
+export type StaffInstanceClearDefaultSendCapResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffDefaultSendCapChange;
+};
+
+export type StaffInstanceClearDefaultSendCapResponse = StaffInstanceClearDefaultSendCapResponses[keyof StaffInstanceClearDefaultSendCapResponses];
+
+export type StaffInstanceSetDefaultSendCapData = {
+  body: StaffDefaultSendCapInput;
+  path?: never;
+  query?: never;
+  url: '/instance/default-send-cap';
+};
+
+export type StaffInstanceSetDefaultSendCapErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type StaffInstanceSetDefaultSendCapError = StaffInstanceSetDefaultSendCapErrors[keyof StaffInstanceSetDefaultSendCapErrors];
+
+export type StaffInstanceSetDefaultSendCapResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffDefaultSendCapChange;
+};
+
+export type StaffInstanceSetDefaultSendCapResponse = StaffInstanceSetDefaultSendCapResponses[keyof StaffInstanceSetDefaultSendCapResponses];
 
 export type StaffInstanceAcknowledgeNoticeData = {
   body?: never;

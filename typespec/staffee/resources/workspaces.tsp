@@ -157,6 +157,17 @@ model StaffHold {
   actionUrl?: string | null;
 }
 
+/** A Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
+ * all its Integrations, set by a Staff member and never by the Workspace */
+model StaffSendCap {
+  /** Messages per rolling 24 hours; null when the Workspace has no Send cap */
+  perDay: MaxPerDay | null;
+
+  /** Messages the Workspace sent over the last 24 hours, through all its Integrations and
+   * Transactional included */
+  sentLast24h: int32;
+}
+
 /** A Workspace with its deliverability and active holds, as the detail page shows it */
 model StaffWorkspaceDetailResource {
   ...StaffWorkspaceResource;
@@ -166,6 +177,22 @@ model StaffWorkspaceDetailResource {
 
   deliverability: StaffDeliverability;
   abuse: StaffAbuse;
+
+  /** The Workspace's Send cap; absent on an Instance that has no Send caps */
+  sendCap?: StaffSendCap;
+}
+
+/** The Send cap a Staff member sets on a Workspace */
+model StaffSendCapInput {
+  /** Messages per rolling 24 hours */
+  perDay: MaxPerDay;
+}
+
+/** The outcome of setting or clearing a Send cap: the Send cap as it now stands, and whether
+ * anything changed (setting the same value, or clearing a Workspace with none, changes nothing) */
+model StaffSendCapChange {
+  changed: boolean;
+  sendCap: StaffSendCap;
 }
 
 /** Which Workspaces the list surfaces for review */
@@ -268,6 +295,27 @@ namespace StaffWorkspaces {
   @post
   op unexempt(@path workspaceId: WorkspaceId):
     | StaffExemptionChange
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | NotFoundProblem;
+
+  /** Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a
+   * rolling 24 hours are deferred, not refused. Audited. Idempotent. Not found on an Instance that
+   * has no Send caps. */
+  @route("/{workspaceId}/send-cap")
+  @put
+  op setSendCap(@path workspaceId: WorkspaceId, @body body: StaffSendCapInput):
+    | StaffSendCapChange
+    | BadRequestProblem
+    | UnauthorizedProblem
+    | NotFoundProblem;
+
+  /** Remove a Workspace's Send cap, so it is limited by its Provider limits only. Audited.
+   * Idempotent. Not found on an Instance that has no Send caps. */
+  @route("/{workspaceId}/send-cap")
+  @delete
+  op clearSendCap(@path workspaceId: WorkspaceId):
+    | StaffSendCapChange
     | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;

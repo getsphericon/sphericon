@@ -39,6 +39,8 @@ const (
 	FieldReportingCurrency = "reporting_currency"
 	// FieldAttributionWindowDays holds the string denoting the attribution_window_days field in the database.
 	FieldAttributionWindowDays = "attribution_window_days"
+	// FieldSendCap holds the string denoting the send_cap field in the database.
+	FieldSendCap = "send_cap"
 	// FieldDomainJoinEnabled holds the string denoting the domain_join_enabled field in the database.
 	FieldDomainJoinEnabled = "domain_join_enabled"
 	// FieldSecondFactorRequiredAt holds the string denoting the second_factor_required_at field in the database.
@@ -91,6 +93,8 @@ const (
 	EdgeJoinDomains = "join_domains"
 	// EdgeProviderLimiters holds the string denoting the provider_limiters edge name in mutations.
 	EdgeProviderLimiters = "provider_limiters"
+	// EdgeSendCapLimiters holds the string denoting the send_cap_limiters edge name in mutations.
+	EdgeSendCapLimiters = "send_cap_limiters"
 	// EdgeHolds holds the string denoting the holds edge name in mutations.
 	EdgeHolds = "holds"
 	// EdgeBroadcasts holds the string denoting the broadcasts edge name in mutations.
@@ -237,6 +241,13 @@ const (
 	ProviderLimitersInverseTable = "provider_limiters"
 	// ProviderLimitersColumn is the table column denoting the provider_limiters relation/edge.
 	ProviderLimitersColumn = "workspace_id"
+	// SendCapLimitersTable is the table that holds the send_cap_limiters relation/edge.
+	SendCapLimitersTable = "send_cap_limiters"
+	// SendCapLimitersInverseTable is the table name for the SendCapLimiter entity.
+	// It exists in this package in order to avoid circular dependency with the "sendcaplimiter" package.
+	SendCapLimitersInverseTable = "send_cap_limiters"
+	// SendCapLimitersColumn is the table column denoting the send_cap_limiters relation/edge.
+	SendCapLimitersColumn = "workspace_id"
 	// HoldsTable is the table that holds the holds relation/edge.
 	HoldsTable = "holds"
 	// HoldsInverseTable is the table name for the Hold entity.
@@ -415,6 +426,7 @@ var Columns = []string{
 	FieldTimezone,
 	FieldReportingCurrency,
 	FieldAttributionWindowDays,
+	FieldSendCap,
 	FieldDomainJoinEnabled,
 	FieldSecondFactorRequiredAt,
 	FieldFeedPosition,
@@ -464,6 +476,8 @@ var (
 	DefaultAttributionWindowDays int
 	// AttributionWindowDaysValidator is a validator for the "attribution_window_days" field. It is called by the builders before save.
 	AttributionWindowDaysValidator func(int) error
+	// SendCapValidator is a validator for the "send_cap" field. It is called by the builders before save.
+	SendCapValidator func(int) error
 	// DefaultDomainJoinEnabled holds the default value on creation for the "domain_join_enabled" field.
 	DefaultDomainJoinEnabled bool
 	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
@@ -562,6 +576,11 @@ func ByReportingCurrency(opts ...sql.OrderTermOption) OrderOption {
 // ByAttributionWindowDays orders the results by the attribution_window_days field.
 func ByAttributionWindowDays(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAttributionWindowDays, opts...).ToFunc()
+}
+
+// BySendCap orders the results by the send_cap field.
+func BySendCap(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSendCap, opts...).ToFunc()
 }
 
 // ByDomainJoinEnabled orders the results by the domain_join_enabled field.
@@ -817,6 +836,20 @@ func ByProviderLimitersCount(opts ...sql.OrderTermOption) OrderOption {
 func ByProviderLimiters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newProviderLimitersStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// BySendCapLimitersCount orders the results by send_cap_limiters count.
+func BySendCapLimitersCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSendCapLimitersStep(), opts...)
+	}
+}
+
+// BySendCapLimiters orders the results by send_cap_limiters terms.
+func BySendCapLimiters(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSendCapLimitersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1237,6 +1270,13 @@ func newProviderLimitersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProviderLimitersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ProviderLimitersTable, ProviderLimitersColumn),
+	)
+}
+func newSendCapLimitersStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SendCapLimitersInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SendCapLimitersTable, SendCapLimitersColumn),
 	)
 }
 func newHoldsStep() *sqlgraph.Step {

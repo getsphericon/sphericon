@@ -58,12 +58,27 @@ type Invoker interface {
 	//
 	// POST /instance/notice/acknowledge
 	StaffInstanceAcknowledgeNotice(ctx context.Context) (StaffInstanceAcknowledgeNoticeRes, error)
+	// StaffInstanceClearDefaultSendCap invokes StaffInstance_clearDefaultSendCap operation.
+	//
+	// Remove the default Send cap: Workspaces created from now on get no Send cap; existing Workspaces
+	// keep theirs. Recorded in the Instance audit log. Idempotent. Not found on an Instance that has no
+	// Send caps.
+	//
+	// DELETE /instance/default-send-cap
+	StaffInstanceClearDefaultSendCap(ctx context.Context) (StaffInstanceClearDefaultSendCapRes, error)
 	// StaffInstanceGetState invokes StaffInstance_getState operation.
 	//
 	// The Instance's own settings and state.
 	//
 	// GET /instance
 	StaffInstanceGetState(ctx context.Context) (StaffInstanceGetStateRes, error)
+	// StaffInstanceListAuditEntries invokes StaffInstance_listAuditEntries operation.
+	//
+	// The Instance audit log (ADR 0070), newest first: the changes Staff members made to the Instance's
+	// own settings.
+	//
+	// GET /instance/audit-entries
+	StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (StaffInstanceListAuditEntriesRes, error)
 	// StaffInstancePreviewTelemetryReport invokes StaffInstance_previewTelemetryReport operation.
 	//
 	// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
@@ -71,6 +86,14 @@ type Invoker interface {
 	//
 	// GET /instance/telemetry/preview
 	StaffInstancePreviewTelemetryReport(ctx context.Context) (StaffInstancePreviewTelemetryReportRes, error)
+	// StaffInstanceSetDefaultSendCap invokes StaffInstance_setDefaultSendCap operation.
+	//
+	// Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created from now
+	// on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit log. Idempotent.
+	// Not found on an Instance that has no Send caps.
+	//
+	// PUT /instance/default-send-cap
+	StaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (StaffInstanceSetDefaultSendCapRes, error)
 	// StaffInstanceSetTelemetry invokes StaffInstance_setTelemetry operation.
 	//
 	// Switch the Telemetry report on or off. Answers 409 while the environment decides.
@@ -585,6 +608,121 @@ func (c *Client) sendStaffInstanceAcknowledgeNotice(ctx context.Context) (res St
 	return result, nil
 }
 
+// StaffInstanceClearDefaultSendCap invokes StaffInstance_clearDefaultSendCap operation.
+//
+// Remove the default Send cap: Workspaces created from now on get no Send cap; existing Workspaces
+// keep theirs. Recorded in the Instance audit log. Idempotent. Not found on an Instance that has no
+// Send caps.
+//
+// DELETE /instance/default-send-cap
+func (c *Client) StaffInstanceClearDefaultSendCap(ctx context.Context) (StaffInstanceClearDefaultSendCapRes, error) {
+	res, err := c.sendStaffInstanceClearDefaultSendCap(ctx)
+	return res, err
+}
+
+func (c *Client) sendStaffInstanceClearDefaultSendCap(ctx context.Context) (res StaffInstanceClearDefaultSendCapRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffInstance_clearDefaultSendCap"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/instance/default-send-cap"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffInstanceClearDefaultSendCapOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/instance/default-send-cap"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffInstanceClearDefaultSendCapOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffInstanceClearDefaultSendCapResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // StaffInstanceGetState invokes StaffInstance_getState operation.
 //
 // The Instance's own settings and state.
@@ -691,6 +829,158 @@ func (c *Client) sendStaffInstanceGetState(ctx context.Context) (res StaffInstan
 
 	stage = "DecodeResponse"
 	result, err := decodeStaffInstanceGetStateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// StaffInstanceListAuditEntries invokes StaffInstance_listAuditEntries operation.
+//
+// The Instance audit log (ADR 0070), newest first: the changes Staff members made to the Instance's
+// own settings.
+//
+// GET /instance/audit-entries
+func (c *Client) StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (StaffInstanceListAuditEntriesRes, error) {
+	res, err := c.sendStaffInstanceListAuditEntries(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendStaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (res StaffInstanceListAuditEntriesRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffInstance_listAuditEntries"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/instance/audit-entries"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffInstanceListAuditEntriesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/instance/audit-entries"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "cursor" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "cursor",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Cursor.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "limit" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "limit",
+			Style:   uri.QueryStyleForm,
+			Explode: false,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Limit.Get(); ok {
+				return e.EncodeValue(conv.Int32ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffInstanceListAuditEntriesOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffInstanceListAuditEntriesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -805,6 +1095,124 @@ func (c *Client) sendStaffInstancePreviewTelemetryReport(ctx context.Context) (r
 
 	stage = "DecodeResponse"
 	result, err := decodeStaffInstancePreviewTelemetryReportResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// StaffInstanceSetDefaultSendCap invokes StaffInstance_setDefaultSendCap operation.
+//
+// Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created from now
+// on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit log. Idempotent.
+// Not found on an Instance that has no Send caps.
+//
+// PUT /instance/default-send-cap
+func (c *Client) StaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (StaffInstanceSetDefaultSendCapRes, error) {
+	res, err := c.sendStaffInstanceSetDefaultSendCap(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendStaffInstanceSetDefaultSendCap(ctx context.Context, request *StaffDefaultSendCapInput) (res StaffInstanceSetDefaultSendCapRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("StaffInstance_setDefaultSendCap"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/instance/default-send-cap"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, StaffInstanceSetDefaultSendCapOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/instance/default-send-cap"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeStaffInstanceSetDefaultSendCapRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, StaffInstanceSetDefaultSendCapOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeStaffInstanceSetDefaultSendCapResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

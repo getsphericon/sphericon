@@ -13,6 +13,8 @@ import { StaffInstanceTelemetryLock } from '../generated/staff/types.gen.ts'
 import type { StaffInstanceState } from '../generated/staff/types.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { formatLongDate } from '../utils/datetime.ts'
+import { DefaultSendCapCard, NoDefaultSendCapAlert } from './DefaultSendCapCard.tsx'
+import { InstanceAuditLogCard } from './InstanceAuditLogCard.tsx'
 import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 
 // The switch of the anonymous Telemetry report (ADR 0032). When the deployment decides (the saas
@@ -53,7 +55,8 @@ function TelemetrySection({ state }: { state: StaffInstanceState }) {
 }
 
 // What the Instance tells its Staff member about itself: a newer release the Release check found,
-// and a License key that expired (ADR 0035), shown here only, never to a Workspace.
+// a License key that expired (ADR 0035), shown here only, never to a Workspace, and, on an Instance
+// that has Send caps, that new Workspaces start with none while no default is set (ADR 0067).
 function InstanceAlerts({ state }: { state: StaffInstanceState }) {
   const { t } = useTranslation()
   const expiredOn = state.licenseExpiredAt ? formatLongDate(state.licenseExpiredAt) : null
@@ -68,6 +71,9 @@ function InstanceAlerts({ state }: { state: StaffInstanceState }) {
         </Alert>
       ) : null}
       {state.latestRelease ? <ReleaseAlert version={state.latestRelease} /> : null}
+      {state.defaultSendCap && (state.defaultSendCap.perDay ?? null) === null ? (
+        <NoDefaultSendCapAlert />
+      ) : null}
     </>
   )
 }
@@ -79,6 +85,7 @@ function InstanceState() {
   return (
     <>
       <InstanceAlerts state={state} />
+      {state.defaultSendCap ? <DefaultSendCapCard defaultSendCap={state.defaultSendCap} /> : null}
       <TelemetrySection state={state} />
     </>
   )
@@ -97,6 +104,7 @@ export function ConsoleInstancePage() {
       >
         <InstanceState />
       </QueryBoundary>
+      <InstanceAuditLogCard />
     </Stack>
   )
 }

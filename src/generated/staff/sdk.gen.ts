@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeErrors, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceGetStateData, StaffInstanceGetStateErrors, StaffInstanceGetStateResponses, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportErrors, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryErrors, StaffInstanceSetTelemetryResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupItemsArchiveData, StaffSignupItemsArchiveErrors, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateErrors, StaffSignupItemsCreateResponses, StaffSignupItemsGetData, StaffSignupItemsGetErrors, StaffSignupItemsGetResponses, StaffSignupItemsListData, StaffSignupItemsListErrors, StaffSignupItemsListResponses, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsErrors, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishErrors, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderErrors, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftErrors, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateErrors, StaffSignupItemsUpdateResponses } from './types.gen.ts';
-import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffInstanceSetTelemetryBody, zStaffSignupItemsArchivePath, zStaffSignupItemsCreateBody, zStaffSignupItemsGetPath, zStaffSignupItemsListVersionsPath, zStaffSignupItemsPublishBody, zStaffSignupItemsPublishPath, zStaffSignupItemsReorderBody, zStaffSignupItemsSaveDraftBody, zStaffSignupItemsSaveDraftPath, zStaffSignupItemsUpdateBody, zStaffSignupItemsUpdatePath } from './zod.gen.ts';
+import type { StaffAuthLoginData, StaffAuthLoginErrors, StaffAuthLoginResponses, StaffAuthLogoutData, StaffAuthLogoutErrors, StaffAuthLogoutResponses, StaffAuthSecondFactorData, StaffAuthSecondFactorErrors, StaffAuthSecondFactorResponses, StaffInstanceAcknowledgeNoticeData, StaffInstanceAcknowledgeNoticeErrors, StaffInstanceAcknowledgeNoticeResponses, StaffInstanceClearDefaultSendCapData, StaffInstanceClearDefaultSendCapErrors, StaffInstanceClearDefaultSendCapResponses, StaffInstanceGetStateData, StaffInstanceGetStateErrors, StaffInstanceGetStateResponses, StaffInstanceListAuditEntriesData, StaffInstanceListAuditEntriesErrors, StaffInstanceListAuditEntriesResponses, StaffInstancePreviewTelemetryReportData, StaffInstancePreviewTelemetryReportErrors, StaffInstancePreviewTelemetryReportResponses, StaffInstanceSetDefaultSendCapData, StaffInstanceSetDefaultSendCapErrors, StaffInstanceSetDefaultSendCapResponses, StaffInstanceSetTelemetryData, StaffInstanceSetTelemetryErrors, StaffInstanceSetTelemetryResponses, StaffMeGetData, StaffMeGetErrors, StaffMeGetResponses, StaffSignupItemsArchiveData, StaffSignupItemsArchiveErrors, StaffSignupItemsArchiveResponses, StaffSignupItemsCreateData, StaffSignupItemsCreateErrors, StaffSignupItemsCreateResponses, StaffSignupItemsGetData, StaffSignupItemsGetErrors, StaffSignupItemsGetResponses, StaffSignupItemsListData, StaffSignupItemsListErrors, StaffSignupItemsListResponses, StaffSignupItemsListVersionsData, StaffSignupItemsListVersionsErrors, StaffSignupItemsListVersionsResponses, StaffSignupItemsPublishData, StaffSignupItemsPublishErrors, StaffSignupItemsPublishResponses, StaffSignupItemsReorderData, StaffSignupItemsReorderErrors, StaffSignupItemsReorderResponses, StaffSignupItemsSaveDraftData, StaffSignupItemsSaveDraftErrors, StaffSignupItemsSaveDraftResponses, StaffSignupItemsUpdateData, StaffSignupItemsUpdateErrors, StaffSignupItemsUpdateResponses } from './types.gen.ts';
+import { zStaffAuthLoginBody, zStaffAuthSecondFactorBody, zStaffInstanceListAuditEntriesQuery, zStaffInstanceSetDefaultSendCapBody, zStaffInstanceSetTelemetryBody, zStaffSignupItemsArchivePath, zStaffSignupItemsCreateBody, zStaffSignupItemsGetPath, zStaffSignupItemsListVersionsPath, zStaffSignupItemsPublishBody, zStaffSignupItemsPublishPath, zStaffSignupItemsReorderBody, zStaffSignupItemsSaveDraftBody, zStaffSignupItemsSaveDraftPath, zStaffSignupItemsUpdateBody, zStaffSignupItemsUpdatePath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -95,6 +95,69 @@ export const staffInstanceGetState = <ThrowOnError extends boolean = false>(opti
     }],
   url: '/instance',
   ...options
+});
+
+/**
+ * The Instance audit log (ADR 0070), newest first: the changes Staff members made to the
+ * Instance's own settings
+ */
+export const staffInstanceListAuditEntries = <ThrowOnError extends boolean = false>(options?: Options<StaffInstanceListAuditEntriesData, ThrowOnError>): RequestResult<StaffInstanceListAuditEntriesResponses, StaffInstanceListAuditEntriesErrors, ThrowOnError> => (options?.client ?? client).get<StaffInstanceListAuditEntriesResponses, StaffInstanceListAuditEntriesErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: zStaffInstanceListAuditEntriesQuery.optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/instance/audit-entries',
+  ...options
+});
+
+/**
+ * Remove the default Send cap: Workspaces created from now on get no Send cap; existing
+ * Workspaces keep theirs. Recorded in the Instance audit log. Idempotent. Not found on an
+ * Instance that has no Send caps.
+ */
+export const staffInstanceClearDefaultSendCap = <ThrowOnError extends boolean = false>(options?: Options<StaffInstanceClearDefaultSendCapData, ThrowOnError>): RequestResult<StaffInstanceClearDefaultSendCapResponses, StaffInstanceClearDefaultSendCapErrors, ThrowOnError> => (options?.client ?? client).delete<StaffInstanceClearDefaultSendCapResponses, StaffInstanceClearDefaultSendCapErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/instance/default-send-cap',
+  ...options
+});
+
+/**
+ * Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created
+ * from now on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit
+ * log. Idempotent. Not found on an Instance that has no Send caps.
+ */
+export const staffInstanceSetDefaultSendCap = <ThrowOnError extends boolean = false>(options: Options<StaffInstanceSetDefaultSendCapData, ThrowOnError>): RequestResult<StaffInstanceSetDefaultSendCapResponses, StaffInstanceSetDefaultSendCapErrors, ThrowOnError> => (options.client ?? client).put<StaffInstanceSetDefaultSendCapResponses, StaffInstanceSetDefaultSendCapErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: zStaffInstanceSetDefaultSendCapBody,
+    path: z.never().optional(),
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/instance/default-send-cap',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**

@@ -388,6 +388,132 @@
         "tags": ["StaffMember Workspaces"]
       }
     },
+    "/workspaces/{workspaceId}/send-cap": {
+      "put": {
+        "operationId": "StaffWorkspaces_setSendCap",
+        "description": "Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a\nrolling 24 hours are deferred, not refused. Audited. Idempotent. Not found on an Instance that\nhas no Send caps.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSendCapChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffSendCapInput"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "StaffWorkspaces_clearSendCap",
+        "description": "Remove a Workspace's Send cap, so it is limited by its Provider limits only. Audited.\nIdempotent. Not found on an Instance that has no Send caps.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffSendCapChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "RFC 7807 not found response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["StaffMember Workspaces"]
+      }
+    },
     "/workspaces/{workspaceId}/suspend": {
       "post": {
         "operationId": "StaffWorkspaces_suspend",
@@ -769,6 +895,13 @@
           }
         },
         "description": "The body of a refused removal (ADR 0049): ProblemDetails plus the rows that use it"
+      },
+      "MaxPerDay": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 1,
+        "maximum": 100000000,
+        "description": "A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap"
       },
       "PaymentRequiredProblem": {
         "type": "object",
@@ -1248,6 +1381,56 @@
         },
         "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011)"
       },
+      "StaffSendCap": {
+        "type": "object",
+        "required": ["perDay", "sentLast24h"],
+        "properties": {
+          "perDay": {
+            "type": "integer",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerDay"
+              }
+            ],
+            "nullable": true,
+            "description": "Messages per rolling 24 hours; null when the Workspace has no Send cap"
+          },
+          "sentLast24h": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the Workspace sent over the last 24 hours, through all its Integrations and\nTransactional included"
+          }
+        },
+        "description": "A Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across\nall its Integrations, set by a Staff member and never by the Workspace"
+      },
+      "StaffSendCapChange": {
+        "type": "object",
+        "required": ["changed", "sendCap"],
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          },
+          "sendCap": {
+            "$ref": "#/components/schemas/StaffSendCap"
+          }
+        },
+        "description": "The outcome of setting or clearing a Send cap: the Send cap as it now stands, and whether\nanything changed (setting the same value, or clearing a Workspace with none, changes nothing)"
+      },
+      "StaffSendCapInput": {
+        "type": "object",
+        "required": ["perDay"],
+        "properties": {
+          "perDay": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerDay"
+              }
+            ],
+            "description": "Messages per rolling 24 hours"
+          }
+        },
+        "description": "The Send cap a Staff member sets on a Workspace"
+      },
       "StaffSignupCompanySize": {
         "type": "string",
         "enum": ["1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"],
@@ -1640,6 +1823,14 @@
           },
           "abuse": {
             "$ref": "#/components/schemas/StaffAbuse"
+          },
+          "sendCap": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffSendCap"
+              }
+            ],
+            "description": "The Workspace's Send cap; absent on an Instance that has no Send caps"
           }
         },
         "description": "A Workspace with its deliverability and active holds, as the detail page shows it"

@@ -1777,6 +1777,10 @@ const (
 	SegmentRetiredID = 104
 	// SegmentRetiredName is from fixtures/segments.
 	SegmentRetiredName = "Retired audience"
+	// SendCapLimiterAcmeID is from fixtures/send_cap_limiters.
+	SendCapLimiterAcmeID = 1
+	// SendCapLimiterGlobexID is from fixtures/send_cap_limiters.
+	SendCapLimiterGlobexID = 900
 	// SendingDomainArchivedDomain is from fixtures/sending_domains.
 	SendingDomainArchivedDomain = "old.acme.com"
 	// SendingDomainArchivedID is from fixtures/sending_domains.

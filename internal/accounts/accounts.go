@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/signup"
 	"github.com/getsphericon/sphericon/internal/validation"
@@ -51,7 +52,15 @@ type Accounts struct {
 	passwords   *credentials.Hasher
 	consents    Consents
 	newPublicID func() string
+	// sendCaps is whether the Instance has Send caps; only then does a new Workspace start with
+	// the default defaultSendCap reads.
+	sendCaps       providerlimit.SendCaps
+	defaultSendCap DefaultSendCap
 }
+
+// DefaultSendCap reads, on the transaction that creates a Workspace, the Send cap it starts with
+// (ADR 0067): nil for none. instance.DefaultSendCapIn is the Instance's default.
+type DefaultSendCap func(ctx context.Context, tx *ent.Client) (*int, error)
 
 // Consents answers a form's answers against the Sign-up items in effect: the Consent records they
 // make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check), and says
@@ -68,6 +77,13 @@ type Option func(*Accounts)
 // uses it to force a collision and watch creation retry.
 func WithWorkspaceIDs(generate func() string) Option {
 	return func(a *Accounts) { a.newPublicID = generate }
+}
+
+// WithSendCaps says whether the Instance has Send caps (ADR 0067); where it has, every Workspace
+// created from now on starts with the default Send cap defaultIn reads. Without them (the
+// default) a new Workspace has none, whatever default is stored.
+func WithSendCaps(caps providerlimit.SendCaps, defaultIn DefaultSendCap) Option {
+	return func(a *Accounts) { a.sendCaps, a.defaultSendCap = caps, defaultIn }
 }
 
 // New builds Accounts over the ent client; the bus opens the transactions that
@@ -433,7 +449,7 @@ func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name strin
 			if u.EmailVerifiedAt == nil {
 				return ErrEmailNotVerified
 			}
-			if ws, err = createWorkspaceIn(ctx, tx, userID, name, a.newPublicID()); err != nil {
+			if ws, err = a.createWorkspaceIn(ctx, tx, userID, name, a.newPublicID()); err != nil {
 				return err
 			}
 			actor := events.Actor{Kind: events.ActorUser, ID: strconv.FormatInt(u.ID, 10), Name: u.Name}
@@ -447,17 +463,24 @@ func (a *Accounts) CreateWorkspace(ctx context.Context, userID int64, name strin
 }
 
 // createWorkspaceIn creates the Workspace and its owner Membership on tx, with the
-// Workspace id it is given. A unique violation (an id already taken) aborts tx, so the caller retries the whole
+// Workspace id it is given and the Send cap a new Workspace starts with (WithSendCaps). A unique violation (an id already taken) aborts tx, so the caller retries the whole
 // transaction with a fresh id.
-func createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, publicID string) (*ent.Workspace, error) {
+func (a *Accounts) createWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64, name, publicID string) (*ent.Workspace, error) {
 	collectKey, err := credentials.GenerateCollectKey()
 	if err != nil {
 		return nil, err
+	}
+	var sendCap *int
+	if a.sendCaps {
+		if sendCap, err = a.defaultSendCap(ctx, tx); err != nil {
+			return nil, err
+		}
 	}
 	ws, err := tx.Workspace.Create().
 		SetName(name).
 		SetPublicID(publicID).
 		SetCollectKey(collectKey).
+		SetNillableSendCap(sendCap).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -671,7 +694,7 @@ func (a *Accounts) verified(ctx context.Context, proven bool, write func(tx *ent
 					return err
 				}
 			}
-			first, err := createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName, a.newPublicID())
+			first, err := a.createWorkspaceIn(ctx, tx, u.ID, FirstWorkspaceName, a.newPublicID())
 			if err != nil {
 				return err
 			}

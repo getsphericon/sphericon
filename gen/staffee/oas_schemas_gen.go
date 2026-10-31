@@ -36,6 +36,8 @@ func (s *ApiKeyAuth) SetRoles(val []string) {
 
 type EntityId int64
 
+type MaxPerDay int32
+
 // NewNilFloat64 returns new NilFloat64 with value set to v.
 func NewNilFloat64(v float64) NilFloat64 {
 	return NilFloat64{
@@ -75,6 +77,51 @@ func (o NilFloat64) Get() (v float64, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilFloat64) Or(d float64) float64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewNilMaxPerDay returns new NilMaxPerDay with value set to v.
+func NewNilMaxPerDay(v MaxPerDay) NilMaxPerDay {
+	return NilMaxPerDay{
+		Value: v,
+	}
+}
+
+// NilMaxPerDay is nullable MaxPerDay.
+type NilMaxPerDay struct {
+	Value MaxPerDay
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilMaxPerDay) SetTo(v MaxPerDay) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilMaxPerDay) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilMaxPerDay) SetToNull() {
+	o.Null = true
+	var v MaxPerDay
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilMaxPerDay) Get() (v MaxPerDay, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilMaxPerDay) Or(d MaxPerDay) MaxPerDay {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -713,6 +760,52 @@ func (o OptProblemDetailsFields) Get() (v ProblemDetailsFields, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptProblemDetailsFields) Or(d ProblemDetailsFields) ProblemDetailsFields {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptStaffSendCap returns new OptStaffSendCap with value set to v.
+func NewOptStaffSendCap(v StaffSendCap) OptStaffSendCap {
+	return OptStaffSendCap{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptStaffSendCap is optional StaffSendCap.
+type OptStaffSendCap struct {
+	Value StaffSendCap
+	Set   bool
+}
+
+// IsSet returns true if OptStaffSendCap was set.
+func (o OptStaffSendCap) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptStaffSendCap) Reset() {
+	var v StaffSendCap
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptStaffSendCap) SetTo(v StaffSendCap) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptStaffSendCap) Get() (v StaffSendCap, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptStaffSendCap) Or(d StaffSendCap) StaffSendCap {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -1821,6 +1914,85 @@ func (s *StaffRate) SetRate(val NilFloat64) {
 	s.Rate = val
 }
 
+// A Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across all its
+// Integrations, set by a Staff member and never by the Workspace.
+// Ref: #/components/schemas/StaffSendCap
+type StaffSendCap struct {
+	// Messages per rolling 24 hours; null when the Workspace has no Send cap.
+	PerDay NilMaxPerDay `json:"perDay"`
+	// Messages the Workspace sent over the last 24 hours, through all its Integrations and Transactional
+	// included.
+	SentLast24h int32 `json:"sentLast24h"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *StaffSendCap) GetPerDay() NilMaxPerDay {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *StaffSendCap) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *StaffSendCap) SetPerDay(val NilMaxPerDay) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *StaffSendCap) SetSentLast24h(val int32) {
+	s.SentLast24h = val
+}
+
+// The outcome of setting or clearing a Send cap: the Send cap as it now stands, and whether anything
+// changed (setting the same value, or clearing a Workspace with none, changes nothing).
+// Ref: #/components/schemas/StaffSendCapChange
+type StaffSendCapChange struct {
+	Changed bool         `json:"changed"`
+	SendCap StaffSendCap `json:"sendCap"`
+}
+
+// GetChanged returns the value of Changed.
+func (s *StaffSendCapChange) GetChanged() bool {
+	return s.Changed
+}
+
+// GetSendCap returns the value of SendCap.
+func (s *StaffSendCapChange) GetSendCap() StaffSendCap {
+	return s.SendCap
+}
+
+// SetChanged sets the value of Changed.
+func (s *StaffSendCapChange) SetChanged(val bool) {
+	s.Changed = val
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *StaffSendCapChange) SetSendCap(val StaffSendCap) {
+	s.SendCap = val
+}
+
+func (*StaffSendCapChange) staffWorkspacesClearSendCapRes() {}
+func (*StaffSendCapChange) staffWorkspacesSetSendCapRes()   {}
+
+// The Send cap a Staff member sets on a Workspace.
+// Ref: #/components/schemas/StaffSendCapInput
+type StaffSendCapInput struct {
+	// Messages per rolling 24 hours.
+	PerDay MaxPerDay `json:"perDay"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *StaffSendCapInput) GetPerDay() MaxPerDay {
+	return s.PerDay
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *StaffSendCapInput) SetPerDay(val MaxPerDay) {
+	s.PerDay = val
+}
+
 // How many people work at the User's company (second question).
 // Ref: #/components/schemas/StaffSignupCompanySize
 type StaffSignupCompanySize string
@@ -2675,6 +2847,8 @@ type StaffWorkspaceDetailResource struct {
 	Holds          []StaffHold         `json:"holds"`
 	Deliverability StaffDeliverability `json:"deliverability"`
 	Abuse          StaffAbuse          `json:"abuse"`
+	// The Workspace's Send cap; absent on an Instance that has no Send caps.
+	SendCap OptStaffSendCap `json:"sendCap"`
 }
 
 // GetID returns the value of ID.
@@ -2732,6 +2906,11 @@ func (s *StaffWorkspaceDetailResource) GetAbuse() StaffAbuse {
 	return s.Abuse
 }
 
+// GetSendCap returns the value of SendCap.
+func (s *StaffWorkspaceDetailResource) GetSendCap() OptStaffSendCap {
+	return s.SendCap
+}
+
 // SetID sets the value of ID.
 func (s *StaffWorkspaceDetailResource) SetID(val WorkspaceId) {
 	s.ID = val
@@ -2785,6 +2964,11 @@ func (s *StaffWorkspaceDetailResource) SetDeliverability(val StaffDeliverability
 // SetAbuse sets the value of Abuse.
 func (s *StaffWorkspaceDetailResource) SetAbuse(val StaffAbuse) {
 	s.Abuse = val
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *StaffWorkspaceDetailResource) SetSendCap(val OptStaffSendCap) {
+	s.SendCap = val
 }
 
 func (*StaffWorkspaceDetailResource) staffWorkspacesGetRes() {}
@@ -2940,6 +3124,18 @@ func (s *StaffWorkspaceReview) UnmarshalText(data []byte) error {
 	}
 }
 
+type StaffWorkspacesClearSendCapBadRequest ProblemDetails
+
+func (*StaffWorkspacesClearSendCapBadRequest) staffWorkspacesClearSendCapRes() {}
+
+type StaffWorkspacesClearSendCapNotFound ProblemDetails
+
+func (*StaffWorkspacesClearSendCapNotFound) staffWorkspacesClearSendCapRes() {}
+
+type StaffWorkspacesClearSendCapUnauthorized ProblemDetails
+
+func (*StaffWorkspacesClearSendCapUnauthorized) staffWorkspacesClearSendCapRes() {}
+
 type StaffWorkspacesExemptBadRequest ProblemDetails
 
 func (*StaffWorkspacesExemptBadRequest) staffWorkspacesExemptRes() {}
@@ -3037,6 +3233,18 @@ func (*StaffWorkspacesListOK) staffWorkspacesListRes() {}
 type StaffWorkspacesListUnauthorized ProblemDetails
 
 func (*StaffWorkspacesListUnauthorized) staffWorkspacesListRes() {}
+
+type StaffWorkspacesSetSendCapBadRequest ProblemDetails
+
+func (*StaffWorkspacesSetSendCapBadRequest) staffWorkspacesSetSendCapRes() {}
+
+type StaffWorkspacesSetSendCapNotFound ProblemDetails
+
+func (*StaffWorkspacesSetSendCapNotFound) staffWorkspacesSetSendCapRes() {}
+
+type StaffWorkspacesSetSendCapUnauthorized ProblemDetails
+
+func (*StaffWorkspacesSetSendCapUnauthorized) staffWorkspacesSetSendCapRes() {}
 
 type StaffWorkspacesSuspendBadRequest ProblemDetails
 

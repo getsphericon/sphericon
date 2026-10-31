@@ -59,10 +59,18 @@ type StaffConverter interface {
 	// goverter:map AbuseExempt Exempt
 	// goverter:map AbuseWarningNotifiedAt Warned | isSet
 	// goverter:map . Suspension | workspaceSuspension
+	// The Send cap is attached through SendCapToResource only on an Instance that has Send caps.
 	// goverter:ignore Holds
 	// goverter:ignore Abuse
 	// goverter:ignore Deliverability
+	// goverter:ignore SendCap
 	WorkspaceDetailToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceDetailResource
+
+	// goverter:map SendCap PerDay | nilMaxPerDay
+	// The sends of the last 24 hours are read through the Workspace's scope (Module.SentLast24h),
+	// which the mapper cannot see: the handler attaches them.
+	// goverter:ignore SentLast24h
+	SendCapToResource(source *ent.Workspace) staffeeapi.StaffSendCap
 
 	HoldToResource(source *ent.Hold) staffeeapi.StaffHold
 	// goverter:useEmptyOnNil:slice
@@ -252,6 +260,14 @@ func staffAuditDiff(d map[string]jx.Raw) staffeeapi.OptNilStaffAuditEntryResourc
 
 func nilFloat64(v *float64) staffeeapi.NilFloat64 {
 	return convert.Nil[staffeeapi.NilFloat64](v)
+}
+
+// nilMaxPerDay renders a Send cap: null when the Workspace has none.
+func nilMaxPerDay(v *int) staffeeapi.NilMaxPerDay {
+	if v == nil {
+		return staffeeapi.NilMaxPerDay{Null: true}
+	}
+	return staffeeapi.NewNilMaxPerDay(staffeeapi.MaxPerDay(narrow.Int32(*v)))
 }
 
 // count narrows a count to the contract's int32.

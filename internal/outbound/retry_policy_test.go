@@ -8,6 +8,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
 // A Deferral draws its own jitter, up to a fifth of the delay, so each case states the band
@@ -55,5 +56,23 @@ func TestADeferralDelayAgreesWithTheModel(t *testing.T) {
 		base := min(max(float64(wait)*float64(1+backlog), float64(time.Second)), float64(time.Hour))
 		assert.GreaterOrEqual(t, float64(retry.After), base-1)
 		assert.LessOrEqual(t, float64(retry.After), base*1.2+1)
+	})
+}
+
+// A Deferral caused by the Send cap asks again within the bound, jitter included, whatever the
+// Workspace bucket's wait and the backlog ahead: a raised Send cap is noticed within minutes. It
+// still never wakes sooner than the floor, and a longer backlog never makes it wake sooner.
+func TestASendCapDeferralAlwaysRetriesWithinTheBound(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		wait := time.Duration(rapid.Int64Range(0, int64(48*time.Hour)).Draw(t, "wait"))
+		backlog := rapid.IntRange(0, 100_000).Draw(t, "backlog")
+
+		retry := outbound.Result{Outcome: outbound.Deferral, Cause: providerlimit.CauseSendCap, Wait: wait}.Retry(backlog)
+
+		assert.True(t, retry.Wanted)
+		assert.GreaterOrEqual(t, retry.After, time.Second)
+		assert.LessOrEqual(t, retry.After, 10*time.Minute)
+		base := min(max(float64(wait)*float64(1+backlog), float64(time.Second)), float64(10*time.Minute)/1.2)
+		assert.GreaterOrEqual(t, float64(retry.After), base-1)
 	})
 }

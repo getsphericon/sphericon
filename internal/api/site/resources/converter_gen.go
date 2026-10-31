@@ -255,11 +255,26 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKi
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return siteapiSiteBrandKitResource
 }
+func (c *ConverterImpl) BroadcastLimitToResource(source providerlimit.Cause) site.SiteBroadcastLimit {
+	var siteapiSiteBroadcastLimit site.SiteBroadcastLimit
+	switch source {
+	case providerlimit.CauseProvider:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	case providerlimit.CauseProviderLimit:
+		siteapiSiteBroadcastLimit = site.SiteBroadcastLimitProviderLimit
+	case providerlimit.CauseSendCap:
+		siteapiSiteBroadcastLimit = site.SiteBroadcastLimitSendCap
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteBroadcastLimit
+}
 func (c *ConverterImpl) BroadcastProgressToResource(source broadcasts.Progress) site.SiteBroadcastProgress {
 	var siteapiSiteBroadcastProgress site.SiteBroadcastProgress
 	siteapiSiteBroadcastProgress.ProcessedCount = count(source.Processed)
 	siteapiSiteBroadcastProgress.RemainingCount = count(source.Remaining)
 	siteapiSiteBroadcastProgress.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletion)
+	siteapiSiteBroadcastProgress.LimitedBy = broadcastLimit(c, source.LimitedBy)
 	return siteapiSiteBroadcastProgress
 }
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) site.ContactExportBroadcastRecipient {
@@ -1397,6 +1412,15 @@ func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []site.SiteSe
 	}
 	return siteapiSiteSegmentResourceList
 }
+func (c *ConverterImpl) SendCapStatusToResource(source *providerlimit.SendCapStatus) site.OptNilSiteSendCap {
+	return optNilSendCap(c, source)
+}
+func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) site.SiteSendCap {
+	var siteapiSiteSendCap site.SiteSendCap
+	siteapiSiteSendCap.PerDay = maxPerDay(source.PerDay)
+	siteapiSiteSendCap.SentLast24h = count(source.Sent24h)
+	return siteapiSiteSendCap
+}
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.SiteSendingDomainResource {
 	var siteapiSiteSendingDomainResource site.SiteSendingDomainResource
 	if source != nil {
@@ -1809,6 +1833,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		// siteapiSiteWorkspaceResource.Holds: ignore
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)
 		// siteapiSiteWorkspaceResource.SecondFactorGraceEndsAt: ignore
+		// siteapiSiteWorkspaceResource.SendCap: ignore
 		// siteapiSiteWorkspaceResource.AccountLinkAvailable: ignore
 		siteapiSiteWorkspaceResource.CreatedAt = timestamp((*source).CreatedAt)
 	}

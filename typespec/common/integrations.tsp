@@ -7,11 +7,6 @@ namespace Sphericon;
 @maxValue(10000)
 scalar MaxPerSecond extends int32;
 
-/** A rolling 24-hour Provider limit the caller may set */
-@minValue(1)
-@maxValue(100000000)
-scalar MaxPerDay extends int32;
-
 /** SMTP credentials */
 model SmtpConfigInput {
   kind: "smtp";

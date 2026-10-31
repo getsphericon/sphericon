@@ -21,7 +21,8 @@ import (
 
 // globexInboxModule sends Globex's marketing through its Test inbox: the real provider keeping
 // Captured messages, with the 200 a day the Integration row reports, on a clock the test moves.
-func globexInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock) *outbound.Module {
+// opts add to the module's options.
+func globexInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock, opts ...outbound.Option) *outbound.Module {
 	t.Helper()
 	s := env.DB.Scoped(fixtures.GlobexID)
 	built, err := inbox.Descriptor().Build(nil, messaging.Deps{
@@ -32,7 +33,8 @@ func globexInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock) *outboun
 	require.True(t, ok)
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexInboxID).SetIsDefault(true).ExecX(context.Background())
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetIsDefault(false).ExecX(context.Background())
-	return outbound.New(env.Bus, env.Holds, senders{sender: sender}, tracking.New("test-secret", "http://local"), outbound.WithClock(c.now))
+	return outbound.New(env.Bus, env.Holds, senders{sender: sender}, tracking.New("test-secret", "http://local"),
+		append([]outbound.Option{outbound.WithClock(c.now)}, opts...)...)
 }
 
 // sendToReader sends a marketing message to Globex's mailable Contact.

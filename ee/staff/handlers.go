@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
@@ -109,7 +110,63 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(breach))
 	}
 	res.Deliverability = staffMapper.DeliverabilityToResource(d)
+	if h.module.SendCaps() {
+		sendCap, err := h.sendCap(ctx, w)
+		if err != nil {
+			return nil, err
+		}
+		res.SendCap = staffeeapi.NewOptStaffSendCap(sendCap)
+	}
 	return &res, nil
+}
+
+// StaffWorkspacesSetSendCap sets a Workspace's Send cap as the signed-in Staff member.
+func (h *Handlers) StaffWorkspacesSetSendCap(ctx context.Context, req *staffeeapi.StaffSendCapInput, params staffeeapi.StaffWorkspacesSetSendCapParams) (staffeeapi.StaffWorkspacesSetSendCapRes, error) {
+	perDay := int(req.PerDay)
+	change, found, err := h.setSendCap(ctx, params.WorkspaceId, &perDay)
+	if !found {
+		p := staffeeapi.StaffWorkspacesSetSendCapNotFound(notFoundProblem())
+		return &p, nil
+	}
+	return change, err
+}
+
+// StaffWorkspacesClearSendCap removes a Workspace's Send cap as the signed-in Staff member.
+func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staffeeapi.StaffWorkspacesClearSendCapParams) (staffeeapi.StaffWorkspacesClearSendCapRes, error) {
+	change, found, err := h.setSendCap(ctx, params.WorkspaceId, nil)
+	if !found {
+		p := staffeeapi.StaffWorkspacesClearSendCapNotFound(notFoundProblem())
+		return &p, nil
+	}
+	return change, err
+}
+
+// setSendCap is the change both Send cap operations make. found is false for an unknown
+// Workspace; on an Instance with no Send caps the module's refusal is the error (404 as well).
+func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, perDay *int) (change *staffeeapi.StaffSendCapChange, found bool, err error) {
+	w, changed, err := h.module.SetSendCap(ctx, h.bus, string(wsID), staffmembers.Current(ctx), perDay)
+	if ent.IsNotFound(err) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, true, err
+	}
+	sendCap, err := h.sendCap(ctx, w)
+	if err != nil {
+		return nil, true, err
+	}
+	return &staffeeapi.StaffSendCapChange{Changed: changed, SendCap: sendCap}, true, nil
+}
+
+// sendCap is the Workspace's Send cap with its sends over the last 24 hours.
+func (h *Handlers) sendCap(ctx context.Context, w *ent.Workspace) (staffeeapi.StaffSendCap, error) {
+	sent, err := h.module.SentLast24h(ctx, w)
+	if err != nil {
+		return staffeeapi.StaffSendCap{}, err
+	}
+	res := staffMapper.SendCapToResource(w)
+	res.SentLast24h = narrow.Int32(sent)
+	return res, nil
 }
 
 func workspaceNotFound() *staffeeapi.StaffWorkspacesGetNotFound {

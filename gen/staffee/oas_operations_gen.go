@@ -6,13 +6,15 @@ package staffeeapi
 type OperationName = string
 
 const (
-	StaffSignupSurveyCountsOperation  OperationName = "StaffSignupSurveyCounts"
-	StaffSignupSurveyGetOperation     OperationName = "StaffSignupSurveyGet"
-	StaffWorkspaceAuditListOperation  OperationName = "StaffWorkspaceAuditList"
-	StaffWorkspacesExemptOperation    OperationName = "StaffWorkspacesExempt"
-	StaffWorkspacesGetOperation       OperationName = "StaffWorkspacesGet"
-	StaffWorkspacesListOperation      OperationName = "StaffWorkspacesList"
-	StaffWorkspacesSuspendOperation   OperationName = "StaffWorkspacesSuspend"
-	StaffWorkspacesUnexemptOperation  OperationName = "StaffWorkspacesUnexempt"
-	StaffWorkspacesUnsuspendOperation OperationName = "StaffWorkspacesUnsuspend"
+	StaffSignupSurveyCountsOperation     OperationName = "StaffSignupSurveyCounts"
+	StaffSignupSurveyGetOperation        OperationName = "StaffSignupSurveyGet"
+	StaffWorkspaceAuditListOperation     OperationName = "StaffWorkspaceAuditList"
+	StaffWorkspacesClearSendCapOperation OperationName = "StaffWorkspacesClearSendCap"
+	StaffWorkspacesExemptOperation       OperationName = "StaffWorkspacesExempt"
+	StaffWorkspacesGetOperation          OperationName = "StaffWorkspacesGet"
+	StaffWorkspacesListOperation         OperationName = "StaffWorkspacesList"
+	StaffWorkspacesSetSendCapOperation   OperationName = "StaffWorkspacesSetSendCap"
+	StaffWorkspacesSuspendOperation      OperationName = "StaffWorkspacesSuspend"
+	StaffWorkspacesUnexemptOperation     OperationName = "StaffWorkspacesUnexempt"
+	StaffWorkspacesUnsuspendOperation    OperationName = "StaffWorkspacesUnsuspend"
 )

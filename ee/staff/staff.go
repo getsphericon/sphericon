@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/audit"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/signupsurvey"
 )
 
@@ -43,18 +44,22 @@ type Config struct {
 	// HoldMaxExpiry is how far ahead a Staff hold's expiry may be set
 	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is DefaultHoldMaxExpiry.
 	HoldMaxExpiry time.Duration
+	// SendCaps is whether the Instance has Send caps (ADR 0067). Without them the console shows
+	// no Send cap and its endpoints are not found, whatever the License.
+	SendCaps providerlimit.SendCaps
 }
 
 // Module is the domain of the console's Enterprise sections and of the service endpoints.
 type Module struct {
-	ent     *ent.Client
-	lic     *licensekey.License
-	audit   *audit.Log
-	now     func() time.Time
-	watch   *abuse.Watch
-	support string
-	holdMax time.Duration
-	survey  *signupsurvey.Reader
+	ent      *ent.Client
+	lic      *licensekey.License
+	audit    *audit.Log
+	now      func() time.Time
+	watch    *abuse.Watch
+	support  string
+	holdMax  time.Duration
+	survey   *signupsurvey.Reader
+	sendCaps providerlimit.SendCaps
 }
 
 // NewModule builds the module over the raw client.
@@ -69,6 +74,7 @@ func NewModule(client *ent.Client, lic *licensekey.License, auditLog *audit.Log,
 	}
 	return &Module{
 		ent: client, lic: lic, audit: auditLog, now: now, watch: abuse.NewWatch(lic, cfg.Abuse), support: cfg.SupportEmail, holdMax: holdMax, survey: signupsurvey.NewReader(client),
+		sendCaps: cfg.SendCaps,
 	}
 }
 

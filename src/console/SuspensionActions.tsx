@@ -10,33 +10,10 @@ import {
   staffWorkspacesUnexemptMutation,
   staffWorkspacesUnsuspendMutation,
 } from '../generated/staffee/@tanstack/react-query.gen.ts'
-import type { StaffExemptionChange, StaffSuspensionChange } from '../generated/staffee/types.gen.ts'
 import { zStaffSuspendInput } from '../generated/staffee/zod.gen.ts'
-import { useNotify } from '../hooks/useNotify.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { trimmed, useSchemaForm } from '../resources/schemaForm.ts'
-
-// Both actions answer 200 with whether anything changed, so a no-op says so instead of
-// looking like a success.
-function useChangeNotice(changedMessage: string, unchangedMessage: string) {
-  const { t } = useTranslation()
-  const notify = useNotify()
-  return (change: StaffSuspensionChange | StaffExemptionChange) => {
-    notify(
-      change.changed
-        ? {
-            color: 'teal',
-            title: t(($) => $.notifications.successTitle),
-            message: changedMessage,
-          }
-        : {
-            color: 'blue',
-            title: t(($) => $.console.workspace.unchangedTitle),
-            message: unchangedMessage,
-          },
-    )
-  }
-}
+import { useChangeNotice } from './useChangeNotice.ts'
 
 const suspendSchema = z.object({ reason: trimmed(zStaffSuspendInput.shape.reason) })
 

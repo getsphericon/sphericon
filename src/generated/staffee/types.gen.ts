@@ -105,6 +105,11 @@ export type InUseProblemDetails = {
 };
 
 /**
+ * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
+ */
+export type MaxPerDay = number;
+
+/**
  * RFC 7807 payment required response: the feature needs an Enterprise license
  */
 export type PaymentRequiredProblem = {
@@ -479,6 +484,41 @@ export type StaffRate = {
 };
 
 /**
+ * A Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
+ * all its Integrations, set by a Staff member and never by the Workspace
+ */
+export type StaffSendCap = {
+  /**
+   * Messages per rolling 24 hours; null when the Workspace has no Send cap
+   */
+  perDay: MaxPerDay | null;
+  /**
+   * Messages the Workspace sent over the last 24 hours, through all its Integrations and
+   * Transactional included
+   */
+  sentLast24h: number;
+};
+
+/**
+ * The outcome of setting or clearing a Send cap: the Send cap as it now stands, and whether
+ * anything changed (setting the same value, or clearing a Workspace with none, changes nothing)
+ */
+export type StaffSendCapChange = {
+  changed: boolean;
+  sendCap: StaffSendCap;
+};
+
+/**
+ * The Send cap a Staff member sets on a Workspace
+ */
+export type StaffSendCapInput = {
+  /**
+   * Messages per rolling 24 hours
+   */
+  perDay: MaxPerDay;
+};
+
+/**
  * How many people work at the User's company (second question)
  */
 export const StaffSignupCompanySize = {
@@ -755,6 +795,10 @@ export type StaffWorkspaceDetailResource = {
   holds: Array<StaffHold>;
   deliverability: StaffDeliverability;
   abuse: StaffAbuse;
+  /**
+   * The Workspace's Send cap; absent on an Instance that has no Send caps
+   */
+  sendCap?: StaffSendCap;
 };
 
 /**
@@ -1131,6 +1175,76 @@ export type StaffWorkspacesExemptResponses = {
 };
 
 export type StaffWorkspacesExemptResponse = StaffWorkspacesExemptResponses[keyof StaffWorkspacesExemptResponses];
+
+export type StaffWorkspacesClearSendCapData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/send-cap';
+};
+
+export type StaffWorkspacesClearSendCapErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type StaffWorkspacesClearSendCapError = StaffWorkspacesClearSendCapErrors[keyof StaffWorkspacesClearSendCapErrors];
+
+export type StaffWorkspacesClearSendCapResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSendCapChange;
+};
+
+export type StaffWorkspacesClearSendCapResponse = StaffWorkspacesClearSendCapResponses[keyof StaffWorkspacesClearSendCapResponses];
+
+export type StaffWorkspacesSetSendCapData = {
+  body: StaffSendCapInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/send-cap';
+};
+
+export type StaffWorkspacesSetSendCapErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 not found response
+   */
+  404: ProblemDetails;
+};
+
+export type StaffWorkspacesSetSendCapError = StaffWorkspacesSetSendCapErrors[keyof StaffWorkspacesSetSendCapErrors];
+
+export type StaffWorkspacesSetSendCapResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: StaffSendCapChange;
+};
+
+export type StaffWorkspacesSetSendCapResponse = StaffWorkspacesSetSendCapResponses[keyof StaffWorkspacesSetSendCapResponses];
 
 export type StaffWorkspacesSuspendData = {
   body: StaffSuspendInput;

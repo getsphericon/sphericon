@@ -112,6 +112,17 @@ func TestNilIsNullWithoutAValue(t *testing.T) {
 	assert.Equal(t, nilInt{null: true}, unset)
 }
 
+func TestNilViaMapsAValueAndMakesNoneNull(t *testing.T) {
+	tenfold := func(v int) int64 { return int64(v * 10) }
+	seven := 7
+
+	set := convert.NilVia[nilInt](&seven, tenfold)
+	unset := convert.NilVia[nilInt]((*int)(nil), tenfold)
+
+	assert.Equal(t, nilInt{v: 70}, set)
+	assert.Equal(t, nilInt{null: true}, unset)
+}
+
 type optText struct {
 	v   string
 	set bool

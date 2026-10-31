@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -239,6 +240,33 @@ func (_u *WorkspaceUpdate) SetNillableAttributionWindowDays(v *int) *WorkspaceUp
 // AddAttributionWindowDays adds value to the "attribution_window_days" field.
 func (_u *WorkspaceUpdate) AddAttributionWindowDays(v int) *WorkspaceUpdate {
 	_u.mutation.AddAttributionWindowDays(v)
+	return _u
+}
+
+// SetSendCap sets the "send_cap" field.
+func (_u *WorkspaceUpdate) SetSendCap(v int) *WorkspaceUpdate {
+	_u.mutation.ResetSendCap()
+	_u.mutation.SetSendCap(v)
+	return _u
+}
+
+// SetNillableSendCap sets the "send_cap" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableSendCap(v *int) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetSendCap(*v)
+	}
+	return _u
+}
+
+// AddSendCap adds value to the "send_cap" field.
+func (_u *WorkspaceUpdate) AddSendCap(v int) *WorkspaceUpdate {
+	_u.mutation.AddSendCap(v)
+	return _u
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (_u *WorkspaceUpdate) ClearSendCap() *WorkspaceUpdate {
+	_u.mutation.ClearSendCap()
 	return _u
 }
 
@@ -679,6 +707,21 @@ func (_u *WorkspaceUpdate) AddProviderLimiters(v ...*ProviderLimiter) *Workspace
 		ids[i] = v[i].ID
 	}
 	return _u.AddProviderLimiterIDs(ids...)
+}
+
+// AddSendCapLimiterIDs adds the "send_cap_limiters" edge to the SendCapLimiter entity by IDs.
+func (_u *WorkspaceUpdate) AddSendCapLimiterIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddSendCapLimiterIDs(ids...)
+	return _u
+}
+
+// AddSendCapLimiters adds the "send_cap_limiters" edges to the SendCapLimiter entity.
+func (_u *WorkspaceUpdate) AddSendCapLimiters(v ...*SendCapLimiter) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSendCapLimiterIDs(ids...)
 }
 
 // AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
@@ -1325,6 +1368,27 @@ func (_u *WorkspaceUpdate) RemoveProviderLimiters(v ...*ProviderLimiter) *Worksp
 	return _u.RemoveProviderLimiterIDs(ids...)
 }
 
+// ClearSendCapLimiters clears all "send_cap_limiters" edges to the SendCapLimiter entity.
+func (_u *WorkspaceUpdate) ClearSendCapLimiters() *WorkspaceUpdate {
+	_u.mutation.ClearSendCapLimiters()
+	return _u
+}
+
+// RemoveSendCapLimiterIDs removes the "send_cap_limiters" edge to SendCapLimiter entities by IDs.
+func (_u *WorkspaceUpdate) RemoveSendCapLimiterIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveSendCapLimiterIDs(ids...)
+	return _u
+}
+
+// RemoveSendCapLimiters removes "send_cap_limiters" edges to SendCapLimiter entities.
+func (_u *WorkspaceUpdate) RemoveSendCapLimiters(v ...*SendCapLimiter) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSendCapLimiterIDs(ids...)
+}
+
 // ClearHolds clears all "holds" edges to the Hold entity.
 func (_u *WorkspaceUpdate) ClearHolds() *WorkspaceUpdate {
 	_u.mutation.ClearHolds()
@@ -1871,6 +1935,11 @@ func (_u *WorkspaceUpdate) check() error {
 			return &ValidationError{Name: "attribution_window_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.attribution_window_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SendCap(); ok {
+		if err := workspace.SendCapValidator(v); err != nil {
+			return &ValidationError{Name: "send_cap", err: fmt.Errorf(`ent: validator failed for field "Workspace.send_cap": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
 			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
@@ -1947,6 +2016,15 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedAttributionWindowDays(); ok {
 		_spec.AddField(workspace.FieldAttributionWindowDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SendCap(); ok {
+		_spec.SetField(workspace.FieldSendCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSendCap(); ok {
+		_spec.AddField(workspace.FieldSendCap, field.TypeInt, value)
+	}
+	if _u.mutation.SendCapCleared() {
+		_spec.ClearField(workspace.FieldSendCap, field.TypeInt)
 	}
 	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
@@ -2637,6 +2715,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SendCapLimitersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendCapLimitersTable,
+			Columns: []string{workspace.SendCapLimitersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendcaplimiter.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSendCapLimitersIDs(); len(nodes) > 0 && !_u.mutation.SendCapLimitersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendCapLimitersTable,
+			Columns: []string{workspace.SendCapLimitersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendcaplimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SendCapLimitersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendCapLimitersTable,
+			Columns: []string{workspace.SendCapLimitersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendcaplimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -3877,6 +4000,33 @@ func (_u *WorkspaceUpdateOne) AddAttributionWindowDays(v int) *WorkspaceUpdateOn
 	return _u
 }
 
+// SetSendCap sets the "send_cap" field.
+func (_u *WorkspaceUpdateOne) SetSendCap(v int) *WorkspaceUpdateOne {
+	_u.mutation.ResetSendCap()
+	_u.mutation.SetSendCap(v)
+	return _u
+}
+
+// SetNillableSendCap sets the "send_cap" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableSendCap(v *int) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetSendCap(*v)
+	}
+	return _u
+}
+
+// AddSendCap adds value to the "send_cap" field.
+func (_u *WorkspaceUpdateOne) AddSendCap(v int) *WorkspaceUpdateOne {
+	_u.mutation.AddSendCap(v)
+	return _u
+}
+
+// ClearSendCap clears the value of the "send_cap" field.
+func (_u *WorkspaceUpdateOne) ClearSendCap() *WorkspaceUpdateOne {
+	_u.mutation.ClearSendCap()
+	return _u
+}
+
 // SetDomainJoinEnabled sets the "domain_join_enabled" field.
 func (_u *WorkspaceUpdateOne) SetDomainJoinEnabled(v bool) *WorkspaceUpdateOne {
 	_u.mutation.SetDomainJoinEnabled(v)
@@ -4314,6 +4464,21 @@ func (_u *WorkspaceUpdateOne) AddProviderLimiters(v ...*ProviderLimiter) *Worksp
 		ids[i] = v[i].ID
 	}
 	return _u.AddProviderLimiterIDs(ids...)
+}
+
+// AddSendCapLimiterIDs adds the "send_cap_limiters" edge to the SendCapLimiter entity by IDs.
+func (_u *WorkspaceUpdateOne) AddSendCapLimiterIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddSendCapLimiterIDs(ids...)
+	return _u
+}
+
+// AddSendCapLimiters adds the "send_cap_limiters" edges to the SendCapLimiter entity.
+func (_u *WorkspaceUpdateOne) AddSendCapLimiters(v ...*SendCapLimiter) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSendCapLimiterIDs(ids...)
 }
 
 // AddHoldIDs adds the "holds" edge to the Hold entity by IDs.
@@ -4960,6 +5125,27 @@ func (_u *WorkspaceUpdateOne) RemoveProviderLimiters(v ...*ProviderLimiter) *Wor
 	return _u.RemoveProviderLimiterIDs(ids...)
 }
 
+// ClearSendCapLimiters clears all "send_cap_limiters" edges to the SendCapLimiter entity.
+func (_u *WorkspaceUpdateOne) ClearSendCapLimiters() *WorkspaceUpdateOne {
+	_u.mutation.ClearSendCapLimiters()
+	return _u
+}
+
+// RemoveSendCapLimiterIDs removes the "send_cap_limiters" edge to SendCapLimiter entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveSendCapLimiterIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveSendCapLimiterIDs(ids...)
+	return _u
+}
+
+// RemoveSendCapLimiters removes "send_cap_limiters" edges to SendCapLimiter entities.
+func (_u *WorkspaceUpdateOne) RemoveSendCapLimiters(v ...*SendCapLimiter) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSendCapLimiterIDs(ids...)
+}
+
 // ClearHolds clears all "holds" edges to the Hold entity.
 func (_u *WorkspaceUpdateOne) ClearHolds() *WorkspaceUpdateOne {
 	_u.mutation.ClearHolds()
@@ -5519,6 +5705,11 @@ func (_u *WorkspaceUpdateOne) check() error {
 			return &ValidationError{Name: "attribution_window_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.attribution_window_days": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SendCap(); ok {
+		if err := workspace.SendCapValidator(v); err != nil {
+			return &ValidationError{Name: "send_cap", err: fmt.Errorf(`ent: validator failed for field "Workspace.send_cap": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
 			return &ValidationError{Name: "suspended_by_kind", err: fmt.Errorf(`ent: validator failed for field "Workspace.suspended_by_kind": %w`, err)}
@@ -5612,6 +5803,15 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.AddedAttributionWindowDays(); ok {
 		_spec.AddField(workspace.FieldAttributionWindowDays, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SendCap(); ok {
+		_spec.SetField(workspace.FieldSendCap, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSendCap(); ok {
+		_spec.AddField(workspace.FieldSendCap, field.TypeInt, value)
+	}
+	if _u.mutation.SendCapCleared() {
+		_spec.ClearField(workspace.FieldSendCap, field.TypeInt)
 	}
 	if value, ok := _u.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
@@ -6302,6 +6502,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SendCapLimitersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendCapLimitersTable,
+			Columns: []string{workspace.SendCapLimitersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendcaplimiter.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSendCapLimitersIDs(); len(nodes) > 0 && !_u.mutation.SendCapLimitersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendCapLimitersTable,
+			Columns: []string{workspace.SendCapLimitersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendcaplimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SendCapLimitersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.SendCapLimitersTable,
+			Columns: []string{workspace.SendCapLimitersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sendcaplimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

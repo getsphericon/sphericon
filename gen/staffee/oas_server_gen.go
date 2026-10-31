@@ -27,6 +27,13 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
 	StaffWorkspaceAuditList(ctx context.Context, params StaffWorkspaceAuditListParams) (StaffWorkspaceAuditListRes, error)
+	// StaffWorkspacesClearSendCap implements StaffWorkspaces_clearSendCap operation.
+	//
+	// Remove a Workspace's Send cap, so it is limited by its Provider limits only. Audited. Idempotent.
+	// Not found on an Instance that has no Send caps.
+	//
+	// DELETE /workspaces/{workspaceId}/send-cap
+	StaffWorkspacesClearSendCap(ctx context.Context, params StaffWorkspacesClearSendCapParams) (StaffWorkspacesClearSendCapRes, error)
 	// StaffWorkspacesExempt implements StaffWorkspaces_exempt operation.
 	//
 	// Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor frozen
@@ -47,6 +54,14 @@ type Handler interface {
 	//
 	// GET /workspaces
 	StaffWorkspacesList(ctx context.Context, params StaffWorkspacesListParams) (StaffWorkspacesListRes, error)
+	// StaffWorkspacesSetSendCap implements StaffWorkspaces_setSendCap operation.
+	//
+	// Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a
+	// rolling 24 hours are deferred, not refused. Audited. Idempotent. Not found on an Instance that has
+	// no Send caps.
+	//
+	// PUT /workspaces/{workspaceId}/send-cap
+	StaffWorkspacesSetSendCap(ctx context.Context, req *StaffSendCapInput, params StaffWorkspacesSetSendCapParams) (StaffWorkspacesSetSendCapRes, error)
 	// StaffWorkspacesSuspend implements StaffWorkspaces_suspend operation.
 	//
 	// Suspend a Workspace's outbound sending (ADR 0007) with a required reason, as the signed-in Staff

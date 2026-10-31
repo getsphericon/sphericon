@@ -1,5 +1,7 @@
 // Package suspension owns what it means for a Workspace to be suspended, and the notice its Owners
-// get.
+// get, and the platform's other levers over a Workspace's sending that Staff set on its row: the
+// abuse exemption (ADR 0026) and the Send cap (ADR 0067). Each change is audited in the
+// Workspace's own Audit log.
 package suspension
 
 import (
@@ -155,7 +157,46 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 	return changed, nil
 }
 
-// recordWorkspaceAudit publishes the Audit entry of a suspension change.
+// SetSendCap sets the Workspace's Send cap to sendCap messages per rolling 24 hours, or clears it
+// with nil (ADR 0067), recorded as `workspace.send_cap_change` in its Audit log for the actor `by`
+// with the old and the new value. It reports whether the value changed: setting the same value or
+// clearing a Workspace with none is a no-op. The Send cap is a lever short of a suspension: a spent
+// one slows sending (a Deferral), it does not stop it. Whether the Instance has Send caps at all is
+// the caller's to check; the bounds are the contract's.
+func SetSendCap(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, sendCap *int) (bool, error) {
+	if err := by.validate(); err != nil {
+		return false, fmt.Errorf("set send cap: %w", err)
+	}
+	changed := false
+	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		w, err := tx.Workspace.Query().Where(workspace.ID(workspaceID)).ForUpdate().Only(ctx)
+		if err != nil {
+			return err
+		}
+		diff, differs := events.ChangeOf(w.SendCap, sendCap)
+		if !differs {
+			return nil
+		}
+		upd := tx.Workspace.UpdateOneID(workspaceID)
+		if sendCap == nil {
+			upd.ClearSendCap()
+		} else {
+			upd.SetSendCap(*sendCap)
+		}
+		if err := upd.Exec(ctx); err != nil {
+			return err
+		}
+		changed = true
+		return recordWorkspaceAudit(ctx, tx, pub, workspaceID, by, events.ActionWorkspaceSendCapChange,
+			map[string]any{workspace.FieldSendCap: diff})
+	})
+	if err != nil {
+		return false, fmt.Errorf("set send cap of workspace %d: %w", workspaceID, err)
+	}
+	return changed, nil
+}
+
+// recordWorkspaceAudit publishes the Audit entry of a change to the Workspace's sending standing.
 func recordWorkspaceAudit(ctx context.Context, tx *ent.Client, pub events.Publisher, workspaceID int64, by Actor, action string, diff map[string]any) error {
 	ws, err := tx.Workspace.Get(ctx, workspaceID)
 	if err != nil {

@@ -17,22 +17,25 @@ var (
 	rn5AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn11AllowedHeaders = map[string]string{
+	rn9AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn16AllowedHeaders = map[string]string{
-		"POST": "Content-Type",
-	}
-	rn19AllowedHeaders = map[string]string{
-		"PUT": "Content-Type",
-	}
-	rn14AllowedHeaders = map[string]string{
-		"PATCH": "Content-Type",
-	}
-	rn20AllowedHeaders = map[string]string{
+	rn13AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn18AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn21AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn16AllowedHeaders = map[string]string{
+		"PATCH": "Content-Type",
+	}
+	rn22AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn20AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 )
@@ -227,6 +230,58 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 					switch elem[0] {
+					case 'a': // Prefix: "audit-entries"
+
+						if l := len("audit-entries"); len(elem) >= l && elem[0:l] == "audit-entries" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleStaffInstanceListAuditEntriesRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+					case 'd': // Prefix: "default-send-cap"
+
+						if l := len("default-send-cap"); len(elem) >= l && elem[0:l] == "default-send-cap" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "DELETE":
+								s.handleStaffInstanceClearDefaultSendCapRequest([0]string{}, elemIsEscaped, w, r)
+							case "PUT":
+								s.handleStaffInstanceSetDefaultSendCapRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "DELETE,PUT",
+									allowedHeaders: rn9AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
 					case 'n': // Prefix: "notice/acknowledge"
 
 						if l := len("notice/acknowledge"); len(elem) >= l && elem[0:l] == "notice/acknowledge" {
@@ -267,7 +322,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							default:
 								s.notAllowed(w, r, notAllowedParams{
 									allowedMethods: "PUT",
-									allowedHeaders: rn11AllowedHeaders,
+									allowedHeaders: rn13AllowedHeaders,
 									acceptPost:     "",
 									acceptPatch:    "",
 								})
@@ -349,7 +404,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					default:
 						s.notAllowed(w, r, notAllowedParams{
 							allowedMethods: "GET,POST",
-							allowedHeaders: rn16AllowedHeaders,
+							allowedHeaders: rn18AllowedHeaders,
 							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
@@ -386,7 +441,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							default:
 								s.notAllowed(w, r, notAllowedParams{
 									allowedMethods: "PUT",
-									allowedHeaders: rn19AllowedHeaders,
+									allowedHeaders: rn21AllowedHeaders,
 									acceptPost:     "",
 									acceptPatch:    "",
 								})
@@ -419,7 +474,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						default:
 							s.notAllowed(w, r, notAllowedParams{
 								allowedMethods: "GET,PATCH",
-								allowedHeaders: rn14AllowedHeaders,
+								allowedHeaders: rn16AllowedHeaders,
 								acceptPost:     "",
 								acceptPatch:    "application/json",
 							})
@@ -485,7 +540,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								default:
 									s.notAllowed(w, r, notAllowedParams{
 										allowedMethods: "PUT",
-										allowedHeaders: rn20AllowedHeaders,
+										allowedHeaders: rn22AllowedHeaders,
 										acceptPost:     "",
 										acceptPatch:    "",
 									})
@@ -516,7 +571,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								default:
 									s.notAllowed(w, r, notAllowedParams{
 										allowedMethods: "GET,POST",
-										allowedHeaders: rn18AllowedHeaders,
+										allowedHeaders: rn20AllowedHeaders,
 										acceptPost:     "application/json",
 										acceptPatch:    "",
 									})
@@ -770,6 +825,65 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 					switch elem[0] {
+					case 'a': // Prefix: "audit-entries"
+
+						if l := len("audit-entries"); len(elem) >= l && elem[0:l] == "audit-entries" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = StaffInstanceListAuditEntriesOperation
+								r.summary = ""
+								r.operationID = "StaffInstance_listAuditEntries"
+								r.operationGroup = ""
+								r.pathPattern = "/instance/audit-entries"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+					case 'd': // Prefix: "default-send-cap"
+
+						if l := len("default-send-cap"); len(elem) >= l && elem[0:l] == "default-send-cap" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "DELETE":
+								r.name = StaffInstanceClearDefaultSendCapOperation
+								r.summary = ""
+								r.operationID = "StaffInstance_clearDefaultSendCap"
+								r.operationGroup = ""
+								r.pathPattern = "/instance/default-send-cap"
+								r.args = args
+								r.count = 0
+								return r, true
+							case "PUT":
+								r.name = StaffInstanceSetDefaultSendCapOperation
+								r.summary = ""
+								r.operationID = "StaffInstance_setDefaultSendCap"
+								r.operationGroup = ""
+								r.pathPattern = "/instance/default-send-cap"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
 					case 'n': // Prefix: "notice/acknowledge"
 
 						if l := len("notice/acknowledge"); len(elem) >= l && elem[0:l] == "notice/acknowledge" {

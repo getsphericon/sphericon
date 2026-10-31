@@ -54,12 +54,33 @@ func (UnimplementedHandler) StaffInstanceAcknowledgeNotice(ctx context.Context) 
 	return r, ht.ErrNotImplemented
 }
 
+// StaffInstanceClearDefaultSendCap implements StaffInstance_clearDefaultSendCap operation.
+//
+// Remove the default Send cap: Workspaces created from now on get no Send cap; existing Workspaces
+// keep theirs. Recorded in the Instance audit log. Idempotent. Not found on an Instance that has no
+// Send caps.
+//
+// DELETE /instance/default-send-cap
+func (UnimplementedHandler) StaffInstanceClearDefaultSendCap(ctx context.Context) (r StaffInstanceClearDefaultSendCapRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // StaffInstanceGetState implements StaffInstance_getState operation.
 //
 // The Instance's own settings and state.
 //
 // GET /instance
 func (UnimplementedHandler) StaffInstanceGetState(ctx context.Context) (r StaffInstanceGetStateRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// StaffInstanceListAuditEntries implements StaffInstance_listAuditEntries operation.
+//
+// The Instance audit log (ADR 0070), newest first: the changes Staff members made to the Instance's
+// own settings.
+//
+// GET /instance/audit-entries
+func (UnimplementedHandler) StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (r StaffInstanceListAuditEntriesRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -70,6 +91,17 @@ func (UnimplementedHandler) StaffInstanceGetState(ctx context.Context) (r StaffI
 //
 // GET /instance/telemetry/preview
 func (UnimplementedHandler) StaffInstancePreviewTelemetryReport(ctx context.Context) (r StaffInstancePreviewTelemetryReportRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// StaffInstanceSetDefaultSendCap implements StaffInstance_setDefaultSendCap operation.
+//
+// Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created from now
+// on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit log. Idempotent.
+// Not found on an Instance that has no Send caps.
+//
+// PUT /instance/default-send-cap
+func (UnimplementedHandler) StaffInstanceSetDefaultSendCap(ctx context.Context, req *StaffDefaultSendCapInput) (r StaffInstanceSetDefaultSendCapRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

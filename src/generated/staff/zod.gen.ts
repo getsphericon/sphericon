@@ -25,6 +25,11 @@ export const zLegalDocumentLabel = z.string().min(1).max(64);
 export const zLegalDocumentMarkdown = z.string().max(100000);
 
 /**
+ * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
+ */
+export const zMaxPerDay = z.int().gte(1).lte(100000000);
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum([
@@ -111,6 +116,30 @@ export const zSignupItemKind = z.enum([
  * A Sign-up item's title: what the sign-up form shows
  */
 export const zSignupItemTitle = z.string().min(1).max(200);
+
+/**
+ * The default Send cap (ADR 0067): copied onto every Workspace created from now on. Changing it
+ * leaves the Send caps of existing Workspaces as they are.
+ */
+export const zStaffDefaultSendCap = z.object({
+  perDay: zMaxPerDay.nullable()
+});
+
+/**
+ * The outcome of setting or clearing the default Send cap: the default as it now stands, and
+ * whether anything changed (setting the same value, or clearing none, changes nothing)
+ */
+export const zStaffDefaultSendCapChange = z.object({
+  changed: z.boolean(),
+  defaultSendCap: zStaffDefaultSendCap
+});
+
+/**
+ * The default Send cap a Staff member sets
+ */
+export const zStaffDefaultSendCapInput = z.object({
+  perDay: zMaxPerDay
+});
 
 /**
  * A TOTP secret awaiting its first confirming code
@@ -226,6 +255,26 @@ export const zTimeZoneName = z.string();
 export const zTimestamp = z.iso.datetime();
 
 /**
+ * One entry of the Instance audit log (ADR 0070): a Staff member changed a setting of the
+ * Instance itself
+ */
+export const zStaffInstanceAuditEntryResource = z.object({
+  id: zEntityId,
+  occurredAt: zTimestamp,
+  actor: zStaffResource,
+  action: z.string(),
+  diff: z.record(z.string(), z.unknown())
+});
+
+/**
+ * A page of the Instance audit log, newest first
+ */
+export const zStaffInstanceAuditEntryList = z.object({
+  items: z.array(zStaffInstanceAuditEntryResource),
+  nextCursor: z.exactOptional(z.string().nullable())
+});
+
+/**
  * The Instance's own settings and state, which belong to no Workspace (ADR 0063): what a Staff
  * member sees and decides about the Instance itself.
  */
@@ -234,7 +283,8 @@ export const zStaffInstanceState = z.object({
   noticeAcknowledged: z.boolean(),
   latestRelease: z.exactOptional(z.string()),
   licenseExpiredAt: z.exactOptional(zTimestamp),
-  telemetrySchemaUrl: z.string()
+  telemetrySchemaUrl: z.string(),
+  defaultSendCap: z.exactOptional(zStaffDefaultSendCap)
 });
 
 /**
@@ -358,6 +408,28 @@ export const zStaffAuthSecondFactorResponse = zStaffResource;
  * The request has succeeded.
  */
 export const zStaffInstanceGetStateResponse = zStaffInstanceState;
+
+export const zStaffInstanceListAuditEntriesQuery = z.object({
+  cursor: z.exactOptional(z.string()),
+  limit: z.int().gte(1).lte(100).optional().default(25)
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffInstanceListAuditEntriesResponse = zStaffInstanceAuditEntryList;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffInstanceClearDefaultSendCapResponse = zStaffDefaultSendCapChange;
+
+export const zStaffInstanceSetDefaultSendCapBody = zStaffDefaultSendCapInput;
+
+/**
+ * The request has succeeded.
+ */
+export const zStaffInstanceSetDefaultSendCapResponse = zStaffDefaultSendCapChange;
 
 /**
  * The request has succeeded.

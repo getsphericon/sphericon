@@ -14,9 +14,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/automations"
+	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/tracking"
@@ -91,6 +93,45 @@ func TestBroadcastThroughALimitedIntegrationLosesNoRecipient(t *testing.T) {
 	})
 }
 
+// A Broadcast larger than its Workspace's Send cap is not refused and not held: the planner paces it
+// by the Provider limit alone (none here, so all at once), the recipients the Send cap lets out go
+// at once, the rest snooze within the Send cap's bound, the progress names the Send cap with an
+// estimate a token away, and the Broadcast stays sending until the window frees up and it finishes.
+func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		e := newRiverEnv(t)
+		ctx := e.workCtx()
+		now := time.Now()
+		mod := outbound.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"), outbound.WithSendCaps(true))
+
+		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
+		require.NoError(t, err)
+		require.Greater(t, len(ids), 2, "the fixture audience must outgrow a Send cap of more than one")
+		sendCap := len(ids) - 1
+		e.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(sendCap).ExecX(ctx)
+		perToken := 24 * time.Hour / time.Duration(sendCap)
+
+		detail, err := broadcasts.New(e.Bus, testhelper.Renderer(), mod).
+			Detail(ctx, e.DB.Scoped(fixtures.AcmeID), e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID), now)
+		require.NoError(t, err)
+		require.NotNil(t, detail.Progress)
+		assert.Equal(t, providerlimit.CauseSendCap, detail.Progress.LimitedBy)
+		require.NotNil(t, detail.Progress.EstimatedCompletion)
+		assert.WithinDuration(t, now.Add(perToken), *detail.Progress.EstimatedCompletion, time.Second, "the one beyond the bucket waits a token")
+
+		w := jobs.NewSendRecipientWorker(e.DB, mod)
+		start := now
+		now = driveRecipients(t, e, w, ids, now)
+
+		elapsed := now.Sub(start)
+		assert.GreaterOrEqual(t, elapsed, perToken-time.Second, "never faster than the Send cap")
+		assert.LessOrEqual(t, elapsed, perToken+10*time.Minute, "the last one goes within the bound of its token")
+		finished := e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
+		assert.Len(t, e.sender.sent, len(ids), "every recipient sent exactly once")
+		assert.Equal(t, broadcast.StatusSent, finished.Status)
+	})
+}
+
 // An Automation step that finds the Integration's limit spent defers: the enrollment
 // stays active at the same step, asks to be rescheduled via ResumeAt, and the step
 // sends exactly once when capacity returns. Transactional traffic is what spends the
@@ -130,6 +171,42 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		require.True(t, env.RunNextStep(t, step))
 		assert.Len(t, fs.sent, 4, "the step sends once capacity returns")
 		assert.Equal(t, 1, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
+	})
+}
+
+// An Automation step that finds the Workspace's Send cap spent reschedules through its Enrollment
+// like any Deferral, but asks again within the Send cap's bound (about 10 minutes) rather than
+// after the day the bucket needs, so a Send cap a Staff member raises is noticed within minutes.
+func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		env := testhelper.Setup(t)
+		ctx := context.Background()
+		fs := &fakeSender{}
+		mod := outbound.New(env.Bus, env.CoreHolds(), resolvingTo(fs), tracking.New("test-secret", "http://local"), outbound.WithSendCaps(true))
+		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
+
+		res, err := mod.Send(ctx, env.DB.Scoped(fixtures.AcmeID), outbound.Request{
+			Kind: outboundmessage.KindTransactional, Key: "tx:1", Destination: "a@example.com",
+			Subject: "Receipt", Body: "<p>Hi</p>",
+		})
+		require.NoError(t, err)
+		require.Equal(t, outbound.Sent, res.Outcome, "the day's one token goes to Transactional")
+
+		require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
+		runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
+
+		before := time.Now()
+		ran := env.RunNextStep(t, stepperWith(env, mod))
+		require.True(t, ran, "a Deferral is not a failure")
+		queued := queuedSteps(t, env)
+		require.Equal(t, []map[string]any{stepJob(runID, 0)}, queued, "the same step is queued again")
+		wait := env.JobSchedules(t, stepping.RunStepArgs{}.Kind())[0].Sub(before)
+		assert.Positive(t, wait)
+		assert.LessOrEqual(t, wait, 10*time.Minute, "asks again within the bound, not after a day")
+		run := env.DB.AutomationRun.GetX(ctx, runID)
+		assert.Equal(t, automationrun.StatusActive, run.Status)
+		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
+		assert.Len(t, fs.sent, 1, "the step has not sent")
 	})
 }
 

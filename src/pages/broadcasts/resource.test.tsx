@@ -14,8 +14,10 @@ import {
   handleSiteBroadcastsUpdate,
   handleSiteIntegrationsList,
   handleSiteSegmentsList,
+  handleSiteSegmentsPreview,
   handleSiteSendingDomainsList,
   handleSiteTemplatesList,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
@@ -82,6 +84,24 @@ const INTEGRATIONS = [
   { ...integration('30', 'SMS gateway'), channel: 'sms' as const },
 ]
 
+const WORKSPACE = {
+  id: 'TestWs01',
+  name: 'Acme',
+  collectKey: 'omck_test_key',
+  postalAddress: '',
+  timezone: 'UTC',
+  accountLinkAvailable: false,
+  permissions: [],
+  mcpUrl: 'https://sphericon.test',
+  trackerUrl: 'https://t.sphericon.test',
+  holds: [],
+  role: 'owner' as const,
+  createdAt: '2026-01-01T00:00:00Z',
+}
+
+// The form reads the Workspace for its Send cap; this one has none, so nothing is counted.
+const workspaces = handleSiteWorkspacesList({ body: [WORKSPACE] })
+
 function empty() {
   return HttpResponse.json({ items: [], totalItems: 0 })
 }
@@ -110,6 +130,7 @@ function serve(
   const bodies: unknown[] = []
   const fetches = { list: 0, detail: 0 }
   worker.use(
+    workspaces,
     handleSiteBroadcastsCreate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json({ ...broadcast('draft'), id: '42' }, { status: 201 })
@@ -209,6 +230,26 @@ test('a draft can be sent now', async () => {
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
 })
 
+test('a draft larger than the Send cap is warned about and can still be sent now', async () => {
+  serve('draft')
+  worker.use(
+    handleSiteWorkspacesList({
+      body: [{ ...WORKSPACE, sendCap: { perDay: 1000, sentLast24h: 0 } }],
+    }),
+    handleSiteSegmentsPreview({ body: { count: 2500 } }),
+  )
+  const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  // 1000 go at once, 1000 more within the day and the last 500 on the second.
+  await expect.element(screen.getByText(/2,500 contacts.*about 2 days/)).toBeInTheDocument()
+  const send = screen.getByRole('button', { name: 'Send now' })
+  await expect.element(send).toBeEnabled()
+  await send.click()
+
+  await expect.element(screen.getByText('Broadcast is sending')).toBeInTheDocument()
+  await expect.poll(() => navigate.mock.calls.length).toBe(1)
+})
+
 test('send and schedule are disabled for a non-draft broadcast, test send stays available', async () => {
   serve('sent')
   const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
@@ -233,6 +274,7 @@ test('editing shows no form while the broadcast loads, then the loaded values', 
 
 test('editing shows an error alert when the broadcast cannot be loaded', async () => {
   worker.use(
+    workspaces,
     handleSiteBroadcastsGet(() =>
       problem(404, { title: 'Not Found', detail: 'broadcast not found' }),
     ),
@@ -255,6 +297,7 @@ const DOC = {
 test('saving a broadcast written in the editor sends its document and no body', async () => {
   const { bodies } = serve('draft')
   worker.use(
+    workspaces,
     handleSiteBroadcastsGet(() =>
       HttpResponse.json({ ...broadcast('draft'), body: '<p>Hello there</p>', doc: DOC }),
     ),
@@ -282,6 +325,7 @@ test('saving a broadcast written in the editor sends its document and no body', 
 test('a broadcast with no document opens as editable source', async () => {
   serve('draft')
   worker.use(
+    workspaces,
     handleSiteBroadcastsGet(() =>
       HttpResponse.json({ ...broadcast('draft'), body: '<table><tr><td>Hi</td></tr></table>' }),
     ),
@@ -297,6 +341,7 @@ test('a broadcast with no document opens as editable source', async () => {
 test('a refused save shows the reason the server gave', async () => {
   serve('draft')
   worker.use(
+    workspaces,
     handleSiteBroadcastsGet(() => HttpResponse.json({ ...broadcast('draft'), doc: DOC })),
     handleSiteBroadcastsUpdate(() => problem(422, { detail: 'heading level 9 is not allowed' })),
   )
@@ -363,6 +408,7 @@ test('the Integration a broadcast sends through is chosen among the email ones a
 test('a saved Integration is shown, and switching back to the default clears it', async () => {
   const { bodies } = serve('draft')
   worker.use(
+    workspaces,
     handleSiteBroadcastsGet(() =>
       HttpResponse.json({ ...broadcast('draft'), integrationId: '21' }),
     ),

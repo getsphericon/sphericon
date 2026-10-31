@@ -44,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -75,6 +76,7 @@ type WorkspaceQuery struct {
 	withSendingDomains      *SendingDomainQuery
 	withJoinDomains         *JoinDomainQuery
 	withProviderLimiters    *ProviderLimiterQuery
+	withSendCapLimiters     *SendCapLimiterQuery
 	withHolds               *HoldQuery
 	withBroadcasts          *BroadcastQuery
 	withBroadcastRecipients *BroadcastRecipientQuery
@@ -436,6 +438,28 @@ func (_q *WorkspaceQuery) QueryProviderLimiters() *ProviderLimiterQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(providerlimiter.Table, providerlimiter.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ProviderLimitersTable, workspace.ProviderLimitersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySendCapLimiters chains the current query on the "send_cap_limiters" edge.
+func (_q *WorkspaceQuery) QuerySendCapLimiters() *SendCapLimiterQuery {
+	query := (&SendCapLimiterClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(sendcaplimiter.Table, sendcaplimiter.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SendCapLimitersTable, workspace.SendCapLimitersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1155,6 +1179,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withSendingDomains:      _q.withSendingDomains.Clone(),
 		withJoinDomains:         _q.withJoinDomains.Clone(),
 		withProviderLimiters:    _q.withProviderLimiters.Clone(),
+		withSendCapLimiters:     _q.withSendCapLimiters.Clone(),
 		withHolds:               _q.withHolds.Clone(),
 		withBroadcasts:          _q.withBroadcasts.Clone(),
 		withBroadcastRecipients: _q.withBroadcastRecipients.Clone(),
@@ -1336,6 +1361,17 @@ func (_q *WorkspaceQuery) WithProviderLimiters(opts ...func(*ProviderLimiterQuer
 		opt(query)
 	}
 	_q.withProviderLimiters = query
+	return _q
+}
+
+// WithSendCapLimiters tells the query-builder to eager-load the nodes that are connected to
+// the "send_cap_limiters" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithSendCapLimiters(opts ...func(*SendCapLimiterQuery)) *WorkspaceQuery {
+	query := (&SendCapLimiterClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSendCapLimiters = query
 	return _q
 }
 
@@ -1670,7 +1706,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [37]bool{
+		loadedTypes = [38]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -1685,6 +1721,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withSendingDomains != nil,
 			_q.withJoinDomains != nil,
 			_q.withProviderLimiters != nil,
+			_q.withSendCapLimiters != nil,
 			_q.withHolds != nil,
 			_q.withBroadcasts != nil,
 			_q.withBroadcastRecipients != nil,
@@ -1826,6 +1863,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadProviderLimiters(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.ProviderLimiters = []*ProviderLimiter{} },
 			func(n *Workspace, e *ProviderLimiter) { n.Edges.ProviderLimiters = append(n.Edges.ProviderLimiters, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSendCapLimiters; query != nil {
+		if err := _q.loadSendCapLimiters(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.SendCapLimiters = []*SendCapLimiter{} },
+			func(n *Workspace, e *SendCapLimiter) { n.Edges.SendCapLimiters = append(n.Edges.SendCapLimiters, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2404,6 +2448,36 @@ func (_q *WorkspaceQuery) loadProviderLimiters(ctx context.Context, query *Provi
 	}
 	query.Where(predicate.ProviderLimiter(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.ProviderLimitersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadSendCapLimiters(ctx context.Context, query *SendCapLimiterQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *SendCapLimiter)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sendcaplimiter.FieldWorkspaceID)
+	}
+	query.Where(predicate.SendCapLimiter(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.SendCapLimitersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

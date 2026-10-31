@@ -690,7 +690,8 @@ _Avoid_: Ban, lockout, disable, quota (suspension is not an entitlement state �
 **Staff console**:
 The Staff member's own web surface (a fourth API surface beside `/site`, `/api`, `/collect`). On
 every Instance it holds the Instance's own settings: its Sign-up items, the Telemetry report and its
-notice, and the expiry of the License key.
+notice, the expiry of the License key, the default Send cap where the Instance has Send caps, and
+the Instance audit log.
 With the Enterprise feature it also acts across Workspaces: it shows Workspace **metadata only**
 (identity, suspension state, deliverability rates, send volume, Audit log) — never Contacts,
 content, or Events — and offers suspend and unsuspend. Impersonation is out of scope.
@@ -924,6 +925,14 @@ content and audience definitions, Contact edits and deletes, imports, exports, l
 the data plane, whose facts are already Events and Outbound messages. Readable by owner and
 admin. An Enterprise concept, absent from a plain self-hosted install.
 _Avoid_: Event (that is a Contact/data-plane fact), activity, history, changelog
+
+**Instance audit log**:
+The Instance's own append-only record of the changes a Staff member makes to the Instance's
+settings, such as the default Send cap: which Staff member, what changed from what to what, and
+when. It belongs to the Instance, not to any Workspace, so it outlives every Workspace, and no
+customer sees it. Every Instance keeps one, with or without a License key. Distinct from a
+Workspace's Audit log, which records changes to one Workspace.
+_Avoid_: Instance changelog, staff log, Audit log (unqualified: that is the Workspace's)
 
 **Setup checklist**:
 The Workspace's path to its first sent email, shown on the Overview until it is done: a real Integration (a Test inbox does not count), a verified Sending domain, a Contact (any one, from any source), a sent email (an Outbound message

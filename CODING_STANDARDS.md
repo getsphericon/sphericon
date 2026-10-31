@@ -25,7 +25,8 @@ built, run and generated is in `AGENTS.md`; the vocabulary is in `GLOSSARY.md`.
 - **Narrowing an integer to the contract's `int32` goes through `narrow.Int32`**
   (`internal/narrow`), which caps at the bounds instead of wrapping.
 - **A change to a field in an Audit entry's diff is `events.Change(from, to)` or
-  `events.Became(to)`**, keyed by the ent field constant (`membership.FieldRole`), not a literal.
+  `events.Became(to)`, or `events.ChangeOf(from, to)` for an optional field (a nil pointer is no
+  value)**, keyed by the ent field constant (`membership.FieldRole`), not a literal.
 - **A linter is off only when it is harmful here, and the reason is in `.golangci.yml`.** An
   exclusion there is scoped to the files it concerns and says why; there is no `//nolint`.
 

@@ -42,6 +42,53 @@ type LegalDocumentLabel string
 
 type LegalDocumentMarkdown string
 
+type MaxPerDay int32
+
+// NewNilMaxPerDay returns new NilMaxPerDay with value set to v.
+func NewNilMaxPerDay(v MaxPerDay) NilMaxPerDay {
+	return NilMaxPerDay{
+		Value: v,
+	}
+}
+
+// NilMaxPerDay is nullable MaxPerDay.
+type NilMaxPerDay struct {
+	Value MaxPerDay
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilMaxPerDay) SetTo(v MaxPerDay) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilMaxPerDay) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilMaxPerDay) SetToNull() {
+	o.Null = true
+	var v MaxPerDay
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilMaxPerDay) Get() (v MaxPerDay, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilMaxPerDay) Or(d MaxPerDay) MaxPerDay {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptBool returns new OptBool with value set to v.
 func NewOptBool(v bool) OptBool {
 	return OptBool{
@@ -174,6 +221,74 @@ func (o OptLegalDocumentMarkdown) Get() (v LegalDocumentMarkdown, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptLegalDocumentMarkdown) Or(d LegalDocumentMarkdown) LegalDocumentMarkdown {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilString returns new OptNilString with value set to v.
+func NewOptNilString(v string) OptNilString {
+	return OptNilString{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilString is optional nullable string.
+type OptNilString struct {
+	Value string
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilString was set.
+func (o OptNilString) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilString) Reset() {
+	var v string
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilString) SetTo(v string) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilString) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilString) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v string
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilString) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilString) Get() (v string, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilString) Or(d string) string {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -404,6 +519,52 @@ func (o OptSignupItemTitle) Get() (v SignupItemTitle, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSignupItemTitle) Or(d SignupItemTitle) SignupItemTitle {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptStaffDefaultSendCap returns new OptStaffDefaultSendCap with value set to v.
+func NewOptStaffDefaultSendCap(v StaffDefaultSendCap) OptStaffDefaultSendCap {
+	return OptStaffDefaultSendCap{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptStaffDefaultSendCap is optional StaffDefaultSendCap.
+type OptStaffDefaultSendCap struct {
+	Value StaffDefaultSendCap
+	Set   bool
+}
+
+// IsSet returns true if OptStaffDefaultSendCap was set.
+func (o OptStaffDefaultSendCap) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptStaffDefaultSendCap) Reset() {
+	var v StaffDefaultSendCap
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptStaffDefaultSendCap) SetTo(v StaffDefaultSendCap) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptStaffDefaultSendCap) Get() (v StaffDefaultSendCap, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptStaffDefaultSendCap) Or(d StaffDefaultSendCap) StaffDefaultSendCap {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -1087,6 +1248,72 @@ type StaffAuthSecondFactorUnauthorized ProblemDetails
 
 func (*StaffAuthSecondFactorUnauthorized) staffAuthSecondFactorRes() {}
 
+// The default Send cap (ADR 0067): copied onto every Workspace created from now on. Changing it leaves
+// the Send caps of existing Workspaces as they are.
+// Ref: #/components/schemas/StaffDefaultSendCap
+type StaffDefaultSendCap struct {
+	// Messages per rolling 24 hours; null when new Workspaces get no Send cap.
+	PerDay NilMaxPerDay `json:"perDay"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *StaffDefaultSendCap) GetPerDay() NilMaxPerDay {
+	return s.PerDay
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *StaffDefaultSendCap) SetPerDay(val NilMaxPerDay) {
+	s.PerDay = val
+}
+
+// The outcome of setting or clearing the default Send cap: the default as it now stands, and whether
+// anything changed (setting the same value, or clearing none, changes nothing).
+// Ref: #/components/schemas/StaffDefaultSendCapChange
+type StaffDefaultSendCapChange struct {
+	Changed        bool                `json:"changed"`
+	DefaultSendCap StaffDefaultSendCap `json:"defaultSendCap"`
+}
+
+// GetChanged returns the value of Changed.
+func (s *StaffDefaultSendCapChange) GetChanged() bool {
+	return s.Changed
+}
+
+// GetDefaultSendCap returns the value of DefaultSendCap.
+func (s *StaffDefaultSendCapChange) GetDefaultSendCap() StaffDefaultSendCap {
+	return s.DefaultSendCap
+}
+
+// SetChanged sets the value of Changed.
+func (s *StaffDefaultSendCapChange) SetChanged(val bool) {
+	s.Changed = val
+}
+
+// SetDefaultSendCap sets the value of DefaultSendCap.
+func (s *StaffDefaultSendCapChange) SetDefaultSendCap(val StaffDefaultSendCap) {
+	s.DefaultSendCap = val
+}
+
+func (*StaffDefaultSendCapChange) staffInstanceClearDefaultSendCapRes() {}
+func (*StaffDefaultSendCapChange) staffInstanceSetDefaultSendCapRes()   {}
+
+// The default Send cap a Staff member sets.
+// Ref: #/components/schemas/StaffDefaultSendCapInput
+type StaffDefaultSendCapInput struct {
+	// Messages per rolling 24 hours.
+	PerDay MaxPerDay `json:"perDay"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *StaffDefaultSendCapInput) GetPerDay() MaxPerDay {
+	return s.PerDay
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *StaffDefaultSendCapInput) SetPerDay(val MaxPerDay) {
+	s.PerDay = val
+}
+
 // A TOTP secret awaiting its first confirming code.
 // Ref: #/components/schemas/StaffEnrolment
 type StaffEnrolment struct {
@@ -1128,6 +1355,132 @@ func (s *StaffEnrolment) SetQrCode(val string) {
 	s.QrCode = val
 }
 
+// A page of the Instance audit log, newest first.
+// Ref: #/components/schemas/StaffInstanceAuditEntryList
+type StaffInstanceAuditEntryList struct {
+	Items []StaffInstanceAuditEntryResource `json:"items"`
+	// Pass as `cursor` for the next page; absent on the last page.
+	NextCursor OptNilString `json:"nextCursor"`
+}
+
+// GetItems returns the value of Items.
+func (s *StaffInstanceAuditEntryList) GetItems() []StaffInstanceAuditEntryResource {
+	return s.Items
+}
+
+// GetNextCursor returns the value of NextCursor.
+func (s *StaffInstanceAuditEntryList) GetNextCursor() OptNilString {
+	return s.NextCursor
+}
+
+// SetItems sets the value of Items.
+func (s *StaffInstanceAuditEntryList) SetItems(val []StaffInstanceAuditEntryResource) {
+	s.Items = val
+}
+
+// SetNextCursor sets the value of NextCursor.
+func (s *StaffInstanceAuditEntryList) SetNextCursor(val OptNilString) {
+	s.NextCursor = val
+}
+
+func (*StaffInstanceAuditEntryList) staffInstanceListAuditEntriesRes() {}
+
+// One entry of the Instance audit log (ADR 0070): a Staff member changed a setting of the Instance
+// itself.
+// Ref: #/components/schemas/StaffInstanceAuditEntryResource
+type StaffInstanceAuditEntryResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// When the change was made.
+	OccurredAt Timestamp `json:"occurredAt"`
+	// The Staff member who made it.
+	Actor StaffResource `json:"actor"`
+	// What was changed, as `instance.<what>_change`.
+	Action string `json:"action"`
+	// The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there was no
+	// value, `to` where it was cleared.
+	Diff StaffInstanceAuditEntryResourceDiff `json:"diff"`
+}
+
+// GetID returns the value of ID.
+func (s *StaffInstanceAuditEntryResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *StaffInstanceAuditEntryResource) GetOccurredAt() Timestamp {
+	return s.OccurredAt
+}
+
+// GetActor returns the value of Actor.
+func (s *StaffInstanceAuditEntryResource) GetActor() StaffResource {
+	return s.Actor
+}
+
+// GetAction returns the value of Action.
+func (s *StaffInstanceAuditEntryResource) GetAction() string {
+	return s.Action
+}
+
+// GetDiff returns the value of Diff.
+func (s *StaffInstanceAuditEntryResource) GetDiff() StaffInstanceAuditEntryResourceDiff {
+	return s.Diff
+}
+
+// SetID sets the value of ID.
+func (s *StaffInstanceAuditEntryResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *StaffInstanceAuditEntryResource) SetOccurredAt(val Timestamp) {
+	s.OccurredAt = val
+}
+
+// SetActor sets the value of Actor.
+func (s *StaffInstanceAuditEntryResource) SetActor(val StaffResource) {
+	s.Actor = val
+}
+
+// SetAction sets the value of Action.
+func (s *StaffInstanceAuditEntryResource) SetAction(val string) {
+	s.Action = val
+}
+
+// SetDiff sets the value of Diff.
+func (s *StaffInstanceAuditEntryResource) SetDiff(val StaffInstanceAuditEntryResourceDiff) {
+	s.Diff = val
+}
+
+// The old (`from`) and the new (`to`) value of each changed field; `from` is absent where there was no
+// value, `to` where it was cleared.
+type StaffInstanceAuditEntryResourceDiff map[string]jx.Raw
+
+func (s *StaffInstanceAuditEntryResourceDiff) init() StaffInstanceAuditEntryResourceDiff {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type StaffInstanceClearDefaultSendCapNotFound ProblemDetails
+
+func (*StaffInstanceClearDefaultSendCapNotFound) staffInstanceClearDefaultSendCapRes() {}
+
+type StaffInstanceClearDefaultSendCapUnauthorized ProblemDetails
+
+func (*StaffInstanceClearDefaultSendCapUnauthorized) staffInstanceClearDefaultSendCapRes() {}
+
+type StaffInstanceListAuditEntriesBadRequest ProblemDetails
+
+func (*StaffInstanceListAuditEntriesBadRequest) staffInstanceListAuditEntriesRes() {}
+
+type StaffInstanceListAuditEntriesUnauthorized ProblemDetails
+
+func (*StaffInstanceListAuditEntriesUnauthorized) staffInstanceListAuditEntriesRes() {}
+
 type StaffInstancePreviewTelemetryReportOK map[string]jx.Raw
 
 func (s *StaffInstancePreviewTelemetryReportOK) init() StaffInstancePreviewTelemetryReportOK {
@@ -1140,6 +1493,18 @@ func (s *StaffInstancePreviewTelemetryReportOK) init() StaffInstancePreviewTelem
 }
 
 func (*StaffInstancePreviewTelemetryReportOK) staffInstancePreviewTelemetryReportRes() {}
+
+type StaffInstanceSetDefaultSendCapBadRequest ProblemDetails
+
+func (*StaffInstanceSetDefaultSendCapBadRequest) staffInstanceSetDefaultSendCapRes() {}
+
+type StaffInstanceSetDefaultSendCapNotFound ProblemDetails
+
+func (*StaffInstanceSetDefaultSendCapNotFound) staffInstanceSetDefaultSendCapRes() {}
+
+type StaffInstanceSetDefaultSendCapUnauthorized ProblemDetails
+
+func (*StaffInstanceSetDefaultSendCapUnauthorized) staffInstanceSetDefaultSendCapRes() {}
 
 type StaffInstanceSetTelemetryBadRequest ProblemDetails
 
@@ -1171,6 +1536,8 @@ type StaffInstanceState struct {
 	LicenseExpiredAt OptTimestamp `json:"licenseExpiredAt"`
 	// The page that documents the schema of the Telemetry report.
 	TelemetrySchemaUrl string `json:"telemetrySchemaUrl"`
+	// The Send cap every new Workspace starts with; absent on an Instance that has no Send caps.
+	DefaultSendCap OptStaffDefaultSendCap `json:"defaultSendCap"`
 }
 
 // GetTelemetry returns the value of Telemetry.
@@ -1198,6 +1565,11 @@ func (s *StaffInstanceState) GetTelemetrySchemaUrl() string {
 	return s.TelemetrySchemaUrl
 }
 
+// GetDefaultSendCap returns the value of DefaultSendCap.
+func (s *StaffInstanceState) GetDefaultSendCap() OptStaffDefaultSendCap {
+	return s.DefaultSendCap
+}
+
 // SetTelemetry sets the value of Telemetry.
 func (s *StaffInstanceState) SetTelemetry(val StaffInstanceTelemetry) {
 	s.Telemetry = val
@@ -1221,6 +1593,11 @@ func (s *StaffInstanceState) SetLicenseExpiredAt(val OptTimestamp) {
 // SetTelemetrySchemaUrl sets the value of TelemetrySchemaUrl.
 func (s *StaffInstanceState) SetTelemetrySchemaUrl(val string) {
 	s.TelemetrySchemaUrl = val
+}
+
+// SetDefaultSendCap sets the value of DefaultSendCap.
+func (s *StaffInstanceState) SetDefaultSendCap(val OptStaffDefaultSendCap) {
+	s.DefaultSendCap = val
 }
 
 func (*StaffInstanceState) staffInstanceAcknowledgeNoticeRes() {}

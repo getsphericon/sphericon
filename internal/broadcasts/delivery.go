@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/outbound"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
 // HeldError reports that Outbound send put the source on hold (see outbound.Hold*).
@@ -18,15 +19,18 @@ type HeldError struct{ Reason string }
 
 func (e *HeldError) Error() string { return "send held: " + e.Reason }
 
-// DeferredError reports that Outbound send found the Integration's Provider limit spent
-// (outbound.Deferral). Nothing was consumed: the caller retries the same work after Delay.
+// DeferredError reports that Outbound send found a send limit spent (outbound.Deferral): the
+// Integration's Provider limit, the Workspace's Send cap or the provider's own. Nothing was
+// consumed: the caller retries the same work after Delay.
 type DeferredError struct {
 	// Delay is the wait the Outbound retry policy chose for this deferral (it was recorded on
 	// the recipient so the backlog of later recipients can tell it is asleep).
 	Delay time.Duration
+	// Cause is the limit the deferral waits for.
+	Cause providerlimit.Cause
 }
 
-func (e *DeferredError) Error() string { return "send deferred: provider limit spent" }
+func (e *DeferredError) Error() string { return "send deferred: " + string(e.Cause) + " spent" }
 
 // Delivery is the send side of the Broadcast lifecycle: one recipient at a time through
 // Outbound send, the hold reason and the final settling of the Broadcast. A recipient has no
@@ -45,7 +49,7 @@ func NewDelivery(out *outbound.Module) *Delivery { return &Delivery{out: out} }
 // committed send replay the recorded result.
 //
 // A returned error is for the adapter to retry: *HeldError (the source is on hold),
-// *DeferredError (its Provider limit is spent), outbound.ErrInProgress (a live claim) or a
+// *DeferredError (a send limit is spent), outbound.ErrInProgress (a live claim) or a
 // fault; none consumed the recipient.
 func (d *Delivery) SendRecipient(ctx context.Context, s *ent.Scoped, recipientID int64) error {
 	rec, err := s.BroadcastRecipient().Get(ctx, recipientID)
@@ -130,7 +134,7 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 		}
 		return &HeldError{Reason: res.Reason}
 	}
-	// The Integration is busy, not blocked: the Broadcast stays sending with no hold
+	// A send limit is spent, nothing is blocked: the Broadcast stays sending with no hold
 	// reason and this recipient stays pending, retried after the wait. The wait is measured on
 	// Outbound send's clock, so the time it is due is too.
 	now := d.out.Now()
@@ -154,7 +158,7 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	if uerr := s.BroadcastRecipient().UpdateOneID(rec.ID).SetDeferredUntil(now.Add(retry.After)).Exec(ctx); uerr != nil {
 		slog.WarnContext(ctx, "broadcast recipient deferral not recorded", "error", uerr, "recipient_id", rec.ID)
 	}
-	return &DeferredError{Delay: retry.After}
+	return &DeferredError{Delay: retry.After, Cause: res.Cause}
 }
 
 // GiveUp records the terminal failure of a recipient whose last attempt failed with cause:

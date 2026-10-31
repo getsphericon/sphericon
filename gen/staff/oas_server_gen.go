@@ -37,12 +37,27 @@ type Handler interface {
 	//
 	// POST /instance/notice/acknowledge
 	StaffInstanceAcknowledgeNotice(ctx context.Context) (StaffInstanceAcknowledgeNoticeRes, error)
+	// StaffInstanceClearDefaultSendCap implements StaffInstance_clearDefaultSendCap operation.
+	//
+	// Remove the default Send cap: Workspaces created from now on get no Send cap; existing Workspaces
+	// keep theirs. Recorded in the Instance audit log. Idempotent. Not found on an Instance that has no
+	// Send caps.
+	//
+	// DELETE /instance/default-send-cap
+	StaffInstanceClearDefaultSendCap(ctx context.Context) (StaffInstanceClearDefaultSendCapRes, error)
 	// StaffInstanceGetState implements StaffInstance_getState operation.
 	//
 	// The Instance's own settings and state.
 	//
 	// GET /instance
 	StaffInstanceGetState(ctx context.Context) (StaffInstanceGetStateRes, error)
+	// StaffInstanceListAuditEntries implements StaffInstance_listAuditEntries operation.
+	//
+	// The Instance audit log (ADR 0070), newest first: the changes Staff members made to the Instance's
+	// own settings.
+	//
+	// GET /instance/audit-entries
+	StaffInstanceListAuditEntries(ctx context.Context, params StaffInstanceListAuditEntriesParams) (StaffInstanceListAuditEntriesRes, error)
 	// StaffInstancePreviewTelemetryReport implements StaffInstance_previewTelemetryReport operation.
 	//
 	// The Telemetry report exactly as the Instance would send it now (ADR 0032): the body the published
@@ -50,6 +65,14 @@ type Handler interface {
 	//
 	// GET /instance/telemetry/preview
 	StaffInstancePreviewTelemetryReport(ctx context.Context) (StaffInstancePreviewTelemetryReportRes, error)
+	// StaffInstanceSetDefaultSendCap implements StaffInstance_setDefaultSendCap operation.
+	//
+	// Set the default Send cap (ADR 0067) as the signed-in Staff member: every Workspace created from now
+	// on starts with it; existing Workspaces keep theirs. Recorded in the Instance audit log. Idempotent.
+	// Not found on an Instance that has no Send caps.
+	//
+	// PUT /instance/default-send-cap
+	StaffInstanceSetDefaultSendCap(ctx context.Context, req *StaffDefaultSendCapInput) (StaffInstanceSetDefaultSendCapRes, error)
 	// StaffInstanceSetTelemetry implements StaffInstance_setTelemetry operation.
 	//
 	// Switch the Telemetry report on or off. Answers 409 while the environment decides.

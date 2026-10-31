@@ -44,3 +44,44 @@ test('shows the providers and the sending domains', async () => {
   await expect.element(screen.getByRole('heading', { name: 'Providers' })).toBeInTheDocument()
   await expect.element(screen.getByRole('heading', { name: 'Domains' })).toBeInTheDocument()
 })
+
+test('shows the Send cap the platform set, apart from the Provider limit', async () => {
+  worker.use(
+    handleSiteWorkspacesList({
+      body: [{ ...workspace, sendCap: { perDay: 5000, sentLast24h: 1200 } }],
+    }),
+    handleSiteIntegrationsList({ body: [] }),
+    handleSiteSendingDomainsList({
+      body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(
+    <EmailsPage />,
+    routeMount(emailsRoute, { workspaceId: 'TestWs01' }),
+  )
+
+  await expect.element(screen.getByRole('heading', { name: 'Send cap' })).toBeInTheDocument()
+  await expect.element(screen.getByText('5,000 per 24 hours')).toBeInTheDocument()
+  await expect.element(screen.getByText('Set by the platform')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sent in the last 24 h: 1,200 / 5,000')).toBeInTheDocument()
+})
+
+test('shows no Send cap when none applies', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [{ ...workspace, sendCap: null }] }),
+    handleSiteIntegrationsList({ body: [] }),
+    handleSiteSendingDomainsList({
+      body: { items: [], page: 1, pageSize: 20, totalItems: 0, totalPages: 1 },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(
+    <EmailsPage />,
+    routeMount(emailsRoute, { workspaceId: 'TestWs01' }),
+  )
+
+  await expect.element(screen.getByRole('heading', { name: 'Providers' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('heading', { name: 'Send cap' })).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Set by the platform')).not.toBeInTheDocument()
+})

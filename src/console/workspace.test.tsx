@@ -3,8 +3,10 @@ import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleStaffWorkspaceAuditList,
+  handleStaffWorkspacesClearSendCap,
   handleStaffWorkspacesExempt,
   handleStaffWorkspacesGet,
+  handleStaffWorkspacesSetSendCap,
   handleStaffWorkspacesSuspend,
   handleStaffWorkspacesUnexempt,
   handleStaffWorkspacesUnsuspend,
@@ -318,6 +320,90 @@ test('a no-op says nothing changed', async () => {
   await expect
     .element(screen.getByText('Nothing changed: sending was not suspended.'))
     .toBeInTheDocument()
+})
+
+test('shows that a workspace has no Send cap and sets one', async () => {
+  const set: unknown[] = []
+  worker.use(
+    handleStaffWorkspacesGet({ body: { ...HOOLI, sendCap: { perDay: null, sentLast24h: 3 } } }),
+    handleStaffWorkspacesSetSendCap(async ({ request, params }) => {
+      set.push({ id: params.workspaceId, body: await request.json() })
+      return HttpResponse.json({ changed: true, sendCap: { perDay: 5000, sentLast24h: 3 } })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect
+    .element(screen.getByText('No Send cap: only its Provider limits bound its sending.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Sent in the last 24 hours: 3')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Set Send cap' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('textbox', { name: /Messages per 24 hours/ }).fill('5000')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => set).toEqual([{ id: 'HooliWs5', body: { perDay: 5000 } }])
+  await expect.element(screen.getByText('Send cap saved')).toBeInTheDocument()
+})
+
+test('a Send cap outside the bounds is refused before anything is sent', async () => {
+  const set: unknown[] = []
+  worker.use(
+    handleStaffWorkspacesGet({ body: { ...HOOLI, sendCap: { perDay: null, sentLast24h: 3 } } }),
+    handleStaffWorkspacesSetSendCap(async ({ request }) => {
+      set.push(await request.json())
+      return HttpResponse.json({ changed: true, sendCap: { perDay: 1, sentLast24h: 3 } })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await screen.getByRole('button', { name: 'Set Send cap' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+  await expect
+    .element(dialog.getByText('Enter a whole number from 1 to 100,000,000.'))
+    .toBeInTheDocument()
+  await dialog.getByRole('textbox', { name: /Messages per 24 hours/ }).fill('0')
+  await dialog.getByRole('button', { name: 'Save' }).click()
+  await expect
+    .element(dialog.getByText('Enter a whole number from 1 to 100,000,000.'))
+    .toBeInTheDocument()
+  expect(set).toEqual([])
+})
+
+test('shows a workspace Send cap and removes it only after the confirm button', async () => {
+  const cleared: string[] = []
+  worker.use(
+    handleStaffWorkspacesGet({ body: { ...HOOLI, sendCap: { perDay: 5000, sentLast24h: 1200 } } }),
+    handleStaffWorkspacesClearSendCap(({ params }) => {
+      cleared.push(params.workspaceId)
+      return HttpResponse.json({ changed: true, sendCap: { perDay: null, sentLast24h: 1200 } })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText('5,000 messages per 24 hours')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Sent in the last 24 hours: 1,200 of 5,000'))
+    .toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Remove Send cap' }).click()
+  await expect
+    .element(screen.getByRole('dialog').getByText('Remove the Send cap?'))
+    .toBeInTheDocument()
+  expect(cleared).toEqual([])
+
+  await screen.getByRole('dialog').getByRole('button', { name: 'Remove Send cap' }).click()
+
+  await expect.poll(() => cleared).toEqual(['HooliWs5'])
+})
+
+test('an instance without Send caps shows no Send cap', async () => {
+  worker.use(handleStaffWorkspacesGet({ body: HOOLI }))
+  const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
+
+  await expect.element(screen.getByText('Hooli')).toBeInTheDocument()
+  await expect.element(screen.getByText('Send cap', { exact: true })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Set Send cap' })).not.toBeInTheDocument()
 })
 
 test('lists the active holds with key, reason code, message, since, expiry and setter', async () => {

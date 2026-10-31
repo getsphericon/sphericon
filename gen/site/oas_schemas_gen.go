@@ -2739,6 +2739,51 @@ func (o NilSiteAutomationVersion) Or(d SiteAutomationVersion) SiteAutomationVers
 	return d
 }
 
+// NewNilSiteBroadcastLimit returns new NilSiteBroadcastLimit with value set to v.
+func NewNilSiteBroadcastLimit(v SiteBroadcastLimit) NilSiteBroadcastLimit {
+	return NilSiteBroadcastLimit{
+		Value: v,
+	}
+}
+
+// NilSiteBroadcastLimit is nullable SiteBroadcastLimit.
+type NilSiteBroadcastLimit struct {
+	Value SiteBroadcastLimit
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilSiteBroadcastLimit) SetTo(v SiteBroadcastLimit) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilSiteBroadcastLimit) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilSiteBroadcastLimit) SetToNull() {
+	o.Null = true
+	var v SiteBroadcastLimit
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilSiteBroadcastLimit) Get() (v SiteBroadcastLimit, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilSiteBroadcastLimit) Or(d SiteBroadcastLimit) SiteBroadcastLimit {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilSiteProviderLimitSource returns new NilSiteProviderLimitSource with value set to v.
 func NewNilSiteProviderLimitSource(v SiteProviderLimitSource) NilSiteProviderLimitSource {
 	return NilSiteProviderLimitSource{
@@ -4485,6 +4530,74 @@ func (o OptNilSiteEventResourceProperties) Get() (v SiteEventResourceProperties,
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilSiteEventResourceProperties) Or(d SiteEventResourceProperties) SiteEventResourceProperties {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilSiteSendCap returns new OptNilSiteSendCap with value set to v.
+func NewOptNilSiteSendCap(v SiteSendCap) OptNilSiteSendCap {
+	return OptNilSiteSendCap{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSiteSendCap is optional nullable SiteSendCap.
+type OptNilSiteSendCap struct {
+	Value SiteSendCap
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSiteSendCap was set.
+func (o OptNilSiteSendCap) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSiteSendCap) Reset() {
+	var v SiteSendCap
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSiteSendCap) SetTo(v SiteSendCap) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSiteSendCap) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSiteSendCap) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SiteSendCap
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSiteSendCap) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSiteSendCap) Get() (v SiteSendCap, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSiteSendCap) Or(d SiteSendCap) SiteSendCap {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -10866,6 +10979,49 @@ type SiteBrandKitSaveUnprocessableEntity ProblemDetails
 
 func (*SiteBrandKitSaveUnprocessableEntity) siteBrandKitSaveRes() {}
 
+// What slows a sending broadcast.
+// Ref: #/components/schemas/SiteBroadcastLimit
+type SiteBroadcastLimit string
+
+const (
+	SiteBroadcastLimitSendCap       SiteBroadcastLimit = "sendCap"
+	SiteBroadcastLimitProviderLimit SiteBroadcastLimit = "providerLimit"
+)
+
+// AllValues returns all SiteBroadcastLimit values.
+func (SiteBroadcastLimit) AllValues() []SiteBroadcastLimit {
+	return []SiteBroadcastLimit{
+		SiteBroadcastLimitSendCap,
+		SiteBroadcastLimitProviderLimit,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteBroadcastLimit) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteBroadcastLimitSendCap:
+		return []byte(s), nil
+	case SiteBroadcastLimitProviderLimit:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteBroadcastLimit) UnmarshalText(data []byte) error {
+	switch SiteBroadcastLimit(data) {
+	case SiteBroadcastLimitSendCap:
+		*s = SiteBroadcastLimitSendCap
+		return nil
+	case SiteBroadcastLimitProviderLimit:
+		*s = SiteBroadcastLimitProviderLimit
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A broadcast's per-link click figures, most clicked first.
 // Ref: #/components/schemas/SiteBroadcastLinkClicksList
 type SiteBroadcastLinkClicksList struct {
@@ -10893,9 +11049,10 @@ type SiteBroadcastLinksListNotFound ProblemDetails
 
 func (*SiteBroadcastLinksListNotFound) siteBroadcastLinksListRes() {}
 
-// How far a sending broadcast has got. A broadcast limited by its Integration's Send rate limit is
-// paced: recipients go out at an even interval, so the estimate is derived on the server from the last
-// scheduled time and the recipients remaining.
+// How far a sending broadcast has got. A broadcast limited by its Integration's Provider limit is
+// paced: recipients go out at an even interval. The Workspace's Send cap lets a day's worth out at a
+// time. The estimate is derived on the server from both, the later of the two, and `limitedBy` says
+// which one it is.
 // Ref: #/components/schemas/SiteBroadcastProgress
 type SiteBroadcastProgress struct {
 	// Recipients already decided: sent, skipped or failed.
@@ -10903,8 +11060,10 @@ type SiteBroadcastProgress struct {
 	// Recipients still waiting to be sent.
 	RemainingCount int32 `json:"remainingCount"`
 	// When the last remaining recipient is expected to be sent. Null when it is not knowable: the
-	// broadcast is on hold, or it is not paced by a Provider limit.
+	// broadcast is on hold, or nothing limits it.
 	EstimatedCompletionAt OptNilTimestamp `json:"estimatedCompletionAt"`
+	// What slows the broadcast and sets the estimate; null when nothing does or it is on hold.
+	LimitedBy NilSiteBroadcastLimit `json:"limitedBy"`
 }
 
 // GetProcessedCount returns the value of ProcessedCount.
@@ -10922,6 +11081,11 @@ func (s *SiteBroadcastProgress) GetEstimatedCompletionAt() OptNilTimestamp {
 	return s.EstimatedCompletionAt
 }
 
+// GetLimitedBy returns the value of LimitedBy.
+func (s *SiteBroadcastProgress) GetLimitedBy() NilSiteBroadcastLimit {
+	return s.LimitedBy
+}
+
 // SetProcessedCount sets the value of ProcessedCount.
 func (s *SiteBroadcastProgress) SetProcessedCount(val int32) {
 	s.ProcessedCount = val
@@ -10935,6 +11099,11 @@ func (s *SiteBroadcastProgress) SetRemainingCount(val int32) {
 // SetEstimatedCompletionAt sets the value of EstimatedCompletionAt.
 func (s *SiteBroadcastProgress) SetEstimatedCompletionAt(val OptNilTimestamp) {
 	s.EstimatedCompletionAt = val
+}
+
+// SetLimitedBy sets the value of LimitedBy.
+func (s *SiteBroadcastProgress) SetLimitedBy(val NilSiteBroadcastLimit) {
+	s.LimitedBy = val
 }
 
 // Broadcast resource used by the site UI.
@@ -21682,6 +21851,38 @@ type SiteSegmentsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteSegmentsUpdateUnprocessableEntity) siteSegmentsUpdateRes() {}
 
+// The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across all
+// its Integrations, Transactional included. The platform sets it; the Workspace only reads it. Sends
+// beyond it wait for the 24-hour window to free up; Transactional mail is never delayed. It is not a
+// Provider limit, which each Integration sets for its own provider account.
+// Ref: #/components/schemas/SiteSendCap
+type SiteSendCap struct {
+	// Messages per rolling 24 hours.
+	PerDay MaxPerDay `json:"perDay"`
+	// Messages the Workspace sent over the last 24 hours.
+	SentLast24h int32 `json:"sentLast24h"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *SiteSendCap) GetPerDay() MaxPerDay {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *SiteSendCap) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *SiteSendCap) SetPerDay(val MaxPerDay) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *SiteSendCap) SetSentLast24h(val int32) {
+	s.SentLast24h = val
+}
+
 // Sending domain resource used by the site UI (ADR 0010). sphericon generates the DKIM keypair; the
 // user publishes the DKIM TXT to authenticate the domain. The private key is never exposed. `verified`
 // is re-checked in the background: the domain loses it (`verificationLostAt`) if the DNS record
@@ -25669,6 +25870,9 @@ type SiteWorkspaceResource struct {
 	// User has a Second factor. After it, every request to this Workspace answers 403 with code
 	// second_factor_required until the User enrolls one.
 	SecondFactorGraceEndsAt OptNilTimestamp `json:"secondFactorGraceEndsAt"`
+	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
+	// Send cap applies. Read-only: no operation lets the Workspace change it.
+	SendCap OptNilSiteSendCap `json:"sendCap"`
 	// Whether the authenticated User may open the Account link: true only for an Owner, and only on an
 	// installation configured for it.
 	AccountLinkAvailable bool `json:"accountLinkAvailable"`
@@ -25749,6 +25953,11 @@ func (s *SiteWorkspaceResource) GetSecondFactorRequiredAt() OptNilTimestamp {
 // GetSecondFactorGraceEndsAt returns the value of SecondFactorGraceEndsAt.
 func (s *SiteWorkspaceResource) GetSecondFactorGraceEndsAt() OptNilTimestamp {
 	return s.SecondFactorGraceEndsAt
+}
+
+// GetSendCap returns the value of SendCap.
+func (s *SiteWorkspaceResource) GetSendCap() OptNilSiteSendCap {
+	return s.SendCap
 }
 
 // GetAccountLinkAvailable returns the value of AccountLinkAvailable.
@@ -25834,6 +26043,11 @@ func (s *SiteWorkspaceResource) SetSecondFactorRequiredAt(val OptNilTimestamp) {
 // SetSecondFactorGraceEndsAt sets the value of SecondFactorGraceEndsAt.
 func (s *SiteWorkspaceResource) SetSecondFactorGraceEndsAt(val OptNilTimestamp) {
 	s.SecondFactorGraceEndsAt = val
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *SiteWorkspaceResource) SetSendCap(val OptNilSiteSendCap) {
+	s.SendCap = val
 }
 
 // SetAccountLinkAvailable sets the value of AccountLinkAvailable.

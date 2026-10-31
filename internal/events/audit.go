@@ -87,8 +87,10 @@ const (
 	ActionWorkspaceUnsuspend          = "workspace.unsuspend"
 	ActionWorkspaceAbuseExempt        = "workspace.abuse_exempt"
 	ActionWorkspaceAbuseUnexempt      = "workspace.abuse_unexempt"
-	ActionContactImport               = "contact.import"
-	ActionAuditLogExport              = "audit_log.export"
+	// ActionWorkspaceSendCapChange: a Staff member set, changed or cleared the Send cap (ADR 0067).
+	ActionWorkspaceSendCapChange = "workspace.send_cap_change"
+	ActionContactImport          = "contact.import"
+	ActionAuditLogExport         = "audit_log.export"
 	// ActionWebhookEndpointTest: a sample event was sent to a Webhook endpoint (ADR 0039): no row changes.
 	ActionWebhookEndpointTest = "webhook_endpoint.test"
 )
@@ -120,6 +122,7 @@ var ExplicitAuditActions = []string{
 	ActionWorkspaceUnsuspend,
 	ActionWorkspaceAbuseExempt,
 	ActionWorkspaceAbuseUnexempt,
+	ActionWorkspaceSendCapChange,
 	ActionContactImport,
 	ActionAuditLogExport,
 	ActionWebhookEndpointTest,
@@ -160,6 +163,23 @@ func Change(from, to any) map[string]any {
 // Became is the Diff entry of a field that was set where there was no value before.
 func Became(to any) map[string]any {
 	return map[string]any{DiffTo: to}
+}
+
+// ChangeOf is the Diff entry of an optional field that went from `from` to `to`, where nil is no
+// value: the "from" is absent when there was none, the "to" when it was cleared. changed is false
+// when both are the same value (or both are none), so the caller writes and records nothing.
+func ChangeOf[T comparable](from, to *T) (entry map[string]any, changed bool) {
+	if from == nil && to == nil || from != nil && to != nil && *from == *to {
+		return nil, false
+	}
+	entry = map[string]any{}
+	if from != nil {
+		entry[DiffFrom] = *from
+	}
+	if to != nil {
+		entry[DiffTo] = *to
+	}
+	return entry, true
 }
 
 // AuditEntry is emitted in the transaction of the change it records; the envelope id

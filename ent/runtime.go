@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
@@ -50,6 +51,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -535,6 +537,25 @@ func init() {
 	holdDescSetBy := holdFields[6].Descriptor()
 	// hold.SetByValidator is a validator for the "set_by" field. It is called by the builders before save.
 	hold.SetByValidator = holdDescSetBy.Validators[0].(func(string) error)
+	instanceauditentryMixin := schema.InstanceAuditEntry{}.Mixin()
+	instanceauditentryMixinFields0 := instanceauditentryMixin[0].Fields()
+	_ = instanceauditentryMixinFields0
+	instanceauditentryFields := schema.InstanceAuditEntry{}.Fields()
+	_ = instanceauditentryFields
+	// instanceauditentryDescCreatedAt is the schema descriptor for created_at field.
+	instanceauditentryDescCreatedAt := instanceauditentryMixinFields0[0].Descriptor()
+	// instanceauditentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	instanceauditentry.DefaultCreatedAt = instanceauditentryDescCreatedAt.Default.(func() time.Time)
+	// instanceauditentryDescUpdatedAt is the schema descriptor for updated_at field.
+	instanceauditentryDescUpdatedAt := instanceauditentryMixinFields0[1].Descriptor()
+	// instanceauditentry.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	instanceauditentry.DefaultUpdatedAt = instanceauditentryDescUpdatedAt.Default.(func() time.Time)
+	// instanceauditentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	instanceauditentry.UpdateDefaultUpdatedAt = instanceauditentryDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// instanceauditentryDescAction is the schema descriptor for action field.
+	instanceauditentryDescAction := instanceauditentryFields[2].Descriptor()
+	// instanceauditentry.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	instanceauditentry.ActionValidator = instanceauditentryDescAction.Validators[0].(func(string) error)
 	instancestateMixin := schema.InstanceState{}.Mixin()
 	instancestateMixinFields0 := instancestateMixin[0].Fields()
 	_ = instancestateMixinFields0
@@ -558,6 +579,10 @@ func init() {
 	instancestateDescTelemetryEnabled := instancestateFields[2].Descriptor()
 	// instancestate.DefaultTelemetryEnabled holds the default value on creation for the telemetry_enabled field.
 	instancestate.DefaultTelemetryEnabled = instancestateDescTelemetryEnabled.Default.(bool)
+	// instancestateDescDefaultSendCap is the schema descriptor for default_send_cap field.
+	instancestateDescDefaultSendCap := instancestateFields[7].Descriptor()
+	// instancestate.DefaultSendCapValidator is a validator for the "default_send_cap" field. It is called by the builders before save.
+	instancestate.DefaultSendCapValidator = instancestateDescDefaultSendCap.Validators[0].(func(int) error)
 	integrationMixin := schema.Integration{}.Mixin()
 	integrationMixinFields0 := integrationMixin[0].Fields()
 	_ = integrationMixinFields0
@@ -1120,6 +1145,21 @@ func init() {
 	segmentDescName := segmentFields[1].Descriptor()
 	// segment.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	segment.NameValidator = segmentDescName.Validators[0].(func(string) error)
+	sendcaplimiterMixin := schema.SendCapLimiter{}.Mixin()
+	sendcaplimiterMixinFields0 := sendcaplimiterMixin[0].Fields()
+	_ = sendcaplimiterMixinFields0
+	sendcaplimiterFields := schema.SendCapLimiter{}.Fields()
+	_ = sendcaplimiterFields
+	// sendcaplimiterDescCreatedAt is the schema descriptor for created_at field.
+	sendcaplimiterDescCreatedAt := sendcaplimiterMixinFields0[0].Descriptor()
+	// sendcaplimiter.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sendcaplimiter.DefaultCreatedAt = sendcaplimiterDescCreatedAt.Default.(func() time.Time)
+	// sendcaplimiterDescUpdatedAt is the schema descriptor for updated_at field.
+	sendcaplimiterDescUpdatedAt := sendcaplimiterMixinFields0[1].Descriptor()
+	// sendcaplimiter.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sendcaplimiter.DefaultUpdatedAt = sendcaplimiterDescUpdatedAt.Default.(func() time.Time)
+	// sendcaplimiter.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sendcaplimiter.UpdateDefaultUpdatedAt = sendcaplimiterDescUpdatedAt.UpdateDefault.(func() time.Time)
 	sendingdomainMixin := schema.SendingDomain{}.Mixin()
 	sendingdomainMixinFields0 := sendingdomainMixin[0].Fields()
 	_ = sendingdomainMixinFields0
@@ -1582,16 +1622,20 @@ func init() {
 	workspace.DefaultAttributionWindowDays = workspaceDescAttributionWindowDays.Default.(int)
 	// workspace.AttributionWindowDaysValidator is a validator for the "attribution_window_days" field. It is called by the builders before save.
 	workspace.AttributionWindowDaysValidator = workspaceDescAttributionWindowDays.Validators[0].(func(int) error)
+	// workspaceDescSendCap is the schema descriptor for send_cap field.
+	workspaceDescSendCap := workspaceFields[10].Descriptor()
+	// workspace.SendCapValidator is a validator for the "send_cap" field. It is called by the builders before save.
+	workspace.SendCapValidator = workspaceDescSendCap.Validators[0].(func(int) error)
 	// workspaceDescDomainJoinEnabled is the schema descriptor for domain_join_enabled field.
-	workspaceDescDomainJoinEnabled := workspaceFields[10].Descriptor()
+	workspaceDescDomainJoinEnabled := workspaceFields[11].Descriptor()
 	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
 	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
 	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
-	workspaceDescFeedPosition := workspaceFields[12].Descriptor()
+	workspaceDescFeedPosition := workspaceFields[13].Descriptor()
 	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
 	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[19].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[20].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 }

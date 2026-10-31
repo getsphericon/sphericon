@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/ent/segment"
+	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -593,6 +594,22 @@ func (s *Scoped) verifySegment(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Segment: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifySendCapLimiter fails with ErrNotInWorkspace unless every id is a SendCapLimiter of the Workspace.
+func (s *Scoped) verifySendCapLimiter(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.SendCapLimiter.Query().Where(sendcaplimiter.IDIn(ids...), sendcaplimiter.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("SendCapLimiter: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -28448,6 +28465,523 @@ func (x *SegmentScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *SegmentScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// SendCapLimiterScoped reaches SendCapLimiter entities of one Workspace.
+type SendCapLimiterScoped struct{ s *Scoped }
+
+// SendCapLimiter returns the SendCapLimiter entities of the Workspace.
+func (s *Scoped) SendCapLimiter() *SendCapLimiterScoped { return &SendCapLimiterScoped{s: s} }
+
+// Query returns a SendCapLimiter query already confined to the Workspace.
+func (t *SendCapLimiterScoped) Query() *SendCapLimiterQuery {
+	return t.s.c.SendCapLimiter.Query().Where(sendcaplimiter.WorkspaceID(t.s.ws))
+}
+
+// Get returns the SendCapLimiter with the id; a row of another Workspace is not found.
+func (t *SendCapLimiterScoped) Get(ctx context.Context, id int64) (*SendCapLimiter, error) {
+	return t.Query().Where(sendcaplimiter.ID(id)).Only(ctx)
+}
+
+// SendCapLimiterScopedDeleteOne wraps SendCapLimiterDeleteOne.
+type SendCapLimiterScopedDeleteOne struct {
+	s *Scoped
+	b *SendCapLimiterDeleteOne
+}
+
+// DeleteOneID deletes the SendCapLimiter with the id; a row of another Workspace is not found.
+func (t *SendCapLimiterScoped) DeleteOneID(id int64) *SendCapLimiterScopedDeleteOne {
+	return &SendCapLimiterScopedDeleteOne{s: t.s, b: t.s.c.SendCapLimiter.DeleteOneID(id).Where(sendcaplimiter.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *SendCapLimiterScopedDeleteOne) Where(ps ...predicate.SendCapLimiter) *SendCapLimiterScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *SendCapLimiterScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// SendCapLimiterScopedDelete wraps SendCapLimiterDelete.
+type SendCapLimiterScopedDelete struct {
+	s *Scoped
+	b *SendCapLimiterDelete
+}
+
+// Delete deletes the SendCapLimiter entities of the Workspace that match the predicates.
+func (t *SendCapLimiterScoped) Delete() *SendCapLimiterScopedDelete {
+	return &SendCapLimiterScopedDelete{s: t.s, b: t.s.c.SendCapLimiter.Delete().Where(sendcaplimiter.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *SendCapLimiterScopedDelete) Where(ps ...predicate.SendCapLimiter) *SendCapLimiterScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *SendCapLimiterScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// SendCapLimiterScopedCreate wraps SendCapLimiterCreate. It has no way to name a Workspace.
+type SendCapLimiterScopedCreate struct {
+	s *Scoped
+	b *SendCapLimiterCreate
+}
+
+// Create starts a SendCapLimiter in the Workspace.
+func (t *SendCapLimiterScoped) Create() *SendCapLimiterScopedCreate {
+	return &SendCapLimiterScopedCreate{s: t.s, b: t.s.c.SendCapLimiter.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *SendCapLimiterScopedCreate) SetCreatedAt(v time.Time) *SendCapLimiterScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *SendCapLimiterScopedCreate) SetNillableCreatedAt(v *time.Time) *SendCapLimiterScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendCapLimiterScopedCreate) SetUpdatedAt(v time.Time) *SendCapLimiterScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *SendCapLimiterScopedCreate) SetNillableUpdatedAt(v *time.Time) *SendCapLimiterScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetDayFill sets the "day_fill" field.
+func (x *SendCapLimiterScopedCreate) SetDayFill(v float64) *SendCapLimiterScopedCreate {
+	x.b.SetDayFill(v)
+	return x
+}
+
+// SetRefilledAt sets the "refilled_at" field.
+func (x *SendCapLimiterScopedCreate) SetRefilledAt(v time.Time) *SendCapLimiterScopedCreate {
+	x.b.SetRefilledAt(v)
+	return x
+}
+
+func (x *SendCapLimiterScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the SendCapLimiter.
+func (x *SendCapLimiterScopedCreate) Save(ctx context.Context) (*SendCapLimiter, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *SendCapLimiterScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// SendCapLimiterScopedCreateBulk creates several SendCapLimiter entities of one Workspace at once.
+type SendCapLimiterScopedCreateBulk struct {
+	s  *Scoped
+	xs []*SendCapLimiterScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *SendCapLimiterScoped) CreateBulk(xs ...*SendCapLimiterScopedCreate) *SendCapLimiterScopedCreateBulk {
+	return &SendCapLimiterScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *SendCapLimiterScopedCreateBulk) raw(ctx context.Context) (*SendCapLimiterCreateBulk, error) {
+	builders := make([]*SendCapLimiterCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("SendCapLimiter: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		if err := x.check(ctx); err != nil {
+			return nil, err
+		}
+		builders[i] = x.b
+	}
+	return b.s.c.SendCapLimiter.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the SendCapLimiter entities.
+func (b *SendCapLimiterScopedCreateBulk) Save(ctx context.Context) ([]*SendCapLimiter, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *SendCapLimiterScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// SendCapLimiterScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type SendCapLimiterScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *SendCapLimiterScopedUpsert) SetUpdatedAt(v time.Time) *SendCapLimiterScopedUpsert {
+	u.u.Set(sendcaplimiter.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *SendCapLimiterScopedUpsert) UpdateUpdatedAt() *SendCapLimiterScopedUpsert {
+	u.u.SetExcluded(sendcaplimiter.FieldUpdatedAt)
+	return u
+}
+
+// SetDayFill sets the "day_fill" field.
+func (u *SendCapLimiterScopedUpsert) SetDayFill(v float64) *SendCapLimiterScopedUpsert {
+	u.u.Set(sendcaplimiter.FieldDayFill, v)
+	return u
+}
+
+// AddDayFill adds v to the "day_fill" field.
+func (u *SendCapLimiterScopedUpsert) AddDayFill(v float64) *SendCapLimiterScopedUpsert {
+	u.u.Add(sendcaplimiter.FieldDayFill, v)
+	return u
+}
+
+// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
+func (u *SendCapLimiterScopedUpsert) UpdateDayFill() *SendCapLimiterScopedUpsert {
+	u.u.SetExcluded(sendcaplimiter.FieldDayFill)
+	return u
+}
+
+// SetRefilledAt sets the "refilled_at" field.
+func (u *SendCapLimiterScopedUpsert) SetRefilledAt(v time.Time) *SendCapLimiterScopedUpsert {
+	u.u.Set(sendcaplimiter.FieldRefilledAt, v)
+	return u
+}
+
+// UpdateRefilledAt sets the "refilled_at" field to the value that was provided on create.
+func (u *SendCapLimiterScopedUpsert) UpdateRefilledAt() *SendCapLimiterScopedUpsert {
+	u.u.SetExcluded(sendcaplimiter.FieldRefilledAt)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *SendCapLimiterScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(sendcaplimiter.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// SendCapLimiterScopedUpsertOne is the "upsert" of one SendCapLimiter.
+type SendCapLimiterScopedUpsertOne struct {
+	x *SendCapLimiterScopedCreate
+	u *SendCapLimiterUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *SendCapLimiterScopedCreate) OnConflictColumns(columns ...string) *SendCapLimiterScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *SendCapLimiterScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *SendCapLimiterScopedUpsertOne {
+	return &SendCapLimiterScopedUpsertOne{x: x, u: x.b.OnConflict((&SendCapLimiterScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *SendCapLimiterScopedUpsertOne) UpdateNewValues() *SendCapLimiterScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *SendCapLimiterScopedUpsertOne) Ignore() *SendCapLimiterScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *SendCapLimiterScopedUpsertOne) DoNothing() *SendCapLimiterScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *SendCapLimiterScopedUpsertOne) Update(set func(*SendCapLimiterScopedUpsert)) *SendCapLimiterScopedUpsertOne {
+	u.u.Update(func(s *SendCapLimiterUpsert) { set(&SendCapLimiterScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *SendCapLimiterScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *SendCapLimiterScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// SendCapLimiterScopedUpsertBulk is the "upsert" of several SendCapLimiter entities.
+type SendCapLimiterScopedUpsertBulk struct {
+	b       *SendCapLimiterScopedCreateBulk
+	t       *SendCapLimiterScoped
+	columns []string
+	opts    []func(*SendCapLimiterUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *SendCapLimiterScopedCreateBulk) OnConflictColumns(columns ...string) *SendCapLimiterScopedUpsertBulk {
+	return &SendCapLimiterScopedUpsertBulk{b: b, t: &SendCapLimiterScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *SendCapLimiterScopedUpsertBulk) UpdateNewValues() *SendCapLimiterScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *SendCapLimiterUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *SendCapLimiterScopedUpsertBulk) Ignore() *SendCapLimiterScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *SendCapLimiterUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *SendCapLimiterScopedUpsertBulk) DoNothing() *SendCapLimiterScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *SendCapLimiterUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *SendCapLimiterScopedUpsertBulk) Update(set func(*SendCapLimiterScopedUpsert)) *SendCapLimiterScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *SendCapLimiterUpsertBulk) {
+		r.Update(func(s *SendCapLimiterUpsert) { set(&SendCapLimiterScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *SendCapLimiterScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// SendCapLimiterScopedUpdateOne wraps SendCapLimiterUpdateOne. It has no way to move the row to another Workspace.
+type SendCapLimiterScopedUpdateOne struct {
+	s *Scoped
+	b *SendCapLimiterUpdateOne
+}
+
+// UpdateOneID updates the SendCapLimiter with the id; a row of another Workspace is not found.
+func (t *SendCapLimiterScoped) UpdateOneID(id int64) *SendCapLimiterScopedUpdateOne {
+	return &SendCapLimiterScopedUpdateOne{s: t.s, b: t.s.c.SendCapLimiter.UpdateOneID(id).Where(sendcaplimiter.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *SendCapLimiterScopedUpdateOne) Where(ps ...predicate.SendCapLimiter) *SendCapLimiterScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendCapLimiterScopedUpdateOne) SetUpdatedAt(v time.Time) *SendCapLimiterScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDayFill sets the "day_fill" field.
+func (x *SendCapLimiterScopedUpdateOne) SetDayFill(v float64) *SendCapLimiterScopedUpdateOne {
+	x.b.SetDayFill(v)
+	return x
+}
+
+// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
+func (x *SendCapLimiterScopedUpdateOne) SetNillableDayFill(v *float64) *SendCapLimiterScopedUpdateOne {
+	x.b.SetNillableDayFill(v)
+	return x
+}
+
+// AddDayFill adds value to the "day_fill" field.
+func (x *SendCapLimiterScopedUpdateOne) AddDayFill(v float64) *SendCapLimiterScopedUpdateOne {
+	x.b.AddDayFill(v)
+	return x
+}
+
+// SetRefilledAt sets the "refilled_at" field.
+func (x *SendCapLimiterScopedUpdateOne) SetRefilledAt(v time.Time) *SendCapLimiterScopedUpdateOne {
+	x.b.SetRefilledAt(v)
+	return x
+}
+
+// SetNillableRefilledAt sets the "refilled_at" field if the given value is not nil.
+func (x *SendCapLimiterScopedUpdateOne) SetNillableRefilledAt(v *time.Time) *SendCapLimiterScopedUpdateOne {
+	x.b.SetNillableRefilledAt(v)
+	return x
+}
+
+func (x *SendCapLimiterScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the SendCapLimiter.
+func (x *SendCapLimiterScopedUpdateOne) Save(ctx context.Context) (*SendCapLimiter, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *SendCapLimiterScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// SendCapLimiterScopedUpdate wraps SendCapLimiterUpdate: a conditional bulk update of one Workspace.
+type SendCapLimiterScopedUpdate struct {
+	s *Scoped
+	b *SendCapLimiterUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the SendCapLimiter entities of the Workspace that match the predicates.
+func (t *SendCapLimiterScoped) Update() *SendCapLimiterScopedUpdate {
+	return &SendCapLimiterScopedUpdate{s: t.s, b: t.s.c.SendCapLimiter.Update().Where(sendcaplimiter.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *SendCapLimiterScopedUpdate) Where(ps ...predicate.SendCapLimiter) *SendCapLimiterScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *SendCapLimiterScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *SendCapLimiterScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(sendcaplimiter.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *SendCapLimiterScopedUpdate) SetUpdatedAt(v time.Time) *SendCapLimiterScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetDayFill sets the "day_fill" field.
+func (x *SendCapLimiterScopedUpdate) SetDayFill(v float64) *SendCapLimiterScopedUpdate {
+	x.b.SetDayFill(v)
+	return x
+}
+
+// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
+func (x *SendCapLimiterScopedUpdate) SetNillableDayFill(v *float64) *SendCapLimiterScopedUpdate {
+	x.b.SetNillableDayFill(v)
+	return x
+}
+
+// AddDayFill adds value to the "day_fill" field.
+func (x *SendCapLimiterScopedUpdate) AddDayFill(v float64) *SendCapLimiterScopedUpdate {
+	x.b.AddDayFill(v)
+	return x
+}
+
+// SetRefilledAt sets the "refilled_at" field.
+func (x *SendCapLimiterScopedUpdate) SetRefilledAt(v time.Time) *SendCapLimiterScopedUpdate {
+	x.b.SetRefilledAt(v)
+	return x
+}
+
+// SetNillableRefilledAt sets the "refilled_at" field if the given value is not nil.
+func (x *SendCapLimiterScopedUpdate) SetNillableRefilledAt(v *time.Time) *SendCapLimiterScopedUpdate {
+	x.b.SetNillableRefilledAt(v)
+	return x
+}
+
+func (x *SendCapLimiterScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *SendCapLimiterScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *SendCapLimiterScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

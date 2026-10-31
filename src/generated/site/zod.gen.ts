@@ -199,7 +199,7 @@ export const zLintFinding = z.object({
 });
 
 /**
- * A rolling 24-hour Provider limit the caller may set
+ * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
  */
 export const zMaxPerDay = z.int().gte(1).lte(100000000);
 
@@ -678,6 +678,11 @@ export const zSiteAutomationVersion = z.object({
   integrationId: z.exactOptional(zEntityId.nullable()),
   steps: z.array(zSiteAutomationStep)
 });
+
+/**
+ * What slows a sending broadcast
+ */
+export const zSiteBroadcastLimit = z.enum(['sendCap', 'providerLimit']);
 
 /**
  * Broadcast lifecycle status
@@ -1651,6 +1656,17 @@ export const zSiteSecondFactorStatus = z.object({
 });
 
 /**
+ * The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
+ * all its Integrations, Transactional included. The platform sets it; the Workspace only reads it.
+ * Sends beyond it wait for the 24-hour window to free up; Transactional mail is never delayed. It
+ * is not a Provider limit, which each Integration sets for its own provider account.
+ */
+export const zSiteSendCap = z.object({
+  perDay: zMaxPerDay,
+  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * SES config without the secret access key
  */
 export const zSiteSesConfig = z.object({
@@ -2397,14 +2413,16 @@ export const zSiteBrandKitResource = z.object({
 });
 
 /**
- * How far a sending broadcast has got. A broadcast limited by its Integration's Send
- * rate limit is paced: recipients go out at an even interval, so the estimate is
- * derived on the server from the last scheduled time and the recipients remaining.
+ * How far a sending broadcast has got. A broadcast limited by its Integration's Provider
+ * limit is paced: recipients go out at an even interval. The Workspace's Send cap lets a
+ * day's worth out at a time. The estimate is derived on the server from both, the later
+ * of the two, and `limitedBy` says which one it is.
  */
 export const zSiteBroadcastProgress = z.object({
   processedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   remainingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  estimatedCompletionAt: z.exactOptional(zTimestamp.nullable())
+  estimatedCompletionAt: z.exactOptional(zTimestamp.nullable()),
+  limitedBy: zSiteBroadcastLimit.nullable()
 });
 
 /**
@@ -3128,6 +3146,7 @@ export const zSiteWorkspaceResource = z.object({
   holds: z.array(zSiteWorkspaceHold),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
+  sendCap: z.exactOptional(zSiteSendCap.nullable()),
   accountLinkAvailable: z.boolean(),
   createdAt: zTimestamp
 });

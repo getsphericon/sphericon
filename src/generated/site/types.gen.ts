@@ -812,7 +812,7 @@ export type LintFinding = {
 };
 
 /**
- * A rolling 24-hour Provider limit the caller may set
+ * A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap
  */
 export type MaxPerDay = number;
 
@@ -2115,6 +2115,16 @@ export type SiteBrandKitResource = {
 };
 
 /**
+ * What slows a sending broadcast
+ */
+export const SiteBroadcastLimit = { SEND_CAP: 'sendCap', PROVIDER_LIMIT: 'providerLimit' } as const;
+
+/**
+ * What slows a sending broadcast
+ */
+export type SiteBroadcastLimit = typeof SiteBroadcastLimit[keyof typeof SiteBroadcastLimit];
+
+/**
  * A broadcast's per-link click figures, most clicked first
  */
 export type SiteBroadcastLinkClicksList = {
@@ -2125,9 +2135,10 @@ export type SiteBroadcastLinkClicksList = {
 };
 
 /**
- * How far a sending broadcast has got. A broadcast limited by its Integration's Send
- * rate limit is paced: recipients go out at an even interval, so the estimate is
- * derived on the server from the last scheduled time and the recipients remaining.
+ * How far a sending broadcast has got. A broadcast limited by its Integration's Provider
+ * limit is paced: recipients go out at an even interval. The Workspace's Send cap lets a
+ * day's worth out at a time. The estimate is derived on the server from both, the later
+ * of the two, and `limitedBy` says which one it is.
  */
 export type SiteBroadcastProgress = {
   /**
@@ -2140,9 +2151,13 @@ export type SiteBroadcastProgress = {
   remainingCount: number;
   /**
    * When the last remaining recipient is expected to be sent. Null when it is not
-   * knowable: the broadcast is on hold, or it is not paced by a Provider limit.
+   * knowable: the broadcast is on hold, or nothing limits it.
    */
   estimatedCompletionAt?: Timestamp | null;
+  /**
+   * What slows the broadcast and sets the estimate; null when nothing does or it is on hold
+   */
+  limitedBy: SiteBroadcastLimit | null;
 };
 
 /**
@@ -4998,6 +5013,23 @@ export type SiteSegmentResource = {
 };
 
 /**
+ * The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
+ * all its Integrations, Transactional included. The platform sets it; the Workspace only reads it.
+ * Sends beyond it wait for the 24-hour window to free up; Transactional mail is never delayed. It
+ * is not a Provider limit, which each Integration sets for its own provider account.
+ */
+export type SiteSendCap = {
+  /**
+   * Messages per rolling 24 hours
+   */
+  perDay: MaxPerDay;
+  /**
+   * Messages the Workspace sent over the last 24 hours
+   */
+  sentLast24h: number;
+};
+
+/**
  * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
  * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
  * private key is never exposed. `verified` is re-checked in the background:
@@ -6097,6 +6129,11 @@ export type SiteWorkspaceResource = {
    * second_factor_required until the User enrolls one.
    */
   secondFactorGraceEndsAt?: Timestamp | null;
+  /**
+   * The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null
+   * when no Send cap applies. Read-only: no operation lets the Workspace change it.
+   */
+  sendCap?: SiteSendCap | null;
   /**
    * Whether the authenticated User may open the Account link: true only for an
    * Owner, and only on an installation configured for it.

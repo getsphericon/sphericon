@@ -60,6 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -405,6 +406,7 @@ var editionPackage = do.Package(
 			SupportEmail:  cfg.SupportEmail,
 			HoldMaxExpiry: cfg.StaffHoldMaxExpiry,
 			Clock:         do.MustInvoke[Clock](i),
+			SendCaps:      do.MustInvoke[providerlimit.SendCaps](i),
 		})
 	}),
 	// A Workspace's freezes on the send chokepoint (ADR 0009, 0015), gated by the license: one
@@ -546,6 +548,11 @@ var deliveryPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*machine.Detector, error) {
 		return machine.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[machine.Source](i)), nil
 	}),
+	// Whether the Instance has Send caps (ADR 0067): the saas Mode has them. It is decided here,
+	// once, and every module that enforces, shows or sets a Send cap takes this one value.
+	do.Lazy(func(i do.Injector) (providerlimit.SendCaps, error) {
+		return providerlimit.SendCaps(do.MustInvoke[*config.Config](i).Mode.SaaS()), nil
+	}),
 	// The request budgets of the process (ADR 0025): one limiter for both listeners, so a
 	// client's budget is the same whichever one it reaches.
 	do.Lazy(func(i do.Injector) (*ratelimit.Limiter, error) {
@@ -555,7 +562,10 @@ var deliveryPackage = do.Package(
 	// Workspace's behalf, for every send surface.
 	do.Lazy(func(i do.Injector) (*outbound.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		opts := []outbound.Option{outbound.WithTestSendBudget(do.MustInvoke[*accounts.Attempts](i))}
+		opts := []outbound.Option{
+			outbound.WithTestSendBudget(do.MustInvoke[*accounts.Attempts](i)),
+			outbound.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
+		}
 		if cfg.SystemMailConfigured() {
 			opts = append(opts, outbound.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))
 		}
@@ -573,8 +583,11 @@ var accountsPackage = do.Package(
 		return credentials.NewHasher(), nil
 	}),
 	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
+	// On an Instance that has Send caps (ADR 0067) a new Workspace starts with the Instance's
+	// default; elsewhere it has none.
 	do.Lazy(func(i do.Injector) (*accounts.Accounts, error) {
-		return accounts.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i)), nil
+		return accounts.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*consentrecords.Module](i),
+			accounts.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i), instance.DefaultSendCapIn)), nil
 	}),
 	// The Workspace deletion cycle (ADR 0043), over the raw client.
 	do.Lazy(func(i do.Injector) (*workspacedeletion.Module, error) {
@@ -590,7 +603,8 @@ var accountsPackage = do.Package(
 		}
 		lapsedAt, _ := do.MustInvoke[*ee.Edition](i).LicenseLapsedAt()
 		host := instance.HostOf(cfg, string(do.MustInvoke[Version](i)), lapsedAt)
-		return instance.New(do.MustInvoke[*ent.Client](i), instance.EnvironmentOf(cfg), host, do.MustInvoke[Clock](i), instance.WithReleaseSource(source)), nil
+		return instance.New(do.MustInvoke[*ent.Client](i), instance.EnvironmentOf(cfg), host, do.MustInvoke[Clock](i),
+			instance.WithReleaseSource(source), instance.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i))), nil
 	}),
 	// Attempts counts failed logins per account (ADR 0025) over the raw client.
 	do.Lazy(func(i do.Injector) (*accounts.Attempts, error) {

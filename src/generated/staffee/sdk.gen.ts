@@ -5,8 +5,8 @@ import * as z from 'zod';
 
 import { client } from './client.gen.ts';
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client/index.ts';
-import type { StaffSignupSurveyCountsData, StaffSignupSurveyCountsErrors, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetData, StaffSignupSurveyGetErrors, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListData, StaffWorkspaceAuditListErrors, StaffWorkspaceAuditListResponses, StaffWorkspacesExemptData, StaffWorkspacesExemptErrors, StaffWorkspacesExemptResponses, StaffWorkspacesGetData, StaffWorkspacesGetErrors, StaffWorkspacesGetResponses, StaffWorkspacesListData, StaffWorkspacesListErrors, StaffWorkspacesListResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendErrors, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptErrors, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendErrors, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
-import { zStaffSignupSurveyGetPath, zStaffWorkspaceAuditListPath, zStaffWorkspaceAuditListQuery, zStaffWorkspacesExemptPath, zStaffWorkspacesGetPath, zStaffWorkspacesListQuery, zStaffWorkspacesSuspendBody, zStaffWorkspacesSuspendPath, zStaffWorkspacesUnexemptPath, zStaffWorkspacesUnsuspendPath } from './zod.gen.ts';
+import type { StaffSignupSurveyCountsData, StaffSignupSurveyCountsErrors, StaffSignupSurveyCountsResponses, StaffSignupSurveyGetData, StaffSignupSurveyGetErrors, StaffSignupSurveyGetResponses, StaffWorkspaceAuditListData, StaffWorkspaceAuditListErrors, StaffWorkspaceAuditListResponses, StaffWorkspacesClearSendCapData, StaffWorkspacesClearSendCapErrors, StaffWorkspacesClearSendCapResponses, StaffWorkspacesExemptData, StaffWorkspacesExemptErrors, StaffWorkspacesExemptResponses, StaffWorkspacesGetData, StaffWorkspacesGetErrors, StaffWorkspacesGetResponses, StaffWorkspacesListData, StaffWorkspacesListErrors, StaffWorkspacesListResponses, StaffWorkspacesSetSendCapData, StaffWorkspacesSetSendCapErrors, StaffWorkspacesSetSendCapResponses, StaffWorkspacesSuspendData, StaffWorkspacesSuspendErrors, StaffWorkspacesSuspendResponses, StaffWorkspacesUnexemptData, StaffWorkspacesUnexemptErrors, StaffWorkspacesUnexemptResponses, StaffWorkspacesUnsuspendData, StaffWorkspacesUnsuspendErrors, StaffWorkspacesUnsuspendResponses } from './types.gen.ts';
+import { zStaffSignupSurveyGetPath, zStaffWorkspaceAuditListPath, zStaffWorkspaceAuditListQuery, zStaffWorkspacesClearSendCapPath, zStaffWorkspacesExemptPath, zStaffWorkspacesGetPath, zStaffWorkspacesListQuery, zStaffWorkspacesSetSendCapBody, zStaffWorkspacesSetSendCapPath, zStaffWorkspacesSuspendBody, zStaffWorkspacesSuspendPath, zStaffWorkspacesUnexemptPath, zStaffWorkspacesUnsuspendPath } from './zod.gen.ts';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -130,6 +130,49 @@ export const staffWorkspacesExempt = <ThrowOnError extends boolean = false>(opti
     }],
   url: '/workspaces/{workspaceId}/exempt',
   ...options
+});
+
+/**
+ * Remove a Workspace's Send cap, so it is limited by its Provider limits only. Audited.
+ * Idempotent. Not found on an Instance that has no Send caps.
+ */
+export const staffWorkspacesClearSendCap = <ThrowOnError extends boolean = false>(options: Options<StaffWorkspacesClearSendCapData, ThrowOnError>): RequestResult<StaffWorkspacesClearSendCapResponses, StaffWorkspacesClearSendCapErrors, ThrowOnError> => (options.client ?? client).delete<StaffWorkspacesClearSendCapResponses, StaffWorkspacesClearSendCapErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: z.never().optional(),
+    path: zStaffWorkspacesClearSendCapPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/workspaces/{workspaceId}/send-cap',
+  ...options
+});
+
+/**
+ * Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a
+ * rolling 24 hours are deferred, not refused. Audited. Idempotent. Not found on an Instance that
+ * has no Send caps.
+ */
+export const staffWorkspacesSetSendCap = <ThrowOnError extends boolean = false>(options: Options<StaffWorkspacesSetSendCapData, ThrowOnError>): RequestResult<StaffWorkspacesSetSendCapResponses, StaffWorkspacesSetSendCapErrors, ThrowOnError> => (options.client ?? client).put<StaffWorkspacesSetSendCapResponses, StaffWorkspacesSetSendCapErrors, ThrowOnError>({
+  requestValidator: async (data) => await z.object({
+    body: zStaffWorkspacesSetSendCapBody,
+    path: zStaffWorkspacesSetSendCapPath,
+    query: z.never().optional()
+  }).parseAsync(data),
+  security: [{
+      in: 'cookie',
+      name: 'STAFF_JWT',
+      type: 'apiKey'
+    }],
+  url: '/workspaces/{workspaceId}/send-cap',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**

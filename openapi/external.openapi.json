@@ -43,6 +43,9 @@
       "name": "Auth"
     },
     {
+      "name": "Workspace"
+    },
+    {
       "name": "Audit"
     },
     {
@@ -13365,6 +13368,81 @@
         },
         "x-required-scopes": ["webhooks:test"]
       }
+    },
+    "/workspace": {
+      "get": {
+        "operationId": "Workspace_get",
+        "description": "Read the Workspace the token acts in: its name, time zone and Send cap. Read the Send cap to\nexplain a slow send or to plan one: a send larger than what remains of it in the last 24 hours\ngoes out over more than a day. Read-only: no operation changes the Send cap.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "RFC 7807 unauthorized response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "required": true,
+                "description": "The request budget of the window that was exceeded",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "required": true,
+                "description": "Requests left in the current window",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "required": true,
+                "description": "Unix time at which the window resets",
+                "schema": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Workspace"],
+        "x-required-scopes": []
+      }
     }
   },
   "security": [
@@ -17871,7 +17949,7 @@
         "format": "int32",
         "minimum": 1,
         "maximum": 100000000,
-        "description": "A rolling 24-hour Provider limit the caller may set"
+        "description": "A rolling 24-hour limit the caller may set: a Provider limit's daily value or a Send cap"
       },
       "MaxPerSecond": {
         "type": "integer",
@@ -18644,6 +18722,26 @@
           }
         },
         "description": "Segment resource"
+      },
+      "SendCap": {
+        "type": "object",
+        "required": ["perDay", "sentLast24h"],
+        "properties": {
+          "perDay": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MaxPerDay"
+              }
+            ],
+            "description": "Messages per rolling 24 hours"
+          },
+          "sentLast24h": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the Workspace sent over the last 24 hours"
+          }
+        },
+        "description": "The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across\nall its Integrations, Transactional included. The platform sets it; the Workspace only reads it.\nSends beyond it are deferred until the 24-hour window frees up, never refused; Transactional mail\nis never delayed. It is not a Provider limit, which each Integration sets for its own provider\naccount."
       },
       "SendScope": {
         "type": "string",
@@ -19889,6 +19987,44 @@
         "type": "string",
         "pattern": "^[0-9A-Za-z]{8}$",
         "description": "A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the\nWorkspace's one public address."
+      },
+      "WorkspaceResource": {
+        "type": "object",
+        "required": ["id", "name", "timezone"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkspaceId"
+              }
+            ],
+            "description": "The Workspace id: its short opaque public address"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name",
+            "x-untrusted": true
+          },
+          "timezone": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TimeZoneName"
+              }
+            ],
+            "description": "The IANA time zone every analytics report counts its days in (ADR 0057)"
+          },
+          "sendCap": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SendCap"
+              }
+            ],
+            "nullable": true,
+            "description": "The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null\nwhen no Send cap applies"
+          }
+        },
+        "description": "The Workspace the token acts in"
       }
     },
     "securitySchemes": {

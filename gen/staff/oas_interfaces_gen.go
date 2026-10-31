@@ -17,12 +17,24 @@ type StaffInstanceAcknowledgeNoticeRes interface {
 	staffInstanceAcknowledgeNoticeRes()
 }
 
+type StaffInstanceClearDefaultSendCapRes interface {
+	staffInstanceClearDefaultSendCapRes()
+}
+
 type StaffInstanceGetStateRes interface {
 	staffInstanceGetStateRes()
 }
 
+type StaffInstanceListAuditEntriesRes interface {
+	staffInstanceListAuditEntriesRes()
+}
+
 type StaffInstancePreviewTelemetryReportRes interface {
 	staffInstancePreviewTelemetryReportRes()
+}
+
+type StaffInstanceSetDefaultSendCapRes interface {
+	staffInstanceSetDefaultSendCapRes()
 }
 
 type StaffInstanceSetTelemetryRes interface {

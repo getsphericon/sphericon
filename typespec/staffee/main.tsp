@@ -5,6 +5,7 @@ import "@typespec/openapi";
 import "../common/scalars.tsp";
 import "../common/errors.tsp";
 import "../common/pagination.tsp";
+import "../common/limits.tsp";
 import "./resources/workspaces.tsp";
 import "./resources/audit.tsp";
 import "./resources/signup-survey.tsp";

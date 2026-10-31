@@ -32,10 +32,22 @@ import (
 // goverter:extend optString
 // goverter:extend optLapse
 // goverter:extend optLock
+// goverter:extend optDefaultSendCap
+// goverter:extend nilMaxPerDay
+// goverter:extend instanceAuditDiff
 type Converter interface {
 	StaffMemberToResource(source *ent.StaffMember) staffapi.StaffResource
 
 	InstanceStateToResource(source instance.State) staffapi.StaffInstanceState
+	DefaultSendCapToResource(source instance.DefaultSendCap) staffapi.StaffDefaultSendCap
+	DefaultSendCapChangeToResource(source instance.DefaultSendCapChange) staffapi.StaffDefaultSendCapChange
+
+	// An entry's actor is the Staff member it was loaded with; it is never deleted (ADR 0026).
+	// goverter:map CreatedAt OccurredAt
+	// goverter:map Edges.StaffMember Actor
+	InstanceAuditEntryToResource(source *ent.InstanceAuditEntry) staffapi.StaffInstanceAuditEntryResource
+	// goverter:useEmptyOnNil:slice
+	InstanceAuditEntriesToResources(source []*ent.InstanceAuditEntry) []staffapi.StaffInstanceAuditEntryResource
 
 	SignupItemToResource(source signupitems.Item) staffapi.StaffSignupItemResource
 	SignupItemsToResources(source []signupitems.Item) []staffapi.StaffSignupItemResource
@@ -78,6 +90,27 @@ func optLock(c Converter, l instance.Lock) staffapi.OptStaffInstanceTelemetryLoc
 		return staffapi.OptStaffInstanceTelemetryLock{}
 	}
 	return staffapi.NewOptStaffInstanceTelemetryLock(c.InstanceTelemetryLockToResource(l))
+}
+
+// optDefaultSendCap is the default Send cap, absent on an Instance that has no Send caps.
+func optDefaultSendCap(c Converter, d *instance.DefaultSendCap) staffapi.OptStaffDefaultSendCap {
+	if d == nil {
+		return staffapi.OptStaffDefaultSendCap{}
+	}
+	return staffapi.NewOptStaffDefaultSendCap(c.DefaultSendCapToResource(*d))
+}
+
+// nilMaxPerDay renders a Send cap: null when there is none.
+func nilMaxPerDay(v *int) staffapi.NilMaxPerDay {
+	if v == nil {
+		return staffapi.NilMaxPerDay{Null: true}
+	}
+	return staffapi.NewNilMaxPerDay(staffapi.MaxPerDay(narrow.Int32(*v)))
+}
+
+// instanceAuditDiff is an entry's stored diff as the contract's object.
+func instanceAuditDiff(d map[string]any) staffapi.StaffInstanceAuditEntryResourceDiff {
+	return convert.RawObject[staffapi.StaffInstanceAuditEntryResourceDiff](d)
 }
 
 func optDraft(d *string) staffapi.OptLegalDocumentMarkdown {

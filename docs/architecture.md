@@ -100,7 +100,10 @@ Every Workspace-owned entity (one with `WorkspaceMixin`) is reached through
 `Delete`/`DeleteOneID`/`CreateBulk`/upsert wrappers apply the Workspace themselves; `Create`
 has no `SetWorkspaceID`; a reference to another Workspace's row fails with
 `ent.ErrNotInWorkspace` (422). A new Workspace-owned entity is covered on the next
-`mise run generate`; nothing is hand-written per entity. `Scoped.Workspace(ctx)` loads the
+`mise run generate`; nothing is hand-written per entity. A Workspace-owned table may hold at most
+one row per Workspace (a unique `workspace_id`): `brand_kits`, and `send_cap_limiters`, the Send
+cap's 24-hour bucket (ADR 0067). It is scoped, erased with its Workspace and seeded by fixtures
+like any other, and the isolation test lists it in `singletonEntities`. `Scoped.Workspace(ctx)` loads the
 tenant row itself (the Workspace is the tenant root, so it has no wrapper). A Versioned definition
 (`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)
 also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedStore`), the moves of its
@@ -171,10 +174,11 @@ only caller of their writes (`forbidigo`).
      with the raw client and scoped to its Workspace; signed unsubscribe/confirm tokens
      (`internal/consent`), and `accounts.BootstrapScope` (the bootstrap token);
   7. the platform Staff member (ADR 0026): `ee/staff` scopes over the one Workspace the console
-     is looking at, in two reads, each after the Workspace row is loaded and each through
+     is looking at, in three reads, each after the Workspace row is loaded and each through
      the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
-     `audit.Log.Entries`) and its deliverability rates (`Module.WorkspaceDeliverability`, via
-     `reputation.Rates`); and the service endpoints (a Service credential) scope over the one
+     `audit.Log.Entries`), its deliverability rates (`Module.WorkspaceDeliverability`, via
+     `reputation.Rates`) and its sends of the last 24 hours shown next to its Send cap
+     (`Module.SentLast24h`, via `providerlimit.SentLast24h`, ADR 0067); and the service endpoints (a Service credential) scope over the one
      Workspace a call names, after its row is loaded, to set, clear and list its Staff holds
      (`Module.SetHold`, `ClearHold`, `ActiveHolds`; the send path and the site API read them
      through the `holds` module, which holds no raw client); the abuse detector
@@ -195,7 +199,7 @@ only caller of their writes (`forbidigo`).
   so it works on the bus's raw transaction client and scopes from the token's Workspace),
   `internal/oauthserver`, `internal/secondfactor` (a User's TOTP Second factor and Recovery
   codes, ADR 0020: they belong to the User, not a Workspace), `internal/staffmembers` (the Staff member, ADR 0008, 0026, 0063: its table belongs to no Workspace; the store, the login adapter and the session check, on every Instance), `internal/signupitems` (the Sign-up items, their Legal document drafts and published versions, ADR 0062: they belong to the Instance, not to a Workspace), `internal/consentrecords` (the Consent records, ADR 0062: a User's decisions on the Sign-up items belong to the User, not to a Workspace; `Write` adds them on the transaction client of the step that makes the User or changes the answer, `Module.Current` reads a User's latest answer per item, `Module.Pending` and `Gated` are the one definition of a User stopped by the acceptance gate (a required acceptance in effect whose current version they have not accepted) and `AcceptPending` records the re-acceptance, and `Module.OptionalConsents` and `SetOptionalConsent` read and change a User's optional consents in account settings, a change adding one record with the source account settings, and `Mailings` the Users' latest answers on the mailings consent item for the service feed of Users), `internal/signupsurvey` (the Sign-up survey, ADR 0055: a User's answers and the "survey due" marker on the User row belong to no Workspace, and the submit writes both in one transaction), `internal/rekey` (`sphericon encryption-key reencrypt`: it rewrites the stored ciphertext of every Workspace, User and Staff member row under the primary key, by id and compare-and-swap), `internal/machine` (machine engagement, ADR 0053: the iCloud Private Relay ranges table, which no Workspace owns, read per hit by the tracking endpoints and replaced by the refresh river job in `internal/jobs/private_relay.go`, which only calls it), `internal/doctor` (`sphericon doctor`, read-only: it lists every Workspace's Sending domains and the origin of the newest sent mail, and reads the Postgres version), `internal/instance` (the Instance state row
-  that no Workspace owns, set by a Staff member in the console, ADR 0032, 0063; it reads the Memberships of every live Workspace to tell an owner of any of them of a newer release), `internal/joindomains` (Join
+  that no Workspace owns, set by a Staff member in the console, ADR 0032, 0063; it reads the Memberships of every live Workspace to tell an owner of any of them of a newer release; `DefaultSendCapIn` reads the default Send cap on the transaction of `accounts` that creates a Workspace, ADR 0067), `internal/instanceaudit` (the Instance audit log, ADR 0070: its entries belong to the Instance, not to a Workspace; `Record` writes one on the transaction client of the Instance-level Staff change it records, `Entries` reads it for the console), `internal/joindomains` (Join
   domains: a domain is verified by one Workspace across the Instance, so the lookup of the verified row
   by domain runs before any scope exists, and handing a domain over to the Workspace that now proves it
   scopes one transaction to both Workspaces through `events.Bus.WithinHandOverTx`; the periodic
@@ -203,8 +207,9 @@ only caller of their writes (`forbidigo`).
   `Module.Due` and scopes each `Module.Recheck` to the Workspace of the row it loaded; the Owners of a Workspace that
   loses a domain, by that re-check or by a hand-over, are mailed through the `Notify` seam after the write commits), `internal/domainverify` (the Sending domain verification jobs' module, ADR 0010/0038: it reads a
   Sending domain by id to learn its Workspace before any scope exists, then writes through that scope), `internal/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row; every other function takes a `*ent.Scoped`), `internal/suspension` (Workspace
-  suspension), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
-  the Owners' deleted ones, which have no scope yet, opens a transaction per erase step, scopes to the
+  suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067), `internal/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the Workspaces whose window has passed and
+  the Owners' deleted ones, which have no scope yet, opens a transaction per erase step (one per
+  Workspace-owned table, the Send cap's bucket `send_cap_limiters` among them), scopes to the
   one Workspace being erased inside it, and writes the row the cycle moves), `internal/events`
   (the bus and its subscribers), `internal/jobs` (job entry points), `internal/server`
   (tracking by recipient id, provider hooks, composition, and the Instance-wide Tracking host
