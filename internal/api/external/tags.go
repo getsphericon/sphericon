@@ -7,7 +7,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -18,13 +17,8 @@ func (h *Handlers) TagsList(ctx context.Context, params externalapi.TagsListPara
 		return nil, err
 	}
 	page := tagsPage(all, params.Page, params.PageSize)
-	return &externalapi.TagsListOK{
-		Items:      page.Items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.TagsListPage(page)
+	return &out, nil
 }
 
 func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.TagsListForContactParams) (externalapi.TagsListForContactRes, error) {
@@ -36,13 +30,8 @@ func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.Ta
 		return nil, err
 	}
 	page := tagsPage(mine, params.Page, params.PageSize)
-	return &externalapi.TagsListForContactOK{
-		Items:      page.Items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.TagsListForContactPage(page)
+	return &out, nil
 }
 
 func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput, params externalapi.TagsApplyParams) (externalapi.TagsApplyRes, error) {

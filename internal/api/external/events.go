@@ -3,11 +3,11 @@ package external
 import (
 	"context"
 
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/samber/lo"
 
+	externalapi "github.com/getsphericon/sphericon/gen/external"
+
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -49,13 +49,8 @@ func (h *Handlers) EventActionsList(ctx context.Context, params externalapi.Even
 		return nil, err
 	}
 
-	return &externalapi.EventActionsListOK{
-		Items: lo.Map(page.Items, func(a string, _ int) externalapi.EventActionResource {
-			return externalapi.EventActionResource{Action: a}
-		}),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.EventActionsListPage(pagination.WithItems(page, lo.Map(page.Items, func(a string, _ int) externalapi.EventActionResource {
+		return externalapi.EventActionResource{Action: a}
+	})))
+	return &out, nil
 }

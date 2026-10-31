@@ -5,7 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -18,14 +17,8 @@ func (h *Handlers) CapturedMessagesList(ctx context.Context, params externalapi.
 	if err != nil {
 		return nil, err
 	}
-	items := mapper.CapturedMessagesToSummaries(page.Items)
-	return &externalapi.CapturedMessagesListOK{
-		Items:      items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.CapturedMessagesListPage(page)
+	return &out, nil
 }
 
 // CapturedMessagesGet returns one Captured message in full.

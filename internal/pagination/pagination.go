@@ -118,3 +118,10 @@ func List[T any](
 		TotalPages: TotalPages(total, p.PageSize),
 	}, nil
 }
+
+// WithItems is p with its items replaced by items, which a caller mapped from p's own (a list
+// whose resources carry something the converter cannot read, such as a Broadcast's figures): the
+// page, its size and the totals stay p's.
+func WithItems[T, U any](p Page[T], items []U) Page[U] {
+	return Page[U]{Items: items, Page: p.Page, PageSize: p.PageSize, TotalItems: p.TotalItems, TotalPages: p.TotalPages}
+}

@@ -3,12 +3,12 @@ package external
 import (
 	"context"
 
+	"github.com/samber/lo"
+
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/webhooks"
-	"github.com/samber/lo"
 )
 
 // webhookResource maps the endpoint; the signing secret is deliberately never part of an
@@ -22,13 +22,8 @@ func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.Webhooks
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.WebhooksListOK{
-		Items:      lo.Map(page.Items, func(e webhooks.Endpoint, _ int) externalapi.WebhookResource { return webhookResource(e) }),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.WebhooksListPage(pagination.WithItems(page, lo.Map(page.Items, func(e webhooks.Endpoint, _ int) externalapi.WebhookResource { return webhookResource(e) })))
+	return &out, nil
 }
 
 func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWebhookInput) (externalapi.WebhooksCreateRes, error) {
