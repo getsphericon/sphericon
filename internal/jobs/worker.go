@@ -82,8 +82,11 @@ type Retention struct {
 // in account emails (reset/verify/change). outboundAllow is the Instance's internal allowlist for
 // webhook deliveries (ADR 0039). The instance-wide outbox and Event prunes
 // run on entClient, the raw client; retention carries the prune settings. ext plugs in the
-// Enterprise Edition's workers and periodic jobs.
-func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, ranges *machine.Detector, retention Retention, ext ...Extension) (*Client, error) {
+// Enterprise Edition's workers and periodic jobs. driver is river's database/sql driver over the
+// job queue's pool; built with riverdatabasesql.NewWithPgxListener it carries the LISTEN
+// connection that tells the client of a new job, a cancellation or a paused queue at once, and
+// built with riverdatabasesql.New (tests on one transaction) the client only polls.
+func NewClient(driver *riverdatabasesql.Driver, entClient *ent.Client, mod *outbound.Module, cipher *secrets.Cipher, bus *events.Bus, systemSender messaging.EmailSender, lookup sending.TXTLookup, tracking *trackingdomain.Verifier, catalog *messaging.Catalog, appURL string, outboundAllow webhook.Allowlist, ranges *machine.Detector, retention Retention, ext ...Extension) (*Client, error) {
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
 	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
@@ -137,12 +140,26 @@ func NewClient(riverDB *sql.DB, entClient *ent.Client, mod *outbound.Module, cip
 	}
 
 	logger := slog.Default()
-	rc, err := river.NewClient(riverdatabasesql.New(riverDB), newRiverConfig(workers, logger, extraPeriodic...))
+	cfg := newRiverConfig(workers, logger, extraPeriodic...)
+	if driver.SupportsListener() {
+		// A notification brings every new job at once; the poll only catches one that was missed
+		// (the listener reconnecting), so it can be slow.
+		cfg.FetchPollInterval = listenerFallbackPoll
+	}
+	rc, err := river.NewClient(driver, cfg)
 	if err != nil {
 		return nil, err
 	}
 	return &Client{river: rc, ent: entClient, domains: domains, appURL: appURL}, nil
 }
+
+// SoftStopTimeout is how long a stopping client lets its running jobs finish before it
+// cancels them. Every job is idempotent or fenced, so a cancelled one is simply retried.
+const SoftStopTimeout = 10 * time.Second
+
+// listenerFallbackPoll is how often a client that LISTENs still polls for jobs, in case it missed
+// a notification. A poll-only client (no listener) keeps river's default of a second.
+const listenerFallbackPoll = 5 * time.Second
 
 // River job retention, explicit rather than river's defaults: bounds the
 // river_job table (Event retention is separate, ADR 0019).
@@ -165,11 +182,11 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 			QueueWebhooks:           {MaxWorkers: 5},
 			stepping.QueueHTTPSteps: {MaxWorkers: 5},
 		},
-		// The database/sql driver has no LISTEN connection: the client polls for new jobs.
-		PollOnly:     true,
-		Workers:      workers,
-		Logger:       logger,
-		ErrorHandler: &errorHandler{logger: logger},
+		// Stop lets running jobs finish for SoftStopTimeout, then cancels their contexts.
+		SoftStopTimeout: SoftStopTimeout,
+		Workers:         workers,
+		Logger:          logger,
+		ErrorHandler:    &errorHandler{logger: logger},
 		// OTel spans + metrics per job insert/work, via the global providers set
 		// by telemetry.Setup (a no-op when telemetry is disabled, e.g. tests).
 		Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil)},

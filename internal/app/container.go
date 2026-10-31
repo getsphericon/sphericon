@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/samber/do/v2"
 	"go.opentelemetry.io/otel/metric"
 
@@ -189,14 +191,17 @@ func (e *eventsRuntime) Shutdown() error {
 
 // riverPool is the database/sql pool river runs on (separate from the one the ent client and
 // pubsub use, so job workers cannot starve the API).
+// listener is the one connection river LISTENs on for job notifications (db.OpenRiverListener).
 type riverPool struct {
 	*sql.DB
 
-	metrics metric.Registration
+	listener *pgxpool.Pool
+	metrics  metric.Registration
 }
 
 func (p *riverPool) Shutdown() {
 	cleanup.Report("unregister the pool metrics", p.metrics.Unregister())
+	p.listener.Close()
 	cleanup.Close(p, "the job queue pool")
 }
 
@@ -205,8 +210,10 @@ type jobsClient struct {
 	*jobs.Client
 }
 
+// Shutdown stops the client: running jobs get jobs.SoftStopTimeout to finish and are cancelled
+// after it; the context bounds the wait for the cancelled ones to return.
 func (j *jobsClient) Shutdown() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), jobs.SoftStopTimeout+5*time.Second)
 	defer cancel()
 	return j.Stop(ctx)
 }
@@ -428,12 +435,18 @@ var jobsPackage = do.Package(
 		if err != nil {
 			return nil, err
 		}
-		reg, err := db.RegisterPoolMetrics(database.DB, pool)
+		listener, err := db.OpenRiverListener(context.Background(), cfg.DatabaseURL)
 		if err != nil {
 			cleanup.Close(pool, "the job queue pool")
 			return nil, err
 		}
-		return &riverPool{DB: pool, metrics: reg}, nil
+		reg, err := db.RegisterPoolMetrics(database.DB, pool)
+		if err != nil {
+			listener.Close()
+			cleanup.Close(pool, "the job queue pool")
+			return nil, err
+		}
+		return &riverPool{DB: pool, listener: listener, metrics: reg}, nil
 	}),
 	// The queue depth gauge reads on scrape through the job queue's pool.
 	do.Lazy(func(i do.Injector) (*queueDepthGauge, error) {
@@ -470,7 +483,8 @@ var jobsPackage = do.Package(
 		sys := do.MustInvoke[SystemSender](i)
 		edition := do.MustInvoke[*ee.Edition](i)
 		inst := do.MustInvoke[*instance.Module](i)
-		jc, err := jobs.NewClient(do.MustInvoke[*riverPool](i).DB, do.MustInvoke[*ent.Client](i), do.MustInvoke[*outbound.Module](i), do.MustInvoke[*secrets.Cipher](i), bus, sys.EmailSender,
+		pool := do.MustInvoke[*riverPool](i)
+		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), do.MustInvoke[*ent.Client](i), do.MustInvoke[*outbound.Module](i), do.MustInvoke[*secrets.Cipher](i), bus, sys.EmailSender,
 			do.MustInvoke[sending.TXTLookup](i), do.MustInvoke[*trackingdomain.Verifier](i), do.MustInvoke[*messaging.Catalog](i), cfg.AppURL, cfg.OutboundAllow, do.MustInvoke[*machine.Detector](i),
 			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
 			edition.Jobs(bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), do.MustInvoke[*instance.Sender](i).Jobs())
