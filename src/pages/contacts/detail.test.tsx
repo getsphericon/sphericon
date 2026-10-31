@@ -87,20 +87,23 @@ test('lists the contact events and filters them by contact id', async () => {
   await expect.element(screen.getByText('Custom fields')).not.toBeInTheDocument()
 })
 
-test('asks the API for machine events only behind a toggle', async () => {
+const eventsBySwitch = (requested: (string | null)[]) =>
+  handleSiteEventsList(({ request }) => {
+    const includeMachine = new URL(request.url).searchParams.get('includeMachine')
+    requested.push(includeMachine)
+    const human = { id: 'e2', subjectId: 's1', action: 'email.clicked', createdAt: NOW }
+    const machine = { id: 'e1', subjectId: 's1', action: 'email.opened', createdAt: NOW }
+    return HttpResponse.json({
+      items: includeMachine === 'true' ? [machine, human] : [human],
+      totalItems: includeMachine === 'true' ? 2 : 1,
+    })
+  })
+
+test('asks the API for machine events only when the URL says to show them', async () => {
   const requested: (string | null)[] = []
   worker.use(
     handleSiteContactsGet({ body: { ...ADA, customFields: null } }),
-    handleSiteEventsList(({ request }) => {
-      const includeMachine = new URL(request.url).searchParams.get('includeMachine')
-      requested.push(includeMachine)
-      const human = { id: 'e2', subjectId: 's1', action: 'email.clicked', createdAt: NOW }
-      const machine = { id: 'e1', subjectId: 's1', action: 'email.opened', createdAt: NOW }
-      return HttpResponse.json({
-        items: includeMachine === 'true' ? [machine, human] : [human],
-        totalItems: includeMachine === 'true' ? 2 : 1,
-      })
-    }),
+    eventsBySwitch(requested),
   )
 
   const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
@@ -108,15 +111,34 @@ test('asks the API for machine events only behind a toggle', async () => {
   await expect.element(screen.getByText('email.clicked')).toBeInTheDocument()
   await expect.element(screen.getByText('email.opened')).not.toBeInTheDocument()
   expect(requested.at(-1)).not.toBe('true')
+})
 
-  await screen.getByRole('switch', { name: 'Show machine events' }).click()
+test('machine events are shown when the URL asks for them', async () => {
+  const requested: (string | null)[] = []
+  worker.use(
+    handleSiteContactsGet({ body: { ...ADA, customFields: null } }),
+    eventsBySwitch(requested),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, {
+    ...DETAIL_ROUTE,
+    initialPath: `${DETAIL_ROUTE.initialPath}?machine=true`,
+  })
 
   await expect.element(screen.getByText('email.opened')).toBeInTheDocument()
   expect(requested.at(-1)).toBe('true')
+  await expect.element(screen.getByRole('switch', { name: 'Show machine events' })).toBeChecked()
+})
 
+test('the machine events switch puts the choice in the URL', async () => {
+  worker.use(handleSiteContactsGet({ body: { ...ADA, customFields: null } }), eventsBySwitch([]))
+
+  const { screen, navigate } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
   await screen.getByRole('switch', { name: 'Show machine events' }).click()
 
-  await expect.element(screen.getByText('email.opened')).not.toBeInTheDocument()
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({ search: { machine: true }, replace: true }),
+  )
 })
 
 test('falls back to the subject id as the title when there is no email', async () => {

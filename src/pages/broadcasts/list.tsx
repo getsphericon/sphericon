@@ -21,6 +21,7 @@ import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspace
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
+import { withPage } from '../../searchSchemas.ts'
 import { messageRevenueCells } from '../../utils/messageRevenue.ts'
 import { BroadcastHoldBadge } from './BroadcastHold.tsx'
 
@@ -65,7 +66,7 @@ export function BroadcastsListPage() {
     successMessage: t(($) => $.notifications.broadcastRestored),
     errorTitle: t(($) => $.alerts.broadcastRestoreErrorTitle),
   })
-  const { archived = false } = broadcastsRoute.useSearch()
+  const { archived = false, page } = broadcastsRoute.useSearch()
   const routeNavigate = broadcastsRoute.useNavigate()
 
   return (
@@ -89,7 +90,10 @@ export function BroadcastsListPage() {
       />
 
       <PagedTable
-        resetKey={String(archived)}
+        page={page}
+        onPageChange={(next) =>
+          void routeNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) =>
           siteBroadcastsListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }

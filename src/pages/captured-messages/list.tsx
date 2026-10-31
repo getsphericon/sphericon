@@ -12,9 +12,11 @@ import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
 import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspaceId/captured-messages/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 export function CapturedMessagesListPage() {
   const { formatDateTime } = useDateFormat()
+  const { page } = capturedMessagesRoute.useSearch()
   const { t } = useTranslation()
   const { workspaceId } = capturedMessagesRoute.useParams()
   const navigate = capturedMessagesRoute.useNavigate()
@@ -51,6 +53,8 @@ export function CapturedMessagesListPage() {
       </Text>
 
       <PagedTable
+        page={page}
+        onPageChange={(next) => void navigate({ search: withPage(next), viewTransition: false })}
         pageSize={20}
         options={(query) => siteCapturedMessagesListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.capturedMessages.loadError)}

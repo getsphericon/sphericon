@@ -11,7 +11,6 @@ const config: KnipConfig = {
     'internal/contractcopy/testdata/**',
   ],
   ignoreDependencies: [
-    '@sphericon/analytics',
     '@jsonforms/core',
     '@jsonforms/react',
     '@typespec/.*',

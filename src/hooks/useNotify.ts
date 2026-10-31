@@ -1,5 +1,5 @@
 import type { NotificationData } from '@mantine/notifications'
-import { createContext, useContext } from 'react'
+import { createContext, use } from 'react'
 
 type Notify = (data: NotificationData) => string
 
@@ -10,7 +10,7 @@ export const NotifyContext = createContext<Notify | null>(null)
 
 // useNotify returns the function that shows a toast in the nearest NotificationsProvider.
 export function useNotify(): Notify {
-  const notify = useContext(NotifyContext)
+  const notify = use(NotifyContext)
   if (!notify) {
     throw new Error('useNotify needs a NotificationsProvider above it')
   }

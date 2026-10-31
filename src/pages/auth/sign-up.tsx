@@ -1,8 +1,8 @@
 import { Button, Card, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useInterval } from '@mantine/hooks'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useCountDown } from 'ahooks'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AuthLayout } from '../../components/AuthLayout.tsx'
@@ -40,22 +40,16 @@ export function SignUpPage() {
   const items = itemsQuery.data?.items ?? []
   const [ticked, setTicked] = useState<Record<string, boolean>>({})
 
-  const [cooldown, setCooldown] = useState(0)
-  const ticker = useInterval(() => setCooldown((seconds) => Math.max(0, seconds - 1)), 1000)
+  // The moment the resend button is offered again; none until a link is resent.
+  const [resendAt, setResendAt] = useState<number>()
+  const [cooldownLeft] = useCountDown({ targetDate: resendAt })
+  const cooldown = Math.ceil(cooldownLeft / 1000)
   const resendMutation = useResourceMutation({
     mutation: siteAuthResendVerificationMutation(),
     successMessage: t(($) => $.login.resendSuccess),
     errorTitle: t(($) => $.login.resendErrorTitle),
-    onDone: () => {
-      setCooldown(RESEND_COOLDOWN_SECONDS)
-      ticker.start()
-    },
+    onDone: () => setResendAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000),
   })
-  useEffect(() => {
-    if (cooldown === 0) {
-      ticker.stop()
-    }
-  }, [cooldown, ticker])
 
   const form = useForm<Required<Omit<SiteSignUpInput, 'signupItems'>> & { confirm: string }>({
     initialValues: {

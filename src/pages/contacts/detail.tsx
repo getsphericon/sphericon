@@ -13,11 +13,11 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { EventRowDetails } from '../../components/EventRowDetails.tsx'
+import { RelativeTime } from '../../components/RelativeTime.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -34,6 +34,7 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsEditRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/edit.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 import { can } from '../../utils/permissions.ts'
 
 const EVENTS_PAGE_SIZE = 10
@@ -121,19 +122,14 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
 }
 
 function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contactId: string }) {
-  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
-  const [page, setPage] = useState(1)
-  const [showMachine, setShowMachine] = useState(false)
-
-  // The component instance is reused across contactId changes, so reset the
-  // events page to avoid requesting an out-of-range page for the next contact
-  // (derived during render, the documented alternative to setState in an effect).
-  const [pageContactId, setPageContactId] = useState(contactId)
-  if (pageContactId !== contactId) {
-    setPageContactId(contactId)
-    setPage(1)
-  }
+  const { page = 1, machine: showMachine = false } = contactsDetailRoute.useSearch()
+  const navigate = contactsDetailRoute.useNavigate()
+  const setPage = (next: number) =>
+    void navigate({
+      search: withPage(next),
+      viewTransition: false,
+    })
 
   // Activity is keyed by the stable contact_id (ADR 0002): this also surfaces
   // anonymous events stitched onto the contact at Identify, which an email filter
@@ -157,7 +153,14 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
         <Switch
           label={t(($) => $.contacts.showMachineEvents)}
           checked={showMachine}
-          onChange={(e) => setShowMachine(e.currentTarget.checked)}
+          onChange={(e) =>
+            // Another set of events: back to its first page.
+            void navigate({
+              search: { machine: e.currentTarget.checked || undefined },
+              replace: true,
+              viewTransition: false,
+            })
+          }
         />
       </Group>
 
@@ -179,7 +182,7 @@ function ContactEvents({ workspaceId, contactId }: { workspaceId: string; contac
           {
             accessor: 'createdAt',
             title: t(($) => $.activity.time),
-            render: (record) => formatDateTime(record.createdAt),
+            render: (record) => <RelativeTime value={record.createdAt} />,
           },
           { accessor: 'action', title: t(($) => $.activity.action) },
         ]}

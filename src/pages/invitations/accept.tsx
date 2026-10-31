@@ -10,12 +10,13 @@ import {
   Title,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { SigninProviders } from '../../components/SigninProviders.tsx'
 import { SignupItemFields } from '../../components/SignupItemFields.tsx'
@@ -34,7 +35,42 @@ import { Route as acceptInvitationRoute } from '../../routes/invitations/$token.
 import { Route as loginRoute } from '../../routes/login.tsx'
 import { signupItemAnswers } from '../../utils/signupItems.ts'
 
+// InvitationLoading shows while the invitation is looked up and the session probed.
+function InvitationLoading() {
+  const { t } = useTranslation()
+  return (
+    <CenteredLayout maw={420} align="center">
+      <Loader />
+      <Text c="dimmed">{t(($) => $.acceptInvitation.loading)}</Text>
+    </CenteredLayout>
+  )
+}
+
 export function AcceptInvitationPage() {
+  const { t } = useTranslation()
+  // A signed-in User with a required acceptance pending (ADR 0062) is refused the session probe
+  // and the accept alike: they go to the accept-or-sign-out screen first.
+  useAcceptanceWatch()
+
+  return (
+    <QueryBoundary
+      fallback={<InvitationLoading />}
+      errorTitle={t(($) => $.acceptInvitation.errorTitle)}
+      // An invitation that cannot be looked up is unknown, revoked or expired, all alike.
+      renderError={() => (
+        <CenteredLayout maw={420}>
+          <Alert color="red" title={t(($) => $.acceptInvitation.errorTitle)}>
+            {t(($) => $.acceptInvitation.invalid)}
+          </Alert>
+        </CenteredLayout>
+      )}
+    >
+      <AcceptInvitation />
+    </QueryBoundary>
+  )
+}
+
+function AcceptInvitation() {
   const { t } = useTranslation()
   const notify = useNotify()
   const apiErrorMessage = useApiErrorMessage()
@@ -43,23 +79,17 @@ export function AcceptInvitationPage() {
   const location = useLocation()
   // Set when the server's provider callback sent the person back here without joining.
   const signinError = zSiteSigninError.safeParse(useSearch({ strict: false }).error).data
-  // A signed-in User with a required acceptance pending (ADR 0062) is refused the session probe
-  // and the accept alike: they go to the accept-or-sign-out screen first.
-  useAcceptanceWatch()
 
-  const lookup = useQuery({
+  const invite = useSuspenseQuery({
     ...sitePublicInvitationsLookupOptions({ path: { token } }),
     retry: false,
-  })
+  }).data
 
   // The lookup says nothing about whether the address has an account (ADR 0031), so the
   // page offers both ways in: set up an account, or join with the session of the account
-  // that already holds the address. Probe the session to know which of the two to show.
-  const session = useQuery({
-    ...siteWorkspacesListOptions(),
-    enabled: lookup.isSuccess,
-    retry: false,
-  })
+  // that already holds the address. Probe the session to know which of the two to show. A
+  // refused probe means signed out, not a failure, so it stays out of the boundary.
+  const session = useQuery({ ...siteWorkspacesListOptions(), retry: false })
 
   const form = useForm({ initialValues: { name: '', password: '' } })
   // The Sign-up items in effect (ADR 0062), asked only of an invitee who sets up an account:
@@ -93,26 +123,10 @@ export function AcceptInvitationPage() {
     },
   })
 
-  if (lookup.isLoading || session.isLoading) {
-    return (
-      <CenteredLayout maw={420} align="center">
-        <Loader />
-        <Text c="dimmed">{t(($) => $.acceptInvitation.loading)}</Text>
-      </CenteredLayout>
-    )
+  if (session.isLoading) {
+    return <InvitationLoading />
   }
 
-  if (lookup.isError || !lookup.data) {
-    return (
-      <CenteredLayout maw={420}>
-        <Alert color="red" title={t(($) => $.acceptInvitation.errorTitle)}>
-          {t(($) => $.acceptInvitation.invalid)}
-        </Alert>
-      </CenteredLayout>
-    )
-  }
-
-  const invite = lookup.data
   const signedIn = session.isSuccess
 
   const handleSubmit = (values: { name: string; password: string }) => {

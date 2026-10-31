@@ -1,10 +1,10 @@
 import { Badge, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { LinkClickTable } from '../../components/LinkClickTable.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import {
@@ -132,25 +132,23 @@ function BroadcastLinks({
 
 export function BroadcastReportPage() {
   const { t } = useTranslation()
+  return (
+    <QueryBoundary
+      fallback={<PageSkeleton />}
+      errorTitle={t(($) => $.alerts.broadcastLoadErrorTitle)}
+    >
+      <BroadcastReport />
+    </QueryBoundary>
+  )
+}
+
+function BroadcastReport() {
+  const { t } = useTranslation()
   const { workspaceId, broadcastId } = broadcastsReportRoute.useParams()
 
-  const getQuery = useQuery(siteBroadcastsGetOptions({ path: { workspaceId, id: broadcastId } }))
-
-  if (getQuery.isLoading) {
-    return <PageSkeleton />
-  }
-
-  if (getQuery.isError || !getQuery.data) {
-    return (
-      <ApiErrorAlert
-        error={getQuery.error}
-        title={t(($) => $.alerts.broadcastLoadErrorTitle)}
-        fallback={t(($) => $.alerts.broadcastLoadErrorTitle)}
-      />
-    )
-  }
-
-  const broadcast = getQuery.data
+  const broadcast = useSuspenseQuery(
+    siteBroadcastsGetOptions({ path: { workspaceId, id: broadcastId } }),
+  ).data
 
   return (
     <Stack>

@@ -11,11 +11,12 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useSuspenseQueries } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import {
   siteOAuthDecideMutation,
   siteOAuthDescribeOptions,
@@ -58,22 +59,50 @@ export function OAuthConsentPage() {
 // the screen offers no other and sends only those, and the server refuses the rest.
 export function OAuthConsent({ request }: { request: ConsentRequest }) {
   const { t } = useTranslation()
+  return (
+    <QueryBoundary
+      fallback={
+        <CenteredLayout maw={480} align="center">
+          <Loader />
+        </CenteredLayout>
+      }
+      errorTitle={t(($) => $.oauthConsent.errorTitle)}
+      // A request the server will not describe cannot be granted: it is shown as invalid.
+      renderError={() => (
+        <CenteredLayout maw={480}>
+          <Alert color="red" title={t(($) => $.oauthConsent.errorTitle)}>
+            {t(($) => $.oauthConsent.invalid)}
+          </Alert>
+        </CenteredLayout>
+      )}
+    >
+      <ConsentForm request={request} />
+    </QueryBoundary>
+  )
+}
+
+function ConsentForm({ request }: { request: ConsentRequest }) {
+  const { t } = useTranslation()
   const notify = useNotify()
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [allowSend, setAllowSend] = useState(false)
   const [allowSetup, setAllowSetup] = useState(false)
 
-  const describe = useQuery({
-    ...siteOAuthDescribeOptions({
-      query: {
-        clientId: request.clientId,
-        redirectUri: request.redirectUri,
-        scope: request.scope,
+  const [{ data: info }, { data: workspaces }] = useSuspenseQueries({
+    queries: [
+      {
+        ...siteOAuthDescribeOptions({
+          query: {
+            clientId: request.clientId,
+            redirectUri: request.redirectUri,
+            scope: request.scope,
+          },
+        }),
+        retry: false,
       },
-    }),
-    retry: false,
+      siteWorkspacesListOptions(),
+    ],
   })
-  const workspaces = useQuery(siteWorkspacesListOptions())
 
   const decide = useMutation({
     ...siteOAuthDecideMutation(),
@@ -95,28 +124,9 @@ export function OAuthConsent({ request }: { request: ConsentRequest }) {
     },
   })
 
-  if (describe.isLoading || workspaces.isLoading) {
-    return (
-      <CenteredLayout maw={480} align="center">
-        <Loader />
-      </CenteredLayout>
-    )
-  }
-
-  if (describe.isError || !describe.data) {
-    return (
-      <CenteredLayout maw={480}>
-        <Alert color="red" title={t(($) => $.oauthConsent.errorTitle)}>
-          {t(($) => $.oauthConsent.invalid)}
-        </Alert>
-      </CenteredLayout>
-    )
-  }
-
-  const info = describe.data
-  const options = (workspaces.data ?? []).map((w) => ({ value: w.id, label: w.name }))
+  const options = workspaces.map((w) => ({ value: w.id, label: w.name }))
   const selected = workspaceId ?? options[0]?.value ?? null
-  const workspace = workspaces.data?.find((w) => w.id === selected)
+  const workspace = workspaces.find((w) => w.id === selected)
   // A scope whose Permission the User's Role lacks in the chosen workspace is not offered.
   const grantable = <S extends string>(scopes: S[]) =>
     scopes.filter((scope) => {

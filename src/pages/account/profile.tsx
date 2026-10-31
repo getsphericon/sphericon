@@ -1,5 +1,4 @@
 import {
-  Alert,
   Badge,
   Button,
   Divider,
@@ -13,10 +12,11 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { modals } from '@mantine/modals'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteUserEmailChangeMutation,
@@ -249,29 +249,29 @@ function SessionsSection() {
 
 export function ProfilePage() {
   const { t } = useTranslation()
-  const meQuery = useQuery(siteUserGetMeOptions())
 
   return (
     <Stack>
       <Title order={2}>{t(($) => $.profile.title)}</Title>
 
-      {meQuery.isError ? (
-        <Alert color="red" title={t(($) => $.profile.loadErrorTitle)}>
-          {t(($) => $.profile.loadErrorTitle)}
-        </Alert>
-      ) : null}
+      <QueryBoundary fallback={<BlockSkeleton />} errorTitle={t(($) => $.profile.loadErrorTitle)}>
+        <Profile />
+      </QueryBoundary>
+    </Stack>
+  )
+}
 
-      {meQuery.isLoading ? <BlockSkeleton /> : null}
+// Profile is every section of the page, shown once the User loads.
+function Profile() {
+  const user = useSuspenseQuery(siteUserGetMeOptions()).data
 
-      {meQuery.data ? (
-        <Stack>
-          <ProfileForm user={meQuery.data} />
-          <SignInSection />
-          <OptionalConsentsSection />
-          <SessionsSection />
-          <DeleteUserSection />
-        </Stack>
-      ) : null}
+  return (
+    <Stack>
+      <ProfileForm user={user} />
+      <SignInSection />
+      <OptionalConsentsSection />
+      <SessionsSection />
+      <DeleteUserSection />
     </Stack>
   )
 }

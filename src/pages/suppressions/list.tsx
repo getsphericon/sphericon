@@ -1,7 +1,6 @@
 import {
   Box,
   EmptyState,
-  Alert,
   Badge,
   Button,
   Group,
@@ -14,11 +13,12 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useCounter, useDisclosure } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
-import { useState } from 'react'
+import { useDeferredValue, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -44,6 +44,79 @@ const REASON_COLORS: Record<SiteSuppressionReason, string> = {
 // server-side rather than rendering only the first page.
 const PAGE_SIZE = 20
 
+// SuppressionsTable is one page of the list; the page's boundary shows its first load and a
+// failure.
+function SuppressionsTable({
+  workspaceId,
+  page,
+  lifted,
+  canManage,
+  fetching,
+  onPageChange,
+  onLift,
+}: {
+  workspaceId: string
+  page: number
+  lifted: boolean
+  canManage: boolean
+  fetching: boolean
+  onPageChange: (page: number) => void
+  onLift: (id: string) => void
+}) {
+  const { t } = useTranslation()
+  const { items: records, totalItems } = useSuspenseQuery(
+    siteSuppressionsListOptions({
+      path: { workspaceId },
+      query: { page, pageSize: PAGE_SIZE, lifted },
+    }),
+  ).data
+
+  return (
+    <DataTable
+      minHeight={records.length === 0 ? 200 : 0}
+      withTableBorder
+      records={records}
+      idAccessor="id"
+      fetching={fetching}
+      columns={[
+        { accessor: 'destination', title: t(($) => $.suppressions.emailColumn) },
+        {
+          accessor: 'reason',
+          title: t(($) => $.suppressions.reasonColumn),
+          render: (record) => (
+            <Badge variant="light" color={REASON_COLORS[record.reason]}>
+              {t(($) => $.suppressions.reasons[record.reason])}
+            </Badge>
+          ),
+        },
+        {
+          accessor: 'actions',
+          title: '',
+          render: (record) =>
+            record.liftedAt ? (
+              <Badge variant="light" color="gray">
+                {t(($) => $.suppressions.liftedBadge)}
+              </Badge>
+            ) : canManage ? (
+              <Group justify="flex-end">
+                <RowActionsMenu>
+                  <Menu.Item onClick={() => onLift(record.id)}>
+                    {t(($) => $.suppressions.lift)}
+                  </Menu.Item>
+                </RowActionsMenu>
+              </Group>
+            ) : null,
+        },
+      ]}
+      emptyState={<EmptyState title={t(($) => $.suppressions.empty)} />}
+      totalRecords={totalItems}
+      recordsPerPage={PAGE_SIZE}
+      page={page}
+      onPageChange={onPageChange}
+    />
+  )
+}
+
 // SuppressionsListPage manages the workspace do-not-send list: hard bounces and
 // complaints land here automatically; destinations can also be added manually.
 // The send path skips every active destination listed here; a lifted one stays as a record
@@ -56,6 +129,11 @@ export function SuppressionsListPage() {
   const confirmLift = useConfirmation()
   const [page, pageHandlers] = useCounter(1, { min: 1 })
   const [lifted, setLifted] = useState(false)
+  // The table reads deferred copies, so while another page or the lifted list loads the table
+  // it replaces stays up under its loader instead of falling back to the skeleton, and the
+  // pager and the switch answer at once.
+  const shownPage = useDeferredValue(page)
+  const shownLifted = useDeferredValue(lifted)
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const workspaces = useQuery(siteWorkspacesListOptions())
   const canManage = can(
@@ -64,12 +142,6 @@ export function SuppressionsListPage() {
   )
 
   const queryKey = siteSuppressionsListQueryKey({ path: { workspaceId } })
-  const suppressionsQuery = useQuery(
-    siteSuppressionsListOptions({
-      path: { workspaceId },
-      query: { page, pageSize: PAGE_SIZE, lifted },
-    }),
-  )
 
   const form = useForm<{ destination: string }>({ initialValues: { destination: '' } })
 
@@ -98,9 +170,6 @@ export function SuppressionsListPage() {
       onConfirm: () => liftMutation.mutate({ path: { workspaceId, id } }),
     })
 
-  const records = suppressionsQuery.data?.items ?? []
-  const totalItems = suppressionsQuery.data?.totalItems ?? 0
-
   return (
     <Box>
       <Group justify="space-between" mb="sm">
@@ -122,55 +191,17 @@ export function SuppressionsListPage() {
         }}
       />
 
-      {suppressionsQuery.isError ? (
-        <Alert color="red" title={t(($) => $.suppressions.loadError)} mb="md">
-          {t(($) => $.suppressions.loadError)}
-        </Alert>
-      ) : null}
-
-      {suppressionsQuery.isLoading ? <TableSkeleton /> : null}
-
-      <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
-        withTableBorder
-        records={records}
-        idAccessor="id"
-        columns={[
-          { accessor: 'destination', title: t(($) => $.suppressions.emailColumn) },
-          {
-            accessor: 'reason',
-            title: t(($) => $.suppressions.reasonColumn),
-            render: (record) => (
-              <Badge variant="light" color={REASON_COLORS[record.reason]}>
-                {t(($) => $.suppressions.reasons[record.reason])}
-              </Badge>
-            ),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            render: (record) =>
-              record.liftedAt ? (
-                <Badge variant="light" color="gray">
-                  {t(($) => $.suppressions.liftedBadge)}
-                </Badge>
-              ) : canManage ? (
-                <Group justify="flex-end">
-                  <RowActionsMenu>
-                    <Menu.Item onClick={() => onLift(record.id)}>
-                      {t(($) => $.suppressions.lift)}
-                    </Menu.Item>
-                  </RowActionsMenu>
-                </Group>
-              ) : null,
-          },
-        ]}
-        emptyState={<EmptyState title={t(($) => $.suppressions.empty)} />}
-        totalRecords={totalItems}
-        recordsPerPage={PAGE_SIZE}
-        page={page}
-        onPageChange={pageHandlers.set}
-      />
+      <QueryBoundary fallback={<TableSkeleton />} errorTitle={t(($) => $.suppressions.loadError)}>
+        <SuppressionsTable
+          workspaceId={workspaceId}
+          page={shownPage}
+          lifted={shownLifted}
+          canManage={canManage}
+          fetching={page !== shownPage || lifted !== shownLifted}
+          onPageChange={pageHandlers.set}
+          onLift={onLift}
+        />
+      </QueryBoundary>
       <Modal opened={createOpened} onClose={closeCreate} title={t(($) => $.suppressions.create)}>
         <form
           onSubmit={form.onSubmit((values) =>

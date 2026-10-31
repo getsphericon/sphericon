@@ -1,13 +1,13 @@
 import { Alert, Button, Card, Group, ScrollArea, Stack, Text, Title } from '@mantine/core'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { DeleteWorkspaceControl } from '../../components/DeleteWorkspaceControl.tsx'
 import { LegalMarkdown } from '../../components/LegalMarkdown.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteLegalDocumentsGetOptions,
@@ -25,40 +25,40 @@ import { DeleteUserSection } from './DeleteUserForm.tsx'
 
 // PendingDocument is the current text of one required acceptance the User has not accepted.
 function PendingDocument({ item }: { item: SiteSignupItem }) {
-  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
-  const query = useQuery({
-    ...siteLegalDocumentsGetOptions({ path: { key: item.key } }),
-    retry: false,
-  })
-
   return (
     <Stack gap="xs">
       <Title order={3}>{item.title}</Title>
-      {query.isPending && <BlockSkeleton />}
-      {query.isError && (
-        <ApiErrorAlert
-          error={query.error}
-          title={t(($) => $.legal.loadError)}
-          fallback={t(($) => $.notifications.errorMessage)}
-        />
-      )}
-      {query.data && (
-        <>
-          <Text c="dimmed" size="sm">
-            {t(($) => $.legal.version, {
-              version: query.data.version,
-              date: formatDate(query.data.publishedAt),
-            })}
-          </Text>
-          <Card withBorder padding="lg">
-            <ScrollArea.Autosize mah={360}>
-              <LegalMarkdown markdown={query.data.markdown} />
-            </ScrollArea.Autosize>
-          </Card>
-        </>
-      )}
+      <QueryBoundary fallback={<BlockSkeleton />} errorTitle={t(($) => $.legal.loadError)}>
+        <PendingDocumentText documentKey={item.key} />
+      </QueryBoundary>
     </Stack>
+  )
+}
+
+// PendingDocumentText is the version and the Markdown of one pending document.
+function PendingDocumentText({ documentKey }: { documentKey: string }) {
+  const { formatDate } = useDateFormat()
+  const { t } = useTranslation()
+  const legal = useSuspenseQuery({
+    ...siteLegalDocumentsGetOptions({ path: { key: documentKey } }),
+    retry: false,
+  }).data
+
+  return (
+    <>
+      <Text c="dimmed" size="sm">
+        {t(($) => $.legal.version, {
+          version: legal.version,
+          date: formatDate(legal.publishedAt),
+        })}
+      </Text>
+      <Card withBorder padding="lg">
+        <ScrollArea.Autosize mah={360}>
+          <LegalMarkdown markdown={legal.markdown} />
+        </ScrollArea.Autosize>
+      </Card>
+    </>
   )
 }
 

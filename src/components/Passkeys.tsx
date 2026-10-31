@@ -1,7 +1,7 @@
-import { Alert, Button, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Group, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { startRegistration } from '@simplewebauthn/browser'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -20,6 +20,7 @@ import { useActionModal } from '../hooks/useActionModal.tsx'
 import { useDateFormat } from '../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { IdentityProof } from './IdentityProof.tsx'
+import { QueryBoundary } from './QueryBoundary.tsx'
 import { BlockSkeleton } from './Skeletons.tsx'
 
 interface AddPasskey {
@@ -85,13 +86,30 @@ function AddPasskeyForm({ passwordless, onClose }: { passwordless: boolean; onCl
 
 // The User's Passkeys (ADR 0052): the list with its names and last use, and the button that adds
 // one in a modal. Adding asks for the password, or for a fresh sign-in with a provider when the
-// User has none; a successful add ends the User's other sessions.
+// User has none; a successful add ends the User's other sessions. The title is part of what loads,
+// since an Instance that cannot hold a Passkey shows no section at all.
 export function Passkeys({ returnTo }: { returnTo: string }) {
   const { t } = useTranslation()
-  const passkeys = useQuery(sitePasskeysListOptions())
+  return (
+    <QueryBoundary
+      fallback={
+        <Stack>
+          <Title order={4}>{t(($) => $.security.passkeys.title)}</Title>
+          <BlockSkeleton />
+        </Stack>
+      }
+      errorTitle={t(($) => $.security.loadErrorTitle)}
+    >
+      <PasskeyList returnTo={returnTo} />
+    </QueryBoundary>
+  )
+}
 
-  const data = passkeys.data
-  const passwordless = data?.passwordSet === false
+function PasskeyList({ returnTo }: { returnTo: string }) {
+  const { t } = useTranslation()
+  const data = useSuspenseQuery(sitePasskeysListOptions()).data
+
+  const passwordless = !data.passwordSet
   const needsProvider = passwordless && !data.identityProofFresh
   const add = useActionModal(
     t(($) => $.security.passkeys.addButton),
@@ -104,21 +122,19 @@ export function Passkeys({ returnTo }: { returnTo: string }) {
   )
 
   // An Instance served on an IP address has no host name to bind a Passkey to.
-  if (data && !data.available) {
+  if (!data.available) {
     return null
   }
 
   return (
     <Stack>
       <Title order={4}>{t(($) => $.security.passkeys.title)}</Title>
-      {passkeys.isError ? <Alert color="red" title={t(($) => $.security.loadErrorTitle)} /> : null}
-      {passkeys.isLoading ? <BlockSkeleton /> : null}
-      {data && data.items.length === 0 ? (
+      {data.items.length === 0 ? (
         <Text size="sm" c="dimmed">
           {t(($) => $.security.passkeys.empty)}
         </Text>
       ) : null}
-      {data?.items.map((passkey) => (
+      {data.items.map((passkey) => (
         <PasskeyRow
           key={passkey.id}
           passkey={passkey}
@@ -127,13 +143,11 @@ export function Passkeys({ returnTo }: { returnTo: string }) {
           returnTo={returnTo}
         />
       ))}
-      {data ? (
-        <Group justify="flex-end">
-          <Button variant="default" onClick={add.open}>
-            {t(($) => $.security.passkeys.addButton)}
-          </Button>
-        </Group>
-      ) : null}
+      <Group justify="flex-end">
+        <Button variant="default" onClick={add.open}>
+          {t(($) => $.security.passkeys.addButton)}
+        </Button>
+      </Group>
       {add.modal}
     </Stack>
   )

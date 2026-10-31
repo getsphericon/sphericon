@@ -20,6 +20,18 @@
   `src/components`); `src/generated` imports nothing of ours. Something a route's search schema
   needs lives in `src/utils`, not next to its page. Every file under `src/` must belong to a
   component (`strict`), so a new top-level directory is added to `easement.yml`.
+- A library comes before a hand-written helper: `@mantine/hooks` and `ahooks` for hooks, `es-toolkit`
+  for utilities, `@mantine/charts` for charts, dates through `src/utils/datetime.ts` (dayjs; feeds
+  show `<RelativeTime>`).
+- Load states: a component reads its data with `useSuspenseQuery` under a `QueryBoundary`
+  (`src/components/QueryBoundary.tsx`), which shows the skeleton, the error and a retry. A plain
+  `useQuery` is for a query behind `enabled`, one driven by typed input (`keepPreviousData`) and a
+  permission probe. A detail route loads its record with `preload` (`src/utils/preload.ts`).
+- A paged list's page is its route's `page` search param (`pageParam` in `src/searchSchemas.ts`):
+  the page reads it and hands `PagedTable` the page and a `withPage` navigation. A form a person can
+  leave half-typed renders `LeaveDialog`.
+- A dependency a test can reach is listed in `optimizeDeps.include` (`vite.config.ts`), a tracker
+  one as `@sphericon/analytics > <pkg>`: found mid-run, Vite reloads the browser and fails tests.
 - Toasts go through `useNotify()` (`src/hooks/useNotify.ts`), never Mantine's global `notifications`
   (lint refuses it): a `NotificationsProvider` owns one store per mount, and `renderWithProviders`
   mounts its own, so no test needs to clean toasts up. `renderWithProviders` also sets Mantine

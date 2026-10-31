@@ -20,11 +20,12 @@ import {
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { IconBrandAws, IconMailOpened, IconPlugConnected, IconServer } from '@tabler/icons-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -132,6 +133,120 @@ function buildConfig(values: IntegrationFormValues): SiteIntegrationConfigInput 
   }
 }
 
+// The Workspace's active providers, read by the list and by the create form.
+const integrationsOptions = (workspaceId: string) =>
+  siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } })
+
+// IntegrationsList shows the providers with the warnings about their send limits; the section's
+// boundary shows the load and its failure.
+function IntegrationsList({
+  workspaceId,
+  canManage,
+  onMakeDefault,
+  onEditLimits,
+  onInbound,
+  onRemove,
+}: {
+  workspaceId: string
+  canManage: boolean
+  onMakeDefault: (id: string) => void
+  onEditLimits: (record: SiteIntegrationResource) => void
+  onInbound: (record: SiteIntegrationResource) => void
+  onRemove: (id: string) => void
+}) {
+  const { t } = useTranslation()
+  const records = useSuspenseQuery(integrationsOptions(workspaceId)).data
+  const unlimited = records.filter((record) => record.providerLimit.warnings.includes('unlimited'))
+  const quotaUnavailable = records.filter((record) =>
+    record.providerLimit.warnings.includes('providerQuotaUnavailable'),
+  )
+
+  return (
+    <>
+      {unlimited.map((record) => (
+        <Alert
+          key={record.id}
+          color="yellow"
+          variant="light"
+          title={t(($) => $.settings.integrations.providerLimit.unlimitedTitle, {
+            name: record.name,
+          })}
+          mb="sm"
+        >
+          {t(($) => $.settings.integrations.providerLimit.unlimitedWarning)}
+        </Alert>
+      ))}
+
+      {quotaUnavailable.map((record) => (
+        <Alert
+          key={record.id}
+          color="yellow"
+          variant="light"
+          title={t(($) => $.settings.integrations.providerLimit.quotaUnavailableTitle, {
+            name: record.name,
+          })}
+          mb="sm"
+        >
+          {t(($) => $.settings.integrations.providerLimit.quotaUnavailableWarning)}
+        </Alert>
+      ))}
+
+      <DataTable
+        minHeight={records.length === 0 ? 200 : 0}
+        withTableBorder
+        records={records}
+        idAccessor="id"
+        columns={[
+          { accessor: 'name' },
+          { accessor: 'provider', title: t(($) => $.settings.integrations.providerLabel) },
+          {
+            accessor: 'isDefault',
+            title: t(($) => $.settings.integrations.default),
+            render: (record) => (record.isDefault ? t(($) => $.settings.integrations.default) : ''),
+          },
+          {
+            accessor: 'providerLimit',
+            title: t(($) => $.settings.integrations.providerLimit.title),
+            render: (record) => <ProviderLimitStatus status={record.providerLimit} />,
+          },
+          {
+            accessor: 'actions',
+            title: '',
+            render: (record) => (
+              <Group gap="xs" wrap="nowrap" justify="flex-end">
+                <ChangeHistoryLink
+                  workspaceId={workspaceId}
+                  targetType={AUDIT_TARGET_INTEGRATION}
+                  targetId={record.id}
+                />
+                {canManage ? (
+                  <RowActionsMenu>
+                    {record.isDefault ? null : (
+                      <Menu.Item onClick={() => onMakeDefault(record.id)}>
+                        {t(($) => $.settings.integrations.makeDefault)}
+                      </Menu.Item>
+                    )}
+                    <Menu.Item onClick={() => onEditLimits(record)}>
+                      {t(($) => $.settings.integrations.providerLimit.edit)}
+                    </Menu.Item>
+                    <Menu.Item onClick={() => onInbound(record)}>
+                      {t(($) => $.settings.integrations.inbound.open)}
+                    </Menu.Item>
+                    <Menu.Item color="red" onClick={() => onRemove(record.id)}>
+                      {t(($) => $.actions.remove)}
+                    </Menu.Item>
+                  </RowActionsMenu>
+                ) : null}
+              </Group>
+            ),
+          },
+        ]}
+        emptyState={<EmptyState title={t(($) => $.settings.integrations.empty)} />}
+      />
+    </>
+  )
+}
+
 export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceResource }) {
   const workspaceId = workspace.id
   const { t } = useTranslation()
@@ -141,9 +256,8 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   const canManageIntegrations = can(workspace, 'integrations:manage')
 
   const queryKey = siteIntegrationsListQueryKey({ path: { workspaceId } })
-  const integrationsQuery = useQuery(
-    siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
-  )
+  // The list the boundary below loads, read here only to know whether a provider exists yet.
+  const integrationsQuery = useQuery(integrationsOptions(workspaceId))
 
   const validateLimits = useProviderLimitValidators((values: IntegrationFormValues) =>
     requiresProviderLimit(values.provider, values.endpoint),
@@ -219,11 +333,6 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   )
   // The first provider of a Workspace is its default; later ones ask.
   const hasActive = (integrationsQuery.data ?? []).length > 0
-  const records = integrationsQuery.data ?? []
-  const unlimited = records.filter((record) => record.providerLimit.warnings.includes('unlimited'))
-  const quotaUnavailable = records.filter((record) =>
-    record.providerLimit.warnings.includes('providerQuotaUnavailable'),
-  )
 
   return (
     <Box>
@@ -239,106 +348,21 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
         {t(($) => $.settings.integrations.description)}
       </Text>
 
-      {integrationsQuery.isError ? (
-        <Alert color="red" title={t(($) => $.settings.integrations.loadError)} mb="md">
-          {t(($) => $.settings.integrations.loadError)}
-        </Alert>
-      ) : null}
-
-      {integrationsQuery.isLoading ? <TableSkeleton /> : null}
-
-      {unlimited.map((record) => (
-        <Alert
-          key={record.id}
-          color="yellow"
-          variant="light"
-          title={t(($) => $.settings.integrations.providerLimit.unlimitedTitle, {
-            name: record.name,
-          })}
-          mb="sm"
-        >
-          {t(($) => $.settings.integrations.providerLimit.unlimitedWarning)}
-        </Alert>
-      ))}
-
-      {quotaUnavailable.map((record) => (
-        <Alert
-          key={record.id}
-          color="yellow"
-          variant="light"
-          title={t(($) => $.settings.integrations.providerLimit.quotaUnavailableTitle, {
-            name: record.name,
-          })}
-          mb="sm"
-        >
-          {t(($) => $.settings.integrations.providerLimit.quotaUnavailableWarning)}
-        </Alert>
-      ))}
-
-      <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
-        withTableBorder
-        records={records}
-        idAccessor="id"
-        columns={[
-          { accessor: 'name' },
-          { accessor: 'provider', title: t(($) => $.settings.integrations.providerLabel) },
-          {
-            accessor: 'isDefault',
-            title: t(($) => $.settings.integrations.default),
-            render: (record) => (record.isDefault ? t(($) => $.settings.integrations.default) : ''),
-          },
-          {
-            accessor: 'providerLimit',
-            title: t(($) => $.settings.integrations.providerLimit.title),
-            render: (record) => <ProviderLimitStatus status={record.providerLimit} />,
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            render: (record) => (
-              <Group gap="xs" wrap="nowrap" justify="flex-end">
-                <ChangeHistoryLink
-                  workspaceId={workspaceId}
-                  targetType={AUDIT_TARGET_INTEGRATION}
-                  targetId={record.id}
-                />
-                {canManageIntegrations ? (
-                  <RowActionsMenu>
-                    {record.isDefault ? null : (
-                      <Menu.Item
-                        onClick={() =>
-                          defaultMutation.mutate({
-                            path: { workspaceId, id: record.id },
-                            body: { isDefault: true },
-                          })
-                        }
-                      >
-                        {t(($) => $.settings.integrations.makeDefault)}
-                      </Menu.Item>
-                    )}
-                    <Menu.Item onClick={() => setEditing(record)}>
-                      {t(($) => $.settings.integrations.providerLimit.edit)}
-                    </Menu.Item>
-                    <Menu.Item onClick={() => setInbound(record)}>
-                      {t(($) => $.settings.integrations.inbound.open)}
-                    </Menu.Item>
-                    <Menu.Item
-                      color="red"
-                      onClick={() =>
-                        removeMutation.mutate({ path: { workspaceId, id: record.id } })
-                      }
-                    >
-                      {t(($) => $.actions.remove)}
-                    </Menu.Item>
-                  </RowActionsMenu>
-                ) : null}
-              </Group>
-            ),
-          },
-        ]}
-        emptyState={<EmptyState title={t(($) => $.settings.integrations.empty)} />}
-      />
+      <QueryBoundary
+        fallback={<TableSkeleton />}
+        errorTitle={t(($) => $.settings.integrations.loadError)}
+      >
+        <IntegrationsList
+          workspaceId={workspaceId}
+          canManage={canManageIntegrations}
+          onMakeDefault={(id) =>
+            defaultMutation.mutate({ path: { workspaceId, id }, body: { isDefault: true } })
+          }
+          onEditLimits={setEditing}
+          onInbound={setInbound}
+          onRemove={(id) => removeMutation.mutate({ path: { workspaceId, id } })}
+        />
+      </QueryBoundary>
       {canManageIntegrations ? (
         <Modal
           opened={createOpened}

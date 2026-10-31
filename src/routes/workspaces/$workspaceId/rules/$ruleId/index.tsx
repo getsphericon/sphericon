@@ -1,3 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
 
-export const Route = createFileRoute('/workspaces/$workspaceId/rules/$ruleId/')()
+import { pageParam } from '../../../../../searchSchemas.ts'
+
+export const Route = createFileRoute('/workspaces/$workspaceId/rules/$ruleId/')({
+  validateSearch: z.object({ page: pageParam }),
+})

@@ -1,8 +1,8 @@
 import { Alert, Card, Stack, Switch, Text, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { ReleaseAlert } from '../components/UpdateBanner.tsx'
 import {
@@ -13,6 +13,7 @@ import {
 import { StaffInstanceTelemetryLock } from '../generated/staff/types.gen.ts'
 import type { StaffInstanceState } from '../generated/staff/types.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { formatLongDate } from '../utils/datetime.ts'
 import { TelemetryReportActions } from './TelemetryReportActions.tsx'
 
 // The switch of the anonymous Telemetry report (ADR 0032). When the deployment decides (the saas
@@ -56,12 +57,8 @@ function TelemetrySection({ state }: { state: StaffInstanceState }) {
 // What the Instance tells its Staff member about itself: a newer release the Release check found,
 // and a License key that expired (ADR 0035), shown here only, never to a Workspace.
 function InstanceAlerts({ state }: { state: StaffInstanceState }) {
-  const { t, i18n } = useTranslation()
-  const expiredOn = state.licenseExpiredAt
-    ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long' }).format(
-        new Date(state.licenseExpiredAt),
-      )
-    : null
+  const { t } = useTranslation()
+  const expiredOn = state.licenseExpiredAt ? formatLongDate(state.licenseExpiredAt) : null
 
   return (
     <>
@@ -77,28 +74,31 @@ function InstanceAlerts({ state }: { state: StaffInstanceState }) {
   )
 }
 
+// The sections that read the Instance state; the page's boundary shows the load and its failure.
+function InstanceState() {
+  const state = useSuspenseQuery(staffInstanceGetStateOptions()).data
+
+  return (
+    <>
+      <InstanceAlerts state={state} />
+      <TelemetrySection state={state} />
+    </>
+  )
+}
+
 // The Instance's own settings (ADR 0063), open to every signed-in Staff member.
 export function ConsoleInstancePage() {
   const { t } = useTranslation()
-  const state = useQuery(staffInstanceGetStateOptions())
 
   return (
     <Stack maw={720}>
       <Title order={2}>{t(($) => $.console.instance.title)}</Title>
-      {state.isPending ? <BlockSkeleton /> : null}
-      {state.isError ? (
-        <ApiErrorAlert
-          error={state.error}
-          title={t(($) => $.console.instance.loadError)}
-          fallback={t(($) => $.console.instance.loadError)}
-        />
-      ) : null}
-      {state.data ? (
-        <>
-          <InstanceAlerts state={state.data} />
-          <TelemetrySection state={state.data} />
-        </>
-      ) : null}
+      <QueryBoundary
+        fallback={<BlockSkeleton />}
+        errorTitle={t(($) => $.console.instance.loadError)}
+      >
+        <InstanceState />
+      </QueryBoundary>
     </Stack>
   )
 }

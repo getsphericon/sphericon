@@ -1,8 +1,8 @@
 import { Card, SimpleGrid, Stack, Text, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import { siteSetupChecklistGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -13,29 +13,25 @@ import { RecentlyCreated } from './RecentlyCreated.tsx'
 import { RevenueBlock } from './RevenueBlock.tsx'
 import { SetupChecklist } from './SetupChecklist.tsx'
 
+// UnfinishedChecklist is the Setup checklist until it is finished, and nothing after.
+function UnfinishedChecklist({ workspaceId }: { workspaceId: string }) {
+  const checklist = useSuspenseQuery(siteSetupChecklistGetOptions({ path: { workspaceId } })).data
+  return checklist.complete ? null : (
+    <SetupChecklist workspaceId={workspaceId} checklist={checklist} />
+  )
+}
+
 // OverviewPage is the workspace's landing page: the Setup checklist until it is finished, the
 // revenue block, the shortcuts to create something and the broadcasts created last.
 export function OverviewPage() {
   const { t } = useTranslation()
   const { workspaceId } = overviewRoute.useParams()
 
-  const checklistQuery = useQuery(siteSetupChecklistGetOptions({ path: { workspaceId } }))
-  const checklist = checklistQuery.data
-  const showChecklist = checklist !== undefined && !checklist.complete
-
   return (
     <Stack>
-      {checklistQuery.isLoading && <BlockSkeleton />}
-
-      {checklistQuery.isError && (
-        <ApiErrorAlert
-          error={checklistQuery.error}
-          title={t(($) => $.setupChecklist.loadError)}
-          fallback={t(($) => $.setupChecklist.loadError)}
-        />
-      )}
-
-      {showChecklist && <SetupChecklist workspaceId={workspaceId} checklist={checklist} />}
+      <QueryBoundary fallback={<BlockSkeleton />} errorTitle={t(($) => $.setupChecklist.loadError)}>
+        <UnfinishedChecklist workspaceId={workspaceId} />
+      </QueryBoundary>
 
       <RevenueBlock workspaceId={workspaceId} />
 

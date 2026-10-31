@@ -51,18 +51,29 @@ test('an event without an email shows its subject id', async () => {
   await expect.element(screen.getByText('anon:1')).toBeInTheDocument()
 })
 
-test('filtering by action refetches with the action and resets to page one', async () => {
-  const queries: Query[] = []
-  serveEvents(queries, 60)
-  const { screen } = await renderWithRouter(<RecentActivityPage />, mount)
-
-  await expect.element(screen.getByText('anon:1')).toBeInTheDocument()
-  await screen.getByRole('button', { name: '2', exact: true }).click()
-  await expect.poll(() => queries.some((q) => q.page === '2')).toBe(true)
+test('typing an action puts it in the URL once typing pauses, on the first page', async () => {
+  serveEvents([], 60)
+  const { screen, navigate } = await renderWithRouter(<RecentActivityPage />, {
+    ...mount,
+    initialPath: `${mount.initialPath}?page=2`,
+  })
 
   await screen.getByPlaceholder('Filter by action').fill('purchase')
 
-  await expect.poll(() => queries.at(-1)).toEqual({ page: '1', action: 'purchase' })
+  await expect
+    .poll(() => navigate.mock.calls.at(-1)?.[0])
+    .toMatchObject({ search: { action: 'purchase' }, replace: true })
+})
+
+test('the page in the URL is the page of the feed requested', async () => {
+  const queries: Query[] = []
+  serveEvents(queries, 60)
+  await renderWithRouter(<RecentActivityPage />, {
+    ...mount,
+    initialPath: `${mount.initialPath}?page=2&action=purchase`,
+  })
+
+  await expect.poll(() => queries.at(-1)).toEqual({ page: '2', action: 'purchase' })
 })
 
 test('the action search param is the starting filter', async () => {

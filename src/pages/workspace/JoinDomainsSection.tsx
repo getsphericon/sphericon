@@ -1,5 +1,4 @@
 import {
-  Alert,
   Badge,
   Box,
   Button,
@@ -17,9 +16,10 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -114,6 +114,36 @@ function JoinDomainRow({
   )
 }
 
+// JoinDomainsList shows each domain with its record; the section's boundary shows the load and
+// its failure.
+function JoinDomainsList({
+  workspaceId,
+  verifyingId,
+  onVerify,
+  onRemove,
+}: {
+  workspaceId: string
+  verifyingId: string | null
+  onVerify: (id: string) => void
+  onRemove: (id: string) => void
+}) {
+  const { t } = useTranslation()
+  const domains = useSuspenseQuery(siteJoinDomainsListOptions({ path: { workspaceId } })).data
+
+  if (domains.length === 0) {
+    return <Text size="sm">{t(($) => $.joinDomains.empty)}</Text>
+  }
+  return domains.map((domain) => (
+    <JoinDomainRow
+      key={domain.id}
+      domain={domain}
+      verifying={verifyingId === domain.id}
+      onVerify={() => onVerify(domain.id)}
+      onRemove={() => onRemove(domain.id)}
+    />
+  ))
+}
+
 // JoinDomainsSection is the "Domain access" panel: add a domain, publish the TXT record it
 // shows, Verify, remove, and switch domain join on or off (a person who proves an address on a
 // verified domain after that becomes a member). It needs join_domains:manage: the page does not
@@ -122,7 +152,6 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
   const confirmDelete = useConfirmation()
   const queryKey = siteJoinDomainsListQueryKey({ path: { workspaceId } })
-  const domainsQuery = useQuery(siteJoinDomainsListOptions({ path: { workspaceId } }))
   const joinKey = siteDomainJoinGetQueryKey({ path: { workspaceId } })
   const joinQuery = useQuery(siteDomainJoinGetOptions({ path: { workspaceId } }))
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
@@ -169,8 +198,6 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
     })
   }
 
-  const domains = domainsQuery.data ?? []
-
   return (
     <Box>
       <Title order={4} mb="xs">
@@ -194,23 +221,14 @@ export function JoinDomainsSection({ workspaceId }: { workspaceId: string }) {
           }
         />
 
-        {domainsQuery.isError ? (
-          <Alert color="red" title={t(($) => $.joinDomains.loadError)} />
-        ) : null}
-        {domainsQuery.isLoading ? <TableSkeleton /> : null}
-        {domainsQuery.isSuccess && domains.length === 0 ? (
-          <Text size="sm">{t(($) => $.joinDomains.empty)}</Text>
-        ) : null}
-
-        {domains.map((domain) => (
-          <JoinDomainRow
-            key={domain.id}
-            domain={domain}
-            verifying={verifyMutation.isPending && verifyMutation.variables.path.id === domain.id}
-            onVerify={() => verifyMutation.mutate({ path: { workspaceId, id: domain.id } })}
-            onRemove={() => onRemove(domain.id)}
+        <QueryBoundary fallback={<TableSkeleton />} errorTitle={t(($) => $.joinDomains.loadError)}>
+          <JoinDomainsList
+            workspaceId={workspaceId}
+            verifyingId={verifyMutation.isPending ? verifyMutation.variables.path.id : null}
+            onVerify={(id) => verifyMutation.mutate({ path: { workspaceId, id } })}
+            onRemove={onRemove}
           />
-        ))}
+        </QueryBoundary>
 
         <Group>
           <Button onClick={openAdd}>{t(($) => $.joinDomains.add)}</Button>

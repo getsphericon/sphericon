@@ -14,13 +14,14 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { IconArrowDown, IconArrowUp } from '@tabler/icons-react'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { QueryBoundary } from '../components/QueryBoundary.tsx'
+import { TableSkeleton } from '../components/Skeletons.tsx'
 import {
   staffSignupItemsCreateMutation,
   staffSignupItemsListOptions,
@@ -175,101 +176,110 @@ function MoveButtons({
   )
 }
 
-// The Instance's Sign-up items (ADR 0062), in the order of the sign-up form: a row opens the item
-// and its Legal document.
-export function ConsoleSignupItemsPage() {
+// The Sign-up items in the order of the sign-up form; the page's boundary shows the load and its
+// failure. A reorder refetches the list under the rows already shown, so the table only says it
+// is fetching.
+function SignupItemsTable() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const itemsQuery = useQuery(staffSignupItemsListOptions())
+  const itemsQuery = useSuspenseQuery(staffSignupItemsListOptions())
   const reorder = useResourceMutation({
     mutation: staffSignupItemsReorderMutation(),
     invalidate: [staffSignupItemsListQueryKey()],
     errorTitle: t(($) => $.console.signupItems.reorderError),
   })
-  const items = itemsQuery.data?.items ?? []
+  const items = itemsQuery.data.items
+
+  return (
+    <DataTable
+      minHeight={items.length > 0 ? 0 : 160}
+      withTableBorder
+      highlightOnHover
+      fetching={itemsQuery.isFetching}
+      records={items}
+      idAccessor="id"
+      columns={[
+        {
+          accessor: 'position',
+          title: t(($) => $.console.signupItems.columns.order),
+          render: (_, index) => (
+            <MoveButtons
+              items={items}
+              index={index}
+              pending={reorder.isPending}
+              onMove={(ids) => reorder.mutate({ body: { ids } })}
+            />
+          ),
+        },
+        {
+          accessor: 'title',
+          title: t(($) => $.console.signupItems.columns.title),
+          render: (record) => (
+            <Group gap="xs">
+              <Text size="sm">{record.title}</Text>
+              {record.archivedAt ? (
+                <Badge color="gray" variant="outline">
+                  {t(($) => $.console.signupItems.archivedBadge)}
+                </Badge>
+              ) : null}
+            </Group>
+          ),
+        },
+        {
+          accessor: 'key',
+          title: t(($) => $.console.signupItems.columns.key),
+          visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.sm})`,
+        },
+        {
+          accessor: 'kind',
+          title: t(($) => $.console.signupItems.columns.kind),
+          render: (record) => (
+            <Group gap="xs">
+              <Text size="sm">{t(($) => $.console.signupItems.kind[record.kind])}</Text>
+              {record.mailingsConsent ? (
+                <Badge color="grape" variant="light">
+                  {t(($) => $.console.signupItems.mailingsBadge)}
+                </Badge>
+              ) : null}
+            </Group>
+          ),
+        },
+        {
+          accessor: 'currentVersion',
+          title: t(($) => $.console.signupItems.columns.version),
+          render: (record) =>
+            record.currentVersion ? (
+              <Text size="sm">{record.currentVersion.label}</Text>
+            ) : (
+              <Badge color="gray" variant="light">
+                {t(($) => $.console.signupItems.notPublished)}
+              </Badge>
+            ),
+        },
+      ]}
+      onRowClick={({ record }) =>
+        void navigate({ to: consoleSignupItemRoute.to, params: { itemId: record.id } })
+      }
+      emptyState={<EmptyState title={t(($) => $.console.signupItems.empty)} />}
+    />
+  )
+}
+
+// The Instance's Sign-up items (ADR 0062): a row opens the item and its Legal document. The form
+// that adds one sits outside the list's boundary, so it stays usable when the list fails to load.
+export function ConsoleSignupItemsPage() {
+  const { t } = useTranslation()
 
   return (
     <Stack>
       <Title order={2}>{t(($) => $.console.signupItems.title)}</Title>
       <Text c="dimmed">{t(($) => $.console.signupItems.description)}</Text>
-      {itemsQuery.isError ? (
-        <ApiErrorAlert
-          error={itemsQuery.error}
-          title={t(($) => $.console.signupItems.loadError)}
-          fallback={t(($) => $.console.signupItems.loadError)}
-        />
-      ) : null}
-      <DataTable
-        minHeight={items.length > 0 ? 0 : 160}
-        withTableBorder
-        highlightOnHover
-        fetching={itemsQuery.isFetching}
-        records={items}
-        idAccessor="id"
-        columns={[
-          {
-            accessor: 'position',
-            title: t(($) => $.console.signupItems.columns.order),
-            render: (_, index) => (
-              <MoveButtons
-                items={items}
-                index={index}
-                pending={reorder.isPending}
-                onMove={(ids) => reorder.mutate({ body: { ids } })}
-              />
-            ),
-          },
-          {
-            accessor: 'title',
-            title: t(($) => $.console.signupItems.columns.title),
-            render: (record) => (
-              <Group gap="xs">
-                <Text size="sm">{record.title}</Text>
-                {record.archivedAt ? (
-                  <Badge color="gray" variant="outline">
-                    {t(($) => $.console.signupItems.archivedBadge)}
-                  </Badge>
-                ) : null}
-              </Group>
-            ),
-          },
-          {
-            accessor: 'key',
-            title: t(($) => $.console.signupItems.columns.key),
-            visibleMediaQuery: (theme) => `(min-width: ${theme.breakpoints.sm})`,
-          },
-          {
-            accessor: 'kind',
-            title: t(($) => $.console.signupItems.columns.kind),
-            render: (record) => (
-              <Group gap="xs">
-                <Text size="sm">{t(($) => $.console.signupItems.kind[record.kind])}</Text>
-                {record.mailingsConsent ? (
-                  <Badge color="grape" variant="light">
-                    {t(($) => $.console.signupItems.mailingsBadge)}
-                  </Badge>
-                ) : null}
-              </Group>
-            ),
-          },
-          {
-            accessor: 'currentVersion',
-            title: t(($) => $.console.signupItems.columns.version),
-            render: (record) =>
-              record.currentVersion ? (
-                <Text size="sm">{record.currentVersion.label}</Text>
-              ) : (
-                <Badge color="gray" variant="light">
-                  {t(($) => $.console.signupItems.notPublished)}
-                </Badge>
-              ),
-          },
-        ]}
-        onRowClick={({ record }) =>
-          void navigate({ to: consoleSignupItemRoute.to, params: { itemId: record.id } })
-        }
-        emptyState={<EmptyState title={t(($) => $.console.signupItems.empty)} />}
-      />
+      <QueryBoundary
+        fallback={<TableSkeleton />}
+        errorTitle={t(($) => $.console.signupItems.loadError)}
+      >
+        <SignupItemsTable />
+      </QueryBoundary>
       <AddItemForm />
     </Stack>
   )

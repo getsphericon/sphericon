@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   ColorInput,
   Group,
@@ -13,9 +12,10 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { modals } from '@mantine/modals'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQueries } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteBrandKitGetOptions,
@@ -208,9 +208,6 @@ function BrandKitForm({
 export function BrandKitPage() {
   const { t } = useTranslation()
   const { workspaceId } = brandKitRoute.useParams()
-  const workspacesQuery = useQuery(siteWorkspacesListOptions())
-  const kitQuery = useQuery(siteBrandKitGetOptions({ path: { workspaceId } }))
-  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId)
 
   return (
     <Stack>
@@ -218,20 +215,27 @@ export function BrandKitPage() {
       <Text c="dimmed" size="sm">
         {t(($) => $.brandKit.description)}
       </Text>
-      {kitQuery.isError || workspacesQuery.isError ? (
-        <Alert color="red" title={t(($) => $.brandKit.loadErrorTitle)}>
-          {t(($) => $.brandKit.loadErrorTitle)}
-        </Alert>
-      ) : null}
-      {kitQuery.isLoading || workspacesQuery.isLoading ? <BlockSkeleton /> : null}
-      {kitQuery.data && workspace ? (
-        <BrandKitForm
-          key={kitQuery.data.updatedAt ?? 'unsaved'}
-          workspaceId={workspaceId}
-          kit={kitQuery.data}
-          canChange={can(workspace, 'brand_kit:manage')}
-        />
-      ) : null}
+      <QueryBoundary fallback={<BlockSkeleton />} errorTitle={t(($) => $.brandKit.loadErrorTitle)}>
+        <BrandKit workspaceId={workspaceId} />
+      </QueryBoundary>
     </Stack>
   )
+}
+
+// BrandKit reads the kit and the caller's Workspace; the page's boundary shows the load and its
+// failure.
+function BrandKit({ workspaceId }: { workspaceId: string }) {
+  const [{ data: workspaces }, { data: kit }] = useSuspenseQueries({
+    queries: [siteWorkspacesListOptions(), siteBrandKitGetOptions({ path: { workspaceId } })],
+  })
+  const workspace = workspaces.find((w) => w.id === workspaceId)
+
+  return workspace ? (
+    <BrandKitForm
+      key={kit.updatedAt ?? 'unsaved'}
+      workspaceId={workspaceId}
+      kit={kit}
+      canChange={can(workspace, 'brand_kit:manage')}
+    />
+  ) : null
 }

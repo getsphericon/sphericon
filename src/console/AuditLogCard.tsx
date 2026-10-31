@@ -1,9 +1,9 @@
 import { Button, Card, EmptyState, Stack, Table, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { staffWorkspaceAuditListOptions } from '../generated/staffee/@tanstack/react-query.gen.ts'
 import type { StaffAuditEntryResource } from '../generated/staffee/types.gen.ts'
@@ -29,41 +29,39 @@ function targetLabel({ target }: StaffAuditEntryResource) {
   return detail ? `${target.type} ${detail}` : target.type
 }
 
-// One page of the log; while more exist, a button mounts the next page beneath it, so
-// the list grows without holding every page in one state.
-function AuditPage({
-  workspaceId,
-  cursor,
-  first,
-}: {
+interface AuditPageProps {
   workspaceId: string
   cursor?: string
   first: boolean
-}) {
+}
+
+// One page of the log behind its own boundary, so the next page loads, or fails, beneath the
+// rows already shown.
+function AuditPage(props: AuditPageProps) {
+  const { t } = useTranslation()
+  return (
+    <QueryBoundary
+      fallback={<BlockSkeleton />}
+      errorTitle={t(($) => $.console.workspace.auditLog.loadError)}
+    >
+      <AuditRows {...props} />
+    </QueryBoundary>
+  )
+}
+
+// The rows of one page; while more exist, a button mounts the next page beneath them, so the
+// list grows without holding every page in one state.
+function AuditRows({ workspaceId, cursor, first }: AuditPageProps) {
   const { t } = useTranslation()
   const [showNext, setShowNext] = useState(false)
-  const query = useQuery(
+  const { items, nextCursor } = useSuspenseQuery(
     staffWorkspaceAuditListOptions({
       path: { workspaceId },
       query: { limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) },
     }),
-  )
+  ).data
 
-  if (query.isLoading) {
-    return <BlockSkeleton />
-  }
-  if (query.isError) {
-    return (
-      <ApiErrorAlert
-        error={query.error}
-        title={t(($) => $.console.workspace.auditLog.loadError)}
-        fallback={t(($) => $.console.workspace.auditLog.loadError)}
-      />
-    )
-  }
-
-  const items = query.data?.items ?? []
-  const next = query.data?.nextCursor ?? undefined
+  const next = nextCursor ?? undefined
   if (first && items.length === 0) {
     return <EmptyState title={t(($) => $.console.workspace.auditLog.empty)} />
   }

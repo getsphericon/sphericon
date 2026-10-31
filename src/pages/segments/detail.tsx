@@ -1,10 +1,10 @@
 import { Group, Stack, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -15,26 +15,29 @@ import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspace
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 export function SegmentDetailPage() {
   const { t } = useTranslation()
+  return (
+    <QueryBoundary
+      fallback={<PageSkeleton />}
+      errorTitle={t(($) => $.alerts.segmentLoadErrorTitle)}
+    >
+      <SegmentDetail />
+    </QueryBoundary>
+  )
+}
+
+function SegmentDetail() {
+  const { page } = segmentsDetailRoute.useSearch()
+  const pageNavigate = segmentsDetailRoute.useNavigate()
+  const { t } = useTranslation()
   const { workspaceId, segmentId } = segmentsDetailRoute.useParams()
   const navigate = useNavigate()
-  const segmentQuery = useQuery(siteSegmentsGetOptions({ path: { workspaceId, id: segmentId } }))
-
-  if (segmentQuery.isLoading) {
-    return <PageSkeleton />
-  }
-
-  if (segmentQuery.isError || !segmentQuery.data) {
-    return (
-      <ApiErrorAlert
-        error={segmentQuery.error}
-        title={t(($) => $.alerts.segmentLoadErrorTitle)}
-        fallback={t(($) => $.alerts.segmentLoadErrorTitle)}
-      />
-    )
-  }
+  const segmentQuery = useSuspenseQuery(
+    siteSegmentsGetOptions({ path: { workspaceId, id: segmentId } }),
+  )
 
   return (
     <Stack>
@@ -56,6 +59,10 @@ export function SegmentDetailPage() {
 
       <Title order={5}>{t(($) => $.segments.matchingContacts)}</Title>
       <PagedTable
+        page={page}
+        onPageChange={(next) =>
+          void pageNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) =>
           siteSegmentContactsListOptions({ path: { workspaceId, segmentId }, query })
         }

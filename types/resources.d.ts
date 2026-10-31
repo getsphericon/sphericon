@@ -41,6 +41,7 @@ export default interface Resources {
       "edit": "Edit",
       "more": "More actions",
       "remove": "Remove",
+      "retry": "Try again",
       "save": "Save",
       "unarchive": "Restore",
       "view": "View"
@@ -298,10 +299,7 @@ export default interface Resources {
       "httpUrlLabel": "URL",
       "integrationDefault": "Workspace default",
       "integrationLabel": "Integration",
-      "leaveDiscard": "Leave",
       "leaveMessage": "Your changes to this automation are not saved.",
-      "leaveStay": "Keep editing",
-      "leaveTitle": "Leave without saving?",
       "liveVersion": "Live version {{number}}",
       "messageDone": "Done",
       "nameLabel": "Name",
@@ -866,6 +864,12 @@ export default interface Resources {
       "verifiedToast": "Domain verified",
       "verify": "Verify",
       "verifyError": "Could not verify the domain"
+    },
+    "leave": {
+      "discard": "Leave",
+      "message": "Your changes are not saved.",
+      "stay": "Keep editing",
+      "title": "Leave without saving?"
     },
     "legal": {
       "loadError": "Could not load the document",

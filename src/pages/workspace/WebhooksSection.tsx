@@ -18,11 +18,12 @@ import {
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -157,15 +158,128 @@ function TestEventModal({
   )
 }
 
+// WebhooksTable lists the endpoints; the section's boundary shows the load and its failure.
+function WebhooksTable({
+  workspaceId,
+  onTest,
+  onRegenerate,
+  onToggle,
+  onDelete,
+}: {
+  workspaceId: string
+  onTest: (id: string) => void
+  onRegenerate: (id: string) => void
+  onToggle: (record: SiteWebhookEndpointResource) => void
+  onDelete: (id: string) => void
+}) {
+  const { formatDateTime } = useDateFormat()
+  const { t } = useTranslation()
+  const records = useSuspenseQuery(siteWebhooksListOptions({ path: { workspaceId } })).data.items
+
+  return (
+    <DataTable
+      minHeight={records.length === 0 ? 200 : 0}
+      withTableBorder
+      records={records}
+      idAccessor="id"
+      columns={[
+        { accessor: 'url', title: t(($) => $.settings.webhooks.urlColumn) },
+        {
+          accessor: 'eventTypes',
+          title: t(($) => $.settings.webhooks.eventsLabel),
+          render: (record) =>
+            record.eventTypes.length === 0
+              ? t(($) => $.settings.webhooks.allEvents)
+              : record.eventTypes.join(', '),
+        },
+        {
+          accessor: 'enabled',
+          title: t(($) => $.settings.webhooks.statusColumn),
+          render: (record) => (
+            <Stack gap={2}>
+              <Badge variant="light" color={record.enabled ? 'teal' : 'gray'}>
+                {record.enabled
+                  ? t(($) => $.settings.webhooks.enabled)
+                  : t(($) => $.settings.webhooks.disabled)}
+              </Badge>
+              {record.disabledReason ? (
+                <Text size="xs" c="dimmed">
+                  {
+                    {
+                      owner: t(($) => $.settings.webhooks.disabledOwner),
+                      gone: t(($) => $.settings.webhooks.disabledGone),
+                      persistent_failure: t(($) => $.settings.webhooks.disabledPersistentFailure),
+                    }[record.disabledReason]
+                  }
+                  {record.disabledAt ? ` (${formatDateTime(record.disabledAt)})` : ''}
+                </Text>
+              ) : null}
+              {record.failure ? (
+                <>
+                  <Badge variant="light" color="red">
+                    {t(($) => $.settings.webhooks.failing)}
+                  </Badge>
+                  <FailureText failure={record.failure} />
+                </>
+              ) : null}
+            </Stack>
+          ),
+        },
+        {
+          accessor: 'secret',
+          title: t(($) => $.settings.webhooks.secret),
+          render: (record) => (
+            <CopyButton value={record.secret}>
+              {({ copied, copy }) => (
+                <Button size="compact-xs" variant="light" onClick={copy}>
+                  {copied ? t(($) => $.settings.copied) : t(($) => $.settings.webhooks.copySecret)}
+                </Button>
+              )}
+            </CopyButton>
+          ),
+        },
+        {
+          accessor: 'actions',
+          title: '',
+          render: (record) => (
+            <Group gap="xs" wrap="nowrap" justify="flex-end">
+              <ChangeHistoryLink
+                workspaceId={workspaceId}
+                targetType={AUDIT_TARGET_WEBHOOK_ENDPOINT}
+                targetId={record.id}
+              />
+              <RowActionsMenu>
+                <Menu.Item onClick={() => onTest(record.id)}>
+                  {t(($) => $.settings.webhooks.sendTest)}
+                </Menu.Item>
+                <Menu.Item onClick={() => onRegenerate(record.id)}>
+                  {t(($) => $.settings.webhooks.regenerate)}
+                </Menu.Item>
+                <Menu.Item onClick={() => onToggle(record)}>
+                  {record.enabled
+                    ? t(($) => $.settings.webhooks.disable)
+                    : t(($) => $.settings.webhooks.enable)}
+                </Menu.Item>
+                <Menu.Item color="red" onClick={() => onDelete(record.id)}>
+                  {t(($) => $.settings.webhooks.delete)}
+                </Menu.Item>
+              </RowActionsMenu>
+            </Group>
+          ),
+        },
+      ]}
+      emptyState={<EmptyState title={t(($) => $.settings.webhooks.empty)} />}
+    />
+  )
+}
+
 export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const { formatDateTime } = useDateFormat()
   const confirmDelete = useConfirmation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [testingId, setTestingId] = useState<string | null>(null)
 
   const queryKey = siteWebhooksListQueryKey({ path: { workspaceId } })
-  const webhooksQuery = useQuery(siteWebhooksListOptions({ path: { workspaceId } }))
 
   const form = useForm<{ url: string; eventTypes: string[] }>({
     initialValues: { url: '', eventTypes: [] },
@@ -225,8 +339,6 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
       onConfirm: () => deleteMutation.mutate({ path: { workspaceId, id } }),
     })
 
-  const records = webhooksQuery.data?.items ?? []
-
   return (
     <Box>
       <Group justify="space-between" mb="sm">
@@ -236,109 +348,18 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
         </Button>
       </Group>
 
-      {webhooksQuery.isError ? (
-        <Alert color="red" title={t(($) => $.settings.webhooks.loadError)} mb="md">
-          {t(($) => $.settings.webhooks.loadError)}
-        </Alert>
-      ) : null}
-
-      {webhooksQuery.isLoading ? <TableSkeleton /> : null}
-
-      <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
-        withTableBorder
-        records={records}
-        idAccessor="id"
-        columns={[
-          { accessor: 'url', title: t(($) => $.settings.webhooks.urlColumn) },
-          {
-            accessor: 'eventTypes',
-            title: t(($) => $.settings.webhooks.eventsLabel),
-            render: (record) =>
-              record.eventTypes.length === 0
-                ? t(($) => $.settings.webhooks.allEvents)
-                : record.eventTypes.join(', '),
-          },
-          {
-            accessor: 'enabled',
-            title: t(($) => $.settings.webhooks.statusColumn),
-            render: (record) => (
-              <Stack gap={2}>
-                <Badge variant="light" color={record.enabled ? 'teal' : 'gray'}>
-                  {record.enabled
-                    ? t(($) => $.settings.webhooks.enabled)
-                    : t(($) => $.settings.webhooks.disabled)}
-                </Badge>
-                {record.disabledReason ? (
-                  <Text size="xs" c="dimmed">
-                    {
-                      {
-                        owner: t(($) => $.settings.webhooks.disabledOwner),
-                        gone: t(($) => $.settings.webhooks.disabledGone),
-                        persistent_failure: t(($) => $.settings.webhooks.disabledPersistentFailure),
-                      }[record.disabledReason]
-                    }
-                    {record.disabledAt ? ` (${formatDateTime(record.disabledAt)})` : ''}
-                  </Text>
-                ) : null}
-                {record.failure ? (
-                  <>
-                    <Badge variant="light" color="red">
-                      {t(($) => $.settings.webhooks.failing)}
-                    </Badge>
-                    <FailureText failure={record.failure} />
-                  </>
-                ) : null}
-              </Stack>
-            ),
-          },
-          {
-            accessor: 'secret',
-            title: t(($) => $.settings.webhooks.secret),
-            render: (record) => (
-              <CopyButton value={record.secret}>
-                {({ copied, copy }) => (
-                  <Button size="compact-xs" variant="light" onClick={copy}>
-                    {copied
-                      ? t(($) => $.settings.copied)
-                      : t(($) => $.settings.webhooks.copySecret)}
-                  </Button>
-                )}
-              </CopyButton>
-            ),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            render: (record) => (
-              <Group gap="xs" wrap="nowrap" justify="flex-end">
-                <ChangeHistoryLink
-                  workspaceId={workspaceId}
-                  targetType={AUDIT_TARGET_WEBHOOK_ENDPOINT}
-                  targetId={record.id}
-                />
-                <RowActionsMenu>
-                  <Menu.Item onClick={() => setTestingId(record.id)}>
-                    {t(($) => $.settings.webhooks.sendTest)}
-                  </Menu.Item>
-                  <Menu.Item onClick={() => onRegenerate(record.id)}>
-                    {t(($) => $.settings.webhooks.regenerate)}
-                  </Menu.Item>
-                  <Menu.Item onClick={() => onToggle(record)}>
-                    {record.enabled
-                      ? t(($) => $.settings.webhooks.disable)
-                      : t(($) => $.settings.webhooks.enable)}
-                  </Menu.Item>
-                  <Menu.Item color="red" onClick={() => onDelete(record.id)}>
-                    {t(($) => $.settings.webhooks.delete)}
-                  </Menu.Item>
-                </RowActionsMenu>
-              </Group>
-            ),
-          },
-        ]}
-        emptyState={<EmptyState title={t(($) => $.settings.webhooks.empty)} />}
-      />
+      <QueryBoundary
+        fallback={<TableSkeleton />}
+        errorTitle={t(($) => $.settings.webhooks.loadError)}
+      >
+        <WebhooksTable
+          workspaceId={workspaceId}
+          onTest={setTestingId}
+          onRegenerate={onRegenerate}
+          onToggle={onToggle}
+          onDelete={onDelete}
+        />
+      </QueryBoundary>
 
       <Modal
         opened={createOpened}

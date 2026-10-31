@@ -7,6 +7,7 @@ import { siteTransactionalEmailsListOptions } from '../../generated/site/@tansta
 import type { SiteTransactionalEmailStatus } from '../../generated/site/types.gen.ts'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { Route as transactionalEmailsRoute } from '../../routes/workspaces/$workspaceId/transactional-emails/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 const STATUS_COLORS: Record<SiteTransactionalEmailStatus, string> = {
   pending: 'yellow',
@@ -25,6 +26,8 @@ function StatusBadge({ t, status }: { t: TFunction; status: SiteTransactionalEma
 
 export function TransactionalEmailsListPage() {
   const { formatDateTime } = useDateFormat()
+  const { page } = transactionalEmailsRoute.useSearch()
+  const pageNavigate = transactionalEmailsRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId } = transactionalEmailsRoute.useParams()
 
@@ -33,6 +36,10 @@ export function TransactionalEmailsListPage() {
       <Title order={2}>{t(($) => $.transactionalEmails.title)}</Title>
 
       <PagedTable
+        page={page}
+        onPageChange={(next) =>
+          void pageNavigate({ search: withPage(next), viewTransition: false })
+        }
         pageSize={20}
         options={(query) => siteTransactionalEmailsListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.transactionalEmailsLoadErrorTitle)}

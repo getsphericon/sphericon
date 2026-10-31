@@ -1,7 +1,6 @@
 import {
   Box,
   EmptyState,
-  Alert,
   Badge,
   Button,
   Group,
@@ -14,11 +13,12 @@ import {
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
-import { useQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import { TableSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -37,6 +37,100 @@ interface DomainFormValues {
   domain: string
 }
 
+// SendingDomainsTable lists the domains with the records of the one opened; the section's boundary
+// shows the load and its failure.
+function SendingDomainsTable({
+  workspaceId,
+  canEdit,
+  recordsId,
+  onShowRecords,
+  onCloseRecords,
+  verifying,
+  onVerify,
+  removing,
+  onRemove,
+}: {
+  workspaceId: string
+  canEdit: boolean
+  recordsId: string | null
+  onShowRecords: (id: string) => void
+  onCloseRecords: () => void
+  verifying: boolean
+  onVerify: (id: string) => void
+  removing: boolean
+  onRemove: (record: SiteSendingDomainResource) => void
+}) {
+  const { t } = useTranslation()
+  const records = useSuspenseQuery(
+    siteSendingDomainsListOptions({ path: { workspaceId }, query: { archived: false } }),
+  ).data.items
+  const recordsDomain = records.find((record) => record.id === recordsId)
+
+  return (
+    <>
+      <DataTable
+        minHeight={records.length === 0 ? 200 : 0}
+        withTableBorder
+        highlightOnHover
+        onRowClick={({ record }) => onShowRecords(record.id)}
+        records={records}
+        idAccessor="id"
+        emptyState={<EmptyState title={t(($) => $.settings.sendingDomains.empty)} />}
+        columns={[
+          { accessor: 'domain' },
+          {
+            accessor: 'verified',
+            title: t(($) => $.settings.sendingDomains.statusColumn),
+            render: (record) =>
+              record.verified ? (
+                <Badge color="teal" variant="light">
+                  {t(($) => $.settings.sendingDomains.verified)}
+                </Badge>
+              ) : record.verificationLostAt ? (
+                <Badge color="red" variant="light">
+                  {t(($) => $.settings.sendingDomains.lost)}
+                </Badge>
+              ) : (
+                <Badge color="gray" variant="light">
+                  {t(($) => $.settings.sendingDomains.pending)}
+                </Badge>
+              ),
+          },
+          {
+            accessor: 'actions',
+            title: '',
+            textAlign: 'right',
+            render: (record) =>
+              canEdit ? (
+                // A click in the cell must not toggle the row's expansion.
+                <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
+                  <RowActionsMenu>
+                    <Menu.Item onClick={() => onShowRecords(record.id)}>
+                      {t(($) => $.settings.sendingDomains.showRecords)}
+                    </Menu.Item>
+                    <Menu.Item disabled={verifying} onClick={() => onVerify(record.id)}>
+                      {t(($) => $.settings.sendingDomains.verify)}
+                    </Menu.Item>
+                    <Menu.Item color="red" disabled={removing} onClick={() => onRemove(record)}>
+                      {t(($) => $.actions.remove)}
+                    </Menu.Item>
+                  </RowActionsMenu>
+                </Group>
+              ) : null,
+          },
+        ]}
+      />
+
+      <SendingDomainRecordsModal
+        workspaceId={workspaceId}
+        record={recordsDomain}
+        onClose={onCloseRecords}
+        canVerify={canEdit}
+      />
+    </>
+  )
+}
+
 export function SendingDomainsSection({
   workspaceId,
   canEdit,
@@ -49,11 +143,7 @@ export function SendingDomainsSection({
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false)
   const [recordsId, setRecordsId] = useState<string | null>(null)
 
-  const listQuery = { archived: false }
   const queryKey = siteSendingDomainsListQueryKey({ path: { workspaceId } })
-  const domainsQuery = useQuery(
-    siteSendingDomainsListOptions({ path: { workspaceId }, query: listQuery }),
-  )
 
   const form = useForm<DomainFormValues>({ initialValues: { domain: '' } })
 
@@ -97,9 +187,6 @@ export function SendingDomainsSection({
     })
   }
 
-  const records = domainsQuery.data?.items ?? []
-  const recordsDomain = records.find((record) => record.id === recordsId)
-
   return (
     <Box>
       <Group justify="space-between" mb="sm">
@@ -114,75 +201,22 @@ export function SendingDomainsSection({
         {t(($) => $.settings.sendingDomains.description)}
       </Text>
 
-      {domainsQuery.isError ? (
-        <Alert color="red" title={t(($) => $.settings.sendingDomains.loadError)} mb="md">
-          {t(($) => $.settings.sendingDomains.loadError)}
-        </Alert>
-      ) : null}
-
-      {domainsQuery.isLoading ? <TableSkeleton /> : null}
-
-      <DataTable
-        minHeight={records.length === 0 ? 200 : 0}
-        withTableBorder
-        highlightOnHover
-        onRowClick={({ record }) => setRecordsId(record.id)}
-        records={records}
-        idAccessor="id"
-        emptyState={<EmptyState title={t(($) => $.settings.sendingDomains.empty)} />}
-        columns={[
-          { accessor: 'domain' },
-          {
-            accessor: 'verified',
-            title: t(($) => $.settings.sendingDomains.statusColumn),
-            render: (record) =>
-              record.verified ? (
-                <Badge color="teal" variant="light">
-                  {t(($) => $.settings.sendingDomains.verified)}
-                </Badge>
-              ) : record.verificationLostAt ? (
-                <Badge color="red" variant="light">
-                  {t(($) => $.settings.sendingDomains.lost)}
-                </Badge>
-              ) : (
-                <Badge color="gray" variant="light">
-                  {t(($) => $.settings.sendingDomains.pending)}
-                </Badge>
-              ),
-          },
-          {
-            accessor: 'actions',
-            title: '',
-            textAlign: 'right',
-            render: (record) =>
-              canEdit ? (
-                // A click in the cell must not toggle the row's expansion.
-                <Group justify="flex-end" onClick={(event) => event.stopPropagation()}>
-                  <RowActionsMenu>
-                    <Menu.Item onClick={() => setRecordsId(record.id)}>
-                      {t(($) => $.settings.sendingDomains.showRecords)}
-                    </Menu.Item>
-                    <Menu.Item
-                      disabled={verifyMutation.isPending}
-                      onClick={() =>
-                        verifyMutation.mutate({ path: { workspaceId, id: record.id } })
-                      }
-                    >
-                      {t(($) => $.settings.sendingDomains.verify)}
-                    </Menu.Item>
-                    <Menu.Item
-                      color="red"
-                      disabled={removeMutation.isPending}
-                      onClick={() => onRemove(record)}
-                    >
-                      {t(($) => $.actions.remove)}
-                    </Menu.Item>
-                  </RowActionsMenu>
-                </Group>
-              ) : null,
-          },
-        ]}
-      />
+      <QueryBoundary
+        fallback={<TableSkeleton />}
+        errorTitle={t(($) => $.settings.sendingDomains.loadError)}
+      >
+        <SendingDomainsTable
+          workspaceId={workspaceId}
+          canEdit={canEdit}
+          recordsId={recordsId}
+          onShowRecords={setRecordsId}
+          onCloseRecords={() => setRecordsId(null)}
+          verifying={verifyMutation.isPending}
+          onVerify={(id) => verifyMutation.mutate({ path: { workspaceId, id } })}
+          removing={removeMutation.isPending}
+          onRemove={onRemove}
+        />
+      </QueryBoundary>
 
       <Modal
         opened={addOpened}
@@ -211,13 +245,6 @@ export function SendingDomainsSection({
           </Stack>
         </form>
       </Modal>
-
-      <SendingDomainRecordsModal
-        workspaceId={workspaceId}
-        record={recordsDomain}
-        onClose={() => setRecordsId(null)}
-        canVerify={canEdit}
-      />
     </Box>
   )
 }

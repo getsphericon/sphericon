@@ -1,12 +1,12 @@
 import { Badge, Group, Stack, Text, Title } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
-import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { DraftControls } from '../../components/DraftControls.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
@@ -21,6 +21,7 @@ import { Route as automationsEditRoute } from '../../routes/workspaces/$workspac
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 import { AutomationReport } from './AutomationReport.tsx'
 import { automationDraftActions } from './draftActions.ts'
 
@@ -116,27 +117,27 @@ function AutomationVersionSummary({
 }
 
 export function AutomationDetailPage() {
+  const { t } = useTranslation()
+  return (
+    <QueryBoundary
+      fallback={<PageSkeleton />}
+      errorTitle={t(($) => $.alerts.automationLoadErrorTitle)}
+    >
+      <AutomationDetail />
+    </QueryBoundary>
+  )
+}
+
+function AutomationDetail() {
   const { formatDateTime } = useDateFormat()
+  const { page } = automationsDetailRoute.useSearch()
+  const pageNavigate = automationsDetailRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId, automationId } = automationsDetailRoute.useParams()
   const navigate = useNavigate()
-  const getQuery = useQuery(siteAutomationsGetOptions({ path: { workspaceId, id: automationId } }))
-
-  if (getQuery.isLoading) {
-    return <PageSkeleton />
-  }
-
-  if (getQuery.isError || !getQuery.data) {
-    return (
-      <ApiErrorAlert
-        error={getQuery.error}
-        title={t(($) => $.alerts.automationLoadErrorTitle)}
-        fallback={t(($) => $.alerts.automationLoadErrorTitle)}
-      />
-    )
-  }
-
-  const automation = getQuery.data
+  const automation = useSuspenseQuery(
+    siteAutomationsGetOptions({ path: { workspaceId, id: automationId } }),
+  ).data
 
   return (
     <Stack>
@@ -178,6 +179,10 @@ export function AutomationDetailPage() {
 
       <Title order={5}>{t(($) => $.automations.enrollmentsTitle)}</Title>
       <PagedTable
+        page={page}
+        onPageChange={(next) =>
+          void pageNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) =>
           siteEnrollmentsListOptions({ path: { workspaceId, automationId }, query })
         }

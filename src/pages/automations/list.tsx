@@ -21,6 +21,7 @@ import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { withPage } from '../../searchSchemas.ts'
 import { messageRevenueCells } from '../../utils/messageRevenue.ts'
 import { AutomationCreateModal } from './create.tsx'
 
@@ -67,7 +68,7 @@ export function AutomationsListPage() {
     errorTitle: t(($) => $.alerts.automationRestoreErrorTitle),
   })
 
-  const { archived = false } = automationsRoute.useSearch()
+  const { archived = false, page } = automationsRoute.useSearch()
   const routeNavigate = automationsRoute.useNavigate()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
 
@@ -91,7 +92,10 @@ export function AutomationsListPage() {
       />
 
       <PagedTable
-        resetKey={String(archived)}
+        page={page}
+        onPageChange={(next) =>
+          void routeNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) =>
           siteAutomationsListOptions({ path: { workspaceId }, query: { ...query, archived } })
         }

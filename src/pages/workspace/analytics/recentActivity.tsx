@@ -9,18 +9,19 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { useDebouncedValue } from '@mantine/hooks'
+import { useDebouncedCallback } from '@mantine/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { DataTable } from 'mantine-datatable'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { DetailedEventRowDetails } from '../../../components/EventRowDetails.tsx'
+import { RelativeTime } from '../../../components/RelativeTime.tsx'
 import { TableSkeleton } from '../../../components/Skeletons.tsx'
 import { siteEventsListOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
-import { useDateFormat } from '../../../hooks/useDateFormat.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as workspaceRoute } from '../../../routes/workspaces/$workspaceId/route.tsx'
+import { withPage } from '../../../searchSchemas.ts'
 
 const PAGE_SIZE = 25
 const LIVE_REFETCH_MS = 5000
@@ -29,23 +30,28 @@ const LIVE_REFETCH_MS = 5000
 // recent first. Live mode polls so newly tracked events surface without a
 // manual reload — the primary way to verify that tracking works.
 export function RecentActivityPage() {
-  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
-  const [page, setPage] = useState(1)
   const [live, setLive] = useState(true)
-  // The `action` search param (a link from the Events report) seeds the filter.
-  const { action: linkedAction } = recentActivityRoute.useSearch()
-  const [actionFilter, setActionFilter] = useState(linkedAction ?? '')
-  const [debouncedAction] = useDebouncedValue(actionFilter.trim(), 300)
-
-  // Reset to the first page whenever the action filter changes (derived during
-  // render, the documented alternative to setState in an effect).
-  const [pageAction, setPageAction] = useState(debouncedAction)
-  if (pageAction !== debouncedAction) {
-    setPageAction(debouncedAction)
-    setPage(1)
-  }
+  // The filter and the page are the URL's; the field holds what is being typed.
+  const { action = '', page = 1 } = recentActivityRoute.useSearch()
+  const navigate = recentActivityRoute.useNavigate()
+  const [actionFilter, setActionFilter] = useState(action)
+  // A filter reaches the URL once typing pauses; another filter starts on its first page.
+  const applyAction = useDebouncedCallback(
+    (next: string) =>
+      void navigate({
+        search: { action: next.trim() || undefined },
+        replace: true,
+        viewTransition: false,
+      }),
+    300,
+  )
+  const setPage = (next: number) =>
+    void navigate({
+      search: withPage(next),
+      viewTransition: false,
+    })
 
   const eventsQuery = useQuery({
     ...siteEventsListOptions({
@@ -53,7 +59,7 @@ export function RecentActivityPage() {
       query: {
         page,
         pageSize: PAGE_SIZE,
-        ...(debouncedAction ? { action: debouncedAction } : {}),
+        ...(action ? { action } : {}),
       },
     }),
     refetchInterval: live ? LIVE_REFETCH_MS : false,
@@ -70,7 +76,10 @@ export function RecentActivityPage() {
           <TextInput
             placeholder={t(($) => $.activity.filterActionPlaceholder)}
             value={actionFilter}
-            onChange={(event) => setActionFilter(event.currentTarget.value)}
+            onChange={(event) => {
+              setActionFilter(event.currentTarget.value)
+              applyAction(event.currentTarget.value)
+            }}
           />
           <Switch
             label={t(($) => $.activity.live)}
@@ -98,7 +107,7 @@ export function RecentActivityPage() {
           {
             accessor: 'createdAt',
             title: t(($) => $.activity.time),
-            render: (record) => formatDateTime(record.createdAt),
+            render: (record) => <RelativeTime value={record.createdAt} />,
           },
           {
             accessor: 'action',

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import type { MutationCacheNotifyEvent, QueryCacheNotifyEvent } from '@tanstack/react-query'
 import { useNavigate, useRouter } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useEffectEvent } from 'react'
 
 import { siteUserGetMeQueryKey } from '../generated/site/@tanstack/react-query.gen.ts'
 import { Route as acceptanceRoute } from '../routes/acceptance.tsx'
@@ -16,14 +16,14 @@ export function useAcceptanceWatch() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const router = useRouter()
+  const stop = useEffectEvent(async () => {
+    queryClient.removeQueries({ queryKey: siteUserGetMeQueryKey() })
+    await navigate({
+      to: acceptanceRoute.to,
+      search: { redirect: router.state.location.href },
+    })
+  })
   useEffect(() => {
-    const stop = async () => {
-      queryClient.removeQueries({ queryKey: siteUserGetMeQueryKey() })
-      await navigate({
-        to: acceptanceRoute.to,
-        search: { redirect: router.state.location.href },
-      })
-    }
     // Only a refusal as it arrives counts: a query keeps its last error while it fetches again,
     // and that stale refusal must not send back a User who has accepted since. A query and a
     // mutation are refused alike.
@@ -42,5 +42,5 @@ export function useAcceptanceWatch() {
       unsubscribeQueries()
       unsubscribeMutations()
     }
-  }, [queryClient, navigate, router])
+  }, [queryClient])
 }

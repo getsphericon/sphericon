@@ -28,35 +28,45 @@ interface SentBody {
   events: { visitorId: string; action: string; properties: unknown; clientEventId?: string }[]
 }
 
-function sentBodies(stub: FetchStub, path: string): SentBody[] {
-  return stub.mock.calls
-    .filter(([url]) => typeof url === 'string' && url.endsWith(path))
-    .map(([, init]) => {
-      const body: SentBody = JSON.parse(typeof init?.body === 'string' ? init.body : '{}')
-      return body
-    })
+// Every request the tracker made, copied as fetch got it: the client hands fetch a Request, and
+// ky reads its body, so the copy is what a test reads.
+let sentRequests: Request[]
+
+async function sentBodies(path: string): Promise<SentBody[]> {
+  return Promise.all(
+    sentRequests
+      .filter((request) => request.url.endsWith(path))
+      .map(async (request) => {
+        const body: SentBody = JSON.parse((await request.clone().text()) || '{}')
+        return body
+      }),
+  )
 }
 
-function sentBody(stub: FetchStub, path: string): SentBody {
-  const [body] = sentBodies(stub, path)
+async function sentBody(path: string): Promise<SentBody> {
+  const [body] = await sentBodies(path)
   if (!body) {
     throw new Error(`no request sent to ${path}`)
   }
   return body
 }
 
-// firstCall returns the URL and headers of the first fetch the tracker made.
-function firstCall(stub: FetchStub) {
-  const [url, init] = stub.mock.calls[0] ?? []
-  return { url, headers: init?.headers }
+// firstCall returns the URL and the collect key of the first request the tracker made.
+function firstCall() {
+  const [request] = sentRequests
+  return { url: request?.url, collectKey: request?.headers.get('x-collect-key') }
 }
 
 let fetchStub: FetchStub
 
 beforeEach(() => {
   vi.useFakeTimers()
-  fetchStub = vi.fn<typeof fetch>(async () => Promise.resolve(new Response(null, { status: 202 })))
-  vi.stubGlobal('fetch', fetchStub)
+  fetchStub = vi.fn<typeof fetch>(async () => Promise.resolve(new Response(null, { status: 204 })))
+  sentRequests = []
+  vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+    sentRequests.push(new Request(input, init).clone())
+    return fetchStub(input, init)
+  })
   clearVisitorCookie()
   delete window._omq
 })
@@ -77,10 +87,10 @@ test('batches tracked events into one authenticated POST after the flush delay',
   await vi.advanceTimersByTimeAsync(200)
 
   expect(fetchStub).toHaveBeenCalledTimes(1)
-  const { url, headers } = firstCall(fetchStub)
+  const { url, collectKey } = firstCall()
   expect(url).toBe('https://collect.example/collect/events')
-  expect(headers).toMatchObject({ 'x-collect-key': 'ck_test' })
-  const { events } = sentBody(fetchStub, '/collect/events')
+  expect(collectKey).toBe('ck_test')
+  const { events } = await sentBody('/collect/events')
   expect(events.map((e) => e.action)).toEqual(['signup', 'click'])
   expect(events[0]?.properties).toEqual({ plan: 'pro' })
   expect(events[1]?.properties).toBeNull()
@@ -92,7 +102,7 @@ test('reuses the visitor id from the cookie and persists a new one', async () =>
   first.initTracking(CONFIG)
   first.track('a')
   await vi.advanceTimersByTimeAsync(200)
-  expect(sentBody(fetchStub, '/collect/events').events[0]?.visitorId).toBe('existing-visitor')
+  expect((await sentBody('/collect/events')).events[0]?.visitorId).toBe('existing-visitor')
 
   clearVisitorCookie()
   const second = await loadTracker()
@@ -106,7 +116,7 @@ test('identify posts the visitor id with nulls for missing fields', async () => 
 
   await identify({ email: 'a@example.com' })
 
-  const body = sentBody(fetchStub, '/collect/identify')
+  const body = await sentBody('/collect/identify')
   expect(body).toMatchObject({
     email: 'a@example.com',
     phone: null,
@@ -117,7 +127,7 @@ test('identify posts the visitor id with nulls for missing fields', async () => 
 })
 
 test('identify swallows network failures', async () => {
-  fetchStub.mockRejectedValue(new Error('offline'))
+  fetchStub.mockRejectedValue(new TypeError('Failed to fetch'))
   const { initTracking, identify } = await loadTracker()
   initTracking(CONFIG)
 
@@ -131,8 +141,8 @@ interface Sent {
   action: string
 }
 
-function sentEvents(stub: FetchStub): Sent[][] {
-  return sentBodies(stub, '/collect/events').map((b) => b.events)
+async function sentEvents(): Promise<Sent[][]> {
+  return (await sentBodies('/collect/events')).map((b) => b.events)
 }
 
 function storedQueue(): Sent[] {
@@ -145,7 +155,7 @@ beforeEach(() => {
 })
 
 test('every event carries a clientEventId, generated once and reused on a retry', async () => {
-  fetchStub.mockRejectedValueOnce(new Error('offline'))
+  fetchStub.mockRejectedValueOnce(new TypeError('Failed to fetch'))
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
 
@@ -153,13 +163,13 @@ test('every event carries a clientEventId, generated once and reused on a retry'
   await vi.advanceTimersByTimeAsync(200)
   await vi.advanceTimersByTimeAsync(1000)
 
-  const [first, retry] = sentEvents(fetchStub)
+  const [first, retry] = await sentEvents()
   expect(first?.[0]?.clientEventId).toEqual(expect.any(String))
   expect(retry?.[0]?.clientEventId).toBe(first?.[0]?.clientEventId)
 })
 
 test('an event that failed to send stays in the browser queue until it is accepted', async () => {
-  fetchStub.mockRejectedValueOnce(new Error('offline'))
+  fetchStub.mockRejectedValueOnce(new TypeError('Failed to fetch'))
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
 
@@ -181,10 +191,10 @@ test('429 and 5xx are retried, honouring Retry-After', async () => {
   track('first')
   await vi.advanceTimersByTimeAsync(200)
   await vi.advanceTimersByTimeAsync(4000)
-  expect(sentEvents(fetchStub)).toHaveLength(1)
+  expect(await sentEvents()).toHaveLength(1)
 
   await vi.advanceTimersByTimeAsync(1000)
-  expect(sentEvents(fetchStub)).toHaveLength(2)
+  expect(await sentEvents()).toHaveLength(2)
   expect(storedQueue()).toEqual([])
 })
 
@@ -196,12 +206,12 @@ test('the backoff grows while the instance keeps failing', async () => {
   track('first')
   await vi.advanceTimersByTimeAsync(200)
   await vi.advanceTimersByTimeAsync(1000)
-  expect(sentEvents(fetchStub)).toHaveLength(2)
+  expect(await sentEvents()).toHaveLength(2)
 
   await vi.advanceTimersByTimeAsync(1999)
-  expect(sentEvents(fetchStub)).toHaveLength(2)
+  expect(await sentEvents()).toHaveLength(2)
   await vi.advanceTimersByTimeAsync(1)
-  expect(sentEvents(fetchStub)).toHaveLength(3)
+  expect(await sentEvents()).toHaveLength(3)
 })
 
 test('a 4xx other than 429 drops the batch instead of retrying it', async () => {
@@ -213,7 +223,7 @@ test('a 4xx other than 429 drops the batch instead of retrying it', async () => 
   await vi.advanceTimersByTimeAsync(200)
   await vi.advanceTimersByTimeAsync(60_000)
 
-  expect(sentEvents(fetchStub)).toHaveLength(1)
+  expect(await sentEvents()).toHaveLength(1)
   expect(storedQueue()).toEqual([])
 })
 
@@ -234,7 +244,7 @@ test('events left in the browser queue are sent on the next page load', async ()
   initTracking(CONFIG)
   await vi.advanceTimersByTimeAsync(200)
 
-  expect(sentEvents(fetchStub)).toEqual([
+  expect(await sentEvents()).toEqual([
     [expect.objectContaining({ action: 'left over', clientEventId: 'id-1' })],
   ])
   expect(storedQueue()).toEqual([])
@@ -264,7 +274,7 @@ test('a corrupt stored queue is ignored', async () => {
   track('ok')
   await vi.advanceTimersByTimeAsync(200)
 
-  expect(sentEvents(fetchStub)).toEqual([[expect.objectContaining({ action: 'ok' })]])
+  expect(await sentEvents()).toEqual([[expect.objectContaining({ action: 'ok' })]])
 })
 
 test('calls made before init are queued on window._omq and replayed by init', async () => {
@@ -277,8 +287,8 @@ test('calls made before init are queued on window._omq and replayed by init', as
   initTracking(CONFIG)
   await vi.advanceTimersByTimeAsync(200)
 
-  expect(sentBody(fetchStub, '/collect/identify').subjectId).toBe('s1')
-  expect(sentBody(fetchStub, '/collect/events').events[0]?.action).toBe('early')
+  expect((await sentBody('/collect/identify')).subjectId).toBe('s1')
+  expect((await sentBody('/collect/events')).events[0]?.action).toBe('early')
 })
 
 test('resolves the config from an init command in the async stub queue', async () => {
@@ -292,9 +302,9 @@ test('resolves the config from an init command in the async stub queue', async (
   initTracking()
   await vi.advanceTimersByTimeAsync(200)
 
-  const { url, headers } = firstCall(fetchStub)
+  const { url, collectKey } = firstCall()
   expect(url).toBe('https://q.example/collect/events')
-  expect(headers).toMatchObject({ 'x-collect-key': 'ck_queue' })
+  expect(collectKey).toBe('ck_queue')
 })
 
 test('commands pushed to window._omq after init are processed immediately', async () => {
@@ -308,8 +318,8 @@ test('commands pushed to window._omq after init are processed immediately', asyn
   )
   await vi.advanceTimersByTimeAsync(200)
 
-  expect(sentBody(fetchStub, '/collect/identify').email).toBe('p@example.com')
-  expect(sentBody(fetchStub, '/collect/events').events[0]?.action).toBe('pushed')
+  expect((await sentBody('/collect/identify')).email).toBe('p@example.com')
+  expect((await sentBody('/collect/events')).events[0]?.action).toBe('pushed')
 })
 
 test('init without a usable collect key does not start tracking', async () => {
@@ -330,8 +340,16 @@ test('a second init is ignored', async () => {
   track('x')
   await vi.advanceTimersByTimeAsync(200)
 
-  expect(firstCall(fetchStub).url).toBe('https://collect.example/collect/events')
+  expect(firstCall().url).toBe('https://collect.example/collect/events')
 })
+
+// Settles the promise chains queued so far, letting no timer run.
+async function flushMicrotasks(rounds = 20): Promise<void> {
+  if (rounds > 0) {
+    await Promise.resolve()
+    await flushMicrotasks(rounds - 1)
+  }
+}
 
 test('pagehide flushes pending events without waiting for the timer', async () => {
   const { initTracking, track } = await loadTracker()
@@ -339,11 +357,11 @@ test('pagehide flushes pending events without waiting for the timer', async () =
   track('leaving')
 
   window.dispatchEvent(new Event('pagehide'))
+  // The request starts before any timer may run: a page that is unloading runs none.
+  await flushMicrotasks()
 
   // Trackers loaded by earlier tests keep their pagehide listeners, so look for this event only.
-  const sent = sentEvents(fetchStub)
-    .flat()
-    .filter((e) => e.action === 'leaving')
+  const sent = (await sentEvents()).flat().filter((e) => e.action === 'leaving')
   expect(sent).toHaveLength(1)
 })
 
@@ -355,19 +373,18 @@ test('trackPageView sends a page.view event with the page details', async () => 
   trackPageView(page)
   await vi.advanceTimersByTimeAsync(200)
 
-  const { events } = sentBody(fetchStub, '/collect/events')
+  const { events } = await sentBody('/collect/events')
   expect(events[0]).toMatchObject({ action: 'page.view', properties: page })
 })
 
-test('falls back to a generated visitor id when crypto.randomUUID is unavailable', async () => {
-  vi.stubGlobal('crypto', {})
+test('a new visitor id is a UUID kept in the visitor cookie', async () => {
   const { initTracking, track } = await loadTracker()
   initTracking(CONFIG)
   track('a')
   await vi.advanceTimersByTimeAsync(200)
 
-  const visitorId = sentBody(fetchStub, '/collect/events').events[0]?.visitorId
-  expect(visitorId).toMatch(/^vid_[a-z0-9]+$/)
+  const visitorId = (await sentBody('/collect/events')).events[0]?.visitorId
+  expect(visitorId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
   expect(document.cookie).toContain(`om_vid=${visitorId}`)
 })
 
@@ -378,7 +395,7 @@ test('an empty visitor cookie is replaced by a new id', async () => {
   track('a')
   await vi.advanceTimersByTimeAsync(200)
 
-  expect(sentBody(fetchStub, '/collect/events').events[0]?.visitorId).toMatch(/.+/)
+  expect((await sentBody('/collect/events')).events[0]?.visitorId).toMatch(/.+/)
 })
 
 test('an untyped snippet queue may omit the config base url and the identify payload', async () => {
@@ -389,7 +406,7 @@ test('an untyped snippet queue may omit the config base url and the identify pay
   initTracking()
   await vi.advanceTimersByTimeAsync(200)
 
-  const { url } = firstCall(fetchStub)
-  expect(url).toBe('/collect/identify')
-  expect(sentBody(fetchStub, '/collect/identify')).toMatchObject({ email: null, traits: null })
+  const { url } = firstCall()
+  expect(url).toBe(`${location.origin}/collect/identify`)
+  expect(await sentBody('/collect/identify')).toMatchObject({ email: null, traits: null })
 })

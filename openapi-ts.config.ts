@@ -80,8 +80,8 @@ export default defineConfig([
   surface('site'),
   surface('staff'),
   surface('staffee'),
-  // Collect ingestion contract — types only. The tracker is a tiny standalone
-  // snippet, so it must not pull in the fetch client / zod runtime.
+  // The collect ingestion client of the tracker: types and SDK over ky, whose retry (backoff,
+  // Retry-After) is how the tracker resends a refused batch.
   {
     input: './openapi/collect.openapi.json',
     output: {
@@ -94,6 +94,8 @@ export default defineConfig([
         enums: 'javascript',
         name: '@hey-api/typescript',
       },
+      '@hey-api/client-ky',
+      '@hey-api/sdk',
     ],
   },
 ])

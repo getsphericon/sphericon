@@ -13,8 +13,11 @@ import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { Route as templatesEditRoute } from '../../routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
 import { Route as templatesRoute } from '../../routes/workspaces/$workspaceId/templates/index.tsx'
 import { Route as templatesCreateRoute } from '../../routes/workspaces/$workspaceId/templates/new.tsx'
+import { withPage } from '../../searchSchemas.ts'
 
 export function TemplatesListPage() {
+  const { page } = templatesRoute.useSearch()
+  const pageNavigate = templatesRoute.useNavigate()
   const { t } = useTranslation()
   const { workspaceId } = templatesRoute.useParams()
 
@@ -36,6 +39,10 @@ export function TemplatesListPage() {
       </Group>
 
       <PagedTable
+        page={page}
+        onPageChange={(next) =>
+          void pageNavigate({ search: withPage(next), viewTransition: false })
+        }
         options={(query) => siteTemplatesListOptions({ path: { workspaceId }, query })}
         loadErrorTitle={t(($) => $.alerts.templateLoadErrorTitle)}
         noRecordsText={t(($) => $.templates.noRecords)}
