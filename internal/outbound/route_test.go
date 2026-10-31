@@ -105,6 +105,6 @@ func TestTheProviderLimitRunsOnTheInjectedClock(t *testing.T) {
 // standing lifts by itself, and the sends wait for it. A route with no Integration that can send is
 // refused.
 func TestAStoppedProviderHoldsTheRouteButArmingStillPasses(t *testing.T) {
-	assert.NoError(t, outbound.Route{Hold: outbound.HoldProviderStopped}.Armable())
+	require.NoError(t, outbound.Route{Hold: outbound.HoldProviderStopped}.Armable())
 	assert.ErrorIs(t, outbound.Route{Hold: outbound.HoldNoIntegration}.Armable(), outbound.ErrRouteHeld)
 }
