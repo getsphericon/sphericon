@@ -428,6 +428,7 @@ export default interface Resources {
       "segmentAll": "All contacts",
       "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
+      "sendCapWarning": "This audience of {{audience}} is larger than the Send cap of {{perDay}} per 24 hours the platform set on this Workspace. It will go out over about {{count}} day; you can still send it." | "This audience of {{audience}} is larger than the Send cap of {{perDay}} per 24 hours the platform set on this Workspace. It will go out over about {{count}} days; you can still send it.",
       "sendNow": "Send now",
       "stats": {
         "bounced": "Bounced",

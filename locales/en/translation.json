@@ -432,6 +432,8 @@
     "segmentAll": "All contacts",
     "segmentLabel": "Segment",
     "segmentNote": "Unsubscribed contacts are always excluded.",
+    "sendCapWarning_one": "This audience of {{audience}} is larger than the Send cap of {{perDay}} per 24 hours the platform set on this Workspace. It will go out over about {{count}} day; you can still send it.",
+    "sendCapWarning_other": "This audience of {{audience}} is larger than the Send cap of {{perDay}} per 24 hours the platform set on this Workspace. It will go out over about {{count}} days; you can still send it.",
     "sendNow": "Send now",
     "stats": {
       "bounced": "Bounced",

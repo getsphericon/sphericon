@@ -1,11 +1,18 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
 import {
   handleSiteBroadcastsSchedule,
   handleSiteBroadcastsTestSend,
+  handleSiteWorkspacesList,
+  handleSiteSegmentsGet,
+  handleSiteSegmentsPreview,
+  handleSiteBroadcastsSend,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteBroadcastResource,
+  SiteWorkspaceResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { problem } from '../../test/problem.ts'
@@ -13,6 +20,27 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { DeliveryBlock } from './DeliveryBlock.tsx'
+
+// The Workspace the page belongs to, with no Send cap unless a test gives it one.
+const WORKSPACE: SiteWorkspaceResource = {
+  id: 'TestWs01',
+  name: 'Acme',
+  collectKey: 'omck_test_key',
+  postalAddress: '',
+  timezone: 'UTC',
+  accountLinkAvailable: false,
+  permissions: [],
+  mcpUrl: 'https://sphericon.test',
+  trackerUrl: 'https://t.sphericon.test',
+  holds: [],
+  sendCap: null,
+  role: 'owner',
+  createdAt: '2026-01-01T00:00:00Z',
+}
+
+beforeEach(() => {
+  worker.use(handleSiteWorkspacesList({ body: [WORKSPACE] }))
+})
 
 const MOUNT = routeMount(broadcastsEditRoute, { workspaceId: 'TestWs01', broadcastId: '7' })
 const SEND_FAILED = 'Failed to send broadcast'
@@ -114,4 +142,81 @@ test('a rejected test send shows the error toast', async () => {
   await screen.getByRole('button', { name: 'Send test' }).click()
 
   await expect.element(screen.getByText(SEND_FAILED)).toBeInTheDocument()
+})
+
+const capped = (perDay: number) => ({ ...WORKSPACE, sendCap: { perDay, sentLast24h: 0 } })
+
+test('warns before sending an audience larger than the Send cap, in days, and still sends', async () => {
+  const previewed: unknown[] = []
+  const condition = { kind: 'group' as const, combinator: 'and' as const, rules: [] }
+  worker.use(
+    handleSiteWorkspacesList({ body: [capped(1000)] }),
+    handleSiteSegmentsGet({
+      body: {
+        id: '3',
+        name: 'Active',
+        condition,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+    }),
+    handleSiteSegmentsPreview(async ({ request }) => {
+      previewed.push(await request.json())
+      return HttpResponse.json({ count: 2500 })
+    }),
+    handleSiteBroadcastsSend({ body: { ...draft, status: 'sending' } }),
+  )
+  const { screen } = await renderWithRouter(
+    <DeliveryBlock broadcast={{ ...draft, segmentId: '3' }} />,
+    MOUNT,
+  )
+
+  await expect
+    .element(
+      screen.getByText(/audience of 2,500 is larger than the Send cap of 1,000 per 24 hours/),
+    )
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/over about 3 days/)).toBeInTheDocument()
+  expect(previewed).toEqual([{ condition }])
+  await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeEnabled()
+})
+
+test('previews the whole list for a broadcast without a segment', async () => {
+  const previewed: unknown[] = []
+  worker.use(
+    handleSiteWorkspacesList({ body: [capped(100)] }),
+    handleSiteSegmentsPreview(async ({ request }) => {
+      previewed.push(await request.json())
+      return HttpResponse.json({ count: 150 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<DeliveryBlock broadcast={draft} />, MOUNT)
+
+  await expect.element(screen.getByText(/over about 2 days/)).toBeInTheDocument()
+  expect(previewed).toEqual([{}])
+})
+
+test('says nothing when the audience fits the Send cap', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [capped(1000)] }),
+    handleSiteSegmentsPreview({ body: { count: 1000 } }),
+  )
+  const { screen } = await renderWithRouter(<DeliveryBlock broadcast={draft} />, MOUNT)
+
+  await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeInTheDocument()
+  await expect.element(screen.getByText(/larger than the Send cap/)).not.toBeInTheDocument()
+})
+
+test('a Workspace without a Send cap previews nothing', async () => {
+  const previewed: unknown[] = []
+  worker.use(
+    handleSiteSegmentsPreview(async ({ request }) => {
+      previewed.push(await request.json())
+      return HttpResponse.json({ count: 10 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<DeliveryBlock broadcast={draft} />, MOUNT)
+
+  await expect.element(screen.getByRole('button', { name: 'Send now' })).toBeInTheDocument()
+  expect(previewed).toEqual([])
 })

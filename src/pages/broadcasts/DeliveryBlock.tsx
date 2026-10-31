@@ -14,6 +14,7 @@ import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { SendCapWarning } from './SendCapWarning.tsx'
 
 // Send now, schedule and test send for a loaded Broadcast. Sending and scheduling are only
 // possible for drafts; test send works for any status.
@@ -61,6 +62,7 @@ export function DeliveryBlock({ broadcast }: { broadcast: SiteBroadcastResource 
       <Text size="sm" c="dimmed">
         {t(($) => $.broadcasts.deliveryHint)}
       </Text>
+      {isDraft && <SendCapWarning broadcast={broadcast} />}
       <Group align="flex-end">
         <Button
           color="teal"

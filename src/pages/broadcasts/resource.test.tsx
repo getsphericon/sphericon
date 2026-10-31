@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 
 import {
   siteBroadcastsGetOptions,
@@ -16,8 +16,12 @@ import {
   handleSiteSegmentsList,
   handleSiteSendingDomainsList,
   handleSiteTemplatesList,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteIntegrationResource,
+  SiteWorkspaceResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { problem } from '../../test/problem.ts'
@@ -25,6 +29,27 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { BroadcastCreatePage, BroadcastEditPage } from './resource.tsx'
+
+// The Workspace the page belongs to, with no Send cap unless a test gives it one.
+const WORKSPACE: SiteWorkspaceResource = {
+  id: 'TestWs01',
+  name: 'Acme',
+  collectKey: 'omck_test_key',
+  postalAddress: '',
+  timezone: 'UTC',
+  accountLinkAvailable: false,
+  permissions: [],
+  mcpUrl: 'https://sphericon.test',
+  trackerUrl: 'https://t.sphericon.test',
+  holds: [],
+  sendCap: null,
+  role: 'owner',
+  createdAt: '2026-01-01T00:00:00Z',
+}
+
+beforeEach(() => {
+  worker.use(handleSiteWorkspacesList({ body: [WORKSPACE] }))
+})
 
 const CREATE_ROUTE = routeMount(broadcastsCreateRoute, { workspaceId: 'TestWs01' })
 
