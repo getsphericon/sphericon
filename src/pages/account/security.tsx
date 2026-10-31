@@ -401,7 +401,7 @@ export function SecurityPage() {
   const [codes, setCodes] = useState<string[] | null>(null)
 
   return (
-    <Stack maw={520}>
+    <Stack maw={420}>
       <Title order={2}>{t(($) => $.security.title)}</Title>
       <Group justify="space-between">
         <Title order={4}>{t(($) => $.security.twoFactorTitle)}</Title>
