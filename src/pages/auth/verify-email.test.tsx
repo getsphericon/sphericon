@@ -1,6 +1,6 @@
 import { HttpResponse } from 'msw'
 import { StrictMode } from 'react'
-import { expect, test, vi } from 'vitest'
+import { expect, test } from 'vitest'
 
 import { handleSiteAuthVerifyEmail } from '../../generated/site/msw.gen.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -40,13 +40,13 @@ test('sends the token alone, once under StrictMode too, and opens the workspace 
     MOUNT,
   )
 
-  await vi.waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith({
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith({
       to: overviewRoute.to,
       params: { workspaceId: LANDING },
       replace: true,
-    }),
-  )
+    })
   expect(bodies).toEqual([{ token: 'tok-v' }])
   await expect.element(screen.getByRole('button', { name: 'Set password' })).not.toBeInTheDocument()
 })
@@ -67,13 +67,13 @@ test('asks for a password when the link is not in the Sign-up browser and resend
 
   await fillAndSubmit(screen, 's3cret-pass')
 
-  await vi.waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith({
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith({
       to: overviewRoute.to,
       params: { workspaceId: LANDING },
       replace: true,
-    }),
-  )
+    })
   expect(bodies).toEqual([{ token: 'tok-v' }, { token: 'tok-v', password: 's3cret-pass' }])
 })
 
@@ -139,12 +139,12 @@ test('offers a retry that sends the token again after a server failure', async (
 
   await screen.getByRole('button', { name: 'Try again' }).click()
 
-  await vi.waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith({
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith({
       to: overviewRoute.to,
       params: { workspaceId: LANDING },
       replace: true,
-    }),
-  )
+    })
   expect(calls).toBe(2)
 })

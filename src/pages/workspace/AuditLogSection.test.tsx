@@ -103,16 +103,16 @@ test('sends the applied filter to the list and to the export', async () => {
     />,
   )
 
-  await vi.waitFor(() =>
-    expect(
+  await expect
+    .poll(() =>
       queries.some((q) => q.includes('targetType=integration') && q.includes('targetId=5')),
-    ).toBe(true),
-  )
+    )
+    .toBe(true)
   expect(queries.some((q) => q.includes('ip=10.0.0.1'))).toBe(true)
   await expect.element(screen.getByLabelText('Target type')).toHaveValue('integration')
 
   await screen.getByRole('button', { name: 'Export CSV' }).click()
-  await vi.waitFor(() => expect(exported).toContain('targetType=integration'))
+  await expect.poll(() => exported).toContain('targetType=integration')
   expect(exported).toContain('targetId=5')
 })
 
@@ -263,7 +263,7 @@ test('exports the log as CSV through the generated client', async () => {
   )
 
   await screen.getByRole('button', { name: 'Export CSV' }).click()
-  await vi.waitFor(() => expect(exported).toBe(1))
+  await expect.poll(() => exported).toBe(1)
 })
 
 test('shows the retention window and saves a new one', async () => {
@@ -288,7 +288,7 @@ test('shows the retention window and saves a new one', async () => {
   await expect.element(input).toHaveValue('90')
   await input.fill('30')
   await screen.getByRole('button', { name: 'Save retention' }).click()
-  await vi.waitFor(() => expect(saved).toEqual({ retentionDays: 30 }))
+  await expect.poll(() => saved).toEqual({ retentionDays: 30 })
 })
 
 test('an empty retention window keeps the log forever', async () => {
@@ -311,7 +311,7 @@ test('an empty retention window keeps the log forever', async () => {
 
   await screen.getByLabelText('Keep the log for (days)').fill('')
   await screen.getByRole('button', { name: 'Save retention' }).click()
-  await vi.waitFor(() => expect(saved).toEqual({ retentionDays: null }))
+  await expect.poll(() => saved).toEqual({ retentionDays: null })
 })
 
 test('a failed retention save is reported', async () => {

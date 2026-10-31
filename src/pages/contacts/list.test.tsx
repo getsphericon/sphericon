@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { expect, test, vi } from 'vitest'
+import { expect, test } from 'vitest'
 
 import { handleSiteContactsList, handleSiteTagsList } from '../../generated/site/msw.gen.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
@@ -106,11 +106,9 @@ test('typing in the search field puts the email in the URL search', async () => 
   const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
   await screen.getByRole('textbox', { name: 'Search by email' }).fill('bob')
 
-  await vi.waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith(
-      expect.objectContaining({ search: { email: 'bob' }, replace: true }),
-    ),
-  )
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith(expect.objectContaining({ search: { email: 'bob' }, replace: true }))
 })
 
 test('the email in the URL search filters the request and fills the field', async () => {
