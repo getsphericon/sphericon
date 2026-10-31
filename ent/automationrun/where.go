@@ -90,6 +90,11 @@ func BeganAt(v time.Time) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldBeganAt, v))
 }
 
+// EventAction applies equality check predicate on the "event_action" field. It's identical to EventActionEQ.
+func EventAction(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldEventAction, v))
+}
+
 // CurrentStep applies equality check predicate on the "current_step" field. It's identical to CurrentStepEQ.
 func CurrentStep(v int) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStep, v))
@@ -328,6 +333,91 @@ func BeganAtLT(v time.Time) predicate.AutomationRun {
 // BeganAtLTE applies the LTE predicate on the "began_at" field.
 func BeganAtLTE(v time.Time) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldLTE(FieldBeganAt, v))
+}
+
+// EventActionEQ applies the EQ predicate on the "event_action" field.
+func EventActionEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldEventAction, v))
+}
+
+// EventActionNEQ applies the NEQ predicate on the "event_action" field.
+func EventActionNEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldEventAction, v))
+}
+
+// EventActionIn applies the In predicate on the "event_action" field.
+func EventActionIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldEventAction, vs...))
+}
+
+// EventActionNotIn applies the NotIn predicate on the "event_action" field.
+func EventActionNotIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldEventAction, vs...))
+}
+
+// EventActionGT applies the GT predicate on the "event_action" field.
+func EventActionGT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldEventAction, v))
+}
+
+// EventActionGTE applies the GTE predicate on the "event_action" field.
+func EventActionGTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldEventAction, v))
+}
+
+// EventActionLT applies the LT predicate on the "event_action" field.
+func EventActionLT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldEventAction, v))
+}
+
+// EventActionLTE applies the LTE predicate on the "event_action" field.
+func EventActionLTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldEventAction, v))
+}
+
+// EventActionContains applies the Contains predicate on the "event_action" field.
+func EventActionContains(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContains(FieldEventAction, v))
+}
+
+// EventActionHasPrefix applies the HasPrefix predicate on the "event_action" field.
+func EventActionHasPrefix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasPrefix(FieldEventAction, v))
+}
+
+// EventActionHasSuffix applies the HasSuffix predicate on the "event_action" field.
+func EventActionHasSuffix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasSuffix(FieldEventAction, v))
+}
+
+// EventActionIsNil applies the IsNil predicate on the "event_action" field.
+func EventActionIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldEventAction))
+}
+
+// EventActionNotNil applies the NotNil predicate on the "event_action" field.
+func EventActionNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldEventAction))
+}
+
+// EventActionEqualFold applies the EqualFold predicate on the "event_action" field.
+func EventActionEqualFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEqualFold(FieldEventAction, v))
+}
+
+// EventActionContainsFold applies the ContainsFold predicate on the "event_action" field.
+func EventActionContainsFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContainsFold(FieldEventAction, v))
+}
+
+// EventPropertiesIsNil applies the IsNil predicate on the "event_properties" field.
+func EventPropertiesIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldEventProperties))
+}
+
+// EventPropertiesNotNil applies the NotNil predicate on the "event_properties" field.
+func EventPropertiesNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldEventProperties))
 }
 
 // CurrentStepEQ applies the EQ predicate on the "current_step" field.

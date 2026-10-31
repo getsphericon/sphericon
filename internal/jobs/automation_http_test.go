@@ -120,14 +120,33 @@ func newHTTPStepHarness(t *testing.T, body string, signed bool) *httpStepHarness
 // the Enrollment on a job of its own.
 func (h *httpStepHarness) enroll(t *testing.T, contactID int64) (runID int64) {
 	t.Helper()
-	ctx := context.Background()
-	runID, enrolled, err := automations.Enroll(ctx, h.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, contactID)
+	runID, enrolled, err := automations.Enroll(context.Background(), h.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, contactID)
 	require.NoError(t, err)
 	require.True(t, enrolled)
+	h.reachHTTPStep(t, runID)
+	return runID
+}
+
+// enrollOn enrolls the Contact on the stored Event (its trigger, http_demo), as the trigger job
+// does, and runs the step that reaches the HTTP step.
+func (h *httpStepHarness) enrollOn(t *testing.T, contactID int64, ev automations.Event) (runID int64) {
+	t.Helper()
+	ctx := context.Background()
+	acme := h.DB.Scoped(fixtures.AcmeID)
+	origin, err := automations.OriginOf(ctx, acme, ev)
+	require.NoError(t, err)
+	runID, enrolled, err := automations.EnrollOnTrigger(ctx, acme, fixtures.AutomationNotifySlackID, contactID, origin)
+	require.NoError(t, err)
+	require.True(t, enrolled)
+	h.reachHTTPStep(t, runID)
+	return runID
+}
+
+func (h *httpStepHarness) reachHTTPStep(t *testing.T, runID int64) {
+	t.Helper()
 	queueStep(t, h.TestEnv, runID)
 	require.True(t, h.RunNextStep(t, h.stepper()))
 	require.Equal(t, []map[string]any{{"run_id": float64(runID), "step": float64(0)}}, h.JobsOf(t, stepping.RunHTTPStepArgs{}.Kind()))
-	return runID
 }
 
 func (h *httpStepHarness) stepper() *stepping.Module {
@@ -177,6 +196,21 @@ func TestHTTPStepContinuesAfterA2xxSigned(t *testing.T) {
 	assert.Equal(t, automationrun.StatusActive, r.status)
 	assert.Equal(t, 1, r.step, "the Enrollment moved past the HTTP step")
 	assert.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, h.TestEnv), "and its next step is queued")
+}
+
+// An HTTP step renders the Event that started the Enrollment as a Rule's http Action does (#752):
+// `event.action` and `event.properties`, JSON-escaped, and a property the Event lacks empty.
+func TestHTTPStepRendersTheTriggeringEventsProperties(t *testing.T) {
+	h := newHTTPStepHarness(t,
+		`{"action":"{{ event.action }}","amount":"{{ event.properties.amount }}","plan":"{{ event.properties.plan }}","missing":"{{ event.properties.missing }}"}`,
+		false)
+	runID := h.enrollOn(t, fixtures.ContactPaymentFailedID, storedEventOf(t, h.TestEnv, fixtures.EventHTTPDemoID))
+
+	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
+
+	calls := h.rcv.received()
+	require.Len(t, calls, 1)
+	assert.JSONEq(t, `{"action":"http_demo","amount":"€49","plan":"<b>Pro</b> \"annual\"","missing":""}`, calls[0].body)
 }
 
 func TestHTTPStepWithoutASecretIsUnsigned(t *testing.T) {

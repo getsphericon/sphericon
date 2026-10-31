@@ -101,10 +101,7 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 		}
 	}
 	// A missing property renders as it does in an HTTP step: empty.
-	bindings := outbound.Bindings(c, map[string]any{"event": map[string]any{
-		"action":     f.Action,
-		"properties": props,
-	}})
+	bindings := outbound.Bindings(c, outbound.EventVariables(f.Action, props))
 	body, err := httpcall.RenderBody(action.Body, bindings)
 	if err != nil {
 		// A render that is not valid JSON would fail the same way on every attempt.

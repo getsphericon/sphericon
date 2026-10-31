@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -97,17 +98,17 @@ func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 
 	_, err := archiveAutomation(c, id)
 	require.NoError(t, err)
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0, time.Now()))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
 	assert.Empty(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), "an archived Automation starts no Enrollment")
 
 	_, err = c.SiteAutomationsUnarchive(ctx, siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0, time.Now()))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
 	assert.Empty(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), "the unarchived Automation is inactive")
 
 	_, err = c.SiteAutomationsPublish(ctx, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, "hold_demo", 0, time.Now()))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, automations.Event{Action: "hold_demo", OccurredAt: time.Now()}, 0))
 	assert.Len(t, env.JobsOf(t, stepping.RunStepArgs{}.Kind()), 1, "the published Automation enrolls the Contact")
 }
 

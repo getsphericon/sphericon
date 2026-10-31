@@ -287,7 +287,7 @@
     },
     "goalEventHint": "This event ends a contact's enrollment as having reached the goal. Leave empty for none.",
     "goalEventLabel": "Goal event",
-    "httpBodyHint": "JSON. Merge tags like {{ first_name }} are escaped for you, so write them inside quotes.",
+    "httpBodyHint": "JSON. It sees the contact's fields and event.action and event.properties of the event that started the enrollment. Merge tags like {{ first_name }} are escaped for you, so write them inside quotes: the body must be valid JSON when they are empty.",
     "httpBodyLabel": "JSON body",
     "httpHeadersHint": "One per line: Name: value. Leave a saved header's value empty to keep it.",
     "httpHeadersLabel": "Headers (up to 5)",
@@ -907,6 +907,10 @@
     "verifyRequiredTitle": "Verify your email first"
   },
   "messageEditor": {
+    "eventPropertyHint": "A property of the event that started the enrollment. One the event lacks renders empty.",
+    "eventPropertyInsert": "Insert",
+    "eventPropertyName": "Property name",
+    "insertEventProperty": "Insert event property",
     "insertVariable": "Insert variable",
     "label": "Message",
     "placeholder": "Write your message, or type / to add a heading, list, button or image",

@@ -4958,11 +4958,13 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
-# Carries the pricing url too, but weighs more than a Rule is shown (events.RuleProperties).
+# Carries the pricing url too, but weighs more than a Rule is shown or an Enrollment copies
+# (events.BoundedProperties).
 - id: 9105 # fixture: EventRuleUrlOversized
   contact_id: 100
   action: rule_url
   properties: '{"url":"https://x.test/pricing","pad":"{{repeat "x" 33000}}"}'
+  source_id: 'fixture:rule-url-oversized'
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
@@ -5209,11 +5211,34 @@
   created_at: '{{daysAgo 1}}'
 # The Event RuleEnrollRecovery fired on, 4 days ago, a day before the Contact's payment_succeeded: the
 # Enrollment the Rule makes begins then, so that payment ends it as it is made (#751).
+# Its properties are what the Enrollment copies and binds as `event` (#752).
 - id: 20418 # fixture: EventRecoveryRuleTrigger
   contact_id: 132
   email: paid.early@codebasics.dev
   action: rule_enroll_recovery
+  properties: '{"amount":"€19","plan":"Starter"}'
   source_id: 'fixture:recovery-rule-trigger'
   workspace_id: 1
   occurred_at: '{{daysAgo 4}}'
   created_at: '{{daysAgo 4}}'
+# The triggering Events of ContactPaymentFailed (#752): an Enrollment either starts copies its
+# properties, which the steps render as `event.properties`. The plan carries markup and quotes,
+# which an email escapes as HTML and an HTTP step as JSON.
+- id: 20419 # fixture: EventPaymentFailed
+  contact_id: 133
+  email: payment.failed@codebasics.dev
+  action: payment_failed
+  properties: '{"amount":"€49","plan":"<b>Pro</b> \"annual\""}'
+  source_id: 'fixture:payment-failed'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 20420 # fixture: EventHTTPDemo
+  contact_id: 133
+  email: payment.failed@codebasics.dev
+  action: http_demo
+  properties: '{"amount":"€49","plan":"<b>Pro</b> \"annual\""}'
+  source_id: 'fixture:http-demo'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'

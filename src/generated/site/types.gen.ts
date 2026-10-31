@@ -1603,7 +1603,7 @@ export type SiteAutomationStep = {
    */
   subject?: string;
   /**
-   * Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings only, strings JSON-escaped, up to 64 KiB, must render to valid JSON)
+   * Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it
    */
   body?: string;
   /**
@@ -2895,7 +2895,7 @@ export type SiteDomainJoinResource = {
  */
 export type SiteDryRunHttpStepInput = {
   /**
-   * The Liquid JSON body to render
+   * The Liquid JSON body to render. No Enrollment stands behind a dry run, so `event` is empty
    */
   body: string;
   /**

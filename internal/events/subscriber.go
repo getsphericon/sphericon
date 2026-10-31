@@ -316,20 +316,23 @@ func AutomationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 	}
 }
 
-// RulePropertiesBound is the most JSON an Event's properties may weigh to be shown to a Rule.
-// Ingest already refuses larger customer events; a larger one reaching a Rule anyway has no
-// properties, for the Condition and for the Firing's Actions alike, so a Rule never decides on a
-// value its Actions could not template and a job row does not grow without limit.
-const RulePropertiesBound = 32 << 10
+// PropertiesBound is the most JSON an Event's properties may weigh to be shown to a Rule or copied
+// onto an Enrollment (#752): the per-event limit ingest applies by default, so ingest already refuses
+// larger customer events. A larger one reaching a Rule or an Enrollment anyway has no properties,
+// for the Condition and for the Firing's Actions alike, and for every step of the Enrollment, so a
+// Rule never decides on a value its Actions could not template, and neither a job row nor an
+// Enrollment's row grows without limit.
+const PropertiesBound = 32 << 10
 
-// RuleProperties is the view of an Event's properties that a Rule evaluates and a Firing keeps:
-// the properties themselves, or nil when they weigh more than RulePropertiesBound. Every path
-// that shows properties to a Rule (the consumer, Evaluate, a dry run) goes through it.
-func RuleProperties(props map[string]any) map[string]any {
+// BoundedProperties is the view of an Event's properties that a Rule evaluates, a Firing keeps and
+// an Enrollment copies: the properties themselves, or nil when they weigh more than
+// PropertiesBound. Every path that shows properties to a Rule (the consumer, Evaluate, a dry run)
+// or copies them onto an Enrollment goes through it.
+func BoundedProperties(props map[string]any) map[string]any {
 	if len(props) == 0 {
 		return props
 	}
-	if encoded, err := json.Marshal(props); err != nil || len(encoded) > RulePropertiesBound {
+	if encoded, err := json.Marshal(props); err != nil || len(encoded) > PropertiesBound {
 		return nil
 	}
 	return props
@@ -374,10 +377,6 @@ func RulesConsumer(client *ent.Client, rules RuleEvaluator) message.NoPublishHan
 		if err := Persist(msg.Context(), client, env); err != nil {
 			return err
 		}
-		sourceID := env.DedupKey
-		if sourceID == "" {
-			sourceID = env.ID
-		}
 		recorded := env.RecordedAt
 		if recorded.IsZero() {
 			recorded = env.OccurredAt
@@ -386,9 +385,9 @@ func RulesConsumer(client *ent.Client, rules RuleEvaluator) message.NoPublishHan
 			WorkspaceID: env.WorkspaceID,
 			ContactID:   p.ContactID,
 			Action:      p.Action,
-			SourceID:    sourceID,
+			SourceID:    env.SourceID(),
 			RecordedAt:  recorded,
-			Properties:  RuleProperties(p.Properties),
+			Properties:  BoundedProperties(p.Properties),
 		})
 	}
 }
@@ -454,14 +453,10 @@ func Persist(ctx context.Context, client *ent.Client, env Envelope) error {
 		SetProperties(p.Properties).
 		SetOccurredAt(env.OccurredAt).
 		SetBackfill(IsBackfill(ev))
-	// Dedup on the DedupKey when the event carries a natural upstream id, else the
-	// envelope ULID. Empty ⇒ leave source_id NULL (distinct under the unique index)
-	// rather than "", so a missing id never collides and false-dedupes a distinct event.
-	sourceID := env.ID
-	if env.DedupKey != "" {
-		sourceID = env.DedupKey
-	}
-	if sourceID != "" {
+	// Dedup on the source id (Envelope.SourceID). Empty ⇒ leave source_id NULL (distinct under
+	// the unique index) rather than "", so a missing id never collides and false-dedupes a
+	// distinct event.
+	if sourceID := env.SourceID(); sourceID != "" {
 		create.SetSourceID(sourceID)
 	}
 	// The authoritative Contact link, resolved at ingest. 0 ⇒ anonymous (leave null).

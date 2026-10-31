@@ -34,6 +34,7 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import type { EditorTheme } from '../utils/brandTheme.ts'
+import { eventPropertyTag } from '../utils/mergeTags.ts'
 import { docCodec } from '../utils/messageDoc.ts'
 import type { MessageDoc } from '../utils/messageDoc.ts'
 
@@ -42,6 +43,8 @@ export interface VisualEditorProps {
   initial: MessageDoc | null
   onChange: (doc: MessageDoc) => void
   variables: readonly string[]
+  // Offers a property of the Event an Automation's Enrollment began on, by name (#752).
+  eventProperties: boolean
   // The editor's theme, read once when the editor mounts: it writes the theme into a document that
   // has none, so it is the Brand kit's palette for a message that is being authored.
   theme: EditorTheme
@@ -242,11 +245,20 @@ function EditorToolbar({ editor }: { editor: Editor }) {
 
 // The only module that imports the editor, so MessageEditor loads it lazily and a page that
 // edits no message never pays for it.
-export function VisualEditor({ initial, onChange, variables, theme }: VisualEditorProps) {
+export function VisualEditor({
+  initial,
+  onChange,
+  variables,
+  eventProperties,
+  theme,
+}: VisualEditorProps) {
   const { t } = useTranslation()
   const editor = useRef<EmailEditorRef>(null)
   const [ready, setReady] = useState(false)
   const [tiptap, setTiptap] = useState<Editor | null>(null)
+  const [propertyOpen, setPropertyOpen] = useState(false)
+  const [property, setProperty] = useState('')
+  const propertyTag = eventPropertyTag(property)
 
   // Opening the menu moves the editor's selection to the start of the message, so the caret is
   // remembered while the editor has focus and the tag goes there.
@@ -260,6 +272,15 @@ export function VisualEditor({ initial, onChange, variables, theme }: VisualEdit
     } else {
       current?.chain().insertContentAt(caret.current, tag).focus().run()
     }
+  }
+
+  const insertProperty = () => {
+    if (propertyTag === null) {
+      return
+    }
+    insertVariable(propertyTag)
+    setProperty('')
+    setPropertyOpen(false)
   }
 
   return (
@@ -279,6 +300,41 @@ export function VisualEditor({ initial, onChange, variables, theme }: VisualEdit
             ))}
           </Menu.Dropdown>
         </Menu>
+        {eventProperties ? (
+          <Popover opened={propertyOpen} onChange={setPropertyOpen} withArrow>
+            <Popover.Target>
+              <Button
+                variant="default"
+                size="xs"
+                disabled={!ready}
+                onClick={() => setPropertyOpen((open) => !open)}
+              >
+                {t(($) => $.messageEditor.insertEventProperty)}
+              </Button>
+            </Popover.Target>
+            <Popover.Dropdown>
+              <Group gap="xs" align="flex-end">
+                <TextInput
+                  size="xs"
+                  label={t(($) => $.messageEditor.eventPropertyName)}
+                  description={t(($) => $.messageEditor.eventPropertyHint)}
+                  placeholder="amount"
+                  value={property}
+                  onChange={(event) => setProperty(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      insertProperty()
+                    }
+                  }}
+                />
+                <Button size="xs" disabled={propertyTag === null} onClick={insertProperty}>
+                  {t(($) => $.messageEditor.eventPropertyInsert)}
+                </Button>
+              </Group>
+            </Popover.Dropdown>
+          </Popover>
+        ) : null}
       </Group>
       {tiptap ? <EditorToolbar editor={tiptap} /> : null}
       {/* The sheet is white and its text black in both app schemes, on purpose: it is a preview of the

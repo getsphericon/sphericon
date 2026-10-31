@@ -501,6 +501,10 @@ const (
 	ContactPaidBeforeEnrolledEmail = "paid.early@codebasics.dev"
 	// ContactPaidBeforeEnrolledID is from fixtures/contacts.
 	ContactPaidBeforeEnrolledID = 132
+	// ContactPaymentFailedEmail is from fixtures/contacts.
+	ContactPaymentFailedEmail = "payment.failed@codebasics.dev"
+	// ContactPaymentFailedID is from fixtures/contacts.
+	ContactPaymentFailedID = 133
 	// ContactUnsubscribedEverythingEmail is from fixtures/contacts.
 	ContactUnsubscribedEverythingEmail = "scarlett.sql@codebasics.dev"
 	// ContactUnsubscribedEverythingID is from fixtures/contacts.
@@ -751,6 +755,12 @@ const (
 	EventGothamUnsubscribedOnThe8thEmail = "e@gotham.test"
 	// EventGothamUnsubscribedOnThe8thID is from fixtures/events.
 	EventGothamUnsubscribedOnThe8thID = 9304
+	// EventHTTPDemoAction is from fixtures/events.
+	EventHTTPDemoAction = "http_demo"
+	// EventHTTPDemoEmail is from fixtures/events.
+	EventHTTPDemoEmail = "payment.failed@codebasics.dev"
+	// EventHTTPDemoID is from fixtures/events.
+	EventHTTPDemoID = 20420
 	// EventLinkClickBroadcastPricingAction is from fixtures/events.
 	EventLinkClickBroadcastPricingAction = "email.clicked"
 	// EventLinkClickBroadcastPricingID is from fixtures/events.
@@ -819,6 +829,12 @@ const (
 	EventOldUnsubscribedEmail = "old305@example.com"
 	// EventOldUnsubscribedID is from fixtures/events.
 	EventOldUnsubscribedID = 305
+	// EventPaymentFailedAction is from fixtures/events.
+	EventPaymentFailedAction = "payment_failed"
+	// EventPaymentFailedEmail is from fixtures/events.
+	EventPaymentFailedEmail = "payment.failed@codebasics.dev"
+	// EventPaymentFailedID is from fixtures/events.
+	EventPaymentFailedID = 20419
 	// EventRecentAnalyticalAction is from fixtures/events.
 	EventRecentAnalyticalAction = "page_view"
 	// EventRecentAnalyticalEmail is from fixtures/events.

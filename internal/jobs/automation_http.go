@@ -80,7 +80,7 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[stepping.Ru
 	if err != nil {
 		return err
 	}
-	body, err := automations.RenderBody(step.Body, c)
+	body, err := automations.RenderBody(step.Body, c, run)
 	if err != nil {
 		// A render that is not valid JSON would fail the same way on every attempt.
 		return w.fail(ctx, run, automations.Failure{Kind: automationrun.FailureKindInvalidBody}, river.JobCancel(err))

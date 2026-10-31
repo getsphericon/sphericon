@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -37,6 +38,10 @@ type AutomationRun struct {
 	Status automationrun.Status `json:"status,omitempty"`
 	// BeganAt holds the value of the "began_at" field.
 	BeganAt time.Time `json:"began_at,omitempty"`
+	// EventAction holds the value of the "event_action" field.
+	EventAction *string `json:"event_action,omitempty"`
+	// EventProperties holds the value of the "event_properties" field.
+	EventProperties map[string]interface{} `json:"event_properties,omitempty"`
 	// CurrentStep holds the value of the "current_step" field.
 	CurrentStep int `json:"current_step,omitempty"`
 	// ResumeAt holds the value of the "resume_at" field.
@@ -117,9 +122,11 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case automationrun.FieldEventProperties:
+			values[i] = new([]byte)
 		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldCurrentStep, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
-		case automationrun.FieldStatus, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
+		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
 		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldResumeAt:
 			values[i] = new(sql.NullTime)
@@ -191,6 +198,21 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field began_at", values[i])
 			} else if value.Valid {
 				_m.BeganAt = value.Time
+			}
+		case automationrun.FieldEventAction:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field event_action", values[i])
+			} else if value.Valid {
+				_m.EventAction = new(string)
+				*_m.EventAction = value.String
+			}
+		case automationrun.FieldEventProperties:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field event_properties", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.EventProperties); err != nil {
+					return fmt.Errorf("unmarshal field event_properties: %w", err)
+				}
 			}
 		case automationrun.FieldCurrentStep:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -305,6 +327,14 @@ func (_m *AutomationRun) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("began_at=")
 	builder.WriteString(_m.BeganAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	if v := _m.EventAction; v != nil {
+		builder.WriteString("event_action=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("event_properties=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EventProperties))
 	builder.WriteString(", ")
 	builder.WriteString("current_step=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CurrentStep))

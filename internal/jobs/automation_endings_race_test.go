@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/cleanup"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -79,7 +80,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 
 	enrolled := make(chan error, 1)
 	go func() {
-		enrolled <- stepping.OnEvent(ctx, enrolling, e.scoped, fixtures.ContactAliceID, "payment_failed", 0, failed)
+		enrolled <- stepping.OnEvent(ctx, enrolling, e.scoped, fixtures.ContactAliceID, automations.Event{Action: "payment_failed", OccurredAt: failed}, 0)
 	}()
 	<-hold.reached
 	stored(t, e, &events.CollectedEvent{
@@ -88,7 +89,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 	ending := e.bus(t)
 	ended, endDone := make(chan error, 1), make(chan struct{})
 	go func() {
-		ended <- stepping.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, "payment_succeeded", 0, paid)
+		ended <- stepping.OnEvent(ctx, ending, e.scoped, fixtures.ContactAliceID, automations.Event{Action: "payment_succeeded", OccurredAt: paid}, 0)
 		close(endDone)
 	}()
 	require.Eventually(t, func() bool {

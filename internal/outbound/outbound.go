@@ -729,6 +729,24 @@ func Bindings(c *ent.Contact, vars map[string]any) map[string]any {
 	return b
 }
 
+// EventVariables are the merge tags of the Event a message or a call is about, under `event`: its
+// action and its properties. A Rule's http Action binds the Event the Rule fired on, an
+// Automation's steps the Event their Enrollment began on (#752), so both are written alike. An
+// empty action and nil properties still bind `event`, so every `event.*` tag renders empty and a
+// Contact's custom field named `event` never stands in for it.
+func EventVariables(action string, properties map[string]any) map[string]any {
+	return map[string]any{"event": map[string]any{"action": action, "properties": properties}}
+}
+
+// EnrollmentVariables are the merge tags an Automation's steps bind besides the Contact's: `event`,
+// the copy of the Event the Enrollment began on (#752); empty for a nil run or one no Event began.
+func EnrollmentVariables(run *ent.AutomationRun) map[string]any {
+	if run == nil {
+		return EventVariables("", nil)
+	}
+	return EventVariables(lo.FromPtr(run.EventAction), run.EventProperties)
+}
+
 // recordSent marks the claim Sent and publishes email.sent in one transaction, so
 // the send fact reaches the Event log iff the message is recorded as sent. The
 // provider call precedes this transaction, so delivery to the provider is

@@ -8983,8 +8983,10 @@ type SiteAutomationStep struct {
 	Type SiteAutomationStepType `json:"type"`
 	// Email subject (email steps).
 	Subject OptString `json:"subject"`
-	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: Contact bindings
-	// only, strings JSON-escaped, up to 64 KiB, must render to valid JSON).
+	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped,
+	// up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields
+	// plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired
+	// on, when a Rule enrolled), copied when it began; empty when no Event began it.
 	Body OptString `json:"body"`
 	// The editor's JSON document an email step's body was built from, an opaque object checked by the
 	// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
@@ -13614,7 +13616,7 @@ func (*SiteDomainJoinSetNotFound) siteDomainJoinSetRes() {}
 // Request body for rendering an HTTP step's body for a Contact.
 // Ref: #/components/schemas/SiteDryRunHttpStepInput
 type SiteDryRunHttpStepInput struct {
-	// The Liquid JSON body to render.
+	// The Liquid JSON body to render. No Enrollment stands behind a dry run, so `event` is empty.
 	Body string `json:"body"`
 	// The Contact whose values fill the template.
 	ContactId EntityId `json:"contactId"`

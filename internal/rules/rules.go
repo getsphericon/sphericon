@@ -705,7 +705,7 @@ func (ActionsArgs) Kind() string { return ActionsKind }
 // It returns the Firings it wrote. It is queue-free apart from the enqueue inside the
 // transaction, so a test drives it directly.
 func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.RuleFiring, error) {
-	ev.Properties = events.RuleProperties(ev.Properties)
+	ev.Properties = events.BoundedProperties(ev.Properties)
 	active, err := s.Rule().Query().
 		Where(
 			rule.StatusEQ(rule.StatusActive),
@@ -953,7 +953,7 @@ func PendingHTTP(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring, index in
 }
 
 // propertiesJSON is the Event's properties as kept on its Firing, nil when there are none. The
-// caller has already bounded them (events.RuleProperties), so a Firing keeps exactly what its
+// caller has already bounded them (events.BoundedProperties), so a Firing keeps exactly what its
 // Rule's Condition saw.
 func propertiesJSON(props map[string]any) *string {
 	if len(props) == 0 {

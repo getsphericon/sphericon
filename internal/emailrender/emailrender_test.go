@@ -16,6 +16,19 @@ const sampleHTML = `<table role="presentation" width="100%"><tbody><tr><td style
 <img src="https://example.com/logo.png" alt="Logo">
 </td></tr></tbody></table>`
 
+// An Automation's email binds the Event its Enrollment began on as `event` (#752): the lint, which
+// renders with no recipient data, takes its tags, a property named in brackets, a condition on one
+// and a filter on one, as it takes the Contact's.
+func TestLintTakesTheTriggeringEventsMergeTags(t *testing.T) {
+	body := `<p>Your payment of {{ event.properties.amount }} for {{ event.properties["plan name"] }} failed.</p>` +
+		`{% if event.properties.amount %}<p>{{ event.properties.amount | upcase }}</p>{% endif %}`
+
+	report := emailrender.Lint("Your {{ event.action }}", body, nil)
+
+	require.NoError(t, report.Error)
+	assert.Empty(t, report.Warnings)
+}
+
 func TestRenderEmailHTML(t *testing.T) {
 	out, err := emailrender.RenderEmail("Hi {{ first_name }}", sampleHTML, map[string]any{
 		"first_name": "Alex",
