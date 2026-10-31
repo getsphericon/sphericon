@@ -61,9 +61,7 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 	if err != nil {
 		return r, err
 	}
-	r.Holds = lo.Map(standing.Holds(), func(hold *ent.Hold, _ int) siteapi.SiteWorkspaceHold {
-		return mapper.HoldToResource(hold)
-	})
+	r.Holds = mapper.HoldsToResources(standing.Holds())
 	return r, nil
 }
 

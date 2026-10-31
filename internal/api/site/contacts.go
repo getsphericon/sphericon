@@ -3,9 +3,6 @@ package site
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -24,9 +21,7 @@ func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteCont
 	}
 
 	return &siteapi.SiteContactsListOK{
-		Items: lo.Map(page.Items, func(c *ent.Contact, _ int) siteapi.SiteContactResource {
-			return mapper.ContactToResource(c)
-		}),
+		Items:      mapper.ContactsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),

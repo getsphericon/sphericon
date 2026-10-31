@@ -25,6 +25,7 @@ import (
 // bind the generated option types of this surface to the shared conversions of internal/convert.
 //
 // goverter:converter
+// goverter:annotate:unmapped
 // goverter:name InputsImpl
 // goverter:output:file ./inputs_gen.go
 // goverter:matchIgnoreCase
@@ -84,6 +85,7 @@ type Inputs interface {
 	ContactUpdate(source *externalapi.UpdateContactInput) contacts.UpdateInput
 	// goverter:map CustomFields | upsertContactFields
 	ContactUpsert(source externalapi.UpsertContactInput) contacts.Attributes
+	ContactUpserts(source []externalapi.UpsertContactInput) []contacts.Attributes
 
 	// goverter:map Params | createIntegrationParams
 	IntegrationCreate(source *externalapi.CreateIntegrationInput) (integrations.CreateInput, error)

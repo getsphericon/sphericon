@@ -3,9 +3,6 @@ package site
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/brandkit"
 )
@@ -54,8 +51,6 @@ func (h *Handlers) SiteBrandKitRecreateStarterTemplates(ctx context.Context, _ s
 		return nil, err
 	}
 	res := siteapi.SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON(
-		lo.Map(made, func(t *ent.EmailTemplate, _ int) siteapi.SiteEmailTemplateResource {
-			return mapper.EmailTemplateToResource(t)
-		}))
+		mapper.EmailTemplatesToResources(made))
 	return &res, nil
 }

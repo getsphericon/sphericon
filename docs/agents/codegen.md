@@ -37,6 +37,11 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `// goverter:extend` helpers (ids, timestamps, optionals) are hand-written in
   each package's `resources.go`; the impl (`ConverterImpl`) is generated. Adding a DTO
   field that has no source mapping fails generation — that completeness check is the point.
+  A list of resources is a list method of the `Converter` (`ContactsToResources(source
+  []*ent.Contact) []…`) marked `// goverter:useEmptyOnNil:slice`, so no rows answer `[]`, never
+  null; a handler does not wrap the single-item method in `lo.Map`. `annotate:unmapped` writes a
+  `// Field: ignore` line into the generated code for each field the converter leaves to the
+  handler.
 
 - `mise run generate` — full cycle: typespec → openapi → backend (ent + ogen) → fixture catalog → frontend → i18n types → format.
 - `mise run generate:typespec` / `mise run generate:backend` / `mise run generate:openapi` — partial regens.
