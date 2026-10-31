@@ -30,10 +30,8 @@ import {
   siteInvitationsCreateMutation,
   siteInvitationsDeleteMutation,
   siteInvitationsListOptions,
-  siteInvitationsListQueryKey,
   siteMembershipsDeleteMutation,
   siteMembershipsListOptions,
-  siteMembershipsListQueryKey,
   siteMembershipsResetSecondFactorMutation,
   siteMembershipsUpdateMutation,
   siteUserGetMeOptions,
@@ -217,16 +215,12 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
   const canManage = can(workspace, 'members:manage')
   const canResetSecondFactor = can(workspace, 'second_factor:manage')
 
-  const membersKey = siteMembershipsListQueryKey({ path: { workspaceId } })
-  const invitesKey = siteInvitationsListQueryKey({ path: { workspaceId } })
-
   const form = useForm<{ email: string; role: SiteInvitableRole }>({
     initialValues: { email: '', role: 'member' },
   })
 
   const inviteMutation = useResourceMutation({
     mutation: siteInvitationsCreateMutation(),
-    invalidate: [invitesKey],
     errorTitle: t(($) => $.settings.members.inviteError),
     onDone: (data) => {
       setInviteUrl(data.inviteUrl)
@@ -236,28 +230,24 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
 
   const revokeMutation = useResourceMutation({
     mutation: siteInvitationsDeleteMutation(),
-    invalidate: [invitesKey],
     successMessage: t(($) => $.settings.members.revoked),
     errorTitle: t(($) => $.settings.members.revokeError),
   })
 
   const roleMutation = useResourceMutation({
     mutation: siteMembershipsUpdateMutation(),
-    invalidate: [membersKey],
     successMessage: t(($) => $.settings.members.roleUpdated),
     errorTitle: t(($) => $.settings.members.roleUpdateError),
   })
 
   const removeMutation = useResourceMutation({
     mutation: siteMembershipsDeleteMutation(),
-    invalidate: [membersKey],
     successMessage: t(($) => $.settings.members.removed),
     errorTitle: t(($) => $.settings.members.removeError),
   })
 
   const resetMutation = useResourceMutation({
     mutation: siteMembershipsResetSecondFactorMutation(),
-    invalidate: [membersKey],
     successMessage: t(($) => $.settings.members.secondFactorReset),
     errorTitle: t(($) => $.settings.members.resetSecondFactorError),
   })

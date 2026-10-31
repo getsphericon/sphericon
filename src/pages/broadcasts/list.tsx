@@ -11,7 +11,6 @@ import {
   siteBroadcastsArchiveMutation,
   siteBroadcastsDeleteMutation,
   siteBroadcastsListOptions,
-  siteBroadcastsListQueryKey,
   siteBroadcastsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
@@ -49,20 +48,17 @@ export function BroadcastsListPage() {
   const deleteBroadcast = useDeleteResource({
     mutation: siteBroadcastsDeleteMutation(),
     workspaceId,
-    listQueryKey: siteBroadcastsListQueryKey({ path: { workspaceId } }),
     successMessage: t(($) => $.notifications.broadcastDeleted),
     errorTitle: t(($) => $.alerts.broadcastDeleteErrorTitle),
   })
 
   const archiveBroadcast = useResourceMutation({
     mutation: siteBroadcastsArchiveMutation(),
-    invalidate: [siteBroadcastsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.broadcastArchived),
     errorTitle: t(($) => $.alerts.broadcastArchiveErrorTitle),
   })
   const restoreBroadcast = useResourceMutation({
     mutation: siteBroadcastsUnarchiveMutation(),
-    invalidate: [siteBroadcastsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.broadcastRestored),
     errorTitle: t(($) => $.alerts.broadcastRestoreErrorTitle),
   })

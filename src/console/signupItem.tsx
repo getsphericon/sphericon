@@ -24,10 +24,7 @@ import { AnchorLink } from '../components/RouterLink.tsx'
 import { PageSkeleton } from '../components/Skeletons.tsx'
 import {
   staffSignupItemsGetOptions,
-  staffSignupItemsGetQueryKey,
-  staffSignupItemsListQueryKey,
   staffSignupItemsListVersionsOptions,
-  staffSignupItemsListVersionsQueryKey,
   staffSignupItemsPublishMutation,
   staffSignupItemsArchiveMutation,
   staffSignupItemsSaveDraftMutation,
@@ -44,10 +41,6 @@ import { Route as legalDocumentRoute } from '../routes/legal.$key.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
 import { publishStopsUsers } from '../utils/signupItems.ts'
 
-function useInvalidate(itemId: string) {
-  return [staffSignupItemsGetQueryKey({ path: { id: itemId } }), staffSignupItemsListQueryKey()]
-}
-
 const titleSchema = z.object({ title: trimmed(zSignupItemTitle) })
 const publishSchema = z.object({ label: trimmed(zLegalDocumentLabel) })
 
@@ -57,7 +50,6 @@ function TitleForm({ item }: { item: StaffSignupItemResource }) {
   const form = useSchemaForm(titleSchema, { title: item.title })
   const mutation = useResourceMutation({
     mutation: staffSignupItemsUpdateMutation(),
-    invalidate: useInvalidate(item.id),
     successMessage: t(($) => $.console.signupItem.titleSaved),
     errorTitle: t(($) => $.console.signupItem.titleError),
   })
@@ -85,7 +77,6 @@ function ArchiveButton({ item }: { item: StaffSignupItemResource }) {
   const confirm = useConfirmation()
   const mutation = useResourceMutation({
     mutation: staffSignupItemsArchiveMutation(),
-    invalidate: useInvalidate(item.id),
     successMessage: t(($) => $.console.signupItem.archiveDone),
     errorTitle: t(($) => $.console.signupItem.archiveError),
   })
@@ -161,7 +152,6 @@ function MailingsSwitch({ item }: { item: StaffSignupItemResource }) {
   const { t } = useTranslation()
   const mutation = useResourceMutation({
     mutation: staffSignupItemsUpdateMutation(),
-    invalidate: useInvalidate(item.id),
     errorTitle: t(($) => $.console.signupItem.mailingsError),
   })
 
@@ -192,7 +182,6 @@ function DraftEditor({ item }: { item: StaffSignupItemResource }) {
   const form = useForm({ initialValues: { markdown: item.draft ?? '' } })
   const mutation = useResourceMutation({
     mutation: staffSignupItemsSaveDraftMutation(),
-    invalidate: useInvalidate(item.id),
     successMessage: t(($) => $.console.signupItem.draftSaved),
     errorTitle: t(($) => $.console.signupItem.draftError),
   })
@@ -246,10 +235,6 @@ function PublishForm({ item, unsaved }: { item: StaffSignupItemResource; unsaved
   const form = useSchemaForm(publishSchema, { label: '' })
   const mutation = useResourceMutation({
     mutation: staffSignupItemsPublishMutation(),
-    invalidate: [
-      ...useInvalidate(item.id),
-      staffSignupItemsListVersionsQueryKey({ path: { id: item.id } }),
-    ],
     successMessage: t(($) => $.console.signupItem.published),
     errorTitle: t(($) => $.console.signupItem.publishError),
     onDone: () => form.reset(),

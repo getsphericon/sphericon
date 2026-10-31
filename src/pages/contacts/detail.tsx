@@ -23,7 +23,6 @@ import { PageSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteContactsDeleteMutation,
   siteContactsGetOptions,
-  siteContactsListQueryKey,
   siteEventsListOptions,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -75,7 +74,6 @@ function ContactActions({ workspaceId, contactId }: { workspaceId: string; conta
 
   const eraseMutation = useResourceMutation({
     mutation: siteContactsDeleteMutation(),
-    invalidate: [siteContactsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.notifications.contactErased),
     errorTitle: t(($) => $.alerts.eraseErrorTitle),
     forbiddenMessage: t(($) => $.contacts.eraseForbidden),

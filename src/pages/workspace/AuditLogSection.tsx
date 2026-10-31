@@ -28,7 +28,6 @@ import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteAuditExportOptions,
   siteAuditGetRetentionOptions,
-  siteAuditGetRetentionQueryKey,
   siteAuditListOptions,
   siteAuditSetRetentionMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -298,7 +297,6 @@ function RetentionForm({ workspaceId, days }: { workspaceId: string; days: numbe
   const [value, setValue] = useState<string | number>(days ?? '')
   const mutation = useResourceMutation({
     mutation: siteAuditSetRetentionMutation(),
-    invalidate: [siteAuditGetRetentionQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.settings.auditLog.retentionSaved),
     errorTitle: t(($) => $.settings.auditLog.retentionError),
   })

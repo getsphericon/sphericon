@@ -28,7 +28,6 @@ import {
   sitePersonalTokensDeleteMutation,
   sitePersonalTokensGrantableScopesOptions,
   sitePersonalTokensListOptions,
-  sitePersonalTokensListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { PersonalScope, SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
@@ -129,7 +128,6 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
     setNewSecret(null)
   }
 
-  const queryKey = sitePersonalTokensListQueryKey({ path: { workspaceId } })
   const grantable = useQuery({
     ...sitePersonalTokensGrantableScopesOptions({ path: { workspaceId } }),
     enabled: createOpened,
@@ -141,7 +139,6 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
 
   const createMutation = useResourceMutation({
     mutation: sitePersonalTokensCreateMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.personalTokens.createError),
     onDone: (data) => {
       setNewSecret(data.token)
@@ -151,7 +148,6 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
 
   const revoke = useResourceMutation({
     mutation: sitePersonalTokensDeleteMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.personalTokens.revokeError),
   })
 

@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { AnchorLink } from '../../components/RouterLink.tsx'
 import {
   siteOptionalConsentsListOptions,
-  siteOptionalConsentsListQueryKey,
   siteOptionalConsentsSetMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { SiteOptionalConsentDecision } from '../../generated/site/types.gen.ts'
@@ -22,7 +21,6 @@ export function OptionalConsentsSection() {
 
   const setConsent = useResourceMutation({
     mutation: siteOptionalConsentsSetMutation(),
-    invalidate: [siteOptionalConsentsListQueryKey()],
     successMessage: t(($) => $.profile.consentsSaved),
     errorTitle: t(($) => $.profile.consentsErrorTitle),
   })

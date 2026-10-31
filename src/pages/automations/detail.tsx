@@ -155,7 +155,7 @@ function AutomationDetail() {
             <DraftControls
               workspaceId={workspaceId}
               resource={automation}
-              {...automationDraftActions(t, workspaceId, automation.id)}
+              {...automationDraftActions(t)}
             />
           )}
           <ButtonLink

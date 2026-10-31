@@ -7,13 +7,16 @@ import { useApiErrorMessage } from './useApiErrorMessage.ts'
 import { useNotify } from './useNotify.ts'
 
 // Options layered on top of a generated mutation. The three things every CRUD
-// mutation in this app repeats — invalidate the affected list query, toast on
+// mutation in this app repeats — invalidate the queries it affects, toast on
 // success, toast the API error on failure — collapse into declarative fields.
 interface ResourceMutationOptions<TData, TError, TVars, TCtx> {
   // The generated react-query mutation, e.g. siteTemplatesCreateMutation().
   mutation: UseMutationOptions<TData, TError, TVars, TCtx>
-  // Query keys to invalidate after a successful mutation (list queries, etc.).
-  invalidate?: QueryKey[]
+  // A successful mutation invalidates every query of its own resource: the generated keys carry
+  // their operation's tags (`Site Segments`), so nothing is listed for that. List here only the
+  // queries of another resource the mutation changes (a Brand kit save recreates Templates);
+  // false skips the own-resource invalidation too, for a mutation that ends the session.
+  invalidate?: QueryKey[] | false
   // Toast message shown on success. Omit for no toast (the generic "Success"
   // title is supplied by the hook).
   successMessage?: string
@@ -49,9 +52,17 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
   return useMutation({
     ...mutation,
     onSuccess: async (data, variables) => {
-      await Promise.all(
-        (invalidate ?? []).map(async (queryKey) => queryClient.invalidateQueries({ queryKey })),
-      )
+      if (invalidate !== false) {
+        const own = new Set(tagsOf(mutation.mutationKey))
+        await Promise.all([
+          queryClient.invalidateQueries({
+            predicate: (query) => tagsOf(query.queryKey).some((tag) => own.has(tag)),
+          }),
+          ...(invalidate ?? []).map(async (queryKey) =>
+            queryClient.invalidateQueries({ queryKey }),
+          ),
+        ])
+      }
       if (successMessage) {
         notify({
           color: 'teal',
@@ -78,4 +89,13 @@ export function useResourceMutation<TData, TError, TVars, TCtx>({
       })
     },
   })
+}
+
+// tagsOf reads the operation tags a generated query or mutation key carries in its first element.
+function tagsOf(key: QueryKey | undefined): readonly string[] {
+  const head: unknown = key?.[0]
+  if (typeof head !== 'object' || head === null || !('tags' in head) || !Array.isArray(head.tags)) {
+    return []
+  }
+  return head.tags.filter((tag): tag is string => typeof tag === 'string')
 }

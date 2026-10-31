@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 
 import {
   siteWorkspacesGetRevenueSettingsOptions,
-  siteWorkspacesGetRevenueSettingsQueryKey,
   siteWorkspacesUpdateRevenueSettingsMutation,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type {
@@ -40,7 +39,6 @@ function RevenueSettingsForm({
 
   const mutation = useResourceMutation({
     mutation: siteWorkspacesUpdateRevenueSettingsMutation(),
-    invalidate: [siteWorkspacesGetRevenueSettingsQueryKey({ path: { workspaceId: workspace.id } })],
     successMessage: t(($) => $.settings.saved),
     errorTitle: t(($) => $.settings.revenue.errorTitle),
     forbiddenMessage: t(($) => $.settings.revenue.forbidden),

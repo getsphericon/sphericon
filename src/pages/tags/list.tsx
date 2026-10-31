@@ -6,7 +6,6 @@ import { RowActionsMenu } from '../../components/RowActionsMenu.tsx'
 import {
   siteTagsDeleteMutation,
   siteTagsListOptions,
-  siteTagsListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
@@ -23,7 +22,6 @@ export function TagsListPage() {
   const deleteTag = useDeleteResource({
     mutation: siteTagsDeleteMutation(),
     workspaceId,
-    listQueryKey: siteTagsListQueryKey({ path: { workspaceId } }),
     successMessage: t(($) => $.notifications.tagDeleted),
     errorTitle: t(($) => $.alerts.tagDeleteErrorTitle),
   })

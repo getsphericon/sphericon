@@ -224,7 +224,7 @@ export function SendingDomainRecordsModal({
 }) {
   const { t } = useTranslation()
 
-  const verifyMutation = useVerifySendingDomain(workspaceId)
+  const verifyMutation = useVerifySendingDomain()
 
   return (
     <Modal opened={record !== undefined} onClose={onClose} size="xl" title={record?.domain ?? ''}>

@@ -28,7 +28,6 @@ import {
   siteTokensCreateMutation,
   siteTokensDeleteMutation,
   siteTokensListOptions,
-  siteTokensListQueryKey,
   siteTokensUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { ApiTokenScope } from '../../generated/site/types.gen.ts'
@@ -127,8 +126,6 @@ export function ApiKeysSection({
     setNewSecret(null)
   }
 
-  const queryKey = siteTokensListQueryKey({ path: { workspaceId } })
-
   const renameForm = useForm({ initialValues: { name: '' } })
   const openRename = (record: { id: string; name: string }) => {
     renameForm.setValues({ name: record.name })
@@ -141,7 +138,6 @@ export function ApiKeysSection({
 
   const createMutation = useResourceMutation({
     mutation: siteTokensCreateMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.tokens.createError),
     forbiddenMessage: t(($) => $.settings.tokens.forbidden),
     onDone: (data) => {
@@ -152,7 +148,6 @@ export function ApiKeysSection({
 
   const renameMutation = useResourceMutation({
     mutation: siteTokensUpdateMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.tokens.renameError),
     forbiddenMessage: t(($) => $.settings.tokens.forbidden),
     onDone: () => setRenaming(null),
@@ -160,7 +155,6 @@ export function ApiKeysSection({
 
   const deleteMutation = useResourceMutation({
     mutation: siteTokensDeleteMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.tokens.revokeError),
     forbiddenMessage: t(($) => $.settings.tokens.forbidden),
   })

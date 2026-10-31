@@ -22,7 +22,6 @@ import { TableSkeleton } from '../../../components/Skeletons.tsx'
 import {
   siteConnectionsDeleteMutation,
   siteConnectionsListOptions,
-  siteConnectionsListQueryKey,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../../hooks/useConfirmation.tsx'
@@ -87,11 +86,9 @@ function ConnectionsSection({ workspace }: { workspace: SiteWorkspaceResource })
   const { t } = useTranslation()
   const confirmRevoke = useConfirmation()
   const workspaceId = workspace.id
-  const queryKey = siteConnectionsListQueryKey({ path: { workspaceId } })
   const connections = useQuery(siteConnectionsListOptions({ path: { workspaceId } }))
   const revoke = useResourceMutation({
     mutation: siteConnectionsDeleteMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.settings.connections.revokeError),
   })
   const onRevoke = (id: string) => {

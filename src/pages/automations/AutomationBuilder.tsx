@@ -229,7 +229,7 @@ function BuilderBar({
             workspaceId={workspaceId}
             resource={automation}
             dirty={dirty}
-            {...automationDraftActions(t, workspaceId, automation.id)}
+            {...automationDraftActions(t)}
           />
         </Group>
       </Group>

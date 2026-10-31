@@ -25,7 +25,6 @@ import {
   siteSuppressionsCreateMutation,
   siteSuppressionsDeleteMutation,
   siteSuppressionsListOptions,
-  siteSuppressionsListQueryKey,
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteSuppressionReason } from '../../generated/site/types.gen.ts'
@@ -141,13 +140,10 @@ export function SuppressionsListPage() {
     'suppressions:manage',
   )
 
-  const queryKey = siteSuppressionsListQueryKey({ path: { workspaceId } })
-
   const form = useForm<{ destination: string }>({ initialValues: { destination: '' } })
 
   const createMutation = useResourceMutation({
     mutation: siteSuppressionsCreateMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.suppressions.createError),
     onDone: () => {
       form.reset()
@@ -158,7 +154,6 @@ export function SuppressionsListPage() {
 
   const liftMutation = useResourceMutation({
     mutation: siteSuppressionsDeleteMutation(),
-    invalidate: [queryKey],
     errorTitle: t(($) => $.suppressions.liftError),
   })
 

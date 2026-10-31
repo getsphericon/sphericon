@@ -72,6 +72,8 @@ export function DeleteUserForm({
 
   const deleteUser = useResourceMutation({
     mutation: siteUserDeleteUserMutation(),
+    // The session ends: nothing of it is refreshed, the cache is cleared below.
+    invalidate: false,
     errorTitle: t(($) => $.profile.deleteUserErrorTitle),
     handleError: soleOwnedHandler(onSoleOwned),
     onDone: async () => {

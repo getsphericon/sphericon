@@ -120,7 +120,6 @@ export function SignupSurveyPage() {
   const submit = useResourceMutation({
     mutation: siteSignupSurveySubmitMutation(),
     // The route guards read the current user from the cache: refresh it before leaving.
-    invalidate: [siteUserGetMeQueryKey()],
     errorTitle: t(($) => $.signupSurvey.errorTitle),
     // A 409 says the survey is not due (answered elsewhere, or the Instance stopped asking):
     // read the current user again and go where the guard sends them, with no error toast.

@@ -7,7 +7,6 @@ import { BlockSkeleton } from '../components/Skeletons.tsx'
 import { ReleaseAlert } from '../components/UpdateBanner.tsx'
 import {
   staffInstanceGetStateOptions,
-  staffInstanceGetStateQueryKey,
   staffInstanceSetTelemetryMutation,
 } from '../generated/staff/@tanstack/react-query.gen.ts'
 import { StaffInstanceTelemetryLock } from '../generated/staff/types.gen.ts'
@@ -23,7 +22,6 @@ function TelemetrySection({ state }: { state: StaffInstanceState }) {
   const { telemetry } = state
   const mutation = useResourceMutation({
     mutation: staffInstanceSetTelemetryMutation(),
-    invalidate: [staffInstanceGetStateQueryKey()],
     successMessage: t(($) => $.console.instance.telemetry.saved),
     errorTitle: t(($) => $.console.instance.telemetry.errorTitle),
   })

@@ -5,8 +5,6 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import {
-  staffWorkspacesGetQueryKey,
-  staffWorkspacesListQueryKey,
   staffWorkspacesExemptMutation,
   staffWorkspacesSuspendMutation,
   staffWorkspacesUnexemptMutation,
@@ -40,10 +38,6 @@ function useChangeNotice(changedMessage: string, unchangedMessage: string) {
   }
 }
 
-function useInvalidate(workspaceId: string) {
-  return [staffWorkspacesGetQueryKey({ path: { workspaceId } }), staffWorkspacesListQueryKey()]
-}
-
 const suspendSchema = z.object({ reason: trimmed(zStaffSuspendInput.shape.reason) })
 
 function SuspendForm({ workspaceId, onClose }: { workspaceId: string; onClose: () => void }) {
@@ -55,7 +49,6 @@ function SuspendForm({ workspaceId, onClose }: { workspaceId: string; onClose: (
   )
   const mutation = useResourceMutation({
     mutation: staffWorkspacesSuspendMutation(),
-    invalidate: useInvalidate(workspaceId),
     errorTitle: t(($) => $.console.workspace.suspend.error),
     onDone: (change) => {
       notifyUnchanged(change)
@@ -109,7 +102,6 @@ export function SuspensionActions({
   )
   const unsuspend = useResourceMutation({
     mutation: staffWorkspacesUnsuspendMutation(),
-    invalidate: useInvalidate(workspaceId),
     errorTitle: t(($) => $.console.workspace.unsuspend.error),
     onDone: notifyUnchanged,
   })
@@ -160,13 +152,11 @@ export function ExemptionAction({ workspaceId, exempt }: { workspaceId: string; 
   )
   const exemptMutation = useResourceMutation({
     mutation: staffWorkspacesExemptMutation(),
-    invalidate: useInvalidate(workspaceId),
     errorTitle: t(($) => $.console.workspace.abuse.error),
     onDone: notifyUnchanged,
   })
   const unexemptMutation = useResourceMutation({
     mutation: staffWorkspacesUnexemptMutation(),
-    invalidate: useInvalidate(workspaceId),
     errorTitle: t(($) => $.console.workspace.abuse.error),
     onDone: notifyUnchanged,
   })

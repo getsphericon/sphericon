@@ -5,7 +5,6 @@ import { PagedTable } from '../../components/PagedTable.tsx'
 import {
   siteCapturedMessagesDeleteAllMutation,
   siteCapturedMessagesListOptions,
-  siteCapturedMessagesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
@@ -24,7 +23,6 @@ export function CapturedMessagesListPage() {
 
   const deleteAll = useResourceMutation({
     mutation: siteCapturedMessagesDeleteAllMutation(),
-    invalidate: [siteCapturedMessagesListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.capturedMessages.deletedAll),
     errorTitle: t(($) => $.capturedMessages.deleteError),
   })

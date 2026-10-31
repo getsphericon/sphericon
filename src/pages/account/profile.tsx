@@ -21,7 +21,6 @@ import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteUserEmailChangeMutation,
   siteUserGetMeOptions,
-  siteUserGetMeQueryKey,
   siteUserSignOutEverywhereMutation,
   siteUserUpdateMeMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
@@ -45,7 +44,6 @@ function ProfileForm({ user }: { user: SiteUserResource }) {
 
   const updateMutation = useResourceMutation({
     mutation: siteUserUpdateMeMutation(),
-    invalidate: [siteUserGetMeQueryKey()],
     successMessage: t(($) => $.profile.updated),
     errorTitle: t(($) => $.profile.errorTitle),
   })
@@ -212,6 +210,8 @@ function SessionsSection() {
 
   const signOut = useResourceMutation({
     mutation: siteUserSignOutEverywhereMutation(),
+    // The session ends: nothing of it is refreshed, the cache is cleared below.
+    invalidate: false,
     errorTitle: t(($) => $.profile.signOutEverywhereErrorTitle),
     onDone: async () => {
       queryClient.clear()

@@ -6,7 +6,6 @@ import { ButtonLink } from '../components/RouterLink.tsx'
 import {
   staffInstanceAcknowledgeNoticeMutation,
   staffInstanceGetStateOptions,
-  staffInstanceGetStateQueryKey,
 } from '../generated/staff/@tanstack/react-query.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as consoleInstanceRoute } from '../routes/console/_authed/instance.tsx'
@@ -21,7 +20,6 @@ export function InstanceNotice() {
   const state = useQuery({ ...staffInstanceGetStateOptions(), retry: false })
   const acknowledge = useResourceMutation({
     mutation: staffInstanceAcknowledgeNoticeMutation(),
-    invalidate: [staffInstanceGetStateQueryKey()],
     errorTitle: t(($) => $.console.instance.notice.errorTitle),
   })
   const data = state.data

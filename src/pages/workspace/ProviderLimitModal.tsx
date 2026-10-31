@@ -2,10 +2,7 @@ import { Button, Group, Modal, Stack, Text } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useTranslation } from 'react-i18next'
 
-import {
-  siteIntegrationsListQueryKey,
-  siteIntegrationsUpdateMutation,
-} from '../../generated/site/@tanstack/react-query.gen.ts'
+import { siteIntegrationsUpdateMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import {
@@ -73,7 +70,6 @@ function ProviderLimitForm({ workspaceId, integration, onClose }: ProviderLimitF
 
   const updateMutation = useResourceMutation({
     mutation: siteIntegrationsUpdateMutation(),
-    invalidate: [siteIntegrationsListQueryKey({ path: { workspaceId } })],
     successMessage: t(($) => $.settings.integrations.providerLimit.saved),
     errorTitle: t(($) => $.settings.integrations.providerLimit.saveError),
     onDone: onClose,

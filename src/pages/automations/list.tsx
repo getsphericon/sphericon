@@ -13,7 +13,6 @@ import {
   siteAutomationsDeactivateMutation,
   siteAutomationsDeleteMutation,
   siteAutomationsListOptions,
-  siteAutomationsListQueryKey,
   siteAutomationsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
@@ -30,40 +29,33 @@ export function AutomationsListPage() {
   const { workspaceId } = automationsRoute.useParams()
   const navigate = useNavigate()
 
-  const listQueryKey = siteAutomationsListQueryKey({ path: { workspaceId } })
-
   const deleteAutomation = useDeleteResource({
     mutation: siteAutomationsDeleteMutation(),
     workspaceId,
-    listQueryKey,
     successMessage: t(($) => $.notifications.automationDeleted),
     errorTitle: t(($) => $.alerts.automationDeleteErrorTitle),
   })
 
   const publishMutation = useResourceMutation({
     mutation: siteAutomationsPublishMutation(),
-    invalidate: [listQueryKey],
     successMessage: t(($) => $.notifications.automationPublished),
     errorTitle: t(($) => $.alerts.automationStatusErrorTitle),
   })
 
   const deactivateMutation = useResourceMutation({
     mutation: siteAutomationsDeactivateMutation(),
-    invalidate: [listQueryKey],
     successMessage: t(($) => $.notifications.automationDeactivated),
     errorTitle: t(($) => $.alerts.automationStatusErrorTitle),
   })
 
   const archiveMutation = useResourceMutation({
     mutation: siteAutomationsArchiveMutation(),
-    invalidate: [listQueryKey],
     successMessage: t(($) => $.notifications.automationArchived),
     errorTitle: t(($) => $.alerts.automationArchiveErrorTitle),
   })
 
   const restoreMutation = useResourceMutation({
     mutation: siteAutomationsUnarchiveMutation(),
-    invalidate: [listQueryKey],
     successMessage: t(($) => $.notifications.automationRestored),
     errorTitle: t(($) => $.alerts.automationRestoreErrorTitle),
   })

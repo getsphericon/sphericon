@@ -3,11 +3,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import {
-  siteWorkspacesDeleteMutation,
-  siteWorkspacesListDeletedQueryKey,
-  siteWorkspacesListQueryKey,
-} from '../generated/site/@tanstack/react-query.gen.ts'
+import { siteWorkspacesDeleteMutation } from '../generated/site/@tanstack/react-query.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 
 // DeleteWorkspaceControl deletes a Workspace once its name is typed (ADR 0043): a button that
@@ -28,7 +24,6 @@ export function DeleteWorkspaceControl({
 
   const deleteMutation = useResourceMutation({
     mutation: siteWorkspacesDeleteMutation(),
-    invalidate: [siteWorkspacesListQueryKey(), siteWorkspacesListDeletedQueryKey()],
     successMessage: t(($) => $.settings.danger.deleted),
     errorTitle: t(($) => $.settings.danger.errorTitle),
     onDone,

@@ -72,8 +72,6 @@ export interface ResourceDescription<
     TError,
     { path: { workspaceId: string; id: string }; body: TPayload }
   >
-  listQueryKey: (options: { path: { workspaceId: string } }) => QueryKey
-  getQueryKey: (options: { path: { workspaceId: string; id: string } }) => QueryKey
   // The edit route and the name of its param that holds the resource id, e.g. 'contactId'.
   editRoute: { useParams: () => Record<TIdParam, string> }
   idParam: TIdParam
@@ -116,7 +114,6 @@ export function defineResource<
 
     const mutation = useResourceMutation({
       mutation: resource.createMutation(),
-      invalidate: [resource.listQueryKey({ path: { workspaceId } })],
       successMessage: texts.created,
       errorTitle: texts.saveErrorTitle,
       onDone: async (created) => navigate(resource.editTarget(created, { workspaceId })),
@@ -150,7 +147,6 @@ export function defineResource<
 
     const mutation = useResourceMutation({
       mutation: resource.createMutation(),
-      invalidate: [resource.listQueryKey({ path: { workspaceId } })],
       successMessage: texts.created,
       errorTitle: texts.saveErrorTitle,
       onDone: onClose,
@@ -197,10 +193,6 @@ export function defineResource<
 
     const mutation = useResourceMutation({
       mutation: resource.updateMutation(),
-      invalidate: [
-        resource.listQueryKey({ path: { workspaceId } }),
-        resource.getQueryKey({ path: { workspaceId, id } }),
-      ],
       successMessage: texts.updated,
       errorTitle: texts.saveErrorTitle,
       onDone: (saved) => {
