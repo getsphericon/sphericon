@@ -1,14 +1,15 @@
 import { Modal, Stack, Title } from '@mantine/core'
 import { schemaResolver, useForm } from '@mantine/form'
-import { useQuery } from '@tanstack/react-query'
-import type { QueryKey, UseMutationOptions, UseQueryOptions } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import type { ComponentType, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type * as z from 'zod'
 
-import { ApiErrorAlert } from '../components/ApiErrorAlert.tsx'
+import { LeaveDialog } from '../components/LeaveDialog.tsx'
+import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../components/Skeletons.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
@@ -76,7 +77,7 @@ export interface ResourceDescription<
   // { path: { workspaceId } } (list, create) or { path: { workspaceId, id } } (get, update).
   getOptions: (options: {
     path: { workspaceId: string; id: string }
-  }) => UseQueryOptions<TResource, TError, TResource, TGetKey>
+  }) => UseSuspenseQueryOptions<TResource, TError, TResource, TGetKey>
   createMutation: () => UseMutationOptions<
     TCreated,
     TError,
@@ -144,6 +145,11 @@ export function defineResource<
           form={form}
           isPending={mutation.isPending}
           onSubmit={(body) => mutation.mutate({ path: { workspaceId }, body })}
+        />
+        {/* A save in flight is not blocked: it leaves for the created resource on success. */}
+        <LeaveDialog
+          dirty={form.isDirty() && !mutation.isPending}
+          message={t(($) => $.leave.message)}
         />
       </Stack>
     )
@@ -229,39 +235,37 @@ export function defineResource<
           onSubmit={(body) => mutation.mutate({ path: { workspaceId, id }, body })}
         />
         {children?.(loaded, { dirty: form.isDirty() })}
+        <LeaveDialog
+          dirty={form.isDirty() && !mutation.isPending}
+          message={t(($) => $.leave.message)}
+        />
       </Stack>
+    )
+  }
+
+  // The loaded resource; the edit page's boundary shows its load and a failed load.
+  function LoadedEditForm({ children }: ResourceEditPageProps<TResource>) {
+    const { workspaceId } = workspaceRoute.useParams()
+    const id = resource.editRoute.useParams()[resource.idParam]
+    const { data } = useSuspenseQuery(resource.getOptions({ path: { workspaceId, id } }))
+
+    return (
+      <EditForm
+        key={`${id}:${resource.revision?.(data) ?? ''}`}
+        workspaceId={workspaceId}
+        id={id}
+        loaded={data}
+        {...(children && { children })}
+      />
     )
   }
 
   function EditPage({ children }: ResourceEditPageProps<TResource>) {
     const { t } = useTranslation()
-    const { workspaceId } = workspaceRoute.useParams()
-    const id = resource.editRoute.useParams()[resource.idParam]
-    const texts = resource.texts(t)
-
-    const query = useQuery(resource.getOptions({ path: { workspaceId, id } }))
-
-    if (query.isLoading) {
-      return <PageSkeleton />
-    }
-    if (query.isError || !query.data) {
-      return (
-        <ApiErrorAlert
-          error={query.error}
-          title={texts.loadErrorTitle}
-          fallback={texts.loadErrorTitle}
-        />
-      )
-    }
-
     return (
-      <EditForm
-        key={`${id}:${resource.revision?.(query.data) ?? ''}`}
-        workspaceId={workspaceId}
-        id={id}
-        loaded={query.data}
-        {...(children && { children })}
-      />
+      <QueryBoundary fallback={<PageSkeleton />} errorTitle={resource.texts(t).loadErrorTitle}>
+        <LoadedEditForm {...(children && { children })} />
+      </QueryBoundary>
     )
   }
 

@@ -1,37 +1,9 @@
-import { Button, Group, Modal, Text } from '@mantine/core'
-import { useBlocker } from '@tanstack/react-router'
 import { useStore } from '@workflowbuilder/sdk'
-import { I18nextProvider, useTranslation } from 'react-i18next'
+import { I18nextProvider } from 'react-i18next'
 
+import { LeaveDialog } from '../../components/LeaveDialog.tsx'
 import { i18n } from '../../i18n.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
-
-function LeaveDialog({ dirty }: { dirty: boolean }) {
-  const { t } = useTranslation()
-  const blocker = useBlocker({
-    shouldBlockFn: () => dirty,
-    enableBeforeUnload: dirty,
-    withResolver: true,
-  })
-
-  return (
-    <Modal
-      opened={blocker.status === 'blocked'}
-      onClose={() => blocker.reset?.()}
-      title={t(($) => $.automations.leaveTitle)}
-    >
-      <Text mb="md">{t(($) => $.automations.leaveMessage)}</Text>
-      <Group justify="flex-end">
-        <Button variant="default" onClick={() => blocker.reset?.()}>
-          {t(($) => $.automations.leaveStay)}
-        </Button>
-        <Button color="red" onClick={() => blocker.proceed?.()}>
-          {t(($) => $.automations.leaveDiscard)}
-        </Button>
-      </Group>
-    </Modal>
-  )
-}
 
 // Asks before the person leaves the editor with changes that were not saved. It sits inside
 // <WorkflowBuilder.Root> to read the canvas.
@@ -49,7 +21,10 @@ export function LeaveGuard({
 
   return (
     <I18nextProvider i18n={i18n}>
-      <LeaveDialog dirty={automationSnapshot(name, integrationId, { nodes, edges }) !== saved} />
+      <LeaveDialog
+        dirty={automationSnapshot(name, integrationId, { nodes, edges }) !== saved}
+        message={i18n.t(($) => $.automations.leaveMessage)}
+      />
     </I18nextProvider>
   )
 }
