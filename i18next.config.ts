@@ -7,9 +7,30 @@ export default defineConfig({
     output: 'locales/{{language}}/{{namespace}}.json',
     defaultNS: 'translation',
     keySeparator: '.',
-    // Keep keys the extractor can't see statically (e.g. dynamic lookups like
-    // t(($) => $.status[status])); we maintain those by hand.
-    removeUnusedKeys: false,
+    // Keys the extractor cannot resolve: a lookup indexed by a value from the API, such as
+    // t(($) => $.rules.firingStatus[firing.status]). Every other key the code no longer reads is
+    // removed by `mise run fix` and fails `mise run check:i18n`. A new dynamic family goes here.
+    preservePatterns: [
+      'analytics.abuseWarning.metrics.*',
+      'analytics.clicksByLink.automation',
+      'analytics.clicksByLink.broadcast',
+      'analytics.range.*',
+      'automations.enrollmentStatus.*',
+      'automations.failureKind.*',
+      'broadcasts.hold.reasons.*',
+      'capturedMessages.surfaces.*',
+      'console.signupItems.kind.*',
+      'console.workspaces.review.deleted',
+      'console.workspaces.review.systemFrozen',
+      'console.workspaces.review.warned',
+      'customFields.types.*',
+      'rules.dryRunOutcome.*',
+      'rules.firingStatus.*',
+      'settings.members.source.*',
+      'setupChecklist.steps.*.action',
+      'signin.errors.*',
+      'suppressions.reasons.*',
+    ],
   },
   types: {
     input: 'locales/en/**/*.json',

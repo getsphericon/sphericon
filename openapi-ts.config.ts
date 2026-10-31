@@ -31,7 +31,7 @@ const surface = (name: 'site' | 'staff' | 'staffee'): UserConfig => ({
       mutationOptions: true,
       // Every key carries its operation's tags (the resource, e.g. `Site Segments`), so a
       // mutation invalidates the queries of its own resource without listing them
-      // (src/queryClient.ts).
+      // (useResourceMutation, src/hooks/useResourceMutation.ts).
       queryKeys: { tags: true },
       mutationKeys: { tags: true },
     },

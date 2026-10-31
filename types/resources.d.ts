@@ -78,7 +78,6 @@ export default interface Resources {
       "broadcastSendErrorTitle": "Failed to send broadcast",
       "contactLoadErrorTitle": "Failed to load contact",
       "customFieldLoadErrorTitle": "Failed to load custom fields",
-      "deleteErrorTitle": "Failed to delete contact",
       "eraseErrorTitle": "Failed to erase contact",
       "exportErrorTitle": "Failed to export contact data",
       "firingsLoadErrorTitle": "Failed to load firings",
@@ -92,7 +91,6 @@ export default interface Resources {
       "ruleStatusErrorTitle": "Failed to change rule status",
       "saveErrorTitle": "Failed to save contact",
       "segmentArchiveErrorTitle": "Failed to archive segment",
-      "segmentDeleteErrorTitle": "alerts.segmentDeleteErrorTitle",
       "segmentLoadErrorTitle": "Failed to load segments",
       "segmentRestoreErrorTitle": "Failed to restore segment",
       "segmentSaveErrorTitle": "Failed to save segment",
@@ -101,7 +99,6 @@ export default interface Resources {
       "templateDeleteErrorTitle": "Failed to delete template",
       "templateLoadErrorTitle": "Failed to load templates",
       "templateSaveErrorTitle": "Failed to save template",
-      "testSendErrorTitle": "Failed to send test",
       "transactionalEmailsLoadErrorTitle": "Failed to load transactional emails"
     },
     "analytics": {
@@ -412,8 +409,8 @@ export default interface Resources {
       "openedLabel": "Opened",
       "progress": {
         "almostDone": "almost done",
-        "remainingHours": "about {{count}} hour remaining" | "about {{count}} hour remaining" | "about {{count}} hours remaining",
-        "remainingMinutes": "about {{count}} minutes remaining" | "about {{count}} minute remaining" | "about {{count}} minutes remaining",
+        "remainingHours": "about {{count}} hour remaining" | "about {{count}} hours remaining",
+        "remainingMinutes": "about {{count}} minute remaining" | "about {{count}} minutes remaining",
         "summary": "Sent {{processed}} of {{total}}"
       },
       "recipientsLabel": "Recipients",
@@ -451,7 +448,6 @@ export default interface Resources {
       },
       "statusLabel": "Status",
       "subjectLabel": "Subject",
-      "testSend": "Test send",
       "testSendButton": "Send test",
       "testSendCaptured": "Captured in your Test inbox, not sent to the address you named.",
       "testSendEmailLabel": "Send a test to",
@@ -492,10 +488,6 @@ export default interface Resources {
         "text": "Text"
       },
       "title": "Captured messages"
-    },
-    "comingSoon": {
-      "description": "This section is not available yet.",
-      "title": "Coming soon"
     },
     "confirmEmailChange": {
       "errorBody": "This confirmation link is invalid or has expired.",
@@ -693,7 +685,6 @@ export default interface Resources {
           "warningNotifiedAt": "Owners warned"
         },
         "actorStaff": "Staff member {{id}}",
-        "actorStaffMember": "console.workspace.actorStaffMember",
         "actors": {
           "cli": "Command line",
           "staff": "console.workspace.actors.staff",
@@ -801,7 +792,6 @@ export default interface Resources {
       "noRecords": "No contacts yet",
       "searchPlaceholder": "Search by email",
       "showMachineEvents": "Show machine events",
-      "statusFilter": "Filter by status",
       "tagsTitle": "Tags",
       "updatedAt": "Updated at"
     },
@@ -938,7 +928,6 @@ export default interface Resources {
         "label": "Formatting",
         "link": "Link",
         "linkApply": "Apply link",
-        "linkRemove": "Remove link",
         "linkUrl": "Link address",
         "orderedList": "Numbered list",
         "quote": "Quote",
@@ -1005,8 +994,8 @@ export default interface Resources {
       "errorMessage": "Something went wrong. Please try again.",
       "inUse": "Still in use by: {{users}}. Change or finish those first.",
       "rateLimited": "Too many requests. Please wait a minute and try again.",
-      "rateLimitedMinutes": "Too many attempts. Try again in {{count}} minutes." | "Too many attempts. Try again in {{count}} minute." | "Too many attempts. Try again in {{count}} minutes.",
-      "rateLimitedSeconds": "Too many attempts. Try again in {{count}} seconds." | "Too many attempts. Try again in {{count}} second." | "Too many attempts. Try again in {{count}} seconds.",
+      "rateLimitedMinutes": "Too many attempts. Try again in {{count}} minute." | "Too many attempts. Try again in {{count}} minutes.",
+      "rateLimitedSeconds": "Too many attempts. Try again in {{count}} second." | "Too many attempts. Try again in {{count}} seconds.",
       "ruleArchived": "Rule archived",
       "ruleCreated": "Rule created",
       "ruleDeactivated": "Rule deactivated",
@@ -1017,7 +1006,6 @@ export default interface Resources {
       "ruleUpdated": "Rule updated",
       "segmentArchived": "Segment archived",
       "segmentCreated": "Segment created",
-      "segmentDeleted": "notifications.segmentDeleted",
       "segmentRestored": "Segment restored",
       "segmentUpdated": "Segment updated",
       "soleOwner": "You are the only owner of: {{workspaces}}. Make another member an owner or delete each workspace first.",
@@ -1027,9 +1015,9 @@ export default interface Resources {
       "templateDeleted": "Template deleted",
       "templateUpdated": "Template updated",
       "testSent": "Test email sent",
-      "usedByEnrollments": "{{count}} enrollments of \"{{name}}\"" | "{{count}} enrollment of \"{{name}}\"" | "{{count}} enrollments of \"{{name}}\"",
-      "usedByFirings": "{{count}} firings of \"{{name}}\"" | "{{count}} firing of \"{{name}}\"" | "{{count}} firings of \"{{name}}\"",
-      "usedByMessages": "{{count}} messages sent by \"{{name}}\"" | "{{count}} message sent by \"{{name}}\"" | "{{count}} messages sent by \"{{name}}\""
+      "usedByEnrollments": "{{count}} enrollment of \"{{name}}\"" | "{{count}} enrollments of \"{{name}}\"",
+      "usedByFirings": "{{count}} firing of \"{{name}}\"" | "{{count}} firings of \"{{name}}\"",
+      "usedByMessages": "{{count}} message sent by \"{{name}}\"" | "{{count}} messages sent by \"{{name}}\""
     },
     "oauthConsent": {
       "allow": "Allow access",
@@ -1054,7 +1042,6 @@ export default interface Resources {
       "workspaceLabel": "Workspace"
     },
     "overview": {
-      "contactsCount": "Contacts",
       "createAutomationDescription": "Send follow-up emails when a contact does something.",
       "createBroadcastDescription": "Send a one-time email to a segment of your contacts.",
       "createTitle": "Create a new…",
@@ -1082,10 +1069,7 @@ export default interface Resources {
       "statusLabel": "Status",
       "typeAutomation": "Automation",
       "typeBroadcast": "Broadcast",
-      "typeLabel": "Type",
-      "viewActivity": "View activity",
-      "viewContacts": "View contacts",
-      "viewSettings": "Settings"
+      "typeLabel": "Type"
     },
     "profile": {
       "changeEmailButton": "Send confirmation link",
@@ -1141,7 +1125,6 @@ export default interface Resources {
       "errorMessage": "We couldn't reset your password. The link may have expired — request a new one.",
       "errorTitle": "Could not reset password",
       "mismatch": "Passwords do not match",
-      "missingToken": "This reset link is invalid or has expired.",
       "newPasswordLabel": "New password",
       "submitButton": "Set password",
       "successMessage": "Your password has been reset. Please sign in.",
@@ -1236,7 +1219,7 @@ export default interface Resources {
     },
     "security": {
       "codeLabel": "Code from the app",
-      "codesRemaining": "{{count}} recovery codes left" | "{{count}} recovery code left" | "{{count}} recovery codes left",
+      "codesRemaining": "{{count}} recovery code left" | "{{count}} recovery codes left",
       "confirmButton": "Turn on",
       "confirmErrorTitle": "Could not turn on two-factor authentication",
       "copied": "Copied",
@@ -1302,7 +1285,6 @@ export default interface Resources {
       "conditionHint": "The tests that select matching contacts.",
       "conditionLabel": "Condition",
       "createTitle": "New segment",
-      "definitionLabel": "Definition",
       "editTitle": "Edit segment",
       "emptyState": "Create your first segment.",
       "eventTimesLabel": "Times",
@@ -1313,7 +1295,7 @@ export default interface Resources {
       "noMatchingContacts": "No contacts match this segment",
       "noRecords": "No segments yet",
       "previewButton": "Preview segment",
-      "previewCount": "{{count}} matching contacts" | "{{count}} matching contact" | "{{count}} matching contacts",
+      "previewCount": "{{count}} matching contact" | "{{count}} matching contacts",
       "triggerKeyLabel": "Event property name"
     },
     "settings": {
@@ -1339,7 +1321,6 @@ export default interface Resources {
         "ip": "IP address",
         "kindApiToken": "API token",
         "kindStaff": "Sphericon staff",
-        "kindStaffMember": "settings.auditLog.kindStaffMember",
         "kindSystem": "System",
         "kindUser": "User",
         "loadError": "Failed to load the audit log",
@@ -1405,7 +1386,6 @@ export default interface Resources {
       "integrations": {
         "advanced": "Advanced settings",
         "back": "Back",
-        "channel": "Channel",
         "create": "Connect provider",
         "createError": "Failed to save provider",
         "default": "Default",
@@ -1413,7 +1393,6 @@ export default interface Resources {
         "defaultError": "Failed to change the default provider",
         "description": "Connect an email provider so this workspace can send mail.",
         "empty": "No providers connected yet",
-        "enabled": "Enabled",
         "fields": {
           "accessKeyId": "Access key ID",
           "endpoint": "Custom endpoint",
@@ -1499,7 +1478,6 @@ export default interface Resources {
         },
         "removeError": "Failed to remove provider",
         "saved": "Provider saved",
-        "secretKept": "Leave blank to keep the stored secret",
         "title": "Providers"
       },
       "loadErrorTitle": "Failed to load workspace",
@@ -1510,7 +1488,6 @@ export default interface Resources {
         "guideLink": "Other ways to connect"
       },
       "members": {
-        "created": "Created",
         "emailLabel": "Email",
         "expires": "Expires",
         "invitationsEmpty": "No pending invitations",
@@ -1606,7 +1583,6 @@ export default interface Resources {
         "nothingHeld": "Nothing is held for this address.",
         "resultTitle": "Held for this address",
         "suppressions": "Suppressions: {{n}}",
-        "title": "Look up an address",
         "unsubscribes": "Unsubscribes: {{n}}"
       },
       "revenue": {
@@ -1887,11 +1863,6 @@ export default interface Resources {
         "title": "What do you do?"
       }
     },
-    "status": {
-      "active": "Active",
-      "all": "All",
-      "unsubscribed": "Unsubscribed"
-    },
     "suppressions": {
       "create": "Suppress",
       "createError": "Failed to suppress address",
@@ -1921,7 +1892,6 @@ export default interface Resources {
       "firstName": "First name",
       "lastName": "Last name",
       "phone": "Phone",
-      "status": "Status",
       "subjectId": "Subject ID",
       "tags": "Tags",
       "timeZone": "Time zone"

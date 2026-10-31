@@ -12,23 +12,12 @@ import {
   siteBroadcastsGetOptions,
   siteSegmentsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type {
-  SiteBroadcastResource,
-  SiteBroadcastStats,
-  SiteBroadcastStatus,
-} from '../../generated/site/types.gen.ts'
+import type { SiteBroadcastResource, SiteBroadcastStats } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
 import { BroadcastHoldAlert } from './BroadcastHold.tsx'
 import { BroadcastProgress } from './BroadcastProgress.tsx'
-
-const STATUS_COLORS: Record<SiteBroadcastStatus, string> = {
-  draft: 'gray',
-  scheduled: 'blue',
-  sending: 'yellow',
-  sent: 'teal',
-  failed: 'red',
-}
+import { BroadcastStatusBadge } from './BroadcastStatusBadge.tsx'
 
 function statEntries(
   t: TFunction,
@@ -154,9 +143,7 @@ function BroadcastReport() {
     <Stack>
       <Group justify="space-between">
         <Title order={4}>{broadcast.name}</Title>
-        <Badge color={STATUS_COLORS[broadcast.status]} variant="light" size="lg">
-          {t(($) => $.broadcasts.status[broadcast.status])}
-        </Badge>
+        <BroadcastStatusBadge status={broadcast.status} size="lg" />
       </Group>
       <Text c="dimmed">{broadcast.subject}</Text>
       <BroadcastAudience workspaceId={workspaceId} broadcast={broadcast} />

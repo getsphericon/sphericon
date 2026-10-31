@@ -11,7 +11,7 @@ go-playground/validator, qmuntal/stateless, go-pkgz/auth, go-webauthn, golang-jw
 go-crypt/crypt, osteele/liquid, bluemonday, k3a/html2text, wneessen/go-mail, nicksnyder/go-i18n,
 goja, gojq, otter, golang.org/x/net, ariga.io/atlas (the diff library in cmd/db); frontend: React 19,
 Mantine (+ mantine-datatable), TanStack Router/Query, zod, i18next, react-querybuilder +
-@react-querybuilder/mantine, @xyflow/react, @jsonforms, @react-email/editor on @tiptap/react (the
+@react-querybuilder/mantine, @xyflow/react, @react-email/editor on @tiptap/react (the
 message editor, ADR 0040).
 
 ## Quick wins — replace current hand-rolled utilities
