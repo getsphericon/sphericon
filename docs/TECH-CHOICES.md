@@ -5,10 +5,14 @@ use it instead of hand-rolling. Maintenance status below was verified directly v
 GitHub API / npm on **2026-06-28** (push date, latest tag, archived flag, stars).
 Re-verify before adopting — these numbers age.
 
-Already in use (don't re-introduce): ent, ogen, river, watermill, samber/do, go-pkgz/auth,
-golang-jwt, tink-go, go-crypt/crypt, osteele/liquid, k3a/html2text, wneessen/go-mail,
-nikoksr/notify, golang.org/x/net, spf13/viper, ariga.io/atlas (the diff library in cmd/db); frontend: React 19, Mantine,
-TanStack Router/Query, react-querybuilder + @react-querybuilder/mantine, @mantine/tiptap.
+Already in use (don't re-introduce; `go.mod` and `package.json` are the full list): ent, ogen,
+goverter, chi, pgx, goose, river, watermill (+ watermill-sql), samber/do, samber/lo, caarlos0/env,
+go-playground/validator, qmuntal/stateless, go-pkgz/auth, go-webauthn, golang-jwt, tink-go,
+go-crypt/crypt, osteele/liquid, bluemonday, k3a/html2text, wneessen/go-mail, nicksnyder/go-i18n,
+goja, gojq, otter, golang.org/x/net, ariga.io/atlas (the diff library in cmd/db); frontend: React 19,
+Mantine (+ mantine-datatable), TanStack Router/Query, zod, i18next, react-querybuilder +
+@react-querybuilder/mantine, @xyflow/react, @jsonforms, @react-email/editor on @tiptap/react (the
+message editor, ADR 0040).
 
 ## Quick wins — replace current hand-rolled utilities
 
@@ -24,10 +28,10 @@ library-grade and extractable).
 
 ## Phase 3 — email templates
 
-| Need                              | Pick                      | Status                    | Note                                                                         |
-| --------------------------------- | ------------------------- | ------------------------- | ---------------------------------------------------------------------------- |
-| Email body                        | **HTML** (ADR 0040)       | accepted                  | Liquid merge tags over email-ready HTML; parsed with `golang.org/x/net/html` |
-| CSS inlining (required for email) | **vanng822/go-premailer** | ✅ 2026-06, v1.34.0, 202★ | de-facto Go CSS inliner                                                      |
+| Need                              | Pick                | Status              | Note                                                                                    |
+| --------------------------------- | ------------------- | ------------------- | --------------------------------------------------------------------------------------- |
+| Email body                        | **HTML** (ADR 0040) | accepted            | Liquid merge tags over email-ready HTML; parsed with `golang.org/x/net/html`            |
+| CSS inlining (required for email) | **none**            | rejected (ADR 0040) | the editor writes inline styles and the sanitizer allowlist keeps them; no inliner runs |
 
 ## Phase 4 — automations / workflows
 
