@@ -128,8 +128,14 @@ func readOutbox(ctx context.Context, client *ent.Client, names []string) ([]even
 	}
 	var out []events.Envelope
 	for _, m := range messages {
-		var e events.Envelope
-		if err := json.Unmarshal(m.Payload, &e); err != nil {
+		var metadata map[string]string
+		if len(m.Metadata) > 0 {
+			if err := json.Unmarshal(m.Metadata, &metadata); err != nil {
+				return nil, err
+			}
+		}
+		e, err := events.EnvelopeFrom(m.UUID, m.Payload, metadata)
+		if err != nil {
 			return nil, err
 		}
 		if len(names) == 0 || slices.Contains(names, e.Name) {

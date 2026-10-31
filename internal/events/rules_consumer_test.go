@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,9 +21,7 @@ func msgCausedBy(t *testing.T, ev events.DomainEvent, cause string) *message.Mes
 	t.Helper()
 	data, err := json.Marshal(ev)
 	require.NoError(t, err)
-	body, err := json.Marshal(events.Envelope{ID: "evt_caused", Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: ev.Workspace(), Data: data, CausedBy: cause})
-	require.NoError(t, err)
-	return message.NewMessage(watermill.NewUUID(), body)
+	return events.Message(events.Envelope{ID: "evt_caused", Name: ev.EventName(), Version: ev.EventVersion(), WorkspaceID: ev.Workspace(), Data: data, CausedBy: cause})
 }
 
 // A recorded Event for a Contact is queued for evaluation with what a Firing is unique on (the
@@ -59,8 +56,8 @@ func TestRulesConsumerStoresTheEventBeforeQueueingIt(t *testing.T) {
 	stored, err := env.DB.Event.Query().Where(event.SourceID("evt_test")).Only(t.Context())
 	require.NoError(t, err)
 	queued := env.JobsOf(t, jobkind.RuleEvaluate.Kind)
-	var envelope events.Envelope
-	require.NoError(t, json.Unmarshal(msg.Payload, &envelope))
+	envelope, err := events.EnvelopeOf(msg)
+	require.NoError(t, err)
 	require.NoError(t, events.Persist(t.Context(), env.DB, envelope))
 	rows, err := env.DB.Event.Query().Where(event.SourceID("evt_test")).Count(t.Context())
 	require.NoError(t, err)

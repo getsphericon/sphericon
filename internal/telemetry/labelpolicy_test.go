@@ -2,7 +2,6 @@ package telemetry_test
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"regexp"
 	"strings"
@@ -105,8 +104,7 @@ func runHandledDomainEvent(t *testing.T, srvAddr, contactEmail string) {
 	require.NoError(t, err)
 	handled := make(chan struct{}, 1)
 	router.AddConsumerHandler("label_policy", events.TopicDomainEvents, sub, func(msg *message.Message) error {
-		var env events.Envelope
-		if err := json.Unmarshal(msg.Payload, &env); err != nil {
+		if _, err := events.EnvelopeOf(msg); err != nil {
 			return err
 		}
 		select {
