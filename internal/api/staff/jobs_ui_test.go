@@ -24,8 +24,8 @@ func TestTheJobQueueUIServesOnlyASignedInStaffMember(t *testing.T) {
 		status int
 	}{
 		{"no session", nil, http.StatusUnauthorized},
-		{"a forged session", &http.Cookie{Name: staffmembers.SessionCookie, Value: "forged"}, http.StatusUnauthorized},
-		{"a customer's session", &http.Cookie{Name: "JWT", Value: session.Value}, http.StatusUnauthorized},
+		{"a forged session", &http.Cookie{Name: staffmembers.SessionCookie, Value: "forged", Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode}, http.StatusUnauthorized},
+		{"a customer's session", &http.Cookie{Name: "JWT", Value: session.Value, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode}, http.StatusUnauthorized},
 		{"a Staff member's session", session, http.StatusOK},
 	} {
 		rec := jobsUI(t, h.env.Server, c.cookie)

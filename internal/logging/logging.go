@@ -10,6 +10,7 @@ package logging
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -50,10 +51,11 @@ func JobLogs() *riverlog.Middleware {
 type jobLogs struct{ slog.Handler }
 
 func (h jobLogs) Handle(ctx context.Context, r slog.Record) error {
+	var copied error
 	if job, ok := riverlog.LoggerSafely(ctx); ok && job.Handler().Enabled(ctx, r.Level) {
-		_ = job.Handler().Handle(ctx, r.Clone())
+		copied = job.Handler().Handle(ctx, r.Clone())
 	}
-	return h.Handler.Handle(ctx, r)
+	return errors.Join(h.Handler.Handle(ctx, r), copied)
 }
 
 func (h jobLogs) WithAttrs(attrs []slog.Attr) slog.Handler {
