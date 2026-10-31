@@ -34,6 +34,7 @@ import (
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	orders "github.com/getsphericon/sphericon/internal/orders"
+	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -171,6 +172,15 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 	}
 	return siteapiSiteAutomationVersion
 }
+func (c *ConverterImpl) AutomationsListPage(source pagination.Page[site.SiteAutomationResource]) site.SiteAutomationsListOK {
+	var siteapiSiteAutomationsListOK site.SiteAutomationsListOK
+	siteapiSiteAutomationsListOK.Items = source.Items
+	siteapiSiteAutomationsListOK.Page = count(source.Page)
+	siteapiSiteAutomationsListOK.PageSize = count(source.PageSize)
+	siteapiSiteAutomationsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteAutomationsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteAutomationsListOK
+}
 func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKitResource {
 	var siteapiSiteBrandKitResource site.SiteBrandKitResource
 	siteapiSiteBrandKitResource.Saved = source.Saved
@@ -271,6 +281,15 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 	}
 	return siteapiSiteBroadcastResource
 }
+func (c *ConverterImpl) BroadcastsListPage(source pagination.Page[site.SiteBroadcastResource]) site.SiteBroadcastsListOK {
+	var siteapiSiteBroadcastsListOK site.SiteBroadcastsListOK
+	siteapiSiteBroadcastsListOK.Items = source.Items
+	siteapiSiteBroadcastsListOK.Page = count(source.Page)
+	siteapiSiteBroadcastsListOK.PageSize = count(source.PageSize)
+	siteapiSiteBroadcastsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteBroadcastsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteBroadcastsListOK
+}
 func (c *ConverterImpl) CapturedMessageSurfaceToResource(source capturedmessage.Surface) site.SiteCapturedMessageSurface {
 	var siteapiSiteCapturedMessageSurface site.SiteCapturedMessageSurface
 	switch source {
@@ -334,6 +353,15 @@ func (c *ConverterImpl) CapturedMessageToSummary(source *ent.CapturedMessage) si
 		siteapiSiteCapturedMessageSummary.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteCapturedMessageSummary
+}
+func (c *ConverterImpl) CapturedMessagesListPage(source pagination.Page[*ent.CapturedMessage]) site.SiteCapturedMessagesListOK {
+	var siteapiSiteCapturedMessagesListOK site.SiteCapturedMessagesListOK
+	siteapiSiteCapturedMessagesListOK.Items = c.CapturedMessagesToSummaries(source.Items)
+	siteapiSiteCapturedMessagesListOK.Page = count(source.Page)
+	siteapiSiteCapturedMessagesListOK.PageSize = count(source.PageSize)
+	siteapiSiteCapturedMessagesListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteCapturedMessagesListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteCapturedMessagesListOK
 }
 func (c *ConverterImpl) CapturedMessagesToSummaries(source []*ent.CapturedMessage) []site.SiteCapturedMessageSummary {
 	var siteapiSiteCapturedMessageSummaryList []site.SiteCapturedMessageSummary
@@ -445,6 +473,15 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) site.SiteContactR
 		siteapiSiteContactResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteContactResource
+}
+func (c *ConverterImpl) ContactsListPage(source pagination.Page[*ent.Contact]) site.SiteContactsListOK {
+	var siteapiSiteContactsListOK site.SiteContactsListOK
+	siteapiSiteContactsListOK.Items = c.ContactsToResources(source.Items)
+	siteapiSiteContactsListOK.Page = count(source.Page)
+	siteapiSiteContactsListOK.PageSize = count(source.PageSize)
+	siteapiSiteContactsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteContactsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteContactsListOK
 }
 func (c *ConverterImpl) ContactsToResources(source []*ent.Contact) []site.SiteContactResource {
 	var siteapiSiteContactResourceList []site.SiteContactResource
@@ -585,6 +622,15 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Sit
 	}
 	return siteapiSiteEnrollmentResource
 }
+func (c *ConverterImpl) EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) site.SiteEnrollmentsListOK {
+	var siteapiSiteEnrollmentsListOK site.SiteEnrollmentsListOK
+	siteapiSiteEnrollmentsListOK.Items = c.EnrollmentsToResources(source.Items)
+	siteapiSiteEnrollmentsListOK.Page = count(source.Page)
+	siteapiSiteEnrollmentsListOK.PageSize = count(source.PageSize)
+	siteapiSiteEnrollmentsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteEnrollmentsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteEnrollmentsListOK
+}
 func (c *ConverterImpl) EnrollmentsToResources(source []*ent.AutomationRun) []site.SiteEnrollmentResource {
 	var siteapiSiteEnrollmentResourceList []site.SiteEnrollmentResource
 	siteapiSiteEnrollmentResourceList = make([]site.SiteEnrollmentResource, len(source))
@@ -622,6 +668,15 @@ func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResourc
 		siteapiSiteEventResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteEventResource
+}
+func (c *ConverterImpl) EventsListPage(source pagination.Page[*ent.Event]) site.SiteEventsListOK {
+	var siteapiSiteEventsListOK site.SiteEventsListOK
+	siteapiSiteEventsListOK.Items = c.EventsToResources(source.Items)
+	siteapiSiteEventsListOK.Page = count(source.Page)
+	siteapiSiteEventsListOK.PageSize = count(source.PageSize)
+	siteapiSiteEventsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteEventsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteEventsListOK
 }
 func (c *ConverterImpl) EventsToResources(source []*ent.Event) []site.SiteEventResource {
 	var siteapiSiteEventResourceList []site.SiteEventResource
@@ -1164,6 +1219,15 @@ func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) site.SiteRu
 	}
 	return siteapiSiteRuleFiringResource
 }
+func (c *ConverterImpl) RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) site.SiteRuleFiringsListOK {
+	var siteapiSiteRuleFiringsListOK site.SiteRuleFiringsListOK
+	siteapiSiteRuleFiringsListOK.Items = c.RuleFiringsToResources(source.Items)
+	siteapiSiteRuleFiringsListOK.Page = count(source.Page)
+	siteapiSiteRuleFiringsListOK.PageSize = count(source.PageSize)
+	siteapiSiteRuleFiringsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteRuleFiringsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteRuleFiringsListOK
+}
 func (c *ConverterImpl) RuleFiringsToResources(source []*ent.RuleFiring) []site.SiteRuleFiringResource {
 	var siteapiSiteRuleFiringResourceList []site.SiteRuleFiringResource
 	siteapiSiteRuleFiringResourceList = make([]site.SiteRuleFiringResource, len(source))
@@ -1210,6 +1274,15 @@ func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) site.Site
 	}
 	return siteapiSiteRuleVersion
 }
+func (c *ConverterImpl) RulesListPage(source pagination.Page[*ent.Rule]) site.SiteRulesListOK {
+	var siteapiSiteRulesListOK site.SiteRulesListOK
+	siteapiSiteRulesListOK.Items = c.RulesToResources(source.Items)
+	siteapiSiteRulesListOK.Page = count(source.Page)
+	siteapiSiteRulesListOK.PageSize = count(source.PageSize)
+	siteapiSiteRulesListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteRulesListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteRulesListOK
+}
 func (c *ConverterImpl) RulesToResources(source []*ent.Rule) []site.SiteRuleResource {
 	var siteapiSiteRuleResourceList []site.SiteRuleResource
 	siteapiSiteRuleResourceList = make([]site.SiteRuleResource, len(source))
@@ -1217,6 +1290,15 @@ func (c *ConverterImpl) RulesToResources(source []*ent.Rule) []site.SiteRuleReso
 		siteapiSiteRuleResourceList[i] = c.RuleToResource(source[i])
 	}
 	return siteapiSiteRuleResourceList
+}
+func (c *ConverterImpl) SegmentContactsListPage(source pagination.Page[*ent.Contact]) site.SiteSegmentContactsListOK {
+	var siteapiSiteSegmentContactsListOK site.SiteSegmentContactsListOK
+	siteapiSiteSegmentContactsListOK.Items = c.ContactsToResources(source.Items)
+	siteapiSiteSegmentContactsListOK.Page = count(source.Page)
+	siteapiSiteSegmentContactsListOK.PageSize = count(source.PageSize)
+	siteapiSiteSegmentContactsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteSegmentContactsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteSegmentContactsListOK
 }
 func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentResource {
 	var siteapiSiteSegmentResource site.SiteSegmentResource
@@ -1229,6 +1311,15 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentR
 		siteapiSiteSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteSegmentResource
+}
+func (c *ConverterImpl) SegmentsListPage(source pagination.Page[*ent.Segment]) site.SiteSegmentsListOK {
+	var siteapiSiteSegmentsListOK site.SiteSegmentsListOK
+	siteapiSiteSegmentsListOK.Items = c.SegmentsToResources(source.Items)
+	siteapiSiteSegmentsListOK.Page = count(source.Page)
+	siteapiSiteSegmentsListOK.PageSize = count(source.PageSize)
+	siteapiSiteSegmentsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteSegmentsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteSegmentsListOK
 }
 func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []site.SiteSegmentResource {
 	var siteapiSiteSegmentResourceList []site.SiteSegmentResource
@@ -1257,6 +1348,15 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.
 		siteapiSiteSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteSendingDomainResource
+}
+func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[site.SiteSendingDomainResource]) site.SiteSendingDomainsListOK {
+	var siteapiSiteSendingDomainsListOK site.SiteSendingDomainsListOK
+	siteapiSiteSendingDomainsListOK.Items = source.Items
+	siteapiSiteSendingDomainsListOK.Page = count(source.Page)
+	siteapiSiteSendingDomainsListOK.PageSize = count(source.PageSize)
+	siteapiSiteSendingDomainsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteSendingDomainsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteSendingDomainsListOK
 }
 func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) site.SiteSesConfig {
 	var siteapiSiteSesConfig site.SiteSesConfig
@@ -1361,6 +1461,15 @@ func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) site.Site
 	}
 	return siteapiSiteSuppressionResource
 }
+func (c *ConverterImpl) SuppressionsListPage(source pagination.Page[*ent.Suppression]) site.SiteSuppressionsListOK {
+	var siteapiSiteSuppressionsListOK site.SiteSuppressionsListOK
+	siteapiSiteSuppressionsListOK.Items = c.SuppressionsToResources(source.Items)
+	siteapiSiteSuppressionsListOK.Page = count(source.Page)
+	siteapiSiteSuppressionsListOK.PageSize = count(source.PageSize)
+	siteapiSiteSuppressionsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteSuppressionsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteSuppressionsListOK
+}
 func (c *ConverterImpl) SuppressionsToResources(source []*ent.Suppression) []site.SiteSuppressionResource {
 	var siteapiSiteSuppressionResourceList []site.SiteSuppressionResource
 	siteapiSiteSuppressionResourceList = make([]site.SiteSuppressionResource, len(source))
@@ -1387,6 +1496,24 @@ func (c *ConverterImpl) TagToResource(source *ent.Tag) site.SiteTagResource {
 	}
 	return siteapiSiteTagResource
 }
+func (c *ConverterImpl) TagsListForContactPage(source pagination.Page[site.SiteTagResource]) site.SiteTagsListForContactOK {
+	var siteapiSiteTagsListForContactOK site.SiteTagsListForContactOK
+	siteapiSiteTagsListForContactOK.Items = source.Items
+	siteapiSiteTagsListForContactOK.Page = count(source.Page)
+	siteapiSiteTagsListForContactOK.PageSize = count(source.PageSize)
+	siteapiSiteTagsListForContactOK.TotalItems = count(source.TotalItems)
+	siteapiSiteTagsListForContactOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteTagsListForContactOK
+}
+func (c *ConverterImpl) TagsListPage(source pagination.Page[site.SiteTagResource]) site.SiteTagsListOK {
+	var siteapiSiteTagsListOK site.SiteTagsListOK
+	siteapiSiteTagsListOK.Items = source.Items
+	siteapiSiteTagsListOK.Page = count(source.Page)
+	siteapiSiteTagsListOK.PageSize = count(source.PageSize)
+	siteapiSiteTagsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteTagsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteTagsListOK
+}
 func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []site.SiteTagResource {
 	var siteapiSiteTagResourceList []site.SiteTagResource
 	siteapiSiteTagResourceList = make([]site.SiteTagResource, len(source))
@@ -1394,6 +1521,15 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []site.SiteTagResourc
 		siteapiSiteTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return siteapiSiteTagResourceList
+}
+func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) site.SiteTemplatesListOK {
+	var siteapiSiteTemplatesListOK site.SiteTemplatesListOK
+	siteapiSiteTemplatesListOK.Items = c.EmailTemplatesToResources(source.Items)
+	siteapiSiteTemplatesListOK.Page = count(source.Page)
+	siteapiSiteTemplatesListOK.PageSize = count(source.PageSize)
+	siteapiSiteTemplatesListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteTemplatesListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteTemplatesListOK
 }
 func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenResource {
 	var siteapiSiteApiTokenResource site.SiteApiTokenResource
@@ -1457,6 +1593,15 @@ func (c *ConverterImpl) TrackingStateToResource(source sendingdomain.TrackingSta
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteTrackingState
+}
+func (c *ConverterImpl) TransactionalEmailsListPage(source pagination.Page[*ent.OutboundMessage]) site.SiteTransactionalEmailsListOK {
+	var siteapiSiteTransactionalEmailsListOK site.SiteTransactionalEmailsListOK
+	siteapiSiteTransactionalEmailsListOK.Items = c.TransactionalMessagesToResources(source.Items)
+	siteapiSiteTransactionalEmailsListOK.Page = count(source.Page)
+	siteapiSiteTransactionalEmailsListOK.PageSize = count(source.PageSize)
+	siteapiSiteTransactionalEmailsListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteTransactionalEmailsListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteTransactionalEmailsListOK
 }
 func (c *ConverterImpl) TransactionalMessageToResource(source *ent.OutboundMessage) site.SiteTransactionalEmailResource {
 	var siteapiSiteTransactionalEmailResource site.SiteTransactionalEmailResource
@@ -1568,6 +1713,15 @@ func (c *ConverterImpl) WebhookErrorKindToResource(source webhookendpoint.LastEr
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteWebhookErrorKind
+}
+func (c *ConverterImpl) WebhooksListPage(source pagination.Page[site.SiteWebhookEndpointResource]) site.SiteWebhooksListOK {
+	var siteapiSiteWebhooksListOK site.SiteWebhooksListOK
+	siteapiSiteWebhooksListOK.Items = source.Items
+	siteapiSiteWebhooksListOK.Page = count(source.Page)
+	siteapiSiteWebhooksListOK.PageSize = count(source.PageSize)
+	siteapiSiteWebhooksListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteWebhooksListOK.TotalPages = count(source.TotalPages)
+	return siteapiSiteWebhooksListOK
 }
 func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWorkspaceResource {
 	var siteapiSiteWorkspaceResource site.SiteWorkspaceResource

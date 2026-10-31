@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
@@ -119,6 +120,9 @@ type StaffConverter interface {
 	SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffeeapi.StaffSignupSource
 	// goverter:enum:transform value
 	SuspensionActorKindToResource(source workspace.SuspendedByKind) staffeeapi.StaffSuspensionActorKind
+
+	// A page of a list, with its page, size and totals, as the surface answers it.
+	WorkspacesListPage(source pagination.Page[*ent.Workspace]) staffeeapi.StaffWorkspacesListOK
 }
 
 // ServiceConverter maps ent rows and the usage figures to the service API resources.
@@ -137,6 +141,7 @@ type StaffConverter interface {
 // goverter:extend serviceOptEmail
 // goverter:extend serviceOptTimestamp
 // goverter:extend serviceOptNilTimestampAt
+// goverter:extend count
 type ServiceConverter interface {
 	HoldToResource(source *ent.Hold) serviceapi.HoldResource
 	// goverter:useEmptyOnNil:slice
@@ -179,6 +184,9 @@ type ServiceConverter interface {
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
 	UsageMetricToResource(source usage.Metric) serviceapi.UsageMetric
+	// A page of a list, with its page, size and totals, as the surface answers it.
+	// goverter:skipCopySameType
+	UsageListPage(source pagination.Page[serviceapi.WorkspaceUsageResource]) serviceapi.ServiceUsageListOK
 }
 
 func staffTimestamp(t time.Time) staffeeapi.Timestamp { return staffeeapi.Timestamp(t) }

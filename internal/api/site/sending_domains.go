@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -33,15 +32,10 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 		return nil, err
 	}
 
-	return &siteapi.SiteSendingDomainsListOK{
-		Items: lo.Map(page.Items, func(d *ent.SendingDomain, _ int) siteapi.SiteSendingDomainResource {
-			return h.sendingDomainResource(d)
-		}),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.SendingDomainsListPage(pagination.WithItems(page, lo.Map(page.Items, func(d *ent.SendingDomain, _ int) siteapi.SiteSendingDomainResource {
+		return h.sendingDomainResource(d)
+	})))
+	return &out, nil
 }
 
 func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.CreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (siteapi.SiteSendingDomainsCreateRes, error) {

@@ -33,6 +33,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/broadcasts"
 	"github.com/getsphericon/sphericon/internal/integrations"
 
+	"github.com/go-faster/jx"
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
@@ -45,14 +48,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
-	"github.com/go-faster/jx"
-	"github.com/samber/lo"
 )
 
 // Converter maps ent entities to site API resources. goverter generates the
@@ -497,6 +499,30 @@ type Converter interface {
 	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) siteapi.SiteWebhookDisabledReason
 	// goverter:enum:transform value
 	WebhookErrorKindToResource(source webhookendpoint.LastErrorKind) siteapi.SiteWebhookErrorKind
+	// A page of a list, with its page, size and totals, as the surface answers it.
+	// goverter:skipCopySameType
+	AutomationsListPage(source pagination.Page[siteapi.SiteAutomationResource]) siteapi.SiteAutomationsListOK
+	// goverter:skipCopySameType
+	BroadcastsListPage(source pagination.Page[siteapi.SiteBroadcastResource]) siteapi.SiteBroadcastsListOK
+	CapturedMessagesListPage(source pagination.Page[*ent.CapturedMessage]) siteapi.SiteCapturedMessagesListOK
+	ContactsListPage(source pagination.Page[*ent.Contact]) siteapi.SiteContactsListOK
+	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) siteapi.SiteEnrollmentsListOK
+	EventsListPage(source pagination.Page[*ent.Event]) siteapi.SiteEventsListOK
+	RulesListPage(source pagination.Page[*ent.Rule]) siteapi.SiteRulesListOK
+	RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) siteapi.SiteRuleFiringsListOK
+	SegmentsListPage(source pagination.Page[*ent.Segment]) siteapi.SiteSegmentsListOK
+	SegmentContactsListPage(source pagination.Page[*ent.Contact]) siteapi.SiteSegmentContactsListOK
+	// goverter:skipCopySameType
+	SendingDomainsListPage(source pagination.Page[siteapi.SiteSendingDomainResource]) siteapi.SiteSendingDomainsListOK
+	SuppressionsListPage(source pagination.Page[*ent.Suppression]) siteapi.SiteSuppressionsListOK
+	// goverter:skipCopySameType
+	TagsListPage(source pagination.Page[siteapi.SiteTagResource]) siteapi.SiteTagsListOK
+	// goverter:skipCopySameType
+	TagsListForContactPage(source pagination.Page[siteapi.SiteTagResource]) siteapi.SiteTagsListForContactOK
+	TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) siteapi.SiteTemplatesListOK
+	TransactionalEmailsListPage(source pagination.Page[*ent.OutboundMessage]) siteapi.SiteTransactionalEmailsListOK
+	// goverter:skipCopySameType
+	WebhooksListPage(source pagination.Page[siteapi.SiteWebhookEndpointResource]) siteapi.SiteWebhooksListOK
 }
 
 // ExportMapper adapts the Converter to contactexport.Mapper.

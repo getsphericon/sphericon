@@ -11,6 +11,7 @@ import (
 	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	staffee "github.com/getsphericon/sphericon/gen/staffee"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
+	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
 )
 
@@ -266,6 +267,15 @@ func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staffee.
 		staffeeapiStaffWorkspaceResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
 	}
 	return staffeeapiStaffWorkspaceResource
+}
+func (c *StaffConverterImpl) WorkspacesListPage(source pagination.Page[*ent.Workspace]) staffee.StaffWorkspacesListOK {
+	var staffeeapiStaffWorkspacesListOK staffee.StaffWorkspacesListOK
+	staffeeapiStaffWorkspacesListOK.Items = c.WorkspacesToResources(source.Items)
+	staffeeapiStaffWorkspacesListOK.Page = count(source.Page)
+	staffeeapiStaffWorkspacesListOK.PageSize = count(source.PageSize)
+	staffeeapiStaffWorkspacesListOK.TotalItems = count(source.TotalItems)
+	staffeeapiStaffWorkspacesListOK.TotalPages = count(source.TotalPages)
+	return staffeeapiStaffWorkspacesListOK
 }
 func (c *StaffConverterImpl) WorkspacesToResources(source []*ent.Workspace) []staffee.StaffWorkspaceResource {
 	var staffeeapiStaffWorkspaceResourceList []staffee.StaffWorkspaceResource

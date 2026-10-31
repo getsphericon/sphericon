@@ -30,3 +30,11 @@ func TestPaginateSlicesAnInMemoryCatalogue(t *testing.T) {
 	assert.Equal(t, 1, def.Page)
 	assert.Equal(t, 25, def.PageSize)
 }
+
+func TestWithItemsKeepsThePageAndReplacesItsItems(t *testing.T) {
+	page := pagination.Page[int]{Items: []int{1, 2}, Page: 2, PageSize: 2, TotalItems: 5, TotalPages: 3}
+
+	got := pagination.WithItems(page, []string{"one", "two"})
+
+	assert.Equal(t, pagination.Page[string]{Items: []string{"one", "two"}, Page: 2, PageSize: 2, TotalItems: 5, TotalPages: 3}, got)
+}

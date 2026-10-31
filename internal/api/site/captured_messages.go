@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -18,14 +17,8 @@ func (h *Handlers) SiteCapturedMessagesList(ctx context.Context, params siteapi.
 		return nil, err
 	}
 
-	res := mapper.CapturedMessagesToSummaries(page.Items)
-	return &siteapi.SiteCapturedMessagesListOK{
-		Items:      res,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	out := mapper.CapturedMessagesListPage(page)
+	return &out, nil
 }
 
 // SiteCapturedMessagesGet returns one Captured message in full. Every member may read.
