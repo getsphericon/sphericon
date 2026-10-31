@@ -6626,6 +6626,10 @@ export type ContactsEraseByData = {
 
 export type ContactsEraseByErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -6675,6 +6679,10 @@ export type ContactsExportData = {
 };
 
 export type ContactsExportErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
