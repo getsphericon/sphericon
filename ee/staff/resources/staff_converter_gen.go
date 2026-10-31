@@ -20,6 +20,7 @@ func (c *StaffConverterImpl) AbuseToResource(source *ent.Workspace) staffee.Staf
 		staffeeapiStaffAbuse.ClearedAt = optNilTimestamp((*source).ClearedAt)
 		staffeeapiStaffAbuse.WarningNotifiedAt = optNilTimestamp((*source).AbuseWarningNotifiedAt)
 		staffeeapiStaffAbuse.FreezeNotifiedAt = optNilTimestamp((*source).AbuseFreezeNotifiedAt)
+		// staffeeapiStaffAbuse.Warning: ignore
 	}
 	return staffeeapiStaffAbuse
 }
@@ -91,6 +92,14 @@ func (c *StaffConverterImpl) HoldToResource(source *ent.Hold) staffee.StaffHold 
 	}
 	return staffeeapiStaffHold
 }
+func (c *StaffConverterImpl) HoldsToResources(source []*ent.Hold) []staffee.StaffHold {
+	var staffeeapiStaffHoldList []staffee.StaffHold
+	staffeeapiStaffHoldList = make([]staffee.StaffHold, len(source))
+	for i := 0; i < len(source); i++ {
+		staffeeapiStaffHoldList[i] = c.HoldToResource(source[i])
+	}
+	return staffeeapiStaffHoldList
+}
 func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staffee.StaffRate {
 	var staffeeapiStaffRate staffee.StaffRate
 	staffeeapiStaffRate.Numerator = count(source.Numerator)
@@ -125,6 +134,9 @@ func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) st
 		staffeeapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension(source)
 		staffeeapiStaffWorkspaceDetailResource.Exempt = (*source).AbuseExempt
 		staffeeapiStaffWorkspaceDetailResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
+		// staffeeapiStaffWorkspaceDetailResource.Holds: ignore
+		// staffeeapiStaffWorkspaceDetailResource.Deliverability: ignore
+		// staffeeapiStaffWorkspaceDetailResource.Abuse: ignore
 	}
 	return staffeeapiStaffWorkspaceDetailResource
 }

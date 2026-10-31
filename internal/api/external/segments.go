@@ -3,9 +3,6 @@ package external
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/condition"
@@ -19,9 +16,7 @@ func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.Segments
 		return nil, err
 	}
 	return &externalapi.SegmentsListOK{
-		Items: lo.Map(page.Items, func(s *ent.Segment, _ int) externalapi.SegmentResource {
-			return mapper.SegmentToResource(s)
-		}),
+		Items:      mapper.SegmentsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),

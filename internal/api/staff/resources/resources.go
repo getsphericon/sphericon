@@ -17,6 +17,7 @@ import (
 // Converter maps ent rows and module values to the core Staff API resources.
 //
 // goverter:converter
+// goverter:annotate:unmapped
 // goverter:name ConverterImpl
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase

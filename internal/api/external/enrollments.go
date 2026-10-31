@@ -3,9 +3,6 @@ package external
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -22,9 +19,7 @@ func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.Enrol
 		return nil, err
 	}
 	return &externalapi.EnrollmentsListOK{
-		Items: lo.Map(page.Items, func(r *ent.AutomationRun, _ int) externalapi.EnrollmentResource {
-			return mapper.EnrollmentToResource(r)
-		}),
+		Items:      mapper.EnrollmentsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),

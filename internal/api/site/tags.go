@@ -3,8 +3,6 @@ package site
 import (
 	"context"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/convert"
@@ -84,6 +82,6 @@ func (h *Handlers) SiteTagsDelete(ctx context.Context, params siteapi.SiteTagsDe
 
 // siteTagsPage maps and pages a small in-memory tag set.
 func siteTagsPage(items []*ent.Tag, page, pageSize siteapi.OptInt32) pagination.Page[siteapi.SiteTagResource] {
-	resources := lo.Map(items, func(t *ent.Tag, _ int) siteapi.SiteTagResource { return mapper.TagToResource(t) })
+	resources := mapper.TagsToResources(items)
 	return pagination.Paginate(resources, convert.Ptr(page), convert.Ptr(pageSize))
 }

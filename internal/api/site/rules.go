@@ -3,9 +3,6 @@ package site
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
@@ -19,7 +16,7 @@ func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesLi
 		return nil, err
 	}
 	return &siteapi.SiteRulesListOK{
-		Items:      lo.Map(page.Items, func(r *ent.Rule, _ int) siteapi.SiteRuleResource { return mapper.RuleToResource(r) }),
+		Items:      mapper.RulesToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),
@@ -163,9 +160,7 @@ func (h *Handlers) SiteRuleFiringsList(ctx context.Context, params siteapi.SiteR
 		return nil, err
 	}
 	return &siteapi.SiteRuleFiringsListOK{
-		Items: lo.Map(page.Items, func(f *ent.RuleFiring, _ int) siteapi.SiteRuleFiringResource {
-			return mapper.RuleFiringToResource(f)
-		}),
+		Items:      mapper.RuleFiringsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),

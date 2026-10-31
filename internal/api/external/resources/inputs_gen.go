@@ -58,6 +58,7 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStep) automations.
 	automationsStep.Subject = stringIn(source.Subject)
 	automationsStep.Body = stringIn(source.Body)
 	automationsStep.Doc = stepDocIn(source.Doc)
+	// automationsStep.EditorVersion: ignore
 	automationsStep.Seconds = int32In(source.Seconds)
 	automationsStep.Tag = stringIn(source.Tag)
 	automationsStep.ID = stringIn(source.ID)
@@ -138,6 +139,7 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 	var contactsCreateInput contacts.CreateInput
 	if source != nil {
 		contactsCreateInput.Attributes = c.ContactAttributes((*source))
+		// contactsCreateInput.Tags: ignore
 	}
 	return contactsCreateInput
 }
@@ -151,6 +153,7 @@ func (c *InputsImpl) ContactUpdate(source *external.UpdateContactInput) contacts
 		contactsUpdateInput.LastName = nilStringPatch((*source).LastName)
 		contactsUpdateInput.TimeZone = nilTimeZonePatch((*source).TimeZone)
 		contactsUpdateInput.CustomFields = updateContactFields((*source).CustomFields)
+		// contactsUpdateInput.Tags: ignore
 	}
 	return contactsUpdateInput
 }
@@ -164,6 +167,16 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 	contactsAttributes.TimeZone = nilTimeZonePtrIn(source.TimeZone)
 	contactsAttributes.CustomFields = upsertContactFields(source.CustomFields)
 	return contactsAttributes
+}
+func (c *InputsImpl) ContactUpserts(source []external.UpsertContactInput) []contacts.Attributes {
+	var contactsAttributesList []contacts.Attributes
+	if source != nil {
+		contactsAttributesList = make([]contacts.Attributes, len(source))
+		for i := 0; i < len(source); i++ {
+			contactsAttributesList[i] = c.ContactUpsert(source[i])
+		}
+	}
+	return contactsAttributesList
 }
 func (c *InputsImpl) Event(source external.EventInput, context bool) (eventlog.Input, error) {
 	var eventlogInput eventlog.Input
@@ -321,6 +334,7 @@ func (c *InputsImpl) TemplateCreate(source *external.CreateTemplateInput) templa
 		templatesCreateInput.Subject = stringPtrIn((*source).Subject)
 		templatesCreateInput.Body = stringPtrIn((*source).Body)
 		templatesCreateInput.Doc = createTemplateDoc((*source).Doc)
+		// templatesCreateInput.Prepared: ignore
 	}
 	return templatesCreateInput
 }
