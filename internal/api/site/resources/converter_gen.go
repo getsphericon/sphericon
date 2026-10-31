@@ -49,6 +49,14 @@ func (c *ConverterImpl) AuditActorToResource(source auditapi.View) site.SiteAudi
 	siteapiSiteAuditActor.Name = optNilString(source.ActorName)
 	return siteapiSiteAuditActor
 }
+func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []site.SiteAuditEntryResource {
+	var siteapiSiteAuditEntryResourceList []site.SiteAuditEntryResource
+	siteapiSiteAuditEntryResourceList = make([]site.SiteAuditEntryResource, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteAuditEntryResourceList[i] = c.AuditEntryToResource(source[i])
+	}
+	return siteapiSiteAuditEntryResourceList
+}
 func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) site.SiteAuditEntryResource {
 	var siteapiSiteAuditEntryResource site.SiteAuditEntryResource
 	siteapiSiteAuditEntryResource.ID = site.EntityId(source.ID)
@@ -327,6 +335,14 @@ func (c *ConverterImpl) CapturedMessageToSummary(source *ent.CapturedMessage) si
 	}
 	return siteapiSiteCapturedMessageSummary
 }
+func (c *ConverterImpl) CapturedMessagesToSummaries(source []*ent.CapturedMessage) []site.SiteCapturedMessageSummary {
+	var siteapiSiteCapturedMessageSummaryList []site.SiteCapturedMessageSummary
+	siteapiSiteCapturedMessageSummaryList = make([]site.SiteCapturedMessageSummary, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteCapturedMessageSummaryList[i] = c.CapturedMessageToSummary(source[i])
+	}
+	return siteapiSiteCapturedMessageSummaryList
+}
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) site.ContactExportConfirmation {
 	var siteapiContactExportConfirmation site.ContactExportConfirmation
 	if source != nil {
@@ -373,6 +389,14 @@ func (c *ConverterImpl) ConnectionToResource(source *ent.ApiToken) site.SiteConn
 		siteapiSiteConnectionResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteConnectionResource
+}
+func (c *ConverterImpl) ConnectionsToResources(source []*ent.ApiToken) site.SiteConnectionsListOKApplicationJSON {
+	var siteapiSiteConnectionsListOKApplicationJSON site.SiteConnectionsListOKApplicationJSON
+	siteapiSiteConnectionsListOKApplicationJSON = make(site.SiteConnectionsListOKApplicationJSON, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteConnectionsListOKApplicationJSON[i] = c.ConnectionToResource(source[i])
+	}
+	return siteapiSiteConnectionsListOKApplicationJSON
 }
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) site.ContactExportSource {
 	var siteapiContactExportSource site.ContactExportSource
@@ -459,6 +483,14 @@ func (c *ConverterImpl) CustomFieldTypeToResource(source customfield.Type) site.
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiSiteCustomFieldType
+}
+func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []site.SiteCustomFieldResource {
+	var siteapiSiteCustomFieldResourceList []site.SiteCustomFieldResource
+	siteapiSiteCustomFieldResourceList = make([]site.SiteCustomFieldResource, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteCustomFieldResourceList[i] = c.CustomFieldToResource(source[i])
+	}
+	return siteapiSiteCustomFieldResourceList
 }
 func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.SiteDeletedWorkspaceResource {
 	var siteapiSiteDeletedWorkspaceResource site.SiteDeletedWorkspaceResource
@@ -591,6 +623,14 @@ func (c *ConverterImpl) EventToResource(source *ent.Event) site.SiteEventResourc
 	}
 	return siteapiSiteEventResource
 }
+func (c *ConverterImpl) EventsToResources(source []*ent.Event) []site.SiteEventResource {
+	var siteapiSiteEventResourceList []site.SiteEventResource
+	siteapiSiteEventResourceList = make([]site.SiteEventResource, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteEventResourceList[i] = c.EventToResource(source[i])
+	}
+	return siteapiSiteEventResourceList
+}
 func (c *ConverterImpl) HoldToResource(source *ent.Hold) site.SiteWorkspaceHold {
 	var siteapiSiteWorkspaceHold site.SiteWorkspaceHold
 	if source != nil {
@@ -688,6 +728,14 @@ func (c *ConverterImpl) InvitationToResource(source *ent.Invitation) site.SiteIn
 		siteapiSiteInvitationResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteInvitationResource
+}
+func (c *ConverterImpl) InvitationsToResources(source []*ent.Invitation) site.SiteInvitationsListOKApplicationJSON {
+	var siteapiSiteInvitationsListOKApplicationJSON site.SiteInvitationsListOKApplicationJSON
+	siteapiSiteInvitationsListOKApplicationJSON = make(site.SiteInvitationsListOKApplicationJSON, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteInvitationsListOKApplicationJSON[i] = c.InvitationToResource(source[i])
+	}
+	return siteapiSiteInvitationsListOKApplicationJSON
 }
 func (c *ConverterImpl) JoinDomainToResource(source *ent.JoinDomain) site.SiteJoinDomainResource {
 	var siteapiSiteJoinDomainResource site.SiteJoinDomainResource
@@ -819,6 +867,14 @@ func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMe
 	}
 	return siteapiSiteMembershipResource
 }
+func (c *ConverterImpl) MembershipsToResources(source []*ent.Membership) site.SiteMembershipsListOKApplicationJSON {
+	var siteapiSiteMembershipsListOKApplicationJSON site.SiteMembershipsListOKApplicationJSON
+	siteapiSiteMembershipsListOKApplicationJSON = make(site.SiteMembershipsListOKApplicationJSON, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteMembershipsListOKApplicationJSON[i] = c.MembershipToResource(source[i])
+	}
+	return siteapiSiteMembershipsListOKApplicationJSON
+}
 func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.SiteMessageRevenue {
 	var siteapiSiteMessageRevenue site.SiteMessageRevenue
 	siteapiSiteMessageRevenue.ReportingCurrency = nilCurrencyCode(source.Currency)
@@ -897,6 +953,14 @@ func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey 
 	}
 	return siteapiSitePasskey
 }
+func (c *ConverterImpl) PasskeysToResources(source []*ent.Passkey) []site.SitePasskey {
+	var siteapiSitePasskeyList []site.SitePasskey
+	siteapiSitePasskeyList = make([]site.SitePasskey, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSitePasskeyList[i] = c.PasskeyToResource(source[i])
+	}
+	return siteapiSitePasskeyList
+}
 func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site.SitePendingSignup {
 	var pSiteapiSitePendingSignup *site.SitePendingSignup
 	if source != nil {
@@ -945,6 +1009,14 @@ func (c *ConverterImpl) PersonalTokenToResource(source *ent.ApiToken) site.SiteP
 		siteapiSitePersonalTokenResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSitePersonalTokenResource
+}
+func (c *ConverterImpl) PersonalTokensToResources(source []*ent.ApiToken) site.SitePersonalTokensListOKApplicationJSON {
+	var siteapiSitePersonalTokensListOKApplicationJSON site.SitePersonalTokensListOKApplicationJSON
+	siteapiSitePersonalTokensListOKApplicationJSON = make(site.SitePersonalTokensListOKApplicationJSON, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSitePersonalTokensListOKApplicationJSON[i] = c.PersonalTokenToResource(source[i])
+	}
+	return siteapiSitePersonalTokensListOKApplicationJSON
 }
 func (c *ConverterImpl) ProviderLimitSourceToResource(source providerlimit.Source) site.SiteProviderLimitSource {
 	var siteapiSiteProviderLimitSource site.SiteProviderLimitSource
@@ -1289,6 +1361,14 @@ func (c *ConverterImpl) SuppressionToResource(source *ent.Suppression) site.Site
 	}
 	return siteapiSiteSuppressionResource
 }
+func (c *ConverterImpl) SuppressionsToResources(source []*ent.Suppression) []site.SiteSuppressionResource {
+	var siteapiSiteSuppressionResourceList []site.SiteSuppressionResource
+	siteapiSiteSuppressionResourceList = make([]site.SiteSuppressionResource, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteSuppressionResourceList[i] = c.SuppressionToResource(source[i])
+	}
+	return siteapiSiteSuppressionResourceList
+}
 func (c *ConverterImpl) TagToExport(source *ent.Tag) site.ContactExportTag {
 	var siteapiContactExportTag site.ContactExportTag
 	if source != nil {
@@ -1333,6 +1413,14 @@ func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenR
 		siteapiSiteApiTokenResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteApiTokenResource
+}
+func (c *ConverterImpl) TokensToResources(source []*ent.ApiToken) site.SiteTokensListOKApplicationJSON {
+	var siteapiSiteTokensListOKApplicationJSON site.SiteTokensListOKApplicationJSON
+	siteapiSiteTokensListOKApplicationJSON = make(site.SiteTokensListOKApplicationJSON, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteTokensListOKApplicationJSON[i] = c.TokenToResource(source[i])
+	}
+	return siteapiSiteTokensListOKApplicationJSON
 }
 func (c *ConverterImpl) TrackingReasonToResource(source sendingdomain.TrackingReason) site.SiteTrackingReason {
 	var siteapiSiteTrackingReason site.SiteTrackingReason
@@ -1386,6 +1474,14 @@ func (c *ConverterImpl) TransactionalMessageToResource(source *ent.OutboundMessa
 		siteapiSiteTransactionalEmailResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteTransactionalEmailResource
+}
+func (c *ConverterImpl) TransactionalMessagesToResources(source []*ent.OutboundMessage) []site.SiteTransactionalEmailResource {
+	var siteapiSiteTransactionalEmailResourceList []site.SiteTransactionalEmailResource
+	siteapiSiteTransactionalEmailResourceList = make([]site.SiteTransactionalEmailResource, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteTransactionalEmailResourceList[i] = c.TransactionalMessageToResource(source[i])
+	}
+	return siteapiSiteTransactionalEmailResourceList
 }
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) site.ContactExportUnsubscribe {
 	var siteapiContactExportUnsubscribe site.ContactExportUnsubscribe

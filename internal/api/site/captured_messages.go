@@ -18,10 +18,7 @@ func (h *Handlers) SiteCapturedMessagesList(ctx context.Context, params siteapi.
 		return nil, err
 	}
 
-	res := make([]siteapi.SiteCapturedMessageSummary, len(page.Items))
-	for i, m := range page.Items {
-		res[i] = mapper.CapturedMessageToSummary(m)
-	}
+	res := mapper.CapturedMessagesToSummaries(page.Items)
 	return &siteapi.SiteCapturedMessagesListOK{
 		Items:      res,
 		Page:       narrow.Int32(page.Page),

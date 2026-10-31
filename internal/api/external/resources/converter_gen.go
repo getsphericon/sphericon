@@ -56,12 +56,28 @@ func (c *ConverterImpl) ApiTokenToInfo(source *ent.ApiToken) external.ApiTokenIn
 	}
 	return externalapiApiTokenInfo
 }
+func (c *ConverterImpl) ApiTokensToInfos(source []*ent.ApiToken) []external.ApiTokenInfo {
+	var externalapiApiTokenInfoList []external.ApiTokenInfo
+	externalapiApiTokenInfoList = make([]external.ApiTokenInfo, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiApiTokenInfoList[i] = c.ApiTokenToInfo(source[i])
+	}
+	return externalapiApiTokenInfoList
+}
 func (c *ConverterImpl) AuditActorToResource(source auditapi.View) external.AuditActor {
 	var externalapiAuditActor external.AuditActor
 	externalapiAuditActor.Kind = external.AuditActorKind(source.ActorKind)
 	externalapiAuditActor.ID = optNilString(source.ActorID)
 	externalapiAuditActor.Name = optNilString(source.ActorName)
 	return externalapiAuditActor
+}
+func (c *ConverterImpl) AuditEntriesToResources(source []auditapi.View) []external.AuditEntryResource {
+	var externalapiAuditEntryResourceList []external.AuditEntryResource
+	externalapiAuditEntryResourceList = make([]external.AuditEntryResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiAuditEntryResourceList[i] = c.AuditEntryToResource(source[i])
+	}
+	return externalapiAuditEntryResourceList
 }
 func (c *ConverterImpl) AuditEntryToResource(source auditapi.View) external.AuditEntryResource {
 	var externalapiAuditEntryResource external.AuditEntryResource
@@ -347,6 +363,14 @@ func (c *ConverterImpl) CapturedMessageToSummary(source *ent.CapturedMessage) ex
 	}
 	return externalapiCapturedMessageSummary
 }
+func (c *ConverterImpl) CapturedMessagesToSummaries(source []*ent.CapturedMessage) []external.CapturedMessageSummary {
+	var externalapiCapturedMessageSummaryList []external.CapturedMessageSummary
+	externalapiCapturedMessageSummaryList = make([]external.CapturedMessageSummary, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiCapturedMessageSummaryList[i] = c.CapturedMessageToSummary(source[i])
+	}
+	return externalapiCapturedMessageSummaryList
+}
 func (c *ConverterImpl) ConfirmationToExport(source *ent.Confirmation) external.ContactExportConfirmation {
 	var externalapiContactExportConfirmation external.ContactExportConfirmation
 	if source != nil {
@@ -442,6 +466,14 @@ func (c *ConverterImpl) CustomFieldTypeToResource(source customfield.Type) exter
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiCustomFieldType
+}
+func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []external.CustomFieldResource {
+	var externalapiCustomFieldResourceList []external.CustomFieldResource
+	externalapiCustomFieldResourceList = make([]external.CustomFieldResource, len(source))
+	for i := 0; i < len(source); i++ {
+		externalapiCustomFieldResourceList[i] = c.CustomFieldToResource(source[i])
+	}
+	return externalapiCustomFieldResourceList
 }
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord

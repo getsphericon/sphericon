@@ -17,10 +17,7 @@ func (h *Handlers) SiteTokensList(ctx context.Context, _ siteapi.SiteTokensListP
 		return nil, err
 	}
 
-	items := make(siteapi.SiteTokensListOKApplicationJSON, len(tokens))
-	for i, t := range tokens {
-		items[i] = mapper.TokenToResource(t)
-	}
+	items := mapper.TokensToResources(tokens)
 	return &items, nil
 }
 

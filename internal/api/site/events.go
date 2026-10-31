@@ -21,10 +21,7 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 		return nil, err
 	}
 
-	resources := make([]siteapi.SiteEventResource, len(page.Items))
-	for i, e := range page.Items {
-		resources[i] = mapper.EventToResource(e)
-	}
+	resources := mapper.EventsToResources(page.Items)
 
 	return &siteapi.SiteEventsListOK{
 		Items:      resources,

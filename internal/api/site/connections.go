@@ -14,10 +14,7 @@ func (h *Handlers) SiteConnectionsList(ctx context.Context, _ siteapi.SiteConnec
 	if err != nil {
 		return nil, err
 	}
-	items := make(siteapi.SiteConnectionsListOKApplicationJSON, len(connections))
-	for i, c := range connections {
-		items[i] = mapper.ConnectionToResource(c)
-	}
+	items := mapper.ConnectionsToResources(connections)
 	return &items, nil
 }
 

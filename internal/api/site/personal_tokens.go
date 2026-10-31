@@ -14,10 +14,7 @@ func (h *Handlers) SitePersonalTokensList(ctx context.Context, _ siteapi.SitePer
 	if err != nil {
 		return nil, err
 	}
-	items := make(siteapi.SitePersonalTokensListOKApplicationJSON, len(tokens))
-	for i, t := range tokens {
-		items[i] = mapper.PersonalTokenToResource(t)
-	}
+	items := mapper.PersonalTokensToResources(tokens)
 	return &items, nil
 }
 
