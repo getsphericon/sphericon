@@ -11,7 +11,7 @@ import (
 
 func TestBroadcastStatsRates(t *testing.T) {
 	// 100 targeted, 80 delivered, 40 opened, 20 clicked, 5 unsubscribed, 20 failed.
-	got := resources.BroadcastStats(broadcasts.Stats{
+	got := resources.BroadcastStats(&resources.ConverterImpl{}, broadcasts.Stats{
 		Recipients:   100,
 		Sent:         80,
 		Opened:       40,
@@ -44,7 +44,7 @@ func TestBroadcastStatsRates(t *testing.T) {
 
 func TestBroadcastStatsZeroDenominators(t *testing.T) {
 	// An all-zero broadcast (never sent): every rate must be 0, no NaN/Inf.
-	got := resources.BroadcastStats(broadcasts.Stats{})
+	got := resources.BroadcastStats(&resources.ConverterImpl{}, broadcasts.Stats{})
 	rates := map[string]float32{
 		"deliveryRate":    got.DeliveryRate,
 		"openRate":        got.OpenRate,
@@ -58,7 +58,7 @@ func TestBroadcastStatsZeroDenominators(t *testing.T) {
 	}
 
 	// Delivered but nobody opened: openRate defined (0), clickToOpenRate guarded (0).
-	got = resources.BroadcastStats(broadcasts.Stats{Recipients: 10, Sent: 10})
+	got = resources.BroadcastStats(&resources.ConverterImpl{}, broadcasts.Stats{Recipients: 10, Sent: 10})
 	assert.InDeltaf(t, 1, got.DeliveryRate, 1e-9, "deliveryRate = %v, want 1", got.DeliveryRate)
 	assert.InDelta(t, 0, got.OpenRate, 1e-9)
 	assert.InDelta(t, 0, got.ClickToOpenRate, 1e-9)

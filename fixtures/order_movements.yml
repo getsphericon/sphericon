@@ -17,3 +17,49 @@
   workspace_id: 2
   created_at: '{{daysAgo 200}}'
   updated_at: '{{daysAgo 200}}'
+
+# Gotham (workspace 61): the Movements of the Orders credited to Gotham results (6100). The
+# current Order is completed on 12 March and partly refunded on 13 March; the previous one is
+# completed on 5 March and partly refunded on 15 March, a Movement that counts in the current period.
+- id: 6100
+  order_id: 6100
+  kind: completed
+  amount: 5000
+  occurred_at: '2026-03-12 15:00:00+00'
+  workspace_id: 61
+  created_at: '2026-03-12 15:00:00+00'
+  updated_at: '2026-03-12 15:00:00+00'
+- id: 6101
+  order_id: 6100
+  kind: refunded
+  amount: -1000
+  refund_id: gotham-refund-1
+  occurred_at: '2026-03-13 15:00:00+00'
+  workspace_id: 61
+  created_at: '2026-03-13 15:00:00+00'
+  updated_at: '2026-03-13 15:00:00+00'
+- id: 6102
+  order_id: 6101
+  kind: completed
+  amount: 2500
+  occurred_at: '2026-03-05 15:00:00+00'
+  workspace_id: 61
+  created_at: '2026-03-05 15:00:00+00'
+  updated_at: '2026-03-05 15:00:00+00'
+- id: 6103
+  order_id: 6101
+  kind: refunded
+  amount: -500
+  refund_id: gotham-refund-2
+  occurred_at: '2026-03-15 15:00:00+00'
+  workspace_id: 61
+  created_at: '2026-03-15 15:00:00+00'
+  updated_at: '2026-03-15 15:00:00+00'
+- id: 6104
+  order_id: 6102
+  kind: completed
+  amount: 9900
+  occurred_at: '2026-03-12 16:00:00+00'
+  workspace_id: 61
+  created_at: '2026-03-12 16:00:00+00'
+  updated_at: '2026-03-12 16:00:00+00'

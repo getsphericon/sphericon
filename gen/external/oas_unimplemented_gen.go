@@ -133,6 +133,18 @@ func (UnimplementedHandler) AutomationsPublish(ctx context.Context, params Autom
 	return r, ht.ErrNotImplemented
 }
 
+// AutomationsReport implements Automations_report operation.
+//
+// Read the report: the engagement of the automation's emails over its whole history, and its results
+// over a period of Report days in the Workspace time zone (entered, completed, goal_reached, exited
+// and failed enrollments, their average duration and the revenue credited), each with the period just
+// before it. Needs the automations:read scope.
+//
+// GET /automations/{id}/report
+func (UnimplementedHandler) AutomationsReport(ctx context.Context, params AutomationsReportParams) (r AutomationsReportRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // AutomationsRevert implements Automations_revert operation.
 //
 // Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live.

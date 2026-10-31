@@ -68,6 +68,14 @@ func (AutomationRun) Fields() []ent.Field {
 		field.JSON("event_properties", map[string]any{}).
 			Optional().
 			Immutable(),
+		// When the Enrollment left `active` (#753): written by the one move out of it
+		// (internal/automations, runstate.go), together with the terminal status, and never again.
+		// An exit or goal Event ends it when that Event occurred, on began_at's clock; a step or an
+		// unsubscribe ends it at its caller's clock. Null while it is active. The Automation report
+		// counts an outcome on the Report day of this moment and measures a duration from began_at.
+		field.Time("ended_at").
+			Optional().
+			Nillable(),
 		field.Int("current_step").
 			Default(0).
 			NonNegative(),

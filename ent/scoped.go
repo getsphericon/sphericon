@@ -3628,6 +3628,18 @@ func (x *AutomationRunScopedCreate) SetEventProperties(v map[string]interface{})
 	return x
 }
 
+// SetEndedAt sets the "ended_at" field.
+func (x *AutomationRunScopedCreate) SetEndedAt(v time.Time) *AutomationRunScopedCreate {
+	x.b.SetEndedAt(v)
+	return x
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableEndedAt(v *time.Time) *AutomationRunScopedCreate {
+	x.b.SetNillableEndedAt(v)
+	return x
+}
+
 // SetCurrentStep sets the "current_step" field.
 func (x *AutomationRunScopedCreate) SetCurrentStep(v int) *AutomationRunScopedCreate {
 	x.b.SetCurrentStep(v)
@@ -3822,6 +3834,24 @@ func (u *AutomationRunScopedUpsert) SetStatus(v automationrun.Status) *Automatio
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *AutomationRunScopedUpsert) UpdateStatus() *AutomationRunScopedUpsert {
 	u.u.SetExcluded(automationrun.FieldStatus)
+	return u
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (u *AutomationRunScopedUpsert) SetEndedAt(v time.Time) *AutomationRunScopedUpsert {
+	u.u.Set(automationrun.FieldEndedAt, v)
+	return u
+}
+
+// UpdateEndedAt sets the "ended_at" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateEndedAt() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldEndedAt)
+	return u
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (u *AutomationRunScopedUpsert) ClearEndedAt() *AutomationRunScopedUpsert {
+	u.u.SetNull(automationrun.FieldEndedAt)
 	return u
 }
 
@@ -4121,6 +4151,24 @@ func (x *AutomationRunScopedUpdateOne) SetNillableStatus(v *automationrun.Status
 	return x
 }
 
+// SetEndedAt sets the "ended_at" field.
+func (x *AutomationRunScopedUpdateOne) SetEndedAt(v time.Time) *AutomationRunScopedUpdateOne {
+	x.b.SetEndedAt(v)
+	return x
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableEndedAt(v *time.Time) *AutomationRunScopedUpdateOne {
+	x.b.SetNillableEndedAt(v)
+	return x
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (x *AutomationRunScopedUpdateOne) ClearEndedAt() *AutomationRunScopedUpdateOne {
+	x.b.ClearEndedAt()
+	return x
+}
+
 // SetCurrentStep sets the "current_step" field.
 func (x *AutomationRunScopedUpdateOne) SetCurrentStep(v int) *AutomationRunScopedUpdateOne {
 	x.b.SetCurrentStep(v)
@@ -4369,6 +4417,24 @@ func (x *AutomationRunScopedUpdate) SetStatus(v automationrun.Status) *Automatio
 // SetNillableStatus sets the "status" field if the given value is not nil.
 func (x *AutomationRunScopedUpdate) SetNillableStatus(v *automationrun.Status) *AutomationRunScopedUpdate {
 	x.b.SetNillableStatus(v)
+	return x
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (x *AutomationRunScopedUpdate) SetEndedAt(v time.Time) *AutomationRunScopedUpdate {
+	x.b.SetEndedAt(v)
+	return x
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableEndedAt(v *time.Time) *AutomationRunScopedUpdate {
+	x.b.SetNillableEndedAt(v)
+	return x
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (x *AutomationRunScopedUpdate) ClearEndedAt() *AutomationRunScopedUpdate {
+	x.b.ClearEndedAt()
 	return x
 }
 

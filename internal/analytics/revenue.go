@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/samber/lo"
 )
 
@@ -66,7 +67,7 @@ func (m *Module) Revenue(ctx context.Context, s *ent.Scoped, w Window) (*Revenue
 		err := s.OrderMovement().Query().Where(counted...).
 			Modify(func(sel *sql.Selector) {
 				sel.Select(sql.As(sql.Sum(sel.C(ordermovement.FieldAmount)), "amount")).
-					AppendSelectExprAs(localDay(sel.C(ordermovement.FieldOccurredAt), days.Loc), "day").
+					AppendSelectExprAs(reportday.Label(sel.C(ordermovement.FieldOccurredAt), days.Loc), "day").
 					GroupBy("day")
 			}).Scan(ctx, &amounts)
 		if err != nil {
@@ -104,7 +105,7 @@ func (m *Module) Revenue(ctx context.Context, s *ent.Scoped, w Window) (*Revenue
 		err = s.OrderMovement().Query().Where(append(counted, ordermovement.KindEQ(ordermovement.KindCompleted))...).
 			Modify(func(sel *sql.Selector) {
 				sel.Select(sql.As(sql.Count("*"), "orders")).
-					AppendSelectExprAs(localDay(sel.C(ordermovement.FieldOccurredAt), days.Loc), "day").
+					AppendSelectExprAs(reportday.Label(sel.C(ordermovement.FieldOccurredAt), days.Loc), "day").
 					GroupBy("day")
 			}).Scan(ctx, &completed)
 		if err != nil {

@@ -163,7 +163,7 @@ func enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o
 	if !admits(a) {
 		return 0, false, nil
 	}
-	ending, ended, err := endedSince(ctx, s, a.Edges.LiveVersion, contactID, o.OccurredAt)
+	ending, endedAt, ended, err := endedSince(ctx, s, a.Edges.LiveVersion, contactID, o.OccurredAt)
 	if err != nil {
 		return 0, false, err
 	}
@@ -188,7 +188,7 @@ func enroll(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o
 	if !ended {
 		return run.ID, true, nil
 	}
-	if err := move(ctx, s, run.ID, ending, nil); err != nil {
+	if err := move(ctx, s, run.ID, ending, endedAt, nil); err != nil {
 		return 0, false, err
 	}
 	return run.ID, false, nil
@@ -208,16 +208,16 @@ func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (bool, err
 }
 
 // endedSince is the end the first exit or goal Event of the version recorded for the Contact at
-// since or later makes, if there is one. Like the trigger consumer it leaves out loaded history and
-// a machine open or click (ADR 0053); an exit and the goal at the same moment are taken in the
-// order they were recorded.
-func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, contactID int64, since time.Time) (trigger, bool, error) {
+// since or later makes, and when that Event occurred, if there is one. Like the trigger consumer it
+// leaves out loaded history and a machine open or click (ADR 0053); an exit and the goal at the
+// same moment are taken in the order they were recorded.
+func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, contactID int64, since time.Time) (trigger, time.Time, bool, error) {
 	actions := slices.Clone(v.ExitEvents)
 	if v.GoalEvent != nil {
 		actions = append(actions, *v.GoalEvent)
 	}
 	if len(actions) == 0 {
-		return "", false, nil
+		return "", time.Time{}, false, nil
 	}
 	first, err := s.Event().Query().
 		Where(
@@ -229,13 +229,13 @@ func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		Order(ent.Asc(event.FieldOccurredAt), ent.Asc(event.FieldID)).
 		First(ctx)
 	if ent.IsNotFound(err) {
-		return "", false, nil
+		return "", time.Time{}, false, nil
 	}
 	if err != nil {
-		return "", false, err
+		return "", time.Time{}, false, err
 	}
 	t, ends := endingBy(v, first.Action)
-	return t, ends, nil
+	return t, lo.FromPtr(first.OccurredAt), ends, nil
 }
 
 // byHuman matches the Events with the action, leaving out an open or a click a machine made (ADR
@@ -247,10 +247,10 @@ func byHuman(action string) predicate.Event {
 	return event.Action(action)
 }
 
-// Exit ends the Contact's active Enrollment in the Automation (status exited, no
-// pending resume). It reports whether an active Enrollment was ended; a finished or
+// Exit ends the Contact's active Enrollment in the Automation at now, the caller's clock (status
+// exited, no pending resume). It reports whether an active Enrollment was ended; a finished or
 // absent one is left alone, and so is one another writer moved first.
-func Exit(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (bool, error) {
+func Exit(ctx context.Context, s *ent.Scoped, automationID, contactID int64, now time.Time) (bool, error) {
 	runID, err := s.AutomationRun().Query().
 		Where(
 			automationrun.AutomationID(automationID),
@@ -264,18 +264,18 @@ func Exit(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (bo
 	if err != nil {
 		return false, err
 	}
-	err = ExitRun(ctx, s, runID)
+	err = ExitRun(ctx, s, runID, now)
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return false, nil // another writer moved it out of active first
 	}
 	return err == nil, err
 }
 
-// ExitRun ends one Enrollment by run id, for the step executor that already holds
-// the run (an ineligible destination exits it rather than walk on skipping mail).
+// ExitRun ends one Enrollment by run id at now, the caller's clock, for the step executor that
+// already holds the run (an ineligible destination exits it rather than walk on skipping mail).
 // lifecycle.ErrInvalidTransition when it is no longer active.
-func ExitRun(ctx context.Context, s *ent.Scoped, runID int64) error {
-	return move(ctx, s, runID, triggerExit, nil)
+func ExitRun(ctx context.Context, s *ent.Scoped, runID int64, now time.Time) error {
+	return move(ctx, s, runID, triggerExit, now, nil)
 }
 
 // EndOnEvent ends the Contact's active Enrollments that an Event with the action ends (#751): one
@@ -309,7 +309,8 @@ func EndOnEvent(ctx context.Context, s *ent.Scoped, contactID int64, action stri
 		if !ends {
 			continue
 		}
-		err := move(ctx, s, run.ID, t, nil)
+		// It ends when the Event that ends it occurred, on the clock its beginning was read on.
+		err := move(ctx, s, run.ID, t, occurredAt, nil)
 		if errors.Is(err, lifecycle.ErrInvalidTransition) {
 			continue // another writer moved it out of active first
 		}

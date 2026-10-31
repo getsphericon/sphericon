@@ -4,24 +4,21 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/api/site/resources"
-	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/automations"
 )
 
+// SiteAutomationReportsGet reads the report over the period the request names; the contract's
+// default fills it in when the request names none.
 func (h *Handlers) SiteAutomationReportsGet(ctx context.Context, params siteapi.SiteAutomationReportsGetParams) (siteapi.SiteAutomationReportsGetRes, error) {
-	ws := workspaceScope(ctx)
-	report, err := h.automations.ReportOf(ctx, ws, int64(params.AutomationId))
+	period, err := automations.PeriodOf(params.Period.Value)
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteAutomationReport{
-		Opens:      narrow.Int32(report.Opens),
-		Clicks:     narrow.Int32(report.Clicks),
-		Delivered:  narrow.Int32(report.Delivered),
-		Bounced:    narrow.Int32(report.Bounced),
-		Complained: narrow.Int32(report.Complained),
-		Captured:   narrow.Int32(report.Captured),
-		Revenue:    resources.MessageRevenue(report.Revenue),
-		Links:      mapper.LinkClicksToResource(report.Links),
-	}, nil
+	report, err := h.automations.ReportOf(ctx, workspaceScope(ctx), int64(params.AutomationId), period)
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.AutomationReportToResource(report)
+	res.Results.Period = siteapi.SiteAutomationReportPeriod(params.Period.Value)
+	return &res, nil
 }

@@ -25,7 +25,7 @@ func withStats(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (siteapi.Si
 		return siteapi.SiteBroadcastResource{}, err
 	}
 	res := mapper.BroadcastToResource(b)
-	res.Stats = resources.BroadcastStats(figures[b.ID])
+	res.Stats = resources.BroadcastStats(mapper, figures[b.ID])
 	return res, nil
 }
 
@@ -38,7 +38,7 @@ func broadcastResource(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (si
 		return siteapi.SiteBroadcastResource{}, err
 	}
 	res := mapper.BroadcastToResource(b)
-	res.Stats = resources.BroadcastStats(d.Stats)
+	res.Stats = resources.BroadcastStats(mapper, d.Stats)
 	if d.Progress != nil {
 		res.Progress = siteapi.NewOptNilSiteBroadcastProgress(mapper.BroadcastProgressToResource(*d.Progress))
 	}
@@ -62,7 +62,7 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 	return &siteapi.SiteBroadcastsListOK{
 		Items: lo.Map(page.Items, func(b *ent.Broadcast, _ int) siteapi.SiteBroadcastResource {
 			res := mapper.BroadcastToResource(b)
-			res.Stats = resources.BroadcastStats(figures[b.ID])
+			res.Stats = resources.BroadcastStats(mapper, figures[b.ID])
 			return res
 		}),
 		Page:       narrow.Int32(page.Page),

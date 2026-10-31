@@ -8,7 +8,10 @@ import {
   handleSiteAutomationsRevert,
   handleSiteEnrollmentsList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteAutomationResource,
+  SiteAutomationResults,
+} from '../../generated/site/types.gen.ts'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { page, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -18,6 +21,36 @@ import { worker } from '../../test/worker.ts'
 import { AutomationDetailPage } from './detail.tsx'
 
 const MOUNT = routeMount(automationsDetailRoute, { workspaceId: 'TestWs01', automationId: '1' })
+
+const NO_REVENUE = { reportingCurrency: 'USD', orders: 0, amount: 0 }
+
+// A period in which nothing happened, nor in the one before.
+const NO_RESULTS: SiteAutomationResults = {
+  period: '30d',
+  current: {
+    entered: 0,
+    completed: 0,
+    goalReached: 0,
+    exited: 0,
+    failed: 0,
+    from: '2026-02-16',
+    to: '2026-03-17',
+    averageDurationSeconds: null,
+    revenue: NO_REVENUE,
+  },
+  previous: {
+    entered: 0,
+    completed: 0,
+    goalReached: 0,
+    exited: 0,
+    failed: 0,
+    from: '2026-01-17',
+    to: '2026-02-15',
+    averageDurationSeconds: null,
+    revenue: NO_REVENUE,
+  },
+  series: [],
+}
 
 test('shows the automation and the contacts enrolled in it', async () => {
   worker.use(
@@ -47,6 +80,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
         captured: 0,
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
+        results: NO_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({
@@ -70,7 +104,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
 
   await expect.element(screen.getByText('Welcome series')).toBeInTheDocument()
   await expect.element(screen.getByText('42')).toBeInTheDocument()
-  await expect.element(screen.getByText('Completed')).toBeInTheDocument()
+  await expect.element(screen.getByRole('cell', { name: 'Completed' })).toBeInTheDocument()
 })
 
 test('shows the opens, the clicks and the clicked links of the automation', async () => {
@@ -104,6 +138,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
           { url: 'https://dest.test/a', clicks: 7 },
           { url: 'https://dest.test/b', clicks: 2 },
         ],
+        results: NO_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
@@ -153,6 +188,7 @@ test('marks an inactive automation as inactive', async () => {
         captured: 0,
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
+        results: NO_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
@@ -200,6 +236,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
         captured: 0,
         revenue: { reportingCurrency: 'USD', orders: 4, amount: 12000 },
         links: [],
+        results: NO_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
@@ -240,6 +277,7 @@ test('shows no orders or revenue on the automation until the currency is chosen'
         captured: 0,
         revenue: { reportingCurrency: null, orders: 0, amount: 0 },
         links: [],
+        results: NO_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
@@ -279,6 +317,7 @@ const NO_FIGURES = {
   captured: 0,
   revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
   links: [],
+  results: NO_RESULTS,
 }
 
 test('shows what the live version does, its exit and goal events included, not the draft above it', async () => {
@@ -392,4 +431,84 @@ test('a refused publish shows the reason', async () => {
 
   await expect.element(screen.getByText('Failed to change automation status')).toBeInTheDocument()
   await expect.element(screen.getByText('integration not found')).toBeInTheDocument()
+})
+
+// The 30 days to 17 March against the 30 days before: what the report answers when the page names
+// no period, the contract's default.
+const MONTH: SiteAutomationResults = {
+  period: '30d',
+  current: {
+    entered: 4,
+    completed: 1,
+    goalReached: 1,
+    exited: 1,
+    failed: 1,
+    from: '2026-02-16',
+    to: '2026-03-17',
+    averageDurationSeconds: 85_050,
+    revenue: { reportingCurrency: 'USD', orders: 1, amount: 3500 },
+  },
+  previous: {
+    entered: 3,
+    completed: 1,
+    goalReached: 1,
+    exited: 1,
+    failed: 0,
+    from: '2026-01-17',
+    to: '2026-02-15',
+    averageDurationSeconds: 57_600,
+    revenue: { reportingCurrency: 'USD', orders: 1, amount: 2500 },
+  },
+  series: [],
+}
+
+// The 7 days to 17 March against the 7 days before.
+const WEEK: SiteAutomationResults = {
+  period: '7d',
+  current: { ...MONTH.current, entered: 9, from: '2026-03-11', to: '2026-03-17' },
+  previous: { ...MONTH.previous, entered: 6, from: '2026-03-04', to: '2026-03-10' },
+  series: [],
+}
+
+// The results the report answers for the period a request names (none: the default).
+const RESULTS_BY_PERIOD = new Map<string | null, SiteAutomationResults>([
+  [null, MONTH],
+  ['7d', WEEK],
+])
+
+test('shows what the enrollments did in the period against the period before', async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: PENDING }),
+    handleSiteAutomationReportsGet({ body: { ...NO_FIGURES, results: MONTH } }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+
+  await expect.element(screen.getByText('Entered', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 3 (+33.33%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 0', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('23h 37m')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 16h (+47.66%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('$35.00')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: $25.00 (+40%)')).toBeInTheDocument()
+})
+
+test('the period picked shows the results of that period', async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: PENDING }),
+    handleSiteAutomationReportsGet(({ request }) => {
+      const results = RESULTS_BY_PERIOD.get(new URL(request.url).searchParams.get('period'))
+      return HttpResponse.json({ ...NO_FIGURES, results: results ?? NO_RESULTS })
+    }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+  )
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+  await expect.element(screen.getByText('Previous 30 days: 3 (+33.33%)')).toBeInTheDocument()
+
+  await screen.getByText('7 days', { exact: true }).click()
+
+  await expect.element(screen.getByText('Previous 7 days: 6 (+50%)')).toBeInTheDocument()
+  await expect.element(screen.getByText(/from 03\/11\/2026 to 03\/17\/2026/)).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 3 (+33.33%)')).not.toBeInTheDocument()
 })

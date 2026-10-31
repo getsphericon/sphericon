@@ -434,6 +434,8 @@ shape a Rule's HTTP action binds); an Enrollment no Event began has an empty `ev
 **Automation version** (the one live when it was made) and holds the current step in it, and a
 terminal state:
 `completed`, `failed`, **`exited`** (left early) or **`goal_reached`** (its goal event was recorded).
+It ends at the moment it reaches that state, and the Automation report counts its outcome on that
+moment's Report day and its duration from when it began.
 An unsubscribe from the Automation has two
 effects from one action — it records the durable opt-out (scope `automation:<id>`) _and_ moves
 the active Enrollment to `exited`; suppression, hard bounces and an exit event likewise exit the

@@ -4,6 +4,7 @@ import "@typespec/openapi";
 import "@typespec/versioning";
 
 import "../common/scalars.tsp";
+import "../common/money.tsp";
 import "../common/pagination.tsp";
 import "../common/errors.tsp";
 import "../common/versions.tsp";

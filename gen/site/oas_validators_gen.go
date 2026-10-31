@@ -1999,6 +1999,29 @@ func (s SiteAutomationHttpErrorKind) Validate() error {
 	}
 }
 
+func (s *SiteAutomationPeriodResults) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revenue.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revenue",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SiteAutomationReport) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -2027,10 +2050,36 @@ func (s *SiteAutomationReport) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if err := s.Results.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "results",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s SiteAutomationReportPeriod) Validate() error {
+	switch s {
+	case "7d":
+		return nil
+	case "14d":
+		return nil
+	case "30d":
+		return nil
+	case "90d":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *SiteAutomationReportsGetBadRequest) Validate() error {
@@ -2047,6 +2096,21 @@ func (s *SiteAutomationReportsGetNotFound) Validate() error {
 		return err
 	}
 	return nil
+}
+
+func (s SiteAutomationReportsGetPeriod) Validate() error {
+	switch s {
+	case "7d":
+		return nil
+	case "14d":
+		return nil
+	case "30d":
+		return nil
+	case "90d":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *SiteAutomationResource) Validate() error {
@@ -2117,6 +2181,62 @@ func (s *SiteAutomationResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "revenue",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SiteAutomationResults) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Period.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "period",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Current.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "current",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Previous.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "previous",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Series == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "series",
 			Error: err,
 		})
 	}

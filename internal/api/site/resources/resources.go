@@ -94,6 +94,7 @@ import (
 // goverter:extend auditDiff
 // goverter:extend optWebhookDisabledReason
 // goverter:extend optConsentDecision
+// goverter:extend durationSeconds
 type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
@@ -152,6 +153,19 @@ type Converter interface {
 	RevenueToResource(source *analytics.Revenue) siteapi.SiteAnalyticsRevenue
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	LinkClicksToResource(source []linkclicks.Clicks) []siteapi.SiteLinkClicks
+	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
+	// goverter:autoMap Credited
+	// goverter:map Currency ReportingCurrency
+	MessageRevenueToResource(source orders.Revenue) siteapi.SiteMessageRevenue
+	AutomationReportToResource(source automations.Report) siteapi.SiteAutomationReport
+	// goverter:autoMap ResultCounts
+	// goverter:map AverageDuration AverageDurationSeconds
+	AutomationPeriodResultsToResource(source automations.PeriodResults) siteapi.SiteAutomationPeriodResults
+	// goverter:autoMap ResultCounts
+	AutomationResultsPointToResource(source automations.ResultsPoint) siteapi.SiteAutomationResultsPoint
+	// The period is the one the request named: the handler attaches it.
+	// goverter:ignore Period
+	AutomationResultsToResource(source automations.Results) siteapi.SiteAutomationResults
 
 	// The delivery figures are derived from the Broadcast's recipients and their Outbound
 	// messages, which the mapper cannot see: the handler attaches them (BroadcastStats).
@@ -489,7 +503,7 @@ func optNilEntityID(v *int64) siteapi.OptNilEntityId {
 
 // BroadcastStats nests a Broadcast's delivery figures in the Stats DTO and computes the
 // derived engagement rates. Rates are ratios in [0,1]; a zero denominator yields 0.
-func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
+func BroadcastStats(c Converter, st broadcasts.Stats) siteapi.SiteBroadcastStats {
 	return siteapi.SiteBroadcastStats{
 		RecipientsTotal:   narrow.Int32(st.Recipients),
 		SentCount:         narrow.Int32(st.Sent),
@@ -507,23 +521,13 @@ func BroadcastStats(st broadcasts.Stats) siteapi.SiteBroadcastStats {
 		ClickToOpenRate:   broadcasts.Ratio(st.Clicked, st.Opened),
 		UnsubscribeRate:   broadcasts.Ratio(st.Unsubscribed, st.Sent),
 		FailureRate:       broadcasts.Ratio(st.Failed, st.Recipients),
-		Revenue:           MessageRevenue(st.Revenue),
+		Revenue:           c.MessageRevenueToResource(st.Revenue),
 	}
 }
 
-// MessageRevenue is the Orders and net revenue credited to a Broadcast or an Automation, in
-// the Reporting currency (nil until chosen: the figures are then zero). f holds one id: a
-// list item narrows it with Only.
-func MessageRevenue(f orders.Figures) siteapi.SiteMessageRevenue {
-	var c orders.Credited
-	for _, v := range f.ByID {
-		c = v
-	}
-	return siteapi.SiteMessageRevenue{
-		ReportingCurrency: nilCurrencyCode(f.Currency),
-		Orders:            narrow.Int32(c.Orders),
-		Amount:            c.Amount,
-	}
+// durationSeconds is a duration in whole seconds, null when there was nothing to measure.
+func durationSeconds(d *time.Duration) siteapi.NilInt64 {
+	return convert.Nil[siteapi.NilInt64](convert.WholeSeconds(d))
 }
 
 // workspaceTimezone is the Workspace time zone, UTC while an Owner has not set one (ADR 0057).
@@ -533,10 +537,7 @@ func workspaceTimezone(v *string) siteapi.TimeZoneName {
 
 // nilCurrencyCode is the Reporting currency, null until an Owner or Admin chooses one (ADR 0064).
 func nilCurrencyCode(v *string) siteapi.NilCurrencyCode {
-	if v == nil {
-		return siteapi.NilCurrencyCode{Null: true}
-	}
-	return siteapi.NewNilCurrencyCode(siteapi.CurrencyCode(*v))
+	return convert.Nil[siteapi.NilCurrencyCode]((*siteapi.CurrencyCode)(v))
 }
 
 // nilTimeZone is the User time zone (ADR 0068), null while the app follows the browser.

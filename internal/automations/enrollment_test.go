@@ -63,7 +63,7 @@ func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) 
 	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 
-	exited, err := automations.Exit(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	exited, err := automations.Exit(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID, time.Now())
 	require.NoError(t, err)
 	assert.True(t, exited)
 	run, err := s.AutomationRun().Get(ctx, runID)
@@ -71,7 +71,7 @@ func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) 
 	assert.Equal(t, automationrun.StatusExited, run.Status)
 	assert.Nil(t, run.ResumeAt)
 
-	again, err := automations.Exit(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
+	again, err := automations.Exit(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID, time.Now())
 	require.NoError(t, err)
 	assert.False(t, again, "nothing active is left to exit")
 
@@ -88,7 +88,7 @@ func TestExitRunEndsOneEnrollment(t *testing.T) {
 	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 
-	require.NoError(t, automations.ExitRun(ctx, s, runID))
+	require.NoError(t, automations.ExitRun(ctx, s, runID, time.Now()))
 	run, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
@@ -101,11 +101,11 @@ func TestAnExitedEnrollmentIsNeitherCompletedNorFailed(t *testing.T) {
 	c := enrollable(t, s, 0)
 	runID, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
-	require.NoError(t, automations.ExitRun(ctx, s, runID))
+	require.NoError(t, automations.ExitRun(ctx, s, runID, time.Now()))
 
-	require.ErrorIs(t, automations.Complete(ctx, s, runID), lifecycle.ErrInvalidTransition)
-	require.ErrorIs(t, automations.Fail(ctx, s, runID, automations.Failure{}), lifecycle.ErrInvalidTransition)
-	require.ErrorIs(t, automations.ExitRun(ctx, s, runID), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.Complete(ctx, s, runID, time.Now()), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.Fail(ctx, s, runID, time.Now(), automations.Failure{}), lifecycle.ErrInvalidTransition)
+	require.ErrorIs(t, automations.ExitRun(ctx, s, runID, time.Now()), lifecycle.ErrInvalidTransition)
 	run, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
@@ -120,10 +120,10 @@ func TestFailKeepsTheReasonAndCompleteEndsTheRun(t *testing.T) {
 	done, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 1).ID)
 	require.NoError(t, err)
 
-	require.NoError(t, automations.Fail(ctx, s, failing, automations.Failure{
+	require.NoError(t, automations.Fail(ctx, s, failing, time.Now(), automations.Failure{
 		Kind: automationrun.FailureKindHTTPStatus, Status: 500, Excerpt: "boom",
 	}))
-	require.NoError(t, automations.Complete(ctx, s, done))
+	require.NoError(t, automations.Complete(ctx, s, done, time.Now()))
 
 	run, err := s.AutomationRun().Get(ctx, failing)
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestAdvanceMovesOnlyAnActiveEnrollmentStandingOnTheExpectedStep(t *testing.
 	require.NoError(t, err)
 	gone, _, err := automations.Enroll(ctx, s, fixtures.AutomationWelcomeSeriesID, enrollable(t, s, 1).ID)
 	require.NoError(t, err)
-	require.NoError(t, automations.ExitRun(ctx, s, gone))
+	require.NoError(t, automations.ExitRun(ctx, s, gone, time.Now()))
 	resume := time.Now().Add(time.Hour)
 
 	require.ErrorIs(t, automations.Advance(ctx, s, live, 5, 6, &resume), lifecycle.ErrInvalidTransition, "an Enrollment elsewhere than the expected step stays put")
@@ -186,7 +186,7 @@ func TestIsActiveReadsTheLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ok)
 
-	require.NoError(t, automations.ExitRun(ctx, s, runID))
+	require.NoError(t, automations.ExitRun(ctx, s, runID, time.Now()))
 	ok, err = automations.IsActive(ctx, s, runID)
 	require.NoError(t, err)
 	assert.False(t, ok)

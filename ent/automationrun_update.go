@@ -109,6 +109,26 @@ func (_u *AutomationRunUpdate) SetNillableStatus(v *automationrun.Status) *Autom
 	return _u
 }
 
+// SetEndedAt sets the "ended_at" field.
+func (_u *AutomationRunUpdate) SetEndedAt(v time.Time) *AutomationRunUpdate {
+	_u.mutation.SetEndedAt(v)
+	return _u
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (_u *AutomationRunUpdate) SetNillableEndedAt(v *time.Time) *AutomationRunUpdate {
+	if v != nil {
+		_u.SetEndedAt(*v)
+	}
+	return _u
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (_u *AutomationRunUpdate) ClearEndedAt() *AutomationRunUpdate {
+	_u.mutation.ClearEndedAt()
+	return _u
+}
+
 // SetCurrentStep sets the "current_step" field.
 func (_u *AutomationRunUpdate) SetCurrentStep(v int) *AutomationRunUpdate {
 	_u.mutation.ResetCurrentStep()
@@ -364,6 +384,12 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.EventPropertiesCleared() {
 		_spec.ClearField(automationrun.FieldEventProperties, field.TypeJSON)
 	}
+	if value, ok := _u.mutation.EndedAt(); ok {
+		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
+	}
+	if _u.mutation.EndedAtCleared() {
+		_spec.ClearField(automationrun.FieldEndedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.CurrentStep(); ok {
 		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)
 	}
@@ -608,6 +634,26 @@ func (_u *AutomationRunUpdateOne) SetNillableStatus(v *automationrun.Status) *Au
 	if v != nil {
 		_u.SetStatus(*v)
 	}
+	return _u
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (_u *AutomationRunUpdateOne) SetEndedAt(v time.Time) *AutomationRunUpdateOne {
+	_u.mutation.SetEndedAt(v)
+	return _u
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (_u *AutomationRunUpdateOne) SetNillableEndedAt(v *time.Time) *AutomationRunUpdateOne {
+	if v != nil {
+		_u.SetEndedAt(*v)
+	}
+	return _u
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (_u *AutomationRunUpdateOne) ClearEndedAt() *AutomationRunUpdateOne {
+	_u.mutation.ClearEndedAt()
 	return _u
 }
 
@@ -895,6 +941,12 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 	}
 	if _u.mutation.EventPropertiesCleared() {
 		_spec.ClearField(automationrun.FieldEventProperties, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EndedAt(); ok {
+		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
+	}
+	if _u.mutation.EndedAtCleared() {
+		_spec.ClearField(automationrun.FieldEndedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.CurrentStep(); ok {
 		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)

@@ -2604,6 +2604,51 @@ func (o NilInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewNilInt64 returns new NilInt64 with value set to v.
+func NewNilInt64(v int64) NilInt64 {
+	return NilInt64{
+		Value: v,
+	}
+}
+
+// NilInt64 is nullable int64.
+type NilInt64 struct {
+	Value int64
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilInt64) SetTo(v int64) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilInt64) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilInt64) SetToNull() {
+	o.Null = true
+	var v int64
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilInt64) Get() (v int64, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilInt64) Or(d int64) int64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilRetentionDays returns new NilRetentionDays with value set to v.
 func NewNilRetentionDays(v RetentionDays) NilRetentionDays {
 	return NilRetentionDays{
@@ -5080,6 +5125,52 @@ func (o OptSiteAutomationHttpErrorKind) Get() (v SiteAutomationHttpErrorKind, ok
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAutomationHttpErrorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSiteAutomationReportsGetPeriod returns new OptSiteAutomationReportsGetPeriod with value set to v.
+func NewOptSiteAutomationReportsGetPeriod(v SiteAutomationReportsGetPeriod) OptSiteAutomationReportsGetPeriod {
+	return OptSiteAutomationReportsGetPeriod{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSiteAutomationReportsGetPeriod is optional SiteAutomationReportsGetPeriod.
+type OptSiteAutomationReportsGetPeriod struct {
+	Value SiteAutomationReportsGetPeriod
+	Set   bool
+}
+
+// IsSet returns true if OptSiteAutomationReportsGetPeriod was set.
+func (o OptSiteAutomationReportsGetPeriod) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSiteAutomationReportsGetPeriod) Reset() {
+	var v SiteAutomationReportsGetPeriod
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSiteAutomationReportsGetPeriod) SetTo(v SiteAutomationReportsGetPeriod) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSiteAutomationReportsGetPeriod) Get() (v SiteAutomationReportsGetPeriod, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSiteAutomationReportsGetPeriod) Or(d SiteAutomationReportsGetPeriod) SiteAutomationReportsGetPeriod {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -9345,6 +9436,123 @@ func (s *SiteAutomationHttpHeader) SetValue(val OptString) {
 	s.Value = val
 }
 
+// One period of an automation's results. Each count is what happened in the period: an enrollment
+// counts as entered on the Report day it began and under its outcome on the Report day it ended,
+// whenever it began, so an enrollment still running counts as entered only.
+// Ref: #/components/schemas/SiteAutomationPeriodResults
+type SiteAutomationPeriodResults struct {
+	// Enrollments that began: their triggering Event occurred in it.
+	Entered int32 `json:"entered"`
+	// Enrollments that walked every step and ended in it.
+	Completed int32 `json:"completed"`
+	// Enrollments that ended in it because their goal event was recorded.
+	GoalReached int32 `json:"goalReached"`
+	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	Exited int32 `json:"exited"`
+	// Enrollments that ended in it on a step that failed.
+	Failed int32 `json:"failed"`
+	// The period's first Report day, `YYYY-MM-DD` in the Workspace time zone.
+	From string `json:"from"`
+	// The period's last Report day, included.
+	To string `json:"to"`
+	// Mean time in whole seconds from the beginning to the end of the enrollments that ended in the
+	// period, whatever their outcome; null when none ended.
+	AverageDurationSeconds NilInt64 `json:"averageDurationSeconds"`
+	// The orders credited to the automation that were completed in the period, and the net change of its
+	// revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064).
+	Revenue SiteMessageRevenue `json:"revenue"`
+}
+
+// GetEntered returns the value of Entered.
+func (s *SiteAutomationPeriodResults) GetEntered() int32 {
+	return s.Entered
+}
+
+// GetCompleted returns the value of Completed.
+func (s *SiteAutomationPeriodResults) GetCompleted() int32 {
+	return s.Completed
+}
+
+// GetGoalReached returns the value of GoalReached.
+func (s *SiteAutomationPeriodResults) GetGoalReached() int32 {
+	return s.GoalReached
+}
+
+// GetExited returns the value of Exited.
+func (s *SiteAutomationPeriodResults) GetExited() int32 {
+	return s.Exited
+}
+
+// GetFailed returns the value of Failed.
+func (s *SiteAutomationPeriodResults) GetFailed() int32 {
+	return s.Failed
+}
+
+// GetFrom returns the value of From.
+func (s *SiteAutomationPeriodResults) GetFrom() string {
+	return s.From
+}
+
+// GetTo returns the value of To.
+func (s *SiteAutomationPeriodResults) GetTo() string {
+	return s.To
+}
+
+// GetAverageDurationSeconds returns the value of AverageDurationSeconds.
+func (s *SiteAutomationPeriodResults) GetAverageDurationSeconds() NilInt64 {
+	return s.AverageDurationSeconds
+}
+
+// GetRevenue returns the value of Revenue.
+func (s *SiteAutomationPeriodResults) GetRevenue() SiteMessageRevenue {
+	return s.Revenue
+}
+
+// SetEntered sets the value of Entered.
+func (s *SiteAutomationPeriodResults) SetEntered(val int32) {
+	s.Entered = val
+}
+
+// SetCompleted sets the value of Completed.
+func (s *SiteAutomationPeriodResults) SetCompleted(val int32) {
+	s.Completed = val
+}
+
+// SetGoalReached sets the value of GoalReached.
+func (s *SiteAutomationPeriodResults) SetGoalReached(val int32) {
+	s.GoalReached = val
+}
+
+// SetExited sets the value of Exited.
+func (s *SiteAutomationPeriodResults) SetExited(val int32) {
+	s.Exited = val
+}
+
+// SetFailed sets the value of Failed.
+func (s *SiteAutomationPeriodResults) SetFailed(val int32) {
+	s.Failed = val
+}
+
+// SetFrom sets the value of From.
+func (s *SiteAutomationPeriodResults) SetFrom(val string) {
+	s.From = val
+}
+
+// SetTo sets the value of To.
+func (s *SiteAutomationPeriodResults) SetTo(val string) {
+	s.To = val
+}
+
+// SetAverageDurationSeconds sets the value of AverageDurationSeconds.
+func (s *SiteAutomationPeriodResults) SetAverageDurationSeconds(val NilInt64) {
+	s.AverageDurationSeconds = val
+}
+
+// SetRevenue sets the value of Revenue.
+func (s *SiteAutomationPeriodResults) SetRevenue(val SiteMessageRevenue) {
+	s.Revenue = val
+}
+
 // An automation's engagement figures.
 // Ref: #/components/schemas/SiteAutomationReport
 type SiteAutomationReport struct {
@@ -9367,6 +9575,8 @@ type SiteAutomationReport struct {
 	Revenue SiteMessageRevenue `json:"revenue"`
 	// One entry per clicked link, most clicked first.
 	Links []SiteLinkClicks `json:"links"`
+	// What the automation's enrollments did over the chosen period and the period before it.
+	Results SiteAutomationResults `json:"results"`
 }
 
 // GetOpens returns the value of Opens.
@@ -9409,6 +9619,11 @@ func (s *SiteAutomationReport) GetLinks() []SiteLinkClicks {
 	return s.Links
 }
 
+// GetResults returns the value of Results.
+func (s *SiteAutomationReport) GetResults() SiteAutomationResults {
+	return s.Results
+}
+
 // SetOpens sets the value of Opens.
 func (s *SiteAutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -9449,7 +9664,70 @@ func (s *SiteAutomationReport) SetLinks(val []SiteLinkClicks) {
 	s.Links = val
 }
 
+// SetResults sets the value of Results.
+func (s *SiteAutomationReport) SetResults(val SiteAutomationResults) {
+	s.Results = val
+}
+
 func (*SiteAutomationReport) siteAutomationReportsGetRes() {}
+
+// The length of the period an automation's results are read over, in Report days (ADR 0057), today
+// included.
+// Ref: #/components/schemas/SiteAutomationReportPeriod
+type SiteAutomationReportPeriod string
+
+const (
+	SiteAutomationReportPeriod7d  SiteAutomationReportPeriod = "7d"
+	SiteAutomationReportPeriod14d SiteAutomationReportPeriod = "14d"
+	SiteAutomationReportPeriod30d SiteAutomationReportPeriod = "30d"
+	SiteAutomationReportPeriod90d SiteAutomationReportPeriod = "90d"
+)
+
+// AllValues returns all SiteAutomationReportPeriod values.
+func (SiteAutomationReportPeriod) AllValues() []SiteAutomationReportPeriod {
+	return []SiteAutomationReportPeriod{
+		SiteAutomationReportPeriod7d,
+		SiteAutomationReportPeriod14d,
+		SiteAutomationReportPeriod30d,
+		SiteAutomationReportPeriod90d,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAutomationReportPeriod) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAutomationReportPeriod7d:
+		return []byte(s), nil
+	case SiteAutomationReportPeriod14d:
+		return []byte(s), nil
+	case SiteAutomationReportPeriod30d:
+		return []byte(s), nil
+	case SiteAutomationReportPeriod90d:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAutomationReportPeriod) UnmarshalText(data []byte) error {
+	switch SiteAutomationReportPeriod(data) {
+	case SiteAutomationReportPeriod7d:
+		*s = SiteAutomationReportPeriod7d
+		return nil
+	case SiteAutomationReportPeriod14d:
+		*s = SiteAutomationReportPeriod14d
+		return nil
+	case SiteAutomationReportPeriod30d:
+		*s = SiteAutomationReportPeriod30d
+		return nil
+	case SiteAutomationReportPeriod90d:
+		*s = SiteAutomationReportPeriod90d
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 type SiteAutomationReportsGetBadRequest ProblemDetails
 
@@ -9458,6 +9736,62 @@ func (*SiteAutomationReportsGetBadRequest) siteAutomationReportsGetRes() {}
 type SiteAutomationReportsGetNotFound ProblemDetails
 
 func (*SiteAutomationReportsGetNotFound) siteAutomationReportsGetRes() {}
+
+// Merged schema.
+type SiteAutomationReportsGetPeriod string
+
+const (
+	SiteAutomationReportsGetPeriod7d  SiteAutomationReportsGetPeriod = "7d"
+	SiteAutomationReportsGetPeriod14d SiteAutomationReportsGetPeriod = "14d"
+	SiteAutomationReportsGetPeriod30d SiteAutomationReportsGetPeriod = "30d"
+	SiteAutomationReportsGetPeriod90d SiteAutomationReportsGetPeriod = "90d"
+)
+
+// AllValues returns all SiteAutomationReportsGetPeriod values.
+func (SiteAutomationReportsGetPeriod) AllValues() []SiteAutomationReportsGetPeriod {
+	return []SiteAutomationReportsGetPeriod{
+		SiteAutomationReportsGetPeriod7d,
+		SiteAutomationReportsGetPeriod14d,
+		SiteAutomationReportsGetPeriod30d,
+		SiteAutomationReportsGetPeriod90d,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteAutomationReportsGetPeriod) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteAutomationReportsGetPeriod7d:
+		return []byte(s), nil
+	case SiteAutomationReportsGetPeriod14d:
+		return []byte(s), nil
+	case SiteAutomationReportsGetPeriod30d:
+		return []byte(s), nil
+	case SiteAutomationReportsGetPeriod90d:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteAutomationReportsGetPeriod) UnmarshalText(data []byte) error {
+	switch SiteAutomationReportsGetPeriod(data) {
+	case SiteAutomationReportsGetPeriod7d:
+		*s = SiteAutomationReportsGetPeriod7d
+		return nil
+	case SiteAutomationReportsGetPeriod14d:
+		*s = SiteAutomationReportsGetPeriod14d
+		return nil
+	case SiteAutomationReportsGetPeriod30d:
+		*s = SiteAutomationReportsGetPeriod30d
+		return nil
+	case SiteAutomationReportsGetPeriod90d:
+		*s = SiteAutomationReportsGetPeriod90d
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // Automation resource used by the site UI.
 // Ref: #/components/schemas/SiteAutomationResource
@@ -9581,6 +9915,137 @@ func (*SiteAutomationResource) siteAutomationsPublishRes()    {}
 func (*SiteAutomationResource) siteAutomationsRevertRes()     {}
 func (*SiteAutomationResource) siteAutomationsUnarchiveRes()  {}
 func (*SiteAutomationResource) siteAutomationsUpdateRes()     {}
+
+// An automation's results over a period of Report days, read from its enrollments, with the period
+// just before it to compare with.
+// Ref: #/components/schemas/SiteAutomationResults
+type SiteAutomationResults struct {
+	// The period the results are read over.
+	Period SiteAutomationReportPeriod `json:"period"`
+	// The period ending today.
+	Current SiteAutomationPeriodResults `json:"current"`
+	// As many Report days just before it.
+	Previous SiteAutomationPeriodResults `json:"previous"`
+	// The current period by Report day, oldest first, a day with nothing at zero.
+	Series []SiteAutomationResultsPoint `json:"series"`
+}
+
+// GetPeriod returns the value of Period.
+func (s *SiteAutomationResults) GetPeriod() SiteAutomationReportPeriod {
+	return s.Period
+}
+
+// GetCurrent returns the value of Current.
+func (s *SiteAutomationResults) GetCurrent() SiteAutomationPeriodResults {
+	return s.Current
+}
+
+// GetPrevious returns the value of Previous.
+func (s *SiteAutomationResults) GetPrevious() SiteAutomationPeriodResults {
+	return s.Previous
+}
+
+// GetSeries returns the value of Series.
+func (s *SiteAutomationResults) GetSeries() []SiteAutomationResultsPoint {
+	return s.Series
+}
+
+// SetPeriod sets the value of Period.
+func (s *SiteAutomationResults) SetPeriod(val SiteAutomationReportPeriod) {
+	s.Period = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *SiteAutomationResults) SetCurrent(val SiteAutomationPeriodResults) {
+	s.Current = val
+}
+
+// SetPrevious sets the value of Previous.
+func (s *SiteAutomationResults) SetPrevious(val SiteAutomationPeriodResults) {
+	s.Previous = val
+}
+
+// SetSeries sets the value of Series.
+func (s *SiteAutomationResults) SetSeries(val []SiteAutomationResultsPoint) {
+	s.Series = val
+}
+
+// One Report day of an automation's results.
+// Ref: #/components/schemas/SiteAutomationResultsPoint
+type SiteAutomationResultsPoint struct {
+	// Enrollments that began: their triggering Event occurred in it.
+	Entered int32 `json:"entered"`
+	// Enrollments that walked every step and ended in it.
+	Completed int32 `json:"completed"`
+	// Enrollments that ended in it because their goal event was recorded.
+	GoalReached int32 `json:"goalReached"`
+	// Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event.
+	Exited int32 `json:"exited"`
+	// Enrollments that ended in it on a step that failed.
+	Failed int32 `json:"failed"`
+	// The Report day, `YYYY-MM-DD` in the Workspace time zone.
+	Date string `json:"date"`
+}
+
+// GetEntered returns the value of Entered.
+func (s *SiteAutomationResultsPoint) GetEntered() int32 {
+	return s.Entered
+}
+
+// GetCompleted returns the value of Completed.
+func (s *SiteAutomationResultsPoint) GetCompleted() int32 {
+	return s.Completed
+}
+
+// GetGoalReached returns the value of GoalReached.
+func (s *SiteAutomationResultsPoint) GetGoalReached() int32 {
+	return s.GoalReached
+}
+
+// GetExited returns the value of Exited.
+func (s *SiteAutomationResultsPoint) GetExited() int32 {
+	return s.Exited
+}
+
+// GetFailed returns the value of Failed.
+func (s *SiteAutomationResultsPoint) GetFailed() int32 {
+	return s.Failed
+}
+
+// GetDate returns the value of Date.
+func (s *SiteAutomationResultsPoint) GetDate() string {
+	return s.Date
+}
+
+// SetEntered sets the value of Entered.
+func (s *SiteAutomationResultsPoint) SetEntered(val int32) {
+	s.Entered = val
+}
+
+// SetCompleted sets the value of Completed.
+func (s *SiteAutomationResultsPoint) SetCompleted(val int32) {
+	s.Completed = val
+}
+
+// SetGoalReached sets the value of GoalReached.
+func (s *SiteAutomationResultsPoint) SetGoalReached(val int32) {
+	s.GoalReached = val
+}
+
+// SetExited sets the value of Exited.
+func (s *SiteAutomationResultsPoint) SetExited(val int32) {
+	s.Exited = val
+}
+
+// SetFailed sets the value of Failed.
+func (s *SiteAutomationResultsPoint) SetFailed(val int32) {
+	s.Failed = val
+}
+
+// SetDate sets the value of Date.
+func (s *SiteAutomationResultsPoint) SetDate(val string) {
+	s.Date = val
+}
 
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
 // Ref: #/components/schemas/SiteAutomationStatus

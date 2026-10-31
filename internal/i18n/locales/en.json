@@ -169,6 +169,7 @@
   "errors.automation_nothing_to_revert": "no unpublished changes to revert",
   "errors.automation_step_invalid": "invalid step",
   "errors.automation_trigger_invalid": "invalid trigger",
+  "errors.automation_unknown_report_period": "unknown report period",
   "errors.contact_not_found": "contact not found",
   "errors.tag_not_found": "tag not found",
   "errors.webhook_not_found": "webhook not found",

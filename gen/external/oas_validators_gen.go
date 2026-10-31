@@ -436,6 +436,89 @@ func (s AutomationHttpErrorKind) Validate() error {
 	}
 }
 
+func (s *AutomationPeriodResults) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revenue.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revenue",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AutomationReport) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revenue.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revenue",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Links == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "links",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Results.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "results",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s AutomationReportPeriod) Validate() error {
+	switch s {
+	case "7d":
+		return nil
+	case "14d":
+		return nil
+	case "30d":
+		return nil
+	case "90d":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *AutomationResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -486,6 +569,62 @@ func (s *AutomationResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "draft",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AutomationResults) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Period.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "period",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Current.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "current",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Previous.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "previous",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Series == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "series",
 			Error: err,
 		})
 	}
@@ -910,6 +1049,53 @@ func (s *AutomationsPublishUnauthorized) Validate() error {
 }
 
 func (s *AutomationsPublishUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsReportBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsReportForbidden) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *AutomationsReportNotFound) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s AutomationsReportPeriod) Validate() error {
+	switch s {
+	case "7d":
+		return nil
+	case "14d":
+		return nil
+	case "30d":
+		return nil
+	case "90d":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *AutomationsReportUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -3092,6 +3278,26 @@ func (s *CreateUnsubscribeInput) Validate() error {
 	return nil
 }
 
+func (s CurrencyCode) Validate() error {
+	alias := (string)(s)
+	if err := (validate.String{
+		MinLength:     0,
+		MinLengthSet:  false,
+		MaxLength:     0,
+		MaxLengthSet:  false,
+		Email:         false,
+		Hostname:      false,
+		Regex:         regexMap["^[A-Z]{3}$"],
+		MinNumeric:    0,
+		MinNumericSet: false,
+		MaxNumeric:    0,
+		MaxNumericSet: false,
+	}).Validate(string(alias)); err != nil {
+		return errors.Wrap(err, "string")
+	}
+	return nil
+}
+
 func (s *CustomFieldResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4743,6 +4949,36 @@ func (s MaxPerSecond) Validate() error {
 		Pattern:       nil,
 	}).Validate(int64(alias)); err != nil {
 		return errors.Wrap(err, "int")
+	}
+	return nil
+}
+
+func (s *MessageRevenue) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.ReportingCurrency.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "reportingCurrency",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
 	}
 	return nil
 }

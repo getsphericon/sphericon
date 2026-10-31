@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"entgo.io/ent/dialect/sql"
 )
 
 // ErrUnknownZone is a name the zone database does not know.
@@ -54,13 +56,25 @@ type Window struct {
 
 // Trailing is the last days Report days in loc, the one holding now included.
 func Trailing(now time.Time, loc *time.Location, days int) Window {
-	local := now.In(loc)
-	y, m, d := local.Date()
-	first := d - (days - 1)
+	y, m, d := now.In(loc).Date()
+	return span(loc, y, m, d-(days-1), days)
+}
+
+// Previous is the window of as many Report days just before w, ending where w begins: the period
+// a report compares w with.
+func (w Window) Previous() Window {
+	days := len(w.Dates)
+	y, m, d := w.Since.In(w.Loc).Date()
+	return span(w.Loc, y, m, d-days, days)
+}
+
+// span is the days Report days in loc from the calendar date y-m-first on; time.Date normalizes a
+// first day outside the month.
+func span(loc *time.Location, y int, m time.Month, first, days int) Window {
 	w := Window{
 		Loc:   loc,
 		Since: time.Date(y, m, first, 0, 0, 0, 0, loc),
-		Until: time.Date(y, m, d+1, 0, 0, 0, 0, loc),
+		Until: time.Date(y, m, first+days, 0, 0, 0, 0, loc),
 	}
 	// The labels walk calendar dates in UTC, where every day has 24 hours: adding a day to a
 	// local instant would skip or repeat a date across a daylight-saving change.
@@ -70,4 +84,13 @@ func Trailing(now time.Time, loc *time.Location, days int) Window {
 		civil = civil.AddDate(0, 0, 1)
 	}
 	return w
+}
+
+// Label is the Report-day label (YYYY-MM-DD) of a timestamp column in loc, for a query that counts
+// by Report day. The zone is a bound argument, never spliced into the statement.
+func Label(column string, loc *time.Location) sql.Querier {
+	// raw sql: ent has no AT TIME ZONE expression; the zone is a bound argument
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.WriteString("to_char(").WriteString(column).WriteString(" AT TIME ZONE ").Arg(loc.String()).WriteString(", 'YYYY-MM-DD')")
+	})
 }

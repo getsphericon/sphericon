@@ -15,8 +15,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/orders"
 )
 
-// Report is an Automation's engagement figures. Every open and click is an Event (ADR 0053), so
-// these are repeat counts, and they cover the Event retention window.
+// Report is an Automation's engagement figures and its Results over a period. Every open and
+// click is an Event (ADR 0053), so these are repeat counts, and they cover the Event retention
+// window; the engagement figures are not cut to the period.
 type Report struct {
 	Opens, Clicks int
 	// Delivered, Bounced and Complained count the Automation's Outbound messages by their
@@ -27,14 +28,17 @@ type Report struct {
 	Captured int
 	// Revenue is the Orders credited to the Automation and their net revenue in the Reporting
 	// currency (ADR 0064), nil Currency until it is chosen.
-	Revenue orders.Figures
+	Revenue orders.Revenue
 	// Links counts the clicks by link, most clicked first.
 	Links []linkclicks.Clicks
+	// Results is what the Enrollments did over the period and the period before it.
+	Results Results
 }
 
 // ReportOf counts, leaving out machine engagement (ADR 0053), the `email.opened` and
-// `email.clicked` Events that carry the Automation, and the clicks by link.
-func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64) (Report, error) {
+// `email.clicked` Events that carry the Automation, and the clicks by link, and reads its Results
+// over the period p.
+func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p ReportPeriod) (Report, error) {
 	if _, err := m.Get(ctx, s, id); err != nil {
 		return Report{}, err
 	}
@@ -52,7 +56,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64) (Report,
 	if err != nil {
 		return Report{}, err
 	}
-	var results []struct {
+	var delivery []struct {
 		Delivered  int `json:"delivered"`
 		Bounced    int `json:"bounced"`
 		Complained int `json:"complained"`
@@ -66,7 +70,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64) (Report,
 			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
 			aggregates.CountTrue(outboundmessage.FieldCaptured, "captured"),
 		).
-		Scan(ctx, &results)
+		Scan(ctx, &delivery)
 	if err != nil {
 		return Report{}, err
 	}
@@ -74,10 +78,14 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64) (Report,
 	if err != nil {
 		return Report{}, err
 	}
-	report := Report{Opens: opens, Clicks: linkclicks.Total(links), Links: links, Revenue: revenue.Only(id)}
-	if len(results) > 0 {
-		report.Delivered, report.Bounced, report.Complained = results[0].Delivered, results[0].Bounced, results[0].Complained
-		report.Captured = results[0].Captured
+	results, err := m.resultsOf(ctx, s, id, p)
+	if err != nil {
+		return Report{}, err
+	}
+	report := Report{Opens: opens, Clicks: linkclicks.Total(links), Links: links, Revenue: revenue.Of(id), Results: results}
+	if len(delivery) > 0 {
+		report.Delivered, report.Bounced, report.Complained = delivery[0].Delivered, delivery[0].Bounced, delivery[0].Complained
+		report.Captured = delivery[0].Captured
 	}
 	return report, nil
 }

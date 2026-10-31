@@ -413,6 +413,8 @@
   }
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
+# An Enrollment began when it was made and a finished one ended at its last update, so the
+# Automation report's results (#753) have figures to show.
 - id: 20001
   automation_id: 20001
   version_id: 20001
@@ -420,6 +422,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 5
+  began_at: '{{hoursAgo 48}}'
+  ended_at: '{{hoursAgo 24}}'
   created_at: '{{hoursAgo 48}}'
   updated_at: '{{hoursAgo 24}}'
 - id: 20002
@@ -429,6 +433,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 5
+  began_at: '{{hoursAgo 120}}'
+  ended_at: '{{hoursAgo 96}}'
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 96}}'
 - id: 20003
@@ -438,6 +444,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 192}}'
   created_at: '{{hoursAgo 192}}'
   updated_at: '{{hoursAgo 168}}'
 - id: 20004
@@ -447,6 +454,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 5
+  began_at: '{{hoursAgo 264}}'
+  ended_at: '{{hoursAgo 240}}'
   created_at: '{{hoursAgo 264}}'
   updated_at: '{{hoursAgo 240}}'
 - id: 20005
@@ -456,6 +465,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 5
+  began_at: '{{hoursAgo 408}}'
+  ended_at: '{{hoursAgo 384}}'
   created_at: '{{hoursAgo 408}}'
   updated_at: '{{hoursAgo 384}}'
 - id: 20006
@@ -465,6 +476,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 5
+  began_at: '{{hoursAgo 480}}'
+  ended_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 480}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20007
@@ -474,6 +487,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 552}}'
   created_at: '{{hoursAgo 552}}'
   updated_at: '{{hoursAgo 528}}'
 - id: 20008
@@ -483,6 +497,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 5
+  began_at: '{{hoursAgo 624}}'
+  ended_at: '{{hoursAgo 600}}'
   created_at: '{{hoursAgo 624}}'
   updated_at: '{{hoursAgo 600}}'
 - id: 20009
@@ -492,6 +508,8 @@
   workspace_id: 20
   status: 'exited'
   current_step: 1
+  began_at: '{{hoursAgo 696}}'
+  ended_at: '{{hoursAgo 672}}'
   created_at: '{{hoursAgo 696}}'
   updated_at: '{{hoursAgo 672}}'
 - id: 20010
@@ -501,6 +519,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 5
+  began_at: '{{hoursAgo 768}}'
+  ended_at: '{{hoursAgo 744}}'
   created_at: '{{hoursAgo 768}}'
   updated_at: '{{hoursAgo 744}}'
 - id: 20011
@@ -510,6 +530,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 5
+  began_at: '{{hoursAgo 840}}'
+  ended_at: '{{hoursAgo 816}}'
   created_at: '{{hoursAgo 840}}'
   updated_at: '{{hoursAgo 816}}'
 - id: 20012
@@ -519,6 +541,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 48}}'
+  ended_at: '{{hoursAgo 24}}'
   created_at: '{{hoursAgo 48}}'
   updated_at: '{{hoursAgo 24}}'
 - id: 20013
@@ -528,6 +552,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 120}}'
+  ended_at: '{{hoursAgo 96}}'
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 96}}'
 - id: 20014
@@ -537,6 +563,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 192}}'
   created_at: '{{hoursAgo 192}}'
   updated_at: '{{hoursAgo 168}}'
 - id: 20015
@@ -546,6 +573,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 264}}'
+  ended_at: '{{hoursAgo 240}}'
   created_at: '{{hoursAgo 264}}'
   updated_at: '{{hoursAgo 240}}'
 - id: 20016
@@ -555,6 +584,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 408}}'
+  ended_at: '{{hoursAgo 384}}'
   created_at: '{{hoursAgo 408}}'
   updated_at: '{{hoursAgo 384}}'
 - id: 20017
@@ -564,6 +595,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 480}}'
+  ended_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 480}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20018
@@ -573,6 +606,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 552}}'
   created_at: '{{hoursAgo 552}}'
   updated_at: '{{hoursAgo 528}}'
 - id: 20019
@@ -582,6 +616,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 624}}'
+  ended_at: '{{hoursAgo 600}}'
   created_at: '{{hoursAgo 624}}'
   updated_at: '{{hoursAgo 600}}'
 - id: 20020
@@ -591,6 +627,8 @@
   workspace_id: 20
   status: 'exited'
   current_step: 1
+  began_at: '{{hoursAgo 696}}'
+  ended_at: '{{hoursAgo 672}}'
   created_at: '{{hoursAgo 696}}'
   updated_at: '{{hoursAgo 672}}'
 - id: 20021
@@ -600,6 +638,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 768}}'
+  ended_at: '{{hoursAgo 744}}'
   created_at: '{{hoursAgo 768}}'
   updated_at: '{{hoursAgo 744}}'
 - id: 20022
@@ -609,6 +649,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 840}}'
+  ended_at: '{{hoursAgo 816}}'
   created_at: '{{hoursAgo 840}}'
   updated_at: '{{hoursAgo 816}}'
 - id: 20023
@@ -618,6 +660,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 48}}'
+  ended_at: '{{hoursAgo 24}}'
   created_at: '{{hoursAgo 48}}'
   updated_at: '{{hoursAgo 24}}'
 - id: 20024
@@ -627,6 +671,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 120}}'
+  ended_at: '{{hoursAgo 96}}'
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 96}}'
 - id: 20025
@@ -636,6 +682,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 192}}'
   created_at: '{{hoursAgo 192}}'
   updated_at: '{{hoursAgo 168}}'
 - id: 20026
@@ -645,6 +692,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 408}}'
+  ended_at: '{{hoursAgo 384}}'
   created_at: '{{hoursAgo 408}}'
   updated_at: '{{hoursAgo 384}}'
 - id: 20027
@@ -654,6 +703,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 480}}'
+  ended_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 480}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20028
@@ -663,6 +714,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 552}}'
   created_at: '{{hoursAgo 552}}'
   updated_at: '{{hoursAgo 528}}'
 - id: 20029
@@ -672,6 +724,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 624}}'
+  ended_at: '{{hoursAgo 600}}'
   created_at: '{{hoursAgo 624}}'
   updated_at: '{{hoursAgo 600}}'
 - id: 20030
@@ -681,6 +735,8 @@
   workspace_id: 20
   status: 'exited'
   current_step: 1
+  began_at: '{{hoursAgo 696}}'
+  ended_at: '{{hoursAgo 672}}'
   created_at: '{{hoursAgo 696}}'
   updated_at: '{{hoursAgo 672}}'
 - id: 20031
@@ -690,6 +746,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 768}}'
+  ended_at: '{{hoursAgo 744}}'
   created_at: '{{hoursAgo 768}}'
   updated_at: '{{hoursAgo 744}}'
 - id: 20032
@@ -699,6 +757,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 840}}'
+  ended_at: '{{hoursAgo 816}}'
   created_at: '{{hoursAgo 840}}'
   updated_at: '{{hoursAgo 816}}'
 - id: 20033
@@ -708,6 +768,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 48}}'
+  ended_at: '{{hoursAgo 24}}'
   created_at: '{{hoursAgo 48}}'
   updated_at: '{{hoursAgo 24}}'
 - id: 20034
@@ -717,6 +779,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 120}}'
+  ended_at: '{{hoursAgo 96}}'
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 96}}'
 - id: 20035
@@ -726,6 +790,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 192}}'
   created_at: '{{hoursAgo 192}}'
   updated_at: '{{hoursAgo 168}}'
 - id: 20036
@@ -735,6 +800,8 @@
   workspace_id: 20
   status: 'exited'
   current_step: 1
+  began_at: '{{hoursAgo 336}}'
+  ended_at: '{{hoursAgo 312}}'
   created_at: '{{hoursAgo 336}}'
   updated_at: '{{hoursAgo 312}}'
 - id: 20037
@@ -744,6 +811,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 408}}'
+  ended_at: '{{hoursAgo 384}}'
   created_at: '{{hoursAgo 408}}'
   updated_at: '{{hoursAgo 384}}'
 - id: 20038
@@ -753,6 +822,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 480}}'
+  ended_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 480}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20039
@@ -762,6 +833,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 552}}'
   created_at: '{{hoursAgo 552}}'
   updated_at: '{{hoursAgo 528}}'
 - id: 20040
@@ -771,6 +843,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 624}}'
+  ended_at: '{{hoursAgo 600}}'
   created_at: '{{hoursAgo 624}}'
   updated_at: '{{hoursAgo 600}}'
 - id: 20041
@@ -780,6 +854,8 @@
   workspace_id: 20
   status: 'exited'
   current_step: 1
+  began_at: '{{hoursAgo 696}}'
+  ended_at: '{{hoursAgo 672}}'
   created_at: '{{hoursAgo 696}}'
   updated_at: '{{hoursAgo 672}}'
 - id: 20042
@@ -789,6 +865,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 768}}'
+  ended_at: '{{hoursAgo 744}}'
   created_at: '{{hoursAgo 768}}'
   updated_at: '{{hoursAgo 744}}'
 - id: 20043
@@ -798,6 +876,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 2
+  began_at: '{{hoursAgo 840}}'
+  ended_at: '{{hoursAgo 816}}'
   created_at: '{{hoursAgo 840}}'
   updated_at: '{{hoursAgo 816}}'
 - id: 20044
@@ -807,6 +887,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 1
+  began_at: '{{hoursAgo 48}}'
+  ended_at: '{{hoursAgo 24}}'
   created_at: '{{hoursAgo 48}}'
   updated_at: '{{hoursAgo 24}}'
 - id: 20045
@@ -816,6 +898,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 1
+  began_at: '{{hoursAgo 120}}'
+  ended_at: '{{hoursAgo 96}}'
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 96}}'
 - id: 20046
@@ -825,6 +909,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 192}}'
   created_at: '{{hoursAgo 192}}'
   updated_at: '{{hoursAgo 168}}'
 - id: 20047
@@ -834,6 +919,8 @@
   workspace_id: 20
   status: 'exited'
   current_step: 1
+  began_at: '{{hoursAgo 336}}'
+  ended_at: '{{hoursAgo 312}}'
   created_at: '{{hoursAgo 336}}'
   updated_at: '{{hoursAgo 312}}'
 - id: 20048
@@ -843,6 +930,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 1
+  began_at: '{{hoursAgo 408}}'
+  ended_at: '{{hoursAgo 384}}'
   created_at: '{{hoursAgo 408}}'
   updated_at: '{{hoursAgo 384}}'
 - id: 20049
@@ -852,6 +941,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 1
+  began_at: '{{hoursAgo 480}}'
+  ended_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 480}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20050
@@ -861,6 +952,7 @@
   workspace_id: 20
   status: 'active'
   current_step: 1
+  began_at: '{{hoursAgo 552}}'
   created_at: '{{hoursAgo 552}}'
   updated_at: '{{hoursAgo 528}}'
 - id: 20051
@@ -870,6 +962,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 1
+  began_at: '{{hoursAgo 624}}'
+  ended_at: '{{hoursAgo 600}}'
   created_at: '{{hoursAgo 624}}'
   updated_at: '{{hoursAgo 600}}'
 - id: 20052
@@ -879,6 +973,8 @@
   workspace_id: 20
   status: 'exited'
   current_step: 1
+  began_at: '{{hoursAgo 696}}'
+  ended_at: '{{hoursAgo 672}}'
   created_at: '{{hoursAgo 696}}'
   updated_at: '{{hoursAgo 672}}'
 - id: 20053
@@ -888,6 +984,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 1
+  began_at: '{{hoursAgo 768}}'
+  ended_at: '{{hoursAgo 744}}'
   created_at: '{{hoursAgo 768}}'
   updated_at: '{{hoursAgo 744}}'
 - id: 20054
@@ -897,6 +995,8 @@
   workspace_id: 20
   status: 'completed'
   current_step: 1
+  began_at: '{{hoursAgo 840}}'
+  ended_at: '{{hoursAgo 816}}'
   created_at: '{{hoursAgo 840}}'
   updated_at: '{{hoursAgo 816}}'
 
@@ -911,6 +1011,8 @@
   failure_status: 502
   failure_excerpt: 'HTTP 502 Bad Gateway from https://crm.brightpath.example/hooks/contacts'
   workspace_id: 20
+  began_at: '{{hoursAgo 71}}'
+  ended_at: '{{hoursAgo 70}}'
   created_at: '{{hoursAgo 71}}'
   updated_at: '{{hoursAgo 70}}'
 - id: 21002
@@ -922,6 +1024,8 @@
   failure_kind: 'timeout'
   failure_excerpt: 'The request to https://crm.brightpath.example/hooks/contacts timed out after 10s'
   workspace_id: 20
+  began_at: '{{hoursAgo 51}}'
+  ended_at: '{{hoursAgo 50}}'
   created_at: '{{hoursAgo 51}}'
   updated_at: '{{hoursAgo 50}}'
 - id: 21003
@@ -933,5 +1037,118 @@
   failure_kind: 'network'
   failure_excerpt: 'dial tcp: lookup crm.brightpath.example: no such host'
   workspace_id: 20
+  began_at: '{{hoursAgo 21}}'
+  ended_at: '{{hoursAgo 20}}'
   created_at: '{{hoursAgo 21}}'
   updated_at: '{{hoursAgo 20}}'
+
+# Gotham (workspace 61, America/New_York): the Enrollments of Gotham results (6100), for the
+# Automation report's results (#753). Read on 17 March 2026 over 7 days, the current period is
+# 11-17 March (EDT) and the previous one 4-10 March, which holds the 23-hour 8 March.
+# began at midnight EDT on 11 March, the first instant of the 7-day period to 17 March; completed a day later
+- id: 6100
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20049
+  workspace_id: 61
+  status: completed
+  current_step: 1
+  began_at: '2026-03-11 04:00:00+00'
+  ended_at: '2026-03-12 04:00:00+00'
+  created_at: '2026-03-11 04:00:00+00'
+  updated_at: '2026-03-12 04:00:00+00'
+# reached its goal 6 hours after it began, on 12 March
+- id: 6101
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20050
+  workspace_id: 61
+  status: goal_reached
+  current_step: 0
+  began_at: '2026-03-12 12:00:00+00'
+  ended_at: '2026-03-12 18:00:00+00'
+  created_at: '2026-03-12 12:00:00+00'
+  updated_at: '2026-03-12 18:00:00+00'
+# exited on 14 March, a day after it began
+- id: 6102
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20051
+  workspace_id: 61
+  status: exited
+  current_step: 0
+  began_at: '2026-03-13 12:00:00+00'
+  ended_at: '2026-03-14 12:00:00+00'
+  created_at: '2026-03-13 12:00:00+00'
+  updated_at: '2026-03-14 12:00:00+00'
+# still waiting: entered on 14 March, ended nowhere
+- id: 6103
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20052
+  workspace_id: 61
+  status: active
+  current_step: 0
+  began_at: '2026-03-14 12:00:00+00'
+  created_at: '2026-03-14 12:00:00+00'
+  updated_at: '2026-03-14 12:00:00+00'
+# began in the previous period (9 March) and failed at 00:30 EDT on 11 March, in the current one
+- id: 6104
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20053
+  workspace_id: 61
+  status: failed
+  current_step: 0
+  began_at: '2026-03-09 12:00:00+00'
+  ended_at: '2026-03-11 04:30:00+00'
+  created_at: '2026-03-09 12:00:00+00'
+  updated_at: '2026-03-11 04:30:00+00'
+# began and completed on 10 March: 23:59 EDT is still the previous period
+- id: 6105
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20054
+  workspace_id: 61
+  status: completed
+  current_step: 1
+  began_at: '2026-03-10 04:00:00+00'
+  ended_at: '2026-03-11 03:59:00+00'
+  created_at: '2026-03-10 04:00:00+00'
+  updated_at: '2026-03-11 03:59:00+00'
+# began at 23:59 EST on 7 March and exited at midnight EST, on 8 March (the 23-hour day)
+- id: 6106
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20055
+  workspace_id: 61
+  status: exited
+  current_step: 0
+  began_at: '2026-03-08 04:59:00+00'
+  ended_at: '2026-03-08 05:00:00+00'
+  created_at: '2026-03-08 04:59:00+00'
+  updated_at: '2026-03-08 05:00:00+00'
+# began before the previous period and reached its goal on its first day, 4 March
+- id: 6107
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20056
+  workspace_id: 61
+  status: goal_reached
+  current_step: 0
+  began_at: '2026-03-03 12:00:00+00'
+  ended_at: '2026-03-04 12:00:00+00'
+  created_at: '2026-03-03 12:00:00+00'
+  updated_at: '2026-03-04 12:00:00+00'
+# began and completed before both periods
+- id: 6108
+  automation_id: 6100
+  version_id: 6100
+  contact_id: 20100
+  workspace_id: 61
+  status: completed
+  current_step: 1
+  began_at: '2026-02-20 12:00:00+00'
+  ended_at: '2026-03-02 12:00:00+00'
+  created_at: '2026-02-20 12:00:00+00'
+  updated_at: '2026-03-02 12:00:00+00'

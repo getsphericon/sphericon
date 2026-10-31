@@ -1663,8 +1663,10 @@ export const siteEnrollmentsGetOptions = (options: Options<SiteEnrollmentsGetDat
 export const siteAutomationReportsGetQueryKey = (options: Options<SiteAutomationReportsGetData>) => createQueryKey('siteAutomationReportsGet', options);
 
 /**
- * The opens and clicks of an automation's emails, with a count per clicked link. They come from
- * the `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+ * The opens and clicks of an automation's emails, with a count per clicked link, and its results
+ * over a period. The engagement figures are the automation's whole history: opens and clicks come
+ * from the `email.opened` and `email.clicked` Events, so they cover the Event retention window.
+ * The results are read from its enrollments for the chosen period and the one before it.
  */
 export const siteAutomationReportsGetOptions = (options: Options<SiteAutomationReportsGetData>) => queryOptions<SiteAutomationReportsGetResponse, SiteAutomationReportsGetError, SiteAutomationReportsGetResponse, ReturnType<typeof siteAutomationReportsGetQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {

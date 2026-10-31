@@ -1715,6 +1715,52 @@ export type SiteAutomationHttpHeader = {
 };
 
 /**
+ * One period of an automation's results. Each count is what happened in the period: an
+ * enrollment counts as entered on the Report day it began and under its outcome on the Report day
+ * it ended, whenever it began, so an enrollment still running counts as entered only.
+ */
+export type SiteAutomationPeriodResults = {
+  /**
+   * Enrollments that began: their triggering Event occurred in it
+   */
+  entered: number;
+  /**
+   * Enrollments that walked every step and ended in it
+   */
+  completed: number;
+  /**
+   * Enrollments that ended in it because their goal event was recorded
+   */
+  goalReached: number;
+  /**
+   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   */
+  exited: number;
+  /**
+   * Enrollments that ended in it on a step that failed
+   */
+  failed: number;
+  /**
+   * The period's first Report day, `YYYY-MM-DD` in the Workspace time zone
+   */
+  from: string;
+  /**
+   * The period's last Report day, included
+   */
+  to: string;
+  /**
+   * Mean time in whole seconds from the beginning to the end of the enrollments that ended in
+   * the period, whatever their outcome; null when none ended
+   */
+  averageDurationSeconds: number | null;
+  /**
+   * The orders credited to the automation that were completed in the period, and the net change
+   * of its revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064)
+   */
+  revenue: SiteMessageRevenue;
+};
+
+/**
  * An automation's engagement figures
  */
 export type SiteAutomationReport = {
@@ -1750,7 +1796,26 @@ export type SiteAutomationReport = {
    * One entry per clicked link, most clicked first
    */
   links: Array<SiteLinkClicks>;
+  /**
+   * What the automation's enrollments did over the chosen period and the period before it
+   */
+  results: SiteAutomationResults;
 };
+
+/**
+ * The length of the period an automation's results are read over, in Report days (ADR 0057), today included
+ */
+export const SiteAutomationReportPeriod = {
+  '7D': '7d',
+  '14D': '14d',
+  '30D': '30d',
+  '90D': '90d'
+} as const;
+
+/**
+ * The length of the period an automation's results are read over, in Report days (ADR 0057), today included
+ */
+export type SiteAutomationReportPeriod = typeof SiteAutomationReportPeriod[keyof typeof SiteAutomationReportPeriod];
 
 /**
  * Automation resource used by the site UI
@@ -1793,6 +1858,85 @@ export type SiteAutomationResource = {
    * Last update timestamp
    */
   updatedAt: Timestamp;
+};
+
+/**
+ * How many enrollments began, and how many ended with each outcome
+ */
+export type SiteAutomationResultCounts = {
+  /**
+   * Enrollments that began: their triggering Event occurred in it
+   */
+  entered: number;
+  /**
+   * Enrollments that walked every step and ended in it
+   */
+  completed: number;
+  /**
+   * Enrollments that ended in it because their goal event was recorded
+   */
+  goalReached: number;
+  /**
+   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   */
+  exited: number;
+  /**
+   * Enrollments that ended in it on a step that failed
+   */
+  failed: number;
+};
+
+/**
+ * An automation's results over a period of Report days, read from its enrollments, with the
+ * period just before it to compare with
+ */
+export type SiteAutomationResults = {
+  /**
+   * The period the results are read over
+   */
+  period: SiteAutomationReportPeriod;
+  /**
+   * The period ending today
+   */
+  current: SiteAutomationPeriodResults;
+  /**
+   * As many Report days just before it
+   */
+  previous: SiteAutomationPeriodResults;
+  /**
+   * The current period by Report day, oldest first, a day with nothing at zero
+   */
+  series: Array<SiteAutomationResultsPoint>;
+};
+
+/**
+ * One Report day of an automation's results
+ */
+export type SiteAutomationResultsPoint = {
+  /**
+   * Enrollments that began: their triggering Event occurred in it
+   */
+  entered: number;
+  /**
+   * Enrollments that walked every step and ended in it
+   */
+  completed: number;
+  /**
+   * Enrollments that ended in it because their goal event was recorded
+   */
+  goalReached: number;
+  /**
+   * Enrollments that left early in it: an unsubscribe, a suppression, a hard bounce or an exit event
+   */
+  exited: number;
+  /**
+   * Enrollments that ended in it on a step that failed
+   */
+  failed: number;
+  /**
+   * The Report day, `YYYY-MM-DD` in the Workspace time zone
+   */
+  date: string;
 };
 
 /**
@@ -8819,7 +8963,12 @@ export type SiteAutomationReportsGetData = {
     workspaceId: WorkspaceId;
     automationId: EntityId;
   };
-  query?: never;
+  query?: {
+    /**
+     * The period the results are read over (defaults to 30d)
+     */
+    period?: SiteAutomationReportPeriod;
+  };
   url: '/workspaces/{workspaceId}/automations/{automationId}/report';
 };
 

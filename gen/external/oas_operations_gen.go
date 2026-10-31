@@ -20,6 +20,7 @@ const (
 	AutomationsGetOperation            OperationName = "AutomationsGet"
 	AutomationsListOperation           OperationName = "AutomationsList"
 	AutomationsPublishOperation        OperationName = "AutomationsPublish"
+	AutomationsReportOperation         OperationName = "AutomationsReport"
 	AutomationsRevertOperation         OperationName = "AutomationsRevert"
 	AutomationsUnarchiveOperation      OperationName = "AutomationsUnarchive"
 	AutomationsUpdateOperation         OperationName = "AutomationsUpdate"

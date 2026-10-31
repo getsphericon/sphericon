@@ -3,6 +3,7 @@ package automations_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,7 +39,7 @@ func TestFenceRunsNothingOnAnExitedEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID := enrolled(t, env)
-	require.NoError(t, automations.ExitRun(context.Background(), s, runID))
+	require.NoError(t, automations.ExitRun(context.Background(), s, runID, time.Now()))
 	ran := false
 
 	err := automations.FenceOn(env.DB)(context.Background(), s, runID, func(context.Context) error {

@@ -308,6 +308,26 @@
     "opens": "Opens",
     "publish": "Publish",
     "removeTagNodeDescription": "Take a tag off the contact.",
+    "results": {
+      "averageDuration": "Average duration",
+      "completed": "Completed",
+      "entered": "Entered",
+      "exited": "Exited",
+      "failed": "Failed",
+      "goalReached": "Reached goal",
+      "hint": "What the enrollments did from {{from}} to {{to}}: an enrollment counts as entered on the day it began and under its outcome on the day it ended. The average duration is over the enrollments that ended, whatever the outcome; orders and revenue are those credited to this automation in the period.",
+      "loadError": "Failed to load the results",
+      "orders": "Orders in the period",
+      "periods": {
+        "14d": "14 days",
+        "30d": "30 days",
+        "7d": "7 days",
+        "90d": "90 days"
+      },
+      "previous": "Previous {{period}}",
+      "revenue": "Revenue in the period",
+      "title": "Results"
+    },
     "statusActive": "Active",
     "statusInactive": "Inactive",
     "statusLabel": "Status",

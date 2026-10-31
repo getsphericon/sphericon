@@ -107,15 +107,6 @@ func (m *Module) days(ctx context.Context, s *ent.Scoped, w Window) (reportday.W
 	return reportday.Trailing(m.now(), loc, int(w)), nil
 }
 
-// localDay is the Report-day label (YYYY-MM-DD) of a timestamp column in loc. The zone is a
-// bound argument, never spliced into the statement.
-func localDay(column string, loc *time.Location) sql.Querier {
-	// raw sql: ent has no AT TIME ZONE expression; the zone is a bound argument
-	return sql.ExprFunc(func(b *sql.Builder) {
-		b.WriteString("to_char(").WriteString(column).WriteString(" AT TIME ZONE ").Arg(loc.String()).WriteString(", 'YYYY-MM-DD')")
-	})
-}
-
 // Overview computes the dashboard for the Workspace behind s over the window.
 func (m *Module) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overview, error) {
 	days, err := m.days(ctx, s, w)
@@ -235,7 +226,7 @@ func timeSeries(ctx context.Context, s *ent.Scoped, days reportday.Window) ([]Po
 				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(broadcastrecipient.FieldOpenedAt)), "opened"),
 				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(broadcastrecipient.FieldClickedAt)), "clicked"),
 			)
-			sel.AppendSelectExprAs(localDay(sentAt, days.Loc), "day").
+			sel.AppendSelectExprAs(reportday.Label(sentAt, days.Loc), "day").
 				Where(sql.And(
 					sql.EQ(m.C(outboundmessage.FieldStatus), string(outboundmessage.StatusSent)),
 					sql.GTE(sentAt, days.Since), sql.LT(sentAt, days.Until),

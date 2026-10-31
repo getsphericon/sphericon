@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/internal/reportday"
 )
 
 // NewPeople is the New people report: the Contacts created in the window, per Report day and
@@ -38,7 +39,7 @@ func (m *Module) NewPeople(ctx context.Context, s *ent.Scoped, w Window) (*NewPe
 		Where(contact.CreatedAtGTE(days.Since), contact.CreatedAtLT(days.Until)).
 		Modify(func(sel *sql.Selector) {
 			sel.Select(sel.C(contact.FieldSource), sql.As("COUNT(*)", "count")).
-				AppendSelectExprAs(localDay(sel.C(contact.FieldCreatedAt), days.Loc), "day").
+				AppendSelectExprAs(reportday.Label(sel.C(contact.FieldCreatedAt), days.Loc), "day").
 				GroupBy("day", sel.C(contact.FieldSource))
 		}).
 		Scan(ctx, &rows)

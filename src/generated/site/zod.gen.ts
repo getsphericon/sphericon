@@ -599,6 +599,39 @@ export const zSiteAutomationHttpHeader = z.object({
 });
 
 /**
+ * The length of the period an automation's results are read over, in Report days (ADR 0057), today included
+ */
+export const zSiteAutomationReportPeriod = z.enum([
+  '7d',
+  '14d',
+  '30d',
+  '90d'
+]);
+
+/**
+ * How many enrollments began, and how many ended with each outcome
+ */
+export const zSiteAutomationResultCounts = z.object({
+  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * One Report day of an automation's results
+ */
+export const zSiteAutomationResultsPoint = z.object({
+  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  date: z.string()
+});
+
+/**
  * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
 export const zSiteAutomationStatus = z.enum(['active', 'inactive']);
@@ -1019,6 +1052,34 @@ export const zSiteMessageRevenue = z.object({
 });
 
 /**
+ * One period of an automation's results. Each count is what happened in the period: an
+ * enrollment counts as entered on the Report day it began and under its outcome on the Report day
+ * it ended, whenever it began, so an enrollment still running counts as entered only.
+ */
+export const zSiteAutomationPeriodResults = z.object({
+  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  from: z.string(),
+  to: z.string(),
+  averageDurationSeconds: z.string().regex(/^[0-9]+$/).nullable(),
+  revenue: zSiteMessageRevenue
+});
+
+/**
+ * An automation's results over a period of Report days, read from its enrollments, with the
+ * period just before it to compare with
+ */
+export const zSiteAutomationResults = z.object({
+  period: zSiteAutomationReportPeriod,
+  current: zSiteAutomationPeriodResults,
+  previous: zSiteAutomationPeriodResults,
+  series: z.array(zSiteAutomationResultsPoint)
+});
+
+/**
  * An automation's engagement figures
  */
 export const zSiteAutomationReport = z.object({
@@ -1029,7 +1090,8 @@ export const zSiteAutomationReport = z.object({
   complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   revenue: zSiteMessageRevenue,
-  links: z.array(zSiteLinkClicks)
+  links: z.array(zSiteLinkClicks),
+  results: zSiteAutomationResults
 });
 
 /**
@@ -4110,6 +4172,10 @@ export const zSiteEnrollmentsGetResponse = zSiteEnrollmentResource;
 export const zSiteAutomationReportsGetPath = z.object({
   workspaceId: zWorkspaceId,
   automationId: zEntityId
+});
+
+export const zSiteAutomationReportsGetQuery = z.object({
+  period: z.exactOptional(zSiteAutomationReportPeriod)
 });
 
 /**

@@ -95,6 +95,11 @@ func EventAction(v string) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldEventAction, v))
 }
 
+// EndedAt applies equality check predicate on the "ended_at" field. It's identical to EndedAtEQ.
+func EndedAt(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldEndedAt, v))
+}
+
 // CurrentStep applies equality check predicate on the "current_step" field. It's identical to CurrentStepEQ.
 func CurrentStep(v int) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStep, v))
@@ -418,6 +423,56 @@ func EventPropertiesIsNil() predicate.AutomationRun {
 // EventPropertiesNotNil applies the NotNil predicate on the "event_properties" field.
 func EventPropertiesNotNil() predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotNull(FieldEventProperties))
+}
+
+// EndedAtEQ applies the EQ predicate on the "ended_at" field.
+func EndedAtEQ(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldEndedAt, v))
+}
+
+// EndedAtNEQ applies the NEQ predicate on the "ended_at" field.
+func EndedAtNEQ(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldEndedAt, v))
+}
+
+// EndedAtIn applies the In predicate on the "ended_at" field.
+func EndedAtIn(vs ...time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldEndedAt, vs...))
+}
+
+// EndedAtNotIn applies the NotIn predicate on the "ended_at" field.
+func EndedAtNotIn(vs ...time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldEndedAt, vs...))
+}
+
+// EndedAtGT applies the GT predicate on the "ended_at" field.
+func EndedAtGT(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldEndedAt, v))
+}
+
+// EndedAtGTE applies the GTE predicate on the "ended_at" field.
+func EndedAtGTE(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldEndedAt, v))
+}
+
+// EndedAtLT applies the LT predicate on the "ended_at" field.
+func EndedAtLT(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldEndedAt, v))
+}
+
+// EndedAtLTE applies the LTE predicate on the "ended_at" field.
+func EndedAtLTE(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldEndedAt, v))
+}
+
+// EndedAtIsNil applies the IsNil predicate on the "ended_at" field.
+func EndedAtIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldEndedAt))
+}
+
+// EndedAtNotNil applies the NotNil predicate on the "ended_at" field.
+func EndedAtNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldEndedAt))
 }
 
 // CurrentStepEQ applies the EQ predicate on the "current_step" field.

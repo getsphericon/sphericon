@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
@@ -165,6 +166,8 @@ type Module struct {
 	cipher   *secrets.Cipher
 	renderer *emaildoc.Renderer
 	life     *drafts.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
+	// now is the clock a report's period ends by.
+	now func() time.Time
 }
 
 // New builds the automations module. It holds no client: every call takes the
@@ -172,13 +175,21 @@ type Module struct {
 // opens the transaction of each move of the definition (internal/drafts); the renderer builds an
 // email step's body from its document.
 func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer) *Module {
-	m := &Module{cipher: cipher, renderer: renderer}
+	m := &Module{cipher: cipher, renderer: renderer, now: time.Now}
 	m.life = drafts.New(bus, versioned{m: m}, drafts.Errors{
 		NotFound:         ErrNotFound,
 		NothingToPublish: ErrNothingToPublish,
 		NothingToRevert:  ErrNothingToRevert,
 	})
 	return m
+}
+
+// WithClock returns the module reading now from the given clock: a report's period ends on
+// today by it.
+func (m *Module) WithClock(now func() time.Time) *Module {
+	c := *m
+	c.now = now
+	return &c
 }
 
 // build renders every email step that holds a document to its body, in the same save (ADR 0040,

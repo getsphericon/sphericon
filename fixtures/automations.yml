@@ -231,3 +231,14 @@
   workspace_id: 20
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 24}}'
+
+# Gotham (workspace 61, America/New_York): the results of an Automation over a period (#753). Its
+# Enrollments begin and end at fixed moments around the 8 March 2026 change to daylight saving
+# (automation_runs.yml), so the Report-day tests do not drift. Inactive, trigger unused elsewhere.
+- id: 6100 # fixture: AutomationGothamResults
+  name: Gotham results
+  status: inactive
+  live_version_id: 6100
+  workspace_id: 61
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

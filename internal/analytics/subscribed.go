@@ -66,7 +66,7 @@ func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Windo
 				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+events.NameMarketingConfirmed+"')", "subscribed"),
 				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+events.NameEmailUnsubscribed+"')", "unsubscribed"),
 			)
-			sel.AppendSelectExprAs(localDay(moment, days.Loc), "day").
+			sel.AppendSelectExprAs(reportday.Label(moment, days.Loc), "day").
 				Where(sql.In(action, events.NameMarketingConfirmed, events.NameEmailUnsubscribed)).
 				GroupBy("day")
 		}).

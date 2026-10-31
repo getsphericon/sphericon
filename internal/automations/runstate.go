@@ -50,8 +50,9 @@ func FailureOfDelivery(sendErr error) Failure {
 	return f
 }
 
-// machine is the Enrollment's table over its stored status. extra adds fields to the write.
-func machine(s *ent.Scoped, runID int64, extra func(*ent.AutomationRunScopedUpdate)) *stateless.StateMachine {
+// machine is the Enrollment's table over its stored status. A move out of `active` ends it at
+// endedAt; extra adds fields to the write.
+func machine(s *ent.Scoped, runID int64, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) *stateless.StateMachine {
 	m := lifecycle.New(lifecycle.Storage[automationrun.Status]{
 		Read: func(ctx context.Context) (automationrun.Status, error) {
 			run, err := s.AutomationRun().Get(ctx, runID)
@@ -61,9 +62,12 @@ func machine(s *ent.Scoped, runID int64, extra func(*ent.AutomationRunScopedUpda
 			return run.Status, nil
 		},
 		Write: func(ctx context.Context, from, to automationrun.Status) (bool, error) {
+			// Every state but `active` is final, so this write is the Enrollment's one move out of
+			// it, and the moment it ended is stamped with it.
 			u := s.AutomationRun().Update().
 				Where(automationrun.ID(runID), automationrun.StatusEQ(from)).
 				SetStatus(to).
+				SetEndedAt(endedAt).
 				ClearResumeAt()
 			if extra != nil {
 				extra(u)
@@ -80,16 +84,18 @@ func machine(s *ent.Scoped, runID int64, extra func(*ent.AutomationRunScopedUpda
 	return m
 }
 
-// move fires t on one Enrollment, making the move out of `active` a conditional update.
-func move(ctx context.Context, s *ent.Scoped, runID int64, t trigger, extra func(*ent.AutomationRunScopedUpdate)) error {
-	return machine(s, runID, extra).FireCtx(ctx, t)
+// move fires t on one Enrollment, making the move out of `active` a conditional update that
+// ends it at endedAt: the time of the Event that decided the end when an Event did (an exit or
+// goal Event), else the caller's clock.
+func move(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) error {
+	return machine(s, runID, endedAt, extra).FireCtx(ctx, t)
 }
 
 // IsActive reports, from a fresh read through the lifecycle table, whether the Enrollment
 // can still move: a step that finds it exited, completed or failed stops quietly. A run
 // that no longer exists (erased with its Contact) is not active either.
 func IsActive(ctx context.Context, s *ent.Scoped, runID int64) (bool, error) {
-	ok, err := machine(s, runID, nil).CanFireCtx(ctx, triggerExit)
+	ok, err := machine(s, runID, time.Time{}, nil).CanFireCtx(ctx, triggerExit)
 	if ent.IsNotFound(err) {
 		return false, nil
 	}
@@ -126,16 +132,16 @@ func Advance(ctx context.Context, s *ent.Scoped, runID int64, from, to int, resu
 	return nil
 }
 
-// Complete ends the Enrollment `completed`. lifecycle.ErrInvalidTransition when it is no
-// longer active (an exit won), which the step executor treats as a finished step.
-func Complete(ctx context.Context, s *ent.Scoped, runID int64) error {
-	return move(ctx, s, runID, triggerComplete, nil)
+// Complete ends the Enrollment `completed` at now, the caller's clock. lifecycle.ErrInvalidTransition
+// when it is no longer active (an exit won), which the step executor treats as a finished step.
+func Complete(ctx context.Context, s *ent.Scoped, runID int64, now time.Time) error {
+	return move(ctx, s, runID, triggerComplete, now, nil)
 }
 
-// Fail ends the Enrollment `failed`, keeping the reason. lifecycle.ErrInvalidTransition
-// when it is no longer active.
-func Fail(ctx context.Context, s *ent.Scoped, runID int64, f Failure) error {
-	return move(ctx, s, runID, triggerFail, func(u *ent.AutomationRunScopedUpdate) {
+// Fail ends the Enrollment `failed` at now, the caller's clock, keeping the reason.
+// lifecycle.ErrInvalidTransition when it is no longer active.
+func Fail(ctx context.Context, s *ent.Scoped, runID int64, now time.Time, f Failure) error {
+	return move(ctx, s, runID, triggerFail, now, func(u *ent.AutomationRunScopedUpdate) {
 		if f.Kind != "" {
 			u.SetFailureKind(f.Kind)
 		}
