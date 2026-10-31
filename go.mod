@@ -42,6 +42,7 @@ require (
 	github.com/k3a/html2text v1.5.1
 	github.com/lmittmann/tint v1.2.1
 	github.com/maypok86/otter/v2 v2.4.0
+	github.com/mazznoer/csscolorparser v0.2.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/miekg/dns v1.1.73
 	github.com/modelcontextprotocol/go-sdk v1.8.0
@@ -70,6 +71,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/standard-webhooks/standard-webhooks/libraries v0.0.1
 	github.com/stretchr/testify v1.12.1
+	github.com/tdewolff/parse/v2 v2.8.20
 	github.com/tink-crypto/tink-go/v2 v2.9.0
 	github.com/urfave/cli/v3 v3.14.0
 	github.com/wneessen/go-mail v0.8.1
