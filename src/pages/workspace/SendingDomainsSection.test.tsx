@@ -9,6 +9,7 @@ import {
   handleSiteSendingDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
+import { page } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -32,9 +33,7 @@ function domain(over: Partial<SiteSendingDomainResource> = {}): SiteSendingDomai
 }
 
 const list = (items: SiteSendingDomainResource[]) =>
-  handleSiteSendingDomainsList({
-    body: { items, page: 1, pageSize: 20, totalItems: items.length, totalPages: 1 },
-  })
+  handleSiteSendingDomainsList({ body: page(items) })
 
 test('shows pending and verified domains', async () => {
   worker.use(list([domain(), domain({ id: '2', domain: 'ok.acme.com', verified: true })]))
@@ -330,13 +329,7 @@ test('verifies a domain from its records modal and offers the agent prompt', asy
 const byView = (kept: SiteSendingDomainResource[], archived: SiteSendingDomainResource[]) =>
   handleSiteSendingDomainsList(({ request }) => {
     const items = new URL(request.url).searchParams.get('archived') === 'true' ? archived : kept
-    return HttpResponse.json({
-      items,
-      page: 1,
-      pageSize: 20,
-      totalItems: items.length,
-      totalPages: 1,
-    })
+    return HttpResponse.json(page(items))
   })
 
 test('switches to the archived domains and restores one', async () => {
