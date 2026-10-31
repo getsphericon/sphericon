@@ -479,6 +479,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	ProviderLimitSourceToResource(source providerlimit.Source) siteapi.SiteProviderLimitSource
 	// goverter:enum:transform value
+	BroadcastLimitToResource(source broadcasts.Limit) siteapi.SiteBroadcastLimit
+	// goverter:enum:transform value
 	ProviderLimitWarningToResource(source providerlimit.Warning) siteapi.SiteProviderLimitWarning
 	// goverter:enum:transform value
 	RuleActionStatusToResource(source rules.Outcome) siteapi.SiteRuleActionStatus
@@ -926,9 +928,9 @@ func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperato
 }
 
 // broadcastLimit is what slows a sending Broadcast, null when nothing does.
-func broadcastLimit(v broadcasts.Limit) siteapi.NilSiteBroadcastLimit {
+func broadcastLimit(c Converter, v broadcasts.Limit) siteapi.NilSiteBroadcastLimit {
 	if v == "" {
 		return siteapi.NilSiteBroadcastLimit{Null: true}
 	}
-	return siteapi.NewNilSiteBroadcastLimit(siteapi.SiteBroadcastLimit(v))
+	return siteapi.NewNilSiteBroadcastLimit(c.BroadcastLimitToResource(v))
 }

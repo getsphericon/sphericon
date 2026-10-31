@@ -186,12 +186,24 @@ func (c *ConverterImpl) BrandKitToResource(source brandkit.Kit) site.SiteBrandKi
 	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
 	return siteapiSiteBrandKitResource
 }
+func (c *ConverterImpl) BroadcastLimitToResource(source broadcasts.Limit) site.SiteBroadcastLimit {
+	var siteapiSiteBroadcastLimit site.SiteBroadcastLimit
+	switch source {
+	case broadcasts.LimitProviderLimit:
+		siteapiSiteBroadcastLimit = site.SiteBroadcastLimitProviderLimit
+	case broadcasts.LimitSendCap:
+		siteapiSiteBroadcastLimit = site.SiteBroadcastLimitSendCap
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteBroadcastLimit
+}
 func (c *ConverterImpl) BroadcastProgressToResource(source broadcasts.Progress) site.SiteBroadcastProgress {
 	var siteapiSiteBroadcastProgress site.SiteBroadcastProgress
 	siteapiSiteBroadcastProgress.ProcessedCount = count(source.Processed)
 	siteapiSiteBroadcastProgress.RemainingCount = count(source.Remaining)
 	siteapiSiteBroadcastProgress.EstimatedCompletionAt = optNilTimestamp(source.EstimatedCompletion)
-	siteapiSiteBroadcastProgress.LimitedBy = broadcastLimit(source.LimitedBy)
+	siteapiSiteBroadcastProgress.LimitedBy = broadcastLimit(c, source.LimitedBy)
 	return siteapiSiteBroadcastProgress
 }
 func (c *ConverterImpl) BroadcastRecipientToExport(source *ent.BroadcastRecipient) site.ContactExportBroadcastRecipient {
