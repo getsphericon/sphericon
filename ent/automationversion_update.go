@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
@@ -92,6 +93,38 @@ func (_u *AutomationVersionUpdate) SetNillableTriggerEvent(v *string) *Automatio
 	if v != nil {
 		_u.SetTriggerEvent(*v)
 	}
+	return _u
+}
+
+// SetExitEvents sets the "exit_events" field.
+func (_u *AutomationVersionUpdate) SetExitEvents(v []string) *AutomationVersionUpdate {
+	_u.mutation.SetExitEvents(v)
+	return _u
+}
+
+// AppendExitEvents appends value to the "exit_events" field.
+func (_u *AutomationVersionUpdate) AppendExitEvents(v []string) *AutomationVersionUpdate {
+	_u.mutation.AppendExitEvents(v)
+	return _u
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (_u *AutomationVersionUpdate) SetGoalEvent(v string) *AutomationVersionUpdate {
+	_u.mutation.SetGoalEvent(v)
+	return _u
+}
+
+// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableGoalEvent(v *string) *AutomationVersionUpdate {
+	if v != nil {
+		_u.SetGoalEvent(*v)
+	}
+	return _u
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (_u *AutomationVersionUpdate) ClearGoalEvent() *AutomationVersionUpdate {
+	_u.mutation.ClearGoalEvent()
 	return _u
 }
 
@@ -262,6 +295,20 @@ func (_u *AutomationVersionUpdate) sqlSave(ctx context.Context) (_node int, err 
 	}
 	if value, ok := _u.mutation.TriggerEvent(); ok {
 		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ExitEvents(); ok {
+		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedExitEvents(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, automationversion.FieldExitEvents, value)
+		})
+	}
+	if value, ok := _u.mutation.GoalEvent(); ok {
+		_spec.SetField(automationversion.FieldGoalEvent, field.TypeString, value)
+	}
+	if _u.mutation.GoalEventCleared() {
+		_spec.ClearField(automationversion.FieldGoalEvent, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -479,6 +526,38 @@ func (_u *AutomationVersionUpdateOne) SetNillableTriggerEvent(v *string) *Automa
 	return _u
 }
 
+// SetExitEvents sets the "exit_events" field.
+func (_u *AutomationVersionUpdateOne) SetExitEvents(v []string) *AutomationVersionUpdateOne {
+	_u.mutation.SetExitEvents(v)
+	return _u
+}
+
+// AppendExitEvents appends value to the "exit_events" field.
+func (_u *AutomationVersionUpdateOne) AppendExitEvents(v []string) *AutomationVersionUpdateOne {
+	_u.mutation.AppendExitEvents(v)
+	return _u
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (_u *AutomationVersionUpdateOne) SetGoalEvent(v string) *AutomationVersionUpdateOne {
+	_u.mutation.SetGoalEvent(v)
+	return _u
+}
+
+// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableGoalEvent(v *string) *AutomationVersionUpdateOne {
+	if v != nil {
+		_u.SetGoalEvent(*v)
+	}
+	return _u
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (_u *AutomationVersionUpdateOne) ClearGoalEvent() *AutomationVersionUpdateOne {
+	_u.mutation.ClearGoalEvent()
+	return _u
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (_u *AutomationVersionUpdateOne) SetIntegrationID(v int64) *AutomationVersionUpdateOne {
 	_u.mutation.SetIntegrationID(v)
@@ -676,6 +755,20 @@ func (_u *AutomationVersionUpdateOne) sqlSave(ctx context.Context) (_node *Autom
 	}
 	if value, ok := _u.mutation.TriggerEvent(); ok {
 		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ExitEvents(); ok {
+		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedExitEvents(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, automationversion.FieldExitEvents, value)
+		})
+	}
+	if value, ok := _u.mutation.GoalEvent(); ok {
+		_spec.SetField(automationversion.FieldGoalEvent, field.TypeString, value)
+	}
+	if _u.mutation.GoalEventCleared() {
+		_spec.ClearField(automationversion.FieldGoalEvent, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

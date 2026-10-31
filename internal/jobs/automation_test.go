@@ -17,7 +17,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/stepping"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -85,7 +84,7 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
 func enrollVia(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64) int64 {
 	t.Helper()
-	require.NoError(t, jobs.EvaluateTrigger(context.Background(), env.Bus, env.DB.Scoped(fixtures.AcmeID), contactID, triggerOf(t, env, automationID), 0))
+	require.NoError(t, stepping.OnEvent(context.Background(), env.Bus, env.DB.Scoped(fixtures.AcmeID), contactID, triggerOf(t, env, automationID), 0, time.Now()))
 	runIDs := enrollmentsOf(t, env, automationID, contactID)
 	require.Len(t, runIDs, 1)
 	return runIDs[0]
@@ -106,7 +105,7 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, alice.ID)
 
 	// Enroll-once: a second matching event creates no new run.
-	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), alice.ID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), alice.ID, triggerOf(t, env, fixtures.AutomationJobsGreetingID), 0, time.Now()))
 	assert.Equal(t, []int64{runID}, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, alice.ID))
 
 	fs := &fakeSender{}
@@ -190,7 +189,7 @@ func TestAutomationInactiveDoesNotEnroll(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, triggerOf(t, env, fixtures.AutomationWinBackID), 0))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, triggerOf(t, env, fixtures.AutomationWinBackID), 0, time.Now()))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationWinBackID, fixtures.ContactAliceID), "the win-back automation is a draft")
 }
 
@@ -491,9 +490,76 @@ func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationOnOpenID))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationOnOpenID, time.Now()))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), "the open of its own email enrolls nobody")
 
-	require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationWelcomeSeriesID))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, events.NameEmailOpened, fixtures.AutomationWelcomeSeriesID, time.Now()))
 	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), 1, "the open of another Automation's email starts On open")
+}
+
+// The goal event ends the Enrollment before its next step, which then sends nothing (#751). The
+// payment occurred after the failure but before the job that enrolled was run, and still counts:
+// the Enrollment began when the failure occurred. A click or other Event from the Automation's own
+// email counts too: it ends, it only never enrolls.
+func TestAGoalEventEndsTheEnrollmentBeforeItsNextStep(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	failed := time.Now().Add(-2 * time.Minute)
+	paid := failed.Add(time.Minute)
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, "payment_failed", 0, failed))
+	enrolled := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactAliceID)
+	require.Len(t, enrolled, 1)
+
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactAliceID, "payment_succeeded", fixtures.AutomationPaymentRecoveryID, paid))
+	fs := &fakeSender{}
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
+
+	assert.Empty(t, fs.sent, "no step runs after the goal")
+	run, err := env.DB.AutomationRun.Get(ctx, enrolled[0])
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusGoalReached, run.Status)
+}
+
+// The goal Event's job ran before the trigger's (out of order): it found no Enrollment to end. The
+// trigger's job then makes the Enrollment already at its goal, from the stored Event, and queues
+// no step, so nothing is sent.
+func TestAGoalEventHandledBeforeTheTriggerEndsTheEnrollmentWhenItIsMade(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	contactID := int64(fixtures.ContactPaidBeforeEnrolledID)
+	failed := time.Now().Add(-4 * 24 * time.Hour) // the fixture's payment_succeeded is 3 days ago
+
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, contactID, "payment_succeeded", 0, failed.Add(24*time.Hour)))
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, contactID, "payment_failed", 0, failed))
+	fs := &fakeSender{}
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
+
+	assert.Empty(t, fs.sent)
+	runs := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, contactID)
+	require.Len(t, runs, 1)
+	run, err := env.DB.AutomationRun.Get(ctx, runs[0])
+	require.NoError(t, err)
+	assert.Equal(t, automationrun.StatusGoalReached, run.Status)
+}
+
+// A trigger job queued by a release before #751 carries no occurred_at (ADR 0033): the Event is
+// taken as occurring now, so the Enrollment does not begin in year 1, and the Contact's exit and
+// goal Events of the days before do not end it as it is made.
+func TestATriggerJobWithoutWhenTheEventOccurredBeginsTheEnrollmentNow(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	earliest := time.Now().Add(-time.Microsecond) // began_at is kept to the microsecond
+
+	require.NoError(t, stepping.OnEvent(ctx, env.Bus, acme, fixtures.ContactPaidBeforeEnrolledID, "payment_failed", 0, time.Time{}))
+	latest := time.Now()
+	runs := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaidBeforeEnrolledID)
+	require.Len(t, runs, 1)
+	run, err := env.DB.AutomationRun.Get(ctx, runs[0])
+	require.NoError(t, err)
+
+	assert.Equal(t, automationrun.StatusActive, run.Status)
+	assert.WithinRange(t, run.BeganAt, earliest, latest)
 }

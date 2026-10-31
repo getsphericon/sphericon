@@ -323,6 +323,7 @@ func ScopedEntities() []ScopedEntity {
 				b.SetContactID(remap("Contact", src.ContactID))
 				b.SetVersionID(remap("AutomationVersion", src.VersionID))
 				b.SetStatus(src.Status)
+				b.SetBeganAt(src.BeganAt)
 				b.SetCurrentStep(src.CurrentStep)
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)
@@ -396,6 +397,10 @@ func ScopedEntities() []ScopedEntity {
 				b.SetVersion(src.Version)
 				b.SetSteps(src.Steps)
 				b.SetTriggerEvent(src.TriggerEvent)
+				b.SetExitEvents(src.ExitEvents)
+				if src.GoalEvent != nil {
+					b.SetGoalEvent(*src.GoalEvent)
+				}
 				if src.IntegrationID != nil {
 					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
 				}

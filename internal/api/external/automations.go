@@ -31,7 +31,10 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 
 // AutomationsCreate always stores an inactive Automation: publishing is the send-class operation.
 func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.CreateAutomationInput) (externalapi.AutomationsCreateRes, error) {
-	in := automations.CreateInput{Name: req.Name, TriggerEvent: req.TriggerEvent, IntegrationID: convert.Int64Ptr(req.IntegrationId)}
+	in := automations.CreateInput{
+		Name: req.Name, TriggerEvent: req.TriggerEvent, ExitEvents: req.ExitEvents,
+		GoalEvent: convert.StringPtr(req.GoalEvent), IntegrationID: convert.Int64Ptr(req.IntegrationId),
+	}
 	if req.Steps != nil {
 		in.Steps = resources.AutomationSteps(req.Steps)
 	}
@@ -59,9 +62,15 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 	in := automations.UpdateInput{
 		Name:         convert.StringPtr(req.Name),
 		TriggerEvent: convert.StringPtr(req.TriggerEvent),
+		// JSON Merge Patch, as for the Integration: an explicit null removes the goal event.
+		GoalEvent: convert.StringPtr(req.GoalEvent),
+		ClearGoal: req.GoalEvent.IsNull(),
 		// JSON Merge Patch: an explicit null clears the Integration, an absent key keeps it.
 		IntegrationID:    convert.Int64Ptr(req.IntegrationId),
 		ClearIntegration: req.IntegrationId.IsNull(),
+	}
+	if req.ExitEvents != nil {
+		in.ExitEvents = &req.ExitEvents
 	}
 	if req.Steps != nil {
 		steps := resources.AutomationSteps(req.Steps)

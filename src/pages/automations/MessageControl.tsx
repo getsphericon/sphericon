@@ -2,18 +2,17 @@ import { Button, Modal, Stack } from '@mantine/core'
 import { useJsonForms } from '@workflowbuilder/sdk'
 import type { ControlProps } from '@workflowbuilder/sdk'
 import { useMemo, useState } from 'react'
-import { I18nextProvider, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
-import { i18n } from '../../i18n.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 
 // The properties panel is narrow, so the message is edited in a dialog opened from it. A step
 // keeps its document as JSON text beside the body (the form holds only strings): an edit in the
 // editor writes the document, an edit of a message that has none writes the body and clears the
 // document, so the step saves one or the other.
-function MessageControl(props: ControlProps) {
+export function MessageControl(props: ControlProps) {
   const { data, label } = props
   const { t } = useTranslation()
   const { core } = useJsonForms()
@@ -49,15 +48,5 @@ function MessageControl(props: ControlProps) {
         </Stack>
       </Modal>
     </Stack>
-  )
-}
-
-// The builder subtree reads the global i18next instance (see AutomationBuilder); the dialog is
-// the app's own UI, so it is bound back to the app's instance.
-export function MessageControlInApp(props: ControlProps) {
-  return (
-    <I18nextProvider i18n={i18n}>
-      <MessageControl {...props} />
-    </I18nextProvider>
   )
 }

@@ -1939,6 +1939,17 @@ func (s *SiteAutomationVersion) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if s.ExitEvents == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "exitEvents",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if s.Steps == nil {
 			return errors.New("nil is invalid value")
 		}
@@ -4574,6 +4585,8 @@ func (s SiteEnrollmentStatus) Validate() error {
 	case "failed":
 		return nil
 	case "exited":
+		return nil
+	case "goal_reached":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

@@ -85,6 +85,11 @@ func VersionID(v int64) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldVersionID, v))
 }
 
+// BeganAt applies equality check predicate on the "began_at" field. It's identical to BeganAtEQ.
+func BeganAt(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldBeganAt, v))
+}
+
 // CurrentStep applies equality check predicate on the "current_step" field. It's identical to CurrentStepEQ.
 func CurrentStep(v int) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStep, v))
@@ -283,6 +288,46 @@ func StatusIn(vs ...Status) predicate.AutomationRun {
 // StatusNotIn applies the NotIn predicate on the "status" field.
 func StatusNotIn(vs ...Status) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// BeganAtEQ applies the EQ predicate on the "began_at" field.
+func BeganAtEQ(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldBeganAt, v))
+}
+
+// BeganAtNEQ applies the NEQ predicate on the "began_at" field.
+func BeganAtNEQ(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldBeganAt, v))
+}
+
+// BeganAtIn applies the In predicate on the "began_at" field.
+func BeganAtIn(vs ...time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldBeganAt, vs...))
+}
+
+// BeganAtNotIn applies the NotIn predicate on the "began_at" field.
+func BeganAtNotIn(vs ...time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldBeganAt, vs...))
+}
+
+// BeganAtGT applies the GT predicate on the "began_at" field.
+func BeganAtGT(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldBeganAt, v))
+}
+
+// BeganAtGTE applies the GTE predicate on the "began_at" field.
+func BeganAtGTE(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldBeganAt, v))
+}
+
+// BeganAtLT applies the LT predicate on the "began_at" field.
+func BeganAtLT(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldBeganAt, v))
+}
+
+// BeganAtLTE applies the LTE predicate on the "began_at" field.
+func BeganAtLTE(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldBeganAt, v))
 }
 
 // CurrentStepEQ applies the EQ predicate on the "current_step" field.

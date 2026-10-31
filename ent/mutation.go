@@ -4588,6 +4588,7 @@ type AutomationRunMutation struct {
 	created_at        *time.Time
 	updated_at        *time.Time
 	status            *automationrun.Status
+	began_at          *time.Time
 	current_step      *int
 	addcurrent_step   *int
 	resume_at         *time.Time
@@ -4963,6 +4964,42 @@ func (m *AutomationRunMutation) OldStatus(ctx context.Context) (v automationrun.
 // ResetStatus resets all changes to the "status" field.
 func (m *AutomationRunMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetBeganAt sets the "began_at" field.
+func (m *AutomationRunMutation) SetBeganAt(t time.Time) {
+	m.began_at = &t
+}
+
+// BeganAt returns the value of the "began_at" field in the mutation.
+func (m *AutomationRunMutation) BeganAt() (r time.Time, exists bool) {
+	v := m.began_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBeganAt returns the old "began_at" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldBeganAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBeganAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBeganAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBeganAt: %w", err)
+	}
+	return oldValue.BeganAt, nil
+}
+
+// ResetBeganAt resets all changes to the "began_at" field.
+func (m *AutomationRunMutation) ResetBeganAt() {
+	m.began_at = nil
 }
 
 // SetCurrentStep sets the "current_step" field.
@@ -5380,7 +5417,7 @@ func (m *AutomationRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationRunMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, automationrun.FieldCreatedAt)
 	}
@@ -5401,6 +5438,9 @@ func (m *AutomationRunMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, automationrun.FieldStatus)
+	}
+	if m.began_at != nil {
+		fields = append(fields, automationrun.FieldBeganAt)
 	}
 	if m.current_step != nil {
 		fields = append(fields, automationrun.FieldCurrentStep)
@@ -5439,6 +5479,8 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.VersionID()
 	case automationrun.FieldStatus:
 		return m.Status()
+	case automationrun.FieldBeganAt:
+		return m.BeganAt()
 	case automationrun.FieldCurrentStep:
 		return m.CurrentStep()
 	case automationrun.FieldResumeAt:
@@ -5472,6 +5514,8 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldVersionID(ctx)
 	case automationrun.FieldStatus:
 		return m.OldStatus(ctx)
+	case automationrun.FieldBeganAt:
+		return m.OldBeganAt(ctx)
 	case automationrun.FieldCurrentStep:
 		return m.OldCurrentStep(ctx)
 	case automationrun.FieldResumeAt:
@@ -5539,6 +5583,13 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case automationrun.FieldBeganAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBeganAt(v)
 		return nil
 	case automationrun.FieldCurrentStep:
 		v, ok := value.(int)
@@ -5699,6 +5750,9 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 	case automationrun.FieldStatus:
 		m.ResetStatus()
 		return nil
+	case automationrun.FieldBeganAt:
+		m.ResetBeganAt()
+		return nil
 	case automationrun.FieldCurrentStep:
 		m.ResetCurrentStep()
 		return nil
@@ -5858,6 +5912,9 @@ type AutomationVersionMutation struct {
 	addversion         *int
 	steps              *string
 	trigger_event      *string
+	exit_events        *[]string
+	appendexit_events  []string
+	goal_event         *string
 	clearedFields      map[string]struct{}
 	workspace          *int64
 	clearedworkspace   bool
@@ -6249,6 +6306,106 @@ func (m *AutomationVersionMutation) ResetTriggerEvent() {
 	m.trigger_event = nil
 }
 
+// SetExitEvents sets the "exit_events" field.
+func (m *AutomationVersionMutation) SetExitEvents(s []string) {
+	m.exit_events = &s
+	m.appendexit_events = nil
+}
+
+// ExitEvents returns the value of the "exit_events" field in the mutation.
+func (m *AutomationVersionMutation) ExitEvents() (r []string, exists bool) {
+	v := m.exit_events
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExitEvents returns the old "exit_events" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldExitEvents(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExitEvents is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExitEvents requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExitEvents: %w", err)
+	}
+	return oldValue.ExitEvents, nil
+}
+
+// AppendExitEvents adds s to the "exit_events" field.
+func (m *AutomationVersionMutation) AppendExitEvents(s []string) {
+	m.appendexit_events = append(m.appendexit_events, s...)
+}
+
+// AppendedExitEvents returns the list of values that were appended to the "exit_events" field in this mutation.
+func (m *AutomationVersionMutation) AppendedExitEvents() ([]string, bool) {
+	if len(m.appendexit_events) == 0 {
+		return nil, false
+	}
+	return m.appendexit_events, true
+}
+
+// ResetExitEvents resets all changes to the "exit_events" field.
+func (m *AutomationVersionMutation) ResetExitEvents() {
+	m.exit_events = nil
+	m.appendexit_events = nil
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (m *AutomationVersionMutation) SetGoalEvent(s string) {
+	m.goal_event = &s
+}
+
+// GoalEvent returns the value of the "goal_event" field in the mutation.
+func (m *AutomationVersionMutation) GoalEvent() (r string, exists bool) {
+	v := m.goal_event
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGoalEvent returns the old "goal_event" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldGoalEvent(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGoalEvent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGoalEvent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGoalEvent: %w", err)
+	}
+	return oldValue.GoalEvent, nil
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (m *AutomationVersionMutation) ClearGoalEvent() {
+	m.goal_event = nil
+	m.clearedFields[automationversion.FieldGoalEvent] = struct{}{}
+}
+
+// GoalEventCleared returns if the "goal_event" field was cleared in this mutation.
+func (m *AutomationVersionMutation) GoalEventCleared() bool {
+	_, ok := m.clearedFields[automationversion.FieldGoalEvent]
+	return ok
+}
+
+// ResetGoalEvent resets all changes to the "goal_event" field.
+func (m *AutomationVersionMutation) ResetGoalEvent() {
+	m.goal_event = nil
+	delete(m.clearedFields, automationversion.FieldGoalEvent)
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (m *AutomationVersionMutation) SetIntegrationID(i int64) {
 	m.integration = &i
@@ -6467,7 +6624,7 @@ func (m *AutomationVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationVersionMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, automationversion.FieldCreatedAt)
 	}
@@ -6488,6 +6645,12 @@ func (m *AutomationVersionMutation) Fields() []string {
 	}
 	if m.trigger_event != nil {
 		fields = append(fields, automationversion.FieldTriggerEvent)
+	}
+	if m.exit_events != nil {
+		fields = append(fields, automationversion.FieldExitEvents)
+	}
+	if m.goal_event != nil {
+		fields = append(fields, automationversion.FieldGoalEvent)
 	}
 	if m.integration != nil {
 		fields = append(fields, automationversion.FieldIntegrationID)
@@ -6514,6 +6677,10 @@ func (m *AutomationVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.Steps()
 	case automationversion.FieldTriggerEvent:
 		return m.TriggerEvent()
+	case automationversion.FieldExitEvents:
+		return m.ExitEvents()
+	case automationversion.FieldGoalEvent:
+		return m.GoalEvent()
 	case automationversion.FieldIntegrationID:
 		return m.IntegrationID()
 	}
@@ -6539,6 +6706,10 @@ func (m *AutomationVersionMutation) OldField(ctx context.Context, name string) (
 		return m.OldSteps(ctx)
 	case automationversion.FieldTriggerEvent:
 		return m.OldTriggerEvent(ctx)
+	case automationversion.FieldExitEvents:
+		return m.OldExitEvents(ctx)
+	case automationversion.FieldGoalEvent:
+		return m.OldGoalEvent(ctx)
 	case automationversion.FieldIntegrationID:
 		return m.OldIntegrationID(ctx)
 	}
@@ -6599,6 +6770,20 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetTriggerEvent(v)
 		return nil
+	case automationversion.FieldExitEvents:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExitEvents(v)
+		return nil
+	case automationversion.FieldGoalEvent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGoalEvent(v)
+		return nil
 	case automationversion.FieldIntegrationID:
 		v, ok := value.(int64)
 		if !ok {
@@ -6651,6 +6836,9 @@ func (m *AutomationVersionMutation) AddField(name string, value ent.Value) error
 // mutation.
 func (m *AutomationVersionMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(automationversion.FieldGoalEvent) {
+		fields = append(fields, automationversion.FieldGoalEvent)
+	}
 	if m.FieldCleared(automationversion.FieldIntegrationID) {
 		fields = append(fields, automationversion.FieldIntegrationID)
 	}
@@ -6668,6 +6856,9 @@ func (m *AutomationVersionMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *AutomationVersionMutation) ClearField(name string) error {
 	switch name {
+	case automationversion.FieldGoalEvent:
+		m.ClearGoalEvent()
+		return nil
 	case automationversion.FieldIntegrationID:
 		m.ClearIntegrationID()
 		return nil
@@ -6699,6 +6890,12 @@ func (m *AutomationVersionMutation) ResetField(name string) error {
 		return nil
 	case automationversion.FieldTriggerEvent:
 		m.ResetTriggerEvent()
+		return nil
+	case automationversion.FieldExitEvents:
+		m.ResetExitEvents()
+		return nil
+	case automationversion.FieldGoalEvent:
+		m.ResetGoalEvent()
 		return nil
 	case automationversion.FieldIntegrationID:
 		m.ResetIntegrationID()

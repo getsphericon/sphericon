@@ -25,7 +25,7 @@ const WELCOME: SiteAutomationResource = {
   id: '1',
   name: 'Welcome flow',
   status: 'active',
-  live: { number: 1, triggerEvent: 'contact.created', steps: [] },
+  live: { number: 1, triggerEvent: 'contact.created', exitEvents: [], goalEvent: null, steps: [] },
   draft: null,
   revenue: { reportingCurrency: 'USD', orders: 2, amount: 9900 },
   createdAt: NOW,
@@ -37,7 +37,7 @@ const NURTURE: SiteAutomationResource = {
   name: 'Nurture flow',
   status: 'inactive',
   live: null,
-  draft: { number: 1, triggerEvent: 'email.opened', steps: [] },
+  draft: { number: 1, triggerEvent: 'email.opened', exitEvents: [], goalEvent: null, steps: [] },
   revenue: { reportingCurrency: null, orders: 0, amount: 0 },
 }
 

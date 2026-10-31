@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -34,6 +35,10 @@ type AutomationVersion struct {
 	Steps string `json:"steps,omitempty"`
 	// TriggerEvent holds the value of the "trigger_event" field.
 	TriggerEvent string `json:"trigger_event,omitempty"`
+	// ExitEvents holds the value of the "exit_events" field.
+	ExitEvents []string `json:"exit_events,omitempty"`
+	// GoalEvent holds the value of the "goal_event" field.
+	GoalEvent *string `json:"goal_event,omitempty"`
 	// IntegrationID holds the value of the "integration_id" field.
 	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -104,9 +109,11 @@ func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case automationversion.FieldExitEvents:
+			values[i] = new([]byte)
 		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion, automationversion.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
-		case automationversion.FieldSteps, automationversion.FieldTriggerEvent:
+		case automationversion.FieldSteps, automationversion.FieldTriggerEvent, automationversion.FieldGoalEvent:
 			values[i] = new(sql.NullString)
 		case automationversion.FieldCreatedAt, automationversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -172,6 +179,21 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 				return fmt.Errorf("unexpected type %T for field trigger_event", values[i])
 			} else if value.Valid {
 				_m.TriggerEvent = value.String
+			}
+		case automationversion.FieldExitEvents:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field exit_events", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.ExitEvents); err != nil {
+					return fmt.Errorf("unmarshal field exit_events: %w", err)
+				}
+			}
+		case automationversion.FieldGoalEvent:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field goal_event", values[i])
+			} else if value.Valid {
+				_m.GoalEvent = new(string)
+				*_m.GoalEvent = value.String
 			}
 		case automationversion.FieldIntegrationID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -256,6 +278,14 @@ func (_m *AutomationVersion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("trigger_event=")
 	builder.WriteString(_m.TriggerEvent)
+	builder.WriteString(", ")
+	builder.WriteString("exit_events=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ExitEvents))
+	builder.WriteString(", ")
+	if v := _m.GoalEvent; v != nil {
+		builder.WriteString("goal_event=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.IntegrationID; v != nil {
 		builder.WriteString("integration_id=")

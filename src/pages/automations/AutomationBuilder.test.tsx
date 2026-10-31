@@ -32,6 +32,8 @@ const NOW = '2026-01-01T00:00:00Z'
 const DRAFT: SiteAutomationVersion = {
   number: 1,
   triggerEvent: 'email.clicked',
+  exitEvents: [],
+  goalEvent: null,
   steps: [{ type: 'wait', seconds: 60 }],
 }
 const STORED: SiteAutomationResource = {

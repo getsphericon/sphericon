@@ -108,6 +108,16 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 30}}'
+# Enrolls in Payment recovery (#751): the Enrollment begins when the Event the Rule fired on
+# occurred (events.yml, recorded for ContactPaidBeforeEnrolled before its payment_succeeded).
+- id: 112 # fixture: RuleEnrollRecovery
+  name: Enroll in payment recovery
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  live_version_id: 112
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
 
 # --- Globex (workspace 2) foreign row ---
 - id: 900 # fixture: RuleGlobex

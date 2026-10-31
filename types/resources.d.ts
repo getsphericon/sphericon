@@ -268,9 +268,12 @@ export default interface Resources {
         "active": "In progress",
         "completed": "Completed",
         "exited": "Exited",
-        "failed": "Failed"
+        "failed": "Failed",
+        "goal_reached": "Reached goal"
       },
       "enrollmentsTitle": "Enrollments",
+      "exitEventsHint": "Any of these events ends a contact's enrollment early. Leave empty for none.",
+      "exitEventsLabel": "Exit events",
       "failedEnrollmentContact": "Contact",
       "failedEnrollmentReason": "Reason",
       "failedEnrollmentResponse": "Response",
@@ -282,6 +285,8 @@ export default interface Resources {
         "network": "The receiver could not be reached",
         "timeout": "The receiver did not answer in time"
       },
+      "goalEventHint": "This event ends a contact's enrollment as having reached the goal. Leave empty for none.",
+      "goalEventLabel": "Goal event",
       "httpBodyHint": "JSON. Merge tags like {{first_name}} are escaped for you, so write them inside quotes.",
       "httpBodyLabel": "JSON body",
       "httpHeadersHint": "One per line: Name: value. Leave a saved header's value empty to keep it.",
@@ -300,6 +305,7 @@ export default interface Resources {
       "liveVersion": "Live version {{number}}",
       "messageDone": "Done",
       "nameLabel": "Name",
+      "noEndEvent": "None",
       "noEnrollments": "No contacts enrolled yet",
       "noRecords": "No automations yet",
       "opens": "Opens",

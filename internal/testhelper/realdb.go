@@ -36,6 +36,19 @@ func RealDBURL(t *testing.T) string {
 	return pgtestdb.Custom(t, serverConfig(t), baselineMigrator{}).URL()
 }
 
+// LockWaiters counts the connections to db's database that wait for a lock another transaction
+// holds: a test of the order two transactions take tells by it that the second one waits for the
+// first, without guessing how long it takes to get there.
+// It returns an error rather than failing the test, so a condition polled off the test's
+// goroutine (require.Eventually) can call it.
+func LockWaiters(ctx context.Context, db *sql.DB) (int, error) {
+	// raw sql: pg_stat_activity is a server view; ent has no entity for it.
+	row := db.QueryRowContext(ctx, "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'")
+	var n int
+	err := row.Scan(&n)
+	return n, err
+}
+
 // EmptyDBURL is the URL of a test's own database with no schema at all, for code that
 // migrates a fresh instance (RealDB starts at the fixture state).
 func EmptyDBURL(t *testing.T) string {

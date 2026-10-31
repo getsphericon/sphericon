@@ -42,7 +42,13 @@ test('loads the automation into the builder', async () => {
         name: 'Welcome flow',
         status: 'inactive',
         live: null,
-        draft: { number: 1, triggerEvent: 'email.clicked', steps: [{ type: 'wait', seconds: 60 }] },
+        draft: {
+          number: 1,
+          triggerEvent: 'email.clicked',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [{ type: 'wait', seconds: 60 }],
+        },
         createdAt: NOW,
         updatedAt: NOW,
       },
@@ -76,6 +82,8 @@ const STORED: SiteAutomationResource = {
   draft: {
     number: 1,
     triggerEvent: 'email.clicked',
+    exitEvents: [],
+    goalEvent: null,
     steps: [
       { type: 'wait', seconds: 60 },
       { type: 'apply_tag', tag: 'vip' },
@@ -105,6 +113,8 @@ test('saving from the builder sends the edited name, the trigger and the canvas 
       {
         name: 'Renamed',
         triggerEvent: 'email.clicked',
+        exitEvents: [],
+        goalEvent: null,
         steps: [
           { type: 'wait', seconds: 60 },
           { type: 'apply_tag', tag: 'vip' },
@@ -137,7 +147,7 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
 
 // withSteps is STORED's draft with other steps.
 function withSteps(steps: SiteAutomationVersion['steps']): SiteAutomationVersion {
-  return { number: 1, triggerEvent: 'email.clicked', steps }
+  return { number: 1, triggerEvent: 'email.clicked', exitEvents: [], goalEvent: null, steps }
 }
 
 const AUTHORED_DOC = {
@@ -176,6 +186,8 @@ test('saving an email step written in the editor sends its document and no body'
       {
         name: 'Welcome flow',
         triggerEvent: 'email.clicked',
+        exitEvents: [],
+        goalEvent: null,
         steps: [{ type: 'email', subject: 'Hi', doc: AUTHORED_DOC }],
         integrationId: null,
       },
@@ -324,8 +336,20 @@ test('the builder edits the draft and shows it pending above the live version', 
       body: {
         ...STORED,
         status: 'active',
-        live: { number: 1, triggerEvent: 'email.opened', steps: [] },
-        draft: { number: 2, triggerEvent: 'email.clicked', steps: [] },
+        live: {
+          number: 1,
+          triggerEvent: 'email.opened',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [],
+        },
+        draft: {
+          number: 2,
+          triggerEvent: 'email.clicked',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [],
+        },
       },
     }),
   )

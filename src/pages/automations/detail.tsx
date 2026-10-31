@@ -43,8 +43,9 @@ function stepLabel(t: TFunction, step: SiteAutomationStep): string {
   return detail ? `${kind}: ${detail}` : kind
 }
 
-// What the live version does: its number, its Trigger, its Integration and its steps in order. The
-// editor shows the draft when there is one, so this is where the live version is read (ADR 0065).
+// What the live version does: its number, its Trigger, its exit and goal events, its Integration
+// and its steps in order. The editor shows the draft when there is one, so this is where the live
+// version is read (ADR 0065).
 function AutomationVersionSummary({
   workspaceId,
   version,
@@ -63,6 +64,32 @@ function AutomationVersionSummary({
         <Badge variant="outline" color="gray">
           {version.triggerEvent}
         </Badge>
+      </Group>
+      <Group gap="xs">
+        <Text size="sm" c="dimmed">
+          {t(($) => $.automations.exitEventsLabel)}
+        </Text>
+        {version.exitEvents.length === 0 ? (
+          <Text size="sm">{t(($) => $.automations.noEndEvent)}</Text>
+        ) : (
+          version.exitEvents.map((event) => (
+            <Badge key={event} variant="outline" color="gray">
+              {event}
+            </Badge>
+          ))
+        )}
+      </Group>
+      <Group gap="xs">
+        <Text size="sm" c="dimmed">
+          {t(($) => $.automations.goalEventLabel)}
+        </Text>
+        {version.goalEvent === null ? (
+          <Text size="sm">{t(($) => $.automations.noEndEvent)}</Text>
+        ) : (
+          <Badge variant="outline" color="teal">
+            {version.goalEvent}
+          </Badge>
+        )}
       </Group>
       <Group gap="xs">
         <Text size="sm" c="dimmed">

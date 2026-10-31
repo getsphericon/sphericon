@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { MESSAGE_FORMAT } from './messageFormat.ts'
-import { TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
+import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
 // The palette `type` of each node, stored on `node.data.type` and used by the
 // graph ↔ definition converters to tell email steps from wait steps.
@@ -47,7 +47,13 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         isStartNode: true,
         label: t(($) => $.automations.stepTrigger),
         description: t(($) => $.automations.triggerHint),
-        defaultPropertiesData: { triggerEvent: DEFAULT_TRIGGER_EVENT },
+        // The exit events are held one per line and the goal event as text ('' for none): the
+        // SDK's schema has no list of strings.
+        defaultPropertiesData: {
+          triggerEvent: DEFAULT_TRIGGER_EVENT,
+          exitEvents: '',
+          goalEvent: '',
+        },
         schema: {
           type: 'object',
           required: ['triggerEvent'],
@@ -58,11 +64,25 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               label: t(($) => $.automations.triggerLabel),
               format: TRIGGER_EVENT_FORMAT,
             },
+            exitEvents: {
+              type: 'string',
+              label: t(($) => $.automations.exitEventsLabel),
+              format: EXIT_EVENTS_FORMAT,
+            },
+            goalEvent: {
+              type: 'string',
+              label: t(($) => $.automations.goalEventLabel),
+              format: GOAL_EVENT_FORMAT,
+            },
           },
         },
         uischema: {
           type: 'VerticalLayout',
-          elements: [{ type: 'Text', scope: '#/properties/triggerEvent', placeholder: '' }],
+          elements: [
+            { type: 'Text', scope: '#/properties/triggerEvent', placeholder: '' },
+            { type: 'Text', scope: '#/properties/exitEvents', placeholder: '' },
+            { type: 'Text', scope: '#/properties/goalEvent', placeholder: '' },
+          ],
         } satisfies UISchema,
       },
       {

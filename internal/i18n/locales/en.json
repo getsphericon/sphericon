@@ -159,6 +159,8 @@
   "errors.event_not_found": "event not found",
   "errors.segment_condition_invalid": "invalid condition",
   "errors.segment_not_found": "segment not found",
+  "errors.automation_exit_event_invalid": "invalid exit event",
+  "errors.automation_goal_event_invalid": "invalid goal event",
   "errors.automation_integration_not_found": "integration not found",
   "errors.automation_not_found": "automation not found",
   "errors.automation_nothing_to_publish": "nothing to publish",

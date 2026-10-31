@@ -19,11 +19,25 @@ import (
 	"github.com/getsphericon/sphericon/internal/suppression"
 )
 
-// Enroller enrolls a contact into automations matching an event action. The
-// automations subscriber delegates to it, keeping durable execution in river
-// (the implementation enqueues an EvaluateTrigger job).
+// AutomationEvent is an Event an Automation may react to, as the Automations consumer hands it to
+// the queue: the Contact it is for, its action, the Automation whose email it came from (0 for any
+// other Event) and its Envelope, which says the Workspace and when the Event occurred (the Event
+// row's occurred_at), and from which the queue stores the Event's row.
+type AutomationEvent struct {
+	ContactID          int64
+	Action             string
+	SourceAutomationID int64
+	Envelope           Envelope
+}
+
+// Enroller enrolls a contact into automations matching an event action and ends the
+// Enrollments the action exits or reaches the goal of. The automations subscriber delegates to
+// it, keeping durable execution in river. The implementation stores the Event's row first, through
+// the idempotent Persist the persist consumer runs too, then enqueues an EvaluateTrigger job: the
+// job that ends or makes an Enrollment always sees the Event among the Contact's (#751), whichever
+// consumer runs first.
 type Enroller interface {
-	OnEvent(ctx context.Context, workspaceID, contactID int64, action string, sourceAutomationID int64) error
+	OnEvent(ctx context.Context, ev AutomationEvent) error
 }
 
 // RuleEvent is an Event a Rule may react to, as the Rules consumer hands it to the queue: the
@@ -264,8 +278,10 @@ func WebhooksConsumer(client *ent.Client, dispatcher WebhookDispatcher) message.
 	}
 }
 
-// AutomationsConsumer enrolls the event's contact into matching automations. It
-// skips events with no contact (ContactID == 0, e.g. anonymous collect events).
+// AutomationsConsumer enrolls the event's contact into matching automations and ends the
+// Enrollments the event exits or reaches the goal of (#751). It skips events with no contact
+// (ContactID == 0, e.g. anonymous collect events), loaded history and machine engagement, which
+// neither enroll nor end anything.
 func AutomationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 	return func(msg *message.Message) error {
 		var env Envelope
@@ -287,11 +303,16 @@ func AutomationsConsumer(enroller Enroller) message.NoPublishHandlerFunc {
 			return nil // no contact to enroll (e.g. an anonymous collected event)
 		}
 		if p.Machine {
-			return nil // software opened or clicked: nobody is enrolled by a scanner (ADR 0053)
+			return nil // software opened or clicked: a scanner neither enrolls nor ends (ADR 0053)
 		}
 		// Enroll on the semantic action so a trigger can be "contact.created" or a
-		// customer action like "page_view".
-		return enroller.OnEvent(msg.Context(), env.WorkspaceID, p.ContactID, p.Action, p.AutomationID)
+		// customer action like "page_view". The envelope's occurred_at is the Event row's.
+		return enroller.OnEvent(msg.Context(), AutomationEvent{
+			ContactID:          p.ContactID,
+			Action:             p.Action,
+			SourceAutomationID: p.AutomationID,
+			Envelope:           env,
+		})
 	}
 }
 

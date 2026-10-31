@@ -1,9 +1,9 @@
 // Package automations is the one place an Automation's definition is stored,
 // validated and its lifecycle changed (ADR 0016). /site and /api handlers stay thin
 // adapters over it; the step executor (internal/jobs) decodes the same Step format,
-// so the storage JSON has a single definition. The definition (Trigger, Integration and
-// steps) lives in versions (ADR 0049): an edit writes the draft, Publish makes it live
-// (ADR 0065).
+// so the storage JSON has a single definition. The definition (Trigger, exit and goal events,
+// Integration and steps) lives in versions (ADR 0049): an edit writes the draft, Publish makes
+// it live (ADR 0065).
 package automations
 
 import (
@@ -77,6 +77,11 @@ var (
 	// ErrInvalidTrigger: the trigger is an infrastructure Event (a send or a delivery notice)
 	// that no Automation may start from (ADR 0053).
 	ErrInvalidTrigger = validation.Refuse("automations: invalid trigger", "errors.automation_trigger_invalid")
+	// ErrInvalidExitEvent: an exit event is empty, an infrastructure Event, or the trigger itself.
+	ErrInvalidExitEvent = validation.Refuse("automations: invalid exit event", "errors.automation_exit_event_invalid")
+	// ErrInvalidGoalEvent: the goal event is empty, an infrastructure Event, the trigger itself or
+	// one of the exit events.
+	ErrInvalidGoalEvent = validation.Refuse("automations: invalid goal event", "errors.automation_goal_event_invalid")
 	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
 	ErrIntegrationNotFound = validation.Refuse("automations: integration not found", "errors.automation_integration_not_found")
 
@@ -212,14 +217,77 @@ var engagementTriggers = []string{events.NameEmailOpened, events.NameEmailClicke
 
 // validateTrigger refuses an empty trigger and an infrastructure Event as the trigger.
 func validateTrigger(trigger string) error {
-	t := strings.ToLower(strings.TrimSpace(trigger))
-	if t == "" {
-		return ErrInvalidTrigger.With("the trigger is empty")
-	}
-	if strings.HasPrefix(t, "email.") && !slices.Contains(engagementTriggers, t) {
-		return ErrInvalidTrigger.With(fmt.Sprintf("%q is not a trigger; use %s", trigger, strings.Join(engagementTriggers, ", ")))
+	if problem := eventProblem(trigger); problem != "" {
+		return ErrInvalidTrigger.With(problem)
 	}
 	return nil
+}
+
+// eventProblem says why the action can neither start nor end an Automation: it is empty, or an
+// infrastructure Event (ADR 0053). Empty when it can.
+func eventProblem(action string) string {
+	t := strings.ToLower(strings.TrimSpace(action))
+	if t == "" {
+		return "the event is empty"
+	}
+	if strings.HasPrefix(t, "email.") && !slices.Contains(engagementTriggers, t) {
+		return fmt.Sprintf("%q is not a customer action; use %s", action, strings.Join(engagementTriggers, ", "))
+	}
+	return ""
+}
+
+// validateEvents checks the definition's trigger, each exit event and the goal event by the
+// trigger's rule (validateTrigger), and refuses an exit or goal event equal to the trigger and a
+// goal that is also an exit event: one Event would then both enroll and end, or end two ways.
+func validateEvents(def definition) error {
+	if err := validateTrigger(def.trigger); err != nil {
+		return err
+	}
+	trigger := strings.TrimSpace(def.trigger)
+	for _, e := range def.exits {
+		if problem := eventProblem(e); problem != "" {
+			return ErrInvalidExitEvent.With(problem)
+		}
+		if e == trigger {
+			return ErrInvalidExitEvent.With(fmt.Sprintf("%q is the trigger", e))
+		}
+	}
+	if def.goal == nil {
+		return nil
+	}
+	goal := *def.goal
+	if problem := eventProblem(goal); problem != "" {
+		return ErrInvalidGoalEvent.With(problem)
+	}
+	if goal == trigger {
+		return ErrInvalidGoalEvent.With(fmt.Sprintf("%q is the trigger", goal))
+	}
+	if slices.Contains(def.exits, goal) {
+		return ErrInvalidGoalEvent.With(fmt.Sprintf("%q is also an exit event", goal))
+	}
+	return nil
+}
+
+// normalizeExits turns a list of exit events into its stored form: each trimmed, the first of a
+// repeat kept, never nil.
+func normalizeExits(actions []string) []string {
+	out := make([]string, 0, len(actions))
+	for _, e := range actions {
+		e = strings.TrimSpace(e)
+		if !slices.Contains(out, e) {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+// normalizeGoal turns a goal event into its stored form: trimmed, nil for none.
+func normalizeGoal(goal *string) *string {
+	if goal == nil {
+		return nil
+	}
+	g := strings.TrimSpace(*goal)
+	return &g
 }
 
 // CreateInput is the data for a new Automation. It is always created inactive: publishing is a
@@ -227,7 +295,11 @@ func validateTrigger(trigger string) error {
 type CreateInput struct {
 	Name         string
 	TriggerEvent string
-	Steps        []Step
+	// ExitEvents end an active Enrollment early and GoalEvent ends it as having reached its goal;
+	// nil is none.
+	ExitEvents []string
+	GoalEvent  *string
+	Steps      []Step
 	// IntegrationID is the email Integration the steps send through; nil is the Workspace default.
 	IntegrationID *int64
 }
@@ -237,7 +309,12 @@ type CreateInput struct {
 type UpdateInput struct {
 	Name         *string
 	TriggerEvent *string
-	Steps        *[]Step
+	// ExitEvents replaces the exit events; GoalEvent sets the goal event and ClearGoal removes it.
+	// Neither leaves them alone.
+	ExitEvents *[]string
+	GoalEvent  *string
+	ClearGoal  bool
+	Steps      *[]Step
 	// IntegrationID moves the Automation to that Integration; ClearIntegration goes back to
 	// the Workspace default. Neither leaves it alone.
 	IntegrationID    *int64
@@ -332,7 +409,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		}
 		return a.ID, nil
 	}
-	e := edit{trigger: &in.TriggerEvent, integrationID: in.IntegrationID}
+	e := edit{trigger: &in.TriggerEvent, exits: &in.ExitEvents, goal: in.GoalEvent, integrationID: in.IntegrationID}
 	if in.Steps != nil {
 		e.steps = &steps
 	}
@@ -343,9 +420,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // the fields left out keep the draft's, or the live version's when there is no draft. The live
 // version is never rewritten: the first edit above it creates the draft, the next ones rewrite the
 // draft in place. A definition equal to the draft's (or, with no draft, the live version's) stores
-// nothing. The status is untouched.
+// nothing. An edit of the Trigger, exit or goal events checks the three together (validateEvents),
+// so a new Trigger equal to a stored exit or goal event is refused too. The status is untouched.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
-	e := edit{trigger: in.TriggerEvent, integrationID: in.IntegrationID, clearIntegration: in.ClearIntegration}
+	e := edit{
+		trigger: in.TriggerEvent, exits: in.ExitEvents, goal: in.GoalEvent, clearGoal: in.ClearGoal,
+		integrationID: in.IntegrationID, clearIntegration: in.ClearIntegration,
+	}
 	if in.Steps != nil {
 		built, err := m.build(ctx, *in.Steps)
 		if err != nil {
@@ -366,15 +447,21 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // (their documents rendered) before the transaction.
 type edit struct {
 	trigger          *string
+	exits            *[]string
+	goal             *string
+	clearGoal        bool
 	integrationID    *int64
 	clearIntegration bool
 	steps            *[]Step
 }
 
-// definition is the content of an Automation version as stored: its Trigger, its Integration (nil
-// for the Workspace default) and its encoded, sealed steps.
+// definition is the content of an Automation version as stored: its Trigger, the events that end
+// an Enrollment early (exits) and the one that ends it as having reached its goal (nil for none),
+// its Integration (nil for the Workspace default) and its encoded, sealed steps.
 type definition struct {
 	trigger       string
+	exits         []string
+	goal          *string
 	integrationID *int64
 	steps         string
 }
@@ -387,10 +474,11 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 }
 
 // Merge lays the edit over the base version (nil for a new Automation) and validates what it
-// changes: the Trigger, the Integration (kept, not archived) and the steps. An HTTP step that
-// names one of the base's steps by ID keeps the secrets it does not resend.
+// changes: the Trigger with the exit and goal events, checked together (validateEvents), the
+// Integration (kept, not archived) and the steps. An HTTP step that names one of the base's steps
+// by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
-	def := definition{steps: "[]"}
+	def := definition{exits: []string{}, steps: "[]"}
 	var stored []Step
 	if base != nil {
 		var err error
@@ -402,10 +490,21 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		}
 	}
 	if e.trigger != nil {
-		if err := validateTrigger(*e.trigger); err != nil {
+		def.trigger = *e.trigger
+	}
+	if e.exits != nil {
+		def.exits = normalizeExits(*e.exits)
+	}
+	switch {
+	case e.clearGoal:
+		def.goal = nil
+	case e.goal != nil:
+		def.goal = normalizeGoal(e.goal)
+	}
+	if e.trigger != nil || e.exits != nil || e.goal != nil || e.clearGoal {
+		if err := validateEvents(def); err != nil {
 			return definition{}, err
 		}
-		def.trigger = *e.trigger
 	}
 	switch {
 	case e.clearIntegration:
@@ -442,20 +541,29 @@ func canonical(v *ent.AutomationVersion) (definition, error) {
 	if err != nil {
 		return definition{}, err
 	}
-	return definition{trigger: v.TriggerEvent, integrationID: v.IntegrationID, steps: steps}, nil
+	return definition{
+		trigger: v.TriggerEvent, exits: normalizeExits(v.ExitEvents), goal: v.GoalEvent,
+		integrationID: v.IntegrationID, steps: steps,
+	}, nil
 }
 
 func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
 	held, err := canonical(v)
-	return err == nil && held.trigger == def.trigger && equalIDs(held.integrationID, def.integrationID) && held.steps == def.steps
+	return err == nil && held.trigger == def.trigger && slices.Equal(held.exits, def.exits) && samePtr(held.goal, def.goal) &&
+		samePtr(held.integrationID, def.integrationID) && held.steps == def.steps
 }
 
 func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int, draft *ent.AutomationVersion, def definition) (int64, error) {
 	if draft != nil {
 		upd := ts.AutomationVersion().UpdateOneID(draft.ID).
 			SetTriggerEvent(def.trigger).
+			SetExitEvents(def.exits).
+			SetNillableGoalEvent(def.goal).
 			SetSteps(def.steps).
 			SetNillableIntegrationID(def.integrationID)
+		if def.goal == nil {
+			upd.ClearGoalEvent()
+		}
 		if def.integrationID == nil {
 			upd.ClearIntegrationID()
 		}
@@ -465,6 +573,8 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 		SetAutomationID(id).
 		SetVersion(number).
 		SetTriggerEvent(def.trigger).
+		SetExitEvents(def.exits).
+		SetNillableGoalEvent(def.goal).
 		SetNillableIntegrationID(def.integrationID).
 		SetSteps(def.steps).
 		Save(ctx)
@@ -474,9 +584,10 @@ func (versioned) Write(ctx context.Context, ts *ent.Scoped, id int64, number int
 	return created.ID, nil
 }
 
-// Publishable checks the draft's Trigger again, and its Integration must still be kept.
+// Publishable checks the draft's Trigger, exit and goal events again, and its Integration must
+// still be kept.
 func (versioned) Publishable(ctx context.Context, ts *ent.Scoped, draft *ent.AutomationVersion) error {
-	if err := validateTrigger(draft.TriggerEvent); err != nil {
+	if err := validateEvents(definition{trigger: draft.TriggerEvent, exits: draft.ExitEvents, goal: draft.GoalEvent}); err != nil {
 		return err
 	}
 	return checkIntegration(ctx, ts, draft.IntegrationID)
@@ -500,7 +611,8 @@ func (versioned) Archivable(ctx context.Context, ts *ent.Scoped, a *ent.Automati
 	return nil
 }
 
-func equalIDs(a, b *int64) bool {
+// samePtr reports whether two optional values are both absent or both present and equal.
+func samePtr[T comparable](a, b *T) bool {
 	if a == nil || b == nil {
 		return a == b
 	}
@@ -584,8 +696,8 @@ func (m *Module) Unarchive(ctx context.Context, s *ent.Scoped, id int64) error {
 // Publish makes the draft live and the Automation active (internal/drafts): new Enrollments begin
 // on the draft's definition, and the old live version stays as history; the Enrollments already on
 // it finish there. With no draft it makes an inactive live version active again and leaves an
-// active one as it is; with neither it is refused. The draft's Trigger is checked again and its
-// Integration must still be kept. Publish is send-class (ADR 0065): the surfaces gate it by the
+// active one as it is; with neither it is refused. The draft's Trigger, exit and goal events are
+// checked again and its Integration must still be kept. Publish is send-class (ADR 0065): the surfaces gate it by the
 // publish scope. An archived Automation enrolls nobody and is restored before it is published, so
 // it is as good as absent here: ErrNotFound.
 func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {

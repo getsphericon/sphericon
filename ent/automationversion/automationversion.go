@@ -28,6 +28,10 @@ const (
 	FieldSteps = "steps"
 	// FieldTriggerEvent holds the string denoting the trigger_event field in the database.
 	FieldTriggerEvent = "trigger_event"
+	// FieldExitEvents holds the string denoting the exit_events field in the database.
+	FieldExitEvents = "exit_events"
+	// FieldGoalEvent holds the string denoting the goal_event field in the database.
+	FieldGoalEvent = "goal_event"
 	// FieldIntegrationID holds the string denoting the integration_id field in the database.
 	FieldIntegrationID = "integration_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -80,6 +84,8 @@ var Columns = []string{
 	FieldVersion,
 	FieldSteps,
 	FieldTriggerEvent,
+	FieldExitEvents,
+	FieldGoalEvent,
 	FieldIntegrationID,
 }
 
@@ -104,6 +110,8 @@ var (
 	VersionValidator func(int) error
 	// DefaultSteps holds the default value on creation for the "steps" field.
 	DefaultSteps string
+	// DefaultExitEvents holds the default value on creation for the "exit_events" field.
+	DefaultExitEvents []string
 )
 
 // OrderOption defines the ordering options for the AutomationVersion queries.
@@ -147,6 +155,11 @@ func BySteps(opts ...sql.OrderTermOption) OrderOption {
 // ByTriggerEvent orders the results by the trigger_event field.
 func ByTriggerEvent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTriggerEvent, opts...).ToFunc()
+}
+
+// ByGoalEvent orders the results by the goal_event field.
+func ByGoalEvent(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGoalEvent, opts...).ToFunc()
 }
 
 // ByIntegrationID orders the results by the integration_id field.

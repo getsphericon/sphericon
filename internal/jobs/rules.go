@@ -109,10 +109,10 @@ func RuleActionRunners(mod *outbound.Module, bus *events.Bus) rules.ActionRunner
 }
 
 // enrollAction enrolls the Contact in an Automation through the same Enrollment an Automation's
-// trigger uses: once ever, fenced (ADR 0046). An Automation that is not active (a draft or an
-// archived one) or a Contact already enrolled is Skipped, not Failed. The Enrollment and the job
-// that starts stepping it commit together, so a retry never finds an enrolled Contact whose run
-// never started.
+// trigger uses: once ever, fenced (ADR 0046), beginning when the Event the Rule fired on occurred
+// (stepping.EnrollOnRule). An Automation that is not active (a draft or an archived one) or a
+// Contact already enrolled is Skipped, not Failed. The Enrollment and the job that starts stepping
+// it commit together, so a retry never finds an enrolled Contact whose run never started.
 type enrollAction struct {
 	bus *events.Bus
 }
@@ -127,7 +127,7 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 	case auto.Status != automation.StatusActive:
 		return rules.Result{Status: rules.Skipped, Detail: "the automation is not active"}, nil
 	}
-	enrolled, err := stepping.Enroll(ctx, a.bus, s, auto.ID, in.ContactID)
+	enrolled, err := stepping.EnrollOnRule(ctx, a.bus, s, auto.ID, in.ContactID, in.Firing.SourceID)
 	switch {
 	case err != nil:
 		return rules.Result{}, err

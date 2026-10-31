@@ -569,6 +569,8 @@ export const zSiteAutomationStep = z.object({
 export const zSiteAutomationVersion = z.object({
   number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   triggerEvent: z.string(),
+  exitEvents: z.array(z.string()),
+  goalEvent: z.string().nullable(),
   integrationId: z.exactOptional(zEntityId.nullable()),
   steps: z.array(zSiteAutomationStep)
 });
@@ -677,6 +679,8 @@ export const zSiteContactHoldings = z.object({
 export const zSiteCreateAutomationInput = z.object({
   name: z.string(),
   triggerEvent: z.string(),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
   steps: z.exactOptional(z.array(zSiteAutomationStep)),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -842,7 +846,8 @@ export const zSiteEnrollmentStatus = z.enum([
   'active',
   'completed',
   'failed',
-  'exited'
+  'exited',
+  'goal_reached'
 ]);
 
 /**
@@ -1888,6 +1893,8 @@ export const zSiteTransactionalEmailStatus = z.enum([
 export const zSiteUpdateAutomationInput = z.object({
   name: z.exactOptional(z.string()),
   triggerEvent: z.exactOptional(z.string()),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
   steps: z.exactOptional(z.array(zSiteAutomationStep)),
   integrationId: z.exactOptional(zEntityId.nullable())
 });

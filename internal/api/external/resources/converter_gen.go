@@ -69,6 +69,13 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 	if source != nil {
 		externalapiAutomationVersion.Number = count((*source).Version)
 		externalapiAutomationVersion.TriggerEvent = (*source).TriggerEvent
+		if (*source).ExitEvents != nil {
+			externalapiAutomationVersion.ExitEvents = make([]string, len((*source).ExitEvents))
+			for i := 0; i < len((*source).ExitEvents); i++ {
+				externalapiAutomationVersion.ExitEvents[i] = (*source).ExitEvents[i]
+			}
+		}
+		externalapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
 		externalapiAutomationVersion.IntegrationId = optNilEntityID((*source).IntegrationID)
 		externalapiAutomationVersion.Steps = automationSteps(source)
 	}

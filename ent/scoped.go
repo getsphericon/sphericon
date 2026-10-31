@@ -3598,6 +3598,18 @@ func (x *AutomationRunScopedCreate) SetNillableStatus(v *automationrun.Status) *
 	return x
 }
 
+// SetBeganAt sets the "began_at" field.
+func (x *AutomationRunScopedCreate) SetBeganAt(v time.Time) *AutomationRunScopedCreate {
+	x.b.SetBeganAt(v)
+	return x
+}
+
+// SetNillableBeganAt sets the "began_at" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableBeganAt(v *time.Time) *AutomationRunScopedCreate {
+	x.b.SetNillableBeganAt(v)
+	return x
+}
+
 // SetCurrentStep sets the "current_step" field.
 func (x *AutomationRunScopedCreate) SetCurrentStep(v int) *AutomationRunScopedCreate {
 	x.b.SetCurrentStep(v)
@@ -4634,6 +4646,24 @@ func (x *AutomationVersionScopedCreate) SetTriggerEvent(v string) *AutomationVer
 	return x
 }
 
+// SetExitEvents sets the "exit_events" field.
+func (x *AutomationVersionScopedCreate) SetExitEvents(v []string) *AutomationVersionScopedCreate {
+	x.b.SetExitEvents(v)
+	return x
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (x *AutomationVersionScopedCreate) SetGoalEvent(v string) *AutomationVersionScopedCreate {
+	x.b.SetGoalEvent(v)
+	return x
+}
+
+// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableGoalEvent(v *string) *AutomationVersionScopedCreate {
+	x.b.SetNillableGoalEvent(v)
+	return x
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (x *AutomationVersionScopedCreate) SetIntegrationID(v int64) *AutomationVersionScopedCreate {
 	x.b.SetIntegrationID(v)
@@ -4786,6 +4816,36 @@ func (u *AutomationVersionScopedUpsert) SetTriggerEvent(v string) *AutomationVer
 // UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
 func (u *AutomationVersionScopedUpsert) UpdateTriggerEvent() *AutomationVersionScopedUpsert {
 	u.u.SetExcluded(automationversion.FieldTriggerEvent)
+	return u
+}
+
+// SetExitEvents sets the "exit_events" field.
+func (u *AutomationVersionScopedUpsert) SetExitEvents(v []string) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldExitEvents, v)
+	return u
+}
+
+// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateExitEvents() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldExitEvents)
+	return u
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (u *AutomationVersionScopedUpsert) SetGoalEvent(v string) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldGoalEvent, v)
+	return u
+}
+
+// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateGoalEvent() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldGoalEvent)
+	return u
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (u *AutomationVersionScopedUpsert) ClearGoalEvent() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldGoalEvent)
 	return u
 }
 
@@ -4989,6 +5049,36 @@ func (x *AutomationVersionScopedUpdateOne) SetNillableTriggerEvent(v *string) *A
 	return x
 }
 
+// SetExitEvents sets the "exit_events" field.
+func (x *AutomationVersionScopedUpdateOne) SetExitEvents(v []string) *AutomationVersionScopedUpdateOne {
+	x.b.SetExitEvents(v)
+	return x
+}
+
+// AppendExitEvents appends value to the "exit_events" field.
+func (x *AutomationVersionScopedUpdateOne) AppendExitEvents(v []string) *AutomationVersionScopedUpdateOne {
+	x.b.AppendExitEvents(v)
+	return x
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (x *AutomationVersionScopedUpdateOne) SetGoalEvent(v string) *AutomationVersionScopedUpdateOne {
+	x.b.SetGoalEvent(v)
+	return x
+}
+
+// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableGoalEvent(v *string) *AutomationVersionScopedUpdateOne {
+	x.b.SetNillableGoalEvent(v)
+	return x
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (x *AutomationVersionScopedUpdateOne) ClearGoalEvent() *AutomationVersionScopedUpdateOne {
+	x.b.ClearGoalEvent()
+	return x
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (x *AutomationVersionScopedUpdateOne) SetIntegrationID(v int64) *AutomationVersionScopedUpdateOne {
 	x.b.SetIntegrationID(v)
@@ -5165,6 +5255,36 @@ func (x *AutomationVersionScopedUpdate) SetTriggerEvent(v string) *AutomationVer
 // SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
 func (x *AutomationVersionScopedUpdate) SetNillableTriggerEvent(v *string) *AutomationVersionScopedUpdate {
 	x.b.SetNillableTriggerEvent(v)
+	return x
+}
+
+// SetExitEvents sets the "exit_events" field.
+func (x *AutomationVersionScopedUpdate) SetExitEvents(v []string) *AutomationVersionScopedUpdate {
+	x.b.SetExitEvents(v)
+	return x
+}
+
+// AppendExitEvents appends value to the "exit_events" field.
+func (x *AutomationVersionScopedUpdate) AppendExitEvents(v []string) *AutomationVersionScopedUpdate {
+	x.b.AppendExitEvents(v)
+	return x
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (x *AutomationVersionScopedUpdate) SetGoalEvent(v string) *AutomationVersionScopedUpdate {
+	x.b.SetGoalEvent(v)
+	return x
+}
+
+// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableGoalEvent(v *string) *AutomationVersionScopedUpdate {
+	x.b.SetNillableGoalEvent(v)
+	return x
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (x *AutomationVersionScopedUpdate) ClearGoalEvent() *AutomationVersionScopedUpdate {
+	x.b.ClearGoalEvent()
 	return x
 }
 

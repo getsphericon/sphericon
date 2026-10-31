@@ -77,6 +77,12 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
+- id: 113
+  version_id: 112
+  action: rule_enroll_recovery
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
 - id: 900
   version_id: 900
   action: rule_click

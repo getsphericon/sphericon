@@ -1265,6 +1265,12 @@ type AutomationVersion struct {
 	Number int32 `json:"number"`
 	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
 	TriggerEvent string `json:"triggerEvent"`
+	// Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only an Event
+	// that occurred once the enrollment began counts; machine opens and clicks never do.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
+	// there is none.
+	GoalEvent NilString `json:"goalEvent"`
 	// Sending integration of the email steps; null means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The ordered, linear steps.
@@ -1279,6 +1285,16 @@ func (s *AutomationVersion) GetNumber() int32 {
 // GetTriggerEvent returns the value of TriggerEvent.
 func (s *AutomationVersion) GetTriggerEvent() string {
 	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *AutomationVersion) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *AutomationVersion) GetGoalEvent() NilString {
+	return s.GoalEvent
 }
 
 // GetIntegrationId returns the value of IntegrationId.
@@ -1299,6 +1315,16 @@ func (s *AutomationVersion) SetNumber(val int32) {
 // SetTriggerEvent sets the value of TriggerEvent.
 func (s *AutomationVersion) SetTriggerEvent(val string) {
 	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *AutomationVersion) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *AutomationVersion) SetGoalEvent(val NilString) {
+	s.GoalEvent = val
 }
 
 // SetIntegrationId sets the value of IntegrationId.
@@ -5285,9 +5311,15 @@ func (*CreateApiTokenResponse) authTokensCreateRes()    {}
 // Request body for creating an automation (always created inactive).
 // Ref: #/components/schemas/CreateAutomationInput
 type CreateAutomationInput struct {
-	Name         string           `json:"name"`
-	TriggerEvent string           `json:"triggerEvent"`
-	Steps        []AutomationStep `json:"steps"`
+	Name         string `json:"name"`
+	TriggerEvent string `json:"triggerEvent"`
+	// Event actions that end an active enrollment early; none of them may be the trigger. Each follows the
+	// trigger's rule: any customer action, and of the email events only opened, clicked and unsubscribed.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor an
+	// exit event. Null or omitted is none.
+	GoalEvent OptNilString     `json:"goalEvent"`
+	Steps     []AutomationStep `json:"steps"`
 	// Sending integration of the email steps; null/omitted means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 }
@@ -5300,6 +5332,16 @@ func (s *CreateAutomationInput) GetName() string {
 // GetTriggerEvent returns the value of TriggerEvent.
 func (s *CreateAutomationInput) GetTriggerEvent() string {
 	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *CreateAutomationInput) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *CreateAutomationInput) GetGoalEvent() OptNilString {
+	return s.GoalEvent
 }
 
 // GetSteps returns the value of Steps.
@@ -5320,6 +5362,16 @@ func (s *CreateAutomationInput) SetName(val string) {
 // SetTriggerEvent sets the value of TriggerEvent.
 func (s *CreateAutomationInput) SetTriggerEvent(val string) {
 	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *CreateAutomationInput) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *CreateAutomationInput) SetGoalEvent(val OptNilString) {
+	s.GoalEvent = val
 }
 
 // SetSteps sets the value of Steps.
@@ -6765,10 +6817,11 @@ func (*EnrollmentResource) enrollmentsGetRes() {}
 type EnrollmentStatus string
 
 const (
-	EnrollmentStatusActive    EnrollmentStatus = "active"
-	EnrollmentStatusCompleted EnrollmentStatus = "completed"
-	EnrollmentStatusFailed    EnrollmentStatus = "failed"
-	EnrollmentStatusExited    EnrollmentStatus = "exited"
+	EnrollmentStatusActive      EnrollmentStatus = "active"
+	EnrollmentStatusCompleted   EnrollmentStatus = "completed"
+	EnrollmentStatusFailed      EnrollmentStatus = "failed"
+	EnrollmentStatusExited      EnrollmentStatus = "exited"
+	EnrollmentStatusGoalReached EnrollmentStatus = "goal_reached"
 )
 
 // AllValues returns all EnrollmentStatus values.
@@ -6778,6 +6831,7 @@ func (EnrollmentStatus) AllValues() []EnrollmentStatus {
 		EnrollmentStatusCompleted,
 		EnrollmentStatusFailed,
 		EnrollmentStatusExited,
+		EnrollmentStatusGoalReached,
 	}
 }
 
@@ -6791,6 +6845,8 @@ func (s EnrollmentStatus) MarshalText() ([]byte, error) {
 	case EnrollmentStatusFailed:
 		return []byte(s), nil
 	case EnrollmentStatusExited:
+		return []byte(s), nil
+	case EnrollmentStatusGoalReached:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -6811,6 +6867,9 @@ func (s *EnrollmentStatus) UnmarshalText(data []byte) error {
 		return nil
 	case EnrollmentStatusExited:
 		*s = EnrollmentStatusExited
+		return nil
+	case EnrollmentStatusGoalReached:
+		*s = EnrollmentStatusGoalReached
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -16201,9 +16260,13 @@ func (*UnsubscribesCreateUnprocessableEntity) unsubscribesCreateRes() {}
 // and only publishing makes the draft live.
 // Ref: #/components/schemas/UpdateAutomationInput
 type UpdateAutomationInput struct {
-	Name         OptString        `json:"name"`
-	TriggerEvent OptString        `json:"triggerEvent"`
-	Steps        []AutomationStep `json:"steps"`
+	Name         OptString `json:"name"`
+	TriggerEvent OptString `json:"triggerEvent"`
+	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
+	GoalEvent OptNilString     `json:"goalEvent"`
+	Steps     []AutomationStep `json:"steps"`
 	// Sending integration of the email steps; null means the workspace default, omitted keeps it.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 }
@@ -16216,6 +16279,16 @@ func (s *UpdateAutomationInput) GetName() OptString {
 // GetTriggerEvent returns the value of TriggerEvent.
 func (s *UpdateAutomationInput) GetTriggerEvent() OptString {
 	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *UpdateAutomationInput) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *UpdateAutomationInput) GetGoalEvent() OptNilString {
+	return s.GoalEvent
 }
 
 // GetSteps returns the value of Steps.
@@ -16236,6 +16309,16 @@ func (s *UpdateAutomationInput) SetName(val OptString) {
 // SetTriggerEvent sets the value of TriggerEvent.
 func (s *UpdateAutomationInput) SetTriggerEvent(val OptString) {
 	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *UpdateAutomationInput) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *UpdateAutomationInput) SetGoalEvent(val OptNilString) {
+	s.GoalEvent = val
 }
 
 // SetSteps sets the value of Steps.

@@ -109,6 +109,14 @@ model SiteAutomationVersion {
   /** Event action that enrolls a contact (e.g. "contact.created", "email.opened") */
   triggerEvent: string;
 
+  /** Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only
+   * an Event that occurred once the enrollment began counts; machine opens and clicks never do. */
+  exitEvents: string[];
+
+  /** Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null
+   * when there is none */
+  goalEvent: string | null;
+
   /** Sending integration of the email steps; null means the workspace default */
   integrationId?: EntityId | null;
 
@@ -155,6 +163,16 @@ model SiteAutomationResource {
 model SiteCreateAutomationInput {
   name: string;
   triggerEvent: string;
+
+  /** Event actions that end an active enrollment early; none of them may be the trigger. Each
+   * follows the trigger's rule: any customer action, and of the email events only opened, clicked
+   * and unsubscribed. */
+  exitEvents?: string[];
+
+  /** Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor
+   * an exit event. Null or omitted is none. */
+  goalEvent?: string | null;
+
   steps?: SiteAutomationStep[];
 
   /** Sending integration of the email steps; null/omitted means the workspace default */
@@ -167,6 +185,13 @@ model SiteCreateAutomationInput {
 model SiteUpdateAutomationInput {
   name?: string;
   triggerEvent?: string;
+
+  /** Event actions that end an active enrollment early; replaces the list, omitted keeps it */
+  exitEvents?: string[];
+
+  /** Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it */
+  goalEvent?: string | null;
+
   steps?: SiteAutomationStep[];
 
   /** Sending integration of the email steps; null means the workspace default, omitted keeps it */

@@ -147,6 +147,12 @@ const (
 	AutomationOnboardingDripVersion1ID = 106
 	// AutomationOnboardingDripVersion2ID is from fixtures/automation_versions.
 	AutomationOnboardingDripVersion2ID = 1060
+	// AutomationPaymentRecoveryID is from fixtures/automations.
+	AutomationPaymentRecoveryID = 108
+	// AutomationPaymentRecoveryName is from fixtures/automations.
+	AutomationPaymentRecoveryName = "Payment recovery"
+	// AutomationPaymentRecoveryVersionID is from fixtures/automation_versions.
+	AutomationPaymentRecoveryVersionID = 108
 	// AutomationRunArchivedErasableID is from fixtures/automation_runs.
 	AutomationRunArchivedErasableID = 3003
 	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
@@ -491,6 +497,10 @@ const (
 	ContactOptedOutOfWelcomeEmail = "leo.devops@codebasics.dev"
 	// ContactOptedOutOfWelcomeID is from fixtures/contacts.
 	ContactOptedOutOfWelcomeID = 128
+	// ContactPaidBeforeEnrolledEmail is from fixtures/contacts.
+	ContactPaidBeforeEnrolledEmail = "paid.early@codebasics.dev"
+	// ContactPaidBeforeEnrolledID is from fixtures/contacts.
+	ContactPaidBeforeEnrolledID = 132
 	// ContactUnsubscribedEverythingEmail is from fixtures/contacts.
 	ContactUnsubscribedEverythingEmail = "scarlett.sql@codebasics.dev"
 	// ContactUnsubscribedEverythingID is from fixtures/contacts.
@@ -815,6 +825,12 @@ const (
 	EventRecentAnalyticalEmail = "old310@example.com"
 	// EventRecentAnalyticalID is from fixtures/events.
 	EventRecentAnalyticalID = 310
+	// EventRecoveryRuleTriggerAction is from fixtures/events.
+	EventRecoveryRuleTriggerAction = "rule_enroll_recovery"
+	// EventRecoveryRuleTriggerEmail is from fixtures/events.
+	EventRecoveryRuleTriggerEmail = "paid.early@codebasics.dev"
+	// EventRecoveryRuleTriggerID is from fixtures/events.
+	EventRecoveryRuleTriggerID = 20418
 	// EventRuleClickAnonymousAction is from fixtures/events.
 	EventRuleClickAnonymousAction = "rule_click"
 	// EventRuleClickAnonymousID is from fixtures/events.
@@ -1571,6 +1587,10 @@ const (
 	RuleEnrollInactiveAutomationID = 107
 	// RuleEnrollInactiveAutomationName is from fixtures/rules.
 	RuleEnrollInactiveAutomationName = "Enroll in an inactive automation"
+	// RuleEnrollRecoveryID is from fixtures/rules.
+	RuleEnrollRecoveryID = 112
+	// RuleEnrollRecoveryName is from fixtures/rules.
+	RuleEnrollRecoveryName = "Enroll in payment recovery"
 	// RuleEnrollSingleEmailID is from fixtures/rules.
 	RuleEnrollSingleEmailID = 108
 	// RuleEnrollSingleEmailName is from fixtures/rules.

@@ -130,7 +130,12 @@ func TestClientEnqueuesEveryJobKind(t *testing.T) {
 	require.NoError(t, e.client.EnqueueMemberInvite(ctx, "a@example.com", "https://x/invite", "Acme", "Jane"))
 	require.NoError(t, e.client.EnqueueSendingDomainVerify(ctx, fixtures.SendingDomainVerifiedID))
 	require.NoError(t, e.client.EnqueueSecondFactorRequired(ctx, fixtures.UmbrellaID))
-	require.NoError(t, e.client.OnEvent(ctx, fixtures.AcmeID, fixtures.ContactAliceID, "contact.created", 0))
+	created, err := json.Marshal(&events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Email: fixtures.ContactAliceEmail})
+	require.NoError(t, err)
+	require.NoError(t, e.client.OnEvent(ctx, events.AutomationEvent{
+		ContactID: fixtures.ContactAliceID, Action: events.NameContactCreated,
+		Envelope: events.Envelope{ID: "evt_enqueue", Name: events.NameContactCreated, Version: 1, WorkspaceID: fixtures.AcmeID, Data: created},
+	}))
 
 	assert.Equal(t, []string{
 		"send_welcome",

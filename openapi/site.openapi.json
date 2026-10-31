@@ -15195,7 +15195,7 @@
       },
       "SiteAutomationVersion": {
         "type": "object",
-        "required": ["number", "triggerEvent", "steps"],
+        "required": ["number", "triggerEvent", "exitEvents", "goalEvent", "steps"],
         "properties": {
           "number": {
             "type": "integer",
@@ -15205,6 +15205,18 @@
           "triggerEvent": {
             "type": "string",
             "description": "Event action that enrolls a contact (e.g. \"contact.created\", \"email.opened\")"
+          },
+          "exitEvents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Event actions that end an active enrollment early, as exited (e.g. \"plan_downgraded\"). Only\nan Event that occurred once the enrollment began counts; machine opens and clicks never do."
+          },
+          "goalEvent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Event action that ends an active enrollment as goal_reached (e.g. \"payment_succeeded\"); null\nwhen there is none"
           },
           "integrationId": {
             "type": "string",
@@ -16242,6 +16254,18 @@
           "triggerEvent": {
             "type": "string"
           },
+          "exitEvents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Event actions that end an active enrollment early; none of them may be the trigger. Each\nfollows the trigger's rule: any customer action, and of the email events only opened, clicked\nand unsubscribed."
+          },
+          "goalEvent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor\nan exit event. Null or omitted is none."
+          },
           "steps": {
             "type": "array",
             "items": {
@@ -17167,7 +17191,7 @@
       },
       "SiteEnrollmentStatus": {
         "type": "string",
-        "enum": ["active", "completed", "failed", "exited"],
+        "enum": ["active", "completed", "failed", "exited", "goal_reached"],
         "description": "Where a Contact is in an Automation"
       },
       "SiteEventActionsResult": {
@@ -20196,6 +20220,18 @@
           },
           "triggerEvent": {
             "type": "string"
+          },
+          "exitEvents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Event actions that end an active enrollment early; replaces the list, omitted keeps it"
+          },
+          "goalEvent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it"
           },
           "steps": {
             "type": "array",

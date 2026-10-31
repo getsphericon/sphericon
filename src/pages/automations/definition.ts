@@ -78,6 +78,31 @@ function stepProperties(step: AutomationStep): Record<string, unknown> {
 
 const TRIGGER_NODE_ID = 'trigger'
 
+// What the Trigger node holds: the event that enrolls a Contact, the events that end an
+// Enrollment early and the one that ends it as having reached its goal (#751).
+export interface AutomationTrigger {
+  triggerEvent: string
+  exitEvents: string[]
+  goalEvent: string | null
+}
+
+// The canvas holds the exit events as one line each, the goal event as text ('' for none).
+function triggerProperties(trigger: AutomationTrigger): Record<string, unknown> {
+  return {
+    triggerEvent: trigger.triggerEvent,
+    exitEvents: trigger.exitEvents.join('\n'),
+    goalEvent: trigger.goalEvent ?? '',
+  }
+}
+
+// exitEventsOf reads the exit events off the Trigger node's lines, dropping blank ones.
+export function exitEventsOf(text: string): string[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+}
+
 function labelOf(labels: Record<string, string>, type: string): { label?: string } {
   const label = labels[type]
   return label === undefined ? {} : { label }
@@ -87,11 +112,11 @@ function labelOf(labels: Record<string, string>, type: string): { label?: string
 // node, then one node per stored step. Positions are synthesized from order, never persisted;
 // `labels` names each node kind on the canvas.
 export function stepsToGraph(
-  triggerEvent: string,
+  trigger: AutomationTrigger,
   steps: AutomationStep[],
   labels: Record<string, string>,
 ): AutomationGraph {
-  const trigger: WorkflowBuilderNode = {
+  const start: WorkflowBuilderNode = {
     id: TRIGGER_NODE_ID,
     type: NODE_RENDERER_TYPE,
     position: { x: 0, y: 0 },
@@ -102,11 +127,11 @@ export function stepsToGraph(
       templateType: NodeType.StartNode,
       isStartNode: true,
       segments: [],
-      properties: { triggerEvent, ...labelOf(labels, TRIGGER_NODE_TYPE) },
+      properties: { ...triggerProperties(trigger), ...labelOf(labels, TRIGGER_NODE_TYPE) },
     },
   }
   const nodes: WorkflowBuilderNode[] = [
-    trigger,
+    start,
     ...steps.map((step, i): WorkflowBuilderNode => ({
       id: `step-${i}`,
       type: NODE_RENDERER_TYPE,
@@ -187,13 +212,15 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   return null
 }
 
-// graphToSteps linearizes the canvas graph: it finds the one Trigger node, reads the trigger
-// event off it and walks single outgoing edges from there into ordered steps. The Trigger is
-// not a Step. Branches are not supported yet: nodes off the main chain are reported via
-// `dropped` so the caller can warn instead of silently losing them. `triggerEvent` is null
-// when the canvas does not hold exactly one Trigger.
+// graphToSteps linearizes the canvas graph: it finds the one Trigger node, reads the trigger,
+// exit and goal events off it and walks single outgoing edges from there into ordered steps.
+// The Trigger is not a Step. Branches are not supported yet: nodes off the main chain are
+// reported via `dropped` so the caller can warn instead of silently losing them. `triggerEvent`
+// is null when the canvas does not hold exactly one Trigger.
 export function graphToSteps(graph: AutomationGraph): {
   triggerEvent: string | null
+  exitEvents: string[]
+  goalEvent: string | null
   steps: AutomationStep[]
   dropped: number
 } {
@@ -201,7 +228,7 @@ export function graphToSteps(graph: AutomationGraph): {
   const triggers = nodes.filter((n) => n.data.type === TRIGGER_NODE_TYPE)
   const [root] = triggers
   if (triggers.length !== 1 || !root) {
-    return { triggerEvent: null, steps: [], dropped: 0 }
+    return { triggerEvent: null, exitEvents: [], goalEvent: null, steps: [], dropped: 0 }
   }
 
   const byId = new Map(nodes.map((n) => [n.id, n]))
@@ -225,8 +252,11 @@ export function graphToSteps(graph: AutomationGraph): {
     current = next.get(current)
   }
 
+  const goalEvent = asText(root.data.properties.goalEvent).trim()
   return {
     triggerEvent: asText(root.data.properties.triggerEvent),
+    exitEvents: exitEventsOf(asText(root.data.properties.exitEvents)),
+    goalEvent: goalEvent === '' ? null : goalEvent,
     steps,
     dropped: nodes.length - visited.size,
   }

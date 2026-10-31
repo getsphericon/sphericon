@@ -23,6 +23,11 @@ function node(id: string, type: string, properties: Record<string, unknown>): Wo
 
 const TRIGGER = node('trigger', 'trigger', { triggerEvent: 'email.opened' })
 
+// A Trigger on the event, with no exit and no goal event.
+function on(triggerEvent: string) {
+  return { triggerEvent, exitEvents: [], goalEvent: null }
+}
+
 // A canvas of the Trigger followed by the nodes in a chain.
 function chain(...nodes: WorkflowBuilderNode[]) {
   const all = [TRIGGER, ...nodes]
@@ -34,7 +39,7 @@ function edge(source: string, target: string): WorkflowBuilderEdge {
 }
 
 test('stepsToGraph starts the chain with the Trigger node, linked to each step', () => {
-  const { nodes, edges } = stepsToGraph('email.opened', STEPS, {})
+  const { nodes, edges } = stepsToGraph(on('email.opened'), STEPS, {})
 
   expect(nodes.map((n) => n.id)).toEqual(['trigger', 'step-0', 'step-1', 'step-2', 'step-3'])
   expect(nodes.map((n) => n.position.y)).toEqual([0, 160, 320, 480, 640])
@@ -60,7 +65,7 @@ test('stepsToGraph starts the chain with the Trigger node, linked to each step',
 
 test('stepsToGraph defaults missing step fields', () => {
   const { nodes } = stepsToGraph(
-    'contact.created',
+    on('contact.created'),
     [{ type: 'email' }, { type: 'wait' }, { type: 'apply_tag' }],
     {},
   )
@@ -73,15 +78,17 @@ test('stepsToGraph defaults missing step fields', () => {
 })
 
 test('stepsToGraph of no steps is the Trigger alone', () => {
-  const { nodes, edges } = stepsToGraph('contact.created', [], {})
+  const { nodes, edges } = stepsToGraph(on('contact.created'), [], {})
 
   expect(nodes.map((n) => n.id)).toEqual(['trigger'])
   expect(edges).toEqual([])
 })
 
 test('graphToSteps round-trips a stored trigger and chain', () => {
-  expect(graphToSteps(stepsToGraph('email.clicked', STEPS, {}))).toEqual({
+  expect(graphToSteps(stepsToGraph(on('email.clicked'), STEPS, {}))).toEqual({
     triggerEvent: 'email.clicked',
+    exitEvents: [],
+    goalEvent: null,
     steps: STEPS,
     dropped: 0,
   })
@@ -98,13 +105,13 @@ test('an email step written in the editor is saved as its document alone', () =>
   }
 
   // The canvas holds the document as text beside the body the server built...
-  expect(stepsToGraph('contact.created', [stored], {}).nodes[1]?.data.properties).toEqual({
+  expect(stepsToGraph(on('contact.created'), [stored], {}).nodes[1]?.data.properties).toEqual({
     subject: 'Hi',
     body: '<p>built by the server</p>',
     doc: JSON.stringify(doc),
   })
   // ...and resaving sends the document only: a body beside it is a 422.
-  expect(graphToSteps(stepsToGraph('contact.created', [stored], {})).steps).toEqual([
+  expect(graphToSteps(stepsToGraph(on('contact.created'), [stored], {})).steps).toEqual([
     { type: 'email', subject: 'Hi', doc },
   ])
 })
@@ -118,7 +125,7 @@ test('an email step whose document was cleared is saved as its body alone', () =
 })
 
 test('graphToSteps of a canvas without exactly one Trigger has no trigger event', () => {
-  const none = { triggerEvent: null, steps: [], dropped: 0 }
+  const none = { triggerEvent: null, exitEvents: [], goalEvent: null, steps: [], dropped: 0 }
 
   expect(graphToSteps({ nodes: [], edges: [] })).toEqual(none)
   expect(graphToSteps({ nodes: [node('a', 'wait', { seconds: 5 })], edges: [] })).toEqual(none)
@@ -168,6 +175,8 @@ test('graphToSteps reports nodes off the main chain as dropped', () => {
 
   expect(graphToSteps(graph)).toEqual({
     triggerEvent: 'email.opened',
+    exitEvents: [],
+    goalEvent: null,
     steps: [
       { type: 'apply_tag', tag: 'x' },
       { type: 'apply_tag', tag: 'y' },
@@ -193,7 +202,7 @@ test('an HTTP step keeps its id and header names but never carries a secret into
     headers: [{ name: 'Authorization' }, { name: 'X-Key' }],
     hasSecret: true,
   }
-  const { nodes } = stepsToGraph('contact.created', [stored], {})
+  const { nodes } = stepsToGraph(on('contact.created'), [stored], {})
 
   expect(nodes[1]?.data.properties).toEqual({
     stepId: '01J',
@@ -203,8 +212,10 @@ test('an HTTP step keeps its id and header names but never carries a secret into
     secret: '',
   })
   // Resaving untouched resends no URL, header value or secret, so the server keeps them.
-  expect(graphToSteps(stepsToGraph('contact.created', [stored], {}))).toEqual({
+  expect(graphToSteps(stepsToGraph(on('contact.created'), [stored], {}))).toEqual({
     triggerEvent: 'contact.created',
+    exitEvents: [],
+    goalEvent: null,
     steps: [
       {
         type: 'http',
@@ -243,7 +254,7 @@ test('an HTTP node with a new URL, header value and secret sends them', () => {
 })
 
 test('a bare HTTP step opens blank and a header line without a colon keeps its stored value', () => {
-  const { nodes } = stepsToGraph('contact.created', [{ type: 'http', hasSecret: false }], {})
+  const { nodes } = stepsToGraph(on('contact.created'), [{ type: 'http', hasSecret: false }], {})
 
   expect(nodes[1]?.data.properties).toEqual({
     stepId: '',
@@ -267,6 +278,8 @@ test('graphToSteps stops on a cycle instead of looping', () => {
 
   expect(graphToSteps(graph)).toEqual({
     triggerEvent: 'email.opened',
+    exitEvents: [],
+    goalEvent: null,
     steps: [
       { type: 'apply_tag', tag: 'x' },
       { type: 'apply_tag', tag: 'y' },
@@ -276,7 +289,7 @@ test('graphToSteps stops on a cycle instead of looping', () => {
 })
 
 test('stepsToGraph names each node by its kind', () => {
-  const { nodes } = stepsToGraph('contact.created', [{ type: 'wait', seconds: 5 }], {
+  const { nodes } = stepsToGraph(on('contact.created'), [{ type: 'wait', seconds: 5 }], {
     trigger: 'Trigger',
     wait: 'Wait',
   })
@@ -285,21 +298,47 @@ test('stepsToGraph names each node by its kind', () => {
 })
 
 test('the saved snapshot changes with the name, the Integration, the trigger or the steps, and not with a re-layout', () => {
-  const graph = stepsToGraph('contact.created', STEPS, {})
+  const graph = stepsToGraph(on('contact.created'), STEPS, {})
   const saved = automationSnapshot('Welcome', null, graph)
 
   expect(automationSnapshot('  Welcome ', null, graph)).toBe(saved)
   expect(automationSnapshot('Welcome 2', null, graph)).not.toBe(saved)
   expect(automationSnapshot('Welcome', '21', graph)).not.toBe(saved)
-  expect(automationSnapshot('Welcome', null, stepsToGraph('email.opened', STEPS, {}))).not.toBe(
+  expect(automationSnapshot('Welcome', null, stepsToGraph(on('email.opened'), STEPS, {}))).not.toBe(
     saved,
   )
   expect(
-    automationSnapshot('Welcome', null, stepsToGraph('contact.created', STEPS.slice(1), {})),
+    automationSnapshot('Welcome', null, stepsToGraph(on('contact.created'), STEPS.slice(1), {})),
   ).not.toBe(saved)
   const moved = {
     ...graph,
     nodes: graph.nodes.map((n) => ({ ...n, position: { x: 50, y: n.position.y } })),
   }
   expect(automationSnapshot('Welcome', null, moved)).toBe(saved)
+})
+
+test('the Trigger node carries the exit and goal events, which round-trip', () => {
+  const trigger = {
+    triggerEvent: 'payment_failed',
+    exitEvents: ['account_closed', 'plan_downgraded'],
+    goalEvent: 'payment_succeeded',
+  }
+  const graph = stepsToGraph(trigger, STEPS, {})
+
+  expect(graph.nodes[0]?.data.properties).toMatchObject({
+    exitEvents: 'account_closed\nplan_downgraded',
+    goalEvent: 'payment_succeeded',
+  })
+  expect(graphToSteps(graph)).toEqual({ ...trigger, steps: STEPS, dropped: 0 })
+})
+
+test('blank exit lines and a blank goal are none', () => {
+  const root = node('trigger', 'trigger', {
+    triggerEvent: 'paid',
+    exitEvents: ' refunded \n\n  ',
+    goalEvent: ' ',
+  })
+  const graph = { nodes: [root], edges: [] }
+
+  expect(graphToSteps(graph)).toMatchObject({ exitEvents: ['refunded'], goalEvent: null })
 })

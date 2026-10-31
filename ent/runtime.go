@@ -193,8 +193,12 @@ func init() {
 	automationrun.DefaultUpdatedAt = automationrunDescUpdatedAt.Default.(func() time.Time)
 	// automationrun.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	automationrun.UpdateDefaultUpdatedAt = automationrunDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// automationrunDescBeganAt is the schema descriptor for began_at field.
+	automationrunDescBeganAt := automationrunFields[5].Descriptor()
+	// automationrun.DefaultBeganAt holds the default value on creation for the began_at field.
+	automationrun.DefaultBeganAt = automationrunDescBeganAt.Default.(func() time.Time)
 	// automationrunDescCurrentStep is the schema descriptor for current_step field.
-	automationrunDescCurrentStep := automationrunFields[5].Descriptor()
+	automationrunDescCurrentStep := automationrunFields[6].Descriptor()
 	// automationrun.DefaultCurrentStep holds the default value on creation for the current_step field.
 	automationrun.DefaultCurrentStep = automationrunDescCurrentStep.Default.(int)
 	// automationrun.CurrentStepValidator is a validator for the "current_step" field. It is called by the builders before save.
@@ -224,6 +228,10 @@ func init() {
 	automationversionDescSteps := automationversionFields[1].Descriptor()
 	// automationversion.DefaultSteps holds the default value on creation for the steps field.
 	automationversion.DefaultSteps = automationversionDescSteps.Default.(string)
+	// automationversionDescExitEvents is the schema descriptor for exit_events field.
+	automationversionDescExitEvents := automationversionFields[3].Descriptor()
+	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.
+	automationversion.DefaultExitEvents = automationversionDescExitEvents.Default.([]string)
 	brandkitMixin := schema.BrandKit{}.Mixin()
 	brandkitMixinFields0 := brandkitMixin[0].Fields()
 	_ = brandkitMixinFields0
