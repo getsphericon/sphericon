@@ -1,5 +1,83 @@
 # Changelog
 
+## [0.4.0](https://github.com/getsphericon/sphericon/compare/v0.3.5...v0.4.0) (2026-10-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* **integrations:** the table send_limiters is renamed to provider_limiters. Upgrade: nothing to do; the migration renames the table in place and keeps its rows.
+* **condition:** the performed and notPerformed operators and the "event:<action>" field of the rule leaf are gone from the /site and /api contracts, in favour of the "event" leaf. Upgrade: rewrite each stored or sent event condition as an "event" leaf (performed is atLeast 1, notPerformed is atMost 0, the day window moves to withinDays); a dev database reseeds with mise run db:seed.
+* the `activate` action of Automations and Rules is replaced by `publish` on `/site`, `/api` and MCP, the scope `automations:activate` is renamed `automations:publish`, an Automation and a Rule carry their definition in `live` and `draft` versions instead of top-level fields, and the status `draft` of Automations and Rules is replaced by `inactive`. Upgrade: run `sphericon upgrade` from the previous release without skipping it; the same run moves stored tokens to the new scope and the definitions into versions before it drops the old fields, so swap the binary right after the migration. API clients call `publish` instead of `activate` and read the definition from `live` and `draft`.
+* **config:** SPHERICON_SIGNUP_SURVEY, SPHERICON_REQUIRE_EMAIL_VERIFICATION, SPHERICON_TELEMETRY and SPHERICON_RELEASE_CHECK are gone; SPHERICON_MODE decides what they did. Upgrade: delete those variables from the environment. An Instance with no SPHERICON_MODE is selfhosted: it no longer requires email verification, asks no Sign-up survey and checks for releases. To stop the Telemetry report set DO_NOT_TRACK=1 or switch it off as the Owner in the app.
+
+### Features
+
+* a live Automation or Rule changes only by Publish, a scheduled Broadcast keeps its audience ([#775](https://github.com/getsphericon/sphericon/issues/775)) ([e0445f7](https://github.com/getsphericon/sphericon/commit/e0445f73970af12a08b3683926a6d735e670df42))
+* **account:** a User time zone for the app's times and the User's mail (ADR 0068) ([#812](https://github.com/getsphericon/sphericon/issues/812)) ([3c73ac4](https://github.com/getsphericon/sphericon/commit/3c73ac427fd2ec7c82c01749e28227dd4fc2ba55))
+* **account:** change the email and the password in modals ([136ccd8](https://github.com/getsphericon/sphericon/commit/136ccd85455a19624788ca24701a0da35e498b7f))
+* **account:** delete the user from a modal with its inputs ([dded6b7](https://github.com/getsphericon/sphericon/commit/dded6b700f0335264a5c997e36e33ada014cbc00))
+* **account:** manage the second factor and passkeys in modals ([44c2e80](https://github.com/getsphericon/sphericon/commit/44c2e804f5c77dd6e2e05aeabade2c544ccbd655))
+* **account:** one Connect or Disconnect button per sign-in provider ([5a70e4e](https://github.com/getsphericon/sphericon/commit/5a70e4e0844011e9d44a9b4a426c9f4156300b06))
+* **accounts:** sign-up follows the Instance Mode, closed after the first User on selfhosted ([#690](https://github.com/getsphericon/sphericon/issues/690)) ([b694182](https://github.com/getsphericon/sphericon/commit/b69418288492e4f49752edeff143ab594de8eca1))
+* **analytics:** the reports open on the last 7 days ([#707](https://github.com/getsphericon/sphericon/issues/707)) ([9e0964b](https://github.com/getsphericon/sphericon/commit/9e0964bebb109c9458fa22994e339f4c5df7b0d8))
+* **api:** contacts:export and suppressions:write scopes mirror their Permissions ([#778](https://github.com/getsphericon/sphericon/issues/778)) ([07f70b3](https://github.com/getsphericon/sphericon/commit/07f70b306c3cf883796afdd336da2b2b5bc6fd98))
+* **api:** personal tokens, a member's own credential for the /api surface (ADR 0061) ([#797](https://github.com/getsphericon/sphericon/issues/797)) ([47e27f4](https://github.com/getsphericon/sphericon/commit/47e27f48137cbd0f1e244479babf27d92edee4a8))
+* **automations:** exit and goal events end an Enrollment early ([#810](https://github.com/getsphericon/sphericon/issues/810)) ([bec4c0a](https://github.com/getsphericon/sphericon/commit/bec4c0a60f09a41adb5768c9d0dab8e32389d321))
+* **automations:** results over a period on the Automation report, on /site and /api ([#753](https://github.com/getsphericon/sphericon/issues/753)) ([#820](https://github.com/getsphericon/sphericon/issues/820)) ([6e52de7](https://github.com/getsphericon/sphericon/commit/6e52de75c9091315e8a9c8650f18fd4b25c9fb2e))
+* **automations:** steps render the triggering Event's properties as `event` ([#814](https://github.com/getsphericon/sphericon/issues/814)) ([41e50fe](https://github.com/getsphericon/sphericon/commit/41e50fe0b6709da597a3ff5d6418018b60131295))
+* **condition:** count an event leaf at least or at most N times within a window ([#798](https://github.com/getsphericon/sphericon/issues/798)) ([7568bf6](https://github.com/getsphericon/sphericon/commit/7568bf6bafe329718877939d5620b82c45483495))
+* **condition:** number and date leaves for typed Custom fields and trigger properties ([#823](https://github.com/getsphericon/sphericon/issues/823)) ([ad6ce3e](https://github.com/getsphericon/sphericon/commit/ad6ce3edf1673bff3232f77058724863caa02823))
+* **config:** an Instance runs in one Mode, selfhosted or saas ([#687](https://github.com/getsphericon/sphericon/issues/687)) ([4bdf80f](https://github.com/getsphericon/sphericon/commit/4bdf80f0d4ded5b2c37183173f54eeb7998db50f))
+* declare access per operation in the contract and enforce it once (ADR 0061) ([#776](https://github.com/getsphericon/sphericon/issues/776)) ([aaa0d18](https://github.com/getsphericon/sphericon/commit/aaa0d181d4af76fa597c0008e49955021c41e274))
+* **dev:** fill the Brightpath demo with every state and fix db:seed on a running stack ([#693](https://github.com/getsphericon/sphericon/issues/693)) ([4e37a46](https://github.com/getsphericon/sphericon/commit/4e37a469a47b9723b4e21e4be3232764ecfd8ae6))
+* **dev:** open the running stack at a public URL through a Cloudflare Quick Tunnel ([b17a233](https://github.com/getsphericon/sphericon/commit/b17a2335969e0e001f729184cc7068d30c6fea59))
+* **dev:** start on a database that is behind and run its migrations from the error page ([5fb27af](https://github.com/getsphericon/sphericon/commit/5fb27afbcdc8ab7dbd243ec9df3499fdf8805178))
+* **dev:** two-factor sign-in for Brightpath's admin and member, course links on brightpath.localhost ([#712](https://github.com/getsphericon/sphericon/issues/712)) ([430fdc8](https://github.com/getsphericon/sphericon/commit/430fdc8489da4edb605740026dbb221881d622bf))
+* **dev:** verify Sending domains in dev through a CoreDNS daemon ([#692](https://github.com/getsphericon/sphericon/issues/692)) ([cdd1e95](https://github.com/getsphericon/sphericon/commit/cdd1e950dd7f76cc2009457bd23cb90a80f354ae))
+* every access decision is a Permission, no code compares a Role (ADR 0061) ([#780](https://github.com/getsphericon/sphericon/issues/780)) ([82b25fe](https://github.com/getsphericon/sphericon/commit/82b25fee4e9109e840192aaabeed99256ebf3214))
+* **integrations:** read the SES account's enforcement status and sandbox with its quota (ADR 0067) ([#821](https://github.com/getsphericon/sphericon/issues/821)) ([b98f38e](https://github.com/getsphericon/sphericon/commit/b98f38edb4b95131bc5403ce8fe329b2482dd381))
+* **integrations:** set another provider as the workspace default from its row ([d0dcd21](https://github.com/getsphericon/sphericon/commit/d0dcd219a9fdc7493558d676afc0a7786a47b005))
+* **integrations:** the Provider limit, required for an SES-compatible service (ADR 0067) ([#815](https://github.com/getsphericon/sphericon/issues/815)) ([d1de8e3](https://github.com/getsphericon/sphericon/commit/d1de8e3ef1c698b0ebc99456ac8cf8f13b28f220))
+* **mcp:** ship a set-up-sending-domain prompt ([#682](https://github.com/getsphericon/sphericon/issues/682)) ([eb3166f](https://github.com/getsphericon/sphericon/commit/eb3166fcd3de2a294dc0683ce3ef3269c594a9c7))
+* **oauth:** let a connector manage Sending domains and Integrations behind a second opt-in ([#686](https://github.com/getsphericon/sphericon/issues/686)) ([ead9f3e](https://github.com/getsphericon/sphericon/commit/ead9f3e918dabd3411751be3b47a4143027249d1))
+* **revenue:** order Events, attribution and revenue reports (ADR 0064) ([#727](https://github.com/getsphericon/sphericon/issues/727)) ([fb34db7](https://github.com/getsphericon/sphericon/commit/fb34db7d999ed54e0d98ab491c14c5d441b83735))
+* **setup:** simplify the Setup checklist to four steps ([#680](https://github.com/getsphericon/sphericon/issues/680)) ([80feba0](https://github.com/getsphericon/sphericon/commit/80feba0f15b2f3e147c7f5a5a4e4dd8688dc2dec)), closes [#673](https://github.com/getsphericon/sphericon/issues/673)
+* sign-up items, Consent records and a Staff console on every Instance ([#754](https://github.com/getsphericon/sphericon/issues/754)) ([7c9d4df](https://github.com/getsphericon/sphericon/commit/7c9d4dfd4b459fb912d9da4c7c2ac8eed0ba5d0b))
+* **staff:** the Instance settings move to the Staff console ([#799](https://github.com/getsphericon/sphericon/issues/799)) ([5bf0680](https://github.com/getsphericon/sphericon/commit/5bf0680ad052f0bb46c87351c2a8ed2e770537b6)), closes [#697](https://github.com/getsphericon/sphericon/issues/697)
+* **typespec:** contract extensions are declared with typed decorators ([#825](https://github.com/getsphericon/sphericon/issues/825)) ([12d8e56](https://github.com/getsphericon/sphericon/commit/12d8e565f0c53b1dbb279f893d9a166adcd43fea))
+* **web:** a broadcast chooses the Integration it sends through ([#720](https://github.com/getsphericon/sphericon/issues/720)) ([c443725](https://github.com/getsphericon/sphericon/commit/c44372563bf255fb0db7e394bae19a4a88b0facd))
+* **web:** a calmer error page whose commands copy with a click ([b65f42b](https://github.com/getsphericon/sphericon/commit/b65f42b5a8515c4c7c93b1c8dc1dc5a73217a005))
+* **web:** add a favicon based on the Sphericon mark ([#678](https://github.com/getsphericon/sphericon/issues/678)) ([0d36500](https://github.com/getsphericon/sphericon/commit/0d365001997dc6e0e54bc8e0da8116330caa6f84))
+* **web:** archived records are a list view, and domains and providers are removed ([6ea4361](https://github.com/getsphericon/sphericon/commit/6ea4361fab17e0711d4d53a23f6b527623bc1c5d))
+* **web:** hide the controls whose Permission the Role lacks (ADR 0061) ([#777](https://github.com/getsphericon/sphericon/issues/777)) ([54cd392](https://github.com/getsphericon/sphericon/commit/54cd3923ca58975fb708c679d300f4875b6eb05a))
+* **web:** move the Suppression list to its own menu item ([#681](https://github.com/getsphericon/sphericon/issues/681)) ([0111115](https://github.com/getsphericon/sphericon/commit/0111115384749ae776f0e8bc045213ec845f965a))
+* **web:** overview lists broadcasts and automations together under Recently created ([5567605](https://github.com/getsphericon/sphericon/commit/5567605b2c41368ffa5351370bf0796fb1bc3173))
+* **web:** overview shows create shortcuts and recent broadcasts once setup is done ([e037ca3](https://github.com/getsphericon/sphericon/commit/e037ca378e37231d0081e587c26418e2c739a388))
+* **web:** report browser errors to Sentry when SPHERICON_SENTRY_DSN is set ([#670](https://github.com/getsphericon/sphericon/issues/670)) ([a2b9709](https://github.com/getsphericon/sphericon/commit/a2b9709627f96dd929c85117134105c66e98e7bd))
+* **web:** show Sending domain DNS records in a modal with a prompt to hand to an agent ([#674](https://github.com/getsphericon/sphericon/issues/674)) ([4a68dba](https://github.com/getsphericon/sphericon/commit/4a68dba9ea6d6f22c252213d51d4877d319462bf)), closes [#672](https://github.com/getsphericon/sphericon/issues/672)
+* **web:** show what Sphericon is beside the sign-in, sign-up and password recovery forms ([#685](https://github.com/getsphericon/sphericon/issues/685)) ([bf9099d](https://github.com/getsphericon/sphericon/commit/bf9099d8e276b9c5e3c69bdc39731b6a64f76895))
+
+
+### Bug Fixes
+
+* **account:** the Security page is as wide as the Profile page ([2525466](https://github.com/getsphericon/sphericon/commit/25254664024077f72602d0e3cb33ada271e71bc3))
+* **automations:** archiving deactivates an Automation, and Automation and Rule share one draft lifecycle ([#800](https://github.com/getsphericon/sphericon/issues/800)) ([e6657c6](https://github.com/getsphericon/sphericon/commit/e6657c6f51712c99014b2c3b289d6e23860ddef9)), closes [#785](https://github.com/getsphericon/sphericon/issues/785)
+* **dev:** db:generate applies migrations with goose before it diffs ([#789](https://github.com/getsphericon/sphericon/issues/789)) ([45a0980](https://github.com/getsphericon/sphericon/commit/45a09801b870da87a451cc945059d3651370a37c))
+* **emaildoc:** start a runtime without the code block's languages and register them before one ([#747](https://github.com/getsphericon/sphericon/issues/747)) ([ba13751](https://github.com/getsphericon/sphericon/commit/ba1375133af888df347f8d622bba63e5f7c42b9c))
+* **mcp:** a tool call ends with the /mcp request that runs it ([#766](https://github.com/getsphericon/sphericon/issues/766)) ([8b644c6](https://github.com/getsphericon/sphericon/commit/8b644c6aada5b99488ace201cdb206f351739217))
+* **outbound:** a Broadcast Test send goes through the Broadcast's own Integration ([#694](https://github.com/getsphericon/sphericon/issues/694)) ([d2d4fd5](https://github.com/getsphericon/sphericon/commit/d2d4fd540cc27fe98339c754c74adebbb9fed0e1))
+* **settings:** toast after a member's Role changes and show a loader while it saves ([fb2d323](https://github.com/getsphericon/sphericon/commit/fb2d323074a3ef04216e2459c487f1110fb964db))
+* **settings:** toast after removing a member, revoking an invitation and resetting 2FA ([60ce26e](https://github.com/getsphericon/sphericon/commit/60ce26ef23914ec1cb917d355618dc9945c68118))
+* **web:** a navbar link on a phone swaps the page without the cross-fade ([4742991](https://github.com/getsphericon/sphericon/commit/47429910d6a2774fe4ac317f5c8d71db4befb7bc))
+* **web:** move sign-in providers below the register form ([#679](https://github.com/getsphericon/sphericon/issues/679)) ([d103579](https://github.com/getsphericon/sphericon/commit/d10357961424c7deb95ad4278a811a3c43f7fd7f))
+* **web:** move the sign-in providers below the form on the register page ([d103579](https://github.com/getsphericon/sphericon/commit/d10357961424c7deb95ad4278a811a3c43f7fd7f))
+* **web:** quieter Setup checklist, Sending domain modal in tabs, Verify waits for the check ([d0c3ba8](https://github.com/getsphericon/sphericon/commit/d0c3ba8dc3b3eb1e53710b453f3228014e224307))
+* **web:** setup checklist actions sit on the right and drop below when narrow ([49967c4](https://github.com/getsphericon/sphericon/commit/49967c4a80c7d0916e4aabfedb40dae70da893cd))
+* **web:** setup checklist rows share one container grid so actions wrap together ([08340f3](https://github.com/getsphericon/sphericon/commit/08340f3a400591d94d89e69b9780597ad410dd7c))
+* **web:** sign-in and sign-up pages no longer scroll on a phone ([2ea14fd](https://github.com/getsphericon/sphericon/commit/2ea14fdab42c17b55b40cb905f43a3e7d5a20e19))
+* **web:** switching an archive view keeps the table and cross-fades its rows ([ebb50f0](https://github.com/getsphericon/sphericon/commit/ebb50f009ef0c4af2a43885e7482b8b8baab2525))
+* **web:** the Workspace switcher fits a phone header and its list no longer clips ([831f20f](https://github.com/getsphericon/sphericon/commit/831f20fc0fdbe5f15b2d9f852716931c9e785c76))
+
 ## [0.3.5](https://github.com/getsphericon/sphericon/compare/v0.3.4...v0.3.5) (2026-10-27)
 
 
