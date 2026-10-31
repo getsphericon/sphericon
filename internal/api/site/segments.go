@@ -5,7 +5,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/condition"
 	"github.com/getsphericon/sphericon/internal/narrow"
@@ -21,9 +20,7 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 	}
 
 	return &siteapi.SiteSegmentsListOK{
-		Items: lo.Map(page.Items, func(s *ent.Segment, _ int) siteapi.SiteSegmentResource {
-			return mapper.SegmentToResource(s)
-		}),
+		Items:      mapper.SegmentsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),
@@ -128,9 +125,7 @@ func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.S
 		return nil, err
 	}
 	return &siteapi.SiteSegmentContactsListOK{
-		Items: lo.Map(page.Items, func(c *ent.Contact, _ int) siteapi.SiteContactResource {
-			return mapper.ContactToResource(c)
-		}),
+		Items:      mapper.ContactsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),

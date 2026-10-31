@@ -31,6 +31,7 @@ import (
 // bind the generated option types of this surface to the shared conversions of internal/convert.
 //
 // goverter:converter
+// goverter:annotate:unmapped
 // goverter:name InputsImpl
 // goverter:output:file ./inputs_gen.go
 // goverter:matchIgnoreCase

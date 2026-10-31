@@ -3,9 +3,6 @@ package external
 import (
 	"context"
 
-	"github.com/samber/lo"
-
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
@@ -24,9 +21,7 @@ func (h *Handlers) ContactsList(ctx context.Context, params externalapi.Contacts
 	}
 
 	return &externalapi.ContactsListOK{
-		Items: lo.Map(page.Items, func(c *ent.Contact, _ int) externalapi.ContactResource {
-			return mapper.ContactToResource(c)
-		}),
+		Items:      mapper.ContactsToResources(page.Items),
 		Page:       narrow.Int32(page.Page),
 		PageSize:   narrow.Int32(page.PageSize),
 		TotalItems: narrow.Int32(page.TotalItems),
@@ -102,10 +97,7 @@ func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.Conta
 
 // ContactsBatchUpsert upserts each Contact independently and reports a per-item result.
 func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (externalapi.ContactsBatchUpsertRes, error) {
-	items := lo.Map(req.Contacts, func(c externalapi.UpsertContactInput, _ int) contacts.Attributes {
-		return inputs.ContactUpsert(c)
-	})
-	outcomes := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, items)
+	outcomes := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactUpserts(req.Contacts))
 
 	results := make([]externalapi.ContactBatchItemResult, len(outcomes))
 	for i, o := range outcomes {

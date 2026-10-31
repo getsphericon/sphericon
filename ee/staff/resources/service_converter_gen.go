@@ -34,11 +34,25 @@ func (c *ServiceConverterImpl) OwnerToResource(source *ent.User) service.Service
 	}
 	return serviceapiServiceWorkspaceOwner
 }
+func (c *ServiceConverterImpl) OwnersToResources(source []*ent.User) []service.ServiceWorkspaceOwner {
+	var serviceapiServiceWorkspaceOwnerList []service.ServiceWorkspaceOwner
+	serviceapiServiceWorkspaceOwnerList = make([]service.ServiceWorkspaceOwner, len(source))
+	for i := 0; i < len(source); i++ {
+		serviceapiServiceWorkspaceOwnerList[i] = c.OwnerToResource(source[i])
+	}
+	return serviceapiServiceWorkspaceOwnerList
+}
 func (c *ServiceConverterImpl) TombstoneToResource(source *ent.UserTombstone) service.ServiceUserResource {
 	var serviceapiServiceUserResource service.ServiceUserResource
 	if source != nil {
 		serviceapiServiceUserResource.ID = service.EntityId((*source).UserID)
+		// serviceapiServiceUserResource.Name: ignore
+		// serviceapiServiceUserResource.Email: ignore
+		// serviceapiServiceUserResource.EmailVerifiedAt: ignore
+		// serviceapiServiceUserResource.CreatedAt: ignore
 		serviceapiServiceUserResource.DeletedAt = serviceOptNilTimestampAt((*source).CreatedAt)
+		// serviceapiServiceUserResource.MailingsConsent: ignore
+		// serviceapiServiceUserResource.MailingsConsentChangedAt: ignore
 	}
 	return serviceapiServiceUserResource
 }
@@ -52,6 +66,7 @@ func (c *ServiceConverterImpl) UsageFigureToResource(source usage.Figure) servic
 }
 func (c *ServiceConverterImpl) UsageToResource(source usage.WorkspaceUsage) service.WorkspaceUsageResource {
 	var serviceapiWorkspaceUsageResource service.WorkspaceUsageResource
+	// serviceapiWorkspaceUsageResource.WorkspaceId: ignore
 	serviceapiWorkspaceUsageResource.Period = periodString(source.Period)
 	if source.Figures != nil {
 		serviceapiWorkspaceUsageResource.Figures = make([]service.UsageFigure, len(source.Figures))
@@ -69,6 +84,9 @@ func (c *ServiceConverterImpl) UserToResource(source *ent.User) service.ServiceU
 		serviceapiServiceUserResource.Email = serviceOptEmail((*source).Email)
 		serviceapiServiceUserResource.EmailVerifiedAt = serviceOptNilTimestamp((*source).EmailVerifiedAt)
 		serviceapiServiceUserResource.CreatedAt = serviceOptTimestamp((*source).CreatedAt)
+		// serviceapiServiceUserResource.DeletedAt: ignore
+		// serviceapiServiceUserResource.MailingsConsent: ignore
+		// serviceapiServiceUserResource.MailingsConsentChangedAt: ignore
 	}
 	return serviceapiServiceUserResource
 }
@@ -80,6 +98,7 @@ func (c *ServiceConverterImpl) WorkspaceToResource(source *ent.Workspace) servic
 		serviceapiServiceWorkspaceResource.CreatedAt = serviceTimestamp((*source).CreatedAt)
 		serviceapiServiceWorkspaceResource.DiscardedAt = serviceOptNilTimestamp((*source).DiscardedAt)
 		serviceapiServiceWorkspaceResource.ErasedAt = serviceOptNilTimestamp((*source).ErasedAt)
+		// serviceapiServiceWorkspaceResource.Owners: ignore
 	}
 	return serviceapiServiceWorkspaceResource
 }

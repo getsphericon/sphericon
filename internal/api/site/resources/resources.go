@@ -51,6 +51,7 @@ import (
 // the conversions it can't (ids, optionals, the event property bag).
 //
 // goverter:converter
+// goverter:annotate:unmapped
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase
 // goverter:enum no
@@ -101,9 +102,13 @@ type Converter interface {
 	// The contact is read with its tags loaded (`WithTags`).
 	// goverter:map Edges.Tags Tags
 	ContactToResource(source *ent.Contact) siteapi.SiteContactResource
+	// goverter:useEmptyOnNil:slice
+	ContactsToResources(source []*ent.Contact) []siteapi.SiteContactResource
 	// The contract names the discarded state \"archived\" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) siteapi.SiteSegmentResource
+	// goverter:useEmptyOnNil:slice
+	SegmentsToResources(source []*ent.Segment) []siteapi.SiteSegmentResource
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource
 	// A Connection is an API token read with its Membership and that Membership's User loaded
 	// (apitokens.Connections); the User is who it belongs to.
@@ -202,6 +207,8 @@ type Converter interface {
 
 	// goverter:ignore Warnings
 	EmailTemplateToResource(source *ent.EmailTemplate) siteapi.SiteEmailTemplateResource
+	// goverter:useEmptyOnNil:slice
+	EmailTemplatesToResources(source []*ent.EmailTemplate) []siteapi.SiteEmailTemplateResource
 
 	// A lint finding (ADR 0040) names its element and detail only when the check has one.
 	// goverter:map Element Element | optNonEmpty
@@ -249,6 +256,8 @@ type Converter interface {
 	// goverter:map Type RuleOperators | customFieldRuleOperators
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
 	TagToResource(source *ent.Tag) siteapi.SiteTagResource
+	// goverter:useEmptyOnNil:slice
+	TagsToResources(source []*ent.Tag) []siteapi.SiteTagResource
 
 	// The transactional send history is the Outbound messages of kind transactional
 	// (ADR 0015). A message skipped by Send-eligibility is shown as "suppressed" (the
@@ -288,6 +297,8 @@ type Converter interface {
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
 	RuleToResource(source *ent.Rule) siteapi.SiteRuleResource
+	// goverter:useEmptyOnNil:slice
+	RulesToResources(source []*ent.Rule) []siteapi.SiteRuleResource
 
 	// The contract numbers a version; its Trigger events are the rows of its `triggers` edge,
 	// loaded with it, and the stored actions JSON is decoded into the typed Actions.
@@ -298,11 +309,15 @@ type Converter interface {
 	// The store names the Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
 	RuleFiringToResource(source *ent.RuleFiring) siteapi.SiteRuleFiringResource
+	// goverter:useEmptyOnNil:slice
+	RuleFiringsToResources(source []*ent.RuleFiring) []siteapi.SiteRuleFiringResource
 
 	RuleDryRunToResource(source rules.DryRun) siteapi.SiteRuleDryRunResource
 
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.SiteEnrollmentResource
+	// goverter:useEmptyOnNil:slice
+	EnrollmentsToResources(source []*ent.AutomationRun) []siteapi.SiteEnrollmentResource
 
 	// The deletion window: the date the Workspace's data will be erased.
 	// goverter:map PublicID ID
@@ -314,10 +329,14 @@ type Converter interface {
 
 	// goverter:map CreatedAt Since
 	HoldToResource(source *ent.Hold) siteapi.SiteWorkspaceHold
+	// goverter:useEmptyOnNil:slice
+	HoldsToResources(source []*ent.Hold) []siteapi.SiteWorkspaceHold
 
 	// goverter:map . Record | joinDomainRecord
 	// goverter:map . Verified | joinDomainVerified
 	JoinDomainToResource(source *ent.JoinDomain) siteapi.SiteJoinDomainResource
+	// goverter:useEmptyOnNil:slice
+	JoinDomainsToResources(source []*ent.JoinDomain) []siteapi.SiteJoinDomainResource
 
 	// The DNS records are derived by the sendingdomains module, which the mapper cannot
 	// see: the handler attaches them. The private key is never exposed.

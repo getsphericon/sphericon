@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/paths"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
-	"github.com/samber/lo"
 )
 
 // Surface is the Enterprise part of the /staff API: the handlers and the security handler
@@ -115,7 +114,7 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 		return nil, err
 	}
 	res := staffMapper.WorkspaceDetailToResource(w)
-	res.Holds = lo.Map(active, func(h *ent.Hold, _ int) staffeeapi.StaffHold { return staffMapper.HoldToResource(h) })
+	res.Holds = staffMapper.HoldsToResources(active)
 	res.Abuse = staffMapper.AbuseToResource(w)
 	if breach.Tier != abuse.TierNone {
 		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(breach))

@@ -84,6 +84,7 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // implementation; the extends below cover the conversions it can't infer.
 //
 // goverter:converter
+// goverter:annotate:unmapped
 // goverter:output:file ./converter_gen.go
 // goverter:matchIgnoreCase
 // goverter:enum no
@@ -119,9 +120,13 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:extend durationSeconds
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
+	// goverter:useEmptyOnNil:slice
+	ContactsToResources(source []*ent.Contact) []externalapi.ContactResource
 	// The contract names the discarded state "archived" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
+	// goverter:useEmptyOnNil:slice
+	BroadcastsToResources(source []*ent.Broadcast) []externalapi.BroadcastResource
 
 	// The figures are the report's Stats; the rates are Stats methods.
 	// goverter:map Stats.Recipients RecipientsTotal
@@ -155,7 +160,11 @@ type Converter interface {
 	// The contract names the discarded state \"archived\" (ADR 0049).
 	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
+	// goverter:useEmptyOnNil:slice
+	SegmentsToResources(source []*ent.Segment) []externalapi.SegmentResource
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource
+	// goverter:useEmptyOnNil:slice
+	EmailTemplatesToResources(source []*ent.EmailTemplate) []externalapi.TemplateResource
 
 	// A lint finding (ADR 0040) names its element and detail only when the check has one.
 	// goverter:map Element Element | optNonEmpty
@@ -175,12 +184,16 @@ type Converter interface {
 	// goverter:map Type RuleOperators | customFieldRuleOperators
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
 	TagToResource(source *ent.Tag) externalapi.TagResource
+	// goverter:useEmptyOnNil:slice
+	TagsToResources(source []*ent.Tag) []externalapi.TagResource
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the
 	// draft are the edges the automations module loads (ADR 0065).
 	// goverter:map DiscardedAt ArchivedAt
 	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
 	AutomationToResource(source *ent.Automation) externalapi.AutomationResource
+	// goverter:useEmptyOnNil:slice
+	AutomationsToResources(source []*ent.Automation) []externalapi.AutomationResource
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
@@ -228,6 +241,8 @@ type Converter interface {
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
 	RuleToResource(source *ent.Rule) externalapi.RuleResource
+	// goverter:useEmptyOnNil:slice
+	RulesToResources(source []*ent.Rule) []externalapi.RuleResource
 
 	// The contract numbers a version; its Trigger events are the rows of its `triggers` edge,
 	// loaded with it, and the stored actions JSON is decoded into the typed Actions.
@@ -238,11 +253,15 @@ type Converter interface {
 	// The store names the Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
 	RuleFiringToResource(source *ent.RuleFiring) externalapi.RuleFiringResource
+	// goverter:useEmptyOnNil:slice
+	RuleFiringsToResources(source []*ent.RuleFiring) []externalapi.RuleFiringResource
 
 	RuleDryRunToResource(source rules.DryRun) externalapi.RuleDryRunResource
 
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
+	// goverter:useEmptyOnNil:slice
+	EnrollmentsToResources(source []*ent.AutomationRun) []externalapi.EnrollmentResource
 
 	// The signing secret is deliberately never part of an /api response; the failure state
 	// is derived from the failure columns and a nil event filter renders as an empty list.

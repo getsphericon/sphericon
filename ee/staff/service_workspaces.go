@@ -3,9 +3,7 @@ package staff
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/samber/lo"
 )
 
 // ServiceWorkspaceFeedList is the Workspaces created or changed since a cursor, each
@@ -22,7 +20,7 @@ func (h *ServiceHandlers) ServiceWorkspaceFeedList(ctx context.Context, params s
 	}
 	for i, e := range page.Entries {
 		item := serviceMapper.WorkspaceToResource(e.Workspace)
-		item.Owners = lo.Map(e.Owners, func(u *ent.User, _ int) serviceapi.ServiceWorkspaceOwner { return serviceMapper.OwnerToResource(u) })
+		item.Owners = serviceMapper.OwnersToResources(e.Owners)
 		out.Items[i] = item
 	}
 	return out, nil

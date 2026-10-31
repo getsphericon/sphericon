@@ -29,6 +29,7 @@ const PeriodLayout = "2006-01"
 // resources.
 //
 // goverter:converter
+// goverter:annotate:unmapped
 // goverter:name StaffConverterImpl
 // goverter:output:file ./staff_converter_gen.go
 // goverter:matchIgnoreCase
@@ -63,6 +64,8 @@ type StaffConverter interface {
 	WorkspaceDetailToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceDetailResource
 
 	HoldToResource(source *ent.Hold) staffeeapi.StaffHold
+	// goverter:useEmptyOnNil:slice
+	HoldsToResources(source []*ent.Hold) []staffeeapi.StaffHold
 
 	// The detected breach, if any, is attached by the handler.
 	// goverter:map AbuseExempt Exempt
@@ -102,6 +105,7 @@ type StaffConverter interface {
 // ServiceConverter maps ent rows and the usage figures to the service API resources.
 //
 // goverter:converter
+// goverter:annotate:unmapped
 // goverter:name ServiceConverterImpl
 // goverter:output:file ./service_converter_gen.go
 // goverter:matchIgnoreCase
@@ -123,6 +127,8 @@ type ServiceConverter interface {
 	WorkspaceToResource(source *ent.Workspace) serviceapi.ServiceWorkspaceResource
 	// goverter:map ID UserId
 	OwnerToResource(source *ent.User) serviceapi.ServiceWorkspaceOwner
+	// goverter:useEmptyOnNil:slice
+	OwnersToResources(source []*ent.User) []serviceapi.ServiceWorkspaceOwner
 
 	// The mailings consent is the feed entry's, which the mapper cannot see: the handler
 	// attaches it.
