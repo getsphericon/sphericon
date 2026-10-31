@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
@@ -101,6 +102,10 @@ type StaffConverter interface {
 	// goverter:map CreatedAt AnsweredAt
 	SignupSurveyResponseToResource(source *ent.SignupSurveyResponse) staffeeapi.StaffSignupSurveyResponseResource
 
+	// Pages: a list response is the module's pagination.Page mapped whole.
+	// goverter:useEmptyOnNil:slice
+	WorkspacesListPage(source pagination.Page[*ent.Workspace]) *staffeeapi.StaffWorkspacesListOK
+
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
@@ -133,6 +138,7 @@ type StaffConverter interface {
 // goverter:extend serviceOptEmail
 // goverter:extend serviceOptTimestamp
 // goverter:extend serviceOptNilTimestampAt
+// goverter:extend count
 type ServiceConverter interface {
 	HoldToResource(source *ent.Hold) serviceapi.HoldResource
 
@@ -168,6 +174,12 @@ type ServiceConverter interface {
 	// goverter:ignore WorkspaceId
 	// goverter:map Period Period | periodString
 	UsageToResource(source usage.WorkspaceUsage) serviceapi.WorkspaceUsageResource
+
+	// Pages: a list response is the module's pagination.Page mapped whole. Items the handler
+	// maps itself (an extra per item) arrive as a page of resources (pagination.Map).
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	UsageListPage(source pagination.Page[serviceapi.WorkspaceUsageResource]) *serviceapi.ServiceUsageListOK
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.

@@ -5,7 +5,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
 // SiteCustomFieldsList returns the workspace's Custom field definitions — the typed,
@@ -20,12 +20,5 @@ func (h *Handlers) SiteCustomFieldsList(ctx context.Context, _ siteapi.SiteCusto
 		return nil, err
 	}
 
-	resources := mapper.CustomFieldsToResources(items)
-	return &siteapi.SiteCustomFieldsListOK{
-		Items:      resources,
-		Page:       1,
-		PageSize:   narrow.Int32(len(resources)),
-		TotalItems: narrow.Int32(len(resources)),
-		TotalPages: 1,
-	}, nil
+	return mapper.CustomFieldsListPage(pagination.Whole(items)), nil
 }

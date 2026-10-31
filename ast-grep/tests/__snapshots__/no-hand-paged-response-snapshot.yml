@@ -1,0 +1,37 @@
+id: no-hand-paged-response
+snapshots:
+  "func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFieldsListRes, error) {\n\titems := mapper.CustomFieldsToResources(fields)\n\treturn &externalapi.CustomFieldsListOK{Items: items, Page: 1, PageSize: narrow.Int32(len(items)), TotalItems: narrow.Int32(len(items)), TotalPages: 1}, nil\n}\n":
+    labels:
+      - source: 'externalapi.CustomFieldsListOK{Items: items, Page: 1, PageSize: narrow.Int32(len(items)), TotalItems: narrow.Int32(len(items)), TotalPages: 1}'
+        style: primary
+        start: 158
+        end: 300
+      - source: 'TotalPages: 1'
+        style: secondary
+        start: 286
+        end: 299
+      - source: 'TotalPages: 1'
+        style: secondary
+        start: 286
+        end: 299
+  "func (h *Handlers) SiteContactsList(ctx context.Context, params siteapi.SiteContactsListParams) (siteapi.SiteContactsListRes, error) {\n\tpage, err := h.contacts.List(ctx, workspaceScope(ctx), pagination.ParamsOf(params.Page, params.PageSize), contacts.Filter{})\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\treturn &siteapi.SiteContactsListOK{\n\t\tItems:      mapper.ContactsToResources(page.Items),\n\t\tPage:       narrow.Int32(page.Page),\n\t\tPageSize:   narrow.Int32(page.PageSize),\n\t\tTotalItems: narrow.Int32(page.TotalItems),\n\t\tTotalPages: narrow.Int32(page.TotalPages),\n\t}, nil\n}\n":
+    labels:
+      - source: |-
+          siteapi.SiteContactsListOK{
+          		Items:      mapper.ContactsToResources(page.Items),
+          		Page:       narrow.Int32(page.Page),
+          		PageSize:   narrow.Int32(page.PageSize),
+          		TotalItems: narrow.Int32(page.TotalItems),
+          		TotalPages: narrow.Int32(page.TotalPages),
+          	}
+        style: primary
+        start: 308
+        end: 564
+      - source: 'TotalPages: narrow.Int32(page.TotalPages)'
+        style: secondary
+        start: 519
+        end: 560
+      - source: 'TotalPages: narrow.Int32(page.TotalPages)'
+        style: secondary
+        start: 519
+        end: 560

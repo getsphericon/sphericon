@@ -44,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
@@ -446,6 +447,49 @@ type Converter interface {
 	OptionalConsentsToSite(source []consentrecords.OptionalConsent) []siteapi.SiteOptionalConsent
 	// The banner of a newer release, the one part of the Instance a Workspace's owner sees (ADR 0032).
 	InstanceReleaseToResource(source instance.Release) siteapi.SiteInstanceRelease
+
+	// Pages: a list response is the module's pagination.Page mapped whole, its items through
+	// the list methods above. Items the handler maps itself (an extra per item) arrive as a
+	// page of resources (pagination.Map), an unpaginated list as pagination.Whole.
+	// goverter:useEmptyOnNil:slice
+	ContactsListPage(source pagination.Page[*ent.Contact]) *siteapi.SiteContactsListOK
+	// goverter:useEmptyOnNil:slice
+	SegmentContactsListPage(source pagination.Page[*ent.Contact]) *siteapi.SiteSegmentContactsListOK
+	// goverter:useEmptyOnNil:slice
+	SegmentsListPage(source pagination.Page[*ent.Segment]) *siteapi.SiteSegmentsListOK
+	// goverter:useEmptyOnNil:slice
+	CustomFieldsListPage(source pagination.Page[*ent.CustomField]) *siteapi.SiteCustomFieldsListOK
+	// goverter:useEmptyOnNil:slice
+	TagsListPage(source pagination.Page[*ent.Tag]) *siteapi.SiteTagsListOK
+	// goverter:useEmptyOnNil:slice
+	TagsListForContactPage(source pagination.Page[*ent.Tag]) *siteapi.SiteTagsListForContactOK
+	// goverter:useEmptyOnNil:slice
+	TransactionalEmailsListPage(source pagination.Page[*ent.OutboundMessage]) *siteapi.SiteTransactionalEmailsListOK
+	// goverter:useEmptyOnNil:slice
+	CapturedMessagesListPage(source pagination.Page[*ent.CapturedMessage]) *siteapi.SiteCapturedMessagesListOK
+	// goverter:useEmptyOnNil:slice
+	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *siteapi.SiteEnrollmentsListOK
+	// goverter:useEmptyOnNil:slice
+	RulesListPage(source pagination.Page[*ent.Rule]) *siteapi.SiteRulesListOK
+	// goverter:useEmptyOnNil:slice
+	RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) *siteapi.SiteRuleFiringsListOK
+	// goverter:useEmptyOnNil:slice
+	SuppressionsListPage(source pagination.Page[*ent.Suppression]) *siteapi.SiteSuppressionsListOK
+	// goverter:useEmptyOnNil:slice
+	AutomationsListPage(source pagination.Page[automations.WithRevenue]) *siteapi.SiteAutomationsListOK
+	// goverter:useEmptyOnNil:slice
+	EventsListPage(source pagination.Page[*ent.Event]) *siteapi.SiteEventsListOK
+	// goverter:useEmptyOnNil:slice
+	TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *siteapi.SiteTemplatesListOK
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	WebhooksListPage(source pagination.Page[siteapi.SiteWebhookEndpointResource]) *siteapi.SiteWebhooksListOK
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	SendingDomainsListPage(source pagination.Page[siteapi.SiteSendingDomainResource]) *siteapi.SiteSendingDomainsListOK
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	BroadcastsListPage(source pagination.Page[siteapi.SiteBroadcastResource]) *siteapi.SiteBroadcastsListOK
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.

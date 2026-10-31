@@ -29,6 +29,7 @@ import (
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
 	orders "github.com/getsphericon/sphericon/internal/orders"
+	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -197,6 +198,15 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 	}
 	return externalapiAutomationVersion
 }
+func (c *ConverterImpl) AutomationsListPage(source pagination.Page[*ent.Automation]) *external.AutomationsListOK {
+	var externalapiAutomationsListOK external.AutomationsListOK
+	externalapiAutomationsListOK.Items = c.AutomationsToResources(source.Items)
+	externalapiAutomationsListOK.Page = count(source.Page)
+	externalapiAutomationsListOK.PageSize = count(source.PageSize)
+	externalapiAutomationsListOK.TotalItems = count(source.TotalItems)
+	externalapiAutomationsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiAutomationsListOK
+}
 func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) []external.AutomationResource {
 	var externalapiAutomationResourceList []external.AutomationResource
 	externalapiAutomationResourceList = make([]external.AutomationResource, len(source))
@@ -291,6 +301,15 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 	}
 	return externalapiBroadcastResource
 }
+func (c *ConverterImpl) BroadcastsListPage(source pagination.Page[*ent.Broadcast]) *external.BroadcastsListOK {
+	var externalapiBroadcastsListOK external.BroadcastsListOK
+	externalapiBroadcastsListOK.Items = c.BroadcastsToResources(source.Items)
+	externalapiBroadcastsListOK.Page = count(source.Page)
+	externalapiBroadcastsListOK.PageSize = count(source.PageSize)
+	externalapiBroadcastsListOK.TotalItems = count(source.TotalItems)
+	externalapiBroadcastsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiBroadcastsListOK
+}
 func (c *ConverterImpl) BroadcastsToResources(source []*ent.Broadcast) []external.BroadcastResource {
 	var externalapiBroadcastResourceList []external.BroadcastResource
 	externalapiBroadcastResourceList = make([]external.BroadcastResource, len(source))
@@ -363,6 +382,15 @@ func (c *ConverterImpl) CapturedMessageToSummary(source *ent.CapturedMessage) ex
 	}
 	return externalapiCapturedMessageSummary
 }
+func (c *ConverterImpl) CapturedMessagesListPage(source pagination.Page[*ent.CapturedMessage]) *external.CapturedMessagesListOK {
+	var externalapiCapturedMessagesListOK external.CapturedMessagesListOK
+	externalapiCapturedMessagesListOK.Items = c.CapturedMessagesToSummaries(source.Items)
+	externalapiCapturedMessagesListOK.Page = count(source.Page)
+	externalapiCapturedMessagesListOK.PageSize = count(source.PageSize)
+	externalapiCapturedMessagesListOK.TotalItems = count(source.TotalItems)
+	externalapiCapturedMessagesListOK.TotalPages = count(source.TotalPages)
+	return &externalapiCapturedMessagesListOK
+}
 func (c *ConverterImpl) CapturedMessagesToSummaries(source []*ent.CapturedMessage) []external.CapturedMessageSummary {
 	var externalapiCapturedMessageSummaryList []external.CapturedMessageSummary
 	externalapiCapturedMessageSummaryList = make([]external.CapturedMessageSummary, len(source))
@@ -429,6 +457,15 @@ func (c *ConverterImpl) ContactToResource(source *ent.Contact) external.ContactR
 	}
 	return externalapiContactResource
 }
+func (c *ConverterImpl) ContactsListPage(source pagination.Page[*ent.Contact]) *external.ContactsListOK {
+	var externalapiContactsListOK external.ContactsListOK
+	externalapiContactsListOK.Items = c.ContactsToResources(source.Items)
+	externalapiContactsListOK.Page = count(source.Page)
+	externalapiContactsListOK.PageSize = count(source.PageSize)
+	externalapiContactsListOK.TotalItems = count(source.TotalItems)
+	externalapiContactsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiContactsListOK
+}
 func (c *ConverterImpl) ContactsToResources(source []*ent.Contact) []external.ContactResource {
 	var externalapiContactResourceList []external.ContactResource
 	externalapiContactResourceList = make([]external.ContactResource, len(source))
@@ -466,6 +503,15 @@ func (c *ConverterImpl) CustomFieldTypeToResource(source customfield.Type) exter
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiCustomFieldType
+}
+func (c *ConverterImpl) CustomFieldsListPage(source pagination.Page[*ent.CustomField]) *external.CustomFieldsListOK {
+	var externalapiCustomFieldsListOK external.CustomFieldsListOK
+	externalapiCustomFieldsListOK.Items = c.CustomFieldsToResources(source.Items)
+	externalapiCustomFieldsListOK.Page = count(source.Page)
+	externalapiCustomFieldsListOK.PageSize = count(source.PageSize)
+	externalapiCustomFieldsListOK.TotalItems = count(source.TotalItems)
+	externalapiCustomFieldsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiCustomFieldsListOK
 }
 func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []external.CustomFieldResource {
 	var externalapiCustomFieldResourceList []external.CustomFieldResource
@@ -577,6 +623,15 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 	}
 	return externalapiEnrollmentResource
 }
+func (c *ConverterImpl) EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *external.EnrollmentsListOK {
+	var externalapiEnrollmentsListOK external.EnrollmentsListOK
+	externalapiEnrollmentsListOK.Items = c.EnrollmentsToResources(source.Items)
+	externalapiEnrollmentsListOK.Page = count(source.Page)
+	externalapiEnrollmentsListOK.PageSize = count(source.PageSize)
+	externalapiEnrollmentsListOK.TotalItems = count(source.TotalItems)
+	externalapiEnrollmentsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiEnrollmentsListOK
+}
 func (c *ConverterImpl) EnrollmentsToResources(source []*ent.AutomationRun) []external.EnrollmentResource {
 	var externalapiEnrollmentResourceList []external.EnrollmentResource
 	externalapiEnrollmentResourceList = make([]external.EnrollmentResource, len(source))
@@ -584,6 +639,18 @@ func (c *ConverterImpl) EnrollmentsToResources(source []*ent.AutomationRun) []ex
 		externalapiEnrollmentResourceList[i] = c.EnrollmentToResource(source[i])
 	}
 	return externalapiEnrollmentResourceList
+}
+func (c *ConverterImpl) EventActionsListPage(source pagination.Page[string]) *external.EventActionsListOK {
+	var externalapiEventActionsListOK external.EventActionsListOK
+	externalapiEventActionsListOK.Items = make([]external.EventActionResource, len(source.Items))
+	for i := 0; i < len(source.Items); i++ {
+		externalapiEventActionsListOK.Items[i] = eventAction(source.Items[i])
+	}
+	externalapiEventActionsListOK.Page = count(source.Page)
+	externalapiEventActionsListOK.PageSize = count(source.PageSize)
+	externalapiEventActionsListOK.TotalItems = count(source.TotalItems)
+	externalapiEventActionsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiEventActionsListOK
 }
 func (c *ConverterImpl) EventToExport(source *ent.Event) external.ContactExportEvent {
 	var externalapiContactExportEvent external.ContactExportEvent
@@ -651,6 +718,15 @@ func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) external.
 		externalapiIntegrationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiIntegrationResource
+}
+func (c *ConverterImpl) IntegrationsListPage(source pagination.Page[external.IntegrationResource]) *external.IntegrationsListOK {
+	var externalapiIntegrationsListOK external.IntegrationsListOK
+	externalapiIntegrationsListOK.Items = source.Items
+	externalapiIntegrationsListOK.Page = count(source.Page)
+	externalapiIntegrationsListOK.PageSize = count(source.PageSize)
+	externalapiIntegrationsListOK.TotalItems = count(source.TotalItems)
+	externalapiIntegrationsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiIntegrationsListOK
 }
 func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) external.LintCode {
 	var externalapiLintCode external.LintCode
@@ -720,6 +796,15 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportOutboundMessage
+}
+func (c *ConverterImpl) PresetsListPage(source pagination.Page[external.PresetResource]) *external.PresetsListOK {
+	var externalapiPresetsListOK external.PresetsListOK
+	externalapiPresetsListOK.Items = source.Items
+	externalapiPresetsListOK.Page = count(source.Page)
+	externalapiPresetsListOK.PageSize = count(source.PageSize)
+	externalapiPresetsListOK.TotalItems = count(source.TotalItems)
+	externalapiPresetsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiPresetsListOK
 }
 func (c *ConverterImpl) ProviderLimitSourceToResource(source providerlimit.Source) external.ProviderLimitSource {
 	var externalapiProviderLimitSource external.ProviderLimitSource
@@ -841,6 +926,15 @@ func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) external.Ru
 	}
 	return externalapiRuleFiringResource
 }
+func (c *ConverterImpl) RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) *external.RuleFiringsListOK {
+	var externalapiRuleFiringsListOK external.RuleFiringsListOK
+	externalapiRuleFiringsListOK.Items = c.RuleFiringsToResources(source.Items)
+	externalapiRuleFiringsListOK.Page = count(source.Page)
+	externalapiRuleFiringsListOK.PageSize = count(source.PageSize)
+	externalapiRuleFiringsListOK.TotalItems = count(source.TotalItems)
+	externalapiRuleFiringsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiRuleFiringsListOK
+}
 func (c *ConverterImpl) RuleFiringsToResources(source []*ent.RuleFiring) []external.RuleFiringResource {
 	var externalapiRuleFiringResourceList []external.RuleFiringResource
 	externalapiRuleFiringResourceList = make([]external.RuleFiringResource, len(source))
@@ -887,6 +981,15 @@ func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) external.
 	}
 	return externalapiRuleVersion
 }
+func (c *ConverterImpl) RulesListPage(source pagination.Page[*ent.Rule]) *external.RulesListOK {
+	var externalapiRulesListOK external.RulesListOK
+	externalapiRulesListOK.Items = c.RulesToResources(source.Items)
+	externalapiRulesListOK.Page = count(source.Page)
+	externalapiRulesListOK.PageSize = count(source.PageSize)
+	externalapiRulesListOK.TotalItems = count(source.TotalItems)
+	externalapiRulesListOK.TotalPages = count(source.TotalPages)
+	return &externalapiRulesListOK
+}
 func (c *ConverterImpl) RulesToResources(source []*ent.Rule) []external.RuleResource {
 	var externalapiRuleResourceList []external.RuleResource
 	externalapiRuleResourceList = make([]external.RuleResource, len(source))
@@ -907,6 +1010,15 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentR
 	}
 	return externalapiSegmentResource
 }
+func (c *ConverterImpl) SegmentsListPage(source pagination.Page[*ent.Segment]) *external.SegmentsListOK {
+	var externalapiSegmentsListOK external.SegmentsListOK
+	externalapiSegmentsListOK.Items = c.SegmentsToResources(source.Items)
+	externalapiSegmentsListOK.Page = count(source.Page)
+	externalapiSegmentsListOK.PageSize = count(source.PageSize)
+	externalapiSegmentsListOK.TotalItems = count(source.TotalItems)
+	externalapiSegmentsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiSegmentsListOK
+}
 func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []external.SegmentResource {
 	var externalapiSegmentResourceList []external.SegmentResource
 	externalapiSegmentResourceList = make([]external.SegmentResource, len(source))
@@ -914,6 +1026,15 @@ func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []external.Se
 		externalapiSegmentResourceList[i] = c.SegmentToResource(source[i])
 	}
 	return externalapiSegmentResourceList
+}
+func (c *ConverterImpl) SendingDomainRatesListPage(source pagination.Page[external.SendingDomainRatesResource]) *external.SendingDomainRatesListOK {
+	var externalapiSendingDomainRatesListOK external.SendingDomainRatesListOK
+	externalapiSendingDomainRatesListOK.Items = source.Items
+	externalapiSendingDomainRatesListOK.Page = count(source.Page)
+	externalapiSendingDomainRatesListOK.PageSize = count(source.PageSize)
+	externalapiSendingDomainRatesListOK.TotalItems = count(source.TotalItems)
+	externalapiSendingDomainRatesListOK.TotalPages = count(source.TotalPages)
+	return &externalapiSendingDomainRatesListOK
 }
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) external.SendingDomainResource {
 	var externalapiSendingDomainResource external.SendingDomainResource
@@ -934,6 +1055,15 @@ func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) exter
 		externalapiSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiSendingDomainResource
+}
+func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[external.SendingDomainResource]) *external.SendingDomainsListOK {
+	var externalapiSendingDomainsListOK external.SendingDomainsListOK
+	externalapiSendingDomainsListOK.Items = source.Items
+	externalapiSendingDomainsListOK.Page = count(source.Page)
+	externalapiSendingDomainsListOK.PageSize = count(source.PageSize)
+	externalapiSendingDomainsListOK.TotalItems = count(source.TotalItems)
+	externalapiSendingDomainsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiSendingDomainsListOK
 }
 func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) external.SesConfig {
 	var externalapiSesConfig external.SesConfig
@@ -1010,6 +1140,24 @@ func (c *ConverterImpl) TagToResource(source *ent.Tag) external.TagResource {
 	}
 	return externalapiTagResource
 }
+func (c *ConverterImpl) TagsListForContactPage(source pagination.Page[*ent.Tag]) *external.TagsListForContactOK {
+	var externalapiTagsListForContactOK external.TagsListForContactOK
+	externalapiTagsListForContactOK.Items = c.TagsToResources(source.Items)
+	externalapiTagsListForContactOK.Page = count(source.Page)
+	externalapiTagsListForContactOK.PageSize = count(source.PageSize)
+	externalapiTagsListForContactOK.TotalItems = count(source.TotalItems)
+	externalapiTagsListForContactOK.TotalPages = count(source.TotalPages)
+	return &externalapiTagsListForContactOK
+}
+func (c *ConverterImpl) TagsListPage(source pagination.Page[*ent.Tag]) *external.TagsListOK {
+	var externalapiTagsListOK external.TagsListOK
+	externalapiTagsListOK.Items = c.TagsToResources(source.Items)
+	externalapiTagsListOK.Page = count(source.Page)
+	externalapiTagsListOK.PageSize = count(source.PageSize)
+	externalapiTagsListOK.TotalItems = count(source.TotalItems)
+	externalapiTagsListOK.TotalPages = count(source.TotalPages)
+	return &externalapiTagsListOK
+}
 func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []external.TagResource {
 	var externalapiTagResourceList []external.TagResource
 	externalapiTagResourceList = make([]external.TagResource, len(source))
@@ -1017,6 +1165,15 @@ func (c *ConverterImpl) TagsToResources(source []*ent.Tag) []external.TagResourc
 		externalapiTagResourceList[i] = c.TagToResource(source[i])
 	}
 	return externalapiTagResourceList
+}
+func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *external.TemplatesListOK {
+	var externalapiTemplatesListOK external.TemplatesListOK
+	externalapiTemplatesListOK.Items = c.EmailTemplatesToResources(source.Items)
+	externalapiTemplatesListOK.Page = count(source.Page)
+	externalapiTemplatesListOK.PageSize = count(source.PageSize)
+	externalapiTemplatesListOK.TotalItems = count(source.TotalItems)
+	externalapiTemplatesListOK.TotalPages = count(source.TotalPages)
+	return &externalapiTemplatesListOK
 }
 func (c *ConverterImpl) TrackingReasonToResource(source sendingdomain.TrackingReason) external.TrackingReason {
 	var externalapiTrackingReason external.TrackingReason
@@ -1132,6 +1289,15 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 		externalapiWebhookResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiWebhookResource
+}
+func (c *ConverterImpl) WebhooksListPage(source pagination.Page[external.WebhookResource]) *external.WebhooksListOK {
+	var externalapiWebhooksListOK external.WebhooksListOK
+	externalapiWebhooksListOK.Items = source.Items
+	externalapiWebhooksListOK.Page = count(source.Page)
+	externalapiWebhooksListOK.PageSize = count(source.PageSize)
+	externalapiWebhooksListOK.TotalItems = count(source.TotalItems)
+	externalapiWebhooksListOK.TotalPages = count(source.TotalPages)
+	return &externalapiWebhooksListOK
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute

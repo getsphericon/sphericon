@@ -3,11 +3,9 @@ package external
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/ent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -17,14 +15,7 @@ func (h *Handlers) TagsList(ctx context.Context, params externalapi.TagsListPara
 	if err != nil {
 		return nil, err
 	}
-	page := tagsPage(all, params.Page, params.PageSize)
-	return &externalapi.TagsListOK{
-		Items:      page.Items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.TagsListPage(pagination.Paginate(all, convert.Ptr(params.Page), convert.Ptr(params.PageSize))), nil
 }
 
 func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.TagsListForContactParams) (externalapi.TagsListForContactRes, error) {
@@ -35,14 +26,7 @@ func (h *Handlers) TagsListForContact(ctx context.Context, params externalapi.Ta
 	if err != nil {
 		return nil, err
 	}
-	page := tagsPage(mine, params.Page, params.PageSize)
-	return &externalapi.TagsListForContactOK{
-		Items:      page.Items,
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.TagsListForContactPage(pagination.Paginate(mine, convert.Ptr(params.Page), convert.Ptr(params.PageSize))), nil
 }
 
 func (h *Handlers) TagsApply(ctx context.Context, req *externalapi.ApplyTagInput, params externalapi.TagsApplyParams) (externalapi.TagsApplyRes, error) {
@@ -76,10 +60,4 @@ func (h *Handlers) TagsDelete(ctx context.Context, params externalapi.TagsDelete
 		return nil, err
 	}
 	return &externalapi.TagsDeleteNoContent{}, nil
-}
-
-// tagsPage maps and pages a small in-memory tag set.
-func tagsPage(items []*ent.Tag, page, pageSize externalapi.OptInt32) pagination.Page[externalapi.TagResource] {
-	resources := mapper.TagsToResources(items)
-	return pagination.Paginate(resources, convert.Ptr(page), convert.Ptr(pageSize))
 }

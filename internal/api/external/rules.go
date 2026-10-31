@@ -5,7 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -18,13 +17,7 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.RulesListOK{
-		Items:      mapper.RulesToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.RulesListPage(page), nil
 }
 
 // RulesCreate always stores an inactive Rule: publishing is the send-class operation.
@@ -144,11 +137,5 @@ func (h *Handlers) RuleFiringsList(ctx context.Context, params externalapi.RuleF
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.RuleFiringsListOK{
-		Items:      mapper.RuleFiringsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.RuleFiringsListPage(page), nil
 }

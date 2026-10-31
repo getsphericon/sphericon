@@ -7,7 +7,6 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/convert"
-	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
 )
 
@@ -22,13 +21,7 @@ func (h *Handlers) BroadcastsList(ctx context.Context, params externalapi.Broadc
 	if err != nil {
 		return nil, err
 	}
-	return &externalapi.BroadcastsListOK{
-		Items:      mapper.BroadcastsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.BroadcastsListPage(page), nil
 }
 
 func (h *Handlers) BroadcastsCreate(ctx context.Context, req *externalapi.CreateBroadcastInput) (externalapi.BroadcastsCreateRes, error) {

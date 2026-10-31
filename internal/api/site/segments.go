@@ -19,13 +19,7 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 		return nil, err
 	}
 
-	return &siteapi.SiteSegmentsListOK{
-		Items:      mapper.SegmentsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.SegmentsListPage(page), nil
 }
 
 func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCreateSegmentInput, _ siteapi.SiteSegmentsCreateParams) (siteapi.SiteSegmentsCreateRes, error) {
@@ -124,11 +118,5 @@ func (h *Handlers) SiteSegmentContactsList(ctx context.Context, params siteapi.S
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteSegmentContactsListOK{
-		Items:      mapper.ContactsToResources(page.Items),
-		Page:       narrow.Int32(page.Page),
-		PageSize:   narrow.Int32(page.PageSize),
-		TotalItems: narrow.Int32(page.TotalItems),
-		TotalPages: narrow.Int32(page.TotalPages),
-	}, nil
+	return mapper.SegmentContactsListPage(page), nil
 }

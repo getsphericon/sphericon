@@ -29,12 +29,9 @@ func (m *Module) ListWithRevenue(ctx context.Context, s *ent.Scoped, p paginatio
 	if err != nil {
 		return pagination.Page[WithRevenue]{}, err
 	}
-	return pagination.Page[WithRevenue]{
-		Items: lo.Map(page.Items, func(a *ent.Automation, _ int) WithRevenue {
-			return WithRevenue{Automation: a, Revenue: figures.Of(a.ID)}
-		}),
-		Page: page.Page, PageSize: page.PageSize, TotalItems: page.TotalItems, TotalPages: page.TotalPages,
-	}, nil
+	return pagination.Map(page, func(a *ent.Automation) WithRevenue {
+		return WithRevenue{Automation: a, Revenue: figures.Of(a.ID)}
+	}), nil
 }
 
 // GetWithRevenue is Get with the Automation's revenue.

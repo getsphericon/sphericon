@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
@@ -17,14 +18,7 @@ func (h *Handlers) CustomFieldsList(ctx context.Context) (externalapi.CustomFiel
 	if err != nil {
 		return nil, err
 	}
-	resources := mapper.CustomFieldsToResources(items)
-	return &externalapi.CustomFieldsListOK{
-		Items:      resources,
-		Page:       1,
-		PageSize:   narrow.Int32(len(resources)),
-		TotalItems: narrow.Int32(len(resources)),
-		TotalPages: 1,
-	}, nil
+	return mapper.CustomFieldsListPage(pagination.Whole(items)), nil
 }
 
 // SendingDomainRatesList returns the (numerator, denominator, rate) triples of ADR 0011
@@ -46,13 +40,7 @@ func (h *Handlers) SendingDomainRatesList(ctx context.Context, params externalap
 			BounceRate:      rateTriple(r.Bounce),
 		}
 	}
-	return &externalapi.SendingDomainRatesListOK{
-		Items:      items,
-		Page:       1,
-		PageSize:   narrow.Int32(len(items)),
-		TotalItems: narrow.Int32(len(items)),
-		TotalPages: 1,
-	}, nil
+	return mapper.SendingDomainRatesListPage(pagination.Whole(items)), nil
 }
 
 func rateTriple(r reputation.Rate) externalapi.RateTriple {

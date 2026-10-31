@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
+	"github.com/getsphericon/sphericon/internal/pagination"
 	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
@@ -124,6 +125,7 @@ func automationSteps(v *ent.AutomationVersion) []externalapi.AutomationStep {
 // goverter:extend optWebhookDisabledReason
 // goverter:extend nilCurrencyCode
 // goverter:extend durationSeconds
+// goverter:extend eventAction
 type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
@@ -333,6 +335,51 @@ type Converter interface {
 	OutboundMessageToExport(source *ent.OutboundMessage) externalapi.ContactExportOutboundMessage
 	BroadcastRecipientToExport(source *ent.BroadcastRecipient) externalapi.ContactExportBroadcastRecipient
 
+	// Pages: a list response is the module's pagination.Page mapped whole, its items through
+	// the list methods above. Items the handler maps itself (an extra per item) arrive as a
+	// page of resources (pagination.Map), an unpaginated list as pagination.Whole.
+	// goverter:useEmptyOnNil:slice
+	ContactsListPage(source pagination.Page[*ent.Contact]) *externalapi.ContactsListOK
+	// goverter:useEmptyOnNil:slice
+	SegmentsListPage(source pagination.Page[*ent.Segment]) *externalapi.SegmentsListOK
+	// goverter:useEmptyOnNil:slice
+	TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *externalapi.TemplatesListOK
+	// goverter:useEmptyOnNil:slice
+	BroadcastsListPage(source pagination.Page[*ent.Broadcast]) *externalapi.BroadcastsListOK
+	// goverter:useEmptyOnNil:slice
+	AutomationsListPage(source pagination.Page[*ent.Automation]) *externalapi.AutomationsListOK
+	// goverter:useEmptyOnNil:slice
+	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *externalapi.EnrollmentsListOK
+	// goverter:useEmptyOnNil:slice
+	RulesListPage(source pagination.Page[*ent.Rule]) *externalapi.RulesListOK
+	// goverter:useEmptyOnNil:slice
+	RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) *externalapi.RuleFiringsListOK
+	// goverter:useEmptyOnNil:slice
+	CapturedMessagesListPage(source pagination.Page[*ent.CapturedMessage]) *externalapi.CapturedMessagesListOK
+	// goverter:useEmptyOnNil:slice
+	TagsListPage(source pagination.Page[*ent.Tag]) *externalapi.TagsListOK
+	// goverter:useEmptyOnNil:slice
+	TagsListForContactPage(source pagination.Page[*ent.Tag]) *externalapi.TagsListForContactOK
+	// goverter:useEmptyOnNil:slice
+	CustomFieldsListPage(source pagination.Page[*ent.CustomField]) *externalapi.CustomFieldsListOK
+	// goverter:useEmptyOnNil:slice
+	EventActionsListPage(source pagination.Page[string]) *externalapi.EventActionsListOK
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	WebhooksListPage(source pagination.Page[externalapi.WebhookResource]) *externalapi.WebhooksListOK
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	SendingDomainsListPage(source pagination.Page[externalapi.SendingDomainResource]) *externalapi.SendingDomainsListOK
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	IntegrationsListPage(source pagination.Page[externalapi.IntegrationResource]) *externalapi.IntegrationsListOK
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	PresetsListPage(source pagination.Page[externalapi.PresetResource]) *externalapi.PresetsListOK
+	// goverter:useEmptyOnNil:slice
+	// goverter:skipCopySameType
+	SendingDomainRatesListPage(source pagination.Page[externalapi.SendingDomainRatesResource]) *externalapi.SendingDomainRatesListOK
+
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
@@ -404,6 +451,11 @@ func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshal
 
 // count narrows a message count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
+
+// eventAction is one distinct action name of the Workspace's Events.
+func eventAction(action string) externalapi.EventActionResource {
+	return externalapi.EventActionResource{Action: action}
+}
 
 // nilCurrencyCode is the Reporting currency, null until an Owner or Admin chooses one (ADR 0064).
 func nilCurrencyCode(v *string) externalapi.NilCurrencyCode {
