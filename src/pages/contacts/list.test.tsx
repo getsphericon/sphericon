@@ -104,6 +104,9 @@ test('typing in the search field puts the email in the URL search', async () => 
   worker.use(handleSiteContactsList({ body: page([ALICE, BOB], 2) }))
 
   const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  // Typing waits for the loaded list, as a person would: on a busy CI runner, a search typed
+  // before it had loaded never reached the URL.
+  await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
   await screen.getByRole('textbox', { name: 'Search by email' }).fill('bob')
 
   await expect
