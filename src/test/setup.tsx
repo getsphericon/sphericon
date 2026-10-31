@@ -9,6 +9,7 @@ import '../i18n.ts'
 import { QueryClient } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { afterEach, beforeAll, beforeEach } from 'vitest'
+import { cleanup } from 'vitest-browser-react'
 
 import { client } from '../generated/site/client.gen.ts'
 import {
@@ -114,8 +115,12 @@ beforeEach(() => {
 // the order the page made them, so a request answered by a handler of its own has passed every
 // earlier one: wait for that, then for the unmocked ones to be recorded, while the test's handlers
 // are still installed (or they would be answered by the next test's handlers and reported there).
+// The page is unmounted first: vitest-browser-react only does it before the next test, and a page
+// still mounted makes new requests on its own (a cleared query cache reads everything again),
+// which would reach the worker after its handlers are reset.
 const FLUSH_PATH = '/__flush'
 afterEach(async () => {
+  await cleanup()
   await settled()
   worker.use(http.get(FLUSH_PATH, () => new HttpResponse(null)))
   await fetch(FLUSH_PATH)
