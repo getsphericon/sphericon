@@ -20,64 +20,39 @@ import (
 
 	"net/http/httptest"
 
-	sphericon "github.com/getsphericon/sphericon"
+	"github.com/samber/do/v2"
+
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
-	"github.com/getsphericon/sphericon/ee/abuse"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/analytics"
-	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
-	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
+	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/contacts"
 	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/domainverify"
-	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/holds"
 	"github.com/getsphericon/sphericon/internal/instance"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/joindomains"
 	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/oauthserver"
 	"github.com/getsphericon/sphericon/internal/orders"
 	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
-	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sending"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
-	"github.com/getsphericon/sphericon/internal/tags"
-	"github.com/getsphericon/sphericon/internal/templates"
 	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/transactional"
-	"github.com/getsphericon/sphericon/internal/upgrade"
 	"github.com/getsphericon/sphericon/internal/webhook"
-	"github.com/getsphericon/sphericon/internal/webhooks"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -170,9 +145,8 @@ type TestEnv struct {
 	SQLDB  *sql.DB     // the same txdb connection the ent client and bus ride
 	Bus    *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
 	Server http.Handler
-	// Internal is the handler of the internal listener (ADR 0026), built like the
-	// composition root builds it: the service endpoints and nothing else. Nil on an
-	// unlicensed instance, where no listener would be bound.
+	// Internal is the handler of the internal listener (ADR 0026), from the production
+	// container: the TLS ask, and the service endpoints with the `staff` license.
 	Internal http.Handler
 	// Tracker is the instance the server and the sender share: mint tracking,
 	// unsubscribe and confirmation tokens with it, never with a second one.
@@ -311,8 +285,8 @@ func WithMode(m config.Mode) Option { return func(s *setup) { s.cfg.ApplyMode(m)
 // WithConfig edits a private copy of the test config before the server is built.
 func WithConfig(edit func(*config.Config)) Option { return func(s *setup) { edit(s.cfg) } }
 
-// WithClock replaces the clock of the account attempt module (the login delay), so
-// a test freezes or advances time instead of sleeping.
+// WithClock replaces the clock of the Instance (app.Clock: session expiry, the login delay,
+// holds, second factors, …), so a test freezes or advances time instead of sleeping.
 func WithClock(now func() time.Time) Option { return func(s *setup) { s.now = now } }
 
 // WithRateLimits turns the rate limits on with the given (small) budgets. Without
@@ -325,21 +299,6 @@ func WithRateLimits(limits config.RateLimits) Option {
 // newStaffSecret is the secret Staff member sessions are signed with in a test env: random
 // and its own, never the site's.
 func newStaffSecret() string { return rand.Text() + rand.Text() }
-
-// staffMembers is the Staff member module of the test Instance, its sign-in off under
-// WithoutStaffSecret.
-func (s *setup) staffMembers(t *testing.T, client *ent.Client, cipher *secrets.Cipher, cfg *config.Config, attempts *accounts.Attempts) *staffmembers.Module {
-	t.Helper()
-	secret := newStaffSecret()
-	if s.noStaffSecret {
-		secret = ""
-	}
-	m, err := staffmembers.New(client, cipher, cfg.JWTSecrets(), staffmembers.Config{
-		Secret: secret, SessionTTL: cfg.StaffSessionTTL, SecureCookies: cfg.SecureCookies(), Clock: s.now, Attempts: attempts, Passwords: Passwords(),
-	})
-	require.NoError(t, err, "build staff members")
-	return m
-}
 
 // testLicense mints, once per process, an EE license key signed by a throwaway key
 // pair and verified through the same Parse the production composition root uses.
@@ -362,6 +321,26 @@ func WithLicenseKey(pub ed25519.PublicKey, key string) Option {
 	return func(s *setup) { s.licenseKey, s.licensePub = key, pub }
 }
 
+// license is the License of the test Instance: every feature by default, none under
+// WithoutLicense, and the key of WithLicenseKey loaded as the composition root loads one.
+func (s *setup) license(t *testing.T) *licensekey.License {
+	t.Helper()
+	if s.licensePub != nil {
+		lic, err := licensekey.Load(s.licenseKey, s.licensePub, s.now(), slog.Default())
+		require.NoError(t, err, "load license key")
+		s.cfg.LicenseKey = s.licenseKey
+		return lic
+	}
+	if s.unlicensed {
+		lic, err := licensekey.Parse("", licensekey.ProductionKey, time.Now())
+		require.NoError(t, err, "parse empty license")
+		return lic
+	}
+	lic, err := testLicense()
+	require.NoError(t, err, "mint test license")
+	return lic
+}
+
 // testConfig is a private copy of the baseline config for one test. The test License carries every
 // feature, so the harness runs in the saas Mode and the existing tests keep the gates the SaaS has
 // on (verification, the Sign-up survey); a test of selfhosted says so with WithMode (ADR 0060).
@@ -373,17 +352,12 @@ func testConfig() config.Config {
 	return cfg
 }
 
-// externalSurfaces is the handler of /api and the one of /mcp, built from the same Deps as the
-// app builds them, so both meet the same Bearer-token handler.
-func externalSurfaces(t *testing.T, client *ent.Client, deps apiexternal.Deps, mcpOrigin string) (external, mcp http.Handler) {
-	t.Helper()
-	external, err := server.NewExternalAPI(client, deps)
-	require.NoError(t, err, "build external API")
-	mcp, err = mcpserver.New(sphericon.ExternalOpenAPI, external, server.ExternalSecurity(client, deps), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(mcpOrigin)))
-	require.NoError(t, err, "build MCP handler")
-	return external, mcp
-}
-
+// Setup builds the test Instance from the production container (app.Container) over the test's
+// own transaction. What differs from production is configuration, set here and by the Options,
+// and the seams the container names, replaced here: the clock, the database, the License, the
+// password hasher, the mail senders and the provider catalog, DNS, the job queue (run inline),
+// the Presets, the document renderer, the Private Relay list, the OAuth fetcher and the
+// Sign-in providers.
 func Setup(t *testing.T, opts ...Option) *TestEnv {
 	t.Helper()
 	initBaseline()
@@ -394,27 +368,31 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	for _, opt := range opts {
 		opt(st)
 	}
+	cfg.StaffJWTSecret = newStaffSecret()
+	if st.noStaffSecret {
+		cfg.StaffJWTSecret = ""
+	}
+	if st.volumeFloor > 0 {
+		cfg.AbuseVolumeFloor = st.volumeFloor
+	}
+	if st.noSystemSender {
+		cfg.SMTPHost, cfg.SystemEmailProvider = "", "smtp"
+	}
+	lic := st.license(t)
 
 	// All queries ride the SAME transaction (the cleaner limits the pool to one
-	// connection); it is rolled back when the test ends.
+	// connection); it is rolled back when the test ends. The bus opens a nested (savepoint)
+	// transaction on it, so producer writes, outbox inserts and the jobs queued in a bus
+	// transaction roll back with the test; no worker runs them.
 	txDB := cleaner.DB(t)
 
-	client := db.NewEntClient(txDB)
-	feedClient := db.NewEntClientOnTx(txDB)
-	// Bus over the same txdb connection: WithinTx opens a nested (savepoint)
-	// transaction, so producer writes + outbox inserts roll back with the test.
-	bus := events.New(txDB)
-	// Jobs queued in a bus transaction land in river_job on the same txdb connection, and
-	// roll back with the test; no worker runs them.
-	inserter, err := jobs.NewInserter(txDB)
-	require.NoError(t, err, "build job inserter")
-	bus.UseJobs(inserter)
-
-	// Inline jobs adapter (Rails :inline equivalent): enqueued jobs run
-	// synchronously against capturing senders, so tests assert the real effect.
+	// Captured sends from the inline jobs adapter, for assertions.
 	systemMail := &CapturingSender{}
 	customerMail := &CapturingSender{}
-	capturedModule := capturedmessages.New(cfg.TestInboxMaxMessages)
+	var systemSender messaging.EmailSender = systemMailFrom{systemMail}
+	if st.noSystemFrom {
+		systemSender = struct{ messaging.EmailSender }{systemMail}
+	}
 	// stubTXT keeps sending-domain verification off real DNS: every lookup is
 	// NXDOMAIN, so an inline verify deterministically resolves to "not published".
 	var stubTXT sending.TXTLookup = func(context.Context, string) ([]string, error) {
@@ -423,66 +401,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	if st.txt != nil {
 		stubTXT = st.txt
 	}
-	tracker := tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...)
-	// Cipher (over the fixture-sealing key) and provider catalog for the site
-	// handlers and the inline jobs — mirrors the app's DI singletons, except that
-	// SES's quota lookup is answered by a fake instead of the AWS API.
-	cipher, err := secrets.NewCipher(cfg.EncryptionKey)
-	require.NoError(t, err, "build cipher")
-	lic, err := licensekey.Parse("", licensekey.ProductionKey, time.Now())
-	require.NoError(t, err, "parse empty license")
-	if !st.unlicensed {
-		lic, err = testLicense()
-		require.NoError(t, err, "mint test license")
-	}
-	if st.licensePub != nil {
-		lic, err = licensekey.Load(st.licenseKey, st.licensePub, st.now(), slog.Default())
-		require.NoError(t, err, "load license key")
-		cfg.LicenseKey = st.licenseKey
-	}
-	attempts := accounts.NewAttempts(client,
-		accounts.WithClock(st.now),
-		accounts.WithRateLimits(cfg.RateLimits))
-	limits := abuse.DefaultLimits()
-	if st.volumeFloor > 0 {
-		limits.VolumeFloor = st.volumeFloor
-	}
-	staffMembers := st.staffMembers(t, client, cipher, &cfg, attempts)
-	edition, err := ee.New(client, bus, lic, staffMembers.Sessions(), staff.Config{
-		HoldMaxExpiry: cfg.StaffHoldMaxExpiry, Clock: st.now, Abuse: limits, SupportEmail: cfg.SupportEmail,
-	})
-	require.NoError(t, err, "build edition")
-	useEditionHooks(edition, bus, client, feedClient)
-	outboundOpts := []outbound.Option{outbound.WithTrackingDomains(), outbound.WithTestSendBudget(attempts)}
-	switch {
-	case st.noSystemSender:
-	case st.noSystemFrom:
-		outboundOpts = append(outboundOpts, outbound.WithSystemSender(struct{ messaging.EmailSender }{systemMail}))
-	default:
-		outboundOpts = append(outboundOpts, outbound.WithSystemSender(systemMailFrom{systemMail}))
-	}
-	fakeSES := &FakeSES{}
-	catalog := catalogWith(fakeSES)
-	resolver := inboxResolver{
-		fixed: fixedResolver{sender: customerMail},
-		real:  messaging.NewResolver(cipher, catalog, messaging.WithCapturers(capturedModule.Capturer)),
-	}
-	sender := outbound.New(bus, edition.Holds(), resolver, tracker, outboundOpts...)
-	inline := jobs.NewInline(client, sender, systemMail, domainverify.New(client, stubTXT, nil, accounts.OwnerNotifier(client, systemMail)), cipher, catalog, cfg.AppURL)
-	// The transactional send surface resolves a workspace sender directly (not via
-	// river), so it gets the same capturing resolver — its sends land in CustomerMail.
-	// inline implements every enqueue seam (broadcast, welcome, account mail,
-	// sending-domain verify).
-	// Domain modules, built once here and shared by /site and /api exactly like the
-	// app's DI singletons.
-	eventLog := eventlog.New(bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: st.now})
-	segmentsModule := segments.New(bus)
-	contactsModule := contacts.New(bus)
-	erasureModule := erasure.New(bus)
-	templatesModule := templates.New(Renderer())
-	brandKitModule := brandkit.New(bus, templatesModule)
-	tagsModule := tags.New()
-	webhooksModule := webhooks.New(bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil)
 	// An `sns` Preset checks signatures against the test certificate, so a test posts a
 	// notification signed offline; confirmations are recorded, never fetched. A test with
 	// certificates of its own loads the Presets over them.
@@ -490,69 +408,87 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	if st.certs != nil {
 		presets, err = preset.Load(nil, preset.WithSNSCertificates(st.certs))
 	}
-	if err != nil {
-		t.Fatalf("load presets: %v", err)
-	}
-	confirmations := &Confirmations{}
-	integrationsModule := integrations.New(bus, cipher, catalog, inline, presets, cfg.AppURL, integrations.WithSubscriptionConfirmer(confirmations.confirm))
-	sendingDomainsModule := sendingdomains.New(bus, cipher, inline, cfg.TrackingCNAMETarget)
-	joinDomainsModule := joindomains.New(client, bus, stubTXT, st.now, accounts.OwnerNotifier(client, systemMail))
-	automationsModule := automations.New(cipher, bus, Renderer(), sender)
-	rulesModule := rules.New(cipher, bus)
-	broadcastsModule := broadcasts.New(bus, Renderer(), sender)
-	signupItems := signupitems.New(client, bus, st.now)
-	consentRecords := consentrecords.New(client, bus, signupItems)
-	acc := accounts.New(client, bus, Passwords(), consentRecords)
-	externalDeps := apiexternal.Deps{
-		Clock: st.now, Accounts: acc, Bus: bus, Webhooks: webhooksModule, Outbound: sender,
-		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, Transactional: transactional.New(templatesModule, sender),
-		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule, Reputation: reputation.New(), Integrations: integrationsModule, CapturedMessages: capturedModule, SendingDomains: sendingDomainsModule,
-		BootstrapToken: baseCfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
-	}
-	external, mcpHandler := externalSurfaces(t, client, externalDeps, cfg.MCPOrigin())
+	require.NoError(t, err, "load presets")
 	oauthFetcher := st.oauthFetcher
 	if oauthFetcher == nil {
 		oauthFetcher = oauthserver.NewFetcher(cfg.OutboundAllow)
 	}
-	secondFactor := secondfactor.New(client, bus, cipher, st.now)
-	passkeys, err := secondfactor.NewPasskeys(client, bus, cfg.AppURL, cfg.JWTSecret, st.now)
-	require.NoError(t, err, "build passkeys")
-	source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
-	require.NoError(t, err, "build release source")
-	lapsedAt, _ := edition.LicenseLapsedAt()
-	inst := instance.New(client, instance.EnvironmentOf(&cfg), instance.HostOf(&cfg, st.version, lapsedAt), st.now, instance.WithReleaseSource(source))
-	staffHandler, err := server.NewStaffAPI(staffMembers, signupItems, inst, edition.StaffSections(bus, systemMail))
-	require.NoError(t, err, "build staff API")
-	accountLink, _, err := accountlink.FromConfig(&cfg)
-	require.NoError(t, err, "build account link")
+	fakeSES := &FakeSES{}
 	relay := &FakeRelayRanges{}
-	detector := machine.New(client, relay)
-	handler, err := server.New(&cfg, txDB, migrated, client, apisite.Deps{
-		SignupSurvey:   signupsurvey.New(bus, signupsurvey.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default())),
-		SignupItems:    signupItems,
-		ConsentRecords: consentRecords,
-		Deletion:       workspacedeletion.New(client, bus),
-		AccountLink:    accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
-		Instance: inst,
-		Accounts: acc, Passwords: Passwords(), Attempts: attempts, OAuth: oauthserver.NewService(client, oauthFetcher), Bus: bus, Webhooks: webhooksModule, Outbound: sender,
-		Segments: segmentsModule, EventLog: eventLog, Contacts: contactsModule, Erasure: erasureModule, Tags: tagsModule, Templates: templatesModule, BrandKit: brandKitModule,
-		Automations: automationsModule, Rules: rulesModule, Broadcasts: broadcastsModule,
-		Welcome: inline, SysMail: inline, SendingDomains: sendingDomainsModule, JoinDomains: joinDomainsModule, Integrations: integrationsModule, CapturedMessages: capturedModule,
-		Tokens: authtoken.New(baseCfg.JWTSecret).WithClock(st.now), Tracker: tracker, AppURL: baseCfg.AppURL, Audit: edition.Audit, Analytics: analytics.New().WithClock(st.now).WithRetention(cfg.EventsRetention),
-		SecondFactor:             secondFactor,
-		Passkeys:                 passkeys,
-		Clock:                    st.now,
-		RequireEmailVerification: cfg.RequireEmailVerification,
-		Signin:                   signin.FromConfig(&cfg, st.now, st.signinOpts...),
-	}, detector, external, mcpHandler, staffHandler)
+	confirmations := &Confirmations{}
+
+	injector := app.Container(&cfg)
+	do.OverrideValue(injector, app.Clock(st.now))
+	do.OverrideValue(injector, app.Version(st.version))
+	do.OverrideValue(injector, app.Database{DB: txDB})
+	do.OverrideValue(injector, lic)
+	do.OverrideValue(injector, Passwords())
+	do.OverrideValue(injector, app.SystemSender{EmailSender: systemSender})
+	// SES's quota lookup is answered by a fake instead of the AWS API.
+	do.OverrideValue(injector, catalogWith(fakeSES))
+	do.OverrideValue(injector, stubTXT)
+	do.OverrideValue[machine.Source](injector, relay)
+	do.OverrideValue(injector, presets)
+	do.OverrideValue(injector, Renderer())
+	do.OverrideValue(injector, migrated)
+	// No error-page button that runs the migrations: it would migrate the process's database from
+	// under the test's transaction.
+	do.OverrideValue[apisite.Migrations](injector, nil)
+	do.OverrideValue(injector, app.OAuthFetcher{Doer: oauthFetcher})
+	do.OverrideValue(injector, app.SigninOptions(st.signinOpts))
+	do.OverrideValue(injector, app.IntegrationOptions{integrations.WithSubscriptionConfirmer(confirmations.confirm)})
+	// A Workspace's mail lands in CustomerMail unless its Integration is a Test inbox.
+	do.Override(injector, func(i do.Injector) (outbound.Senders, error) {
+		return inboxResolver{fixed: fixedResolver{sender: customerMail}, real: do.MustInvoke[*messaging.Resolver](i)}, nil
+	})
+	// Inline jobs adapter (Rails :inline equivalent): enqueued jobs run synchronously against
+	// the capturing senders, so tests assert the real effect.
+	do.Override(injector, func(i do.Injector) (app.Enqueuer, error) {
+		client := do.MustInvoke[*ent.Client](i)
+		domains := domainverify.New(client, do.MustInvoke[sending.TXTLookup](i), nil, accounts.OwnerNotifier(client, systemMail))
+		return jobs.NewInline(client, do.MustInvoke[*outbound.Module](i), systemMail, domains, do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i), cfg.AppURL), nil
+	})
+
+	handler, err := do.Invoke[app.Handler](injector)
 	require.NoError(t, err, "build server")
-	internalHandler, err := server.NewInternal(&cfg, client, edition.Service(bus))
+	internal, err := do.Invoke[app.InternalHandler](injector)
 	require.NoError(t, err, "build internal handler")
+	edition := do.MustInvoke[*ee.Edition](injector)
+
+	// The client of a test's own writes of rows the feeds watch, on the same transaction, with
+	// the Edition's hooks like every other client.
+	feedClient := db.NewEntClientOnTx(txDB)
+	feedClient.Use(ee.Hooks(lic, st.now)...)
 
 	return &TestEnv{
-		sender:   sender,
-		Instance: inst, AppURL: cfg.AppURL, DB: client, FeedDB: feedClient, SQLDB: txDB, Bus: bus, Server: handler, Internal: internalHandler, Tracker: tracker, Cipher: cipher, Integrations: integrationsModule, ConsentRecords: consentRecords, jwtSecret: baseCfg.JWTSecret, edition: edition, orders: orders.New(), Holds: edition.Holds(), now: st.now, sessionTTL: cfg.SessionTTL,
-		SystemMail: systemMail, CustomerMail: customerMail, SES: fakeSES, Machine: detector, PrivateRelay: relay, Confirmations: confirmations, SecondFactor: secondFactor, StaffMembers: staffMembers, StaffEnterprise: edition.Staff,
+		Instance:        do.MustInvoke[*instance.Module](injector),
+		AppURL:          cfg.AppURL,
+		DB:              do.MustInvoke[*ent.Client](injector),
+		FeedDB:          feedClient,
+		SQLDB:           txDB,
+		Bus:             do.MustInvoke[*events.Bus](injector),
+		Server:          handler.Handler,
+		Internal:        internal.Handler,
+		Tracker:         do.MustInvoke[*tracking.Tracker](injector),
+		Cipher:          do.MustInvoke[*secrets.Cipher](injector),
+		Integrations:    do.MustInvoke[*integrations.Module](injector),
+		ConsentRecords:  do.MustInvoke[*consentrecords.Module](injector),
+		Holds:           do.MustInvoke[*holds.Holds](injector),
+		orders:          do.MustInvoke[*orders.Module](injector),
+		edition:         edition,
+		sender:          do.MustInvoke[*outbound.Module](injector),
+		jwtSecret:       cfg.JWTSecret,
+		now:             st.now,
+		sessionTTL:      cfg.SessionTTL,
+		SystemMail:      systemMail,
+		CustomerMail:    customerMail,
+		SES:             fakeSES,
+		Machine:         do.MustInvoke[*machine.Detector](injector),
+		PrivateRelay:    relay,
+		Confirmations:   confirmations,
+		SecondFactor:    do.MustInvoke[*secondfactor.Module](injector),
+		StaffMembers:    do.MustInvoke[*staffmembers.Module](injector),
+		StaffEnterprise: edition.Staff,
 	}
 }
 
@@ -699,12 +635,3 @@ var migrated = db.WatchSchema(func(context.Context) (int, error) { return 0, nil
 var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
 	return preset.Load(nil, preset.WithSNSCertificates(preset.TestSNSCertificates))
 })
-
-// useEditionHooks installs the Edition's ent hooks on the clients and on every transaction the
-// bus opens, as the composition root does.
-func useEditionHooks(edition *ee.Edition, bus *events.Bus, clients ...*ent.Client) {
-	for _, c := range clients {
-		c.Use(edition.Hooks()...)
-	}
-	bus.Use(edition.Hooks()...)
-}

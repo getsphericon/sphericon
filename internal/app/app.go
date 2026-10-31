@@ -4,91 +4,37 @@ package app
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/samber/do/v2"
-	"go.opentelemetry.io/otel/metric"
 
-	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
-	"github.com/getsphericon/sphericon/ee/abuse"
-	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ee/staff"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/user"
-	"github.com/getsphericon/sphericon/internal/accountlink"
 	"github.com/getsphericon/sphericon/internal/accounts"
-	"github.com/getsphericon/sphericon/internal/analytics"
-	apiexternal "github.com/getsphericon/sphericon/internal/api/external"
-	apisite "github.com/getsphericon/sphericon/internal/api/site"
-	"github.com/getsphericon/sphericon/internal/authtoken"
-	"github.com/getsphericon/sphericon/internal/automations"
-	"github.com/getsphericon/sphericon/internal/brandkit"
-	"github.com/getsphericon/sphericon/internal/broadcasts"
-	"github.com/getsphericon/sphericon/internal/buildinfo"
-	"github.com/getsphericon/sphericon/internal/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/cleanup"
-	"github.com/getsphericon/sphericon/internal/consentrecords"
-	"github.com/getsphericon/sphericon/internal/contacts"
-	"github.com/getsphericon/sphericon/internal/credentials"
-	"github.com/getsphericon/sphericon/internal/db"
 	"github.com/getsphericon/sphericon/internal/domainverify"
 	"github.com/getsphericon/sphericon/internal/emaildoc"
-	"github.com/getsphericon/sphericon/internal/erasure"
-	"github.com/getsphericon/sphericon/internal/eventlog"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/i18n"
 	"github.com/getsphericon/sphericon/internal/instance"
-	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/joindomains"
-	"github.com/getsphericon/sphericon/internal/machine"
-	"github.com/getsphericon/sphericon/internal/mcpserver"
-	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/messaging/registry"
-	"github.com/getsphericon/sphericon/internal/messaging/systemmail"
-	"github.com/getsphericon/sphericon/internal/oauthserver"
-	"github.com/getsphericon/sphericon/internal/orders"
-	"github.com/getsphericon/sphericon/internal/outbound"
 	"github.com/getsphericon/sphericon/internal/preset"
 	"github.com/getsphericon/sphericon/internal/rekey"
-	"github.com/getsphericon/sphericon/internal/reputation"
-	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/secondfactor"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/segments"
 	"github.com/getsphericon/sphericon/internal/sending"
-	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/sidelistener"
-	"github.com/getsphericon/sphericon/internal/signin"
-	"github.com/getsphericon/sphericon/internal/signupitems"
-	"github.com/getsphericon/sphericon/internal/signupsurvey"
 	"github.com/getsphericon/sphericon/internal/staffmembers"
 	"github.com/getsphericon/sphericon/internal/suspension"
-	"github.com/getsphericon/sphericon/internal/tags"
 	"github.com/getsphericon/sphericon/internal/telemetry"
-	"github.com/getsphericon/sphericon/internal/templates"
-	"github.com/getsphericon/sphericon/internal/tracking"
-	"github.com/getsphericon/sphericon/internal/trackingdomain"
-	"github.com/getsphericon/sphericon/internal/transactional"
-	"github.com/getsphericon/sphericon/internal/upgrade"
-	"github.com/getsphericon/sphericon/internal/webhook"
-	"github.com/getsphericon/sphericon/internal/webhooks"
-	"github.com/getsphericon/sphericon/internal/workspacedeletion"
-
-	// The pgx driver behind database/sql.
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type App struct {
@@ -114,116 +60,6 @@ type App struct {
 	jobsStarted    bool // river's Start was attempted: its Stopped channel closes on success and on failure
 	done           chan error
 	shutdownReport *do.ShutdownReport
-}
-
-type sqlDB struct {
-	*sql.DB
-}
-
-func (d *sqlDB) Shutdown() error {
-	return d.Close()
-}
-
-type entClient struct {
-	*ent.Client
-}
-
-func (c *entClient) Shutdown() error {
-	return c.Close()
-}
-
-// eventsRuntime is the consume side of the domain-event system: the watermill
-// router hosting the persist/automations/webhooks subscribers. (The produce side
-// is eventsBus.) Start runs the router; Shutdown closes it.
-type eventsRuntime struct {
-	router *message.Router
-}
-
-func (e *eventsRuntime) Shutdown() error {
-	// A router that never ran has nothing to drain, and Close would wait out its
-	// timeout for handlers that were never started.
-	if !e.router.IsRunning() && !e.router.IsClosed() {
-		return nil
-	}
-	return e.router.Close()
-}
-
-// eventsBus is the producer side of the domain-event system (transactional
-// outbox over the database/sql pool). No Shutdown: it borrows the sqlDB pool.
-type eventsBus struct {
-	*events.Bus
-}
-
-// systemSender is sphericon's own (platform) transactional email sender, built from
-// config via the messaging catalog. Distinct from a workspace's customer sender.
-type systemSender struct {
-	messaging.EmailSender
-}
-
-// trackingVerifier checks Tracking domain CNAMEs against the configured edge host; nil
-// while SPHERICON_TRACKING_CNAME_TARGET is unset (ADR 0038).
-func trackingVerifier(cfg *config.Config, bus *events.Bus) *trackingdomain.Verifier {
-	if cfg.TrackingCNAMETarget == "" {
-		return nil
-	}
-	return &trackingdomain.Verifier{
-		Lookup: dnsResolver(cfg.DNSAddr).LookupCNAME,
-		Target: cfg.TrackingCNAMETarget,
-		Now:    time.Now,
-		// The SSRF-guarded client: a customer's DNS names the host the probe dials.
-		HTTP:   webhook.NewClient(trackingProbeTimeout),
-		Secret: cfg.JWTSecret,
-		Events: bus,
-	}
-}
-
-// trackingProbeTimeout bounds one HTTPS probe of a Tracking domain.
-const trackingProbeTimeout = 10 * time.Second
-
-// dkimLookup is the DI-provided DKIM DNS resolver for sending-domain
-// verification (ADR 0010). The composition root is the single place that decides
-// the implementation — real DNS in prod, a seeded-domain-trusting stub in dev —
-// so nothing downstream branches on the environment.
-type dkimLookup struct {
-	sending.TXTLookup
-}
-
-// riverPool is the database/sql pool river runs on (separate from the one the ent
-// client and pubsub use, so job workers cannot starve the API).
-type riverPool struct {
-	*sql.DB
-
-	metrics metric.Registration
-}
-
-func (p *riverPool) Shutdown() {
-	cleanup.Report("unregister the pool metrics", p.metrics.Unregister())
-	cleanup.Close(p, "the job queue pool")
-}
-
-// jobsClient is the river-backed async job queue (workers + enqueue API).
-// outboundModule is the Outbound send module singleton (ADR 0015): the one place an
-// email leaves sphericon on a Workspace's behalf, for every send surface.
-type outboundModule struct{ *outbound.Module }
-
-// externalAPI is the external (/api) ogen server; the MCP surface dispatches through it.
-type externalAPI struct{ http.Handler }
-
-// internalHandler is the internal listener's handler: the TLS ask always, /service with
-// the `staff` license (ADR 0026, ADR 0038).
-type internalHandler struct{ http.Handler }
-
-// mcpHandler is the /mcp surface (ADR 0016), projected from the external contract.
-type mcpHandler struct{ http.Handler }
-
-type jobsClient struct {
-	*jobs.Client
-}
-
-func (j *jobsClient) Shutdown() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	return j.Stop(ctx)
 }
 
 // Option customises how New builds the App.
@@ -253,6 +89,8 @@ func WithListener(ln net.Listener) Option {
 	return func(o *options) { o.listener = ln }
 }
 
+// New loads the configuration of env and builds the App on it. An end-to-end-only option is
+// refused before anything is loaded.
 func New(env string, opts ...Option) (*App, error) {
 	var o options
 	for _, opt := range opts {
@@ -261,52 +99,57 @@ func New(env string, opts ...Option) (*App, error) {
 	if o.e2eDKIMLookup && env != config.EnvE2E {
 		return nil, ErrE2EOnly
 	}
-	injector := do.New()
-	register(injector, env, o)
-
-	cfg, err := do.Invoke[*config.Config](injector)
+	cfg, err := config.Load(env)
 	if err != nil {
-		return nil, abort(injector, err)
+		return nil, err
+	}
+	return newApp(cfg, o)
+}
+
+// newApp builds the App over a configuration already loaded (Serve loads it once, for the
+// logger and the telemetry too): the container, then every singleton a running server needs,
+// so a broken one fails here rather than on the first request.
+func newApp(cfg *config.Config, o options) (*App, error) {
+	if o.listener != nil {
+		own := *cfg
+		own.UseListener(o.listener.Addr())
+		cfg = &own
+	}
+	injector := Container(cfg)
+	if o.e2eDKIMLookup {
+		// The e2e suite's domains self-verify through DevTXTLookup, which echoes a Sending
+		// domain's own stored key.
+		do.Override(injector, func(i do.Injector) (sending.TXTLookup, error) {
+			return domainverify.DevTXTLookup(do.MustInvoke[*ent.Client](i)), nil
+		})
 	}
 
 	// Set the process-wide locale for system emails and API validation messages
 	// (internal/i18n). Instance-global, read-only after this point.
 	i18n.Configure(cfg.Locale)
 
-	handler, err := do.Invoke[http.Handler](injector)
+	handler, err := do.Invoke[Handler](injector)
 	if err != nil {
 		return nil, abort(injector, err)
 	}
-
 	// The Presets load at start: a broken custom file stops it here, not on a callback.
 	if _, err := do.Invoke[*preset.Registry](injector); err != nil {
 		return nil, abort(injector, err)
 	}
-
 	evRuntime, err := do.Invoke[*eventsRuntime](injector)
 	if err != nil {
 		return nil, abort(injector, err)
 	}
-
 	jobsCli, err := do.Invoke[*jobsClient](injector)
 	if err != nil {
 		return nil, abort(injector, err)
 	}
-
-	// Operational gauges (outbox lag, queue depth). They read on scrape through the
-	// shared pools and live for the process, so they are never unregistered.
-	client, err := do.Invoke[*entClient](injector)
-	if err != nil {
+	// Operational gauges (outbox lag, queue depth), read on scrape; the container takes them
+	// off the meter when it shuts down.
+	if _, err := do.Invoke[*outboxLagGauge](injector); err != nil {
 		return nil, abort(injector, err)
 	}
-	pool, err := do.Invoke[*riverPool](injector)
-	if err != nil {
-		return nil, abort(injector, err)
-	}
-	if _, err := events.RegisterLagGauge(client.Client); err != nil {
-		return nil, abort(injector, err)
-	}
-	if _, err := jobs.RegisterQueueMetrics(pool.DB); err != nil {
+	if _, err := do.Invoke[*queueDepthGauge](injector); err != nil {
 		return nil, abort(injector, err)
 	}
 
@@ -320,7 +163,7 @@ func New(env string, opts ...Option) (*App, error) {
 	// `staff` license (ADR 0026).
 	var internal *sidelistener.Server
 	if cfg.InternalAddr != "" {
-		ih, err := do.Invoke[*internalHandler](injector)
+		ih, err := do.Invoke[InternalHandler](injector)
 		if err != nil {
 			return nil, abort(injector, err)
 		}
@@ -362,15 +205,12 @@ var ErrAlreadyStarted = errors.New("app: already started")
 // workers. Providers are lazy, so only what a command invokes is ever constructed;
 // that keeps `sphericon workspace …` quick to start and to shut down.
 func NewCommandApp(env string) (*App, error) {
-	injector := do.New()
-	register(injector, env, options{})
-
-	cfg, err := do.Invoke[*config.Config](injector)
+	cfg, err := config.Load(env)
 	if err != nil {
-		return nil, abort(injector, err)
+		return nil, err
 	}
 	i18n.Configure(cfg.Locale)
-	return &App{Config: cfg, injector: injector}, nil
+	return &App{Config: cfg, injector: Container(cfg)}, nil
 }
 
 // abort shuts a container down after a start that failed, and returns the error that failed it.
@@ -576,23 +416,23 @@ func (a *App) runJobs(ctx context.Context) error {
 // already-suspended Workspace is left as it was and the owner is not told twice. If
 // the notice cannot be sent the suspension still stands and the error says so.
 func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspension.Actor, reason string) (bool, error) {
-	client, err := do.Invoke[*entClient](a.injector)
+	client, err := do.Invoke[*ent.Client](a.injector)
 	if err != nil {
 		return false, err
 	}
-	id, err := accounts.WorkspaceIDByPublicID(ctx, client.Client, publicID)
+	id, err := accounts.WorkspaceIDByPublicID(ctx, client, publicID)
 	if err != nil {
 		return false, err
 	}
-	bus, err := do.Invoke[*eventsBus](a.injector)
+	bus, err := do.Invoke[*events.Bus](a.injector)
 	if err != nil {
 		return false, err
 	}
-	changed, err := suspension.SuspendWorkspace(ctx, bus.Bus, id, by, reason)
+	changed, err := suspension.SuspendWorkspace(ctx, bus, id, by, reason)
 	if err != nil || !changed {
 		return changed, err
 	}
-	sys, err := do.Invoke[*systemSender](a.injector)
+	sys, err := do.Invoke[SystemSender](a.injector)
 	if err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
@@ -600,7 +440,7 @@ func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspensi
 	if err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
-	if err := suspension.NotifyOwners(ctx, client.Client, accounts.OwnerNotifier(client.Client, sys.EmailSender), cfg.SupportEmail, id); err != nil {
+	if err := suspension.NotifyOwners(ctx, client, accounts.OwnerNotifier(client, sys.EmailSender), cfg.SupportEmail, id); err != nil {
 		return true, fmt.Errorf("workspace suspended, but the owner notice could not be sent: %w", err)
 	}
 	return true, nil
@@ -608,19 +448,19 @@ func (a *App) SuspendWorkspace(ctx context.Context, publicID string, by suspensi
 
 // UnsuspendWorkspace lifts a Workspace's suspension; held sends resume on their own.
 func (a *App) UnsuspendWorkspace(ctx context.Context, publicID string, by suspension.Actor) (bool, error) {
-	client, err := do.Invoke[*entClient](a.injector)
+	client, err := do.Invoke[*ent.Client](a.injector)
 	if err != nil {
 		return false, err
 	}
-	id, err := accounts.WorkspaceIDByPublicID(ctx, client.Client, publicID)
+	id, err := accounts.WorkspaceIDByPublicID(ctx, client, publicID)
 	if err != nil {
 		return false, err
 	}
-	bus, err := do.Invoke[*eventsBus](a.injector)
+	bus, err := do.Invoke[*events.Bus](a.injector)
 	if err != nil {
 		return false, err
 	}
-	return suspension.UnsuspendWorkspace(ctx, bus.Bus, id, by)
+	return suspension.UnsuspendWorkspace(ctx, bus, id, by)
 }
 
 // ResetSecondFactor clears the Second factor and Recovery codes of the User with
@@ -628,7 +468,7 @@ func (a *App) UnsuspendWorkspace(ctx context.Context, publicID string, by suspen
 // `user.second_factor_reset` by the Staff member "cli" in each of their Workspaces. It
 // reports whether anything changed: a User without a Second factor is left as is.
 func (a *App) ResetSecondFactor(ctx context.Context, email string) (bool, error) {
-	client, err := do.Invoke[*entClient](a.injector)
+	client, err := do.Invoke[*ent.Client](a.injector)
 	if err != nil {
 		return false, err
 	}
@@ -728,11 +568,7 @@ func (a *App) Accounts() (*accounts.Accounts, error) {
 // Bus is the event bus from the DI container, for harnesses that must change data
 // inside a transaction (events.Bus.WithinScopedTx) like the product's own write paths.
 func (a *App) Bus() (*events.Bus, error) {
-	b, err := do.Invoke[*eventsBus](a.injector)
-	if err != nil {
-		return nil, err
-	}
-	return b.Bus, nil
+	return do.Invoke[*events.Bus](a.injector)
 }
 
 func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
@@ -742,1094 +578,10 @@ func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {
 	return a.shutdownReport
 }
 
-// register provides every singleton of the container, grouped by what it wires.
-func register(injector do.Injector, env string, o options) {
-	registerStorage(injector, env, o)
-	registerMessaging(injector, o)
-	registerStaffMembers(injector)
-	registerEvents(injector)
-	registerJobs(injector)
-	registerDelivery(injector)
-	registerAccounts(injector)
-	registerAudience(injector)
-	registerContent(injector)
-	registerSurfaces(injector)
-	registerHandler(injector)
-}
-
-// registerStorage provides the configuration, the Presets and the database.
-func registerStorage(injector do.Injector, env string, o options) {
-	do.Provide(injector, func(do.Injector) (*config.Config, error) {
-		cfg, err := config.Load(env)
-		if err != nil {
-			return nil, err
-		}
-		if o.listener != nil {
-			cfg.UseListener(o.listener.Addr())
-		}
-		return cfg, nil
-	})
-
-	// The Presets of the Instance: the built-in ones and the Self-hoster's directory.
-	do.Provide(injector, func(i do.Injector) (*preset.Registry, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		if cfg.PresetsDir == "" {
-			return preset.Load(nil)
-		}
-		if _, err := os.Stat(cfg.PresetsDir); err != nil {
-			return nil, fmt.Errorf("SPHERICON_PRESETS_DIR: %w", err)
-		}
-		return preset.Load(os.DirFS(cfg.PresetsDir))
-	})
-
-	do.Provide(injector, func(i do.Injector) (*sqlDB, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-
-		database, err := sql.Open("pgx", cfg.DatabaseURL)
-		if err != nil {
-			return nil, err
-		}
-
-		db.ConfigurePool(database, cfg.DBPool)
-
-		return &sqlDB{DB: database}, nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*entClient, error) {
-		database, err := do.Invoke[*sqlDB](i)
-		if err != nil {
-			return nil, err
-		}
-
-		return &entClient{Client: db.NewEntClient(database.DB)}, nil
-	})
-}
-
-// registerMessaging provides the email providers, the credential cipher and the senders.
-func registerMessaging(injector do.Injector, o options) {
-	// Shared, stateless singletons — provided once and injected, rather than
-	// rebuilt per consumer. The provider catalog (registry of email providers),
-	// the Tink cipher (credential encryption; fails fast at boot on a bad key),
-	// and the workspace→sender resolver built from them.
-	do.Provide(injector, func(i do.Injector) (*messaging.Catalog, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return registry.New(cfg.SMTPAllowPrivateHosts), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*secrets.Cipher, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return secrets.NewCipher(cfg.EncryptionKey)
-	})
-
-	do.Provide(injector, func(i do.Injector) (*messaging.Resolver, error) {
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		catalog, err := do.Invoke[*messaging.Catalog](i)
-		if err != nil {
-			return nil, err
-		}
-		captured, err := do.Invoke[*capturedmessages.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		return messaging.NewResolver(cipher, catalog, messaging.WithCapturers(captured.Capturer)), nil
-	})
-
-	// The Test inbox keeps its messages here; the resolver binds it to a Workspace and an
-	// Integration, and the site API reads it.
-	do.Provide(injector, func(i do.Injector) (*capturedmessages.Module, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return capturedmessages.New(cfg.TestInboxMaxMessages), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*systemSender, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		// The platform's own SMTP relay is self-hoster-configured, not tenant input, so it may
-		// be a private host even where Workspace Integrations may not.
-		sender, err := systemmail.Sender(cfg, registry.Default())
-		if err != nil {
-			return nil, err
-		}
-		return &systemSender{EmailSender: sender}, nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*dkimLookup, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		// Every Instance verifies against published DNS records (ADR 0010); the e2e suite's
-		// domains self-verify through DevTXTLookup. A development stack points the resolver at
-		// its own DNS server (SPHERICON_DNS_ADDR) that publishes the Brightpath demo records.
-		if o.e2eDKIMLookup {
-			client, err := do.Invoke[*entClient](i)
-			if err != nil {
-				return nil, err
-			}
-			return &dkimLookup{TXTLookup: domainverify.DevTXTLookup(client.Client)}, nil
-		}
-		return &dkimLookup{TXTLookup: dnsResolver(cfg.DNSAddr).LookupTXT}, nil
-	})
-}
-
-// requireStaffLicenseForSaaS refuses a saas Instance without the `staff` license (ADR 0060): the
-// Mode unlocks nothing, so without the key the Instance would run with no Staff surface at all.
-func requireStaffLicenseForSaaS(mode config.Mode, lic *licensekey.License) error {
-	if mode.SaaS() && !lic.Has(licensekey.FeatureStaff) {
-		return errors.New("SPHERICON_MODE=saas needs a license key with the `staff` feature in SPHERICON_LICENSE_KEY")
-	}
-	return nil
-}
-
-// registerStaffMembers provides the Staff member module.
-func registerStaffMembers(injector do.Injector) {
-	// The Staff member (ADR 0026, ADR 0063): its store, sign-in and sessions, on every
-	// Instance; the sign-in is off without SPHERICON_STAFF_JWT_SECRET.
-	do.Provide(injector, func(i do.Injector) (*staffmembers.Module, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		attempts, err := do.Invoke[*accounts.Attempts](i)
-		if err != nil {
-			return nil, err
-		}
-		passwords, err := do.Invoke[*credentials.Hasher](i)
-		if err != nil {
-			return nil, err
-		}
-		return staffmembers.New(client.Client, cipher, cfg.JWTSecrets(), staffmembers.Config{
-			Secret: cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, SecureCookies: cfg.SecureCookies(), Attempts: attempts, Passwords: passwords,
-		})
-	})
-	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
-	do.Provide(injector, func(i do.Injector) (*signupitems.Module, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		return signupitems.New(client.Client, bus.Bus, nil), nil
-	})
-	// The Users' Consent records on those items (ADR 0062).
-	do.Provide(injector, func(i do.Injector) (*consentrecords.Module, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		items, err := do.Invoke[*signupitems.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		return consentrecords.New(client.Client, bus.Bus, items), nil
-	})
-}
-
-// registerEvents provides the Enterprise Edition and the domain-event bus.
-func registerEvents(injector do.Injector) {
-	// The runtime license key (ADR 0014). An empty or expired key is the plain core
-	// (ADR 0035); a malformed or forged one fails boot.
-	do.Provide(injector, func(i do.Injector) (*licensekey.License, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		lic, err := licensekey.Load(cfg.LicenseKey, licensekey.VerifyingKey(cfg.TrustsDevLicense()), time.Now(), slog.Default())
-		if err != nil {
-			return nil, err
-		}
-		if err := requireStaffLicenseForSaaS(cfg.Mode, lic); err != nil {
-			return nil, err
-		}
-		return lic, nil
-	})
-
-	// The Enterprise Edition (ADR 0014): what the license key switches on.
-	do.Provide(injector, func(i do.Injector) (*ee.Edition, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		lic, err := do.Invoke[*licensekey.License](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		members, err := do.Invoke[*staffmembers.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		edition, err := ee.New(client.Client, bus.Bus, lic, members.Sessions(), staff.Config{
-			Abuse:         abuse.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
-			SupportEmail:  cfg.SupportEmail,
-			HoldMaxExpiry: cfg.StaffHoldMaxExpiry,
-		})
-		if err != nil {
-			return nil, err
-		}
-		client.Use(edition.Hooks()...)
-		return edition, nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*eventsRuntime, error) {
-		database, err := do.Invoke[*sqlDB](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		edition, err := do.Invoke[*ee.Edition](i)
-		if err != nil {
-			return nil, err
-		}
-		jc, err := do.Invoke[*jobsClient](i)
-		if err != nil {
-			return nil, err
-		}
-
-		// Domain events: build the router and register the consumers (the outbox tables
-		// come from the migrations). The automations subscriber enrolls and the webhooks
-		// subscriber dispatches via the river client.
-		router, err := events.NewRouter()
-		if err != nil {
-			return nil, err
-		}
-		if err := events.RegisterSubscribers(router, database.DB, client.Client, jc.Client, jc.Client, edition.Webhooks(jc.Client), orders.New(), edition.Consumers); err != nil {
-			return nil, err
-		}
-		return &eventsRuntime{router: router}, nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*eventsBus, error) {
-		database, err := do.Invoke[*sqlDB](i)
-		if err != nil {
-			return nil, err
-		}
-		lic, err := do.Invoke[*licensekey.License](i)
-		if err != nil {
-			return nil, err
-		}
-		bus := events.New(database.DB)
-		// The Edition's ent hooks on every transaction the bus opens; the Edition itself
-		// is built after the bus, which its Audit log records through.
-		bus.Use(ee.Hooks(lic, time.Now)...)
-		inserter, err := jobs.NewInserter(database.DB)
-		if err != nil {
-			return nil, err
-		}
-		bus.UseJobs(inserter)
-		return &eventsBus{Bus: bus}, nil
-	})
-}
-
-// registerJobs provides the job queue: its connection pool and its client.
-func registerJobs(injector do.Injector) {
-	do.Provide(injector, func(i do.Injector) (*riverPool, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		database, err := do.Invoke[*sqlDB](i)
-		if err != nil {
-			return nil, err
-		}
-		pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
-		if err != nil {
-			return nil, err
-		}
-		reg, err := db.RegisterPoolMetrics(database.DB, pool)
-		if err != nil {
-			cleanup.Close(pool, "the job queue pool")
-			return nil, err
-		}
-		return &riverPool{DB: pool, metrics: reg}, nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*jobsClient, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		pool, err := do.Invoke[*riverPool](i)
-		if err != nil {
-			return nil, err
-		}
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		sys, err := do.Invoke[*systemSender](i)
-		if err != nil {
-			return nil, err
-		}
-		sender, err := do.Invoke[*outboundModule](i)
-		if err != nil {
-			return nil, err
-		}
-
-		lookup, err := do.Invoke[*dkimLookup](i)
-		if err != nil {
-			return nil, err
-		}
-		edition, err := do.Invoke[*ee.Edition](i)
-		if err != nil {
-			return nil, err
-		}
-		catalog, err := do.Invoke[*messaging.Catalog](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		inst, err := do.Invoke[*instance.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		reporter, err := instance.NewSender(inst, cfg)
-		if err != nil {
-			return nil, err
-		}
-		detector, err := do.Invoke[*machine.Detector](i)
-		if err != nil {
-			return nil, err
-		}
-		jc, err := jobs.NewClient(pool.DB, client.Client, sender.Module, cipher, bus.Bus, sys.EmailSender, lookup.TXTLookup, trackingVerifier(cfg, bus.Bus), catalog, cfg.AppURL, cfg.OutboundAllow, detector,
-			jobs.Retention{OutboxFloor: cfg.OutboxFloor, Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
-			edition.Jobs(bus.Bus, sys.EmailSender), edition.ExportJobs(cfg.EventsRetention), inst.Jobs(), reporter.Jobs())
-		if err != nil {
-			return nil, err
-		}
-		return &jobsClient{Client: jc}, nil
-	})
-}
-
-// registerDelivery provides the link tokens, machine detection and outbound send.
-func registerDelivery(injector do.Injector) {
-	// The signed-token authority for tracking, unsubscribe and confirmation links:
-	// one instance, so every surface mints and verifies with the same secret.
-	do.Provide(injector, func(i do.Injector) (*tracking.Tracker, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return tracking.New(cfg.JWTSecret, cfg.AppURL, cfg.JWTVerifySecrets()...), nil
-	})
-
-	// The development schema guard's view of the migrations the database has not run (ADR 0033):
-	// one per process, so a migration run from the error page clears what SchemaGuard cached.
-	do.Provide(injector, func(i do.Injector) (*db.SchemaWatch, error) {
-		database, err := do.Invoke[*sqlDB](i)
-		if err != nil {
-			return nil, err
-		}
-		return db.NewSchemaWatch(database.DB), nil
-	})
-
-	// Machine engagement (ADR 0053): the detector tracking judges hits by and the refresh job
-	// keeps current, over Apple's published Private Relay list.
-	do.Provide(injector, func(i do.Injector) (*machine.Detector, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		return machine.New(client.Client, machine.NewHTTPSource()), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*outboundModule, error) {
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		// The workspace's configured integration (the same resolver the jobs use).
-		resolver, err := do.Invoke[*messaging.Resolver](i)
-		if err != nil {
-			return nil, err
-		}
-		tracker, err := do.Invoke[*tracking.Tracker](i)
-		if err != nil {
-			return nil, err
-		}
-		edition, err := do.Invoke[*ee.Edition](i)
-		if err != nil {
-			return nil, err
-		}
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		attempts, err := do.Invoke[*accounts.Attempts](i)
-		if err != nil {
-			return nil, err
-		}
-		opts := []outbound.Option{outbound.WithTestSendBudget(attempts)}
-		if cfg.SystemMailConfigured() {
-			sys, err := do.Invoke[*systemSender](i)
-			if err != nil {
-				return nil, err
-			}
-			opts = append(opts, outbound.WithSystemSender(sys.EmailSender))
-		}
-		if cfg.TrackingCNAMETarget != "" {
-			opts = append(opts, outbound.WithTrackingDomains())
-		}
-		return &outboundModule{outbound.New(bus.Bus, edition.Holds(), resolver, tracker, opts...)}, nil
-	})
-}
-
-// registerAccounts provides Accounts, the Workspace and Instance modules and the second factor.
-func registerAccounts(injector do.Injector) {
-	// One password hasher for every password a User or a Staff member sets.
-	do.Provide(injector, func(do.Injector) (*credentials.Hasher, error) {
-		return credentials.NewHasher(), nil
-	})
-	// Accounts is the raw-client home of Users, Workspaces and Memberships (ADR 0017).
-	do.Provide(injector, func(i do.Injector) (*accounts.Accounts, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		passwords, err := do.Invoke[*credentials.Hasher](i)
-		if err != nil {
-			return nil, err
-		}
-		consents, err := do.Invoke[*consentrecords.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		return accounts.New(client.Client, bus.Bus, passwords, consents), nil
-	})
-
-	// The Workspace deletion cycle (ADR 0043), over the raw client.
-	do.Provide(injector, func(i do.Injector) (*workspacedeletion.Module, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		return workspacedeletion.New(client.Client, bus.Bus), nil
-	})
-
-	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
-	// client.
-	do.Provide(injector, func(i do.Injector) (*instance.Module, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
-		if err != nil {
-			return nil, err
-		}
-		edition, err := do.Invoke[*ee.Edition](i)
-		if err != nil {
-			return nil, err
-		}
-		lapsedAt, _ := edition.LicenseLapsedAt()
-		return instance.New(client.Client, instance.EnvironmentOf(cfg), instance.HostOf(cfg, buildinfo.Current().Version, lapsedAt), nil, instance.WithReleaseSource(source)), nil
-	})
-
-	// Attempts counts failed logins per account (ADR 0025) over the raw client.
-	do.Provide(injector, func(i do.Injector) (*accounts.Attempts, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		return accounts.NewAttempts(client.Client, accounts.WithRateLimits(cfg.RateLimits)), nil
-	})
-	do.Provide(injector, func(i do.Injector) (*secondfactor.Module, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		return secondfactor.New(client.Client, bus.Bus, cipher, nil), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*secondfactor.Passkeys, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		return secondfactor.NewPasskeys(client.Client, bus.Bus, cfg.AppURL, cfg.JWTSecret, nil)
-	})
-}
-
-// registerAudience provides the domain modules of the audience and its integrations.
-func registerAudience(injector do.Injector) {
-	// Domain modules: each built once and shared by /site, /api and /mcp, so the
-	// surfaces cannot diverge on how a module is constructed.
-	do.Provide(injector, func(i do.Injector) (*segments.Module, error) {
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		return segments.New(bus.Bus), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*contacts.Module, error) {
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		return contacts.New(bus.Bus), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*erasure.Module, error) {
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		return erasure.New(bus.Bus), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*integrations.Module, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		presets, err := do.Invoke[*preset.Registry](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		catalog, err := do.Invoke[*messaging.Catalog](i)
-		if err != nil {
-			return nil, err
-		}
-		jc, err := do.Invoke[*jobsClient](i)
-		if err != nil {
-			return nil, err
-		}
-		return integrations.New(bus.Bus, cipher, catalog, jc.Client, presets, cfg.AppURL), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*sendingdomains.Module, error) {
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		jc, err := do.Invoke[*jobsClient](i)
-		if err != nil {
-			return nil, err
-		}
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return sendingdomains.New(bus.Bus, cipher, jc.Client, cfg.TrackingCNAMETarget), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*joindomains.Module, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		lookup, err := do.Invoke[*dkimLookup](i)
-		if err != nil {
-			return nil, err
-		}
-		sys, err := do.Invoke[*systemSender](i)
-		if err != nil {
-			return nil, err
-		}
-		return joindomains.New(client.Client, bus.Bus, lookup.TXTLookup, time.Now, accounts.OwnerNotifier(client.Client, sys.EmailSender)), nil
-	})
-}
-
-// registerContent provides the domain modules of content, automation and sending.
-func registerContent(injector do.Injector) {
-	// One document renderer for every save that holds a document; the server warms it at start.
-	do.Provide(injector, func(do.Injector) (*emaildoc.Renderer, error) {
-		return emaildoc.New(), nil
-	})
-	do.Provide(injector, func(i do.Injector) (*templates.Module, error) {
-		renderer, err := do.Invoke[*emaildoc.Renderer](i)
-		if err != nil {
-			return nil, err
-		}
-		return templates.New(renderer), nil
-	})
-	do.Provide(injector, func(i do.Injector) (*brandkit.Module, error) {
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		tpl, err := do.Invoke[*templates.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		return brandkit.New(bus.Bus, tpl), nil
-	})
-	do.Provide(injector, func(do.Injector) (*tags.Module, error) {
-		return tags.New(), nil
-	})
-
-	// Webhooks: the audit.entry rule asks the Edition whether the license is active.
-	do.Provide(injector, func(i do.Injector) (*webhooks.Module, error) {
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		edition, err := do.Invoke[*ee.Edition](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return webhooks.New(bus.Bus, cipher, edition.Audit, webhook.NewClientAllowing(webhooks.TestSendTimeout, cfg.OutboundAllow), nil), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*automations.Module, error) {
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		renderer, err := do.Invoke[*emaildoc.Renderer](i)
-		if err != nil {
-			return nil, err
-		}
-		// Publish asks the Send route of Outbound send whether the email steps can send.
-		sender, err := do.Invoke[*outboundModule](i)
-		if err != nil {
-			return nil, err
-		}
-		return automations.New(cipher, bus.Bus, renderer, sender.Module), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*rules.Module, error) {
-		cipher, err := do.Invoke[*secrets.Cipher](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		return rules.New(cipher, bus.Bus), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*eventlog.Module, error) {
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return eventlog.New(bus.Bus, eventlog.LivePolicy{Window: cfg.EventLiveWindow, Now: time.Now}), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*analytics.Module, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return analytics.New().WithRetention(cfg.EventsRetention), nil
-	})
-
-	do.Provide(injector, func(do.Injector) (*reputation.Module, error) {
-		return reputation.New(), nil
-	})
-
-	// The broadcasts module claims a Broadcast and queues its send job on the bus's transaction.
-	do.Provide(injector, func(i do.Injector) (*broadcasts.Module, error) {
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		renderer, err := do.Invoke[*emaildoc.Renderer](i)
-		if err != nil {
-			return nil, err
-		}
-		// Schedule and the progress estimate ask the Send route of Outbound send.
-		sender, err := do.Invoke[*outboundModule](i)
-		if err != nil {
-			return nil, err
-		}
-		return broadcasts.New(bus.Bus, renderer, sender.Module), nil
-	})
-}
-
-// registerSurfaces provides the API surfaces.
-func registerSurfaces(injector do.Injector) {
-	do.Provide(injector, func(i do.Injector) (*authtoken.Signer, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		return authtoken.New(cfg.JWTSecret), nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*externalAPI, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		deps, err := externalDeps(i)
-		if err != nil {
-			return nil, err
-		}
-		h, err := server.NewExternalAPI(client.Client, deps)
-		if err != nil {
-			return nil, err
-		}
-		return &externalAPI{h}, nil
-	})
-
-	do.Provide(injector, func(i do.Injector) (*mcpHandler, error) {
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		external, err := do.Invoke[*externalAPI](i)
-		if err != nil {
-			return nil, err
-		}
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		deps, err := externalDeps(i)
-		if err != nil {
-			return nil, err
-		}
-		h, err := mcpserver.New(sphericon.ExternalOpenAPI, external.Handler, server.ExternalSecurity(client.Client, deps), mcpserver.WithResourceMetadataURL(oauthserver.ResourceMetadataURL(cfg.MCPOrigin())))
-		if err != nil {
-			return nil, err
-		}
-		return &mcpHandler{h}, nil
-	})
-
-	// The handler of the internal listener (ADR 0026): the service endpoints of the
-	// Staff surface (with the `staff` license) and the edge's TLS ask (always).
-	do.Provide(injector, func(i do.Injector) (*internalHandler, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		edition, err := do.Invoke[*ee.Edition](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		h, err := server.NewInternal(cfg, client.Client, edition.Service(bus.Bus))
-		if err != nil {
-			return nil, err
-		}
-		return &internalHandler{h}, nil
-	})
-}
-
-// registerHandler provides the handler every surface is mounted on.
-func registerHandler(injector do.Injector) {
-	do.Provide(injector, func(i do.Injector) (http.Handler, error) {
-		cfg, err := do.Invoke[*config.Config](i)
-		if err != nil {
-			return nil, err
-		}
-		database, err := do.Invoke[*sqlDB](i)
-		if err != nil {
-			return nil, err
-		}
-		client, err := do.Invoke[*entClient](i)
-		if err != nil {
-			return nil, err
-		}
-		site, err := siteDeps(i)
-		if err != nil {
-			return nil, err
-		}
-		external, err := do.Invoke[*externalAPI](i)
-		if err != nil {
-			return nil, err
-		}
-		mcp, err := do.Invoke[*mcpHandler](i)
-		if err != nil {
-			return nil, err
-		}
-		detector, err := do.Invoke[*machine.Detector](i)
-		if err != nil {
-			return nil, err
-		}
-
-		edition, err := do.Invoke[*ee.Edition](i)
-		if err != nil {
-			return nil, err
-		}
-		bus, err := do.Invoke[*eventsBus](i)
-		if err != nil {
-			return nil, err
-		}
-		sys, err := do.Invoke[*systemSender](i)
-		if err != nil {
-			return nil, err
-		}
-		members, err := do.Invoke[*staffmembers.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		items, err := do.Invoke[*signupitems.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		inst, err := do.Invoke[*instance.Module](i)
-		if err != nil {
-			return nil, err
-		}
-		staffAPI, err := server.NewStaffAPI(members, items, inst, edition.StaffSections(bus.Bus, sys.EmailSender))
-		if err != nil {
-			return nil, err
-		}
-		schema, err := do.Invoke[*db.SchemaWatch](i)
-		if err != nil {
-			return nil, err
-		}
-
-		return server.New(cfg, database.DB, schema, client.Client, site, detector, external.Handler, mcp.Handler, staffAPI)
-	})
-}
-
-// resolver invokes singletons and keeps the first failure, so a function that collects many does not
-// repeat the error check after each: once one has failed the rest resolve to their zero value, and
-// err says why. Check err before using any of them.
-type resolver struct {
-	i   do.Injector
-	err error
-}
-
-func invoke[T any](r *resolver) T {
-	var zero T
-	if r.err != nil {
-		return zero
-	}
-	v, err := do.Invoke[T](r.i)
-	if err != nil {
-		r.err = err
-		return zero
-	}
-	return v
-}
-
-// externalDeps collects the shared singletons the /api handlers are built from.
-func externalDeps(i do.Injector) (apiexternal.Deps, error) {
-	r := &resolver{i: i}
-	cfg := invoke[*config.Config](r)
-	acc := invoke[*accounts.Accounts](r)
-	bus := invoke[*eventsBus](r)
-	wh := invoke[*webhooks.Module](r)
-	sender := invoke[*outboundModule](r)
-	seg := invoke[*segments.Module](r)
-	evlog := invoke[*eventlog.Module](r)
-	con := invoke[*contacts.Module](r)
-	er := invoke[*erasure.Module](r)
-	tpl := invoke[*templates.Module](r)
-	bk := invoke[*brandkit.Module](r)
-	tg := invoke[*tags.Module](r)
-	auto := invoke[*automations.Module](r)
-	rl := invoke[*rules.Module](r)
-	bc := invoke[*broadcasts.Module](r)
-	rep := invoke[*reputation.Module](r)
-	integ := invoke[*integrations.Module](r)
-	captured := invoke[*capturedmessages.Module](r)
-	sd := invoke[*sendingdomains.Module](r)
-	edition := invoke[*ee.Edition](r)
-	if r.err != nil {
-		return apiexternal.Deps{}, r.err
-	}
-	return apiexternal.Deps{
-		Accounts: acc, Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
-		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, Transactional: transactional.New(tpl, sender.Module), BrandKit: bk, Automations: auto, Rules: rl,
-		Broadcasts: bc, Reputation: rep, Integrations: integ, CapturedMessages: captured, SendingDomains: sd, BootstrapToken: cfg.BootstrapToken, Audit: edition.Audit, Export: edition.Export,
-	}, nil
-}
-
-// siteDeps collects the shared singletons the /site handlers are built from.
-func siteDeps(i do.Injector) (apisite.Deps, error) {
-	r := &resolver{i: i}
-	cfg := invoke[*config.Config](r)
-	client := invoke[*entClient](r)
-	acc := invoke[*accounts.Accounts](r)
-	bus := invoke[*eventsBus](r)
-	wh := invoke[*webhooks.Module](r)
-	sender := invoke[*outboundModule](r)
-	seg := invoke[*segments.Module](r)
-	evlog := invoke[*eventlog.Module](r)
-	con := invoke[*contacts.Module](r)
-	er := invoke[*erasure.Module](r)
-	tpl := invoke[*templates.Module](r)
-	bk := invoke[*brandkit.Module](r)
-	tg := invoke[*tags.Module](r)
-	auto := invoke[*automations.Module](r)
-	rl := invoke[*rules.Module](r)
-	bc := invoke[*broadcasts.Module](r)
-	tokens := invoke[*authtoken.Signer](r)
-	tracker := invoke[*tracking.Tracker](r)
-	// The river jobs client implements the remaining enqueue seams: welcome, the
-	// self-service account mail (reset/verify/change), and sending-domain DKIM
-	// verification.
-	jc := invoke[*jobsClient](r)
-	edition := invoke[*ee.Edition](r)
-	attempts := invoke[*accounts.Attempts](r)
-	integ := invoke[*integrations.Module](r)
-	captured := invoke[*capturedmessages.Module](r)
-	sd := invoke[*sendingdomains.Module](r)
-	jd := invoke[*joindomains.Module](r)
-	sf := invoke[*secondfactor.Module](r)
-	pk := invoke[*secondfactor.Passkeys](r)
-	an := invoke[*analytics.Module](r)
-	inst := invoke[*instance.Module](r)
-	deletion := invoke[*workspacedeletion.Module](r)
-	passwords := invoke[*credentials.Hasher](r)
-	schema := invoke[*db.SchemaWatch](r)
-	if r.err != nil {
-		return apisite.Deps{}, r.err
-	}
-	// The error page's button that runs the migrations: a development build only (ADR 0033).
-	var migrations apisite.Migrations
-	if cfg.MigratesFromThePage() {
-		migrations = db.NewPageMigrations(cfg.DatabaseURL, cfg.MigrateTimeout, schema)
-	}
-	accountLink, _, err := accountlink.FromConfig(cfg)
-	if err != nil {
-		return apisite.Deps{}, err
-	}
-	// The Sign-up survey is on only with an explicit switch and the `staff` license; the
-	// warning for a switch without the license is logged here, once, at start.
-	survey := signupsurvey.New(bus.Bus, signupsurvey.Enabled(cfg.SignupSurvey, edition.StaffLicensed(), slog.Default()))
-	return apisite.Deps{
-		SignupSurvey:   survey,
-		SignupItems:    invoke[*signupitems.Module](r),
-		ConsentRecords: invoke[*consentrecords.Module](r),
-		Instance:       inst,
-		Deletion:       deletion,
-		AccountLink:    accountLink, Holds: edition.Holds(), AbuseWatch: edition.AbuseWatch(), SupportEmail: cfg.SupportEmail, Origins: apisite.Origins{MCP: cfg.MCPOrigin(), Tracker: cfg.TrackerOrigin()},
-		Accounts: acc, Passwords: passwords, Attempts: attempts, OAuth: oauthserver.NewService(client.Client, oauthserver.NewFetcher(cfg.OutboundAllow)), Bus: bus.Bus, Webhooks: wh, Outbound: sender.Module,
-		Segments: seg, EventLog: evlog, Contacts: con, Erasure: er, Tags: tg, Templates: tpl, BrandKit: bk, Automations: auto, Rules: rl,
-		Broadcasts: bc, Welcome: jc.Client, SysMail: jc.Client, SendingDomains: sd, JoinDomains: jd, Integrations: integ, CapturedMessages: captured,
-		Tokens: tokens, Tracker: tracker, AppURL: cfg.AppURL, Audit: edition.Audit, SecondFactor: sf, Passkeys: pk, Analytics: an,
-		RequireEmailVerification: cfg.RequireEmailVerification,
-		Signin:                   signin.FromConfig(cfg, nil),
-		Migrations:               migrations,
-	}, nil
-}
-
 // Reencrypt seals every stored secret under the primary key of the encryption keyset
 // (`sphericon encryption-key reencrypt`) and returns what it did per column.
 func (a *App) Reencrypt(ctx context.Context) ([]rekey.Count, error) {
-	client, err := do.Invoke[*entClient](a.injector)
+	client, err := do.Invoke[*ent.Client](a.injector)
 	if err != nil {
 		return nil, err
 	}
@@ -1837,20 +589,5 @@ func (a *App) Reencrypt(ctx context.Context) ([]rekey.Count, error) {
 	if err != nil {
 		return nil, err
 	}
-	return rekey.New(client.Client, cipher).Run(ctx)
-}
-
-// dnsResolver is the resolver of Sending domain, Join domain and Tracking domain verification: the host's own
-// when addr is empty, otherwise the DNS server at addr (host:port), which a development stack
-// runs for its demo records.
-func dnsResolver(addr string) *net.Resolver {
-	if addr == "" {
-		return net.DefaultResolver
-	}
-	return &net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, _ string) (net.Conn, error) {
-			return (&net.Dialer{}).DialContext(ctx, network, addr)
-		},
-	}
+	return rekey.New(client, cipher).Run(ctx)
 }
