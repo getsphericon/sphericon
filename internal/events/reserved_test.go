@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"pgregory.net/rapid"
 
@@ -24,13 +25,14 @@ func TestReservedActionIgnoresCaseAndPadding(t *testing.T) {
 }
 
 func TestCustomerActionsAreNotReserved(t *testing.T) {
+	outsideSystemNamespaces := func(action string) bool {
+		return lo.NoneBy([]string{"email.", "marketing.", "contact."}, func(prefix string) bool {
+			return strings.HasPrefix(action, prefix)
+		})
+	}
 	rapid.Check(t, func(t *rapid.T) {
-		action := rapid.StringMatching(`[a-z_]{1,12}(\.[a-z_]{1,12})?`).Draw(t, "action")
-		for _, prefix := range []string{"email.", "marketing.", "contact."} {
-			if strings.HasPrefix(action, prefix) {
-				t.Skip()
-			}
-		}
+		action := rapid.StringMatching(`[a-z_]{1,12}(\.[a-z_]{1,12})?`).Filter(outsideSystemNamespaces).Draw(t, "action")
+
 		assert.False(t, events.ReservedAction(action))
 	})
 }
