@@ -172,7 +172,9 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 		ErrorHandler: &errorHandler{logger: logger},
 		// OTel spans + metrics per job insert/work, via the global providers set
 		// by telemetry.Setup (a no-op when telemetry is disabled, e.g. tests).
-		Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil)},
+		// events.JobCorrelation carries the chain of the domain event being handled through the
+		// jobs queued while handling it, to the events they publish.
+		Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil), events.JobCorrelation()},
 		// Re-validate every Sending domain's DKIM DNS periodically so a record
 		// that disappears flips the domain back to unverified (ADR 0010).
 		PeriodicJobs: append([]*river.PeriodicJob{
@@ -293,7 +295,7 @@ func newRiverConfig(workers *river.Workers, logger *slog.Logger, extra ...*river
 // events.Bus.WithinScopedEnqueueTx: a job is inserted on the caller's *sql.Tx, so it exists
 // iff that transaction commits. It runs no workers; the Client's own river client works the jobs.
 func NewInserter(db *sql.DB) (*river.Client[*sql.Tx], error) {
-	return river.NewClient(riverdatabasesql.New(db), &river.Config{Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil)}})
+	return river.NewClient(riverdatabasesql.New(db), &river.Config{Middleware: []rivertype.Middleware{otelriver.NewMiddleware(nil), events.JobCorrelation()}})
 }
 
 // Start begins processing jobs (run in a goroutine; returns once started).

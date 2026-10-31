@@ -36,3 +36,21 @@ func TestFromContextWithoutRequestID(t *testing.T) {
 	logging.FromContext(context.Background()).Info("hello")
 	require.NotContainsf(t, buf.String(), "request_id", "did not expect request_id attr: %s", buf.String())
 }
+
+// A line logged with the context of a chain of domain events carries its correlation id; one
+// logged outside any does not.
+func TestALineLoggedInAChainCarriesItsCorrelationID(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(logging.Correlated(slog.NewJSONHandler(&buf, nil)))
+
+	logger.InfoContext(logging.WithCorrelationID(context.Background(), "01JCHAIN"), "handled")
+	logger.InfoContext(context.Background(), "alone")
+
+	lines := bytes.Split(bytes.TrimSpace(buf.Bytes()), []byte("\n"))
+	require.Len(t, lines, 2)
+	var chained, alone map[string]any
+	require.NoError(t, json.Unmarshal(lines[0], &chained))
+	require.NoError(t, json.Unmarshal(lines[1], &alone))
+	require.Equal(t, "01JCHAIN", chained["correlation_id"])
+	require.NotContains(t, alone, "correlation_id")
+}

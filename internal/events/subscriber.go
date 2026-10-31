@@ -76,8 +76,9 @@ func NewRouter() (*message.Router, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Per-handler OTel spans + metrics (global providers; no-op when disabled).
-	router.AddMiddleware(otelMiddleware())
+	// Per-handler OTel spans + metrics (global providers; no-op when disabled), linked to the
+	// publisher's span, around the handler's context for the event's chain (correlation.go).
+	router.AddMiddleware(otelMiddleware(), correlationMiddleware)
 	return router, nil
 }
 
