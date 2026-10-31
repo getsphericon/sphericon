@@ -208,7 +208,8 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "completed", "failed", "exited"}, Default: "active"},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "completed", "failed", "exited", "goal_reached"}, Default: "active"},
+		{Name: "began_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "current_step", Type: field.TypeInt, Default: 0},
 		{Name: "resume_at", Type: field.TypeTime, Nullable: true},
 		{Name: "failure_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"invalid_body", "timeout", "blocked_address", "http_status", "network"}},
@@ -227,25 +228,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_runs_automations_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[9]},
+				Columns:    []*schema.Column{AutomationRunsColumns[10]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_runs_contacts_contact",
-				Columns:    []*schema.Column{AutomationRunsColumns[10]},
+				Columns:    []*schema.Column{AutomationRunsColumns[11]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_runs_automation_versions_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[11]},
+				Columns:    []*schema.Column{AutomationRunsColumns[12]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "automation_runs_workspaces_automation_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[12]},
+				Columns:    []*schema.Column{AutomationRunsColumns[13]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -254,22 +255,22 @@ var (
 			{
 				Name:    "automation_runs_automation_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationRunsColumns[9], AutomationRunsColumns[10]},
+				Columns: []*schema.Column{AutomationRunsColumns[10], AutomationRunsColumns[11]},
 			},
 			{
 				Name:    "automationrun_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[12], AutomationRunsColumns[10]},
+				Columns: []*schema.Column{AutomationRunsColumns[13], AutomationRunsColumns[11]},
 			},
 			{
 				Name:    "automation_runs_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[10]},
+				Columns: []*schema.Column{AutomationRunsColumns[11]},
 			},
 			{
 				Name:    "automationrun_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[11]},
+				Columns: []*schema.Column{AutomationRunsColumns[12]},
 			},
 		},
 	}
@@ -281,6 +282,8 @@ var (
 		{Name: "version", Type: field.TypeInt},
 		{Name: "steps", Type: field.TypeString, Default: "[]"},
 		{Name: "trigger_event", Type: field.TypeString},
+		{Name: "exit_events", Type: field.TypeJSON, Default: "[]"},
+		{Name: "goal_event", Type: field.TypeString, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64},
 		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -293,19 +296,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_versions_automations_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[6]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[8]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_versions_integrations_integration",
-				Columns:    []*schema.Column{AutomationVersionsColumns[7]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[9]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "automation_versions_workspaces_automation_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[8]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -314,22 +317,22 @@ var (
 			{
 				Name:    "automation_versions_workspace_id_automation_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationVersionsColumns[8], AutomationVersionsColumns[6], AutomationVersionsColumns[3]},
+				Columns: []*schema.Column{AutomationVersionsColumns[10], AutomationVersionsColumns[8], AutomationVersionsColumns[3]},
 			},
 			{
 				Name:    "automationversion_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[6]},
+				Columns: []*schema.Column{AutomationVersionsColumns[8]},
 			},
 			{
 				Name:    "automationversion_workspace_id_trigger_event",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[8], AutomationVersionsColumns[5]},
+				Columns: []*schema.Column{AutomationVersionsColumns[10], AutomationVersionsColumns[5]},
 			},
 			{
 				Name:    "automationversion_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[7]},
+				Columns: []*schema.Column{AutomationVersionsColumns[9]},
 			},
 		},
 	}
@@ -2759,7 +2762,7 @@ func init() {
 	}
 	AutomationRunsTable.Annotation.Checks = map[string]string{
 		"automation_runs_failure_kind_check": "failure_kind IN ('invalid_body', 'timeout', 'blocked_address', 'http_status', 'network')",
-		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited')",
+		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited', 'goal_reached')",
 	}
 	AutomationVersionsTable.ForeignKeys[0].RefTable = AutomationsTable
 	AutomationVersionsTable.ForeignKeys[1].RefTable = IntegrationsTable

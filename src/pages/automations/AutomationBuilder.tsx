@@ -52,7 +52,7 @@ import { LeaveGuard } from './LeaveGuard.tsx'
 import { automationSnapshot } from './leaveSnapshot.ts'
 import { messageRenderer } from './messageRenderer.ts'
 import { useAutomationNodeTypes } from './nodes.ts'
-import { triggerRenderer } from './triggerRenderer.ts'
+import { exitEventsRenderer, goalEventRenderer, triggerRenderer } from './triggerRenderer.ts'
 
 // Imported as a raw string (not auto-injected): the SDK sheet carries unlayered
 // global resets and .mantine-* overrides that would leak app-wide. We mount it
@@ -60,9 +60,11 @@ import { triggerRenderer } from './triggerRenderer.ts'
 // touches the rest of the app (e.g. the dashboard's body scroll).
 import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 
-// The email step's message is edited by the editor, not a text field, and the Trigger's event
-// is typed with suggestions. A stable reference.
-const jsonForm = { renderers: [messageRenderer, triggerRenderer] }
+// The email step's message is edited by the editor, not a text field, and the Trigger's event,
+// exit events and goal event are typed with suggestions. A stable reference.
+const jsonForm = {
+  renderers: [messageRenderer, triggerRenderer, exitEventsRenderer, goalEventRenderer],
+}
 
 // The SDK ships a Templates button in the palette footer, for diagrams the model cannot hold.
 // A wrapper decorator that renders nothing leaves the footer empty. A stable reference.
@@ -237,10 +239,11 @@ function BuilderBar({
 
 // AutomationBuilder hosts the visual flow editor. It edits the draft, or the live version when
 // there is none (ADR 0065); a save writes the draft and leaves the live version alone. The name is
-// edited in the bar over the canvas; the Trigger is the canvas's first node. Save drives
-// onDataSave, which converts the graph to the trigger event and the linear []step definition and
-// persists name, trigger and steps together through the generated update mutation. The page
-// remounts it when the version it edits changes (a publish or a revert).
+// edited in the bar over the canvas; the Trigger is the canvas's first node, which also holds the
+// exit and goal events. Save drives onDataSave, which converts the graph to the trigger, exit and
+// goal events and the linear []step definition and persists them with the name together through
+// the generated update mutation. The page remounts it when the version it edits changes (a
+// publish or a revert).
 export function AutomationBuilder({ workspaceId, automation, edited }: AutomationBuilderProps) {
   const { t } = useTranslation()
   const notify = useNotify()
@@ -264,8 +267,8 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
     const labels = Object.fromEntries(
       nodeTypes.flatMap((item) => ('type' in item ? [[item.type, item.label]] : [])),
     )
-    return stepsToGraph(edited.triggerEvent, edited.steps, labels)
-  }, [edited.triggerEvent, edited.steps, nodeTypes])
+    return stepsToGraph(edited, edited.steps, labels)
+  }, [edited, nodeTypes])
 
   const [saved, setSaved] = useState(() =>
     automationSnapshot(automation.name, edited.integrationId ?? null, initialGraph),
@@ -285,7 +288,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
 
   const saveGraph = useCallback(
     async (graph: AutomationGraph): Promise<DidSaveStatus> => {
-      const { triggerEvent, steps, dropped } = graphToSteps(graph)
+      const { triggerEvent, exitEvents, goalEvent, steps, dropped } = graphToSteps(graph)
       if (triggerEvent === null) {
         notify({
           color: 'red',
@@ -308,6 +311,8 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
           body: {
             name: values.name.trim(),
             triggerEvent,
+            exitEvents,
+            goalEvent,
             steps,
             integrationId: values.integrationId,
           },

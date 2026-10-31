@@ -2,12 +2,11 @@ package jobs
 
 import (
 	"context"
+	"time"
 
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/jobkind"
 	"github.com/getsphericon/sphericon/internal/stepping"
@@ -21,6 +20,9 @@ type EvaluateTriggerArgs struct {
 	Action      string `json:"action"`
 	// SourceAutomationID is the Automation whose email the Event came from, 0 for any other Event.
 	SourceAutomationID int64 `json:"source_automation_id,omitempty"`
+	// OccurredAt is when the Event happened: it ends only the Enrollments that began by then, and
+	// an Enrollment it makes begins then. Zero in a job of a release before #751 (stepping.OnEvent).
+	OccurredAt time.Time `json:"occurred_at"`
 }
 
 func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
@@ -32,7 +34,8 @@ type EvaluateTriggerWorker struct {
 	bus *events.Bus
 }
 
-// NewEvaluateTriggerWorker builds the worker that enrolls a Contact into the Automations an action triggers.
+// NewEvaluateTriggerWorker builds the worker that hands an Event of a Contact to the Automations
+// (stepping.OnEvent): the Enrollments it ends and the ones it makes.
 func NewEvaluateTriggerWorker(client *ent.Client, bus *events.Bus) *EvaluateTriggerWorker {
 	return &EvaluateTriggerWorker{ent: client, bus: bus}
 }
@@ -50,34 +53,8 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 	if c.WorkspaceID != job.Args.WorkspaceID {
 		return nil // stale or forged job args; never enroll across Workspaces
 	}
-	return EvaluateTrigger(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, job.Args.Action, job.Args.SourceAutomationID)
-}
-
-// EvaluateTrigger enrolls a contact into every active automation in the workspace
-// whose live version's trigger_event matches action (ADR 0065): one AutomationRun each (enroll-once-ever via the
-// unique index), committed together with the job that starts stepping it (stepping.Enroll), one
-// transaction per Automation. A Contact already enrolled keeps its run and its job. An Event
-// from an Automation's own email (sourceAutomationID) never enrolls the Contact into that
-// Automation, so an open-triggered Automation cannot feed itself (ADR 0053).
-func EvaluateTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, action string, sourceAutomationID int64) error {
-	autos, err := s.Automation().Query().
-		Where(
-			automation.StatusEQ(automation.StatusActive),
-			automation.HasLiveVersionWith(automationversion.TriggerEvent(action)),
-		).
-		All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, a := range autos {
-		if a.ID == sourceAutomationID {
-			continue
-		}
-		if _, err := stepping.EnrollOnTrigger(ctx, bus, s, a.ID, contactID, action); err != nil {
-			return err
-		}
-	}
-	return nil
+	args := job.Args
+	return stepping.OnEvent(ctx, w.bus, w.ent.Scoped(c.WorkspaceID), c.ID, args.Action, args.SourceAutomationID, args.OccurredAt)
 }
 
 // --- run stepping: the adapter of the Enrollment stepping module (internal/stepping) ---

@@ -35,6 +35,8 @@ type AutomationRun struct {
 	VersionID int64 `json:"version_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status automationrun.Status `json:"status,omitempty"`
+	// BeganAt holds the value of the "began_at" field.
+	BeganAt time.Time `json:"began_at,omitempty"`
 	// CurrentStep holds the value of the "current_step" field.
 	CurrentStep int `json:"current_step,omitempty"`
 	// ResumeAt holds the value of the "resume_at" field.
@@ -119,7 +121,7 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case automationrun.FieldStatus, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
-		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldResumeAt:
+		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldResumeAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -183,6 +185,12 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = automationrun.Status(value.String)
+			}
+		case automationrun.FieldBeganAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field began_at", values[i])
+			} else if value.Valid {
+				_m.BeganAt = value.Time
 			}
 		case automationrun.FieldCurrentStep:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -294,6 +302,9 @@ func (_m *AutomationRun) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
+	builder.WriteString("began_at=")
+	builder.WriteString(_m.BeganAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("current_step=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CurrentStep))

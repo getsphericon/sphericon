@@ -98,6 +98,13 @@
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{daysAgo 40}}'
+- id: 112
+  rule_id: 112
+  version: 1
+  actions: '[{"type":"enroll_automation","automation_id":108}]'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'
 # Globex's Rule was published twice: version 2 is live, version 1 is history. (Its number also
 # keeps the scoped-client test, which re-creates this row in Acme, clear of Acme's versions 1.)
 - id: 900

@@ -29,6 +29,8 @@ const (
 	FieldVersionID = "version_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldBeganAt holds the string denoting the began_at field in the database.
+	FieldBeganAt = "began_at"
 	// FieldCurrentStep holds the string denoting the current_step field in the database.
 	FieldCurrentStep = "current_step"
 	// FieldResumeAt holds the string denoting the resume_at field in the database.
@@ -89,6 +91,7 @@ var Columns = []string{
 	FieldContactID,
 	FieldVersionID,
 	FieldStatus,
+	FieldBeganAt,
 	FieldCurrentStep,
 	FieldResumeAt,
 	FieldFailureKind,
@@ -113,6 +116,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultBeganAt holds the default value on creation for the "began_at" field.
+	DefaultBeganAt func() time.Time
 	// DefaultCurrentStep holds the default value on creation for the "current_step" field.
 	DefaultCurrentStep int
 	// CurrentStepValidator is a validator for the "current_step" field. It is called by the builders before save.
@@ -127,10 +132,11 @@ const DefaultStatus = StatusActive
 
 // Status values.
 const (
-	StatusActive    Status = "active"
-	StatusCompleted Status = "completed"
-	StatusFailed    Status = "failed"
-	StatusExited    Status = "exited"
+	StatusActive      Status = "active"
+	StatusCompleted   Status = "completed"
+	StatusFailed      Status = "failed"
+	StatusExited      Status = "exited"
+	StatusGoalReached Status = "goal_reached"
 )
 
 func (s Status) String() string {
@@ -140,7 +146,7 @@ func (s Status) String() string {
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s Status) error {
 	switch s {
-	case StatusActive, StatusCompleted, StatusFailed, StatusExited:
+	case StatusActive, StatusCompleted, StatusFailed, StatusExited, StatusGoalReached:
 		return nil
 	default:
 		return fmt.Errorf("automationrun: invalid enum value for status field: %q", s)
@@ -214,6 +220,11 @@ func ByVersionID(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByBeganAt orders the results by the began_at field.
+func ByBeganAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBeganAt, opts...).ToFunc()
 }
 
 // ByCurrentStep orders the results by the current_step field.

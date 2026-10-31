@@ -9184,6 +9184,12 @@ type SiteAutomationVersion struct {
 	Number int32 `json:"number"`
 	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
 	TriggerEvent string `json:"triggerEvent"`
+	// Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only an Event
+	// that occurred once the enrollment began counts; machine opens and clicks never do.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
+	// there is none.
+	GoalEvent NilString `json:"goalEvent"`
 	// Sending integration of the email steps; null means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// The ordered, linear steps.
@@ -9198,6 +9204,16 @@ func (s *SiteAutomationVersion) GetNumber() int32 {
 // GetTriggerEvent returns the value of TriggerEvent.
 func (s *SiteAutomationVersion) GetTriggerEvent() string {
 	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *SiteAutomationVersion) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *SiteAutomationVersion) GetGoalEvent() NilString {
+	return s.GoalEvent
 }
 
 // GetIntegrationId returns the value of IntegrationId.
@@ -9218,6 +9234,16 @@ func (s *SiteAutomationVersion) SetNumber(val int32) {
 // SetTriggerEvent sets the value of TriggerEvent.
 func (s *SiteAutomationVersion) SetTriggerEvent(val string) {
 	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *SiteAutomationVersion) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *SiteAutomationVersion) SetGoalEvent(val NilString) {
+	s.GoalEvent = val
 }
 
 // SetIntegrationId sets the value of IntegrationId.
@@ -12018,9 +12044,15 @@ func (*SiteContactsUpdateUnprocessableEntity) siteContactsUpdateRes() {}
 // Site request body for creating an automation.
 // Ref: #/components/schemas/SiteCreateAutomationInput
 type SiteCreateAutomationInput struct {
-	Name         string               `json:"name"`
-	TriggerEvent string               `json:"triggerEvent"`
-	Steps        []SiteAutomationStep `json:"steps"`
+	Name         string `json:"name"`
+	TriggerEvent string `json:"triggerEvent"`
+	// Event actions that end an active enrollment early; none of them may be the trigger. Each follows the
+	// trigger's rule: any customer action, and of the email events only opened, clicked and unsubscribed.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor an
+	// exit event. Null or omitted is none.
+	GoalEvent OptNilString         `json:"goalEvent"`
+	Steps     []SiteAutomationStep `json:"steps"`
 	// Sending integration of the email steps; null/omitted means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 }
@@ -12033,6 +12065,16 @@ func (s *SiteCreateAutomationInput) GetName() string {
 // GetTriggerEvent returns the value of TriggerEvent.
 func (s *SiteCreateAutomationInput) GetTriggerEvent() string {
 	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *SiteCreateAutomationInput) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *SiteCreateAutomationInput) GetGoalEvent() OptNilString {
+	return s.GoalEvent
 }
 
 // GetSteps returns the value of Steps.
@@ -12053,6 +12095,16 @@ func (s *SiteCreateAutomationInput) SetName(val string) {
 // SetTriggerEvent sets the value of TriggerEvent.
 func (s *SiteCreateAutomationInput) SetTriggerEvent(val string) {
 	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *SiteCreateAutomationInput) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *SiteCreateAutomationInput) SetGoalEvent(val OptNilString) {
+	s.GoalEvent = val
 }
 
 // SetSteps sets the value of Steps.
@@ -13987,10 +14039,11 @@ func (*SiteEnrollmentResource) siteEnrollmentsGetRes() {}
 type SiteEnrollmentStatus string
 
 const (
-	SiteEnrollmentStatusActive    SiteEnrollmentStatus = "active"
-	SiteEnrollmentStatusCompleted SiteEnrollmentStatus = "completed"
-	SiteEnrollmentStatusFailed    SiteEnrollmentStatus = "failed"
-	SiteEnrollmentStatusExited    SiteEnrollmentStatus = "exited"
+	SiteEnrollmentStatusActive      SiteEnrollmentStatus = "active"
+	SiteEnrollmentStatusCompleted   SiteEnrollmentStatus = "completed"
+	SiteEnrollmentStatusFailed      SiteEnrollmentStatus = "failed"
+	SiteEnrollmentStatusExited      SiteEnrollmentStatus = "exited"
+	SiteEnrollmentStatusGoalReached SiteEnrollmentStatus = "goal_reached"
 )
 
 // AllValues returns all SiteEnrollmentStatus values.
@@ -14000,6 +14053,7 @@ func (SiteEnrollmentStatus) AllValues() []SiteEnrollmentStatus {
 		SiteEnrollmentStatusCompleted,
 		SiteEnrollmentStatusFailed,
 		SiteEnrollmentStatusExited,
+		SiteEnrollmentStatusGoalReached,
 	}
 }
 
@@ -14013,6 +14067,8 @@ func (s SiteEnrollmentStatus) MarshalText() ([]byte, error) {
 	case SiteEnrollmentStatusFailed:
 		return []byte(s), nil
 	case SiteEnrollmentStatusExited:
+		return []byte(s), nil
+	case SiteEnrollmentStatusGoalReached:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -14033,6 +14089,9 @@ func (s *SiteEnrollmentStatus) UnmarshalText(data []byte) error {
 		return nil
 	case SiteEnrollmentStatusExited:
 		*s = SiteEnrollmentStatusExited
+		return nil
+	case SiteEnrollmentStatusGoalReached:
+		*s = SiteEnrollmentStatusGoalReached
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -23046,9 +23105,13 @@ func (*SiteTransactionalEmailsListUnprocessableEntity) siteTransactionalEmailsLi
 // and publishing makes the draft live.
 // Ref: #/components/schemas/SiteUpdateAutomationInput
 type SiteUpdateAutomationInput struct {
-	Name         OptString            `json:"name"`
-	TriggerEvent OptString            `json:"triggerEvent"`
-	Steps        []SiteAutomationStep `json:"steps"`
+	Name         OptString `json:"name"`
+	TriggerEvent OptString `json:"triggerEvent"`
+	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
+	GoalEvent OptNilString         `json:"goalEvent"`
+	Steps     []SiteAutomationStep `json:"steps"`
 	// Sending integration of the email steps; null means the workspace default, omitted keeps it.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 }
@@ -23061,6 +23124,16 @@ func (s *SiteUpdateAutomationInput) GetName() OptString {
 // GetTriggerEvent returns the value of TriggerEvent.
 func (s *SiteUpdateAutomationInput) GetTriggerEvent() OptString {
 	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *SiteUpdateAutomationInput) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *SiteUpdateAutomationInput) GetGoalEvent() OptNilString {
+	return s.GoalEvent
 }
 
 // GetSteps returns the value of Steps.
@@ -23081,6 +23154,16 @@ func (s *SiteUpdateAutomationInput) SetName(val OptString) {
 // SetTriggerEvent sets the value of TriggerEvent.
 func (s *SiteUpdateAutomationInput) SetTriggerEvent(val OptString) {
 	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *SiteUpdateAutomationInput) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *SiteUpdateAutomationInput) SetGoalEvent(val OptNilString) {
+	s.GoalEvent = val
 }
 
 // SetSteps sets the value of Steps.

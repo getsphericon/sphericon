@@ -102,7 +102,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		mod := outbound.New(env.Bus, env.CoreHolds(), resolvingTo(fs), tracking.New("test-secret", "http://local"))
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
-		require.NoError(t, jobs.EvaluateTrigger(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0))
+		require.NoError(t, stepping.OnEvent(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0, time.Now()))
 		runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
 
 		for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
@@ -140,7 +140,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 		mod := outbound.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), tracking.New("test-secret", "http://local"))
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
-		require.NoError(t, jobs.EvaluateTrigger(ctx, e.Bus, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0))
+		require.NoError(t, stepping.OnEvent(ctx, e.Bus, e.DB.Scoped(fixtures.AcmeID), fixtures.ContactHoldDemoID, "hold_demo", 0, time.Now()))
 		runID := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
 		require.True(t, e.RunNextStep(t, stepperWith(e.TestEnv, mod)))
 		require.Equal(t, []map[string]any{stepJob(runID, 1)}, queuedSteps(t, e.TestEnv), "the first send takes the only token and the Enrollment moves on")

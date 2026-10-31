@@ -92,6 +92,26 @@ func (_c *AutomationVersionCreate) SetTriggerEvent(v string) *AutomationVersionC
 	return _c
 }
 
+// SetExitEvents sets the "exit_events" field.
+func (_c *AutomationVersionCreate) SetExitEvents(v []string) *AutomationVersionCreate {
+	_c.mutation.SetExitEvents(v)
+	return _c
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (_c *AutomationVersionCreate) SetGoalEvent(v string) *AutomationVersionCreate {
+	_c.mutation.SetGoalEvent(v)
+	return _c
+}
+
+// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
+func (_c *AutomationVersionCreate) SetNillableGoalEvent(v *string) *AutomationVersionCreate {
+	if v != nil {
+		_c.SetGoalEvent(*v)
+	}
+	return _c
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (_c *AutomationVersionCreate) SetIntegrationID(v int64) *AutomationVersionCreate {
 	_c.mutation.SetIntegrationID(v)
@@ -189,6 +209,10 @@ func (_c *AutomationVersionCreate) defaults() {
 		v := automationversion.DefaultSteps
 		_c.mutation.SetSteps(v)
 	}
+	if _, ok := _c.mutation.ExitEvents(); !ok {
+		v := automationversion.DefaultExitEvents
+		_c.mutation.SetExitEvents(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -218,6 +242,9 @@ func (_c *AutomationVersionCreate) check() error {
 	}
 	if _, ok := _c.mutation.TriggerEvent(); !ok {
 		return &ValidationError{Name: "trigger_event", err: errors.New(`ent: missing required field "AutomationVersion.trigger_event"`)}
+	}
+	if _, ok := _c.mutation.ExitEvents(); !ok {
+		return &ValidationError{Name: "exit_events", err: errors.New(`ent: missing required field "AutomationVersion.exit_events"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "AutomationVersion.workspace"`)}
@@ -277,6 +304,14 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 	if value, ok := _c.mutation.TriggerEvent(); ok {
 		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
 		_node.TriggerEvent = value
+	}
+	if value, ok := _c.mutation.ExitEvents(); ok {
+		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
+		_node.ExitEvents = value
+	}
+	if value, ok := _c.mutation.GoalEvent(); ok {
+		_spec.SetField(automationversion.FieldGoalEvent, field.TypeString, value)
+		_node.GoalEvent = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -457,6 +492,36 @@ func (u *AutomationVersionUpsert) UpdateTriggerEvent() *AutomationVersionUpsert 
 	return u
 }
 
+// SetExitEvents sets the "exit_events" field.
+func (u *AutomationVersionUpsert) SetExitEvents(v []string) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldExitEvents, v)
+	return u
+}
+
+// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateExitEvents() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldExitEvents)
+	return u
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (u *AutomationVersionUpsert) SetGoalEvent(v string) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldGoalEvent, v)
+	return u
+}
+
+// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateGoalEvent() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldGoalEvent)
+	return u
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (u *AutomationVersionUpsert) ClearGoalEvent() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldGoalEvent)
+	return u
+}
+
 // SetIntegrationID sets the "integration_id" field.
 func (u *AutomationVersionUpsert) SetIntegrationID(v int64) *AutomationVersionUpsert {
 	u.Set(automationversion.FieldIntegrationID, v)
@@ -596,6 +661,41 @@ func (u *AutomationVersionUpsertOne) SetTriggerEvent(v string) *AutomationVersio
 func (u *AutomationVersionUpsertOne) UpdateTriggerEvent() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.UpdateTriggerEvent()
+	})
+}
+
+// SetExitEvents sets the "exit_events" field.
+func (u *AutomationVersionUpsertOne) SetExitEvents(v []string) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetExitEvents(v)
+	})
+}
+
+// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateExitEvents() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateExitEvents()
+	})
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (u *AutomationVersionUpsertOne) SetGoalEvent(v string) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetGoalEvent(v)
+	})
+}
+
+// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateGoalEvent() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateGoalEvent()
+	})
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (u *AutomationVersionUpsertOne) ClearGoalEvent() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearGoalEvent()
 	})
 }
 
@@ -907,6 +1007,41 @@ func (u *AutomationVersionUpsertBulk) SetTriggerEvent(v string) *AutomationVersi
 func (u *AutomationVersionUpsertBulk) UpdateTriggerEvent() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.UpdateTriggerEvent()
+	})
+}
+
+// SetExitEvents sets the "exit_events" field.
+func (u *AutomationVersionUpsertBulk) SetExitEvents(v []string) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetExitEvents(v)
+	})
+}
+
+// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateExitEvents() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateExitEvents()
+	})
+}
+
+// SetGoalEvent sets the "goal_event" field.
+func (u *AutomationVersionUpsertBulk) SetGoalEvent(v string) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetGoalEvent(v)
+	})
+}
+
+// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateGoalEvent() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateGoalEvent()
+	})
+}
+
+// ClearGoalEvent clears the value of the "goal_event" field.
+func (u *AutomationVersionUpsertBulk) ClearGoalEvent() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearGoalEvent()
 	})
 }
 

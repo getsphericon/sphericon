@@ -98,13 +98,20 @@ func newRealEnv(t *testing.T) *realEnv {
 // bus is a bus of its own over a pool of its own, with a queue to insert the jobs it enqueues into.
 func (e *realEnv) bus(t *testing.T) *events.Bus {
 	t.Helper()
+	return e.busQueueingThrough(t, func(q events.JobInserter) events.JobInserter { return q })
+}
+
+// busQueueingThrough is bus with its queue wrapped by wrap, which sees every job the bus's
+// transactions insert.
+func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobInserter) events.JobInserter) *events.Bus {
+	t.Helper()
 	sqlDB, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
 	bus := events.New(sqlDB)
 	queue, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
-	bus.UseJobs(queue)
+	bus.UseJobs(wrap(queue))
 	return bus
 }
 

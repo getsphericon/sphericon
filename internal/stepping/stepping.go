@@ -60,38 +60,76 @@ func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 	}
 }
 
-// Enroll enrolls the Contact in the Automation, once ever (ADR 0046), and queues the job of its
-// first step in the same transaction: a failed queue insert leaves no Enrollment that nothing
-// will move, and a retry starts over. enrolled is false, and nothing is queued, when the Contact
-// was enrolled before or another writer won the race. It is the one way a trigger or a Rule
-// Action starts an Enrollment.
-func Enroll(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64) (enrolled bool, err error) {
-	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
-		return automations.Enroll(ctx, ts, automationID, contactID)
+// OnEvent is what an Event of the Contact does to the Automations (#751): it first ends the
+// Contact's active Enrollments whose version names the action as an exit or goal event
+// (automations.EndOnEvent, in a transaction of its own, which it needs for the Contact's lock),
+// then enrolls the Contact into every active Automation whose live version's Trigger is the action
+// (ADR 0065), one transaction per Automation (EnrollOnTrigger). An Event from an Automation's own
+// email (sourceAutomationID, 0 for any other Event) never enrolls the Contact into that Automation,
+// so an open-triggered Automation cannot feed itself (ADR 0053); it still ends an Enrollment, so a
+// click in the Automation's own email can be its goal. occurredAt is when the Event occurred; a
+// zero one (the job of a release before #751 carried none) is taken as now.
+func OnEvent(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, action string, sourceAutomationID int64, occurredAt time.Time) error {
+	if occurredAt.IsZero() {
+		occurredAt = time.Now()
+	}
+	err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		return automations.EndOnEvent(ctx, ts, contactID, action, occurredAt)
 	})
-}
-
-// EnrollOnTrigger is Enroll for an Event with the action: it enrolls nobody unless, when the
-// Enrollment is made, the Automation is still active and started by that action in its live
-// version (automations.EnrollOnTrigger).
-func EnrollOnTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, action string) (enrolled bool, err error) {
-	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
-		return automations.EnrollOnTrigger(ctx, ts, automationID, contactID, action)
-	})
-}
-
-// start makes the Enrollment enroll makes and queues the job of its first step, in one
-// transaction.
-func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *ent.Scoped) (int64, bool, error)) (enrolled bool, err error) {
-	err = bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
-		runID, ok, err := enroll(ts)
-		if err != nil || !ok {
+	if err != nil {
+		return err
+	}
+	triggered, err := automations.TriggeredBy(ctx, s, action)
+	if err != nil {
+		return err
+	}
+	for _, automationID := range triggered {
+		if automationID == sourceAutomationID {
+			continue
+		}
+		if _, err := EnrollOnTrigger(ctx, bus, s, automationID, contactID, action, occurredAt); err != nil {
 			return err
 		}
-		enrolled = true
+	}
+	return nil
+}
+
+// EnrollOnRule enrolls the Contact in the Automation for a Rule's Action that fired on the Event
+// stored with sourceID, once ever (ADR 0046), and queues the job of its first step in the same
+// transaction: a failed queue insert leaves no Enrollment that nothing will move, and a retry
+// starts over. made is false, and nothing is queued, when the Contact was enrolled before or
+// another writer won the race. An Enrollment an exit or goal Event recorded since that Event
+// ended at once is made, with no step queued (automations.EnrollOnRule).
+func EnrollOnRule(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, sourceID string) (made bool, err error) {
+	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
+		return automations.EnrollOnRule(ctx, ts, automationID, contactID, sourceID)
+	})
+}
+
+// EnrollOnTrigger is EnrollOnRule for an Event with the action that occurred at occurredAt: it
+// enrolls nobody unless, when the Enrollment is made, the Automation is still active and started
+// by that action in its live version (automations.EnrollOnTrigger).
+func EnrollOnTrigger(ctx context.Context, bus *events.Bus, s *ent.Scoped, automationID, contactID int64, action string, occurredAt time.Time) (made bool, err error) {
+	return start(ctx, bus, s, func(ts *ent.Scoped) (int64, bool, error) {
+		return automations.EnrollOnTrigger(ctx, ts, automationID, contactID, action, occurredAt)
+	})
+}
+
+// start makes the Enrollment enroll makes and, when a step is to run, queues the job of its first
+// step, in one transaction: the transaction the Contact's lock is held in until both commit.
+func start(ctx context.Context, bus *events.Bus, s *ent.Scoped, enroll func(ts *ent.Scoped) (int64, bool, error)) (made bool, err error) {
+	err = bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, q events.Enqueuer) error {
+		runID, active, err := enroll(ts)
+		if err != nil || runID == 0 {
+			return err
+		}
+		made = true
+		if !active {
+			return nil
+		}
 		return q.Enqueue(ctx, RunStepArgs{RunID: runID}, nil)
 	})
-	return enrolled, err
+	return made, err
 }
 
 // Module executes the steps of Enrollments.

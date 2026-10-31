@@ -14,7 +14,7 @@ import (
 )
 
 // The Enrollment's lifecycle (ADR 0046): it starts `active` and leaves it exactly once, for
-// `completed`, `failed` or `exited`; all three are final. Every move is a compare-and-swap
+// `completed`, `failed`, `exited` or `goal_reached`; all four are final. Every move is a compare-and-swap
 // from `active`, so whichever writer reaches the row first decides a race, and a late step
 // cannot overwrite an exit (the move reports lifecycle.ErrInvalidTransition instead).
 type trigger string
@@ -23,6 +23,8 @@ const (
 	triggerComplete trigger = "complete"
 	triggerFail     trigger = "fail"
 	triggerExit     trigger = "exit"
+	// triggerReachGoal ends the Enrollment when its version's goal event is recorded (#751).
+	triggerReachGoal trigger = "reach_goal"
 )
 
 // Failure is what an Enrollment keeps of the step that failed it. The zero value records
@@ -73,7 +75,8 @@ func machine(s *ent.Scoped, runID int64, extra func(*ent.AutomationRunScopedUpda
 	m.Configure(automationrun.StatusActive).
 		Permit(triggerComplete, automationrun.StatusCompleted).
 		Permit(triggerFail, automationrun.StatusFailed).
-		Permit(triggerExit, automationrun.StatusExited)
+		Permit(triggerExit, automationrun.StatusExited).
+		Permit(triggerReachGoal, automationrun.StatusGoalReached)
 	return m
 }
 

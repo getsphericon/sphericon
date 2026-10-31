@@ -9,6 +9,7 @@ enum SiteEnrollmentStatus {
   completed,
   failed,
   exited,
+  goal_reached,
 }
 
 /**

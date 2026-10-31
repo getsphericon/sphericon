@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
@@ -39,11 +41,19 @@ func (AutomationRun) Fields() []ent.Field {
 		// its steps, and the worker reads them from it, so an edit never moves the step an
 		// Enrollment stands on.
 		field.Int64("version_id"),
-		// exited: the enrollment left early (e.g. an unsubscribe or suppression
-		// mid-run) — distinct from completing the sequence.
+		// exited: the enrollment left early (e.g. an unsubscribe, a suppression or an exit
+		// event mid-run) — distinct from completing the sequence. goal_reached: the Contact
+		// did what the Automation was for (its goal event) before the steps ran out.
 		field.Enum("status").
-			Values("active", "completed", "failed", "exited").
+			Values("active", "completed", "failed", "exited", "goal_reached").
 			Default("active"),
+		// When the Enrollment began (#751): the occurred_at of the Event that triggered it, or of
+		// the Event a Rule fired on when a Rule's Action enrolled. An exit or goal Event ends it
+		// only when it occurred at this moment or later, so loaded or late history does not.
+		field.Time("began_at").
+			Default(time.Now).
+			Immutable().
+			Annotations(entsql.Default("CURRENT_TIMESTAMP")),
 		field.Int("current_step").
 			Default(0).
 			NonNegative(),

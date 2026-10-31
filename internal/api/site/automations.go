@@ -43,7 +43,10 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (siteapi.SiteAutomationsCreateRes, error) {
 	ws := workspaceScope(ctx)
 
-	in := automations.CreateInput{Name: req.Name, TriggerEvent: req.TriggerEvent, IntegrationID: convert.Int64Ptr(req.IntegrationId)}
+	in := automations.CreateInput{
+		Name: req.Name, TriggerEvent: req.TriggerEvent, ExitEvents: req.ExitEvents,
+		GoalEvent: convert.StringPtr(req.GoalEvent), IntegrationID: convert.Int64Ptr(req.IntegrationId),
+	}
 	if req.Steps != nil {
 		in.Steps = resources.AutomationSteps(req.Steps)
 	}
@@ -79,9 +82,15 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteU
 	in := automations.UpdateInput{
 		Name:         convert.StringPtr(req.Name),
 		TriggerEvent: convert.StringPtr(req.TriggerEvent),
+		// JSON Merge Patch, as for the Integration: an explicit null removes the goal event.
+		GoalEvent: convert.StringPtr(req.GoalEvent),
+		ClearGoal: req.GoalEvent.IsNull(),
 		// JSON Merge Patch: an explicit null clears the Integration, an absent key keeps it.
 		IntegrationID:    convert.Int64Ptr(req.IntegrationId),
 		ClearIntegration: req.IntegrationId.IsNull(),
+	}
+	if req.ExitEvents != nil {
+		in.ExitEvents = &req.ExitEvents
 	}
 	if req.Steps != nil {
 		steps := resources.AutomationSteps(req.Steps)

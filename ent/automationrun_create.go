@@ -92,6 +92,20 @@ func (_c *AutomationRunCreate) SetNillableStatus(v *automationrun.Status) *Autom
 	return _c
 }
 
+// SetBeganAt sets the "began_at" field.
+func (_c *AutomationRunCreate) SetBeganAt(v time.Time) *AutomationRunCreate {
+	_c.mutation.SetBeganAt(v)
+	return _c
+}
+
+// SetNillableBeganAt sets the "began_at" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableBeganAt(v *time.Time) *AutomationRunCreate {
+	if v != nil {
+		_c.SetBeganAt(*v)
+	}
+	return _c
+}
+
 // SetCurrentStep sets the "current_step" field.
 func (_c *AutomationRunCreate) SetCurrentStep(v int) *AutomationRunCreate {
 	_c.mutation.SetCurrentStep(v)
@@ -235,6 +249,10 @@ func (_c *AutomationRunCreate) defaults() {
 		v := automationrun.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.BeganAt(); !ok {
+		v := automationrun.DefaultBeganAt()
+		_c.mutation.SetBeganAt(v)
+	}
 	if _, ok := _c.mutation.CurrentStep(); !ok {
 		v := automationrun.DefaultCurrentStep
 		_c.mutation.SetCurrentStep(v)
@@ -268,6 +286,9 @@ func (_c *AutomationRunCreate) check() error {
 		if err := automationrun.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.BeganAt(); !ok {
+		return &ValidationError{Name: "began_at", err: errors.New(`ent: missing required field "AutomationRun.began_at"`)}
 	}
 	if _, ok := _c.mutation.CurrentStep(); !ok {
 		return &ValidationError{Name: "current_step", err: errors.New(`ent: missing required field "AutomationRun.current_step"`)}
@@ -338,6 +359,10 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(automationrun.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.BeganAt(); ok {
+		_spec.SetField(automationrun.FieldBeganAt, field.TypeTime, value)
+		_node.BeganAt = value
 	}
 	if value, ok := _c.mutation.CurrentStep(); ok {
 		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)
@@ -666,6 +691,9 @@ func (u *AutomationRunUpsertOne) UpdateNewValues() *AutomationRunUpsertOne {
 		}
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(automationrun.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.BeganAt(); exists {
+			s.SetIgnore(automationrun.FieldBeganAt)
 		}
 	}))
 	return u
@@ -1078,6 +1106,9 @@ func (u *AutomationRunUpsertBulk) UpdateNewValues() *AutomationRunUpsertBulk {
 			}
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(automationrun.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.BeganAt(); exists {
+				s.SetIgnore(automationrun.FieldBeganAt)
 			}
 		}
 	}))

@@ -378,7 +378,8 @@ nobody while its Enrollments stay; only an Automation with no Enrollments at all
 _Avoid_: Workflow, flow, journey, drip, campaign
 
 **Automation version**:
-One copy of an Automation's definition: its Trigger, its Integration and its Steps. The **live
+One copy of an Automation's definition: its Trigger, its exit and goal events, its Integration and
+its Steps. The **live
 version** is the one new Enrollments begin on; the **draft** is a newer version that edits are
 written into, rewritten in place until it is published. A live version is never rewritten, and an
 Enrollment stays on the version it began on. The name belongs to the Automation, not to a version.
@@ -414,13 +415,26 @@ custom event). Not a separate entity — one Trigger per Automation version. Mat
 resolved identity, not by email.
 _Avoid_: Hook, entry condition
 
+**Exit event** / **Goal event**:
+Event actions an **Automation version** names beside its Trigger: an Event with one of its exit
+events ends the Contact's active Enrollment on that version as `exited`, its one goal event as
+`goal_reached`. Matched by Contact alone, and only an Event that occurred once the Enrollment began
+(when its triggering Event occurred, not when the Enrollment was written); a machine open or click
+and loaded history never count. One handled before the Enrollment was made ends it as it is made,
+by the first such Event since the trigger; one handled while it is being made waits for it.
+Neither may be the Trigger, nor the goal an exit event.
+_Avoid_: Stop condition, exit criteria, conversion
+
 **Enrollment**:
 One Contact's membership-and-progress in one Automation — enrolled at most once ever
-(re-enrollment is deliberately out of scope). Stands on one **Automation version** (the one live when
-it began) and holds the current step in it, and a terminal state:
-`completed`, `failed`, or **`exited`** (left early). An unsubscribe from the Automation has two
+(re-enrollment is deliberately out of scope). It begins when its triggering Event occurred (when a
+Rule enrolls, the Event the Rule fired on). Stands on one **Automation version** (the one live when
+it was made) and holds the current step in it, and a terminal state:
+`completed`, `failed`, **`exited`** (left early) or **`goal_reached`** (its goal event was recorded).
+An unsubscribe from the Automation has two
 effects from one action — it records the durable opt-out (scope `automation:<id>`) _and_ moves
-the active Enrollment to `exited`; suppression and hard bounces likewise exit the Enrollment.
+the active Enrollment to `exited`; suppression, hard bounces and an exit event likewise exit the
+Enrollment.
 A run never silently keeps walking steps while skipping every email.
 _Avoid_: Run, automation run, journey instance, subscription
 

@@ -160,7 +160,7 @@ const automation = (id: string, name: string): SiteAutomationResource => ({
   id,
   name,
   status: 'active',
-  live: { number: 1, triggerEvent: 'signed_up', steps: [] },
+  live: { number: 1, triggerEvent: 'signed_up', exitEvents: [], goalEvent: null, steps: [] },
   draft: null,
   ...TIMESTAMPS,
 })

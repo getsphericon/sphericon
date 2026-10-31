@@ -26,7 +26,13 @@ test('shows the automation and the contacts enrolled in it', async () => {
         id: '1',
         name: 'Welcome series',
         status: 'active',
-        live: { number: 1, triggerEvent: 'contact.created', steps: [] },
+        live: {
+          number: 1,
+          triggerEvent: 'contact.created',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [],
+        },
         draft: null,
         ...TIMESTAMPS,
       },
@@ -74,7 +80,13 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
         id: '1',
         name: 'Welcome series',
         status: 'active',
-        live: { number: 1, triggerEvent: 'contact.created', steps: [] },
+        live: {
+          number: 1,
+          triggerEvent: 'contact.created',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [],
+        },
         draft: null,
         ...TIMESTAMPS,
       },
@@ -120,7 +132,13 @@ test('marks an inactive automation as inactive', async () => {
         id: '1',
         name: 'Unfinished flow',
         status: 'inactive',
-        live: { number: 1, triggerEvent: 'contact.created', steps: [] },
+        live: {
+          number: 1,
+          triggerEvent: 'contact.created',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [],
+        },
         draft: null,
         ...TIMESTAMPS,
       },
@@ -161,7 +179,13 @@ test('shows the orders and the net revenue credited to the automation', async ()
         id: '1',
         name: 'Welcome series',
         status: 'active',
-        live: { number: 1, triggerEvent: 'contact.created', steps: [] },
+        live: {
+          number: 1,
+          triggerEvent: 'contact.created',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [],
+        },
         draft: null,
         ...TIMESTAMPS,
       },
@@ -195,7 +219,13 @@ test('shows no orders or revenue on the automation until the currency is chosen'
         id: '1',
         name: 'Welcome series',
         status: 'active',
-        live: { number: 1, triggerEvent: 'contact.created', steps: [] },
+        live: {
+          number: 1,
+          triggerEvent: 'contact.created',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [],
+        },
         draft: null,
         ...TIMESTAMPS,
       },
@@ -227,8 +257,14 @@ const PENDING: SiteAutomationResource = {
   id: '1',
   name: 'Welcome series',
   status: 'active',
-  live: { number: 1, triggerEvent: 'signup', steps: [] },
-  draft: { number: 2, triggerEvent: 'signup', steps: [{ type: 'wait', seconds: 60 }] },
+  live: { number: 1, triggerEvent: 'signup', exitEvents: [], goalEvent: null, steps: [] },
+  draft: {
+    number: 2,
+    triggerEvent: 'signup',
+    exitEvents: [],
+    goalEvent: null,
+    steps: [{ type: 'wait', seconds: 60 }],
+  },
   ...TIMESTAMPS,
 }
 
@@ -245,7 +281,7 @@ const NO_FIGURES = {
   links: [],
 }
 
-test('shows what the live version does, not the draft above it', async () => {
+test('shows what the live version does, its exit and goal events included, not the draft above it', async () => {
   worker.use(
     handleSiteAutomationsGet({
       body: {
@@ -253,13 +289,21 @@ test('shows what the live version does, not the draft above it', async () => {
         live: {
           number: 1,
           triggerEvent: 'signup',
+          exitEvents: ['account_closed'],
+          goalEvent: 'course_started',
           integrationId: null,
           steps: [
             { type: 'email', subject: 'Welcome aboard' },
             { type: 'apply_tag', tag: 'onboarded' },
           ],
         },
-        draft: { number: 2, triggerEvent: 'course_completed', steps: [{ type: 'http' }] },
+        draft: {
+          number: 2,
+          triggerEvent: 'course_completed',
+          exitEvents: [],
+          goalEvent: null,
+          steps: [{ type: 'http' }],
+        },
       },
     }),
     handleSiteAutomationReportsGet({ body: NO_FIGURES }),
@@ -270,6 +314,8 @@ test('shows what the live version does, not the draft above it', async () => {
 
   await expect.element(screen.getByText('Live version 1')).toBeInTheDocument()
   await expect.element(screen.getByText('signup')).toBeInTheDocument()
+  await expect.element(screen.getByText('account_closed')).toBeInTheDocument()
+  await expect.element(screen.getByText('course_started')).toBeInTheDocument()
   await expect.element(screen.getByText('Workspace default')).toBeInTheDocument()
   await expect.element(screen.getByText('Send email: Welcome aboard')).toBeInTheDocument()
   await expect.element(screen.getByText('Apply tag: onboarded')).toBeInTheDocument()

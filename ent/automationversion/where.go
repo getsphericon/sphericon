@@ -90,6 +90,11 @@ func TriggerEvent(v string) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerEvent, v))
 }
 
+// GoalEvent applies equality check predicate on the "goal_event" field. It's identical to GoalEventEQ.
+func GoalEvent(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldGoalEvent, v))
+}
+
 // IntegrationID applies equality check predicate on the "integration_id" field. It's identical to IntegrationIDEQ.
 func IntegrationID(v int64) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldIntegrationID, v))
@@ -383,6 +388,81 @@ func TriggerEventEqualFold(v string) predicate.AutomationVersion {
 // TriggerEventContainsFold applies the ContainsFold predicate on the "trigger_event" field.
 func TriggerEventContainsFold(v string) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldContainsFold(FieldTriggerEvent, v))
+}
+
+// GoalEventEQ applies the EQ predicate on the "goal_event" field.
+func GoalEventEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldGoalEvent, v))
+}
+
+// GoalEventNEQ applies the NEQ predicate on the "goal_event" field.
+func GoalEventNEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldGoalEvent, v))
+}
+
+// GoalEventIn applies the In predicate on the "goal_event" field.
+func GoalEventIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldGoalEvent, vs...))
+}
+
+// GoalEventNotIn applies the NotIn predicate on the "goal_event" field.
+func GoalEventNotIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldGoalEvent, vs...))
+}
+
+// GoalEventGT applies the GT predicate on the "goal_event" field.
+func GoalEventGT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGT(FieldGoalEvent, v))
+}
+
+// GoalEventGTE applies the GTE predicate on the "goal_event" field.
+func GoalEventGTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGTE(FieldGoalEvent, v))
+}
+
+// GoalEventLT applies the LT predicate on the "goal_event" field.
+func GoalEventLT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLT(FieldGoalEvent, v))
+}
+
+// GoalEventLTE applies the LTE predicate on the "goal_event" field.
+func GoalEventLTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLTE(FieldGoalEvent, v))
+}
+
+// GoalEventContains applies the Contains predicate on the "goal_event" field.
+func GoalEventContains(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContains(FieldGoalEvent, v))
+}
+
+// GoalEventHasPrefix applies the HasPrefix predicate on the "goal_event" field.
+func GoalEventHasPrefix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasPrefix(FieldGoalEvent, v))
+}
+
+// GoalEventHasSuffix applies the HasSuffix predicate on the "goal_event" field.
+func GoalEventHasSuffix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasSuffix(FieldGoalEvent, v))
+}
+
+// GoalEventIsNil applies the IsNil predicate on the "goal_event" field.
+func GoalEventIsNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIsNull(FieldGoalEvent))
+}
+
+// GoalEventNotNil applies the NotNil predicate on the "goal_event" field.
+func GoalEventNotNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotNull(FieldGoalEvent))
+}
+
+// GoalEventEqualFold applies the EqualFold predicate on the "goal_event" field.
+func GoalEventEqualFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEqualFold(FieldGoalEvent, v))
+}
+
+// GoalEventContainsFold applies the ContainsFold predicate on the "goal_event" field.
+func GoalEventContainsFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContainsFold(FieldGoalEvent, v))
 }
 
 // IntegrationIDEQ applies the EQ predicate on the "integration_id" field.

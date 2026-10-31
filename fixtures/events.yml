@@ -5174,3 +5174,46 @@
   workspace_id: 61
   occurred_at: '2026-01-10 14:00:00+00'
   created_at: '2026-01-10 14:00:00+00'
+
+# Exit and goal Events of Payment recovery (#751) recorded for ContactPaidBeforeEnrolled before
+# any Enrollment of it. The machine click and the backfilled downgrade end nothing.
+- id: 20414
+  contact_id: 132
+  email: paid.early@codebasics.dev
+  action: account_closed
+  workspace_id: 1
+  occurred_at: '{{daysAgo 5}}'
+  created_at: '{{daysAgo 5}}'
+- id: 20415
+  contact_id: 132
+  email: paid.early@codebasics.dev
+  action: payment_succeeded
+  workspace_id: 1
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 20416
+  contact_id: 132
+  email: paid.early@codebasics.dev
+  action: email.clicked
+  properties: '{"machine":true}'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+- id: 20417
+  contact_id: 132
+  email: paid.early@codebasics.dev
+  action: plan_downgraded
+  backfill: true
+  workspace_id: 1
+  occurred_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+# The Event RuleEnrollRecovery fired on, 4 days ago, a day before the Contact's payment_succeeded: the
+# Enrollment the Rule makes begins then, so that payment ends it as it is made (#751).
+- id: 20418 # fixture: EventRecoveryRuleTrigger
+  contact_id: 132
+  email: paid.early@codebasics.dev
+  action: rule_enroll_recovery
+  source_id: 'fixture:recovery-rule-trigger'
+  workspace_id: 1
+  occurred_at: '{{daysAgo 4}}'
+  created_at: '{{daysAgo 4}}'

@@ -9,8 +9,8 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// AutomationVersion is one copy of an Automation's definition: its Trigger, Integration and steps
-// (ADR 0049, ADR 0065, GLOSSARY: Automation version). The Automation points at its live version
+// AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal events,
+// Integration and steps (ADR 0049, ADR 0065, GLOSSARY: Automation version). The Automation points at its live version
 // and at its draft, the one version above live. An Enrollment begins on the live version and
 // stays on it; only the draft is rewritten in place, and nothing ever stands on it. The name,
 // status and archiving stay on the Automation.
@@ -46,6 +46,14 @@ func (AutomationVersion) Fields() []ent.Field {
 		// The Event.action that enrolls a contact (e.g. "contact.created", "email.opened", a
 		// custom collect event).
 		field.String("trigger_event"),
+		// The Event actions that end an active Enrollment on this version early (`exited`), and
+		// the one that ends it as having reached its goal (`goal_reached`); none is the trigger.
+		field.JSON("exit_events", []string{}).
+			Default([]string{}).
+			Annotations(entsql.Default("[]")),
+		field.String("goal_event").
+			Optional().
+			Nillable(),
 		// The email Integration the steps send through; nil is the Workspace default.
 		field.Int64("integration_id").
 			Optional().

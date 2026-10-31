@@ -1682,6 +1682,16 @@ export type SiteAutomationVersion = {
    */
   triggerEvent: string;
   /**
+   * Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only
+   * an Event that occurred once the enrollment began counts; machine opens and clicks never do.
+   */
+  exitEvents: Array<string>;
+  /**
+   * Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null
+   * when there is none
+   */
+  goalEvent: string | null;
+  /**
    * Sending integration of the email steps; null means the workspace default
    */
   integrationId?: EntityId | null;
@@ -2397,6 +2407,17 @@ export type SiteContactResource = {
 export type SiteCreateAutomationInput = {
   name: string;
   triggerEvent: string;
+  /**
+   * Event actions that end an active enrollment early; none of them may be the trigger. Each
+   * follows the trigger's rule: any customer action, and of the email events only opened, clicked
+   * and unsubscribed.
+   */
+  exitEvents?: Array<string>;
+  /**
+   * Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor
+   * an exit event. Null or omitted is none.
+   */
+  goalEvent?: string | null;
   steps?: Array<SiteAutomationStep>;
   /**
    * Sending integration of the email steps; null/omitted means the workspace default
@@ -3055,7 +3076,8 @@ export const SiteEnrollmentStatus = {
   ACTIVE: 'active',
   COMPLETED: 'completed',
   FAILED: 'failed',
-  EXITED: 'exited'
+  EXITED: 'exited',
+  GOAL_REACHED: 'goal_reached'
 } as const;
 
 /**
@@ -5339,6 +5361,14 @@ export type SiteTransactionalEmailStatus = typeof SiteTransactionalEmailStatus[k
 export type SiteUpdateAutomationInput = {
   name?: string;
   triggerEvent?: string;
+  /**
+   * Event actions that end an active enrollment early; replaces the list, omitted keeps it
+   */
+  exitEvents?: Array<string>;
+  /**
+   * Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it
+   */
+  goalEvent?: string | null;
   steps?: Array<SiteAutomationStep>;
   /**
    * Sending integration of the email steps; null means the workspace default, omitted keeps it

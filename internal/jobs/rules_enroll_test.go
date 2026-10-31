@@ -3,6 +3,7 @@ package jobs_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -62,4 +63,27 @@ func TestRuleActionSkipsAContactAlreadyEnrolled(t *testing.T) {
 	assert.Equal(t, rules.Skipped, res[0].Status)
 	assert.Equal(t, before, greeting())
 	assert.Empty(t, env.JobsOf(t, jobkind.RunStep.Kind))
+}
+
+// A Rule's Enrollment begins when the Event the Rule fired on occurred (#751), not when the
+// Actions job runs: the Contact paid after that Event, so the Enrollment is made already at its
+// goal, the Action succeeded and no step is queued.
+func TestARuleEnrollmentBeginsWhenTheEventTheRuleFiredOnOccurred(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	fired, err := env.DB.Event.Get(ctx, fixtures.EventRecoveryRuleTriggerID)
+	require.NoError(t, err)
+
+	f := fireAndRun(t, env, fixtures.ContactPaidBeforeEnrolledID, fixtures.EventRecoveryRuleTriggerAction, *fired.SourceID)
+
+	run, err := env.DB.AutomationRun.Query().
+		Where(automationrun.AutomationID(fixtures.AutomationPaymentRecoveryID), automationrun.ContactID(fixtures.ContactPaidBeforeEnrolledID)).
+		Only(ctx)
+	require.NoError(t, err)
+	results := resultsOf(t, f)
+	steps := env.JobsOf(t, jobkind.RunStep.Kind)
+	assert.Equal(t, []rules.Result{{Type: rules.ActionEnroll, Status: rules.Succeeded}}, results)
+	assert.Equal(t, automationrun.StatusGoalReached, run.Status)
+	assert.WithinDuration(t, *fired.OccurredAt, run.BeganAt, time.Microsecond)
+	assert.Empty(t, steps, "no step runs after the goal")
 }

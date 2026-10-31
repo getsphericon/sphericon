@@ -13218,6 +13218,18 @@ func (s *SiteAutomationVersion) encodeFields(e *jx.Encoder) {
 		e.Str(s.TriggerEvent)
 	}
 	{
+		e.FieldStart("exitEvents")
+		e.ArrStart()
+		for _, elem := range s.ExitEvents {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("goalEvent")
+		s.GoalEvent.Encode(e)
+	}
+	{
 		if s.IntegrationId.Set {
 			e.FieldStart("integrationId")
 			s.IntegrationId.Encode(e)
@@ -13233,11 +13245,13 @@ func (s *SiteAutomationVersion) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteAutomationVersion = [4]string{
+var jsonFieldsNameOfSiteAutomationVersion = [6]string{
 	0: "number",
 	1: "triggerEvent",
-	2: "integrationId",
-	3: "steps",
+	2: "exitEvents",
+	3: "goalEvent",
+	4: "integrationId",
+	5: "steps",
 }
 
 // Decode decodes SiteAutomationVersion from json.
@@ -13273,6 +13287,36 @@ func (s *SiteAutomationVersion) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"triggerEvent\"")
 			}
+		case "exitEvents":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				s.ExitEvents = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ExitEvents = append(s.ExitEvents, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"exitEvents\"")
+			}
+		case "goalEvent":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.GoalEvent.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"goalEvent\"")
+			}
 		case "integrationId":
 			if err := func() error {
 				s.IntegrationId.Reset()
@@ -13284,7 +13328,7 @@ func (s *SiteAutomationVersion) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		case "steps":
-			requiredBitSet[0] |= 1 << 3
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				s.Steps = make([]SiteAutomationStep, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -13311,7 +13355,7 @@ func (s *SiteAutomationVersion) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001011,
+		0b00101111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -21572,6 +21616,22 @@ func (s *SiteCreateAutomationInput) encodeFields(e *jx.Encoder) {
 		e.Str(s.TriggerEvent)
 	}
 	{
+		if s.ExitEvents != nil {
+			e.FieldStart("exitEvents")
+			e.ArrStart()
+			for _, elem := range s.ExitEvents {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.GoalEvent.Set {
+			e.FieldStart("goalEvent")
+			s.GoalEvent.Encode(e)
+		}
+	}
+	{
 		if s.Steps != nil {
 			e.FieldStart("steps")
 			e.ArrStart()
@@ -21589,11 +21649,13 @@ func (s *SiteCreateAutomationInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteCreateAutomationInput = [4]string{
+var jsonFieldsNameOfSiteCreateAutomationInput = [6]string{
 	0: "name",
 	1: "triggerEvent",
-	2: "steps",
-	3: "integrationId",
+	2: "exitEvents",
+	3: "goalEvent",
+	4: "steps",
+	5: "integrationId",
 }
 
 // Decode decodes SiteCreateAutomationInput from json.
@@ -21628,6 +21690,35 @@ func (s *SiteCreateAutomationInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"triggerEvent\"")
+			}
+		case "exitEvents":
+			if err := func() error {
+				s.ExitEvents = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ExitEvents = append(s.ExitEvents, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"exitEvents\"")
+			}
+		case "goalEvent":
+			if err := func() error {
+				s.GoalEvent.Reset()
+				if err := s.GoalEvent.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"goalEvent\"")
 			}
 		case "steps":
 			if err := func() error {
@@ -27102,6 +27193,8 @@ func (s *SiteEnrollmentStatus) Decode(d *jx.Decoder) error {
 		*s = SiteEnrollmentStatusFailed
 	case SiteEnrollmentStatusExited:
 		*s = SiteEnrollmentStatusExited
+	case SiteEnrollmentStatusGoalReached:
+		*s = SiteEnrollmentStatusGoalReached
 	default:
 		*s = SiteEnrollmentStatus(v)
 	}
@@ -53480,6 +53573,22 @@ func (s *SiteUpdateAutomationInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.ExitEvents != nil {
+			e.FieldStart("exitEvents")
+			e.ArrStart()
+			for _, elem := range s.ExitEvents {
+				e.Str(elem)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.GoalEvent.Set {
+			e.FieldStart("goalEvent")
+			s.GoalEvent.Encode(e)
+		}
+	}
+	{
 		if s.Steps != nil {
 			e.FieldStart("steps")
 			e.ArrStart()
@@ -53497,11 +53606,13 @@ func (s *SiteUpdateAutomationInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteUpdateAutomationInput = [4]string{
+var jsonFieldsNameOfSiteUpdateAutomationInput = [6]string{
 	0: "name",
 	1: "triggerEvent",
-	2: "steps",
-	3: "integrationId",
+	2: "exitEvents",
+	3: "goalEvent",
+	4: "steps",
+	5: "integrationId",
 }
 
 // Decode decodes SiteUpdateAutomationInput from json.
@@ -53531,6 +53642,35 @@ func (s *SiteUpdateAutomationInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"triggerEvent\"")
+			}
+		case "exitEvents":
+			if err := func() error {
+				s.ExitEvents = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.ExitEvents = append(s.ExitEvents, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"exitEvents\"")
+			}
+		case "goalEvent":
+			if err := func() error {
+				s.GoalEvent.Reset()
+				if err := s.GoalEvent.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"goalEvent\"")
 			}
 		case "steps":
 			if err := func() error {
