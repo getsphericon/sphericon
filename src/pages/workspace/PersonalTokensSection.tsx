@@ -58,6 +58,7 @@ function PersonalTokensTable({
   workspaceId: string
   onRevoke: (id: string) => void
 }) {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const records = useSuspenseQuery(sitePersonalTokensListOptions({ path: { workspaceId } })).data
 
@@ -118,7 +119,6 @@ function PersonalTokensTable({
 // members:manage, which the server decides) and mints one of the caller's own (ADR 0061). The mint
 // form offers only the scopes the server says the caller's Role may grant.
 export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceResource }) {
-  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const confirmRevoke = useConfirmation()
   const workspaceId = workspace.id

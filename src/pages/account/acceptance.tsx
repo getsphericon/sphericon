@@ -25,7 +25,6 @@ import { DeleteUserSection } from './DeleteUserForm.tsx'
 
 // PendingDocument is the current text of one required acceptance the User has not accepted.
 function PendingDocument({ item }: { item: SiteSignupItem }) {
-  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   return (
     <Stack gap="xs">
@@ -39,6 +38,7 @@ function PendingDocument({ item }: { item: SiteSignupItem }) {
 
 // PendingDocumentText is the version and the Markdown of one pending document.
 function PendingDocumentText({ documentKey }: { documentKey: string }) {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const legal = useSuspenseQuery({
     ...siteLegalDocumentsGetOptions({ path: { key: documentKey } }),

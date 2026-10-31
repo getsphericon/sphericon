@@ -172,6 +172,7 @@ function WebhooksTable({
   onToggle: (record: SiteWebhookEndpointResource) => void
   onDelete: (id: string) => void
 }) {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const records = useSuspenseQuery(siteWebhooksListOptions({ path: { workspaceId } })).data.items
 
@@ -274,7 +275,6 @@ function WebhooksTable({
 
 export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  const { formatDateTime } = useDateFormat()
   const confirmDelete = useConfirmation()
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [testingId, setTestingId] = useState<string | null>(null)

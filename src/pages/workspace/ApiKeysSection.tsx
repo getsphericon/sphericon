@@ -53,6 +53,7 @@ function ApiKeysTable({
   onRename: (record: { id: string; name: string }) => void
   onRevoke: (id: string) => void
 }) {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const records = useSuspenseQuery(siteTokensListOptions({ path: { workspaceId } })).data
 
@@ -116,7 +117,6 @@ export function ApiKeysSection({
   workspaceId: string
   canManage: boolean
 }) {
-  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const confirmRevoke = useConfirmation()
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null)

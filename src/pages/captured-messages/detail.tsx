@@ -17,7 +17,6 @@ import { Route as capturedMessageRoute } from '../../routes/workspaces/$workspac
 import { Route as capturedMessagesRoute } from '../../routes/workspaces/$workspaceId/captured-messages/index.tsx'
 
 export function CapturedMessagePage() {
-  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   return (
     <QueryBoundary
@@ -30,6 +29,7 @@ export function CapturedMessagePage() {
 }
 
 function CapturedMessage() {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const { workspaceId, messageId } = capturedMessageRoute.useParams()
   const navigate = capturedMessageRoute.useNavigate()

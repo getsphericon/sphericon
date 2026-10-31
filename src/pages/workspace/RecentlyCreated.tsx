@@ -28,7 +28,6 @@ interface Recent {
 // RecentlyCreated lists what the Workspace created last, broadcasts and automations together,
 // newest first: each source is asked for its newest few and the merge keeps the newest overall.
 export function RecentlyCreated({ workspaceId }: { workspaceId: string }) {
-  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   return (
     <QueryBoundary fallback={<TableSkeleton />} errorTitle={t(($) => $.overview.recentLoadError)}>
@@ -39,6 +38,7 @@ export function RecentlyCreated({ workspaceId }: { workspaceId: string }) {
 
 // RecentTable reads both lists at once; the boundary around it shows the load and its failure.
 function RecentTable({ workspaceId }: { workspaceId: string }) {
+  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const query = { page: 1, pageSize: LIMIT }

@@ -117,7 +117,6 @@ function AutomationVersionSummary({
 }
 
 export function AutomationDetailPage() {
-  const { formatDateTime } = useDateFormat()
   const { t } = useTranslation()
   return (
     <QueryBoundary
@@ -130,6 +129,7 @@ export function AutomationDetailPage() {
 }
 
 function AutomationDetail() {
+  const { formatDateTime } = useDateFormat()
   const { page } = automationsDetailRoute.useSearch()
   const pageNavigate = automationsDetailRoute.useNavigate()
   const { t } = useTranslation()

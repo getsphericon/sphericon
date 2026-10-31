@@ -13,7 +13,6 @@ import { hasErrorStatus } from '../../utils/apiErrors.ts'
 // The public page of a Sign-up item's Legal document (ADR 0062): the current version, read
 // without signing in, its Markdown rendered.
 export function LegalDocumentPage() {
-  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   return (
     <Container size="md" py="xl">
@@ -33,6 +32,7 @@ export function LegalDocumentPage() {
 }
 
 function LegalDocument() {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const { key } = legalDocumentRoute.useParams()
   const legal = useSuspenseQuery({

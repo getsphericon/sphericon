@@ -74,6 +74,7 @@ function MembersTabs({
   onRemove: (id: string) => void
   onRevoke: (id: string) => void
 }) {
+  const { formatDate } = useDateFormat()
   const { t } = useTranslation()
   const [{ data: me }, { data: members }, { data: invites }] = useSuspenseQueries({
     queries: [
@@ -204,7 +205,6 @@ function MembersTabs({
 // invitation, changing a Role and removing a member are offered only with members:manage, and
 // resetting a Second factor only with second_factor:manage (the API refuses everyone else).
 export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource }) {
-  const { formatDate } = useDateFormat()
   const workspaceId = workspace.id
   const { t } = useTranslation()
   const confirmRemove = useConfirmation()
