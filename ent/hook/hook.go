@@ -477,6 +477,18 @@ func (f PrivateRelayRangeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PrivateRelayRangeMutation", m)
 }
 
+// The ProviderLimiterFunc type is an adapter to allow the use of ordinary
+// function as ProviderLimiter mutator.
+type ProviderLimiterFunc func(context.Context, *ent.ProviderLimiterMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProviderLimiterFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProviderLimiterMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProviderLimiterMutation", m)
+}
+
 // The RecoveryCodeFunc type is an adapter to allow the use of ordinary
 // function as RecoveryCode mutator.
 type RecoveryCodeFunc func(context.Context, *ent.RecoveryCodeMutation) (ent.Value, error)
@@ -571,18 +583,6 @@ func (f SegmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SegmentMutation", m)
-}
-
-// The SendLimiterFunc type is an adapter to allow the use of ordinary
-// function as SendLimiter mutator.
-type SendLimiterFunc func(context.Context, *ent.SendLimiterMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f SendLimiterFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.SendLimiterMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SendLimiterMutation", m)
 }
 
 // The SendingDomainFunc type is an adapter to allow the use of ordinary

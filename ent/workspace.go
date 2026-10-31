@@ -99,8 +99,8 @@ type WorkspaceEdges struct {
 	SendingDomains []*SendingDomain `json:"sending_domains,omitempty"`
 	// JoinDomains holds the value of the join_domains edge.
 	JoinDomains []*JoinDomain `json:"join_domains,omitempty"`
-	// SendLimiters holds the value of the send_limiters edge.
-	SendLimiters []*SendLimiter `json:"send_limiters,omitempty"`
+	// ProviderLimiters holds the value of the provider_limiters edge.
+	ProviderLimiters []*ProviderLimiter `json:"provider_limiters,omitempty"`
 	// Holds holds the value of the holds edge.
 	Holds []*Hold `json:"holds,omitempty"`
 	// Broadcasts holds the value of the broadcasts edge.
@@ -269,13 +269,13 @@ func (e WorkspaceEdges) JoinDomainsOrErr() ([]*JoinDomain, error) {
 	return nil, &NotLoadedError{edge: "join_domains"}
 }
 
-// SendLimitersOrErr returns the SendLimiters value or an error if the edge
+// ProviderLimitersOrErr returns the ProviderLimiters value or an error if the edge
 // was not loaded in eager-loading.
-func (e WorkspaceEdges) SendLimitersOrErr() ([]*SendLimiter, error) {
+func (e WorkspaceEdges) ProviderLimitersOrErr() ([]*ProviderLimiter, error) {
 	if e.loadedTypes[13] {
-		return e.SendLimiters, nil
+		return e.ProviderLimiters, nil
 	}
-	return nil, &NotLoadedError{edge: "send_limiters"}
+	return nil, &NotLoadedError{edge: "provider_limiters"}
 }
 
 // HoldsOrErr returns the Holds value or an error if the edge
@@ -754,9 +754,9 @@ func (_m *Workspace) QueryJoinDomains() *JoinDomainQuery {
 	return NewWorkspaceClient(_m.config).QueryJoinDomains(_m)
 }
 
-// QuerySendLimiters queries the "send_limiters" edge of the Workspace entity.
-func (_m *Workspace) QuerySendLimiters() *SendLimiterQuery {
-	return NewWorkspaceClient(_m.config).QuerySendLimiters(_m)
+// QueryProviderLimiters queries the "provider_limiters" edge of the Workspace entity.
+func (_m *Workspace) QueryProviderLimiters() *ProviderLimiterQuery {
+	return NewWorkspaceClient(_m.config).QueryProviderLimiters(_m)
 }
 
 // QueryHolds queries the "holds" edge of the Workspace entity.

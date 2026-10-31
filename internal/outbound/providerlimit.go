@@ -7,10 +7,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
-// reserve takes one token from the Integration's Send rate limit (ADR 0023).
+// reserve takes one token from the Integration's Provider limit (ADR 0023).
 // It returns the wait until capacity returns when the limit is spent, and zero when
 // the message may go (also when the Integration is not limited, which costs no write).
 // Transactional is never delayed by the limit, but it is spent from both buckets
@@ -21,14 +21,14 @@ func (m *Module) reserve(ctx context.Context, s *ent.Scoped, req Request, integ 
 	if integ == nil {
 		return 0, nil
 	}
-	limits := sendlimit.EffectiveOf(integ).Limits()
+	limits := providerlimit.EffectiveOf(integ).Limits()
 	if req.Kind == outboundmessage.KindTransactional {
-		if err := sendlimit.Spend(ctx, s, integ.ID, limits, time.Now()); err != nil {
+		if err := providerlimit.Spend(ctx, s, integ.ID, limits, time.Now()); err != nil {
 			return 0, fmt.Errorf("outbound: spend send capacity: %w", err)
 		}
 		return 0, nil
 	}
-	wait, err := sendlimit.Reserve(ctx, s, integ.ID, limits, time.Now())
+	wait, err := providerlimit.Reserve(ctx, s, integ.ID, limits, time.Now())
 	if err != nil {
 		return 0, fmt.Errorf("outbound: reserve send capacity: %w", err)
 	}

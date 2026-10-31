@@ -308,18 +308,18 @@ func TestScopedUpdateModifyCannotAssignTheWorkspace(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(acme)
 
-	n, err := s.SendLimiter().Update().
+	n, err := s.ProviderLimiter().Update().
 		Modify(func(a *ent.ScopedAssign) { a.Set("second_fill", 0.5) }).
 		Save(ctx)
 	require.NoError(t, err)
 	assert.Positive(t, n, "a computed assignment on a regular column goes through")
 
-	_, err = s.SendLimiter().Update().
+	_, err = s.ProviderLimiter().Update().
 		Modify(func(a *ent.ScopedAssign) { a.Set("workspace_id", globex) }).
 		Save(ctx)
 	require.ErrorIs(t, err, ent.ErrWorkspaceAssign)
 
-	row, err := env.DB.SendLimiter.Get(ctx, fixtures.SendLimiterAcmeID)
+	row, err := env.DB.ProviderLimiter.Get(ctx, fixtures.ProviderLimiterAcmeID)
 	require.NoError(t, err)
 	assert.Equal(t, acme, row.WorkspaceID, "the row stayed in its Workspace")
 }

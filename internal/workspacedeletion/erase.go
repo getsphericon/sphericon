@@ -32,13 +32,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -233,7 +233,7 @@ var eraseSteps = []eraseStep{
 	stepOf((*ent.Scoped).Suppression, suppression.IDIn),
 	stepOf((*ent.Scoped).Usage, usage.IDIn),
 	stepOf((*ent.Scoped).Hold, hold.IDIn),
-	stepOf((*ent.Scoped).SendLimiter, sendlimiter.IDIn),
+	stepOf((*ent.Scoped).ProviderLimiter, providerlimiter.IDIn),
 	stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoint.IDIn),
 	stepOf((*ent.Scoped).Invitation, invitation.IDIn),
 	stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),

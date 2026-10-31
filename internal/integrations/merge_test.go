@@ -94,9 +94,16 @@ func TestAnSMTPRelayWithoutAPasswordMovesFreely(t *testing.T) {
 
 const postbox = "https://postbox.cloud.yandex.net"
 
+// postboxReady gives the fixture's SES Integration the Provider limit an SES-compatible service
+// requires, so the edits below may point it at Postbox.
+func postboxReady(env *testhelper.TestEnv) int64 {
+	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetMaxPerSecond(1).SetMaxPerDay(200).ExecX(context.Background())
+	return fixtures.IntegrationAcmeSesID
+}
+
 func TestABlankSESSecretKeepsTheStoredOneForTheSameDestination(t *testing.T) {
 	env := testhelper.Setup(t)
-	id := int64(fixtures.IntegrationAcmeSesID)
+	id := postboxReady(env)
 	require.NoError(t, editSES(env, id, integrations.SESConfig{Region: "eu-west-1", AccessKeyID: "AKIA1234", SecretAccessKey: "stored", Endpoint: postbox, From: "a@acme.test"}))
 
 	require.NoError(t, editSES(env, id, integrations.SESConfig{Region: "eu-west-1", AccessKeyID: "AKIA1234", Endpoint: postbox, From: "new@acme.test"}))
@@ -108,7 +115,7 @@ func TestABlankSESSecretKeepsTheStoredOneForTheSameDestination(t *testing.T) {
 
 func TestABlankSESSecretIsRefusedForAMovedDestination(t *testing.T) {
 	env := testhelper.Setup(t)
-	id := int64(fixtures.IntegrationAcmeSesID)
+	id := postboxReady(env)
 	require.NoError(t, editSES(env, id, integrations.SESConfig{Region: "eu-west-1", AccessKeyID: "AKIA1234", SecretAccessKey: "stored", Endpoint: postbox, From: "a@acme.test"}))
 
 	for name, moved := range map[string]integrations.SESConfig{

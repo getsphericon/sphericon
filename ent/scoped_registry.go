@@ -30,13 +30,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -1205,9 +1205,9 @@ func ScopedEntities() []ScopedEntity {
 			},
 			Refs: []ScopedRef{
 				{
-					Name: "send_limiter", Target: "SendLimiter",
+					Name: "provider_limiter", Target: "ProviderLimiter",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Integration().UpdateOneID(id).SetSendLimiterID(target).Exec(ctx)
+						return s.Integration().UpdateOneID(id).SetProviderLimiterID(target).Exec(ctx)
 					},
 				},
 				{
@@ -1614,6 +1614,47 @@ func ScopedEntities() []ScopedEntity {
 			},
 		},
 		{
+			Name:    "ProviderLimiter",
+			Audited: false,
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.ProviderLimiter.Query().Where(providerlimiter.WorkspaceID(ws)).Order(Asc(providerlimiter.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.ProviderLimiter().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ProviderLimiter().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ProviderLimiter().Update().Where(providerlimiter.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ProviderLimiter().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ProviderLimiter().Delete().Where(providerlimiter.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.ProviderLimiter.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.ProviderLimiter().Create()
+				b.SetIntegrationID(remap("Integration", src.IntegrationID))
+				b.SetSecondFill(src.SecondFill)
+				b.SetDayFill(src.DayFill)
+				b.SetRefilledAt(src.RefilledAt)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
 			Name:    "Rule",
 			Audited: true,
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
@@ -1901,47 +1942,6 @@ func ScopedEntities() []ScopedEntity {
 				if src.Condition != nil {
 					b.SetCondition(*src.Condition)
 				}
-				created, err := b.Save(ctx)
-				if err != nil {
-					return 0, err
-				}
-				return created.WorkspaceID, nil
-			},
-			Refs: []ScopedRef{},
-		},
-		{
-			Name:    "SendLimiter",
-			Audited: false,
-			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
-				return c.SendLimiter.Query().Where(sendlimiter.WorkspaceID(ws)).Order(Asc(sendlimiter.FieldID)).IDs(ctx)
-			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.SendLimiter().Get(ctx, id)
-				return err
-			},
-			Touch: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.SendLimiter().UpdateOneID(id).Exec(ctx)
-			},
-			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.SendLimiter().Update().Where(sendlimiter.ID(id)).Save(ctx)
-			},
-			Delete: func(ctx context.Context, s *Scoped, id int64) error {
-				return s.SendLimiter().DeleteOneID(id).Exec(ctx)
-			},
-			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
-				return s.SendLimiter().Delete().Where(sendlimiter.ID(id)).Exec(ctx)
-			},
-			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
-				src, err := s.c.SendLimiter.Get(ctx, id)
-				if err != nil {
-					return 0, err
-				}
-				_ = remap
-				b := s.SendLimiter().Create()
-				b.SetIntegrationID(remap("Integration", src.IntegrationID))
-				b.SetSecondFill(src.SecondFill)
-				b.SetDayFill(src.DayFill)
-				b.SetRefilledAt(src.RefilledAt)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

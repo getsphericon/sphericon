@@ -15,9 +15,9 @@ import (
 	instance "github.com/getsphericon/sphericon/internal/instance"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
 	linkclicks "github.com/getsphericon/sphericon/internal/linkclicks"
+	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
-	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 	signupitems "github.com/getsphericon/sphericon/internal/signupitems"
 )
 
@@ -548,6 +548,19 @@ func (c *ConverterImpl) PersonalTokenToResource(source *ent.ApiToken) site.SiteP
 	}
 	return siteapiSitePersonalTokenResource
 }
+func (c *ConverterImpl) ProviderLimitToStatus(source providerlimit.Status) site.SiteProviderLimitStatus {
+	var siteapiSiteProviderLimitStatus site.SiteProviderLimitStatus
+	siteapiSiteProviderLimitStatus.PerSecond = c.providerlimitValueToSiteapiSiteProviderLimitValue(source.PerSecond)
+	siteapiSiteProviderLimitStatus.PerDay = c.providerlimitValueToSiteapiSiteProviderLimitValue(source.PerDay)
+	siteapiSiteProviderLimitStatus.SentLast24h = count(source.Sent24h)
+	if source.Warnings != nil {
+		siteapiSiteProviderLimitStatus.Warnings = make([]site.SiteProviderLimitWarning, len(source.Warnings))
+		for i := 0; i < len(source.Warnings); i++ {
+			siteapiSiteProviderLimitStatus.Warnings[i] = providerLimitWarning(source.Warnings[i])
+		}
+	}
+	return siteapiSiteProviderLimitStatus
+}
 func (c *ConverterImpl) RevenueSettingsToResource(source *ent.Workspace) site.SiteRevenueSettingsResource {
 	var siteapiSiteRevenueSettingsResource site.SiteRevenueSettingsResource
 	if source != nil {
@@ -635,19 +648,6 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentR
 		siteapiSiteSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return siteapiSiteSegmentResource
-}
-func (c *ConverterImpl) SendLimitToStatus(source sendlimit.Status) site.SiteSendLimitStatus {
-	var siteapiSiteSendLimitStatus site.SiteSendLimitStatus
-	siteapiSiteSendLimitStatus.PerSecond = c.sendlimitValueToSiteapiSiteSendLimitValue(source.PerSecond)
-	siteapiSiteSendLimitStatus.PerDay = c.sendlimitValueToSiteapiSiteSendLimitValue(source.PerDay)
-	siteapiSiteSendLimitStatus.SentLast24h = count(source.Sent24h)
-	if source.Warnings != nil {
-		siteapiSiteSendLimitStatus.Warnings = make([]site.SiteSendLimitWarning, len(source.Warnings))
-		for i := 0; i < len(source.Warnings); i++ {
-			siteapiSiteSendLimitStatus.Warnings[i] = sendLimitWarning(source.Warnings[i])
-		}
-	}
-	return siteapiSiteSendLimitStatus
 }
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.SiteSendingDomainResource {
 	var siteapiSiteSendingDomainResource site.SiteSendingDomainResource
@@ -871,6 +871,12 @@ func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclick
 	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
 	return siteapiSiteLinkClicks
 }
+func (c *ConverterImpl) providerlimitValueToSiteapiSiteProviderLimitValue(source providerlimit.Value) site.SiteProviderLimitValue {
+	var siteapiSiteProviderLimitValue site.SiteProviderLimitValue
+	siteapiSiteProviderLimitValue.Limit = nilInt32(source.Limit)
+	siteapiSiteProviderLimitValue.Source = providerLimitSource(source.Source)
+	return siteapiSiteProviderLimitValue
+}
 func (c *ConverterImpl) rulesPlannedActionToSiteapiSiteRuleDryRunAction(source rules.PlannedAction) site.SiteRuleDryRunAction {
 	var siteapiSiteRuleDryRunAction site.SiteRuleDryRunAction
 	siteapiSiteRuleDryRunAction.Type = string(source.Type)
@@ -882,10 +888,4 @@ func (c *ConverterImpl) schemaCapturedHeaderToSiteapiSiteCapturedMessageHeader(s
 	siteapiSiteCapturedMessageHeader.Name = source.Name
 	siteapiSiteCapturedMessageHeader.Value = source.Value
 	return siteapiSiteCapturedMessageHeader
-}
-func (c *ConverterImpl) sendlimitValueToSiteapiSiteSendLimitValue(source sendlimit.Value) site.SiteSendLimitValue {
-	var siteapiSiteSendLimitValue site.SiteSendLimitValue
-	siteapiSiteSendLimitValue.Limit = nilInt32(source.Limit)
-	siteapiSiteSendLimitValue.Source = sendLimitSource(source.Source)
-	return siteapiSiteSendLimitValue
 }

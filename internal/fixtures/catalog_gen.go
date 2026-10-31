@@ -1541,6 +1541,10 @@ const (
 	PrivateRelayRangeID = 1
 	// PrivateRelayRangeV6ID is from fixtures/private_relay_ranges.
 	PrivateRelayRangeV6ID = 2
+	// ProviderLimiterAcmeID is from fixtures/provider_limiters.
+	ProviderLimiterAcmeID = 1
+	// ProviderLimiterGlobexID is from fixtures/provider_limiters.
+	ProviderLimiterGlobexID = 900
 	// ProviderOnlyOwnerPruEmail is from fixtures/users.
 	ProviderOnlyOwnerPruEmail = "pru@cyberdyne.test"
 	// ProviderOnlyOwnerPruID is from fixtures/users.
@@ -1723,10 +1727,6 @@ const (
 	SegmentRetiredID = 104
 	// SegmentRetiredName is from fixtures/segments.
 	SegmentRetiredName = "Retired audience"
-	// SendLimiterAcmeID is from fixtures/send_limiters.
-	SendLimiterAcmeID = 1
-	// SendLimiterGlobexID is from fixtures/send_limiters.
-	SendLimiterGlobexID = 900
 	// SendingDomainArchivedDomain is from fixtures/sending_domains.
 	SendingDomainArchivedDomain = "old.acme.com"
 	// SendingDomainArchivedID is from fixtures/sending_domains.

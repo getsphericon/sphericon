@@ -5587,9 +5587,11 @@ type CreateIntegrationInput struct {
 	Name      string  `json:"name"`
 	Enabled   OptBool `json:"enabled"`
 	IsDefault OptBool `json:"isDefault"`
-	// Most messages per second (1 to 10 000); omit or null for no limit.
+	// Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES
+	// Integration with an `endpoint`, which requires it.
 	MaxPerSecond OptNilMaxPerSecond `json:"maxPerSecond"`
-	// Most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit.
+	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit,
+	// except on an SES Integration with an `endpoint`, which requires it.
 	MaxPerDay OptNilMaxPerDay        `json:"maxPerDay"`
 	Config    IntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
@@ -8199,12 +8201,12 @@ type IntegrationResource struct {
 	Enabled bool `json:"enabled"`
 	// Whether this is the default provider for its channel.
 	IsDefault bool `json:"isDefault"`
-	// Send rate limit set on the Integration: most messages per second; null means none.
+	// Provider limit set on the Integration: most messages per second; null means none.
 	MaxPerSecond NilInt32 `json:"maxPerSecond"`
-	// Send rate limit set on the Integration: most messages per rolling 24 hours; null means none.
+	// Provider limit set on the Integration: most messages per rolling 24 hours; null means none.
 	MaxPerDay NilInt32 `json:"maxPerDay"`
-	// The Send rate limit as enforced and 24-hour usage.
-	SendLimit SendLimitStatus `json:"sendLimit"`
+	// The Provider limit as enforced and 24-hour usage.
+	ProviderLimit ProviderLimitStatus `json:"providerLimit"`
 	// Provider config (secrets redacted).
 	Config IntegrationConfig `json:"config"`
 	// The Preset this Integration's provider callbacks are read with; null when it receives none.
@@ -8267,9 +8269,9 @@ func (s *IntegrationResource) GetMaxPerDay() NilInt32 {
 	return s.MaxPerDay
 }
 
-// GetSendLimit returns the value of SendLimit.
-func (s *IntegrationResource) GetSendLimit() SendLimitStatus {
-	return s.SendLimit
+// GetProviderLimit returns the value of ProviderLimit.
+func (s *IntegrationResource) GetProviderLimit() ProviderLimitStatus {
+	return s.ProviderLimit
 }
 
 // GetConfig returns the value of Config.
@@ -8352,9 +8354,9 @@ func (s *IntegrationResource) SetMaxPerDay(val NilInt32) {
 	s.MaxPerDay = val
 }
 
-// SetSendLimit sets the value of SendLimit.
-func (s *IntegrationResource) SetSendLimit(val SendLimitStatus) {
-	s.SendLimit = val
+// SetProviderLimit sets the value of ProviderLimit.
+func (s *IntegrationResource) SetProviderLimit(val ProviderLimitStatus) {
+	s.ProviderLimit = val
 }
 
 // SetConfig sets the value of Config.
@@ -9008,6 +9010,51 @@ func (o NilInt32) Or(d int32) int32 {
 	return d
 }
 
+// NewNilProviderLimitSource returns new NilProviderLimitSource with value set to v.
+func NewNilProviderLimitSource(v ProviderLimitSource) NilProviderLimitSource {
+	return NilProviderLimitSource{
+		Value: v,
+	}
+}
+
+// NilProviderLimitSource is nullable ProviderLimitSource.
+type NilProviderLimitSource struct {
+	Value ProviderLimitSource
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilProviderLimitSource) SetTo(v ProviderLimitSource) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilProviderLimitSource) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilProviderLimitSource) SetToNull() {
+	o.Null = true
+	var v ProviderLimitSource
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilProviderLimitSource) Get() (v ProviderLimitSource, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilProviderLimitSource) Or(d ProviderLimitSource) ProviderLimitSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilRuleVersion returns new NilRuleVersion with value set to v.
 func NewNilRuleVersion(v RuleVersion) NilRuleVersion {
 	return NilRuleVersion{
@@ -9047,51 +9094,6 @@ func (o NilRuleVersion) Get() (v RuleVersion, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilRuleVersion) Or(d RuleVersion) RuleVersion {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewNilSendLimitSource returns new NilSendLimitSource with value set to v.
-func NewNilSendLimitSource(v SendLimitSource) NilSendLimitSource {
-	return NilSendLimitSource{
-		Value: v,
-	}
-}
-
-// NilSendLimitSource is nullable SendLimitSource.
-type NilSendLimitSource struct {
-	Value SendLimitSource
-	Null  bool
-}
-
-// SetTo sets value to v.
-func (o *NilSendLimitSource) SetTo(v SendLimitSource) {
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o NilSendLimitSource) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *NilSendLimitSource) SetToNull() {
-	o.Null = true
-	var v SendLimitSource
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o NilSendLimitSource) Get() (v SendLimitSource, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o NilSendLimitSource) Or(d SendLimitSource) SendLimitSource {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -12482,6 +12484,174 @@ func (*ProblemDetailsHeaders) webhooksRegenerateSecretRes()  {}
 func (*ProblemDetailsHeaders) webhooksTestRes()              {}
 func (*ProblemDetailsHeaders) webhooksUpdateRes()            {}
 
+// Where an effective Provider limit comes from.
+// Ref: #/components/schemas/ProviderLimitSource
+type ProviderLimitSource string
+
+const (
+	ProviderLimitSourceManual   ProviderLimitSource = "manual"
+	ProviderLimitSourceProvider ProviderLimitSource = "provider"
+)
+
+// AllValues returns all ProviderLimitSource values.
+func (ProviderLimitSource) AllValues() []ProviderLimitSource {
+	return []ProviderLimitSource{
+		ProviderLimitSourceManual,
+		ProviderLimitSourceProvider,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ProviderLimitSource) MarshalText() ([]byte, error) {
+	switch s {
+	case ProviderLimitSourceManual:
+		return []byte(s), nil
+	case ProviderLimitSourceProvider:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ProviderLimitSource) UnmarshalText(data []byte) error {
+	switch ProviderLimitSource(data) {
+	case ProviderLimitSourceManual:
+		*s = ProviderLimitSourceManual
+		return nil
+	case ProviderLimitSourceProvider:
+		*s = ProviderLimitSourceProvider
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The Provider limit as enforced, with the last 24 hours of usage.
+// Ref: #/components/schemas/ProviderLimitStatus
+type ProviderLimitStatus struct {
+	// Most messages per second.
+	PerSecond ProviderLimitValue `json:"perSecond"`
+	// Most messages per rolling 24 hours.
+	PerDay ProviderLimitValue `json:"perDay"`
+	// Messages the provider accepted from this Integration in the last 24 hours.
+	SentLast24h int32 `json:"sentLast24h"`
+	// Reasons to review the limit; empty when there is nothing to flag.
+	Warnings []ProviderLimitWarning `json:"warnings"`
+}
+
+// GetPerSecond returns the value of PerSecond.
+func (s *ProviderLimitStatus) GetPerSecond() ProviderLimitValue {
+	return s.PerSecond
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *ProviderLimitStatus) GetPerDay() ProviderLimitValue {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *ProviderLimitStatus) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *ProviderLimitStatus) GetWarnings() []ProviderLimitWarning {
+	return s.Warnings
+}
+
+// SetPerSecond sets the value of PerSecond.
+func (s *ProviderLimitStatus) SetPerSecond(val ProviderLimitValue) {
+	s.PerSecond = val
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *ProviderLimitStatus) SetPerDay(val ProviderLimitValue) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *ProviderLimitStatus) SetSentLast24h(val int32) {
+	s.SentLast24h = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *ProviderLimitStatus) SetWarnings(val []ProviderLimitWarning) {
+	s.Warnings = val
+}
+
+// One effective ceiling: the lowest of the manual and provider values, manual on a tie.
+// Ref: #/components/schemas/ProviderLimitValue
+type ProviderLimitValue struct {
+	// The ceiling in messages; null means this window is not limited.
+	Limit NilInt32 `json:"limit"`
+	// Where the ceiling comes from; null when there is none.
+	Source NilProviderLimitSource `json:"source"`
+}
+
+// GetLimit returns the value of Limit.
+func (s *ProviderLimitValue) GetLimit() NilInt32 {
+	return s.Limit
+}
+
+// GetSource returns the value of Source.
+func (s *ProviderLimitValue) GetSource() NilProviderLimitSource {
+	return s.Source
+}
+
+// SetLimit sets the value of Limit.
+func (s *ProviderLimitValue) SetLimit(val NilInt32) {
+	s.Limit = val
+}
+
+// SetSource sets the value of Source.
+func (s *ProviderLimitValue) SetSource(val NilProviderLimitSource) {
+	s.Source = val
+}
+
+// A reason to look at an Integration's Provider limit.
+// Ref: #/components/schemas/ProviderLimitWarning
+type ProviderLimitWarning string
+
+const (
+	ProviderLimitWarningUnlimited                ProviderLimitWarning = "unlimited"
+	ProviderLimitWarningProviderQuotaUnavailable ProviderLimitWarning = "providerQuotaUnavailable"
+)
+
+// AllValues returns all ProviderLimitWarning values.
+func (ProviderLimitWarning) AllValues() []ProviderLimitWarning {
+	return []ProviderLimitWarning{
+		ProviderLimitWarningUnlimited,
+		ProviderLimitWarningProviderQuotaUnavailable,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ProviderLimitWarning) MarshalText() ([]byte, error) {
+	switch s {
+	case ProviderLimitWarningUnlimited:
+		return []byte(s), nil
+	case ProviderLimitWarningProviderQuotaUnavailable:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ProviderLimitWarning) UnmarshalText(data []byte) error {
+	switch ProviderLimitWarning(data) {
+	case ProviderLimitWarningUnlimited:
+		*s = ProviderLimitWarningUnlimited
+		return nil
+	case ProviderLimitWarningProviderQuotaUnavailable:
+		*s = ProviderLimitWarningProviderQuotaUnavailable
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is null when the
 // denominator is zero: an undefined rate is never reported as 0.
 // Ref: #/components/schemas/RateTriple
@@ -13954,174 +14124,6 @@ func (*SegmentsUpdateUnauthorized) segmentsUpdateRes() {}
 type SegmentsUpdateUnprocessableEntity ProblemDetails
 
 func (*SegmentsUpdateUnprocessableEntity) segmentsUpdateRes() {}
-
-// Where an effective Send rate limit comes from.
-// Ref: #/components/schemas/SendLimitSource
-type SendLimitSource string
-
-const (
-	SendLimitSourceManual   SendLimitSource = "manual"
-	SendLimitSourceProvider SendLimitSource = "provider"
-)
-
-// AllValues returns all SendLimitSource values.
-func (SendLimitSource) AllValues() []SendLimitSource {
-	return []SendLimitSource{
-		SendLimitSourceManual,
-		SendLimitSourceProvider,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SendLimitSource) MarshalText() ([]byte, error) {
-	switch s {
-	case SendLimitSourceManual:
-		return []byte(s), nil
-	case SendLimitSourceProvider:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SendLimitSource) UnmarshalText(data []byte) error {
-	switch SendLimitSource(data) {
-	case SendLimitSourceManual:
-		*s = SendLimitSourceManual
-		return nil
-	case SendLimitSourceProvider:
-		*s = SendLimitSourceProvider
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// The Send rate limit as enforced, with the last 24 hours of usage.
-// Ref: #/components/schemas/SendLimitStatus
-type SendLimitStatus struct {
-	// Most messages per second.
-	PerSecond SendLimitValue `json:"perSecond"`
-	// Most messages per rolling 24 hours.
-	PerDay SendLimitValue `json:"perDay"`
-	// Messages the provider accepted from this Integration in the last 24 hours.
-	SentLast24h int32 `json:"sentLast24h"`
-	// Reasons to review the limit; empty when there is nothing to flag.
-	Warnings []SendLimitWarning `json:"warnings"`
-}
-
-// GetPerSecond returns the value of PerSecond.
-func (s *SendLimitStatus) GetPerSecond() SendLimitValue {
-	return s.PerSecond
-}
-
-// GetPerDay returns the value of PerDay.
-func (s *SendLimitStatus) GetPerDay() SendLimitValue {
-	return s.PerDay
-}
-
-// GetSentLast24h returns the value of SentLast24h.
-func (s *SendLimitStatus) GetSentLast24h() int32 {
-	return s.SentLast24h
-}
-
-// GetWarnings returns the value of Warnings.
-func (s *SendLimitStatus) GetWarnings() []SendLimitWarning {
-	return s.Warnings
-}
-
-// SetPerSecond sets the value of PerSecond.
-func (s *SendLimitStatus) SetPerSecond(val SendLimitValue) {
-	s.PerSecond = val
-}
-
-// SetPerDay sets the value of PerDay.
-func (s *SendLimitStatus) SetPerDay(val SendLimitValue) {
-	s.PerDay = val
-}
-
-// SetSentLast24h sets the value of SentLast24h.
-func (s *SendLimitStatus) SetSentLast24h(val int32) {
-	s.SentLast24h = val
-}
-
-// SetWarnings sets the value of Warnings.
-func (s *SendLimitStatus) SetWarnings(val []SendLimitWarning) {
-	s.Warnings = val
-}
-
-// One effective ceiling: the lowest of the manual and provider values, manual on a tie.
-// Ref: #/components/schemas/SendLimitValue
-type SendLimitValue struct {
-	// The ceiling in messages; null means this window is not limited.
-	Limit NilInt32 `json:"limit"`
-	// Where the ceiling comes from; null when there is none.
-	Source NilSendLimitSource `json:"source"`
-}
-
-// GetLimit returns the value of Limit.
-func (s *SendLimitValue) GetLimit() NilInt32 {
-	return s.Limit
-}
-
-// GetSource returns the value of Source.
-func (s *SendLimitValue) GetSource() NilSendLimitSource {
-	return s.Source
-}
-
-// SetLimit sets the value of Limit.
-func (s *SendLimitValue) SetLimit(val NilInt32) {
-	s.Limit = val
-}
-
-// SetSource sets the value of Source.
-func (s *SendLimitValue) SetSource(val NilSendLimitSource) {
-	s.Source = val
-}
-
-// A reason to look at an Integration's Send rate limit.
-// Ref: #/components/schemas/SendLimitWarning
-type SendLimitWarning string
-
-const (
-	SendLimitWarningUnlimited                SendLimitWarning = "unlimited"
-	SendLimitWarningProviderQuotaUnavailable SendLimitWarning = "providerQuotaUnavailable"
-)
-
-// AllValues returns all SendLimitWarning values.
-func (SendLimitWarning) AllValues() []SendLimitWarning {
-	return []SendLimitWarning{
-		SendLimitWarningUnlimited,
-		SendLimitWarningProviderQuotaUnavailable,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SendLimitWarning) MarshalText() ([]byte, error) {
-	switch s {
-	case SendLimitWarningUnlimited:
-		return []byte(s), nil
-	case SendLimitWarningProviderQuotaUnavailable:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SendLimitWarning) UnmarshalText(data []byte) error {
-	switch SendLimitWarning(data) {
-	case SendLimitWarningUnlimited:
-		*s = SendLimitWarningUnlimited
-		return nil
-	case SendLimitWarningProviderQuotaUnavailable:
-		*s = SendLimitWarningProviderQuotaUnavailable
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
 
 // Send a single transactional email by rendering a referenced template.
 // Ref: #/components/schemas/SendTransactionalEmailInput
@@ -16533,9 +16535,11 @@ type UpdateIntegrationInput struct {
 	Name      OptString `json:"name"`
 	Enabled   OptBool   `json:"enabled"`
 	IsDefault OptBool   `json:"isDefault"`
-	// Most messages per second (1 to 10 000); null clears the limit, omit to keep.
+	// Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES
+	// Integration with an `endpoint` cannot be left without it.
 	MaxPerSecond OptNilMaxPerSecond `json:"maxPerSecond"`
-	// Most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep.
+	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit
+	// to keep. An SES Integration with an `endpoint` cannot be left without it.
 	MaxPerDay OptNilMaxPerDay              `json:"maxPerDay"`
 	Config    OptNilIntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no

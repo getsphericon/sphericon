@@ -1,4 +1,4 @@
-package sendlimit
+package providerlimit
 
 import (
 	"context"

@@ -9,28 +9,28 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// SendLimiter is the state of one Integration's Send rate limit (ADR 0023): two
+// ProviderLimiter is the state of one Integration's Provider limit (ADR 0023): two
 // token buckets, per-second and daily, in a single row so a reservation can take a
 // token from both or neither in one atomic UPDATE. The row is created lazily on the
 // first limited send. Each bucket stores its fill as a fraction of capacity (1 is
 // full), not a token count: capacity and refill rate derive from the Integration's
 // max_per_second / max_per_day at reservation time, so changing a limit takes effect
 // at once and a bucket that was unlimited for a while is simply full.
-type SendLimiter struct {
+type ProviderLimiter struct {
 	ent.Schema
 }
 
-func (SendLimiter) Annotations() []schema.Annotation {
+func (ProviderLimiter) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entsql.Annotation{Table: "send_limiters"},
+		entsql.Annotation{Table: "provider_limiters"},
 	}
 }
 
-func (SendLimiter) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "send_limiters"}}
+func (ProviderLimiter) Mixin() []ent.Mixin {
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "provider_limiters"}}
 }
 
-func (SendLimiter) Fields() []ent.Field {
+func (ProviderLimiter) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("id").
 			StorageKey("id").
@@ -49,10 +49,10 @@ func (SendLimiter) Fields() []ent.Field {
 	}
 }
 
-func (SendLimiter) Edges() []ent.Edge {
+func (ProviderLimiter) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("integration", Integration.Type).
-			Ref("send_limiter").
+			Ref("provider_limiter").
 			Field("integration_id").
 			Unique().
 			Required().
@@ -60,7 +60,7 @@ func (SendLimiter) Edges() []ent.Edge {
 	}
 }
 
-func (SendLimiter) Indexes() []ent.Index {
+func (ProviderLimiter) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("workspace_id"),
 	}

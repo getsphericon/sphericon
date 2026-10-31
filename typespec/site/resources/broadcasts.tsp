@@ -97,7 +97,7 @@ model SiteBroadcastProgress {
 
   /**
    * When the last remaining recipient is expected to be sent. Null when it is not
-   * knowable: the broadcast is on hold, or it is not paced by a Send rate limit.
+   * knowable: the broadcast is on hold, or it is not paced by a Provider limit.
    */
   estimatedCompletionAt?: Timestamp | null;
 }

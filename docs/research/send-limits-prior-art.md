@@ -427,7 +427,7 @@ The provider's reputation is the customer's, but three things stay shared with e
 
 This section lists options and trade-offs; it decides nothing. The current code matches ADR 0023: `EffectiveOf` is
 "the one place manual, provider (and later warmup) values are folded into a ceiling", each value carrying its source
-([`internal/sendlimit/effective.go#L41-L61`](../../internal/sendlimit/effective.go)), and the SES driver reads only
+([`internal/providerlimit/effective.go#L41-L61`](../../internal/providerlimit/effective.go)), and the SES driver reads only
 `SendQuota` from `GetAccount` ([`internal/messaging/ses/ses.go#L159-L180`](../../internal/messaging/ses/ses.go)).
 
 ### Question 1: a ceiling set by Staff

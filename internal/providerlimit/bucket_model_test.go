@@ -1,4 +1,4 @@
-package sendlimit_test
+package providerlimit_test
 
 import (
 	"math"
@@ -7,9 +7,9 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -18,7 +18,7 @@ import (
 // send needs one token from each limited bucket, and a transactional send takes one even when
 // that leaves a bucket negative.
 type bucketModel struct {
-	limits sendlimit.Limits
+	limits providerlimit.Limits
 	second float64
 	day    float64
 	at     time.Time
@@ -67,16 +67,16 @@ func (m *bucketModel) shortBy(now time.Time) (granted, borderline bool) {
 // Whatever mix of marketing sends, transactional sends and waiting, a reservation is granted
 // exactly when the model says both buckets hold a token, and a denied one reports a wait after
 // which the same reservation is granted.
-func TestSendLimiterFollowsTheTokenBucketModel(t *testing.T) {
+func TestProviderLimiterFollowsTheTokenBucketModel(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	start := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	rapid.Check(t, func(t *rapid.T) {
 		// Each run starts from no limiter row, so the first reservation creates it full.
-		env.DB.SendLimiter.Delete().Where(sendlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).ExecX(t.Context())
+		env.DB.ProviderLimiter.Delete().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).ExecX(t.Context())
 
-		var limits sendlimit.Limits
+		var limits providerlimit.Limits
 		if rapid.Bool().Draw(t, "limited per second") {
 			limits.PerSecond = new(rapid.IntRange(1, 20).Draw(t, "per second"))
 		}
@@ -90,7 +90,7 @@ func TestSendLimiterFollowsTheTokenBucketModel(t *testing.T) {
 			"reserve": func(t *rapid.T) {
 				granted, borderline := model.shortBy(now)
 
-				wait, err := sendlimit.Reserve(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now)
+				wait, err := providerlimit.Reserve(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now)
 
 				if err != nil {
 					t.Fatalf("reserve at %v: %v", now, err)
@@ -103,14 +103,14 @@ func TestSendLimiterFollowsTheTokenBucketModel(t *testing.T) {
 					return
 				}
 				now = now.Add(wait)
-				again, err := sendlimit.Reserve(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now)
+				again, err := providerlimit.Reserve(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now)
 				if err != nil || again != 0 {
 					t.Fatalf("after the reported wait of %v the reservation still waits %v (error %v)", wait, again, err)
 				}
 				model.take(now)
 			},
 			"spend": func(t *rapid.T) {
-				if err := sendlimit.Spend(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now); err != nil {
+				if err := providerlimit.Spend(t.Context(), s, fixtures.IntegrationAcmeDefaultID, limits, now); err != nil {
 					t.Fatalf("spend at %v: %v", now, err)
 				}
 				model.take(now)

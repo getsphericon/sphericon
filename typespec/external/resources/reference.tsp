@@ -50,8 +50,8 @@ enum IntegrationProvider {
   inbox,
 }
 
-/** Where an effective Send rate limit comes from */
-enum SendLimitSource {
+/** Where an effective Provider limit comes from */
+enum ProviderLimitSource {
   /** Set by the user on the Integration */
   manual,
 
@@ -59,8 +59,8 @@ enum SendLimitSource {
   provider,
 }
 
-/** A reason to look at an Integration's Send rate limit */
-enum SendLimitWarning {
+/** A reason to look at an Integration's Provider limit */
+enum ProviderLimitWarning {
   /** No ceiling applies: sends are not paced and the provider may throttle or block them */
   unlimited,
 
@@ -69,27 +69,27 @@ enum SendLimitWarning {
 }
 
 /** One effective ceiling: the lowest of the manual and provider values, manual on a tie */
-model SendLimitValue {
+model ProviderLimitValue {
   /** The ceiling in messages; null means this window is not limited */
   limit: int32 | null;
 
   /** Where the ceiling comes from; null when there is none */
-  source: SendLimitSource | null;
+  source: ProviderLimitSource | null;
 }
 
-/** The Send rate limit as enforced, with the last 24 hours of usage */
-model SendLimitStatus {
+/** The Provider limit as enforced, with the last 24 hours of usage */
+model ProviderLimitStatus {
   /** Most messages per second */
-  perSecond: SendLimitValue;
+  perSecond: ProviderLimitValue;
 
   /** Most messages per rolling 24 hours */
-  perDay: SendLimitValue;
+  perDay: ProviderLimitValue;
 
   /** Messages the provider accepted from this Integration in the last 24 hours */
   sentLast24h: int32;
 
   /** Reasons to review the limit; empty when there is nothing to flag */
-  warnings: SendLimitWarning[];
+  warnings: ProviderLimitWarning[];
 }
 
 /**

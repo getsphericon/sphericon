@@ -62,7 +62,7 @@ const (
 	Failed Outcome = "failed"
 	// Held: the source cannot send right now. Reason is a Hold* constant.
 	Held Outcome = "held"
-	// Deferral: the Integration's Send rate limit is spent (ADR 0023). Nothing is wrong
+	// Deferral: the Integration's Provider limit is spent (ADR 0023). Nothing is wrong
 	// with the source, it is busy: no hold reason, no claim, no attempt consumed.
 	// Result.Wait says when capacity returns.
 	Deferral Outcome = "deferral"
@@ -72,7 +72,7 @@ const (
 )
 
 // Backoffs for a provider reply that says it is busy (ADR 0023). The core does not
-// auto-tune the Send rate limit; it only waits. A daily quota refills gradually, so
+// auto-tune the Provider limit; it only waits. A daily quota refills gradually, so
 // its wait is long.
 const (
 	DeferralBackoff = 30 * time.Second
@@ -374,7 +374,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	built.msg.To = dest
 	built.msg.Origin = &messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind), Source: req.Source}
 
-	// Send rate limit: the last gate before the provider, so a message that was
+	// Provider limit: the last gate before the provider, so a message that was
 	// Skipped, Held or failed to render never spends capacity.
 	if wait, err := m.reserve(ctx, s, req, g.integration); err != nil {
 		m.release(ctx, s, msg)

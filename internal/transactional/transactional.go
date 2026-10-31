@@ -154,7 +154,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{}, outbound.ErrHeld.With(outbound.Detail(res.Reason))
 	default:
 		// Deferral, and Refused (a Test send's outcome): a Transactional request is neither
-		// reserved against the Send rate limit nor a Test send.
+		// reserved against the Provider limit nor a Test send.
 		return Result{}, fmt.Errorf("%w: outbound answered a transactional send with %q", ErrInvariant, res.Outcome)
 	}
 	return out, nil

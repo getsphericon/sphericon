@@ -5,12 +5,12 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** A per-second Send rate limit the caller may set */
+/** A per-second Provider limit the caller may set */
 @minValue(1)
 @maxValue(10000)
 scalar MaxPerSecond extends int32;
 
-/** A rolling 24-hour Send rate limit the caller may set */
+/** A rolling 24-hour Provider limit the caller may set */
 @minValue(1)
 @maxValue(100000000)
 scalar MaxPerDay extends int32;
@@ -119,14 +119,14 @@ model IntegrationResource {
   /** Whether this is the default provider for its channel */
   isDefault: boolean;
 
-  /** Send rate limit set on the Integration: most messages per second; null means none */
+  /** Provider limit set on the Integration: most messages per second; null means none */
   maxPerSecond: int32 | null;
 
-  /** Send rate limit set on the Integration: most messages per rolling 24 hours; null means none */
+  /** Provider limit set on the Integration: most messages per rolling 24 hours; null means none */
   maxPerDay: int32 | null;
 
-  /** The Send rate limit as enforced and 24-hour usage */
-  sendLimit: SendLimitStatus;
+  /** The Provider limit as enforced and 24-hour usage */
+  providerLimit: ProviderLimitStatus;
 
   /** Provider config (secrets redacted) */
   config: IntegrationConfig;
@@ -159,10 +159,10 @@ model CreateIntegrationInput {
   enabled?: boolean;
   isDefault?: boolean;
 
-  /** Most messages per second (1 to 10 000); omit or null for no limit */
+  /** Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it */
   maxPerSecond?: MaxPerSecond | null;
 
-  /** Most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit */
+  /** Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it */
   maxPerDay?: MaxPerDay | null;
 
   config: IntegrationConfigInput;
@@ -180,10 +180,10 @@ model UpdateIntegrationInput {
   enabled?: boolean;
   isDefault?: boolean;
 
-  /** Most messages per second (1 to 10 000); null clears the limit, omit to keep */
+  /** Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it */
   maxPerSecond?: MaxPerSecond | null;
 
-  /** Most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep */
+  /** Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it */
   maxPerDay?: MaxPerDay | null;
 
   config?: IntegrationConfigInput | null;

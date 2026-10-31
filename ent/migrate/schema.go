@@ -1785,6 +1785,44 @@ var (
 		Columns:    PrivateRelayRangesColumns,
 		PrimaryKey: []*schema.Column{PrivateRelayRangesColumns[0]},
 	}
+	// ProviderLimitersColumns holds the columns for the "provider_limiters" table.
+	ProviderLimitersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "second_fill", Type: field.TypeFloat64},
+		{Name: "day_fill", Type: field.TypeFloat64},
+		{Name: "refilled_at", Type: field.TypeTime},
+		{Name: "integration_id", Type: field.TypeInt64, Unique: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// ProviderLimitersTable holds the schema information for the "provider_limiters" table.
+	ProviderLimitersTable = &schema.Table{
+		Name:       "provider_limiters",
+		Columns:    ProviderLimitersColumns,
+		PrimaryKey: []*schema.Column{ProviderLimitersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "provider_limiters_integrations_provider_limiter",
+				Columns:    []*schema.Column{ProviderLimitersColumns[6]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "provider_limiters_workspaces_provider_limiters",
+				Columns:    []*schema.Column{ProviderLimitersColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "providerlimiter_workspace_id",
+				Unique:  false,
+				Columns: []*schema.Column{ProviderLimitersColumns[7]},
+			},
+		},
+	}
 	// RecoveryCodesColumns holds the columns for the "recovery_codes" table.
 	RecoveryCodesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -2071,44 +2109,6 @@ var (
 				Name:    "segment_workspace_id",
 				Unique:  false,
 				Columns: []*schema.Column{SegmentsColumns[6]},
-			},
-		},
-	}
-	// SendLimitersColumns holds the columns for the "send_limiters" table.
-	SendLimitersColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "second_fill", Type: field.TypeFloat64},
-		{Name: "day_fill", Type: field.TypeFloat64},
-		{Name: "refilled_at", Type: field.TypeTime},
-		{Name: "integration_id", Type: field.TypeInt64, Unique: true},
-		{Name: "workspace_id", Type: field.TypeInt64},
-	}
-	// SendLimitersTable holds the schema information for the "send_limiters" table.
-	SendLimitersTable = &schema.Table{
-		Name:       "send_limiters",
-		Columns:    SendLimitersColumns,
-		PrimaryKey: []*schema.Column{SendLimitersColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "send_limiters_integrations_send_limiter",
-				Columns:    []*schema.Column{SendLimitersColumns[6]},
-				RefColumns: []*schema.Column{IntegrationsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "send_limiters_workspaces_send_limiters",
-				Columns:    []*schema.Column{SendLimitersColumns[7]},
-				RefColumns: []*schema.Column{WorkspacesColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "sendlimiter_workspace_id",
-				Unique:  false,
-				Columns: []*schema.Column{SendLimitersColumns[7]},
 			},
 		},
 	}
@@ -2698,6 +2698,7 @@ var (
 		PasskeyChallengesTable,
 		PendingSignupsTable,
 		PrivateRelayRangesTable,
+		ProviderLimitersTable,
 		RecoveryCodesTable,
 		RulesTable,
 		RuleFiringsTable,
@@ -2705,7 +2706,6 @@ var (
 		RuleVersionTriggersTable,
 		SchemaStateTable,
 		SegmentsTable,
-		SendLimitersTable,
 		SendingDomainsTable,
 		ServiceCredentialsTable,
 		SignupItemsTable,
@@ -2963,6 +2963,11 @@ func init() {
 	PrivateRelayRangesTable.Annotation = &entsql.Annotation{
 		Table: "private_relay_ranges",
 	}
+	ProviderLimitersTable.ForeignKeys[0].RefTable = IntegrationsTable
+	ProviderLimitersTable.ForeignKeys[1].RefTable = WorkspacesTable
+	ProviderLimitersTable.Annotation = &entsql.Annotation{
+		Table: "provider_limiters",
+	}
 	RecoveryCodesTable.ForeignKeys[0].RefTable = UsersTable
 	RecoveryCodesTable.Annotation = &entsql.Annotation{
 		Table: "recovery_codes",
@@ -2999,11 +3004,6 @@ func init() {
 	SegmentsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SegmentsTable.Annotation = &entsql.Annotation{
 		Table: "segments",
-	}
-	SendLimitersTable.ForeignKeys[0].RefTable = IntegrationsTable
-	SendLimitersTable.ForeignKeys[1].RefTable = WorkspacesTable
-	SendLimitersTable.Annotation = &entsql.Annotation{
-		Table: "send_limiters",
 	}
 	SendingDomainsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SendingDomainsTable.Annotation = &entsql.Annotation{

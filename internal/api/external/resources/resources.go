@@ -24,9 +24,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/httpcall"
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/narrow"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/go-faster/jx"
 	"github.com/samber/lo"
 )
@@ -130,8 +130,8 @@ func AutomationSteps(steps []externalapi.AutomationStep) []automations.Step {
 // goverter:extend nilString
 // goverter:extend count
 // goverter:extend omitEmpty
-// goverter:extend sendLimitWarning
-// goverter:extend sendLimitSource
+// goverter:extend providerLimitWarning
+// goverter:extend providerLimitSource
 // goverter:extend optTimestamp
 // goverter:extend optInt32
 // goverter:extend optString
@@ -181,12 +181,12 @@ type Converter interface {
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
-	// the Send rate limit from sendlimit.Statuses: the handler attaches them.
+	// the Provider limit from providerlimit.Statuses: the handler attaches them.
 	// goverter:ignore Config
 	// goverter:ignore Params
 	// goverter:ignore SecretsRetiring
 	// goverter:ignore HookUrl
-	// goverter:ignore SendLimit
+	// goverter:ignore ProviderLimit
 	// goverter:map DiscardedAt ArchivedAt
 	IntegrationToResource(source *ent.Integration) externalapi.IntegrationResource
 
@@ -211,7 +211,7 @@ type Converter interface {
 	// goverter:map . Kind | sesConfigKind
 	SesConfigToResource(source integrations.RedactedSES) externalapi.SesConfig
 	// goverter:map Sent24h SentLast24h
-	SendLimitToStatus(source sendlimit.Status) externalapi.SendLimitStatus
+	ProviderLimitToStatus(source providerlimit.Status) externalapi.ProviderLimitStatus
 
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
 	// are the edges the rules module loads (ADR 0065).
@@ -306,9 +306,9 @@ func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshal
 	return new(m.BroadcastRecipientToExport(r))
 }
 
-// sendLimitWarning casts: sendlimit's warnings are the contract's enum values.
-func sendLimitWarning(w sendlimit.Warning) externalapi.SendLimitWarning {
-	return externalapi.SendLimitWarning(w)
+// providerLimitWarning casts: providerlimit's warnings are the contract's enum values.
+func providerLimitWarning(w providerlimit.Warning) externalapi.ProviderLimitWarning {
+	return externalapi.ProviderLimitWarning(w)
 }
 
 // openRate and clickRate are the report's rates, which Stats computes.
@@ -342,12 +342,12 @@ func nilInt32(v *int) externalapi.NilInt32 {
 	return externalapi.NewNilInt32(narrow.Int32(*v))
 }
 
-// sendLimitSource is null exactly when the window has no limit (its source is empty).
-func sendLimitSource(v sendlimit.Source) externalapi.NilSendLimitSource {
+// providerLimitSource is null exactly when the window has no limit (its source is empty).
+func providerLimitSource(v providerlimit.Source) externalapi.NilProviderLimitSource {
 	if v == "" {
-		return externalapi.NilSendLimitSource{Null: true}
+		return externalapi.NilProviderLimitSource{Null: true}
 	}
-	return externalapi.NewNilSendLimitSource(externalapi.SendLimitSource(v))
+	return externalapi.NewNilProviderLimitSource(externalapi.ProviderLimitSource(v))
 }
 
 func optNilInt32(v *int) externalapi.OptNilInt32 {

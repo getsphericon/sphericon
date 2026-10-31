@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -53,10 +53,10 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 	run := func() {
 		require.NoError(t, worker.Work(ctx, job(jobs.RefreshIntegrationQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID})))
 	}
-	effective := func() sendlimit.Effective {
+	effective := func() providerlimit.Effective {
 		row, err := s.Integration().Get(ctx, fixtures.IntegrationAcmeSesID)
 		require.NoError(t, err)
-		return sendlimit.EffectiveOf(row)
+		return providerlimit.EffectiveOf(row)
 	}
 
 	// The lookup fails: unlimited with a warning, and the job still succeeds.
@@ -69,12 +69,12 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 	run()
 	eff := effective()
 	assert.False(t, eff.ProviderQuotaUnavailable, "a later success clears the warning")
-	assert.Equal(t, sendlimit.Value{Limit: new(1), Source: sendlimit.SourceProvider}, eff.PerSecond)
+	assert.Equal(t, providerlimit.Value{Limit: new(1), Source: providerlimit.SourceProvider}, eff.PerSecond)
 
 	fake.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
 	run()
-	assert.Equal(t, sendlimit.Value{Limit: new(14), Source: sendlimit.SourceProvider}, effective().PerSecond)
-	assert.Equal(t, sendlimit.Value{Limit: new(50000), Source: sendlimit.SourceProvider}, effective().PerDay)
+	assert.Equal(t, providerlimit.Value{Limit: new(14), Source: providerlimit.SourceProvider}, effective().PerSecond)
+	assert.Equal(t, providerlimit.Value{Limit: new(50000), Source: providerlimit.SourceProvider}, effective().PerDay)
 }
 
 func TestRefreshIntegrationQuotaOfADeletedIntegrationIsNothingToDo(t *testing.T) {

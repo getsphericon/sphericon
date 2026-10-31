@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -363,23 +363,23 @@ func (_u *IntegrationUpdate) SetWorkspace(v *Workspace) *IntegrationUpdate {
 	return _u.SetWorkspaceID(v.ID)
 }
 
-// SetSendLimiterID sets the "send_limiter" edge to the SendLimiter entity by ID.
-func (_u *IntegrationUpdate) SetSendLimiterID(id int64) *IntegrationUpdate {
-	_u.mutation.SetSendLimiterID(id)
+// SetProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID.
+func (_u *IntegrationUpdate) SetProviderLimiterID(id int64) *IntegrationUpdate {
+	_u.mutation.SetProviderLimiterID(id)
 	return _u
 }
 
-// SetNillableSendLimiterID sets the "send_limiter" edge to the SendLimiter entity by ID if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableSendLimiterID(id *int64) *IntegrationUpdate {
+// SetNillableProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableProviderLimiterID(id *int64) *IntegrationUpdate {
 	if id != nil {
-		_u = _u.SetSendLimiterID(*id)
+		_u = _u.SetProviderLimiterID(*id)
 	}
 	return _u
 }
 
-// SetSendLimiter sets the "send_limiter" edge to the SendLimiter entity.
-func (_u *IntegrationUpdate) SetSendLimiter(v *SendLimiter) *IntegrationUpdate {
-	return _u.SetSendLimiterID(v.ID)
+// SetProviderLimiter sets the "provider_limiter" edge to the ProviderLimiter entity.
+func (_u *IntegrationUpdate) SetProviderLimiter(v *ProviderLimiter) *IntegrationUpdate {
+	return _u.SetProviderLimiterID(v.ID)
 }
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
@@ -408,9 +408,9 @@ func (_u *IntegrationUpdate) ClearWorkspace() *IntegrationUpdate {
 	return _u
 }
 
-// ClearSendLimiter clears the "send_limiter" edge to the SendLimiter entity.
-func (_u *IntegrationUpdate) ClearSendLimiter() *IntegrationUpdate {
-	_u.mutation.ClearSendLimiter()
+// ClearProviderLimiter clears the "provider_limiter" edge to the ProviderLimiter entity.
+func (_u *IntegrationUpdate) ClearProviderLimiter() *IntegrationUpdate {
+	_u.mutation.ClearProviderLimiter()
 	return _u
 }
 
@@ -651,28 +651,28 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.SendLimiterCleared() {
+	if _u.mutation.ProviderLimiterCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   integration.SendLimiterTable,
-			Columns: []string{integration.SendLimiterColumn},
+			Table:   integration.ProviderLimiterTable,
+			Columns: []string{integration.ProviderLimiterColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.SendLimiterIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ProviderLimiterIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   integration.SendLimiterTable,
-			Columns: []string{integration.SendLimiterColumn},
+			Table:   integration.ProviderLimiterTable,
+			Columns: []string{integration.ProviderLimiterColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1078,23 +1078,23 @@ func (_u *IntegrationUpdateOne) SetWorkspace(v *Workspace) *IntegrationUpdateOne
 	return _u.SetWorkspaceID(v.ID)
 }
 
-// SetSendLimiterID sets the "send_limiter" edge to the SendLimiter entity by ID.
-func (_u *IntegrationUpdateOne) SetSendLimiterID(id int64) *IntegrationUpdateOne {
-	_u.mutation.SetSendLimiterID(id)
+// SetProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID.
+func (_u *IntegrationUpdateOne) SetProviderLimiterID(id int64) *IntegrationUpdateOne {
+	_u.mutation.SetProviderLimiterID(id)
 	return _u
 }
 
-// SetNillableSendLimiterID sets the "send_limiter" edge to the SendLimiter entity by ID if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableSendLimiterID(id *int64) *IntegrationUpdateOne {
+// SetNillableProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableProviderLimiterID(id *int64) *IntegrationUpdateOne {
 	if id != nil {
-		_u = _u.SetSendLimiterID(*id)
+		_u = _u.SetProviderLimiterID(*id)
 	}
 	return _u
 }
 
-// SetSendLimiter sets the "send_limiter" edge to the SendLimiter entity.
-func (_u *IntegrationUpdateOne) SetSendLimiter(v *SendLimiter) *IntegrationUpdateOne {
-	return _u.SetSendLimiterID(v.ID)
+// SetProviderLimiter sets the "provider_limiter" edge to the ProviderLimiter entity.
+func (_u *IntegrationUpdateOne) SetProviderLimiter(v *ProviderLimiter) *IntegrationUpdateOne {
+	return _u.SetProviderLimiterID(v.ID)
 }
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
@@ -1123,9 +1123,9 @@ func (_u *IntegrationUpdateOne) ClearWorkspace() *IntegrationUpdateOne {
 	return _u
 }
 
-// ClearSendLimiter clears the "send_limiter" edge to the SendLimiter entity.
-func (_u *IntegrationUpdateOne) ClearSendLimiter() *IntegrationUpdateOne {
-	_u.mutation.ClearSendLimiter()
+// ClearProviderLimiter clears the "provider_limiter" edge to the ProviderLimiter entity.
+func (_u *IntegrationUpdateOne) ClearProviderLimiter() *IntegrationUpdateOne {
+	_u.mutation.ClearProviderLimiter()
 	return _u
 }
 
@@ -1396,28 +1396,28 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.SendLimiterCleared() {
+	if _u.mutation.ProviderLimiterCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   integration.SendLimiterTable,
-			Columns: []string{integration.SendLimiterColumn},
+			Table:   integration.ProviderLimiterTable,
+			Columns: []string{integration.ProviderLimiterColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.SendLimiterIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.ProviderLimiterIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   integration.SendLimiterTable,
-			Columns: []string{integration.SendLimiterColumn},
+			Table:   integration.ProviderLimiterTable,
+			Columns: []string{integration.ProviderLimiterColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -1,4 +1,4 @@
-package sendlimit
+package providerlimit
 
 import (
 	"context"
@@ -122,7 +122,7 @@ func Usage(ctx context.Context, s *ent.Scoped, now time.Time) (map[int64]int, er
 	return out, nil
 }
 
-// Status is an Integration's Send rate limit as shown to a user: the ceilings as
+// Status is an Integration's Provider limit as shown to a user: the ceilings as
 // enforced, the messages sent over the last 24 hours and what is worth flagging. Each
 // surface maps it to its own DTO.
 //

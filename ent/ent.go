@@ -51,6 +51,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/passkeychallenge"
 	"github.com/getsphericon/sphericon/ent/pendingsignup"
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	"github.com/getsphericon/sphericon/ent/riverjob"
 	"github.com/getsphericon/sphericon/ent/rule"
@@ -60,7 +61,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/schemastate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
 	"github.com/getsphericon/sphericon/ent/servicecredential"
 	"github.com/getsphericon/sphericon/ent/signupitem"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -175,6 +175,7 @@ func checkColumn(t, c string) error {
 			passkeychallenge.Table:     passkeychallenge.ValidColumn,
 			pendingsignup.Table:        pendingsignup.ValidColumn,
 			privaterelayrange.Table:    privaterelayrange.ValidColumn,
+			providerlimiter.Table:      providerlimiter.ValidColumn,
 			recoverycode.Table:         recoverycode.ValidColumn,
 			riverjob.Table:             riverjob.ValidColumn,
 			rule.Table:                 rule.ValidColumn,
@@ -183,7 +184,6 @@ func checkColumn(t, c string) error {
 			ruleversiontrigger.Table:   ruleversiontrigger.ValidColumn,
 			schemastate.Table:          schemastate.ValidColumn,
 			segment.Table:              segment.ValidColumn,
-			sendlimiter.Table:          sendlimiter.ValidColumn,
 			sendingdomain.Table:        sendingdomain.ValidColumn,
 			servicecredential.Table:    servicecredential.ValidColumn,
 			signupitem.Table:           signupitem.ValidColumn,

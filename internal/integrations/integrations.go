@@ -145,14 +145,14 @@ type ConfigInput struct {
 	Inbox *InboxConfig
 }
 
-// Limit is a Send rate limit in a request: unset keeps the stored value (update) or
+// Limit is a Provider limit in a request: unset keeps the stored value (update) or
 // means no limit (create); Value nil with Set true clears it.
 type Limit struct {
 	Set   bool
 	Value *int
 }
 
-// LimitOf reads a Send rate limit from an optional-nullable request field (the generated
+// LimitOf reads a Provider limit from an optional-nullable request field (the generated
 // OptNil types of either API): omitted is unset, null clears, a number sets.
 func LimitOf[T ~int32](in interface {
 	Get() (T, bool)
@@ -203,6 +203,11 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	provider, channel, plaintext, err := m.encode(in.Config)
 	if err != nil {
 		return nil, err
+	}
+	if in.Config.SES != nil {
+		if err := requireProviderLimit(in.Config.SES.Endpoint, in.MaxPerSecond.Value, in.MaxPerDay.Value); err != nil {
+			return nil, err
+		}
 	}
 	sealed, err := m.cipher.Encrypt(plaintext)
 	if err != nil {
@@ -280,6 +285,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	sealed, err := m.sealEditedConfig(row, in.Config)
 	if err != nil {
+		return nil, err
+	}
+	if err := m.keepsProviderLimit(row, in); err != nil {
 		return nil, err
 	}
 
@@ -445,6 +453,54 @@ func applyLimit[T any](l Limit, set func(int) T, unset func() T) {
 	case l.Set:
 		unset()
 	}
+}
+
+// requireProviderLimit refuses an SES Integration with its own endpoint that is left without
+// either Provider limit value (ADR 0067): an SES-compatible service has no quota call, so the
+// customer gives what their provider account allows. AWS SES (no endpoint) reports its own.
+func requireProviderLimit(endpoint string, perSecond, perDay *int) error {
+	if endpoint == "" {
+		return nil
+	}
+	msg := i18n.T("errors.integration_provider_limit_required", nil)
+	missing := map[string][]string{}
+	if perSecond == nil {
+		missing[validation.FieldMaxPerSecond] = []string{msg}
+	}
+	if perDay == nil {
+		missing[validation.FieldMaxPerDay] = []string{msg}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	return &validation.FieldsError{Fields: missing}
+}
+
+// keepsProviderLimit applies requireProviderLimit to what an Update leaves: the edited SES
+// config's endpoint or the stored one, and each limit as edited or as stored.
+func (m *Module) keepsProviderLimit(row *ent.Integration, in UpdateInput) error {
+	if row.Provider != integration.ProviderSes {
+		return nil
+	}
+	var endpoint string
+	if in.Config != nil && in.Config.SES != nil {
+		endpoint = in.Config.SES.Endpoint
+	} else {
+		stored, err := m.Redact(row)
+		if err != nil {
+			return err
+		}
+		endpoint = stored.SES.Endpoint
+	}
+	return requireProviderLimit(endpoint, in.MaxPerSecond.after(row.MaxPerSecond), in.MaxPerDay.after(row.MaxPerDay))
+}
+
+// after is the limit an edit leaves: the request's when it names one, else the stored one.
+func (l Limit) after(stored *int) *int {
+	if l.Set {
+		return l.Value
+	}
+	return stored
 }
 
 func validName(raw string) (string, error) {

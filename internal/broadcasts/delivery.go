@@ -18,7 +18,7 @@ type HeldError struct{ Reason string }
 
 func (e *HeldError) Error() string { return "send held: " + e.Reason }
 
-// DeferredError reports that Outbound send found the Integration's Send rate limit spent
+// DeferredError reports that Outbound send found the Integration's Provider limit spent
 // (outbound.Deferral). Nothing was consumed: the caller retries the same work after Delay.
 type DeferredError struct {
 	// Delay is the wait the Outbound retry policy chose for this deferral (it was recorded on
@@ -26,7 +26,7 @@ type DeferredError struct {
 	Delay time.Duration
 }
 
-func (e *DeferredError) Error() string { return "send deferred: send rate limit spent" }
+func (e *DeferredError) Error() string { return "send deferred: provider limit spent" }
 
 // Delivery is the send side of the Broadcast lifecycle: one recipient at a time through
 // Outbound send, the hold reason and the final settling of the Broadcast. A recipient has no
@@ -45,7 +45,7 @@ func NewDelivery(out *outbound.Module) *Delivery { return &Delivery{out: out} }
 // committed send replay the recorded result.
 //
 // A returned error is for the adapter to retry: *HeldError (the source is on hold),
-// *DeferredError (its Send rate limit is spent), outbound.ErrInProgress (a live claim) or a
+// *DeferredError (its Provider limit is spent), outbound.ErrInProgress (a live claim) or a
 // fault; none consumed the recipient.
 func (d *Delivery) SendRecipient(ctx context.Context, s *ent.Scoped, recipientID int64) error {
 	rec, err := s.BroadcastRecipient().Get(ctx, recipientID)

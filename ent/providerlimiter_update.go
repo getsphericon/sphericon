@@ -12,38 +12,38 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
-// SendLimiterUpdate is the builder for updating SendLimiter entities.
-type SendLimiterUpdate struct {
+// ProviderLimiterUpdate is the builder for updating ProviderLimiter entities.
+type ProviderLimiterUpdate struct {
 	config
 	hooks     []Hook
-	mutation  *SendLimiterMutation
+	mutation  *ProviderLimiterMutation
 	modifiers []func(*sql.UpdateBuilder)
 }
 
-// Where appends a list predicates to the SendLimiterUpdate builder.
-func (_u *SendLimiterUpdate) Where(ps ...predicate.SendLimiter) *SendLimiterUpdate {
+// Where appends a list predicates to the ProviderLimiterUpdate builder.
+func (_u *ProviderLimiterUpdate) Where(ps ...predicate.ProviderLimiter) *ProviderLimiterUpdate {
 	_u.mutation.Where(ps...)
 	return _u
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *SendLimiterUpdate) SetUpdatedAt(v time.Time) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetUpdatedAt(v time.Time) *ProviderLimiterUpdate {
 	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
 // SetWorkspaceID sets the "workspace_id" field.
-func (_u *SendLimiterUpdate) SetWorkspaceID(v int64) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetWorkspaceID(v int64) *ProviderLimiterUpdate {
 	_u.mutation.SetWorkspaceID(v)
 	return _u
 }
 
 // SetNillableWorkspaceID sets the "workspace_id" field if the given value is not nil.
-func (_u *SendLimiterUpdate) SetNillableWorkspaceID(v *int64) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetNillableWorkspaceID(v *int64) *ProviderLimiterUpdate {
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
@@ -51,14 +51,14 @@ func (_u *SendLimiterUpdate) SetNillableWorkspaceID(v *int64) *SendLimiterUpdate
 }
 
 // SetSecondFill sets the "second_fill" field.
-func (_u *SendLimiterUpdate) SetSecondFill(v float64) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetSecondFill(v float64) *ProviderLimiterUpdate {
 	_u.mutation.ResetSecondFill()
 	_u.mutation.SetSecondFill(v)
 	return _u
 }
 
 // SetNillableSecondFill sets the "second_fill" field if the given value is not nil.
-func (_u *SendLimiterUpdate) SetNillableSecondFill(v *float64) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetNillableSecondFill(v *float64) *ProviderLimiterUpdate {
 	if v != nil {
 		_u.SetSecondFill(*v)
 	}
@@ -66,20 +66,20 @@ func (_u *SendLimiterUpdate) SetNillableSecondFill(v *float64) *SendLimiterUpdat
 }
 
 // AddSecondFill adds value to the "second_fill" field.
-func (_u *SendLimiterUpdate) AddSecondFill(v float64) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) AddSecondFill(v float64) *ProviderLimiterUpdate {
 	_u.mutation.AddSecondFill(v)
 	return _u
 }
 
 // SetDayFill sets the "day_fill" field.
-func (_u *SendLimiterUpdate) SetDayFill(v float64) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetDayFill(v float64) *ProviderLimiterUpdate {
 	_u.mutation.ResetDayFill()
 	_u.mutation.SetDayFill(v)
 	return _u
 }
 
 // SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (_u *SendLimiterUpdate) SetNillableDayFill(v *float64) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetNillableDayFill(v *float64) *ProviderLimiterUpdate {
 	if v != nil {
 		_u.SetDayFill(*v)
 	}
@@ -87,19 +87,19 @@ func (_u *SendLimiterUpdate) SetNillableDayFill(v *float64) *SendLimiterUpdate {
 }
 
 // AddDayFill adds value to the "day_fill" field.
-func (_u *SendLimiterUpdate) AddDayFill(v float64) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) AddDayFill(v float64) *ProviderLimiterUpdate {
 	_u.mutation.AddDayFill(v)
 	return _u
 }
 
 // SetRefilledAt sets the "refilled_at" field.
-func (_u *SendLimiterUpdate) SetRefilledAt(v time.Time) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetRefilledAt(v time.Time) *ProviderLimiterUpdate {
 	_u.mutation.SetRefilledAt(v)
 	return _u
 }
 
 // SetNillableRefilledAt sets the "refilled_at" field if the given value is not nil.
-func (_u *SendLimiterUpdate) SetNillableRefilledAt(v *time.Time) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetNillableRefilledAt(v *time.Time) *ProviderLimiterUpdate {
 	if v != nil {
 		_u.SetRefilledAt(*v)
 	}
@@ -107,29 +107,29 @@ func (_u *SendLimiterUpdate) SetNillableRefilledAt(v *time.Time) *SendLimiterUpd
 }
 
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
-func (_u *SendLimiterUpdate) SetWorkspace(v *Workspace) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) SetWorkspace(v *Workspace) *ProviderLimiterUpdate {
 	return _u.SetWorkspaceID(v.ID)
 }
 
-// Mutation returns the SendLimiterMutation object of the builder.
-func (_u *SendLimiterUpdate) Mutation() *SendLimiterMutation {
+// Mutation returns the ProviderLimiterMutation object of the builder.
+func (_u *ProviderLimiterUpdate) Mutation() *ProviderLimiterMutation {
 	return _u.mutation
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
-func (_u *SendLimiterUpdate) ClearWorkspace() *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) ClearWorkspace() *ProviderLimiterUpdate {
 	_u.mutation.ClearWorkspace()
 	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *SendLimiterUpdate) Save(ctx context.Context) (int, error) {
+func (_u *ProviderLimiterUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *SendLimiterUpdate) SaveX(ctx context.Context) int {
+func (_u *ProviderLimiterUpdate) SaveX(ctx context.Context) int {
 	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -138,48 +138,48 @@ func (_u *SendLimiterUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *SendLimiterUpdate) Exec(ctx context.Context) error {
+func (_u *ProviderLimiterUpdate) Exec(ctx context.Context) error {
 	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *SendLimiterUpdate) ExecX(ctx context.Context) {
+func (_u *ProviderLimiterUpdate) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *SendLimiterUpdate) defaults() {
+func (_u *ProviderLimiterUpdate) defaults() {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := sendlimiter.UpdateDefaultUpdatedAt()
+		v := providerlimiter.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *SendLimiterUpdate) check() error {
+func (_u *ProviderLimiterUpdate) check() error {
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "SendLimiter.workspace"`)
+		return errors.New(`ent: clearing a required unique edge "ProviderLimiter.workspace"`)
 	}
 	if _u.mutation.IntegrationCleared() && len(_u.mutation.IntegrationIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "SendLimiter.integration"`)
+		return errors.New(`ent: clearing a required unique edge "ProviderLimiter.integration"`)
 	}
 	return nil
 }
 
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
-func (_u *SendLimiterUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SendLimiterUpdate {
+func (_u *ProviderLimiterUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ProviderLimiterUpdate {
 	_u.modifiers = append(_u.modifiers, modifiers...)
 	return _u
 }
 
-func (_u *SendLimiterUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+func (_u *ProviderLimiterUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(sendlimiter.Table, sendlimiter.Columns, sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64))
+	_spec := sqlgraph.NewUpdateSpec(providerlimiter.Table, providerlimiter.Columns, sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -188,29 +188,29 @@ func (_u *SendLimiterUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(sendlimiter.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(providerlimiter.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.SecondFill(); ok {
-		_spec.SetField(sendlimiter.FieldSecondFill, field.TypeFloat64, value)
+		_spec.SetField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedSecondFill(); ok {
-		_spec.AddField(sendlimiter.FieldSecondFill, field.TypeFloat64, value)
+		_spec.AddField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.DayFill(); ok {
-		_spec.SetField(sendlimiter.FieldDayFill, field.TypeFloat64, value)
+		_spec.SetField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedDayFill(); ok {
-		_spec.AddField(sendlimiter.FieldDayFill, field.TypeFloat64, value)
+		_spec.AddField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.RefilledAt(); ok {
-		_spec.SetField(sendlimiter.FieldRefilledAt, field.TypeTime, value)
+		_spec.SetField(providerlimiter.FieldRefilledAt, field.TypeTime, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   sendlimiter.WorkspaceTable,
-			Columns: []string{sendlimiter.WorkspaceColumn},
+			Table:   providerlimiter.WorkspaceTable,
+			Columns: []string{providerlimiter.WorkspaceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
@@ -222,8 +222,8 @@ func (_u *SendLimiterUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   sendlimiter.WorkspaceTable,
-			Columns: []string{sendlimiter.WorkspaceColumn},
+			Table:   providerlimiter.WorkspaceTable,
+			Columns: []string{providerlimiter.WorkspaceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
@@ -237,7 +237,7 @@ func (_u *SendLimiterUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{sendlimiter.Label}
+			err = &NotFoundError{providerlimiter.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -247,29 +247,29 @@ func (_u *SendLimiterUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	return _node, nil
 }
 
-// SendLimiterUpdateOne is the builder for updating a single SendLimiter entity.
-type SendLimiterUpdateOne struct {
+// ProviderLimiterUpdateOne is the builder for updating a single ProviderLimiter entity.
+type ProviderLimiterUpdateOne struct {
 	config
 	fields    []string
 	hooks     []Hook
-	mutation  *SendLimiterMutation
+	mutation  *ProviderLimiterMutation
 	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *SendLimiterUpdateOne) SetUpdatedAt(v time.Time) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetUpdatedAt(v time.Time) *ProviderLimiterUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
 // SetWorkspaceID sets the "workspace_id" field.
-func (_u *SendLimiterUpdateOne) SetWorkspaceID(v int64) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetWorkspaceID(v int64) *ProviderLimiterUpdateOne {
 	_u.mutation.SetWorkspaceID(v)
 	return _u
 }
 
 // SetNillableWorkspaceID sets the "workspace_id" field if the given value is not nil.
-func (_u *SendLimiterUpdateOne) SetNillableWorkspaceID(v *int64) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetNillableWorkspaceID(v *int64) *ProviderLimiterUpdateOne {
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
@@ -277,14 +277,14 @@ func (_u *SendLimiterUpdateOne) SetNillableWorkspaceID(v *int64) *SendLimiterUpd
 }
 
 // SetSecondFill sets the "second_fill" field.
-func (_u *SendLimiterUpdateOne) SetSecondFill(v float64) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetSecondFill(v float64) *ProviderLimiterUpdateOne {
 	_u.mutation.ResetSecondFill()
 	_u.mutation.SetSecondFill(v)
 	return _u
 }
 
 // SetNillableSecondFill sets the "second_fill" field if the given value is not nil.
-func (_u *SendLimiterUpdateOne) SetNillableSecondFill(v *float64) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetNillableSecondFill(v *float64) *ProviderLimiterUpdateOne {
 	if v != nil {
 		_u.SetSecondFill(*v)
 	}
@@ -292,20 +292,20 @@ func (_u *SendLimiterUpdateOne) SetNillableSecondFill(v *float64) *SendLimiterUp
 }
 
 // AddSecondFill adds value to the "second_fill" field.
-func (_u *SendLimiterUpdateOne) AddSecondFill(v float64) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) AddSecondFill(v float64) *ProviderLimiterUpdateOne {
 	_u.mutation.AddSecondFill(v)
 	return _u
 }
 
 // SetDayFill sets the "day_fill" field.
-func (_u *SendLimiterUpdateOne) SetDayFill(v float64) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetDayFill(v float64) *ProviderLimiterUpdateOne {
 	_u.mutation.ResetDayFill()
 	_u.mutation.SetDayFill(v)
 	return _u
 }
 
 // SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (_u *SendLimiterUpdateOne) SetNillableDayFill(v *float64) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetNillableDayFill(v *float64) *ProviderLimiterUpdateOne {
 	if v != nil {
 		_u.SetDayFill(*v)
 	}
@@ -313,19 +313,19 @@ func (_u *SendLimiterUpdateOne) SetNillableDayFill(v *float64) *SendLimiterUpdat
 }
 
 // AddDayFill adds value to the "day_fill" field.
-func (_u *SendLimiterUpdateOne) AddDayFill(v float64) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) AddDayFill(v float64) *ProviderLimiterUpdateOne {
 	_u.mutation.AddDayFill(v)
 	return _u
 }
 
 // SetRefilledAt sets the "refilled_at" field.
-func (_u *SendLimiterUpdateOne) SetRefilledAt(v time.Time) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetRefilledAt(v time.Time) *ProviderLimiterUpdateOne {
 	_u.mutation.SetRefilledAt(v)
 	return _u
 }
 
 // SetNillableRefilledAt sets the "refilled_at" field if the given value is not nil.
-func (_u *SendLimiterUpdateOne) SetNillableRefilledAt(v *time.Time) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetNillableRefilledAt(v *time.Time) *ProviderLimiterUpdateOne {
 	if v != nil {
 		_u.SetRefilledAt(*v)
 	}
@@ -333,42 +333,42 @@ func (_u *SendLimiterUpdateOne) SetNillableRefilledAt(v *time.Time) *SendLimiter
 }
 
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
-func (_u *SendLimiterUpdateOne) SetWorkspace(v *Workspace) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) SetWorkspace(v *Workspace) *ProviderLimiterUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
 }
 
-// Mutation returns the SendLimiterMutation object of the builder.
-func (_u *SendLimiterUpdateOne) Mutation() *SendLimiterMutation {
+// Mutation returns the ProviderLimiterMutation object of the builder.
+func (_u *ProviderLimiterUpdateOne) Mutation() *ProviderLimiterMutation {
 	return _u.mutation
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
-func (_u *SendLimiterUpdateOne) ClearWorkspace() *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) ClearWorkspace() *ProviderLimiterUpdateOne {
 	_u.mutation.ClearWorkspace()
 	return _u
 }
 
-// Where appends a list predicates to the SendLimiterUpdate builder.
-func (_u *SendLimiterUpdateOne) Where(ps ...predicate.SendLimiter) *SendLimiterUpdateOne {
+// Where appends a list predicates to the ProviderLimiterUpdate builder.
+func (_u *ProviderLimiterUpdateOne) Where(ps ...predicate.ProviderLimiter) *ProviderLimiterUpdateOne {
 	_u.mutation.Where(ps...)
 	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *SendLimiterUpdateOne) Select(field string, fields ...string) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) Select(field string, fields ...string) *ProviderLimiterUpdateOne {
 	_u.fields = append([]string{field}, fields...)
 	return _u
 }
 
-// Save executes the query and returns the updated SendLimiter entity.
-func (_u *SendLimiterUpdateOne) Save(ctx context.Context) (*SendLimiter, error) {
+// Save executes the query and returns the updated ProviderLimiter entity.
+func (_u *ProviderLimiterUpdateOne) Save(ctx context.Context) (*ProviderLimiter, error) {
 	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *SendLimiterUpdateOne) SaveX(ctx context.Context) *SendLimiter {
+func (_u *ProviderLimiterUpdateOne) SaveX(ctx context.Context) *ProviderLimiter {
 	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -377,61 +377,61 @@ func (_u *SendLimiterUpdateOne) SaveX(ctx context.Context) *SendLimiter {
 }
 
 // Exec executes the query on the entity.
-func (_u *SendLimiterUpdateOne) Exec(ctx context.Context) error {
+func (_u *ProviderLimiterUpdateOne) Exec(ctx context.Context) error {
 	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *SendLimiterUpdateOne) ExecX(ctx context.Context) {
+func (_u *ProviderLimiterUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *SendLimiterUpdateOne) defaults() {
+func (_u *ProviderLimiterUpdateOne) defaults() {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := sendlimiter.UpdateDefaultUpdatedAt()
+		v := providerlimiter.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *SendLimiterUpdateOne) check() error {
+func (_u *ProviderLimiterUpdateOne) check() error {
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "SendLimiter.workspace"`)
+		return errors.New(`ent: clearing a required unique edge "ProviderLimiter.workspace"`)
 	}
 	if _u.mutation.IntegrationCleared() && len(_u.mutation.IntegrationIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "SendLimiter.integration"`)
+		return errors.New(`ent: clearing a required unique edge "ProviderLimiter.integration"`)
 	}
 	return nil
 }
 
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
-func (_u *SendLimiterUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *SendLimiterUpdateOne {
+func (_u *ProviderLimiterUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ProviderLimiterUpdateOne {
 	_u.modifiers = append(_u.modifiers, modifiers...)
 	return _u
 }
 
-func (_u *SendLimiterUpdateOne) sqlSave(ctx context.Context) (_node *SendLimiter, err error) {
+func (_u *ProviderLimiterUpdateOne) sqlSave(ctx context.Context) (_node *ProviderLimiter, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(sendlimiter.Table, sendlimiter.Columns, sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64))
+	_spec := sqlgraph.NewUpdateSpec(providerlimiter.Table, providerlimiter.Columns, sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64))
 	id, ok := _u.mutation.ID()
 	if !ok {
-		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "SendLimiter.id" for update`)}
+		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "ProviderLimiter.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
 	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, sendlimiter.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, providerlimiter.FieldID)
 		for _, f := range fields {
-			if !sendlimiter.ValidColumn(f) {
+			if !providerlimiter.ValidColumn(f) {
 				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 			}
-			if f != sendlimiter.FieldID {
+			if f != providerlimiter.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, f)
 			}
 		}
@@ -444,29 +444,29 @@ func (_u *SendLimiterUpdateOne) sqlSave(ctx context.Context) (_node *SendLimiter
 		}
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(sendlimiter.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(providerlimiter.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.SecondFill(); ok {
-		_spec.SetField(sendlimiter.FieldSecondFill, field.TypeFloat64, value)
+		_spec.SetField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedSecondFill(); ok {
-		_spec.AddField(sendlimiter.FieldSecondFill, field.TypeFloat64, value)
+		_spec.AddField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.DayFill(); ok {
-		_spec.SetField(sendlimiter.FieldDayFill, field.TypeFloat64, value)
+		_spec.SetField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.AddedDayFill(); ok {
-		_spec.AddField(sendlimiter.FieldDayFill, field.TypeFloat64, value)
+		_spec.AddField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.RefilledAt(); ok {
-		_spec.SetField(sendlimiter.FieldRefilledAt, field.TypeTime, value)
+		_spec.SetField(providerlimiter.FieldRefilledAt, field.TypeTime, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   sendlimiter.WorkspaceTable,
-			Columns: []string{sendlimiter.WorkspaceColumn},
+			Table:   providerlimiter.WorkspaceTable,
+			Columns: []string{providerlimiter.WorkspaceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
@@ -478,8 +478,8 @@ func (_u *SendLimiterUpdateOne) sqlSave(ctx context.Context) (_node *SendLimiter
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   sendlimiter.WorkspaceTable,
-			Columns: []string{sendlimiter.WorkspaceColumn},
+			Table:   providerlimiter.WorkspaceTable,
+			Columns: []string{providerlimiter.WorkspaceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(workspace.FieldID, field.TypeInt64),
@@ -491,12 +491,12 @@ func (_u *SendLimiterUpdateOne) sqlSave(ctx context.Context) (_node *SendLimiter
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_spec.AddModifiers(_u.modifiers...)
-	_node = &SendLimiter{config: _u.config}
+	_node = &ProviderLimiter{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
 	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{sendlimiter.Label}
+			err = &NotFoundError{providerlimiter.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}

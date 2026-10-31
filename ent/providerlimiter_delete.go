@@ -9,29 +9,29 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 )
 
-// SendLimiterDelete is the builder for deleting a SendLimiter entity.
-type SendLimiterDelete struct {
+// ProviderLimiterDelete is the builder for deleting a ProviderLimiter entity.
+type ProviderLimiterDelete struct {
 	config
 	hooks    []Hook
-	mutation *SendLimiterMutation
+	mutation *ProviderLimiterMutation
 }
 
-// Where appends a list predicates to the SendLimiterDelete builder.
-func (_d *SendLimiterDelete) Where(ps ...predicate.SendLimiter) *SendLimiterDelete {
+// Where appends a list predicates to the ProviderLimiterDelete builder.
+func (_d *ProviderLimiterDelete) Where(ps ...predicate.ProviderLimiter) *ProviderLimiterDelete {
 	_d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *SendLimiterDelete) Exec(ctx context.Context) (int, error) {
+func (_d *ProviderLimiterDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *SendLimiterDelete) ExecX(ctx context.Context) int {
+func (_d *ProviderLimiterDelete) ExecX(ctx context.Context) int {
 	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -39,8 +39,8 @@ func (_d *SendLimiterDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (_d *SendLimiterDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(sendlimiter.Table, sqlgraph.NewFieldSpec(sendlimiter.FieldID, field.TypeInt64))
+func (_d *ProviderLimiterDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(providerlimiter.Table, sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64))
 	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -56,32 +56,32 @@ func (_d *SendLimiterDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// SendLimiterDeleteOne is the builder for deleting a single SendLimiter entity.
-type SendLimiterDeleteOne struct {
-	_d *SendLimiterDelete
+// ProviderLimiterDeleteOne is the builder for deleting a single ProviderLimiter entity.
+type ProviderLimiterDeleteOne struct {
+	_d *ProviderLimiterDelete
 }
 
-// Where appends a list predicates to the SendLimiterDelete builder.
-func (_d *SendLimiterDeleteOne) Where(ps ...predicate.SendLimiter) *SendLimiterDeleteOne {
+// Where appends a list predicates to the ProviderLimiterDelete builder.
+func (_d *ProviderLimiterDeleteOne) Where(ps ...predicate.ProviderLimiter) *ProviderLimiterDeleteOne {
 	_d._d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query.
-func (_d *SendLimiterDeleteOne) Exec(ctx context.Context) error {
+func (_d *ProviderLimiterDeleteOne) Exec(ctx context.Context) error {
 	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{sendlimiter.Label}
+		return &NotFoundError{providerlimiter.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *SendLimiterDeleteOne) ExecX(ctx context.Context) {
+func (_d *ProviderLimiterDeleteOne) ExecX(ctx context.Context) {
 	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}

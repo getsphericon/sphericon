@@ -10,12 +10,12 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/integration"
-	"github.com/getsphericon/sphericon/ent/sendlimiter"
+	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
-// SendLimiter is the model entity for the SendLimiter schema.
-type SendLimiter struct {
+// ProviderLimiter is the model entity for the ProviderLimiter schema.
+type ProviderLimiter struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int64 `json:"id,omitempty"`
@@ -34,13 +34,13 @@ type SendLimiter struct {
 	// RefilledAt holds the value of the "refilled_at" field.
 	RefilledAt time.Time `json:"refilled_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the SendLimiterQuery when eager-loading is set.
-	Edges        SendLimiterEdges `json:"edges"`
+	// The values are being populated by the ProviderLimiterQuery when eager-loading is set.
+	Edges        ProviderLimiterEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// SendLimiterEdges holds the relations/edges for other nodes in the graph.
-type SendLimiterEdges struct {
+// ProviderLimiterEdges holds the relations/edges for other nodes in the graph.
+type ProviderLimiterEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Integration holds the value of the integration edge.
@@ -52,7 +52,7 @@ type SendLimiterEdges struct {
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e SendLimiterEdges) WorkspaceOrErr() (*Workspace, error) {
+func (e ProviderLimiterEdges) WorkspaceOrErr() (*Workspace, error) {
 	if e.Workspace != nil {
 		return e.Workspace, nil
 	} else if e.loadedTypes[0] {
@@ -63,7 +63,7 @@ func (e SendLimiterEdges) WorkspaceOrErr() (*Workspace, error) {
 
 // IntegrationOrErr returns the Integration value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e SendLimiterEdges) IntegrationOrErr() (*Integration, error) {
+func (e ProviderLimiterEdges) IntegrationOrErr() (*Integration, error) {
 	if e.Integration != nil {
 		return e.Integration, nil
 	} else if e.loadedTypes[1] {
@@ -73,15 +73,15 @@ func (e SendLimiterEdges) IntegrationOrErr() (*Integration, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*SendLimiter) scanValues(columns []string) ([]any, error) {
+func (*ProviderLimiter) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sendlimiter.FieldSecondFill, sendlimiter.FieldDayFill:
+		case providerlimiter.FieldSecondFill, providerlimiter.FieldDayFill:
 			values[i] = new(sql.NullFloat64)
-		case sendlimiter.FieldID, sendlimiter.FieldWorkspaceID, sendlimiter.FieldIntegrationID:
+		case providerlimiter.FieldID, providerlimiter.FieldWorkspaceID, providerlimiter.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
-		case sendlimiter.FieldCreatedAt, sendlimiter.FieldUpdatedAt, sendlimiter.FieldRefilledAt:
+		case providerlimiter.FieldCreatedAt, providerlimiter.FieldUpdatedAt, providerlimiter.FieldRefilledAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -91,56 +91,56 @@ func (*SendLimiter) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the SendLimiter fields.
-func (_m *SendLimiter) assignValues(columns []string, values []any) error {
+// to the ProviderLimiter fields.
+func (_m *ProviderLimiter) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case sendlimiter.FieldID:
+		case providerlimiter.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int64(value.Int64)
-		case sendlimiter.FieldCreatedAt:
+		case providerlimiter.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case sendlimiter.FieldUpdatedAt:
+		case providerlimiter.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
-		case sendlimiter.FieldWorkspaceID:
+		case providerlimiter.FieldWorkspaceID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field workspace_id", values[i])
 			} else if value.Valid {
 				_m.WorkspaceID = value.Int64
 			}
-		case sendlimiter.FieldIntegrationID:
+		case providerlimiter.FieldIntegrationID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field integration_id", values[i])
 			} else if value.Valid {
 				_m.IntegrationID = value.Int64
 			}
-		case sendlimiter.FieldSecondFill:
+		case providerlimiter.FieldSecondFill:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field second_fill", values[i])
 			} else if value.Valid {
 				_m.SecondFill = value.Float64
 			}
-		case sendlimiter.FieldDayFill:
+		case providerlimiter.FieldDayFill:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field day_fill", values[i])
 			} else if value.Valid {
 				_m.DayFill = value.Float64
 			}
-		case sendlimiter.FieldRefilledAt:
+		case providerlimiter.FieldRefilledAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field refilled_at", values[i])
 			} else if value.Valid {
@@ -153,44 +153,44 @@ func (_m *SendLimiter) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the SendLimiter.
+// Value returns the ent.Value that was dynamically selected and assigned to the ProviderLimiter.
 // This includes values selected through modifiers, order, etc.
-func (_m *SendLimiter) Value(name string) (ent.Value, error) {
+func (_m *ProviderLimiter) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryWorkspace queries the "workspace" edge of the SendLimiter entity.
-func (_m *SendLimiter) QueryWorkspace() *WorkspaceQuery {
-	return NewSendLimiterClient(_m.config).QueryWorkspace(_m)
+// QueryWorkspace queries the "workspace" edge of the ProviderLimiter entity.
+func (_m *ProviderLimiter) QueryWorkspace() *WorkspaceQuery {
+	return NewProviderLimiterClient(_m.config).QueryWorkspace(_m)
 }
 
-// QueryIntegration queries the "integration" edge of the SendLimiter entity.
-func (_m *SendLimiter) QueryIntegration() *IntegrationQuery {
-	return NewSendLimiterClient(_m.config).QueryIntegration(_m)
+// QueryIntegration queries the "integration" edge of the ProviderLimiter entity.
+func (_m *ProviderLimiter) QueryIntegration() *IntegrationQuery {
+	return NewProviderLimiterClient(_m.config).QueryIntegration(_m)
 }
 
-// Update returns a builder for updating this SendLimiter.
-// Note that you need to call SendLimiter.Unwrap() before calling this method if this SendLimiter
+// Update returns a builder for updating this ProviderLimiter.
+// Note that you need to call ProviderLimiter.Unwrap() before calling this method if this ProviderLimiter
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *SendLimiter) Update() *SendLimiterUpdateOne {
-	return NewSendLimiterClient(_m.config).UpdateOne(_m)
+func (_m *ProviderLimiter) Update() *ProviderLimiterUpdateOne {
+	return NewProviderLimiterClient(_m.config).UpdateOne(_m)
 }
 
-// Unwrap unwraps the SendLimiter entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the ProviderLimiter entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *SendLimiter) Unwrap() *SendLimiter {
+func (_m *ProviderLimiter) Unwrap() *ProviderLimiter {
 	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: SendLimiter is not a transactional entity")
+		panic("ent: ProviderLimiter is not a transactional entity")
 	}
 	_m.config.driver = _tx.drv
 	return _m
 }
 
 // String implements the fmt.Stringer.
-func (_m *SendLimiter) String() string {
+func (_m *ProviderLimiter) String() string {
 	var builder strings.Builder
-	builder.WriteString("SendLimiter(")
+	builder.WriteString("ProviderLimiter(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
@@ -216,5 +216,5 @@ func (_m *SendLimiter) String() string {
 	return builder.String()
 }
 
-// SendLimiters is a parsable slice of SendLimiter.
-type SendLimiters []*SendLimiter
+// ProviderLimiters is a parsable slice of ProviderLimiter.
+type ProviderLimiters []*ProviderLimiter
