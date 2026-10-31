@@ -120,6 +120,12 @@ export function getSoleOwnedWorkspaces(error: unknown) {
   return parsed.data.workspaces
 }
 
+// Every message a 422 problem lists, by field (its `errors` member); undefined when it lists none.
+export function getFieldErrors(error: unknown) {
+  const problem = asProblem(error)
+  return problem?.status === 422 ? problem.errors : undefined
+}
+
 // The first message a 422 problem lists under one field (its `errors` member), or undefined when
 // the error names no such field.
 export function getFieldError(error: unknown, field: string) {

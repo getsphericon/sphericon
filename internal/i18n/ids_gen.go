@@ -209,6 +209,7 @@ var (
 	ErrorsPermissionWorkspaceUpdate             = ID{key: "errors.permission.workspace_update"}
 	ErrorsPersonalTokenNotFound                 = ID{key: "errors.personal_token_not_found"}
 	ErrorsPhoneExists                           = ID{key: "errors.phone_exists"}
+	ErrorsPresetParamInvalid                    = ID{key: "errors.preset_param_invalid"}
 	ErrorsPresetParamsInvalid                   = ID{key: "errors.preset_params_invalid"}
 	ErrorsPresetParamsWithoutPreset             = ID{key: "errors.preset_params_without_preset"}
 	ErrorsPresetUnknown                         = ID{key: "errors.preset_unknown"}

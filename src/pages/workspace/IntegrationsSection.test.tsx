@@ -504,14 +504,80 @@ test('a member without integrations:manage reads the providers but does not chan
   await expect.element(screen.getByRole('button', { name: 'Remove' })).not.toBeInTheDocument()
 })
 
+// The built-in Presets as the server lists them (internal/preset/builtin), and a custom one with
+// params that are not strings.
 const generic = {
   name: 'generic',
   description: 'A body already in the Delivery notice shape, signed with Standard Webhooks.',
   paramsSchema: {
     type: 'object',
-    properties: { secret: { type: 'string', writeOnly: true } },
+    required: ['secret'],
+    additionalProperties: false,
+    properties: {
+      secret: {
+        type: 'string',
+        title: 'Signing secret',
+        description: 'The whsec_ secret the sender signs with.',
+        writeOnly: true,
+      },
+    },
   },
 }
+const ses = {
+  name: 'ses',
+  description: 'Amazon SES events through SNS.',
+  paramsSchema: {
+    type: 'object',
+    required: ['topic_arn'],
+    additionalProperties: false,
+    properties: {
+      topic_arn: {
+        type: 'string',
+        title: 'SNS topic ARN',
+        description: 'The one SNS topic your SES events are published to.',
+        pattern: '^arn:aws[a-z-]*:sns:[a-z0-9-]+:[0-9]+:[A-Za-z0-9_-]+$',
+      },
+    },
+  },
+}
+const postmark = {
+  name: 'postmark',
+  description: 'Postmark webhooks behind basic auth.',
+  paramsSchema: {
+    type: 'object',
+    required: ['user', 'secret'],
+    additionalProperties: false,
+    properties: {
+      user: { type: 'string', title: 'Basic auth user name' },
+      secret: { type: 'string', title: 'Basic auth password', writeOnly: true },
+    },
+  },
+}
+const mailgun = {
+  name: 'mailgun',
+  description: 'Mailgun webhooks.',
+  paramsSchema: {
+    type: 'object',
+    required: ['signing_key'],
+    additionalProperties: false,
+    properties: {
+      signing_key: { type: 'string', title: 'HTTP webhook signing key', writeOnly: true },
+    },
+  },
+}
+const custom = {
+  name: 'acme-relay',
+  description: 'A custom Preset.',
+  paramsSchema: {
+    type: 'object',
+    required: ['retries'],
+    properties: {
+      retries: { type: 'integer', title: 'Retries', minimum: 0 },
+      strict: { type: 'boolean', title: 'Strict mode' },
+    },
+  },
+}
+const PRESETS = [generic, ses, postmark, mailgun, custom]
 
 const withPreset: SiteIntegrationResource = {
   ...smtp,
@@ -520,27 +586,118 @@ const withPreset: SiteIntegrationResource = {
   secretsRetiring: ['secret'],
 }
 
-test('shows the hook URL and chooses a Preset with its params', async () => {
-  const bodies: unknown[] = []
-  worker.use(
-    list([smtp]),
-    handleSitePresetsList({ body: [generic] }),
-    handleSiteIntegrationsUpdate(async ({ request }) => {
-      bodies.push(await request.json())
-      return HttpResponse.json(withPreset)
-    }),
-  )
-  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
-
+// Opens the inbound settings of the only provider listed.
+async function openInbound(screen: Awaited<ReturnType<typeof renderWithRouter>>['screen']) {
   await screen.getByRole('button', { name: 'More actions' }).click()
   await screen.getByRole('menuitem', { name: 'Inbound' }).click()
-  await expect.element(screen.getByText('https://app.test/hooks/omik_one')).toBeInTheDocument()
+}
+
+async function choosePreset(
+  screen: Awaited<ReturnType<typeof renderWithRouter>>['screen'],
+  name: string,
+) {
   await screen.getByRole('combobox', { name: 'Preset' }).click()
-  await screen.getByRole('option', { name: 'generic' }).click()
-  await screen.getByRole('textbox', { name: /^Params/ }).fill('{"secret": "whsec_abc"}')
+  await screen.getByRole('option', { name }).click()
+}
+
+const updates = (bodies: unknown[], answer = withPreset) =>
+  handleSiteIntegrationsUpdate(async ({ request }) => {
+    bodies.push(await request.json())
+    return HttpResponse.json(answer)
+  })
+
+test('shows the hook URL and chooses a Preset, its params as fields', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await openInbound(screen)
+  await expect.element(screen.getByText('https://app.test/hooks/omik_one')).toBeInTheDocument()
+  await choosePreset(screen, 'generic')
+  await screen.getByLabelText(/^Signing secret/).fill('whsec_abc')
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => bodies).toEqual([{ preset: 'generic', params: { secret: 'whsec_abc' } }])
+  await expect.element(screen.getByRole('textbox', { name: /^Params/ })).not.toBeInTheDocument()
+})
+
+test('every built-in Preset and a custom one render their params as fields', async () => {
+  worker.use(list([smtp]), handleSitePresetsList({ body: PRESETS }))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+  await openInbound(screen)
+
+  await choosePreset(screen, 'ses')
+  await expect.element(screen.getByLabelText(/^SNS topic ARN/)).toBeInTheDocument()
+  await choosePreset(screen, 'postmark')
+  await expect.element(screen.getByLabelText(/^Basic auth user name/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByLabelText(/^Basic auth password/))
+    .toHaveAttribute('type', 'password')
+  await choosePreset(screen, 'mailgun')
+  await expect.element(screen.getByLabelText(/^HTTP webhook signing key/)).toBeInTheDocument()
+  await choosePreset(screen, 'acme-relay')
+  await expect.element(screen.getByLabelText(/^Retries/)).toBeInTheDocument()
+  await expect.element(screen.getByRole('checkbox', { name: /Strict mode/ })).toBeInTheDocument()
+})
+
+test('a value the schema refuses is shown on its field and nothing is sent', async () => {
+  const bodies: unknown[] = []
+  worker.use(list([smtp]), handleSitePresetsList({ body: PRESETS }), updates(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+  await openInbound(screen)
+
+  await choosePreset(screen, 'ses')
+  await screen.getByLabelText(/^SNS topic ARN/).fill('not-an-arn')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText(/must match pattern/).first()).toBeInTheDocument()
+  expect(bodies).toEqual([])
+})
+
+test("the server's refusal of a param lands on its field", async () => {
+  worker.use(
+    list([smtp]),
+    handleSitePresetsList({ body: PRESETS }),
+    handleSiteIntegrationsUpdate(() =>
+      problem(422, { errors: { 'params.user': ['the user name is taken'] } }),
+    ),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+  await openInbound(screen)
+
+  await choosePreset(screen, 'postmark')
+  await screen.getByLabelText(/^Basic auth user name/).fill('hooks')
+  await screen.getByLabelText(/^Basic auth password/).fill('pw')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('the user name is taken').first()).toBeInTheDocument()
+})
+
+test('a saved secret shows blank, a blank keeps it and a new value starts a rotation', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    list([{ ...withPreset, secretsRetiring: [] }]),
+    handleSitePresetsList({ body: PRESETS }),
+    updates(bodies),
+  )
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+  await openInbound(screen)
+
+  const secret = screen.getByLabelText(/^Signing secret/)
+  await expect.element(secret).toHaveValue('')
+  await expect.element(secret).toHaveAttribute('placeholder', 'Stored. Leave blank to keep it.')
+  await expect.element(screen.getByText(/A new value starts a rotation/)).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await expect.poll(() => bodies).toEqual([{ preset: 'generic', params: {} }])
+
+  await secret.fill('whsec_new')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      { preset: 'generic', params: {} },
+      { preset: 'generic', params: { secret: 'whsec_new' } },
+    ])
 })
 
 test('retires the old secrets of a rotating Preset', async () => {

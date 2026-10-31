@@ -1479,13 +1479,9 @@
       },
       "inbound": {
         "description": "Where this provider posts bounces and complaints. Choose how its callbacks are verified and read; the secret is stored encrypted and never shown again.",
-        "hideSchema": "Hide the params schema",
         "hookUrl": "Hook URL",
         "noPreset": "No inbound callbacks",
         "open": "Inbound",
-        "params": "Params",
-        "paramsHint": "JSON. A secret shown as ******** or left empty stays unchanged; a new value rotates it and the old one stays valid until you retire it.",
-        "paramsInvalid": "The params must be a JSON object",
         "preset": "Preset",
         "regenerate": "Regenerate URL",
         "regenerateConfirm": "The current hook URL stops working at once. Paste the new URL into the provider.",
@@ -1499,7 +1495,8 @@
         "save": "Save",
         "saved": "Inbound settings saved",
         "saveError": "Failed to save the inbound settings",
-        "showSchema": "Show the params schema",
+        "secretKeep": "Stored. Leave blank to keep it.",
+        "secretRotates": "A new value starts a rotation: the old one stays accepted until you retire it.",
         "title": "Inbound callbacks: {{name}}"
       },
       "inboxExplanation": "The Test inbox keeps every message it is given and delivers none. Read them on the Captured messages page. A workspace has one.",

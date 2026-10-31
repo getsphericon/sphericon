@@ -195,6 +195,7 @@
   "errors.integration_provider_limit_required": "an SES-compatible service needs its Provider limit: enter what your provider account allows",
   "errors.integration_secret_required": "enter the secret again: it is only kept while the host, port, username, region, endpoint and key id stay the same",
   "errors.preset_unknown": "unknown preset {{.Name}}: list the presets to see the available ones",
+  "errors.preset_param_invalid": "{{.Detail}}",
   "errors.preset_params_invalid": "the params do not match the preset's schema: {{.Detail}}",
   "errors.preset_params_without_preset": "params need a preset",
   "errors.token_scope_unknown": "unknown scope {{.Scope}}",
