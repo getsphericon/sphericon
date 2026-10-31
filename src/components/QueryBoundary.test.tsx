@@ -27,15 +27,19 @@ function Loaded({ load }: { load: () => Promise<string> }) {
   return <p>{data}</p>
 }
 
+// The test's own controls: no user reads them, so they are not translated.
+const TOGGLE = 'Toggle'
+const LOADING = 'Loading'
+
 function Toggled({ load }: { load: () => Promise<string> }) {
   const [shown, setShown] = useState(true)
   return (
     <>
       <button type="button" onClick={() => setShown((value) => !value)}>
-        {'Toggle'}
+        {TOGGLE}
       </button>
       {shown ? (
-        <QueryBoundary fallback={<p>{'Loading'}</p>} errorTitle="Failed to load">
+        <QueryBoundary fallback={<p>{LOADING}</p>} errorTitle="Failed to load">
           <Loaded load={load} />
         </QueryBoundary>
       ) : null}
