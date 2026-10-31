@@ -174,6 +174,8 @@ func TestExternalContactsEraseClearsDeadLetters(t *testing.T) {
 		return nil
 	}))
 	for _, row := range env.DB.OutboxMessage.Query().AllX(ctx) {
+		// test writes: a dead letter is written by the router's poison queue, which no test of
+		// Erasure runs; this one copies the envelopes as the router would.
 		env.DB.OutboxDeadLetter.Create().SetUUID(row.UUID).SetCreatedAt(row.CreatedAt).SetTransactionID(row.TransactionID).
 			SetPayload(row.Payload).SetMetadata([]byte(`{"consumer_group":"webhooks"}`)).ExecX(ctx)
 	}
