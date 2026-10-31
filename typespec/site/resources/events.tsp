@@ -26,8 +26,8 @@ model SiteEventResource {
   /** Arbitrary event properties */
   properties?: Record<unknown> | null;
 
-  /** When the event occurred at the source, if provided */
-  occurredAt?: Timestamp | null;
+  /** When the event happened: the time the source gave, or when it was published if it gave none */
+  occurredAt: Timestamp;
 
   /** When the event was recorded */
   createdAt: Timestamp;

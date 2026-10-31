@@ -200,7 +200,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, f Filter, p pagination
 	if !f.IncludeMachine {
 		// The flag belongs to opens and clicks only: a customer's own Event may carry a
 		// property of that name.
-		q = q.Where(event.Or(event.ActionNotIn(events.NameEmailOpened, events.NameEmailClicked), events.HumanOnly))
+		q = q.Where(event.Or(event.ActionNotIn(events.NameEmailOpened, events.NameEmailClicked), events.HumanOnly()))
 	}
 	return pagination.List(ctx, p, q.Count, func(ctx context.Context, limit, offset int) ([]*ent.Event, error) {
 		return q.Clone().Order(ent.Desc(event.FieldCreatedAt), ent.Desc(event.FieldID)).

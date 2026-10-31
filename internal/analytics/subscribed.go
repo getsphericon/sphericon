@@ -49,7 +49,7 @@ func (m *Module) SubscribedPeople(ctx context.Context, s *ent.Scoped, w Window) 
 }
 
 // subscriptionSeries buckets the subscription Events by the Report day they happened on
-// (occurred_at, the creation time when there is none: ADR 0044), zero-filled over the window.
+// (occurred_at, ADR 0044), zero-filled over the window.
 // No machine filter applies: only opens and clicks are made by software (ADR 0053).
 func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Window) ([]SubscribedPoint, error) {
 	var rows []struct {
@@ -58,9 +58,9 @@ func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Windo
 		Unsubscribed int    `sql:"unsubscribed"`
 	}
 	err := s.Event().Query().
+		Where(event.OccurredAtGTE(days.Since), event.OccurredAtLT(days.Until)).
 		Modify(func(sel *sql.Selector) {
-			events.MomentBetween(sel, days.Since, days.Until)
-			moment := events.Moment(sel)
+			moment := sel.C(event.FieldOccurredAt)
 			action := sel.C(event.FieldAction)
 			sel.Select(
 				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+events.NameMarketingConfirmed+"')", "subscribed"),

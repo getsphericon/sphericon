@@ -64,6 +64,7 @@ test('says an email event of a send through a Test inbox was captured, not deliv
             email: 'cy@example.com',
             action: 'email.delivered',
             properties: { captured: true },
+            occurredAt: '2026-01-03T00:00:00Z',
             createdAt: '2026-01-03T00:00:00Z',
           },
         ],

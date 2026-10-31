@@ -653,6 +653,8 @@ const (
 	EventErasableClickedEmail = "erin@initech.test"
 	// EventErasableClickedID is from fixtures/events.
 	EventErasableClickedID = 954
+	// EventErasableClickedURL is from fixtures/events.
+	EventErasableClickedURL = "https://initech.test/offer?e=erin"
 	// EventErasableComplainedAction is from fixtures/events.
 	EventErasableComplainedAction = "email.complained"
 	// EventErasableComplainedEmail is from fixtures/events.
@@ -755,12 +757,12 @@ const (
 	EventGothamSubscribedLateOnThe8thEmail = "c@gotham.test"
 	// EventGothamSubscribedLateOnThe8thID is from fixtures/events.
 	EventGothamSubscribedLateOnThe8thID = 9302
-	// EventGothamSubscribedWithoutOccurredAtAction is from fixtures/events.
-	EventGothamSubscribedWithoutOccurredAtAction = "marketing.confirmed"
-	// EventGothamSubscribedWithoutOccurredAtEmail is from fixtures/events.
-	EventGothamSubscribedWithoutOccurredAtEmail = "f@gotham.test"
-	// EventGothamSubscribedWithoutOccurredAtID is from fixtures/events.
-	EventGothamSubscribedWithoutOccurredAtID = 9305
+	// EventGothamSubscribedOnThe6thAction is from fixtures/events.
+	EventGothamSubscribedOnThe6thAction = "marketing.confirmed"
+	// EventGothamSubscribedOnThe6thEmail is from fixtures/events.
+	EventGothamSubscribedOnThe6thEmail = "f@gotham.test"
+	// EventGothamSubscribedOnThe6thID is from fixtures/events.
+	EventGothamSubscribedOnThe6thID = 9305
 	// EventGothamUnsubscribedAtMidnightOnThe9thAction is from fixtures/events.
 	EventGothamUnsubscribedAtMidnightOnThe9thAction = "email.unsubscribed"
 	// EventGothamUnsubscribedAtMidnightOnThe9thEmail is from fixtures/events.
@@ -789,10 +791,14 @@ const (
 	EventLinkClickBroadcastPricingAction = "email.clicked"
 	// EventLinkClickBroadcastPricingID is from fixtures/events.
 	EventLinkClickBroadcastPricingID = 9320
+	// EventLinkClickBroadcastPricingURL is from fixtures/events.
+	EventLinkClickBroadcastPricingURL = "https://codebasics.dev/pricing"
 	// EventLinkClickMachineAction is from fixtures/events.
 	EventLinkClickMachineAction = "email.clicked"
 	// EventLinkClickMachineID is from fixtures/events.
 	EventLinkClickMachineID = 9323
+	// EventLinkClickMachineURL is from fixtures/events.
+	EventLinkClickMachineURL = "https://codebasics.dev/pricing"
 	// EventOldAnalyticalAction is from fixtures/events.
 	EventOldAnalyticalAction = "page_view"
 	// EventOldAnalyticalEmail is from fixtures/events.

@@ -3,9 +3,6 @@ package broadcasts
 import (
 	"context"
 
-	"entgo.io/ent/dialect/sql"
-	"entgo.io/ent/dialect/sql/sqljson"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/linkclicks"
@@ -19,7 +16,5 @@ func (m *Module) LinkClicksOf(ctx context.Context, s *ent.Scoped, id int64) ([]l
 	if _, err := m.Get(ctx, s, id); err != nil {
 		return nil, err
 	}
-	return linkclicks.ByLink(ctx, s, linkclicks.Between{}, func(sel *sql.Selector) {
-		sel.Where(sqljson.ValueEQ(event.FieldProperties, id, sqljson.Path("broadcastId")))
-	})
+	return linkclicks.ByLink(ctx, s, linkclicks.Between{}, event.BroadcastID(id))
 }

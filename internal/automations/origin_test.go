@@ -17,7 +17,7 @@ func eventOf(t *testing.T, env *testhelper.TestEnv, id int64) automations.Event 
 	t.Helper()
 	stored, err := env.DB.Event.Get(context.Background(), id)
 	require.NoError(t, err)
-	return automations.Event{Action: stored.Action, SourceID: *stored.SourceID, OccurredAt: *stored.OccurredAt}
+	return automations.Event{Action: stored.Action, SourceID: *stored.SourceID, OccurredAt: stored.OccurredAt}
 }
 
 // The Enrollment an Event starts keeps that Event's action and properties (#752), copied from the

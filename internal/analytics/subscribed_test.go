@@ -23,7 +23,7 @@ func subscribedAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analytics.W
 
 // Fixtures (Gotham, America/New_York), the window being 4-10 March 2026. Subscribed is the
 // marketing.confirmed Event, unsubscribed the email.unsubscribed Event, each on the Report day of
-// its occurred_at (the creation time when there is none): 6 March one confirmed (no occurred_at),
+// its occurred_at: 6 March one confirmed,
 // 7 March one (23:59 EST), 8 March two confirmed and one unsubscribed (the midnight EST one, the
 // 23:59 EDT one and the 01:00 one), 9 March one confirmed (backfilled: recorded on the 10th) and
 // one unsubscribed (midnight EDT). A signup Event and an unsubscribe from February count nowhere.

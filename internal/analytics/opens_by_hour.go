@@ -24,7 +24,7 @@ type OpensByHour struct {
 
 // OpensByHour counts the human opens of the window by hour of day and day of week, both read in
 // the Workspace time zone (ADR 0057). Machine opens (ADR 0053) are in no cell. An open happened
-// when `occurred_at` says, falling back to the creation time (ADR 0044).
+// when its `occurred_at` says (ADR 0044).
 func (m *Module) OpensByHour(ctx context.Context, s *ent.Scoped, w Window) (*OpensByHour, error) {
 	days, err := m.days(ctx, s, w)
 	if err != nil {
@@ -36,11 +36,12 @@ func (m *Module) OpensByHour(ctx context.Context, s *ent.Scoped, w Window) (*Ope
 		Opens   int `sql:"opens"`
 	}
 	err = s.Event().Query().
-		Where(event.ActionEQ(events.NameEmailOpened)).
+		Where(
+			event.ActionEQ(events.NameEmailOpened), events.HumanOnly(),
+			event.OccurredAtGTE(days.Since), event.OccurredAtLT(days.Until),
+		).
 		Modify(func(sel *sql.Selector) {
-			happened := events.Moment(sel)
-			events.HumanOnly(sel)
-			events.MomentBetween(sel, days.Since, days.Until)
+			happened := sel.C(event.FieldOccurredAt)
 			local := func(field string) sql.Querier {
 				// raw sql: ent has no AT TIME ZONE or EXTRACT expression; the zone is a bound argument
 				return sql.ExprFunc(func(b *sql.Builder) {

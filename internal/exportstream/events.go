@@ -24,7 +24,7 @@ type EventRow struct {
 	SubjectID  string         `json:"subject_id"`
 	Email      *string        `json:"email"`
 	Phone      *string        `json:"phone"`
-	OccurredAt *time.Time     `json:"occurred_at"`
+	OccurredAt time.Time      `json:"occurred_at"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 }
@@ -42,7 +42,7 @@ func eventRow(e *ent.Event) EventRow {
 		SubjectID:  e.SubjectID,
 		Email:      e.Email,
 		Phone:      e.Phone,
-		OccurredAt: utc(e.OccurredAt),
+		OccurredAt: e.OccurredAt.UTC(),
 		CreatedAt:  e.CreatedAt.UTC(),
 		UpdatedAt:  e.UpdatedAt.UTC(),
 	}

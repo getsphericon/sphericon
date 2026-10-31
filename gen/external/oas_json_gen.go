@@ -13691,10 +13691,8 @@ func (s *ContactExportEvent) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.OccurredAt.Set {
-			e.FieldStart("occurredAt")
-			s.OccurredAt.Encode(e)
-		}
+		e.FieldStart("occurredAt")
+		s.OccurredAt.Encode(e)
 	}
 	{
 		e.FieldStart("backfill")
@@ -13814,8 +13812,8 @@ func (s *ContactExportEvent) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"properties\"")
 			}
 		case "occurredAt":
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
-				s.OccurredAt.Reset()
 				if err := s.OccurredAt.Decode(d); err != nil {
 					return err
 				}
@@ -13856,7 +13854,7 @@ func (s *ContactExportEvent) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b01001001,
-		0b00000110,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

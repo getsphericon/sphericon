@@ -484,7 +484,7 @@ func (c *compiler) event(l EventLeaf) (predicate.Contact, error) {
 	preds := []predicate.Event{event.Action(action)}
 	if events.IsEngagement(action) {
 		// A machine open or click is in the log and in no count (ADR 0053).
-		preds = append(preds, events.HumanOnly)
+		preds = append(preds, events.HumanOnly())
 	}
 	if l.WithinDays != nil {
 		days := *l.WithinDays
@@ -493,8 +493,7 @@ func (c *compiler) event(l EventLeaf) (predicate.Contact, error) {
 		}
 		// A window reaching back past the first year counts all time: no Event is older, and a
 		// cutoff that far back would overflow a stored timestamp. A window longer than Event
-		// retention is capped by it (ADR 0019). GTE excludes a NULL occurred_at, which no
-		// persisted Event has: the events bus always stamps it.
+		// retention is capped by it (ADR 0019).
 		if since := c.now.AddDate(0, 0, -days); since.Year() >= 1 {
 			preds = append(preds, event.OccurredAtGTE(since))
 		}

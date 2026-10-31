@@ -213,6 +213,7 @@ func TestABackfilledOrderWhoseClickWasPrunedIsUnattributedAndStillCounts(t *test
 		SetSubjectID("alice").SetAction(events.NameEmailClicked).
 		SetContactID(fixtures.ContactAliceID).SetEmail(fixtures.ContactAliceEmail).
 		SetProperties(map[string]any{"broadcastId": fixtures.BroadcastSentUntrackedID}).
+		SetBroadcastID(fixtures.BroadcastSentUntrackedID).
 		SetOccurredAt(ago(retention + day)).SetCreatedAt(ago(retention + day)).ExecX(t.Context())
 	s.at(ago(retention), "Order Completed", orderProps("R-1", "20.00"))
 	env.DeliverOrders(t)

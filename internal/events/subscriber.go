@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/suppression"
+	"github.com/samber/lo"
 )
 
 // AutomationEvent is an Event an Automation may react to, as the Automations consumer hands it to
@@ -452,7 +453,12 @@ func Persist(ctx context.Context, client *ent.Client, env Envelope) error {
 		SetAction(p.Action).
 		SetProperties(p.Properties).
 		SetOccurredAt(env.OccurredAt).
-		SetBackfill(IsBackfill(ev))
+		SetBackfill(IsBackfill(ev)).
+		SetMachine(p.Machine).
+		SetCaptured(p.Captured).
+		SetNillableBroadcastID(lo.EmptyableToPtr(p.BroadcastID)).
+		SetNillableAutomationID(lo.EmptyableToPtr(p.AutomationID)).
+		SetNillableURL(lo.EmptyableToPtr(p.URL))
 	// Dedup on the source id (Envelope.SourceID). Empty ⇒ leave source_id NULL (distinct under
 	// the unique index) rather than "", so a missing id never collides and false-dedupes a
 	// distinct event.

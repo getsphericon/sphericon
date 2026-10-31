@@ -8,6 +8,7 @@
   email: alice@example.com
   action: page_view
   workspace_id: 1
+  occurred_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'
 - id: 2
   contact_id: 2
@@ -15,6 +16,7 @@
   email: bob@example.com
   action: purchase
   workspace_id: 1
+  occurred_at: '2026-01-02 00:00:00'
   created_at: '2026-01-02 00:00:00'
 
 # --- CodeBasics product events (recent, varied actions) ---
@@ -457,6 +459,7 @@
   email: erin@initech.test
   action: email.opened
   properties: '{"broadcastId":300}'
+  broadcast_id: 300
   workspace_id: 3
   occurred_at: '2026-01-02 01:00:00'
   created_at: '2026-01-02 01:00:00'
@@ -466,6 +469,8 @@
   email: erin@initech.test
   action: email.clicked
   properties: '{"broadcastId":300,"url":"https://initech.test/offer?e=erin"}'
+  broadcast_id: 300
+  url: 'https://initech.test/offer?e=erin'
   workspace_id: 3
   occurred_at: '2026-01-02 02:00:00'
   created_at: '2026-01-02 02:00:00'
@@ -493,6 +498,7 @@
   email: erin@initech.test
   action: email.unsubscribed
   properties: '{"broadcastId":300}'
+  broadcast_id: 300
   workspace_id: 3
   occurred_at: '2026-01-02 05:00:00'
   created_at: '2026-01-02 05:00:00'
@@ -1127,6 +1133,7 @@
   email: 'grace.taylor@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20001}'
+  broadcast_id: 20001
   workspace_id: 20
   occurred_at: '{{hoursAgo 1873}}'
   created_at: '{{hoursAgo 1873}}'
@@ -1136,6 +1143,7 @@
   email: 'nina.kowalski@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20001}'
+  broadcast_id: 20001
   workspace_id: 20
   occurred_at: '{{hoursAgo 1872}}'
   created_at: '{{hoursAgo 1872}}'
@@ -1170,6 +1178,7 @@
   email: 'henrik.larsen@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20001}'
+  broadcast_id: 20001
   workspace_id: 20
   occurred_at: '{{hoursAgo 1869}}'
   created_at: '{{hoursAgo 1869}}'
@@ -1179,6 +1188,7 @@
   email: 'henrik.larsen@wingtip.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20001}'
+  broadcast_id: 20001
   workspace_id: 20
   occurred_at: '{{hoursAgo 1868}}'
   created_at: '{{hoursAgo 1868}}'
@@ -1188,6 +1198,7 @@
   email: 'zara.khan@northwind.example'
   action: 'email.opened'
   properties: '{"broadcastId":20001}'
+  broadcast_id: 20001
   workspace_id: 20
   occurred_at: '{{hoursAgo 1868}}'
   created_at: '{{hoursAgo 1868}}'
@@ -1197,6 +1208,7 @@
   email: 'felix.weber@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20001}'
+  broadcast_id: 20001
   workspace_id: 20
   occurred_at: '{{hoursAgo 1868}}'
   created_at: '{{hoursAgo 1868}}'
@@ -1206,6 +1218,7 @@
   email: 'zara.khan@northwind.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20001}'
+  broadcast_id: 20001
   workspace_id: 20
   occurred_at: '{{hoursAgo 1867}}'
   created_at: '{{hoursAgo 1867}}'
@@ -1798,6 +1811,7 @@
   email: 'felix.weber@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1251}}'
   created_at: '{{hoursAgo 1251}}'
@@ -1807,6 +1821,7 @@
   email: 'felix.weber@adatum.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1250}}'
   created_at: '{{hoursAgo 1250}}'
@@ -1816,6 +1831,7 @@
   email: 'grace.taylor@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1247}}'
   created_at: '{{hoursAgo 1247}}'
@@ -1825,6 +1841,7 @@
   email: 'elena.popescu@northwind.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1246}}'
   created_at: '{{hoursAgo 1246}}'
@@ -1834,6 +1851,7 @@
   email: 'jack.murphy@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1245}}'
   created_at: '{{hoursAgo 1245}}'
@@ -1843,6 +1861,7 @@
   email: 'mei.lin@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1244}}'
   created_at: '{{hoursAgo 1244}}'
@@ -1852,6 +1871,7 @@
   email: 'santiago.ibarra@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1244}}'
   created_at: '{{hoursAgo 1244}}'
@@ -1861,6 +1881,7 @@
   email: 'valentina.rossi@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1244}}'
   created_at: '{{hoursAgo 1244}}'
@@ -1870,6 +1891,7 @@
   email: 'nina.kowalski@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1244}}'
   created_at: '{{hoursAgo 1244}}'
@@ -1879,6 +1901,7 @@
   email: 'arjun.mehta@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1243}}'
   created_at: '{{hoursAgo 1243}}'
@@ -1888,6 +1911,7 @@
   email: 'isabela.costa@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1242}}'
   created_at: '{{hoursAgo 1242}}'
@@ -1897,6 +1921,7 @@
   email: 'omar.salem@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1242}}'
   created_at: '{{hoursAgo 1242}}'
@@ -1906,6 +1931,7 @@
   email: 'arjun.mehta@fabrikam.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1241}}'
   created_at: '{{hoursAgo 1241}}'
@@ -1915,6 +1941,7 @@
   email: 'aiko.sato@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20002}'
+  broadcast_id: 20002
   workspace_id: 20
   occurred_at: '{{hoursAgo 1240}}'
   created_at: '{{hoursAgo 1240}}'
@@ -2572,6 +2599,7 @@
   email: 'jack.murphy@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 795}}'
   created_at: '{{hoursAgo 795}}'
@@ -2581,6 +2609,7 @@
   email: 'freya.johansson@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 794}}'
   created_at: '{{hoursAgo 794}}'
@@ -2590,6 +2619,7 @@
   email: 'mei.lin@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 793}}'
   created_at: '{{hoursAgo 793}}'
@@ -2599,6 +2629,7 @@
   email: 'jack.murphy@tailspin.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 793}}'
   created_at: '{{hoursAgo 793}}'
@@ -2608,6 +2639,7 @@
   email: 'freya.johansson@contoso.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 793}}'
   created_at: '{{hoursAgo 793}}'
@@ -2617,6 +2649,7 @@
   email: 'grace.taylor@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 792}}'
   created_at: '{{hoursAgo 792}}'
@@ -2626,6 +2659,7 @@
   email: 'kofi.mensah@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 791}}'
   created_at: '{{hoursAgo 791}}'
@@ -2635,6 +2669,7 @@
   email: 'jonas.becker@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 791}}'
   created_at: '{{hoursAgo 791}}'
@@ -2644,6 +2679,7 @@
   email: 'valentina.rossi@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 790}}'
   created_at: '{{hoursAgo 790}}'
@@ -2653,6 +2689,7 @@
   email: 'zara.khan@northwind.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 790}}'
   created_at: '{{hoursAgo 790}}'
@@ -2662,6 +2699,7 @@
   email: 'yusuf.demir@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 789}}'
   created_at: '{{hoursAgo 789}}'
@@ -2671,6 +2709,7 @@
   email: 'isabela.costa@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 789}}'
   created_at: '{{hoursAgo 789}}'
@@ -2680,6 +2719,7 @@
   email: 'anya.petrova@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 788}}'
   created_at: '{{hoursAgo 788}}'
@@ -2689,6 +2729,7 @@
   email: 'kofi.mensah@adatum.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 788}}'
   created_at: '{{hoursAgo 788}}'
@@ -2698,6 +2739,7 @@
   email: 'arjun.mehta@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 788}}'
   created_at: '{{hoursAgo 788}}'
@@ -2707,6 +2749,7 @@
   email: 'yusuf.demir@fabrikam.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 787}}'
   created_at: '{{hoursAgo 787}}'
@@ -2716,6 +2759,7 @@
   email: 'anya.petrova@contoso.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 787}}'
   created_at: '{{hoursAgo 787}}'
@@ -2725,6 +2769,7 @@
   email: 'zara.khan@northwind.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 787}}'
   created_at: '{{hoursAgo 787}}'
@@ -2734,6 +2779,7 @@
   email: 'aiko.sato@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 787}}'
   created_at: '{{hoursAgo 787}}'
@@ -2743,6 +2789,7 @@
   email: 'omar.salem@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 785}}'
   created_at: '{{hoursAgo 785}}'
@@ -2752,6 +2799,7 @@
   email: 'leo.martin@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 784}}'
   created_at: '{{hoursAgo 784}}'
@@ -2761,6 +2809,7 @@
   email: 'nina.kowalski@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20003}'
+  broadcast_id: 20003
   workspace_id: 20
   occurred_at: '{{hoursAgo 784}}'
   created_at: '{{hoursAgo 784}}'
@@ -2968,6 +3017,7 @@
   email: 'anya.petrova@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 458}}'
   created_at: '{{hoursAgo 458}}'
@@ -2977,6 +3027,7 @@
   email: 'jack.murphy@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 456}}'
@@ -2986,6 +3037,7 @@
   email: 'henrik.larsen@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 456}}'
   created_at: '{{hoursAgo 456}}'
@@ -3004,6 +3056,7 @@
   email: 'yusuf.demir@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 455}}'
   created_at: '{{hoursAgo 455}}'
@@ -3013,6 +3066,7 @@
   email: 'valentina.rossi@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 455}}'
   created_at: '{{hoursAgo 455}}'
@@ -3022,6 +3076,7 @@
   email: 'yusuf.demir@fabrikam.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 454}}'
   created_at: '{{hoursAgo 454}}'
@@ -3031,6 +3086,7 @@
   email: 'nina.kowalski@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 454}}'
   created_at: '{{hoursAgo 454}}'
@@ -3040,6 +3096,7 @@
   email: 'zara.khan@northwind.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 453}}'
   created_at: '{{hoursAgo 453}}'
@@ -3049,6 +3106,7 @@
   email: 'santiago.ibarra@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 452}}'
   created_at: '{{hoursAgo 452}}'
@@ -3058,6 +3116,7 @@
   email: 'nina.kowalski@contoso.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 452}}'
   created_at: '{{hoursAgo 452}}'
@@ -3067,6 +3126,7 @@
   email: 'aiko.sato@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 452}}'
   created_at: '{{hoursAgo 452}}'
@@ -3076,6 +3136,7 @@
   email: 'mei.lin@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 451}}'
   created_at: '{{hoursAgo 451}}'
@@ -3085,6 +3146,7 @@
   email: 'omar.salem@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 451}}'
   created_at: '{{hoursAgo 451}}'
@@ -3094,6 +3156,7 @@
   email: 'felix.weber@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 451}}'
   created_at: '{{hoursAgo 451}}'
@@ -3103,6 +3166,7 @@
   email: 'mei.lin@proseware.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 450}}'
   created_at: '{{hoursAgo 450}}'
@@ -3112,6 +3176,7 @@
   email: 'grace.taylor@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 450}}'
   created_at: '{{hoursAgo 450}}'
@@ -3121,6 +3186,7 @@
   email: 'camila.torres@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 450}}'
   created_at: '{{hoursAgo 450}}'
@@ -3130,6 +3196,7 @@
   email: 'santiago.ibarra@wingtip.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 449}}'
   created_at: '{{hoursAgo 449}}'
@@ -3139,6 +3206,7 @@
   email: 'diego.vargas@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 449}}'
   created_at: '{{hoursAgo 449}}'
@@ -3148,6 +3216,7 @@
   email: 'kofi.mensah@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 448}}'
   created_at: '{{hoursAgo 448}}'
@@ -3157,6 +3226,7 @@
   email: 'grace.taylor@litware.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 448}}'
   created_at: '{{hoursAgo 448}}'
@@ -3166,6 +3236,7 @@
   email: 'ahmed.rahman@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 448}}'
   created_at: '{{hoursAgo 448}}'
@@ -3175,6 +3246,7 @@
   email: 'camila.torres@proseware.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20004}'
+  broadcast_id: 20004
   workspace_id: 20
   occurred_at: '{{hoursAgo 447}}'
   created_at: '{{hoursAgo 447}}'
@@ -3429,6 +3501,7 @@
   email: 'jack.murphy@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 218}}'
   created_at: '{{hoursAgo 218}}'
@@ -3438,6 +3511,7 @@
   email: 'henrik.larsen@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 218}}'
   created_at: '{{hoursAgo 218}}'
@@ -3447,6 +3521,7 @@
   email: 'jack.murphy@tailspin.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 217}}'
   created_at: '{{hoursAgo 217}}'
@@ -3464,6 +3539,7 @@
   email: 'ethan.walker@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 215}}'
   created_at: '{{hoursAgo 215}}'
@@ -3473,6 +3549,7 @@
   email: 'emily.carter@northwind.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 215}}'
   created_at: '{{hoursAgo 215}}'
@@ -3482,6 +3559,7 @@
   email: 'aiko.sato@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 215}}'
   created_at: '{{hoursAgo 215}}'
@@ -3491,6 +3569,7 @@
   email: 'diego.vargas@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 215}}'
   created_at: '{{hoursAgo 215}}'
@@ -3500,6 +3579,7 @@
   email: 'anya.petrova@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 214}}'
@@ -3509,6 +3589,7 @@
   email: 'grace.taylor@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 214}}'
@@ -3518,6 +3599,7 @@
   email: 'felix.weber@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 214}}'
@@ -3527,6 +3609,7 @@
   email: 'samuel.adeyemi@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 214}}'
@@ -3536,6 +3619,7 @@
   email: 'sara.lindqvist@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 214}}'
   created_at: '{{hoursAgo 214}}'
@@ -3545,6 +3629,7 @@
   email: 'noah.fischer@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 213}}'
   created_at: '{{hoursAgo 213}}'
@@ -3554,6 +3639,7 @@
   email: 'yusuf.demir@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 213}}'
   created_at: '{{hoursAgo 213}}'
@@ -3563,6 +3649,7 @@
   email: 'diego.vargas@wingtip.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 213}}'
   created_at: '{{hoursAgo 213}}'
@@ -3572,6 +3659,7 @@
   email: 'samuel.adeyemi@tailspin.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 213}}'
   created_at: '{{hoursAgo 213}}'
@@ -3581,6 +3669,7 @@
   email: 'ravi.patel@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 212}}'
   created_at: '{{hoursAgo 212}}'
@@ -3590,6 +3679,7 @@
   email: 'yusuf.demir@fabrikam.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 211}}'
   created_at: '{{hoursAgo 211}}'
@@ -3599,6 +3689,7 @@
   email: 'arjun.mehta@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 210}}'
   created_at: '{{hoursAgo 210}}'
@@ -3608,6 +3699,7 @@
   email: 'elena.popescu@northwind.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 210}}'
   created_at: '{{hoursAgo 210}}'
@@ -3617,6 +3709,7 @@
   email: 'ravi.patel@adatum.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 209}}'
   created_at: '{{hoursAgo 209}}'
@@ -3626,6 +3719,7 @@
   email: 'leo.martin@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 208}}'
   created_at: '{{hoursAgo 208}}'
@@ -3635,6 +3729,7 @@
   email: 'santiago.ibarra@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 207}}'
   created_at: '{{hoursAgo 207}}'
@@ -3644,6 +3739,7 @@
   email: 'valentina.rossi@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 207}}'
   created_at: '{{hoursAgo 207}}'
@@ -3653,6 +3749,7 @@
   email: 'leo.martin@fabrikam.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 206}}'
   created_at: '{{hoursAgo 206}}'
@@ -3662,6 +3759,7 @@
   email: 'valentina.rossi@litware.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20005}'
+  broadcast_id: 20005
   workspace_id: 20
   occurred_at: '{{hoursAgo 204}}'
   created_at: '{{hoursAgo 204}}'
@@ -3990,6 +4088,7 @@
   email: 'mei.lin@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 74}}'
   created_at: '{{hoursAgo 74}}'
@@ -3999,6 +4098,7 @@
   email: 'jack.murphy@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 72}}'
   created_at: '{{hoursAgo 72}}'
@@ -4008,6 +4108,7 @@
   email: 'zara.khan@northwind.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 72}}'
   created_at: '{{hoursAgo 72}}'
@@ -4017,6 +4118,7 @@
   email: 'grace.taylor@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 72}}'
   created_at: '{{hoursAgo 72}}'
@@ -4034,6 +4136,7 @@
   email: 'freya.johansson@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 71}}'
   created_at: '{{hoursAgo 71}}'
@@ -4043,6 +4146,7 @@
   email: 'ahmed.rahman@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 71}}'
   created_at: '{{hoursAgo 71}}'
@@ -4052,6 +4156,7 @@
   email: 'tyler.brooks@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 71}}'
   created_at: '{{hoursAgo 71}}'
@@ -4061,6 +4166,7 @@
   email: 'felix.weber@adatum.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 70}}'
   created_at: '{{hoursAgo 70}}'
@@ -4070,6 +4176,7 @@
   email: 'tyler.brooks@tailspin.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 70}}'
   created_at: '{{hoursAgo 70}}'
@@ -4079,6 +4186,7 @@
   email: 'anya.petrova@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 69}}'
   created_at: '{{hoursAgo 69}}'
@@ -4088,6 +4196,7 @@
   email: 'omar.salem@tailspin.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 69}}'
   created_at: '{{hoursAgo 69}}'
@@ -4097,6 +4206,7 @@
   email: 'aiko.sato@proseware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 69}}'
   created_at: '{{hoursAgo 69}}'
@@ -4106,6 +4216,7 @@
   email: 'leo.martin@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 68}}'
   created_at: '{{hoursAgo 68}}'
@@ -4115,6 +4226,7 @@
   email: 'diego.vargas@wingtip.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 68}}'
   created_at: '{{hoursAgo 68}}'
@@ -4124,6 +4236,7 @@
   email: 'felix.weber@adatum.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 67}}'
   created_at: '{{hoursAgo 67}}'
@@ -4133,6 +4246,7 @@
   email: 'diego.vargas@wingtip.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 67}}'
   created_at: '{{hoursAgo 67}}'
@@ -4151,6 +4265,7 @@
   email: 'leo.martin@fabrikam.example'
   action: 'email.clicked'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 66}}'
   created_at: '{{hoursAgo 66}}'
@@ -4160,6 +4275,7 @@
   email: 'arjun.mehta@fabrikam.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 66}}'
   created_at: '{{hoursAgo 66}}'
@@ -4169,6 +4285,7 @@
   email: 'sara.lindqvist@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 65}}'
   created_at: '{{hoursAgo 65}}'
@@ -4178,6 +4295,7 @@
   email: 'emily.carter@northwind.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 64}}'
   created_at: '{{hoursAgo 64}}'
@@ -4187,6 +4305,7 @@
   email: 'nina.kowalski@contoso.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 64}}'
   created_at: '{{hoursAgo 64}}'
@@ -4196,6 +4315,7 @@
   email: 'valentina.rossi@litware.example'
   action: 'email.opened'
   properties: '{"broadcastId":20006}'
+  broadcast_id: 20006
   workspace_id: 20
   occurred_at: '{{hoursAgo 63}}'
   created_at: '{{hoursAgo 63}}'
@@ -4874,6 +4994,7 @@
   contact_id: 5544
   action: email.opened
   properties: '{"machine":true}'
+  machine: true
   workspace_id: 58
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
@@ -4881,6 +5002,7 @@
   contact_id: 5544
   action: email.opened
   properties: '{"machine":true}'
+  machine: true
   workspace_id: 58
   occurred_at: '{{daysAgo 2}}'
   created_at: '{{daysAgo 2}}'
@@ -4927,6 +5049,7 @@
   contact_id: 100
   action: rule_click
   properties: '{"machine":true}'
+  machine: true
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
@@ -5000,11 +5123,11 @@
   workspace_id: 61
   occurred_at: '2026-03-08 06:00:00+00' # 01:00 EST on 8 March
   created_at: '2026-03-08 06:00:00+00'
-# No occurred_at: the creation time is the moment (10:00 EST on 6 March).
-- id: 9305 # fixture: EventGothamSubscribedWithoutOccurredAt
+- id: 9305 # fixture: EventGothamSubscribedOnThe6th
   email: f@gotham.test
   action: marketing.confirmed
   workspace_id: 61
+  occurred_at: '2026-03-06 15:00:00+00' # 10:00 EST on 6 March
   created_at: '2026-03-06 15:00:00+00'
 # Backfilled: it happened on 9 March but was recorded on 10 March, so it lands on the 9th.
 - id: 9306 # fixture: EventGothamSubscribedBackfilled
@@ -5029,8 +5152,7 @@
   created_at: '2026-03-08 15:00:00+00'
 # Events report (#626), Acme only. `report_view`: four Events, two Contacts (Liam, Emma) and one
 # anonymous, last seen one day ago. `report_backfill` happened 20 days ago but was recorded one day
-# ago (the window follows occurred_at, ADR 0044); `report_unstamped` has no occurred_at, so its
-# creation time (2 days ago) is its moment; `report_old` is only in the 90-day window. Acme has no
+# ago (the window follows occurred_at, ADR 0044); `report_old` is only in the 90-day window. Acme has no
 # other email.opened, so the two human opens (one Contact) and the machine one are the whole action.
 - id: 5600
   contact_id: 100
@@ -5062,11 +5184,6 @@
   workspace_id: 1
   occurred_at: '{{daysAgo 20}}'
   created_at: '{{daysAgo 1}}'
-- id: 5605
-  contact_id: 101
-  action: report_unstamped
-  workspace_id: 1
-  created_at: '{{daysAgo 2}}'
 - id: 5606
   contact_id: 100
   action: report_old
@@ -5089,6 +5206,7 @@
   contact_id: 101
   action: email.opened
   properties: '{"machine":true}'
+  machine: true
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
@@ -5110,6 +5228,8 @@
   contact_id: 100
   action: email.clicked
   properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing"}'
+  broadcast_id: 200
+  url: 'https://codebasics.dev/pricing'
   workspace_id: 1
   occurred_at: '{{daysAgo 2}}'
   created_at: '{{daysAgo 2}}'
@@ -5117,6 +5237,8 @@
   contact_id: 101
   action: email.clicked
   properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing"}'
+  broadcast_id: 200
+  url: 'https://codebasics.dev/pricing'
   workspace_id: 1
   occurred_at: '{{daysAgo 2}}'
   created_at: '{{daysAgo 2}}'
@@ -5124,6 +5246,8 @@
   contact_id: 100
   action: email.clicked
   properties: '{"broadcastId":200,"url":"https://codebasics.dev/docs"}'
+  broadcast_id: 200
+  url: 'https://codebasics.dev/docs'
   workspace_id: 1
   occurred_at: '{{daysAgo 20}}'
   created_at: '{{daysAgo 20}}'
@@ -5131,6 +5255,9 @@
   contact_id: 100
   action: email.clicked
   properties: '{"broadcastId":200,"url":"https://codebasics.dev/pricing","machine":true}'
+  machine: true
+  broadcast_id: 200
+  url: 'https://codebasics.dev/pricing'
   workspace_id: 1
   occurred_at: '{{daysAgo 2}}'
   created_at: '{{daysAgo 2}}'
@@ -5138,6 +5265,8 @@
   contact_id: 101
   action: email.clicked
   properties: '{"automationId":102,"url":"https://codebasics.dev/pricing"}'
+  automation_id: 102
+  url: 'https://codebasics.dev/pricing'
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
@@ -5149,6 +5278,7 @@
   email: edge1@gotham.example
   action: email.opened
   properties: '{"broadcastId":20009}'
+  broadcast_id: 20009
   workspace_id: 61
   occurred_at: '2026-07-15 02:30:00+00'
   created_at: '2026-07-15 02:30:00+00'
@@ -5157,6 +5287,7 @@
   email: edge2@gotham.example
   action: email.opened
   properties: '{"broadcastId":20009}'
+  broadcast_id: 20009
   workspace_id: 61
   occurred_at: '2026-07-15 02:50:00+00'
   created_at: '2026-07-15 02:50:00+00'
@@ -5165,6 +5296,8 @@
   email: edge3@gotham.example
   action: email.opened
   properties: '{"broadcastId":20009,"machine":true}'
+  machine: true
+  broadcast_id: 20009
   workspace_id: 61
   occurred_at: '2026-07-15 15:00:00+00'
   created_at: '2026-07-15 15:00:00+00'
@@ -5173,6 +5306,7 @@
   email: edge4@gotham.example
   action: email.opened
   properties: '{"broadcastId":20009}'
+  broadcast_id: 20009
   workspace_id: 61
   occurred_at: '2026-01-10 14:00:00+00'
   created_at: '2026-01-10 14:00:00+00'
@@ -5198,6 +5332,7 @@
   email: paid.early@codebasics.dev
   action: email.clicked
   properties: '{"machine":true}'
+  machine: true
   workspace_id: 1
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'

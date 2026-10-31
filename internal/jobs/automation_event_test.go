@@ -18,7 +18,7 @@ func storedEventOf(t *testing.T, env *testhelper.TestEnv, id int64) automations.
 	t.Helper()
 	stored, err := env.DB.Event.Get(context.Background(), id)
 	require.NoError(t, err)
-	return automations.Event{Action: stored.Action, SourceID: *stored.SourceID, OccurredAt: *stored.OccurredAt}
+	return automations.Event{Action: stored.Action, SourceID: *stored.SourceID, OccurredAt: stored.OccurredAt}
 }
 
 // An Automation's email renders the properties of the Event that started the Enrollment (#752):

@@ -168,6 +168,76 @@ func (_c *EventCreate) SetNillableOccurredAt(v *time.Time) *EventCreate {
 	return _c
 }
 
+// SetMachine sets the "machine" field.
+func (_c *EventCreate) SetMachine(v bool) *EventCreate {
+	_c.mutation.SetMachine(v)
+	return _c
+}
+
+// SetNillableMachine sets the "machine" field if the given value is not nil.
+func (_c *EventCreate) SetNillableMachine(v *bool) *EventCreate {
+	if v != nil {
+		_c.SetMachine(*v)
+	}
+	return _c
+}
+
+// SetCaptured sets the "captured" field.
+func (_c *EventCreate) SetCaptured(v bool) *EventCreate {
+	_c.mutation.SetCaptured(v)
+	return _c
+}
+
+// SetNillableCaptured sets the "captured" field if the given value is not nil.
+func (_c *EventCreate) SetNillableCaptured(v *bool) *EventCreate {
+	if v != nil {
+		_c.SetCaptured(*v)
+	}
+	return _c
+}
+
+// SetBroadcastID sets the "broadcast_id" field.
+func (_c *EventCreate) SetBroadcastID(v int64) *EventCreate {
+	_c.mutation.SetBroadcastID(v)
+	return _c
+}
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (_c *EventCreate) SetNillableBroadcastID(v *int64) *EventCreate {
+	if v != nil {
+		_c.SetBroadcastID(*v)
+	}
+	return _c
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (_c *EventCreate) SetAutomationID(v int64) *EventCreate {
+	_c.mutation.SetAutomationID(v)
+	return _c
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (_c *EventCreate) SetNillableAutomationID(v *int64) *EventCreate {
+	if v != nil {
+		_c.SetAutomationID(*v)
+	}
+	return _c
+}
+
+// SetURL sets the "url" field.
+func (_c *EventCreate) SetURL(v string) *EventCreate {
+	_c.mutation.SetURL(v)
+	return _c
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (_c *EventCreate) SetNillableURL(v *string) *EventCreate {
+	if v != nil {
+		_c.SetURL(*v)
+	}
+	return _c
+}
+
 // SetBackfill sets the "backfill" field.
 func (_c *EventCreate) SetBackfill(v bool) *EventCreate {
 	_c.mutation.SetBackfill(v)
@@ -241,6 +311,18 @@ func (_c *EventCreate) defaults() {
 		v := event.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.OccurredAt(); !ok {
+		v := event.DefaultOccurredAt()
+		_c.mutation.SetOccurredAt(v)
+	}
+	if _, ok := _c.mutation.Machine(); !ok {
+		v := event.DefaultMachine
+		_c.mutation.SetMachine(v)
+	}
+	if _, ok := _c.mutation.Captured(); !ok {
+		v := event.DefaultCaptured
+		_c.mutation.SetCaptured(v)
+	}
 	if _, ok := _c.mutation.Backfill(); !ok {
 		v := event.DefaultBackfill
 		_c.mutation.SetBackfill(v)
@@ -265,6 +347,15 @@ func (_c *EventCreate) check() error {
 		if err := event.ActionValidator(v); err != nil {
 			return &ValidationError{Name: "action", err: fmt.Errorf(`ent: validator failed for field "Event.action": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.OccurredAt(); !ok {
+		return &ValidationError{Name: "occurred_at", err: errors.New(`ent: missing required field "Event.occurred_at"`)}
+	}
+	if _, ok := _c.mutation.Machine(); !ok {
+		return &ValidationError{Name: "machine", err: errors.New(`ent: missing required field "Event.machine"`)}
+	}
+	if _, ok := _c.mutation.Captured(); !ok {
+		return &ValidationError{Name: "captured", err: errors.New(`ent: missing required field "Event.captured"`)}
 	}
 	if _, ok := _c.mutation.Backfill(); !ok {
 		return &ValidationError{Name: "backfill", err: errors.New(`ent: missing required field "Event.backfill"`)}
@@ -343,7 +434,27 @@ func (_c *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.OccurredAt(); ok {
 		_spec.SetField(event.FieldOccurredAt, field.TypeTime, value)
-		_node.OccurredAt = &value
+		_node.OccurredAt = value
+	}
+	if value, ok := _c.mutation.Machine(); ok {
+		_spec.SetField(event.FieldMachine, field.TypeBool, value)
+		_node.Machine = value
+	}
+	if value, ok := _c.mutation.Captured(); ok {
+		_spec.SetField(event.FieldCaptured, field.TypeBool, value)
+		_node.Captured = value
+	}
+	if value, ok := _c.mutation.BroadcastID(); ok {
+		_spec.SetField(event.FieldBroadcastID, field.TypeInt64, value)
+		_node.BroadcastID = &value
+	}
+	if value, ok := _c.mutation.AutomationID(); ok {
+		_spec.SetField(event.FieldAutomationID, field.TypeInt64, value)
+		_node.AutomationID = &value
+	}
+	if value, ok := _c.mutation.URL(); ok {
+		_spec.SetField(event.FieldURL, field.TypeString, value)
+		_node.URL = &value
 	}
 	if value, ok := _c.mutation.Backfill(); ok {
 		_spec.SetField(event.FieldBackfill, field.TypeBool, value)
@@ -597,21 +708,69 @@ func (u *EventUpsert) ClearProperties() *EventUpsert {
 	return u
 }
 
-// SetOccurredAt sets the "occurred_at" field.
-func (u *EventUpsert) SetOccurredAt(v time.Time) *EventUpsert {
-	u.Set(event.FieldOccurredAt, v)
+// SetBroadcastID sets the "broadcast_id" field.
+func (u *EventUpsert) SetBroadcastID(v int64) *EventUpsert {
+	u.Set(event.FieldBroadcastID, v)
 	return u
 }
 
-// UpdateOccurredAt sets the "occurred_at" field to the value that was provided on create.
-func (u *EventUpsert) UpdateOccurredAt() *EventUpsert {
-	u.SetExcluded(event.FieldOccurredAt)
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *EventUpsert) UpdateBroadcastID() *EventUpsert {
+	u.SetExcluded(event.FieldBroadcastID)
 	return u
 }
 
-// ClearOccurredAt clears the value of the "occurred_at" field.
-func (u *EventUpsert) ClearOccurredAt() *EventUpsert {
-	u.SetNull(event.FieldOccurredAt)
+// AddBroadcastID adds v to the "broadcast_id" field.
+func (u *EventUpsert) AddBroadcastID(v int64) *EventUpsert {
+	u.Add(event.FieldBroadcastID, v)
+	return u
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *EventUpsert) ClearBroadcastID() *EventUpsert {
+	u.SetNull(event.FieldBroadcastID)
+	return u
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (u *EventUpsert) SetAutomationID(v int64) *EventUpsert {
+	u.Set(event.FieldAutomationID, v)
+	return u
+}
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *EventUpsert) UpdateAutomationID() *EventUpsert {
+	u.SetExcluded(event.FieldAutomationID)
+	return u
+}
+
+// AddAutomationID adds v to the "automation_id" field.
+func (u *EventUpsert) AddAutomationID(v int64) *EventUpsert {
+	u.Add(event.FieldAutomationID, v)
+	return u
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *EventUpsert) ClearAutomationID() *EventUpsert {
+	u.SetNull(event.FieldAutomationID)
+	return u
+}
+
+// SetURL sets the "url" field.
+func (u *EventUpsert) SetURL(v string) *EventUpsert {
+	u.Set(event.FieldURL, v)
+	return u
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *EventUpsert) UpdateURL() *EventUpsert {
+	u.SetExcluded(event.FieldURL)
+	return u
+}
+
+// ClearURL clears the value of the "url" field.
+func (u *EventUpsert) ClearURL() *EventUpsert {
+	u.SetNull(event.FieldURL)
 	return u
 }
 
@@ -646,6 +805,15 @@ func (u *EventUpsertOne) UpdateNewValues() *EventUpsertOne {
 		}
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(event.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.OccurredAt(); exists {
+			s.SetIgnore(event.FieldOccurredAt)
+		}
+		if _, exists := u.create.mutation.Machine(); exists {
+			s.SetIgnore(event.FieldMachine)
+		}
+		if _, exists := u.create.mutation.Captured(); exists {
+			s.SetIgnore(event.FieldCaptured)
 		}
 	}))
 	return u
@@ -867,24 +1035,80 @@ func (u *EventUpsertOne) ClearProperties() *EventUpsertOne {
 	})
 }
 
-// SetOccurredAt sets the "occurred_at" field.
-func (u *EventUpsertOne) SetOccurredAt(v time.Time) *EventUpsertOne {
+// SetBroadcastID sets the "broadcast_id" field.
+func (u *EventUpsertOne) SetBroadcastID(v int64) *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
-		s.SetOccurredAt(v)
+		s.SetBroadcastID(v)
 	})
 }
 
-// UpdateOccurredAt sets the "occurred_at" field to the value that was provided on create.
-func (u *EventUpsertOne) UpdateOccurredAt() *EventUpsertOne {
+// AddBroadcastID adds v to the "broadcast_id" field.
+func (u *EventUpsertOne) AddBroadcastID(v int64) *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
-		s.UpdateOccurredAt()
+		s.AddBroadcastID(v)
 	})
 }
 
-// ClearOccurredAt clears the value of the "occurred_at" field.
-func (u *EventUpsertOne) ClearOccurredAt() *EventUpsertOne {
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *EventUpsertOne) UpdateBroadcastID() *EventUpsertOne {
 	return u.Update(func(s *EventUpsert) {
-		s.ClearOccurredAt()
+		s.UpdateBroadcastID()
+	})
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *EventUpsertOne) ClearBroadcastID() *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.ClearBroadcastID()
+	})
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (u *EventUpsertOne) SetAutomationID(v int64) *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.SetAutomationID(v)
+	})
+}
+
+// AddAutomationID adds v to the "automation_id" field.
+func (u *EventUpsertOne) AddAutomationID(v int64) *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.AddAutomationID(v)
+	})
+}
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *EventUpsertOne) UpdateAutomationID() *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.UpdateAutomationID()
+	})
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *EventUpsertOne) ClearAutomationID() *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.ClearAutomationID()
+	})
+}
+
+// SetURL sets the "url" field.
+func (u *EventUpsertOne) SetURL(v string) *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.SetURL(v)
+	})
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *EventUpsertOne) UpdateURL() *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.UpdateURL()
+	})
+}
+
+// ClearURL clears the value of the "url" field.
+func (u *EventUpsertOne) ClearURL() *EventUpsertOne {
+	return u.Update(func(s *EventUpsert) {
+		s.ClearURL()
 	})
 }
 
@@ -1086,6 +1310,15 @@ func (u *EventUpsertBulk) UpdateNewValues() *EventUpsertBulk {
 			}
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(event.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.OccurredAt(); exists {
+				s.SetIgnore(event.FieldOccurredAt)
+			}
+			if _, exists := b.mutation.Machine(); exists {
+				s.SetIgnore(event.FieldMachine)
+			}
+			if _, exists := b.mutation.Captured(); exists {
+				s.SetIgnore(event.FieldCaptured)
 			}
 		}
 	}))
@@ -1308,24 +1541,80 @@ func (u *EventUpsertBulk) ClearProperties() *EventUpsertBulk {
 	})
 }
 
-// SetOccurredAt sets the "occurred_at" field.
-func (u *EventUpsertBulk) SetOccurredAt(v time.Time) *EventUpsertBulk {
+// SetBroadcastID sets the "broadcast_id" field.
+func (u *EventUpsertBulk) SetBroadcastID(v int64) *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
-		s.SetOccurredAt(v)
+		s.SetBroadcastID(v)
 	})
 }
 
-// UpdateOccurredAt sets the "occurred_at" field to the value that was provided on create.
-func (u *EventUpsertBulk) UpdateOccurredAt() *EventUpsertBulk {
+// AddBroadcastID adds v to the "broadcast_id" field.
+func (u *EventUpsertBulk) AddBroadcastID(v int64) *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
-		s.UpdateOccurredAt()
+		s.AddBroadcastID(v)
 	})
 }
 
-// ClearOccurredAt clears the value of the "occurred_at" field.
-func (u *EventUpsertBulk) ClearOccurredAt() *EventUpsertBulk {
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *EventUpsertBulk) UpdateBroadcastID() *EventUpsertBulk {
 	return u.Update(func(s *EventUpsert) {
-		s.ClearOccurredAt()
+		s.UpdateBroadcastID()
+	})
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *EventUpsertBulk) ClearBroadcastID() *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.ClearBroadcastID()
+	})
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (u *EventUpsertBulk) SetAutomationID(v int64) *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.SetAutomationID(v)
+	})
+}
+
+// AddAutomationID adds v to the "automation_id" field.
+func (u *EventUpsertBulk) AddAutomationID(v int64) *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.AddAutomationID(v)
+	})
+}
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *EventUpsertBulk) UpdateAutomationID() *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.UpdateAutomationID()
+	})
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *EventUpsertBulk) ClearAutomationID() *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.ClearAutomationID()
+	})
+}
+
+// SetURL sets the "url" field.
+func (u *EventUpsertBulk) SetURL(v string) *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.SetURL(v)
+	})
+}
+
+// UpdateURL sets the "url" field to the value that was provided on create.
+func (u *EventUpsertBulk) UpdateURL() *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.UpdateURL()
+	})
+}
+
+// ClearURL clears the value of the "url" field.
+func (u *EventUpsertBulk) ClearURL() *EventUpsertBulk {
+	return u.Update(func(s *EventUpsert) {
+		s.ClearURL()
 	})
 }
 

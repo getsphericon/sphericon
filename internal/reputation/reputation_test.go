@@ -89,26 +89,6 @@ func TestRatesWindowSelectsByTheEventsOwnTimestamp(t *testing.T) {
 	assert.Greater(t, w.Bounce.Denominator, n.Bounce.Denominator, "the 40-day-old sends join a wider window")
 }
 
-// An Event with no occurred_at falls back to its ingest time (created_at): with the moment of
-// the fixture traffic cleared, the rates are the ones the moment gave.
-func TestRatesFallBackToIngestTime(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	s := env.DB.Scoped(fixtures.AcmeID)
-	trailing := reputation.Trailing(7 * day)
-	before, err := reputation.New().Rates(ctx, s, trailing)
-	require.NoError(t, err)
-	require.NoError(t, s.Event().Update().ClearOccurredAt().Exec(ctx))
-
-	after, err := reputation.New().Rates(ctx, s, trailing)
-
-	require.NoError(t, err)
-	was, now := byDomain(t, before)["mail.acme.com"], byDomain(t, after)["mail.acme.com"]
-	assert.Equal(t, was.Bounce, now.Bounce)
-	assert.Equal(t, was.Complaint, now.Complaint)
-	assert.Equal(t, 8, byDomain(t, after)["mail.acme.com"].Bounce.Denominator, "the fixture sends still count")
-}
-
 func TestRatesAreWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	rates, err := reputation.New().Rates(context.Background(), env.DB.Scoped(fixtures.GlobexID), reputation.Trailing(7*day))

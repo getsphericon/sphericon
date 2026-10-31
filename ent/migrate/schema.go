@@ -865,7 +865,12 @@ var (
 		{Name: "phone", Type: field.TypeString, Nullable: true},
 		{Name: "action", Type: field.TypeString},
 		{Name: "properties", Type: field.TypeJSON, Nullable: true},
-		{Name: "occurred_at", Type: field.TypeTime, Nullable: true},
+		{Name: "occurred_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "machine", Type: field.TypeBool, Default: false},
+		{Name: "captured", Type: field.TypeBool, Default: false},
+		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "url", Type: field.TypeString, Nullable: true},
 		{Name: "backfill", Type: field.TypeBool, Default: false},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -878,13 +883,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "events_contacts_events",
-				Columns:    []*schema.Column{EventsColumns[12]},
+				Columns:    []*schema.Column{EventsColumns[17]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "events_workspaces_events",
-				Columns:    []*schema.Column{EventsColumns[13]},
+				Columns:    []*schema.Column{EventsColumns[18]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -893,22 +898,22 @@ var (
 			{
 				Name:    "event_workspace_id_contact_id_action",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[13], EventsColumns[12], EventsColumns[8]},
+				Columns: []*schema.Column{EventsColumns[18], EventsColumns[17], EventsColumns[8]},
 			},
 			{
 				Name:    "event_workspace_id_visitor_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[13], EventsColumns[4]},
+				Columns: []*schema.Column{EventsColumns[18], EventsColumns[4]},
 			},
 			{
 				Name:    "event_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[12]},
+				Columns: []*schema.Column{EventsColumns[17]},
 			},
 			{
 				Name:    "event_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[13], EventsColumns[2], EventsColumns[0]},
+				Columns: []*schema.Column{EventsColumns[18], EventsColumns[2], EventsColumns[0]},
 			},
 			{
 				Name:    "events_created_at_analytical_idx",

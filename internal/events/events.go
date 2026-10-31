@@ -146,12 +146,20 @@ type Projection struct {
 	// VisitorID is the anonymous device (→ events.visitor_id), kept so an anonymous
 	// event can be stitched onto a Contact at Identify. "" ⇒ unset.
 	VisitorID string
-	// AutomationID is the Automation whose email the Event came from, 0 for any other Event. An
-	// Automation never starts from an Event of its own email (ADR 0053).
+	// AutomationID is the Automation whose email the Event came from (→ events.automation_id), 0
+	// for any other Event. An Automation never starts from an Event of its own email (ADR 0053).
 	AutomationID int64
-	// Machine marks an open or click made by software (ADR 0053). It is recorded, but starts no
-	// Automation.
+	// BroadcastID is the Broadcast whose email the Event came from (→ events.broadcast_id), 0 for
+	// any other Event.
+	BroadcastID int64
+	// URL is the link of a click (→ events.url), "" for any other Event.
+	URL string
+	// Machine marks an open or click made by software (ADR 0053, → events.machine). It is
+	// recorded, but starts no Automation.
 	Machine bool
+	// Captured marks an Event of a send through a sender that delivers nowhere outside
+	// (→ events.captured).
+	Captured bool
 }
 
 // DomainEvent is a typed, producer-side domain event. Implementations are
@@ -335,7 +343,10 @@ func (e *EmailEngagement) Project() Projection {
 	if e.Machine {
 		props[MachineProperty] = true
 	}
-	return Projection{Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID, AutomationID: e.AutomationID, Machine: e.Machine}
+	return Projection{
+		Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, URL: e.URL, Machine: e.Machine, Captured: e.Captured,
+	}
 }
 
 // EmailDelivery is emitted when a provider reports what became of one of our sends: a
@@ -404,7 +415,12 @@ func (e *EmailDelivery) Project() Projection {
 	if e.Captured {
 		props[CapturedProperty] = true
 	}
-	return Projection{Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID}
+	// A notice of delivery is never a trigger nor an end of an Automation (ADR 0053), so its
+	// AutomationID only marks whose email it was.
+	return Projection{
+		Subject: e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Captured: e.Captured,
+	}
 }
 
 // MarketingConfirmed is emitted when a destination confirms its subscription

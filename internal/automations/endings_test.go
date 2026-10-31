@@ -145,7 +145,7 @@ func TestAnEnrollmentMadeEndedEndsWhenThatEventOccurred(t *testing.T) {
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
-	assert.Equal(t, closed.OccurredAt, run.EndedAt)
+	assert.Equal(t, &closed.OccurredAt, run.EndedAt)
 }
 
 // A step ends an Enrollment at the moment its caller's clock gives.

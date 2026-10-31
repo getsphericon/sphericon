@@ -43,7 +43,17 @@ type Event struct {
 	// Properties holds the value of the "properties" field.
 	Properties map[string]interface{} `json:"properties,omitempty"`
 	// OccurredAt holds the value of the "occurred_at" field.
-	OccurredAt *time.Time `json:"occurred_at,omitempty"`
+	OccurredAt time.Time `json:"occurred_at,omitempty"`
+	// Machine holds the value of the "machine" field.
+	Machine bool `json:"machine,omitempty"`
+	// Captured holds the value of the "captured" field.
+	Captured bool `json:"captured,omitempty"`
+	// BroadcastID holds the value of the "broadcast_id" field.
+	BroadcastID *int64 `json:"broadcast_id,omitempty"`
+	// AutomationID holds the value of the "automation_id" field.
+	AutomationID *int64 `json:"automation_id,omitempty"`
+	// URL holds the value of the "url" field.
+	URL *string `json:"url,omitempty"`
 	// Backfill holds the value of the "backfill" field.
 	Backfill bool `json:"backfill,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -92,11 +102,11 @@ func (*Event) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case event.FieldProperties:
 			values[i] = new([]byte)
-		case event.FieldBackfill:
+		case event.FieldMachine, event.FieldCaptured, event.FieldBackfill:
 			values[i] = new(sql.NullBool)
-		case event.FieldID, event.FieldWorkspaceID, event.FieldContactID:
+		case event.FieldID, event.FieldWorkspaceID, event.FieldContactID, event.FieldBroadcastID, event.FieldAutomationID:
 			values[i] = new(sql.NullInt64)
-		case event.FieldSourceID, event.FieldVisitorID, event.FieldSubjectID, event.FieldEmail, event.FieldPhone, event.FieldAction:
+		case event.FieldSourceID, event.FieldVisitorID, event.FieldSubjectID, event.FieldEmail, event.FieldPhone, event.FieldAction, event.FieldURL:
 			values[i] = new(sql.NullString)
 		case event.FieldCreatedAt, event.FieldUpdatedAt, event.FieldOccurredAt:
 			values[i] = new(sql.NullTime)
@@ -198,8 +208,40 @@ func (_m *Event) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field occurred_at", values[i])
 			} else if value.Valid {
-				_m.OccurredAt = new(time.Time)
-				*_m.OccurredAt = value.Time
+				_m.OccurredAt = value.Time
+			}
+		case event.FieldMachine:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field machine", values[i])
+			} else if value.Valid {
+				_m.Machine = value.Bool
+			}
+		case event.FieldCaptured:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field captured", values[i])
+			} else if value.Valid {
+				_m.Captured = value.Bool
+			}
+		case event.FieldBroadcastID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field broadcast_id", values[i])
+			} else if value.Valid {
+				_m.BroadcastID = new(int64)
+				*_m.BroadcastID = value.Int64
+			}
+		case event.FieldAutomationID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field automation_id", values[i])
+			} else if value.Valid {
+				_m.AutomationID = new(int64)
+				*_m.AutomationID = value.Int64
+			}
+		case event.FieldURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field url", values[i])
+			} else if value.Valid {
+				_m.URL = new(string)
+				*_m.URL = value.String
 			}
 		case event.FieldBackfill:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -296,9 +338,28 @@ func (_m *Event) String() string {
 	builder.WriteString("properties=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Properties))
 	builder.WriteString(", ")
-	if v := _m.OccurredAt; v != nil {
-		builder.WriteString("occurred_at=")
-		builder.WriteString(v.Format(time.ANSIC))
+	builder.WriteString("occurred_at=")
+	builder.WriteString(_m.OccurredAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("machine=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Machine))
+	builder.WriteString(", ")
+	builder.WriteString("captured=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Captured))
+	builder.WriteString(", ")
+	if v := _m.BroadcastID; v != nil {
+		builder.WriteString("broadcast_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.AutomationID; v != nil {
+		builder.WriteString("automation_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.URL; v != nil {
+		builder.WriteString("url=")
+		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
 	builder.WriteString("backfill=")

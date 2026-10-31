@@ -60,8 +60,8 @@ model ExportEventRow {
   /** Phone number snapshot; absent once anonymized */
   phone: string | null;
 
-  /** When the Event happened, as reported by the sender */
-  occurred_at: Timestamp | null;
+  /** When the Event happened: the time the sender gave, or when it was published if it gave none */
+  occurred_at: Timestamp;
 
   /** Creation timestamp */
   created_at: Timestamp;

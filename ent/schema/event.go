@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
@@ -69,7 +71,39 @@ func (Event) Fields() []ent.Field {
 			NotEmpty(),
 		field.JSON("properties", map[string]any{}).
 			Optional(),
+		// When the Event happened (ADR 0044): the source's time, or the publish time when the
+		// source named none. Every report and window reads an Event's time from it.
 		field.Time("occurred_at").
+			Default(time.Now).
+			Immutable().
+			Annotations(entsql.Default("CURRENT_TIMESTAMP")),
+		// The facts of an email.* Event that reports filter and group on, written at ingest from
+		// the same projection as the keys of the same name in properties, which segment
+		// conditions read. Typed columns, so a query states them with ent's predicates.
+		//
+		// An open or click made by software (ADR 0053, GLOSSARY: Machine engagement): in the log,
+		// in no count.
+		field.Bool("machine").
+			Default(false).
+			Immutable(),
+		// About a send through a sender that delivers nowhere outside (a Test inbox): captured,
+		// not delivered, so it moves no deliverability rate.
+		field.Bool("captured").
+			Default(false).
+			Immutable(),
+		// The Broadcast whose email the Event is about. Like the url, cleared when an Erasure
+		// anonymizes the Event (internal/erasure), as the properties drop their copy.
+		field.Int64("broadcast_id").
+			Optional().
+			Nillable().
+			Annotations(ScopedRef{Unchecked: true, Reason: "a snapshot: an Event outlives the Broadcast it is about"}),
+		// The Automation whose email the Event is about.
+		field.Int64("automation_id").
+			Optional().
+			Nillable().
+			Annotations(ScopedRef{Unchecked: true, Reason: "a snapshot: an Event outlives the Automation it is about"}),
+		// The link of a click.
+		field.String("url").
 			Optional().
 			Nillable(),
 		// Loaded as history (a Backfill): recorded, but no Automation enrolls, no Webhook
@@ -103,7 +137,7 @@ func (Event) Indexes() []ent.Index {
 		// (updated_at, id) inside one Workspace, so a deep back-fill never scans.
 		index.Fields("workspace_id", "updated_at", "id"),
 		// Backs the Event retention delete (ADR 0019): created_at is the age
-		// column (never null, unlike occurred_at). Partial: evidentiary Events are
+		// column (when the Event was stored, not when it happened). Partial: evidentiary Events are
 		// never deleted by age, so they stay out of the index. The predicate is shared
 		// with the retention delete (ExpirableEventPredicate).
 		index.Fields("created_at").

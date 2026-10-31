@@ -465,8 +465,20 @@ func init() {
 	eventDescAction := eventFields[7].Descriptor()
 	// event.ActionValidator is a validator for the "action" field. It is called by the builders before save.
 	event.ActionValidator = eventDescAction.Validators[0].(func(string) error)
+	// eventDescOccurredAt is the schema descriptor for occurred_at field.
+	eventDescOccurredAt := eventFields[9].Descriptor()
+	// event.DefaultOccurredAt holds the default value on creation for the occurred_at field.
+	event.DefaultOccurredAt = eventDescOccurredAt.Default.(func() time.Time)
+	// eventDescMachine is the schema descriptor for machine field.
+	eventDescMachine := eventFields[10].Descriptor()
+	// event.DefaultMachine holds the default value on creation for the machine field.
+	event.DefaultMachine = eventDescMachine.Default.(bool)
+	// eventDescCaptured is the schema descriptor for captured field.
+	eventDescCaptured := eventFields[11].Descriptor()
+	// event.DefaultCaptured holds the default value on creation for the captured field.
+	event.DefaultCaptured = eventDescCaptured.Default.(bool)
 	// eventDescBackfill is the schema descriptor for backfill field.
-	eventDescBackfill := eventFields[10].Descriptor()
+	eventDescBackfill := eventFields[15].Descriptor()
 	// event.DefaultBackfill holds the default value on creation for the backfill field.
 	event.DefaultBackfill = eventDescBackfill.Default.(bool)
 	heldordereventMixin := schema.HeldOrderEvent{}.Mixin()
