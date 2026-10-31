@@ -60,6 +60,36 @@
     }
   }
 
+  // entities 7 (htmlparser2, under @react-email/render's html-to-text) decodes its entity tables
+  // from base64 at module init, through `atob` where there is one and Node's `Buffer` otherwise.
+  if (!Object.hasOwn(g, 'atob')) {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    g.atob = (data) => {
+      const input = data.replace(/[\t\n\f\r =]/g, '')
+      const codes = []
+      let buffer = 0
+      let bits = 0
+      for (let i = 0; i < input.length; i++) {
+        const value = alphabet.indexOf(input[i])
+        if (value < 0) {
+          throw new Error('atob: the string is not correctly encoded')
+        }
+        buffer = (buffer << 6) | value
+        bits += 6
+        if (bits >= 8) {
+          bits -= 8
+          codes.push((buffer >> bits) & 0xff)
+          buffer &= (1 << bits) - 1
+        }
+      }
+      let output = ''
+      for (let i = 0; i < codes.length; i += 8192) {
+        output += String.fromCharCode(...codes.slice(i, i + 8192))
+      }
+      return output
+    }
+  }
+
   // react-dom/server's browser build creates a MessageChannel at module init.
   if (!Object.hasOwn(g, 'MessageChannel')) {
     g.MessageChannel = class MessageChannel {
