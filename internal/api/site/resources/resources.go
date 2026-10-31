@@ -159,6 +159,8 @@ type Converter interface {
 	// The active holds are read through the Workspace's scope, which the mapper cannot
 	// see: the handler attaches them.
 	// goverter:ignore Holds
+	// The Send cap is read through the outbound module (ADR 0067): the handler attaches it.
+	// goverter:ignore SendCap
 	// The support contact is instance configuration, attached by the handler.
 	// goverter:ignore SupportEmail
 	// The MCP origin is instance configuration, attached by the handler.
@@ -267,6 +269,8 @@ type Converter interface {
 	SesConfigToResource(source integrations.RedactedSES) siteapi.SiteSesConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
+	// goverter:map Sent24h SentLast24h
+	SendCapToResource(source providerlimit.SendCapStatus) siteapi.SiteSendCap
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	// goverter:useEmptyOnNil:slice
 	PasskeysToResources(source []*ent.Passkey) []siteapi.SitePasskey

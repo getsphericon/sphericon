@@ -915,6 +915,12 @@ func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []external.Se
 	}
 	return externalapiSegmentResourceList
 }
+func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) external.SendCap {
+	var externalapiSendCap external.SendCap
+	externalapiSendCap.PerDay = count(source.PerDay)
+	externalapiSendCap.SentLast24h = count(source.Sent24h)
+	return externalapiSendCap
+}
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) external.SendingDomainResource {
 	var externalapiSendingDomainResource external.SendingDomainResource
 	if source != nil {
@@ -1132,6 +1138,15 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 		externalapiWebhookResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiWebhookResource
+}
+func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.WorkspaceResource {
+	var externalapiWorkspaceResource external.WorkspaceResource
+	if source != nil {
+		externalapiWorkspaceResource.ID = external.WorkspaceId((*source).PublicID)
+		externalapiWorkspaceResource.Name = (*source).Name
+		// externalapiWorkspaceResource.SendCap: ignore
+	}
+	return externalapiWorkspaceResource
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute

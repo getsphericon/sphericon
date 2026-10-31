@@ -2829,6 +2829,51 @@ func (o NilSiteRuleVersion) Or(d SiteRuleVersion) SiteRuleVersion {
 	return d
 }
 
+// NewNilSiteSendCap returns new NilSiteSendCap with value set to v.
+func NewNilSiteSendCap(v SiteSendCap) NilSiteSendCap {
+	return NilSiteSendCap{
+		Value: v,
+	}
+}
+
+// NilSiteSendCap is nullable SiteSendCap.
+type NilSiteSendCap struct {
+	Value SiteSendCap
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilSiteSendCap) SetTo(v SiteSendCap) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilSiteSendCap) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilSiteSendCap) SetToNull() {
+	o.Null = true
+	var v SiteSendCap
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilSiteSendCap) Get() (v SiteSendCap, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilSiteSendCap) Or(d SiteSendCap) SiteSendCap {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilString returns new NilString with value set to v.
 func NewNilString(v string) NilString {
 	return NilString{
@@ -21341,6 +21386,37 @@ type SiteSegmentsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteSegmentsUpdateUnprocessableEntity) siteSegmentsUpdateRes() {}
 
+// The Send cap the platform set on the Workspace: the most messages it may send in any 24 hours,
+// across all its Integrations. Past it, marketing sends wait for the window to free up; Transactional
+// sends still go out and count. Read-only: no Workspace surface changes it.
+// Ref: #/components/schemas/SiteSendCap
+type SiteSendCap struct {
+	// Most messages per rolling 24 hours.
+	PerDay int32 `json:"perDay"`
+	// Messages the Workspace sent in the last 24 hours, Transactional included.
+	SentLast24h int32 `json:"sentLast24h"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *SiteSendCap) GetPerDay() int32 {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *SiteSendCap) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *SiteSendCap) SetPerDay(val int32) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *SiteSendCap) SetSentLast24h(val int32) {
+	s.SentLast24h = val
+}
+
 // Sending domain resource used by the site UI (ADR 0010). sphericon generates the DKIM keypair; the
 // user publishes the DKIM TXT to authenticate the domain. The private key is never exposed. `verified`
 // is re-checked in the background: the domain loses it (`verificationLostAt`) if the DNS record
@@ -25260,6 +25336,9 @@ type SiteWorkspaceResource struct {
 	// The Staff holds active now, oldest key first; empty while nothing holds sending. Any one freezes
 	// every send surface, like a suspension, but a lapsed hold is never listed.
 	Holds []SiteWorkspaceHold `json:"holds"`
+	// The Send cap the platform set on the Workspace, with its last-24-hour sends; null when no Send cap
+	// applies.
+	SendCap NilSiteSendCap `json:"sendCap"`
 	// When an Owner or Admin switched on the Two-factor requirement (ADR 0020); absent while every member
 	// may work without a Second factor.
 	SecondFactorRequiredAt OptNilTimestamp `json:"secondFactorRequiredAt"`
@@ -25338,6 +25417,11 @@ func (s *SiteWorkspaceResource) GetTrackerUrl() string {
 // GetHolds returns the value of Holds.
 func (s *SiteWorkspaceResource) GetHolds() []SiteWorkspaceHold {
 	return s.Holds
+}
+
+// GetSendCap returns the value of SendCap.
+func (s *SiteWorkspaceResource) GetSendCap() NilSiteSendCap {
+	return s.SendCap
 }
 
 // GetSecondFactorRequiredAt returns the value of SecondFactorRequiredAt.
@@ -25423,6 +25507,11 @@ func (s *SiteWorkspaceResource) SetTrackerUrl(val string) {
 // SetHolds sets the value of Holds.
 func (s *SiteWorkspaceResource) SetHolds(val []SiteWorkspaceHold) {
 	s.Holds = val
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *SiteWorkspaceResource) SetSendCap(val NilSiteSendCap) {
+	s.SendCap = val
 }
 
 // SetSecondFactorRequiredAt sets the value of SecondFactorRequiredAt.

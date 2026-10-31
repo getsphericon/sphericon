@@ -785,6 +785,11 @@ export type StaffWorkspaceDetailResource = {
    * can be set
    */
   sendCaps: boolean;
+  /**
+   * The Workspace's sends in the last 24 hours, Transactional included: what its Send cap
+   * counts. Absent on an Instance without Send caps.
+   */
+  sentLast24h?: number | null;
 };
 
 /**

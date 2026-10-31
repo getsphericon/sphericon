@@ -2792,6 +2792,9 @@ type StaffWorkspaceDetailResource struct {
 	Abuse          StaffAbuse          `json:"abuse"`
 	// Whether this Instance has Send caps (ADR 0067); without, a Workspace has none and none can be set.
 	SendCaps bool `json:"sendCaps"`
+	// The Workspace's sends in the last 24 hours, Transactional included: what its Send cap counts. Absent
+	// on an Instance without Send caps.
+	SentLast24h OptNilInt32 `json:"sentLast24h"`
 }
 
 // GetID returns the value of ID.
@@ -2859,6 +2862,11 @@ func (s *StaffWorkspaceDetailResource) GetSendCaps() bool {
 	return s.SendCaps
 }
 
+// GetSentLast24h returns the value of SentLast24h.
+func (s *StaffWorkspaceDetailResource) GetSentLast24h() OptNilInt32 {
+	return s.SentLast24h
+}
+
 // SetID sets the value of ID.
 func (s *StaffWorkspaceDetailResource) SetID(val WorkspaceId) {
 	s.ID = val
@@ -2922,6 +2930,11 @@ func (s *StaffWorkspaceDetailResource) SetAbuse(val StaffAbuse) {
 // SetSendCaps sets the value of SendCaps.
 func (s *StaffWorkspaceDetailResource) SetSendCaps(val bool) {
 	s.SendCaps = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *StaffWorkspaceDetailResource) SetSentLast24h(val OptNilInt32) {
+	s.SentLast24h = val
 }
 
 func (*StaffWorkspaceDetailResource) staffWorkspacesGetRes() {}

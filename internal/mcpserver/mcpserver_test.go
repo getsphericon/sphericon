@@ -66,7 +66,7 @@ var (
 		"contacts_list", "contacts_create", "contacts_get", "contacts_update", "contacts_delete", "contacts_erase_by", "contacts_export",
 		"broadcasts_list", "broadcasts_create", "broadcasts_get", "broadcasts_update", "broadcasts_delete",
 		"broadcasts_set_segment", "broadcasts_test_send", "broadcasts_report", "broadcasts_archive", "broadcasts_unarchive",
-		"events_record", "events_actions_list", "whoami",
+		"events_record", "events_actions_list", "whoami", "workspace_get",
 		"custom_fields_list", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_archive", "sending_domains_unarchive", "sending_domains_verify", "sending_domains_rates",
 		"integrations_list", "integrations_create", "integrations_get", "integrations_update", "integrations_archive", "integrations_unarchive", "presets_list",
 		"captured_messages_list", "captured_messages_get", "captured_messages_delete",

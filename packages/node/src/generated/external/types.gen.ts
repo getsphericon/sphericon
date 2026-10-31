@@ -3541,6 +3541,22 @@ export type SegmentResource = {
 };
 
 /**
+ * The Send cap the platform set on the Workspace: the most messages it may send in any 24 hours,
+ * across all its Integrations. Past it, marketing sends wait for the window to free up;
+ * Transactional sends still go out and count.
+ */
+export type SendCap = {
+  /**
+   * Most messages per rolling 24 hours
+   */
+  perDay: number;
+  /**
+   * Messages the Workspace sent in the last 24 hours, Transactional included
+   */
+  sentLast24h: number;
+};
+
+/**
  * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
  * only when the user explicitly opts in. mcp:send is the MCP-specific key: send-class
  * tools are not listed over /mcp without it, so any send-class grant brings it along.
@@ -4460,6 +4476,25 @@ export type WebhookTestResult = {
  * Workspace's one public address.
  */
 export type WorkspaceId = string;
+
+/**
+ * The Workspace the API token belongs to
+ */
+export type WorkspaceResource = {
+  /**
+   * The Workspace id
+   */
+  id: WorkspaceId;
+  /**
+   * Display name
+   */
+  name: string;
+  /**
+   * The Send cap the platform set on the Workspace, with its last-24-hour sends; null when no
+   * Send cap applies. A slow send past it is the Send cap, not the Provider limit.
+   */
+  sendCap: SendCap | null;
+};
 
 /**
  * true lists the archived resources instead of the kept ones; the default hides them
@@ -10269,3 +10304,32 @@ export type WebhooksTestResponses = {
 };
 
 export type WebhooksTestResponse = WebhooksTestResponses[keyof WebhooksTestResponses];
+
+export type WorkspaceGetData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/workspace';
+};
+
+export type WorkspaceGetErrors = {
+  /**
+   * RFC 7807 unauthorized response
+   */
+  401: ProblemDetails;
+  /**
+   * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
+   */
+  429: ProblemDetails;
+};
+
+export type WorkspaceGetError = WorkspaceGetErrors[keyof WorkspaceGetErrors];
+
+export type WorkspaceGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: WorkspaceResource;
+};
+
+export type WorkspaceGetResponse = WorkspaceGetResponses[keyof WorkspaceGetResponses];

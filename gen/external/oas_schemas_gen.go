@@ -10247,6 +10247,51 @@ func (o NilRuleVersion) Or(d RuleVersion) RuleVersion {
 	return d
 }
 
+// NewNilSendCap returns new NilSendCap with value set to v.
+func NewNilSendCap(v SendCap) NilSendCap {
+	return NilSendCap{
+		Value: v,
+	}
+}
+
+// NilSendCap is nullable SendCap.
+type NilSendCap struct {
+	Value SendCap
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilSendCap) SetTo(v SendCap) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilSendCap) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilSendCap) SetToNull() {
+	o.Null = true
+	var v SendCap
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilSendCap) Get() (v SendCap, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilSendCap) Or(d SendCap) SendCap {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilString returns new NilString with value set to v.
 func NewNilString(v string) NilString {
 	return NilString{
@@ -13466,6 +13511,8 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
+func (*ProblemDetails) workspaceGetRes() {}
+
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
 
@@ -13655,6 +13702,7 @@ func (*ProblemDetailsHeaders) webhooksListRes()              {}
 func (*ProblemDetailsHeaders) webhooksRegenerateSecretRes()  {}
 func (*ProblemDetailsHeaders) webhooksTestRes()              {}
 func (*ProblemDetailsHeaders) webhooksUpdateRes()            {}
+func (*ProblemDetailsHeaders) workspaceGetRes()              {}
 
 // Where an effective Provider limit comes from.
 // Ref: #/components/schemas/ProviderLimitSource
@@ -15317,6 +15365,37 @@ func (*SegmentsUpdateUnauthorized) segmentsUpdateRes() {}
 type SegmentsUpdateUnprocessableEntity ProblemDetails
 
 func (*SegmentsUpdateUnprocessableEntity) segmentsUpdateRes() {}
+
+// The Send cap the platform set on the Workspace: the most messages it may send in any 24 hours,
+// across all its Integrations. Past it, marketing sends wait for the window to free up; Transactional
+// sends still go out and count.
+// Ref: #/components/schemas/SendCap
+type SendCap struct {
+	// Most messages per rolling 24 hours.
+	PerDay int32 `json:"perDay"`
+	// Messages the Workspace sent in the last 24 hours, Transactional included.
+	SentLast24h int32 `json:"sentLast24h"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *SendCap) GetPerDay() int32 {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *SendCap) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *SendCap) SetPerDay(val int32) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *SendCap) SetSentLast24h(val int32) {
+	s.SentLast24h = val
+}
 
 // Send a single transactional email by rendering a referenced template.
 // Ref: #/components/schemas/SendTransactionalEmailInput
@@ -18886,3 +18965,49 @@ func (*WebhooksUpdateUnauthorized) webhooksUpdateRes() {}
 type WebhooksUpdateUnprocessableEntity ProblemDetails
 
 func (*WebhooksUpdateUnprocessableEntity) webhooksUpdateRes() {}
+
+type WorkspaceId string
+
+// The Workspace the API token belongs to.
+// Ref: #/components/schemas/WorkspaceResource
+type WorkspaceResource struct {
+	// The Workspace id.
+	ID WorkspaceId `json:"id"`
+	// Display name.
+	Name string `json:"name"`
+	// The Send cap the platform set on the Workspace, with its last-24-hour sends; null when no Send cap
+	// applies. A slow send past it is the Send cap, not the Provider limit.
+	SendCap NilSendCap `json:"sendCap"`
+}
+
+// GetID returns the value of ID.
+func (s *WorkspaceResource) GetID() WorkspaceId {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *WorkspaceResource) GetName() string {
+	return s.Name
+}
+
+// GetSendCap returns the value of SendCap.
+func (s *WorkspaceResource) GetSendCap() NilSendCap {
+	return s.SendCap
+}
+
+// SetID sets the value of ID.
+func (s *WorkspaceResource) SetID(val WorkspaceId) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *WorkspaceResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetSendCap sets the value of SendCap.
+func (s *WorkspaceResource) SetSendCap(val NilSendCap) {
+	s.SendCap = val
+}
+
+func (*WorkspaceResource) workspaceGetRes() {}

@@ -24,6 +24,17 @@ model SiteWorkspaceHold {
   actionUrl?: string | null;
 }
 
+/** The Send cap the platform set on the Workspace: the most messages it may send in any 24 hours,
+ * across all its Integrations. Past it, marketing sends wait for the window to free up;
+ * Transactional sends still go out and count. Read-only: no Workspace surface changes it. */
+model SiteSendCap {
+  /** Most messages per rolling 24 hours */
+  perDay: int32;
+
+  /** Messages the Workspace sent in the last 24 hours, Transactional included */
+  sentLast24h: int32;
+}
+
 /** Workspace the current user belongs to */
 @resource("workspaces")
 @segment("workspaces")
@@ -80,6 +91,10 @@ model SiteWorkspaceResource {
    * Any one freezes every send surface, like a suspension, but a lapsed hold is never
    * listed. */
   holds: SiteWorkspaceHold[];
+
+  /** The Send cap the platform set on the Workspace, with its last-24-hour sends; null when no
+   * Send cap applies. */
+  sendCap: SiteSendCap | null;
 
   /** When an Owner or Admin switched on the Two-factor requirement (ADR 0020);
    * absent while every member may work without a Second factor. */

@@ -175,6 +175,10 @@ model StaffWorkspaceDetailResource {
   /** Whether this Instance has Send caps (ADR 0067); without, a Workspace has none and none
    * can be set */
   sendCaps: boolean;
+
+  /** The Workspace's sends in the last 24 hours, Transactional included: what its Send cap
+   * counts. Absent on an Instance without Send caps. */
+  sentLast24h?: int32 | null;
 }
 
 /** Which Workspaces the list surfaces for review */

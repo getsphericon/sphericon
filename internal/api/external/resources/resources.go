@@ -246,6 +246,13 @@ type Converter interface {
 	SesConfigToResource(source integrations.RedactedSES) externalapi.SesConfig
 	// goverter:map Sent24h SentLast24h
 	ProviderLimitToStatus(source providerlimit.Status) externalapi.ProviderLimitStatus
+	// goverter:map Sent24h SentLast24h
+	SendCapToResource(source providerlimit.SendCapStatus) externalapi.SendCap
+	// The Send cap is read through the outbound module, which the mapper cannot see: the handler
+	// attaches it. The numeric key stays internal: the contract's id is the Workspace id.
+	// goverter:ignore SendCap
+	// goverter:map PublicID ID
+	WorkspaceToResource(source *ent.Workspace) externalapi.WorkspaceResource
 
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the draft
 	// are the edges the rules module loads (ADR 0065).

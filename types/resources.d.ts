@@ -749,6 +749,7 @@ export default interface Resources {
           "label": "Messages per 24 hours",
           "none": "No Send cap: the Workspace sends as fast as its Provider limits allow.",
           "save": "Save",
+          "sentLast24h": "Sent in the last 24 hours: {{formatted}}",
           "set": "Set Send cap",
           "title": "Send cap",
           "unchanged": "The Send cap was already that.",
@@ -1638,6 +1639,12 @@ export default interface Resources {
       },
       "saved": "Workspace updated",
       "scopesCount": "{{count}} scope" | "{{count}} scopes",
+      "sendCap": {
+        "description": "The most messages this Workspace may send in any 24 hours, across all its providers, set by the platform. Past it, marketing waits for the window to free up; transactional email still goes out and counts. Each provider's own limit applies as well.",
+        "perDay": "per 24 hours, set by the platform",
+        "sentLast24h": "Sent in the last 24 h",
+        "title": "Send cap"
+      },
       "sendEventsDescription": "The snippet above tracks page views in the browser. To send events yourself, use an SDK or the API.",
       "sendEventsGuideLink": "How to send events",
       "sendEventsTitle": "Send events from your code",

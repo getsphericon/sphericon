@@ -10,6 +10,7 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/sendlimiter"
 )
@@ -82,6 +83,27 @@ func SpendAll(ctx context.Context, s *ent.Scoped, integrationID int64, l Limits,
 		}
 		return Spend(ctx, ts, integrationID, l, now)
 	})
+}
+
+// SendCapStatus is a Workspace's Send cap as shown to it: the most messages per rolling 24 hours
+// and the messages it sent over the last 24 hours. Each surface maps it to its own DTO.
+type SendCapStatus struct {
+	PerDay  int
+	Sent24h int
+}
+
+// SendCapStatusOf is the Workspace's Send cap with its last-24-hour sends (SentLast24h).
+func SendCapStatusOf(ctx context.Context, s *ent.Scoped, sendCap int, now time.Time) (SendCapStatus, error) {
+	sent, err := SentLast24h(ctx, s, now)
+	return SendCapStatus{PerDay: sendCap, Sent24h: sent}, err
+}
+
+// SentLast24h counts the Workspace's Outbound messages the provider accepted over the 24 hours
+// before now, across its Integrations and Transactional included: what its Send cap spends.
+func SentLast24h(ctx context.Context, s *ent.Scoped, now time.Time) (int, error) {
+	return s.OutboundMessage().Query().
+		Where(outboundmessage.StatusEQ(outboundmessage.StatusSent), outboundmessage.SentAtGT(now.Add(-window))).
+		Count(ctx)
 }
 
 func causeOf(wait time.Duration, c Cause) Cause {

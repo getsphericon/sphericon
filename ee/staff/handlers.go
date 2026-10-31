@@ -121,6 +121,13 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 	}
 	res.Deliverability = staffMapper.DeliverabilityToResource(d)
 	res.SendCaps = h.module.sendCaps
+	sent, err := h.module.SentLast24h(ctx, w)
+	if err != nil {
+		return nil, err
+	}
+	if sent != nil {
+		res.SentLast24h = staffeeapi.NewOptNilInt32(narrow.Int32(*sent))
+	}
 	return &res, nil
 }
 

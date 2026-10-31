@@ -5245,9 +5245,15 @@ func (s *StaffWorkspaceDetailResource) encodeFields(e *jx.Encoder) {
 		e.FieldStart("sendCaps")
 		e.Bool(s.SendCaps)
 	}
+	{
+		if s.SentLast24h.Set {
+			e.FieldStart("sentLast24h")
+			s.SentLast24h.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfStaffWorkspaceDetailResource = [13]string{
+var jsonFieldsNameOfStaffWorkspaceDetailResource = [14]string{
 	0:  "id",
 	1:  "name",
 	2:  "createdAt",
@@ -5261,6 +5267,7 @@ var jsonFieldsNameOfStaffWorkspaceDetailResource = [13]string{
 	10: "deliverability",
 	11: "abuse",
 	12: "sendCaps",
+	13: "sentLast24h",
 }
 
 // Decode decodes StaffWorkspaceDetailResource from json.
@@ -5417,6 +5424,16 @@ func (s *StaffWorkspaceDetailResource) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"sendCaps\"")
+			}
+		case "sentLast24h":
+			if err := func() error {
+				s.SentLast24h.Reset()
+				if err := s.SentLast24h.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sentLast24h\"")
 			}
 		default:
 			return d.Skip()

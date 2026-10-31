@@ -30,6 +30,7 @@ const workspace = (permissions: Permission[]): SiteWorkspaceResource => ({
   accountLinkAvailable: false,
   permissions,
   holds: [],
+  sendCap: null,
   mcpUrl: 'https://example.com/mcp',
   trackerUrl: 'https://t.sphericon.test',
   role: 'member',

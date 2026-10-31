@@ -39,3 +39,17 @@ func (m *Module) reserve(ctx context.Context, s *ent.Scoped, req Request, r Rout
 	}
 	return wait, cause, nil
 }
+
+// SendCap is the Workspace's Send cap as it applies to its sends, with its last-24-hour sends; nil
+// when none applies: the Workspace has no Send cap, or the Instance has no Send caps (WithSendCap),
+// where a stored one has no effect and so is not shown either.
+func (m *Module) SendCap(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) (*providerlimit.SendCapStatus, error) {
+	if !m.sendCap || ws.SendCap == nil {
+		return nil, nil
+	}
+	st, err := providerlimit.SendCapStatusOf(ctx, s, *ws.SendCap, m.now())
+	if err != nil {
+		return nil, err
+	}
+	return &st, nil
+}

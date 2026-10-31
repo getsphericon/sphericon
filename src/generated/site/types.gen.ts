@@ -4998,6 +4998,22 @@ export type SiteSegmentResource = {
 };
 
 /**
+ * The Send cap the platform set on the Workspace: the most messages it may send in any 24 hours,
+ * across all its Integrations. Past it, marketing sends wait for the window to free up;
+ * Transactional sends still go out and count. Read-only: no Workspace surface changes it.
+ */
+export type SiteSendCap = {
+  /**
+   * Most messages per rolling 24 hours
+   */
+  perDay: number;
+  /**
+   * Messages the Workspace sent in the last 24 hours, Transactional included
+   */
+  sentLast24h: number;
+};
+
+/**
  * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
  * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
  * private key is never exposed. `verified` is re-checked in the background:
@@ -6084,6 +6100,11 @@ export type SiteWorkspaceResource = {
    * listed.
    */
   holds: Array<SiteWorkspaceHold>;
+  /**
+   * The Send cap the platform set on the Workspace, with its last-24-hour sends; null when no
+   * Send cap applies.
+   */
+  sendCap: SiteSendCap | null;
   /**
    * When an Owner or Admin switched on the Two-factor requirement (ADR 0020);
    * absent while every member may work without a Second factor.

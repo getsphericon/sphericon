@@ -37,6 +37,7 @@ import "./resources/sending-domains.tsp";
 import "./resources/consent.tsp";
 import "./resources/templates.tsp";
 import "./resources/brand-kit.tsp";
+import "./resources/workspace.tsp";
 import "./resources/webhooks.tsp";
 import "./resources/auth.tsp";
 import "./resources/audit.tsp";

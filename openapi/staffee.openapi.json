@@ -1724,6 +1724,12 @@
           "sendCaps": {
             "type": "boolean",
             "description": "Whether this Instance has Send caps (ADR 0067); without, a Workspace has none and none\ncan be set"
+          },
+          "sentLast24h": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The Workspace's sends in the last 24 hours, Transactional included: what its Send cap\ncounts. Absent on an Instance without Send caps."
           }
         },
         "description": "A Workspace with its deliverability and active holds, as the detail page shows it"

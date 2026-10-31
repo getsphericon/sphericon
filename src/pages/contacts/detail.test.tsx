@@ -241,6 +241,7 @@ function holding(permissions: Permission[]) {
         mcpUrl: 'https://sphericon.test',
         trackerUrl: 'https://t.sphericon.test',
         holds: [],
+        sendCap: null,
         role: 'member',
         createdAt: NOW,
       },

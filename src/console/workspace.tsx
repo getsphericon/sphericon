@@ -148,7 +148,13 @@ function WorkspaceCards({ workspaceId }: { workspaceId: string }) {
       </Card>
       <SuspensionCard workspaceId={workspace.id} suspension={workspace.suspension} />
       <AbuseCard workspaceId={workspace.id} abuse={workspace.abuse} />
-      {workspace.sendCaps && <SendCapCard workspaceId={workspace.id} sendCap={workspace.sendCap} />}
+      {workspace.sendCaps && (
+        <SendCapCard
+          workspaceId={workspace.id}
+          sendCap={workspace.sendCap}
+          sentLast24h={workspace.sentLast24h}
+        />
+      )}
       <HoldsCard holds={workspace.holds} />
       <DeliverabilityCard deliverability={workspace.deliverability} />
       <AuditLogCard workspaceId={workspace.id} />

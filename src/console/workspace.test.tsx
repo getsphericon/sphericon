@@ -469,7 +469,9 @@ test('setting a Send cap checks the number, then sends it', async () => {
 test('a Send cap shows, and removing it asks first', async () => {
   const cleared: string[] = []
   worker.use(
-    handleStaffWorkspacesGet({ body: { ...HOOLI, sendCaps: true, sendCap: 1000 } }),
+    handleStaffWorkspacesGet({
+      body: { ...HOOLI, sendCaps: true, sendCap: 1000, sentLast24h: 640 },
+    }),
     handleStaffWorkspacesClearSendCap(({ params }) => {
       cleared.push(params.workspaceId)
       return HttpResponse.json({ changed: true, workspace: HOOLI })
@@ -478,6 +480,7 @@ test('a Send cap shows, and removing it asks first', async () => {
   const { screen } = await renderWithRouter(<ConsoleWorkspacePage />, MOUNT)
 
   await expect.element(screen.getByText('1,000 messages per 24 hours')).toBeInTheDocument()
+  await expect.element(screen.getByText('Sent in the last 24 hours: 640')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Remove Send cap' }).click()
   expect(cleared).toEqual([])
   await screen.getByRole('dialog').getByRole('button', { name: 'Remove Send cap' }).click()

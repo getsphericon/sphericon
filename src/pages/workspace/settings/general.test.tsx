@@ -35,6 +35,7 @@ const workspace: SiteWorkspaceResource = {
   mcpUrl: 'https://sphericon.test',
   trackerUrl: 'https://t.sphericon.test',
   holds: [],
+  sendCap: null,
   role: 'owner',
   createdAt: '2026-01-01T00:00:00Z',
 }

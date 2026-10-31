@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/events"
 	"github.com/getsphericon/sphericon/internal/messaging"
 	"github.com/getsphericon/sphericon/internal/pagination"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reputation"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
@@ -85,6 +86,17 @@ func (m *Module) shown(w *ent.Workspace) *ent.Workspace {
 	c := *w
 	c.SendCap = nil
 	return &c
+}
+
+// SentLast24h is the Workspace's sends in the last 24 hours, what its Send cap counts (ADR 0067),
+// read through a Workspace scope built over the Workspace being looked at (like the rates); nil
+// on an Instance without Send caps.
+func (m *Module) SentLast24h(ctx context.Context, w *ent.Workspace) (*int, error) {
+	if !m.sendCaps {
+		return nil, nil
+	}
+	sent, err := providerlimit.SentLast24h(ctx, m.ent.Scoped(w.ID), m.now())
+	return &sent, err
 }
 
 // UnsuspendWorkspace lifts the Workspace's suspension as the Staff member; held sends

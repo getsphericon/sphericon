@@ -1651,6 +1651,16 @@ export const zSiteSecondFactorStatus = z.object({
 });
 
 /**
+ * The Send cap the platform set on the Workspace: the most messages it may send in any 24 hours,
+ * across all its Integrations. Past it, marketing sends wait for the window to free up;
+ * Transactional sends still go out and count. Read-only: no Workspace surface changes it.
+ */
+export const zSiteSendCap = z.object({
+  perDay: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * SES config without the secret access key
  */
 export const zSiteSesConfig = z.object({
@@ -3126,6 +3136,7 @@ export const zSiteWorkspaceResource = z.object({
   mcpUrl: z.string(),
   trackerUrl: z.string(),
   holds: z.array(zSiteWorkspaceHold),
+  sendCap: zSiteSendCap.nullable(),
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
   accountLinkAvailable: z.boolean(),

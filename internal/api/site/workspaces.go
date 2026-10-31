@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/accounts"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/mailjobs"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/suspension"
 )
 
@@ -63,7 +64,20 @@ func (h *Handlers) workspaceResource(ctx context.Context, s *ent.Scoped, m *ent.
 		return r, err
 	}
 	r.Holds = mapper.HoldsToResources(standing.Holds())
+	sendCap, err := h.outbound.SendCap(ctx, s, m.Edges.Workspace)
+	if err != nil {
+		return r, err
+	}
+	r.SendCap = sendCapOrNull(sendCap)
 	return r, nil
+}
+
+// sendCapOrNull is the contract's nullable Send cap (ADR 0067): null when none applies.
+func sendCapOrNull(st *providerlimit.SendCapStatus) siteapi.NilSiteSendCap {
+	if st == nil {
+		return siteapi.NilSiteSendCap{Null: true}
+	}
+	return siteapi.NewNilSiteSendCap(mapper.SendCapToResource(*st))
 }
 
 // SiteWorkspacesCreate creates a Workspace for the authenticated User, who becomes its

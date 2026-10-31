@@ -1238,6 +1238,12 @@ func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []site.SiteSe
 	}
 	return siteapiSiteSegmentResourceList
 }
+func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) site.SiteSendCap {
+	var siteapiSiteSendCap site.SiteSendCap
+	siteapiSiteSendCap.PerDay = count(source.PerDay)
+	siteapiSiteSendCap.SentLast24h = count(source.Sent24h)
+	return siteapiSiteSendCap
+}
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.SiteSendingDomainResource {
 	var siteapiSiteSendingDomainResource site.SiteSendingDomainResource
 	if source != nil {
@@ -1585,6 +1591,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		// siteapiSiteWorkspaceResource.McpUrl: ignore
 		// siteapiSiteWorkspaceResource.TrackerUrl: ignore
 		// siteapiSiteWorkspaceResource.Holds: ignore
+		// siteapiSiteWorkspaceResource.SendCap: ignore
 		siteapiSiteWorkspaceResource.SecondFactorRequiredAt = optNilTimestamp((*source).SecondFactorRequiredAt)
 		// siteapiSiteWorkspaceResource.SecondFactorGraceEndsAt: ignore
 		// siteapiSiteWorkspaceResource.AccountLinkAvailable: ignore

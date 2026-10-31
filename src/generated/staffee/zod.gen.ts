@@ -463,7 +463,8 @@ export const zStaffWorkspaceDetailResource = z.object({
   holds: z.array(zStaffHold),
   deliverability: zStaffDeliverability,
   abuse: zStaffAbuse,
-  sendCaps: z.boolean()
+  sendCaps: z.boolean(),
+  sentLast24h: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable())
 });
 
 /**

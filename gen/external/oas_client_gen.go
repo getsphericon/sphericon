@@ -750,6 +750,13 @@ type Invoker interface {
 	//
 	// PUT /webhooks/{id}
 	WebhooksUpdate(ctx context.Context, request *UpdateWebhookInput, params WebhooksUpdateParams) (WebhooksUpdateRes, error)
+	// WorkspaceGet invokes Workspace_get operation.
+	//
+	// Read the Workspace the token belongs to, with its Send cap: why a send may be slow and how much of
+	// the day's sending is left. Read-only: no API call changes the Send cap.
+	//
+	// GET /workspace
+	WorkspaceGet(ctx context.Context) (WorkspaceGetRes, error)
 }
 
 // Client implements OAS client.
@@ -16087,6 +16094,120 @@ func (c *Client) sendWebhooksUpdate(ctx context.Context, request *UpdateWebhookI
 
 	stage = "DecodeResponse"
 	result, err := decodeWebhooksUpdateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// WorkspaceGet invokes Workspace_get operation.
+//
+// Read the Workspace the token belongs to, with its Send cap: why a send may be slow and how much of
+// the day's sending is left. Read-only: no API call changes the Send cap.
+//
+// GET /workspace
+func (c *Client) WorkspaceGet(ctx context.Context) (WorkspaceGetRes, error) {
+	res, err := c.sendWorkspaceGet(ctx)
+	return res, err
+}
+
+func (c *Client) sendWorkspaceGet(ctx context.Context) (res WorkspaceGetRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("Workspace_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspace"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, WorkspaceGetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/workspace"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, WorkspaceGetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeWorkspaceGetResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

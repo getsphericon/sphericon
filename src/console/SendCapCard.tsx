@@ -94,11 +94,14 @@ function SendCapForm({
 export function SendCapCard({
   workspaceId,
   sendCap,
+  sentLast24h,
 }: {
   workspaceId: string
   sendCap: number | null | undefined
+  sentLast24h: number | null | undefined
 }) {
   const { t, i18n } = useTranslation()
+  const number = new Intl.NumberFormat(i18n.language)
   const [opened, { open, close }] = useDisclosure(false)
   const notice = useSendCapNotice()
   const clear = useResourceMutation({
@@ -117,12 +120,19 @@ export function SendCapCard({
         <Text size="sm">
           {t(($) => $.console.workspace.sendCap.value, {
             count: sendCap,
-            formatted: new Intl.NumberFormat(i18n.language).format(sendCap),
+            formatted: number.format(sendCap),
           })}
         </Text>
       ) : (
         <Text size="sm" c="dimmed">
           {t(($) => $.console.workspace.sendCap.none)}
+        </Text>
+      )}
+      {sentLast24h !== null && sentLast24h !== undefined && (
+        <Text size="xs" c="dimmed" mt={4}>
+          {t(($) => $.console.workspace.sendCap.sentLast24h, {
+            formatted: number.format(sentLast24h),
+          })}
         </Text>
       )}
       <Group mt="md">

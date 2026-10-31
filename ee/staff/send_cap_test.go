@@ -81,4 +81,22 @@ func TestASelfHostedInstanceHasNoSendCap(t *testing.T) {
 	detail, ok := got.(*staffeeapi.StaffWorkspaceDetailResource)
 	require.True(t, ok)
 	assert.False(t, detail.SendCap.IsSet())
+	assert.False(t, detail.SentLast24h.IsSet(), "nothing to count against")
+}
+
+// The console shows the Workspace's sends in the last 24 hours next to its Send cap, to judge
+// whether it is near the cap.
+func TestTheConsoleShowsTheLastDaySendsNextToTheSendCap(t *testing.T) {
+	h := newHarness(t, testhelper.WithMode(config.ModeSaaS))
+	c, _ := h.staffSession(t)
+	h.setSendCap(t, c, fixtures.AcmePublicID, 1000)
+
+	got, err := c.StaffWorkspacesGet(t.Context(), staffeeapi.StaffWorkspacesGetParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+
+	detail, ok := got.(*staffeeapi.StaffWorkspaceDetailResource)
+	require.True(t, ok)
+	assert.True(t, detail.SendCaps)
+	assert.EqualValues(t, 1000, detail.SendCap.Value)
+	assert.EqualValues(t, 3, detail.SentLast24h.Value, "every Integration's sends of the last 24 hours (fixtures)")
 }

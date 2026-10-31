@@ -39,6 +39,7 @@ namespace Sphericon;
 @@mcp(EmailLint.lint, #{ name: "email_lint" });
 @@mcp(EmailSchema.get, #{ name: "email_schema" });
 @@mcp(BrandKit.get, #{ name: "brand_get" });
+@@mcp(Workspace.get, #{ name: "workspace_get" });
 
 // Read-only reference data (ADR 0016).
 @@mcp(CustomFields.list, #{ name: "custom_fields_list" });

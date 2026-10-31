@@ -244,6 +244,7 @@ func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) st
 		// staffeeapiStaffWorkspaceDetailResource.Deliverability: ignore
 		// staffeeapiStaffWorkspaceDetailResource.Abuse: ignore
 		// staffeeapiStaffWorkspaceDetailResource.SendCaps: ignore
+		// staffeeapiStaffWorkspaceDetailResource.SentLast24h: ignore
 	}
 	return staffeeapiStaffWorkspaceDetailResource
 }

@@ -63,6 +63,7 @@ type StaffConverter interface {
 	// goverter:ignore Abuse
 	// goverter:ignore Deliverability
 	// goverter:ignore SendCaps
+	// goverter:ignore SentLast24h
 	WorkspaceDetailToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceDetailResource
 
 	HoldToResource(source *ent.Hold) staffeeapi.StaffHold

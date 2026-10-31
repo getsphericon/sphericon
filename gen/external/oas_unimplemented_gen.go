@@ -1066,3 +1066,13 @@ func (UnimplementedHandler) WebhooksTest(ctx context.Context, req *TestWebhookIn
 func (UnimplementedHandler) WebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params WebhooksUpdateParams) (r WebhooksUpdateRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
+
+// WorkspaceGet implements Workspace_get operation.
+//
+// Read the Workspace the token belongs to, with its Send cap: why a send may be slow and how much of
+// the day's sending is left. Read-only: no API call changes the Send cap.
+//
+// GET /workspace
+func (UnimplementedHandler) WorkspaceGet(ctx context.Context) (r WorkspaceGetRes, _ error) {
+	return r, ht.ErrNotImplemented
+}

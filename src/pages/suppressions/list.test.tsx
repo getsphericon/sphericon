@@ -33,6 +33,7 @@ beforeEach(() => {
           mcpUrl: 'https://sphericon.test',
           trackerUrl: 'https://t.sphericon.test',
           holds: [],
+          sendCap: null,
           role: 'member',
           createdAt: '2026-01-01T00:00:00Z',
         },
