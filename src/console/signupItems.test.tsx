@@ -154,6 +154,27 @@ test('adding an item sends it and opens it', async () => {
     .toMatchObject({ to: consoleSignupItemRoute.to, params: { itemId: '9' } })
 })
 
+test('an item is checked against the contract before it is sent', async () => {
+  let sent = 0
+  worker.use(
+    handleStaffSignupItemsList({ body: { items: [] } }),
+    handleStaffSignupItemsCreate(() => {
+      sent++
+      return HttpResponse.json(item(), { status: 201 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<ConsoleSignupItemsPage />, LIST)
+
+  await screen.getByLabelText('Title').fill('   ')
+  await screen.getByRole('button', { name: 'Add item' }).click()
+
+  await expect.poll(() => screen.getByText('This field is required').elements().length).toBe(3)
+  await screen.getByLabelText('Key').fill('Not A Key')
+  await screen.getByRole('button', { name: 'Add item' }).click()
+  await expect.element(screen.getByText(/match pattern/)).toBeInTheDocument()
+  expect(sent).toBe(0)
+})
+
 test('saving the draft sends its Markdown, and the preview renders it', async () => {
   const drafts: string[] = []
   serveItem(item())

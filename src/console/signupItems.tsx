@@ -12,13 +12,13 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
-import { useForm } from '@mantine/form'
 import { IconArrowDown, IconArrowUp } from '@tabler/icons-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { TableSkeleton } from '../components/Skeletons.tsx'
@@ -30,29 +30,31 @@ import {
 } from '../generated/staff/@tanstack/react-query.gen.ts'
 import { SignupItemKind } from '../generated/staff/types.gen.ts'
 import type { StaffSignupItemResource } from '../generated/staff/types.gen.ts'
-import { zSignupItemKind } from '../generated/staff/zod.gen.ts'
+import { zSignupItemKey, zSignupItemKind, zSignupItemTitle } from '../generated/staff/zod.gen.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { trimmed, useSchemaForm } from '../resources/schemaForm.ts'
 import { Route as consoleSignupItemRoute } from '../routes/console/_authed/signup-items.$itemId.tsx'
 
 const KINDS = zSignupItemKind.options
 
 // Add a Sign-up item: its key (never changed, the address of its public page), title and kind,
 // and whether an optional consent stands for consent to the operator's mailings.
+// The kind starts unchosen (null), which the generated enum then reports as missing.
+const addItemSchema = z.object({
+  key: trimmed(zSignupItemKey),
+  title: trimmed(zSignupItemTitle),
+  kind: z.custom<SignupItemKind | null>().pipe(zSignupItemKind),
+  mailingsConsent: z.boolean(),
+})
+
 function AddItemForm() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const form = useForm<{
-    key: string
-    title: string
-    kind: SignupItemKind | null
-    mailingsConsent: boolean
-  }>({
-    initialValues: { key: '', title: '', kind: null, mailingsConsent: false },
-    validate: {
-      key: (value) => (value.trim() ? null : t(($) => $.console.signupItems.add.keyRequired)),
-      title: (value) => (value.trim() ? null : t(($) => $.console.signupItems.add.titleRequired)),
-      kind: (value) => (value ? null : t(($) => $.console.signupItems.add.kindRequired)),
-    },
+  const form = useSchemaForm(addItemSchema, {
+    key: '',
+    title: '',
+    kind: null,
+    mailingsConsent: false,
   })
   const mutation = useResourceMutation({
     mutation: staffSignupItemsCreateMutation(),
@@ -66,19 +68,16 @@ function AddItemForm() {
   return (
     <Card withBorder>
       <form
-        onSubmit={form.onSubmit(({ key, title, kind, mailingsConsent }) => {
-          if (!kind) {
-            return
-          }
+        onSubmit={form.onSubmit(({ key, title, kind, mailingsConsent }) =>
           mutation.mutate({
             body: {
-              key: key.trim(),
-              title: title.trim(),
+              key,
+              title,
               kind,
               ...(kind === SignupItemKind.OPTIONAL_CONSENT ? { mailingsConsent } : {}),
             },
-          })
-        })}
+          }),
+        )}
       >
         <Stack>
           <Title order={4}>{t(($) => $.console.signupItems.add.title)}</Title>

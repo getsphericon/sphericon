@@ -1,8 +1,8 @@
 import { Alert, Button, Group, Modal, Stack, Textarea } from '@mantine/core'
-import { useForm } from '@mantine/form'
 import { useDisclosure } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import {
   staffWorkspacesGetQueryKey,
@@ -13,8 +13,10 @@ import {
   staffWorkspacesUnsuspendMutation,
 } from '../generated/staffee/@tanstack/react-query.gen.ts'
 import type { StaffExemptionChange, StaffSuspensionChange } from '../generated/staffee/types.gen.ts'
+import { zStaffSuspendInput } from '../generated/staffee/zod.gen.ts'
 import { useNotify } from '../hooks/useNotify.ts'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { trimmed, useSchemaForm } from '../resources/schemaForm.ts'
 
 // Both actions answer 200 with whether anything changed, so a no-op says so instead of
 // looking like a success.
@@ -42,15 +44,11 @@ function useInvalidate(workspaceId: string) {
   return [staffWorkspacesGetQueryKey({ path: { workspaceId } }), staffWorkspacesListQueryKey()]
 }
 
+const suspendSchema = z.object({ reason: trimmed(zStaffSuspendInput.shape.reason) })
+
 function SuspendForm({ workspaceId, onClose }: { workspaceId: string; onClose: () => void }) {
   const { t } = useTranslation()
-  const form = useForm({
-    initialValues: { reason: '' },
-    validate: {
-      reason: (value) =>
-        value.trim() ? null : t(($) => $.console.workspace.suspend.reasonRequired),
-    },
-  })
+  const form = useSchemaForm(suspendSchema, { reason: '' })
   const notifyUnchanged = useChangeNotice(
     t(($) => $.console.workspace.suspend.done),
     t(($) => $.console.workspace.suspend.unchanged),
@@ -66,11 +64,7 @@ function SuspendForm({ workspaceId, onClose }: { workspaceId: string; onClose: (
   })
 
   return (
-    <form
-      onSubmit={form.onSubmit(({ reason }) =>
-        mutation.mutate({ path: { workspaceId }, body: { reason: reason.trim() } }),
-      )}
-    >
+    <form onSubmit={form.onSubmit((body) => mutation.mutate({ path: { workspaceId }, body }))}>
       <Stack>
         <Alert color="red" variant="light">
           {t(($) => $.console.workspace.suspend.warning)}

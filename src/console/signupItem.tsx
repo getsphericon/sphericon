@@ -16,6 +16,7 @@ import {
 import { useForm } from '@mantine/form'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { LegalMarkdown } from '../components/LegalMarkdown.tsx'
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
@@ -34,8 +35,10 @@ import {
 } from '../generated/staff/@tanstack/react-query.gen.ts'
 import { SignupItemKind } from '../generated/staff/types.gen.ts'
 import type { StaffSignupItemResource } from '../generated/staff/types.gen.ts'
+import { zLegalDocumentLabel, zSignupItemTitle } from '../generated/staff/zod.gen.ts'
 import { useConfirmation } from '../hooks/useConfirmation.tsx'
 import { useResourceMutation } from '../hooks/useResourceMutation.ts'
+import { trimmed, useSchemaForm } from '../resources/schemaForm.ts'
 import { Route as consoleSignupItemRoute } from '../routes/console/_authed/signup-items.$itemId.tsx'
 import { Route as legalDocumentRoute } from '../routes/legal.$key.tsx'
 import { formatDateTime } from '../utils/datetime.ts'
@@ -45,15 +48,13 @@ function useInvalidate(itemId: string) {
   return [staffSignupItemsGetQueryKey({ path: { id: itemId } }), staffSignupItemsListQueryKey()]
 }
 
+const titleSchema = z.object({ title: trimmed(zSignupItemTitle) })
+const publishSchema = z.object({ label: trimmed(zLegalDocumentLabel) })
+
 // The title the sign-up form shows: changing it is not a new version of the document.
 function TitleForm({ item }: { item: StaffSignupItemResource }) {
   const { t } = useTranslation()
-  const form = useForm({
-    initialValues: { title: item.title },
-    validate: {
-      title: (value) => (value.trim() ? null : t(($) => $.console.signupItem.titleRequired)),
-    },
-  })
+  const form = useSchemaForm(titleSchema, { title: item.title })
   const mutation = useResourceMutation({
     mutation: staffSignupItemsUpdateMutation(),
     invalidate: useInvalidate(item.id),
@@ -62,11 +63,7 @@ function TitleForm({ item }: { item: StaffSignupItemResource }) {
   })
 
   return (
-    <form
-      onSubmit={form.onSubmit(({ title }) =>
-        mutation.mutate({ path: { id: item.id }, body: { title: title.trim() } }),
-      )}
-    >
+    <form onSubmit={form.onSubmit((body) => mutation.mutate({ path: { id: item.id }, body }))}>
       <Group align="flex-end">
         <TextInput
           label={t(($) => $.console.signupItem.titleLabel)}
@@ -246,12 +243,7 @@ function DraftEditor({ item }: { item: StaffSignupItemResource }) {
 function PublishForm({ item, unsaved }: { item: StaffSignupItemResource; unsaved: boolean }) {
   const { t } = useTranslation()
   const confirm = useConfirmation()
-  const form = useForm({
-    initialValues: { label: '' },
-    validate: {
-      label: (value) => (value.trim() ? null : t(($) => $.console.signupItem.labelRequired)),
-    },
-  })
+  const form = useSchemaForm(publishSchema, { label: '' })
   const mutation = useResourceMutation({
     mutation: staffSignupItemsPublishMutation(),
     invalidate: [
@@ -262,8 +254,7 @@ function PublishForm({ item, unsaved }: { item: StaffSignupItemResource; unsaved
     errorTitle: t(($) => $.console.signupItem.publishError),
     onDone: () => form.reset(),
   })
-  const publish = (label: string) =>
-    mutation.mutate({ path: { id: item.id }, body: { label: label.trim() } })
+  const publish = (label: string) => mutation.mutate({ path: { id: item.id }, body: { label } })
 
   return (
     <form
