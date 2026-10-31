@@ -17,6 +17,7 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/ratelimit"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -31,7 +32,7 @@ func (f serviceFake) Server(...serviceapi.ServerOption) (http.Handler, error) { 
 // tests asks the TLS question, the one route that reads the database, so it has no client.
 func internalServer(t *testing.T, handler http.Handler) http.Handler {
 	t.Helper()
-	h, err := server.NewInternal(&config.Config{BodyLimits: config.BodyLimits{Default: 1 << 20}}, nil, serviceFake{handler})
+	h, err := server.NewInternal(&config.Config{BodyLimits: config.BodyLimits{Default: 1 << 20}}, nil, ratelimit.New(config.RateLimits{}), serviceFake{handler})
 	require.NoError(t, err)
 	return h
 }
@@ -270,7 +271,7 @@ func TestTheCrossOriginGuardTrustsTheAppAndAllowlistedOrigins(t *testing.T) {
 }
 
 func TestAnAppURLThatIsNoOriginFailsTheServer(t *testing.T) {
-	_, err := server.New(&config.Config{AppURL: "not a url"}, nil, nil, nil, apisite.Deps{}, nil, http.NotFoundHandler(), http.NotFoundHandler(), nil)
+	_, err := server.New(&config.Config{AppURL: "not a url"}, nil, nil, nil, apisite.Deps{}, nil, ratelimit.New(config.RateLimits{}), http.NotFoundHandler(), http.NotFoundHandler(), nil)
 
 	assert.ErrorContains(t, err, "trusted origin")
 }
