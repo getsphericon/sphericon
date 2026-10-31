@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/emailrender"
 	"github.com/getsphericon/sphericon/internal/messaging"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
 // recipientInsertChunk bounds a single CreateBulk so a very large audience is planned in
@@ -243,7 +243,7 @@ func copiedCondition(ctx context.Context, s *ent.Scoped, id int64) ([]predicate.
 }
 
 // interval is the step between two sends of the Broadcast's Integration (the Workspace's
-// default when it names none) at its effective Send rate limit (ADR 0023): zero when nothing
+// default when it names none) at its effective Provider limit (ADR 0023): zero when nothing
 // limits it (or there is no Integration). The planner and the progress estimate both pace by it.
 func interval(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (time.Duration, error) {
 	integ, err := messaging.EmailIntegration(ctx, s, b.IntegrationID)
@@ -253,7 +253,7 @@ func interval(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (time.Durati
 	if err != nil {
 		return 0, err
 	}
-	return sendlimit.EffectiveOf(integ).Limits().Interval(), nil
+	return providerlimit.EffectiveOf(integ).Limits().Interval(), nil
 }
 
 // spread is the i-th send's time: i steps after start.

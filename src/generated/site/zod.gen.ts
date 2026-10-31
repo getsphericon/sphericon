@@ -966,12 +966,12 @@ export const zSiteLoginSecondFactorInput = z.object({
 });
 
 /**
- * A rolling 24-hour Send rate limit the user may set
+ * A rolling 24-hour Provider limit the user may set
  */
 export const zSiteMaxPerDay = z.int().gte(1).lte(100000000);
 
 /**
- * A per-second Send rate limit the user may set
+ * A per-second Provider limit the user may set
  */
 export const zSiteMaxPerSecond = z.int().gte(1).lte(10000);
 
@@ -1297,6 +1297,34 @@ export const zSitePreviewSegmentResult = z.object({
 });
 
 /**
+ * Where an effective Provider limit comes from
+ */
+export const zSiteProviderLimitSource = z.enum(['manual', 'provider']);
+
+/**
+ * One effective ceiling: the lowest of the manual and provider values, manual on a tie
+ */
+export const zSiteProviderLimitValue = z.object({
+  limit: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  source: zSiteProviderLimitSource.nullable()
+});
+
+/**
+ * A reason to look at an Integration's Provider limit
+ */
+export const zSiteProviderLimitWarning = z.enum(['unlimited', 'providerQuotaUnavailable']);
+
+/**
+ * The Provider limit as enforced, with the last 24 hours of usage
+ */
+export const zSiteProviderLimitStatus = z.object({
+  perSecond: zSiteProviderLimitValue,
+  perDay: zSiteProviderLimitValue,
+  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  warnings: z.array(zSiteProviderLimitWarning)
+});
+
+/**
  * A fresh set of Recovery codes. They are shown only in this response.
  */
 export const zSiteRecoveryCodes = z.object({
@@ -1497,34 +1525,6 @@ export const zSiteSecondFactorStatus = z.object({
   recoveryCodesRemaining: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   passwordSet: z.boolean(),
   identityProofFresh: z.boolean()
-});
-
-/**
- * Where an effective Send rate limit comes from
- */
-export const zSiteSendLimitSource = z.enum(['manual', 'provider']);
-
-/**
- * One effective ceiling: the lowest of the manual and provider values, manual on a tie
- */
-export const zSiteSendLimitValue = z.object({
-  limit: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  source: zSiteSendLimitSource.nullable()
-});
-
-/**
- * A reason to look at an Integration's Send rate limit
- */
-export const zSiteSendLimitWarning = z.enum(['unlimited', 'providerQuotaUnavailable']);
-
-/**
- * The Send rate limit as enforced, with the last 24 hours of usage
- */
-export const zSiteSendLimitStatus = z.object({
-  perSecond: zSiteSendLimitValue,
-  perDay: zSiteSendLimitValue,
-  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  warnings: z.array(zSiteSendLimitWarning)
 });
 
 /**
@@ -2528,7 +2528,7 @@ export const zSiteIntegrationResource = z.object({
   isDefault: z.boolean(),
   maxPerSecond: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   maxPerDay: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  sendLimit: zSiteSendLimitStatus,
+  providerLimit: zSiteProviderLimitStatus,
   config: zSiteIntegrationConfig,
   preset: z.string().nullable(),
   params: z.record(z.string(), z.unknown()),

@@ -50,7 +50,7 @@ const integration = (
   isDefault: false,
   maxPerSecond: null,
   maxPerDay: null,
-  sendLimit: {
+  providerLimit: {
     perSecond: { limit: null, source: null },
     perDay: { limit: null, source: null },
     sentLast24h: 0,

@@ -30,7 +30,7 @@ const smtp: SiteIntegrationResource = {
   isDefault: true,
   maxPerSecond: null,
   maxPerDay: null,
-  sendLimit: {
+  providerLimit: {
     perSecond: { limit: null, source: null },
     perDay: { limit: null, source: null },
     sentLast24h: 0,
@@ -170,7 +170,7 @@ test('connects an Amazon SES provider', async () => {
     ])
 })
 
-test('connects an SES-compatible service at its own endpoint', async () => {
+test('connects an SES-compatible service at its own endpoint, with its Provider limit', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
@@ -183,6 +183,8 @@ test('connects an SES-compatible service at its own endpoint', async () => {
   await dialog.getByLabelText(/^Access key ID/).fill('YC')
   await dialog.getByLabelText(/^Secret access key/).fill('shh')
   await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  await dialog.getByLabelText(/^Max per second/).fill('1')
+  await dialog.getByLabelText(/^Max per 24 hours/).fill('200')
   await dialog.getByRole('button', { name: 'Connect provider' }).click()
 
   await expect
@@ -190,6 +192,8 @@ test('connects an SES-compatible service at its own endpoint', async () => {
     .toMatchObject([
       {
         name: 'postbox.cloud.yandex.net',
+        maxPerSecond: 1,
+        maxPerDay: 200,
         config: {
           kind: 'ses',
           endpoint: 'https://postbox.cloud.yandex.net',
@@ -310,7 +314,7 @@ const limited: SiteIntegrationResource = {
   ...smtp,
   maxPerSecond: 14,
   maxPerDay: 50000,
-  sendLimit: {
+  providerLimit: {
     perSecond: { limit: 14, source: 'manual' },
     perDay: { limit: 50000, source: 'manual' },
     sentLast24h: 1200,
@@ -324,11 +328,11 @@ const update = (bodies: unknown[]) =>
     return HttpResponse.json(limited)
   })
 
-test('warns when an Integration has no send limit', async () => {
+test('warns when an Integration has no Provider limit', async () => {
   worker.use(list([smtp]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
-  await expect.element(screen.getByText('Primary SMTP has no send limit')).toBeInTheDocument()
+  await expect.element(screen.getByText('Primary SMTP has no Provider limit')).toBeInTheDocument()
   await expect.element(screen.getByText('Per second: Unlimited')).toBeInTheDocument()
 })
 
@@ -336,7 +340,7 @@ test('warns when the provider send quota could not be read', async () => {
   const ses: SiteIntegrationResource = {
     ...limited,
     name: 'Amazon SES',
-    sendLimit: { ...limited.sendLimit, warnings: ['providerQuotaUnavailable'] },
+    providerLimit: { ...limited.providerLimit, warnings: ['providerQuotaUnavailable'] },
   }
   worker.use(list([ses]))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
@@ -369,10 +373,10 @@ test('shows the effective limit, its source and the 24-hour usage', async () => 
     .element(screen.getByText('Sent in the last 24 h: 1 200 / 50 000'))
     .toBeInTheDocument()
   await expect.element(screen.getByText('Manual').first()).toBeInTheDocument()
-  await expect.element(screen.getByText('has no send limit')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('has no Provider limit')).not.toBeInTheDocument()
 })
 
-test('connects a provider with send limits', async () => {
+test('connects a provider with a Provider limit', async () => {
   const bodies: unknown[] = []
   worker.use(list([]), create(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
@@ -398,7 +402,7 @@ test('edits only the limits of an existing provider, and a blank clears one', as
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).click()
-  await screen.getByRole('menuitem', { name: 'Limits' }).click()
+  await screen.getByRole('menuitem', { name: 'Provider limit' }).click()
   const dialog = screen.getByRole('dialog')
   await expect.element(dialog.getByLabelText('Max per second')).toHaveValue('14')
   await dialog.getByLabelText('Max per second').fill('20')
@@ -420,7 +424,7 @@ test('makes another provider the default, and the default offers no such action'
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
 
   await screen.getByRole('button', { name: 'More actions' }).first().click()
-  await expect.element(screen.getByRole('menuitem', { name: 'Limits' })).toBeInTheDocument()
+  await expect.element(screen.getByRole('menuitem', { name: 'Provider limit' })).toBeInTheDocument()
   expect(screen.getByRole('menuitem', { name: 'Set as default' }).elements()).toHaveLength(0)
   await userEvent.keyboard('{Escape}')
 

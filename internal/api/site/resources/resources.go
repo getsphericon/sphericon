@@ -33,10 +33,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/linkclicks"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/orders"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/reportday"
 	"github.com/getsphericon/sphericon/internal/rules"
 	"github.com/getsphericon/sphericon/internal/sendingdomains"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
 	"github.com/getsphericon/sphericon/internal/signupitems"
 	"github.com/getsphericon/sphericon/internal/workspacedeletion"
 	"github.com/go-faster/jx"
@@ -81,8 +81,8 @@ import (
 // goverter:extend nilInt32
 // goverter:extend nilString
 // goverter:extend count
-// goverter:extend sendLimitWarning
-// goverter:extend sendLimitSource
+// goverter:extend providerLimitWarning
+// goverter:extend providerLimitSource
 // goverter:extend optTimestamp
 // goverter:extend optInt32
 // goverter:extend optString
@@ -191,12 +191,12 @@ type Converter interface {
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
-	// the Send rate limit from sendlimit.Statuses: the handler attaches them.
+	// the Provider limit from providerlimit.Statuses: the handler attaches them.
 	// goverter:ignore Config
 	// goverter:ignore Params
 	// goverter:ignore SecretsRetiring
 	// goverter:ignore HookUrl
-	// goverter:ignore SendLimit
+	// goverter:ignore ProviderLimit
 	// goverter:map DiscardedAt ArchivedAt
 	IntegrationToResource(source *ent.Integration) siteapi.SiteIntegrationResource
 	// The redacted provider configs: the handler only wraps the one that is set in the
@@ -206,7 +206,7 @@ type Converter interface {
 	// goverter:map . Kind | sesConfigKind
 	SesConfigToResource(source integrations.RedactedSES) siteapi.SiteSesConfig
 	// goverter:map Sent24h SentLast24h
-	SendLimitToStatus(source sendlimit.Status) siteapi.SiteSendLimitStatus
+	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	SuppressionToResource(source *ent.Suppression) siteapi.SiteSuppressionResource
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
@@ -364,9 +364,9 @@ func (m ExportMapper) BroadcastRecipient(r *ent.BroadcastRecipient) json.Marshal
 	return new(m.BroadcastRecipientToExport(r))
 }
 
-// sendLimitWarning casts: sendlimit's warnings are the contract's enum values.
-func sendLimitWarning(w sendlimit.Warning) siteapi.SiteSendLimitWarning {
-	return siteapi.SiteSendLimitWarning(w)
+// providerLimitWarning casts: providerlimit's warnings are the contract's enum values.
+func providerLimitWarning(w providerlimit.Warning) siteapi.SiteProviderLimitWarning {
+	return siteapi.SiteProviderLimitWarning(w)
 }
 
 // count narrows a message count to the contract's int32.
@@ -396,12 +396,12 @@ func nilInt32(v *int) siteapi.NilInt32 {
 	return siteapi.NewNilInt32(narrow.Int32(*v))
 }
 
-// sendLimitSource is null exactly when the window has no limit (its source is empty).
-func sendLimitSource(v sendlimit.Source) siteapi.NilSiteSendLimitSource {
+// providerLimitSource is null exactly when the window has no limit (its source is empty).
+func providerLimitSource(v providerlimit.Source) siteapi.NilSiteProviderLimitSource {
 	if v == "" {
-		return siteapi.NilSiteSendLimitSource{Null: true}
+		return siteapi.NilSiteProviderLimitSource{Null: true}
 	}
-	return siteapi.NewNilSiteSendLimitSource(siteapi.SiteSendLimitSource(v))
+	return siteapi.NewNilSiteProviderLimitSource(siteapi.SiteProviderLimitSource(v))
 }
 
 func optNilInt32(v *int) siteapi.OptNilInt32 {

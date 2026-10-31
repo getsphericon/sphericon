@@ -77,9 +77,9 @@ func TestSiteTestInboxIsCreatedWithoutCredentialsAndIsNotTheDefault(t *testing.T
 	assert.Equal(t, 1, defaults, "the existing default is untouched")
 	reread, err := c.SiteIntegrationsGet(t.Context(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
 	require.NoError(t, err)
-	limit := reread.(*siteapi.SiteIntegrationResource).SendLimit.PerDay
+	limit := reread.(*siteapi.SiteIntegrationResource).ProviderLimit.PerDay
 	assert.Equal(t, int32(200), limit.Limit.Value, "it reports its own ceiling")
-	assert.Equal(t, siteapi.NewNilSiteSendLimitSource(siteapi.SiteSendLimitSourceProvider), limit.Source)
+	assert.Equal(t, siteapi.NewNilSiteProviderLimitSource(siteapi.SiteProviderLimitSourceProvider), limit.Source)
 }
 
 func TestSiteTestInboxCanBeChosenAsTheDefaultLikeAnyIntegration(t *testing.T) {

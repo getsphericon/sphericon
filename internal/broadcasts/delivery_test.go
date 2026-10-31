@@ -268,7 +268,7 @@ func TestDeferredRecipientStaysPendingAndSleeps(t *testing.T) {
 	assert.Nil(t, d.broadcastRow().HoldReason, "busy is not a hold")
 }
 
-// The Send rate limit that defers a recipient is the Broadcast's own Integration's: the
+// The Provider limit that defers a recipient is the Broadcast's own Integration's: the
 // default is unlimited, the named one has its capacity spent.
 func TestDeferralFollowsTheBroadcastsOwnIntegration(t *testing.T) {
 	d := newDelivery(t)

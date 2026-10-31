@@ -15,14 +15,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/outbound"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// Send rate limit (ADR 0023), observed at the Outbound send seam under testing/synctest
+// Provider limit (ADR 0023), observed at the Outbound send seam under testing/synctest
 // (fake time, frozen until a test sleeps). The default Acme Integration (fixture) carries the limits.
 
-// limited sets the Send rate limit of the Acme default Integration (nil = none).
+// limited sets the Provider limit of the Acme default Integration (nil = none).
 func limited(t *testing.T, env *testhelper.TestEnv, perSecond, perDay *int) {
 	t.Helper()
 	upd := env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID)
@@ -289,7 +289,7 @@ func TestSentMessageIsStampedWithItsIntegrationAndCountsAsUsage(t *testing.T) {
 		env := testhelper.Setup(t)
 		m := newCoreModule(env)
 
-		before, err := sendlimit.Usage(context.Background(), acme(env), time.Now())
+		before, err := providerlimit.Usage(context.Background(), acme(env), time.Now())
 		require.NoError(t, err)
 
 		res := send(t, m, env, "bc:usage")
@@ -300,7 +300,7 @@ func TestSentMessageIsStampedWithItsIntegrationAndCountsAsUsage(t *testing.T) {
 		require.NotNil(t, msg.IntegrationID, "the message records the Integration it went through")
 		assert.Equal(t, int64(fixtures.IntegrationAcmeDefaultID), *msg.IntegrationID)
 
-		after, err := sendlimit.Usage(context.Background(), acme(env), time.Now())
+		after, err := providerlimit.Usage(context.Background(), acme(env), time.Now())
 		require.NoError(t, err)
 		assert.Equal(t, before[fixtures.IntegrationAcmeDefaultID]+1, after[fixtures.IntegrationAcmeDefaultID])
 	})

@@ -9,7 +9,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/convert"
 	"github.com/getsphericon/sphericon/internal/integrations"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
 // SiteIntegrationsList returns the workspace's sending-provider integrations
@@ -22,7 +22,7 @@ func (h *Handlers) SiteIntegrationsList(ctx context.Context, params siteapi.Site
 		return nil, err
 	}
 
-	limits, err := sendlimit.Statuses(ctx, s, rows, time.Now())
+	limits, err := providerlimit.Statuses(ctx, s, rows, time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -225,10 +225,10 @@ func configInput(in siteapi.SiteIntegrationConfigInput) (integrations.ConfigInpu
 var errUnknownProvider = errors.New("unsupported provider")
 
 // integrationToResource maps the row with goverter, then attaches what the mapper cannot
-// see: the decrypted config and params (redacted), the hook URL and the Send rate limit.
-func (h *Handlers) integrationToResource(row *ent.Integration, limit sendlimit.Status) (siteapi.SiteIntegrationResource, error) {
+// see: the decrypted config and params (redacted), the hook URL and the Provider limit.
+func (h *Handlers) integrationToResource(row *ent.Integration, limit providerlimit.Status) (siteapi.SiteIntegrationResource, error) {
 	res := mapper.IntegrationToResource(row)
-	res.SendLimit = mapper.SendLimitToStatus(limit)
+	res.ProviderLimit = mapper.ProviderLimitToStatus(limit)
 	res.HookUrl = h.integrations.HookURL(row)
 	view, err := h.integrations.View(row)
 	if err != nil {
@@ -256,7 +256,7 @@ func (h *Handlers) integrationToResource(row *ent.Integration, limit sendlimit.S
 // integrationResource renders one Integration with its 24-hour usage, for the
 // single-row responses (get, create, update).
 func (h *Handlers) integrationResource(ctx context.Context, s *ent.Scoped, row *ent.Integration) (siteapi.SiteIntegrationResource, error) {
-	limits, err := sendlimit.Statuses(ctx, s, []*ent.Integration{row}, time.Now())
+	limits, err := providerlimit.Statuses(ctx, s, []*ent.Integration{row}, time.Now())
 	if err != nil {
 		return siteapi.SiteIntegrationResource{}, err
 	}

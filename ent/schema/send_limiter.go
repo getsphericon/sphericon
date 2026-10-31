@@ -9,7 +9,7 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// SendLimiter is the state of one Integration's Send rate limit (ADR 0023): two
+// SendLimiter is the state of one Integration's Provider limit (ADR 0023): two
 // token buckets, per-second and daily, in a single row so a reservation can take a
 // token from both or neither in one atomic UPDATE. The row is created lazily on the
 // first limited send. Each bucket stores its fill as a fraction of capacity (1 is

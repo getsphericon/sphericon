@@ -2139,6 +2139,51 @@ func (o NilSiteAutomationVersion) Or(d SiteAutomationVersion) SiteAutomationVers
 	return d
 }
 
+// NewNilSiteProviderLimitSource returns new NilSiteProviderLimitSource with value set to v.
+func NewNilSiteProviderLimitSource(v SiteProviderLimitSource) NilSiteProviderLimitSource {
+	return NilSiteProviderLimitSource{
+		Value: v,
+	}
+}
+
+// NilSiteProviderLimitSource is nullable SiteProviderLimitSource.
+type NilSiteProviderLimitSource struct {
+	Value SiteProviderLimitSource
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilSiteProviderLimitSource) SetTo(v SiteProviderLimitSource) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilSiteProviderLimitSource) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilSiteProviderLimitSource) SetToNull() {
+	o.Null = true
+	var v SiteProviderLimitSource
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilSiteProviderLimitSource) Get() (v SiteProviderLimitSource, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilSiteProviderLimitSource) Or(d SiteProviderLimitSource) SiteProviderLimitSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilSiteRuleVersion returns new NilSiteRuleVersion with value set to v.
 func NewNilSiteRuleVersion(v SiteRuleVersion) NilSiteRuleVersion {
 	return NilSiteRuleVersion{
@@ -2178,51 +2223,6 @@ func (o NilSiteRuleVersion) Get() (v SiteRuleVersion, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilSiteRuleVersion) Or(d SiteRuleVersion) SiteRuleVersion {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewNilSiteSendLimitSource returns new NilSiteSendLimitSource with value set to v.
-func NewNilSiteSendLimitSource(v SiteSendLimitSource) NilSiteSendLimitSource {
-	return NilSiteSendLimitSource{
-		Value: v,
-	}
-}
-
-// NilSiteSendLimitSource is nullable SiteSendLimitSource.
-type NilSiteSendLimitSource struct {
-	Value SiteSendLimitSource
-	Null  bool
-}
-
-// SetTo sets value to v.
-func (o *NilSiteSendLimitSource) SetTo(v SiteSendLimitSource) {
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o NilSiteSendLimitSource) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *NilSiteSendLimitSource) SetToNull() {
-	o.Null = true
-	var v SiteSendLimitSource
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o NilSiteSendLimitSource) Get() (v SiteSendLimitSource, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o NilSiteSendLimitSource) Or(d SiteSendLimitSource) SiteSendLimitSource {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -9690,7 +9690,7 @@ type SiteBroadcastProgress struct {
 	// Recipients still waiting to be sent.
 	RemainingCount int32 `json:"remainingCount"`
 	// When the last remaining recipient is expected to be sent. Null when it is not knowable: the
-	// broadcast is on hold, or it is not paced by a Send rate limit.
+	// broadcast is on hold, or it is not paced by a Provider limit.
 	EstimatedCompletionAt OptNilTimestamp `json:"estimatedCompletionAt"`
 }
 
@@ -12464,9 +12464,11 @@ type SiteCreateIntegrationInput struct {
 	Name      string  `json:"name"`
 	Enabled   OptBool `json:"enabled"`
 	IsDefault OptBool `json:"isDefault"`
-	// Most messages per second (1 to 10 000); omit or null for no limit.
+	// Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES
+	// Integration with an `endpoint`, which requires it.
 	MaxPerSecond OptNilSiteMaxPerSecond `json:"maxPerSecond"`
-	// Most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit.
+	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit,
+	// except on an SES Integration with an `endpoint`, which requires it.
 	MaxPerDay OptNilSiteMaxPerDay        `json:"maxPerDay"`
 	Config    SiteIntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list` to read provider callbacks (bounces, complaints) with.
@@ -14935,12 +14937,12 @@ type SiteIntegrationResource struct {
 	Enabled bool `json:"enabled"`
 	// Whether this is the default provider for its channel.
 	IsDefault bool `json:"isDefault"`
-	// Send rate limit: most messages per second; null means no per-second limit.
+	// Provider limit: most messages per second; null means no per-second limit.
 	MaxPerSecond NilInt32 `json:"maxPerSecond"`
-	// Send rate limit: most messages per rolling 24 hours; null means no daily limit.
+	// Provider limit: most messages per rolling 24 hours; null means no daily limit.
 	MaxPerDay NilInt32 `json:"maxPerDay"`
-	// The Send rate limit as enforced (manual and provider-reported values) and 24-hour usage.
-	SendLimit SiteSendLimitStatus `json:"sendLimit"`
+	// The Provider limit as enforced (manual and provider-reported values) and 24-hour usage.
+	ProviderLimit SiteProviderLimitStatus `json:"providerLimit"`
 	// Provider config (secrets redacted).
 	Config SiteIntegrationConfig `json:"config"`
 	// The Preset this Integration's provider callbacks are read with; null when it receives none.
@@ -15003,9 +15005,9 @@ func (s *SiteIntegrationResource) GetMaxPerDay() NilInt32 {
 	return s.MaxPerDay
 }
 
-// GetSendLimit returns the value of SendLimit.
-func (s *SiteIntegrationResource) GetSendLimit() SiteSendLimitStatus {
-	return s.SendLimit
+// GetProviderLimit returns the value of ProviderLimit.
+func (s *SiteIntegrationResource) GetProviderLimit() SiteProviderLimitStatus {
+	return s.ProviderLimit
 }
 
 // GetConfig returns the value of Config.
@@ -15088,9 +15090,9 @@ func (s *SiteIntegrationResource) SetMaxPerDay(val NilInt32) {
 	s.MaxPerDay = val
 }
 
-// SetSendLimit sets the value of SendLimit.
-func (s *SiteIntegrationResource) SetSendLimit(val SiteSendLimitStatus) {
-	s.SendLimit = val
+// SetProviderLimit sets the value of ProviderLimit.
+func (s *SiteIntegrationResource) SetProviderLimit(val SiteProviderLimitStatus) {
+	s.ProviderLimit = val
 }
 
 // SetConfig sets the value of Config.
@@ -18221,6 +18223,174 @@ func (s *SitePreviewSegmentResult) SetCount(val int32) {
 
 func (*SitePreviewSegmentResult) siteSegmentsPreviewRes() {}
 
+// Where an effective Provider limit comes from.
+// Ref: #/components/schemas/SiteProviderLimitSource
+type SiteProviderLimitSource string
+
+const (
+	SiteProviderLimitSourceManual   SiteProviderLimitSource = "manual"
+	SiteProviderLimitSourceProvider SiteProviderLimitSource = "provider"
+)
+
+// AllValues returns all SiteProviderLimitSource values.
+func (SiteProviderLimitSource) AllValues() []SiteProviderLimitSource {
+	return []SiteProviderLimitSource{
+		SiteProviderLimitSourceManual,
+		SiteProviderLimitSourceProvider,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteProviderLimitSource) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteProviderLimitSourceManual:
+		return []byte(s), nil
+	case SiteProviderLimitSourceProvider:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteProviderLimitSource) UnmarshalText(data []byte) error {
+	switch SiteProviderLimitSource(data) {
+	case SiteProviderLimitSourceManual:
+		*s = SiteProviderLimitSourceManual
+		return nil
+	case SiteProviderLimitSourceProvider:
+		*s = SiteProviderLimitSourceProvider
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The Provider limit as enforced, with the last 24 hours of usage.
+// Ref: #/components/schemas/SiteProviderLimitStatus
+type SiteProviderLimitStatus struct {
+	// Most messages per second.
+	PerSecond SiteProviderLimitValue `json:"perSecond"`
+	// Most messages per rolling 24 hours.
+	PerDay SiteProviderLimitValue `json:"perDay"`
+	// Messages the provider accepted from this Integration in the last 24 hours.
+	SentLast24h int32 `json:"sentLast24h"`
+	// Reasons to review the limit; empty when there is nothing to flag.
+	Warnings []SiteProviderLimitWarning `json:"warnings"`
+}
+
+// GetPerSecond returns the value of PerSecond.
+func (s *SiteProviderLimitStatus) GetPerSecond() SiteProviderLimitValue {
+	return s.PerSecond
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *SiteProviderLimitStatus) GetPerDay() SiteProviderLimitValue {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *SiteProviderLimitStatus) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *SiteProviderLimitStatus) GetWarnings() []SiteProviderLimitWarning {
+	return s.Warnings
+}
+
+// SetPerSecond sets the value of PerSecond.
+func (s *SiteProviderLimitStatus) SetPerSecond(val SiteProviderLimitValue) {
+	s.PerSecond = val
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *SiteProviderLimitStatus) SetPerDay(val SiteProviderLimitValue) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *SiteProviderLimitStatus) SetSentLast24h(val int32) {
+	s.SentLast24h = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *SiteProviderLimitStatus) SetWarnings(val []SiteProviderLimitWarning) {
+	s.Warnings = val
+}
+
+// One effective ceiling: the lowest of the manual and provider values, manual on a tie.
+// Ref: #/components/schemas/SiteProviderLimitValue
+type SiteProviderLimitValue struct {
+	// The ceiling in messages; null means this window is not limited.
+	Limit NilInt32 `json:"limit"`
+	// Where the ceiling comes from; null when there is none.
+	Source NilSiteProviderLimitSource `json:"source"`
+}
+
+// GetLimit returns the value of Limit.
+func (s *SiteProviderLimitValue) GetLimit() NilInt32 {
+	return s.Limit
+}
+
+// GetSource returns the value of Source.
+func (s *SiteProviderLimitValue) GetSource() NilSiteProviderLimitSource {
+	return s.Source
+}
+
+// SetLimit sets the value of Limit.
+func (s *SiteProviderLimitValue) SetLimit(val NilInt32) {
+	s.Limit = val
+}
+
+// SetSource sets the value of Source.
+func (s *SiteProviderLimitValue) SetSource(val NilSiteProviderLimitSource) {
+	s.Source = val
+}
+
+// A reason to look at an Integration's Provider limit.
+// Ref: #/components/schemas/SiteProviderLimitWarning
+type SiteProviderLimitWarning string
+
+const (
+	SiteProviderLimitWarningUnlimited                SiteProviderLimitWarning = "unlimited"
+	SiteProviderLimitWarningProviderQuotaUnavailable SiteProviderLimitWarning = "providerQuotaUnavailable"
+)
+
+// AllValues returns all SiteProviderLimitWarning values.
+func (SiteProviderLimitWarning) AllValues() []SiteProviderLimitWarning {
+	return []SiteProviderLimitWarning{
+		SiteProviderLimitWarningUnlimited,
+		SiteProviderLimitWarningProviderQuotaUnavailable,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteProviderLimitWarning) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteProviderLimitWarningUnlimited:
+		return []byte(s), nil
+	case SiteProviderLimitWarningProviderQuotaUnavailable:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteProviderLimitWarning) UnmarshalText(data []byte) error {
+	switch SiteProviderLimitWarning(data) {
+	case SiteProviderLimitWarningUnlimited:
+		*s = SiteProviderLimitWarningUnlimited
+		return nil
+	case SiteProviderLimitWarningProviderQuotaUnavailable:
+		*s = SiteProviderLimitWarningProviderQuotaUnavailable
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type SitePublicConfirmationsPerformBadRequest ProblemDetails
 
 func (*SitePublicConfirmationsPerformBadRequest) sitePublicConfirmationsPerformRes() {}
@@ -20114,174 +20284,6 @@ func (*SiteSegmentsUpdateNotFound) siteSegmentsUpdateRes() {}
 type SiteSegmentsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteSegmentsUpdateUnprocessableEntity) siteSegmentsUpdateRes() {}
-
-// Where an effective Send rate limit comes from.
-// Ref: #/components/schemas/SiteSendLimitSource
-type SiteSendLimitSource string
-
-const (
-	SiteSendLimitSourceManual   SiteSendLimitSource = "manual"
-	SiteSendLimitSourceProvider SiteSendLimitSource = "provider"
-)
-
-// AllValues returns all SiteSendLimitSource values.
-func (SiteSendLimitSource) AllValues() []SiteSendLimitSource {
-	return []SiteSendLimitSource{
-		SiteSendLimitSourceManual,
-		SiteSendLimitSourceProvider,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSendLimitSource) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSendLimitSourceManual:
-		return []byte(s), nil
-	case SiteSendLimitSourceProvider:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSendLimitSource) UnmarshalText(data []byte) error {
-	switch SiteSendLimitSource(data) {
-	case SiteSendLimitSourceManual:
-		*s = SiteSendLimitSourceManual
-		return nil
-	case SiteSendLimitSourceProvider:
-		*s = SiteSendLimitSourceProvider
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// The Send rate limit as enforced, with the last 24 hours of usage.
-// Ref: #/components/schemas/SiteSendLimitStatus
-type SiteSendLimitStatus struct {
-	// Most messages per second.
-	PerSecond SiteSendLimitValue `json:"perSecond"`
-	// Most messages per rolling 24 hours.
-	PerDay SiteSendLimitValue `json:"perDay"`
-	// Messages the provider accepted from this Integration in the last 24 hours.
-	SentLast24h int32 `json:"sentLast24h"`
-	// Reasons to review the limit; empty when there is nothing to flag.
-	Warnings []SiteSendLimitWarning `json:"warnings"`
-}
-
-// GetPerSecond returns the value of PerSecond.
-func (s *SiteSendLimitStatus) GetPerSecond() SiteSendLimitValue {
-	return s.PerSecond
-}
-
-// GetPerDay returns the value of PerDay.
-func (s *SiteSendLimitStatus) GetPerDay() SiteSendLimitValue {
-	return s.PerDay
-}
-
-// GetSentLast24h returns the value of SentLast24h.
-func (s *SiteSendLimitStatus) GetSentLast24h() int32 {
-	return s.SentLast24h
-}
-
-// GetWarnings returns the value of Warnings.
-func (s *SiteSendLimitStatus) GetWarnings() []SiteSendLimitWarning {
-	return s.Warnings
-}
-
-// SetPerSecond sets the value of PerSecond.
-func (s *SiteSendLimitStatus) SetPerSecond(val SiteSendLimitValue) {
-	s.PerSecond = val
-}
-
-// SetPerDay sets the value of PerDay.
-func (s *SiteSendLimitStatus) SetPerDay(val SiteSendLimitValue) {
-	s.PerDay = val
-}
-
-// SetSentLast24h sets the value of SentLast24h.
-func (s *SiteSendLimitStatus) SetSentLast24h(val int32) {
-	s.SentLast24h = val
-}
-
-// SetWarnings sets the value of Warnings.
-func (s *SiteSendLimitStatus) SetWarnings(val []SiteSendLimitWarning) {
-	s.Warnings = val
-}
-
-// One effective ceiling: the lowest of the manual and provider values, manual on a tie.
-// Ref: #/components/schemas/SiteSendLimitValue
-type SiteSendLimitValue struct {
-	// The ceiling in messages; null means this window is not limited.
-	Limit NilInt32 `json:"limit"`
-	// Where the ceiling comes from; null when there is none.
-	Source NilSiteSendLimitSource `json:"source"`
-}
-
-// GetLimit returns the value of Limit.
-func (s *SiteSendLimitValue) GetLimit() NilInt32 {
-	return s.Limit
-}
-
-// GetSource returns the value of Source.
-func (s *SiteSendLimitValue) GetSource() NilSiteSendLimitSource {
-	return s.Source
-}
-
-// SetLimit sets the value of Limit.
-func (s *SiteSendLimitValue) SetLimit(val NilInt32) {
-	s.Limit = val
-}
-
-// SetSource sets the value of Source.
-func (s *SiteSendLimitValue) SetSource(val NilSiteSendLimitSource) {
-	s.Source = val
-}
-
-// A reason to look at an Integration's Send rate limit.
-// Ref: #/components/schemas/SiteSendLimitWarning
-type SiteSendLimitWarning string
-
-const (
-	SiteSendLimitWarningUnlimited                SiteSendLimitWarning = "unlimited"
-	SiteSendLimitWarningProviderQuotaUnavailable SiteSendLimitWarning = "providerQuotaUnavailable"
-)
-
-// AllValues returns all SiteSendLimitWarning values.
-func (SiteSendLimitWarning) AllValues() []SiteSendLimitWarning {
-	return []SiteSendLimitWarning{
-		SiteSendLimitWarningUnlimited,
-		SiteSendLimitWarningProviderQuotaUnavailable,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSendLimitWarning) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSendLimitWarningUnlimited:
-		return []byte(s), nil
-	case SiteSendLimitWarningProviderQuotaUnavailable:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSendLimitWarning) UnmarshalText(data []byte) error {
-	switch SiteSendLimitWarning(data) {
-	case SiteSendLimitWarningUnlimited:
-		*s = SiteSendLimitWarningUnlimited
-		return nil
-	case SiteSendLimitWarningProviderQuotaUnavailable:
-		*s = SiteSendLimitWarningProviderQuotaUnavailable
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
 
 // Sending domain resource used by the site UI (ADR 0010). sphericon generates the DKIM keypair; the
 // user publishes the DKIM TXT to authenticate the domain. The private key is never exposed. `verified`
@@ -23523,9 +23525,11 @@ type SiteUpdateIntegrationInput struct {
 	Name      OptString `json:"name"`
 	Enabled   OptBool   `json:"enabled"`
 	IsDefault OptBool   `json:"isDefault"`
-	// Most messages per second (1 to 10 000); null clears the limit, omit to keep.
+	// Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES
+	// Integration with an `endpoint` cannot be left without it.
 	MaxPerSecond OptNilSiteMaxPerSecond `json:"maxPerSecond"`
-	// Most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep.
+	// Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit
+	// to keep. An SES Integration with an `endpoint` cannot be left without it.
 	MaxPerDay OptNilSiteMaxPerDay              `json:"maxPerDay"`
 	Config    OptNilSiteIntegrationConfigInput `json:"config"`
 	// Name of a Preset from `presets_list`; null removes it. Changing it requires `params` in full: no

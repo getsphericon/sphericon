@@ -1,4 +1,4 @@
-package sendlimit_test
+package providerlimit_test
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
 func optionalCeiling(t *rapid.T, label string) *int {
@@ -23,7 +23,7 @@ func TestEffectiveOfIsTheLowerCeilingAndNamesItsSource(t *testing.T) {
 		manual := optionalCeiling(t, "manual")
 		provider := optionalCeiling(t, "provider")
 
-		got := sendlimit.EffectiveOf(&ent.Integration{MaxPerSecond: manual, ProviderMaxPerSecond: provider}).PerSecond
+		got := providerlimit.EffectiveOf(&ent.Integration{MaxPerSecond: manual, ProviderMaxPerSecond: provider}).PerSecond
 
 		switch {
 		case manual == nil && provider == nil:
@@ -31,11 +31,11 @@ func TestEffectiveOfIsTheLowerCeilingAndNamesItsSource(t *testing.T) {
 				t.Fatalf("no ceiling expected, got %v from %q", got.Limit, got.Source)
 			}
 		case provider == nil || (manual != nil && *manual <= *provider):
-			if got.Limit == nil || *got.Limit != *manual || got.Source != sendlimit.SourceManual {
+			if got.Limit == nil || *got.Limit != *manual || got.Source != providerlimit.SourceManual {
 				t.Fatalf("manual %v (provider %v) expected, got %v from %q", *manual, provider, got.Limit, got.Source)
 			}
 		default:
-			if got.Limit == nil || *got.Limit != *provider || got.Source != sendlimit.SourceProvider {
+			if got.Limit == nil || *got.Limit != *provider || got.Source != providerlimit.SourceProvider {
 				t.Fatalf("provider %v (manual %v) expected, got %v from %q", *provider, manual, got.Limit, got.Source)
 			}
 		}

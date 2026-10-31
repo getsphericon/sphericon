@@ -103,20 +103,28 @@ const (
 	// FieldSignupItems carries the answers to the Sign-up items (ADR 0062); a refusal of one item
 	// is reported under Nested(FieldSignupItems, key).
 	FieldSignupItems = "signupItems"
+	// FieldMaxPerSecond and FieldMaxPerDay are an Integration's Provider limit.
+	FieldMaxPerSecond = "maxPerSecond"
+	FieldMaxPerDay    = "maxPerDay"
 )
 
 // fieldOrder is the order fields appear in on the forms, which a detail naming them follows: the
 // Sign-up items' answers come last.
-var fieldOrder = []string{FieldName, FieldEmail, FieldNewEmail, FieldPassword, FieldNewPassword, FieldSignupItems}
+var fieldOrder = []string{
+	FieldName, FieldEmail, FieldNewEmail, FieldPassword, FieldNewPassword, FieldSignupItems,
+	FieldMaxPerSecond, FieldMaxPerDay,
+}
 
 // fieldLabels words a field for a person, by its json name.
 var fieldLabels = map[string]string{
-	FieldName:        "fields.name",
-	FieldEmail:       "fields.email",
-	FieldNewEmail:    "fields.new_email",
-	FieldPassword:    "fields.password",
-	FieldNewPassword: "fields.new_password",
-	FieldSignupItems: "fields.signup_items",
+	FieldName:         "fields.name",
+	FieldEmail:        "fields.email",
+	FieldNewEmail:     "fields.new_email",
+	FieldPassword:     "fields.password",
+	FieldNewPassword:  "fields.new_password",
+	FieldSignupItems:  "fields.signup_items",
+	FieldMaxPerSecond: "fields.max_per_second",
+	FieldMaxPerDay:    "fields.max_per_day",
 }
 
 // Nested is the name a refusal of the entry key of the request field parent is reported under

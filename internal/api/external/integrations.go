@@ -12,7 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/integrations"
 	"github.com/getsphericon/sphericon/internal/narrow"
 	"github.com/getsphericon/sphericon/internal/pagination"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 )
 
 // The Integration operations are thin adapters over internal/integrations, the module
@@ -28,7 +28,7 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 	if err != nil {
 		return nil, err
 	}
-	limits, err := sendlimit.Statuses(ctx, s, page.Items, time.Now())
+	limits, err := providerlimit.Statuses(ctx, s, page.Items, time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func configInput(in externalapi.IntegrationConfigInput) (integrations.ConfigInpu
 
 // integrationOne renders a single row with its 24-hour usage.
 func (h *Handlers) integrationOne(ctx context.Context, s *ent.Scoped, row *ent.Integration) (externalapi.IntegrationResource, error) {
-	limits, err := sendlimit.Statuses(ctx, s, []*ent.Integration{row}, time.Now())
+	limits, err := providerlimit.Statuses(ctx, s, []*ent.Integration{row}, time.Now())
 	if err != nil {
 		return externalapi.IntegrationResource{}, err
 	}
@@ -231,8 +231,8 @@ func (h *Handlers) integrationOne(ctx context.Context, s *ent.Scoped, row *ent.I
 
 // integrationResource maps the row with goverter, then attaches what the mapper cannot
 // see: the redacted config and params (secrets never leave the module), the hook URL and
-// the Send rate limit.
-func (h *Handlers) integrationResource(row *ent.Integration, limit sendlimit.Status) (externalapi.IntegrationResource, error) {
+// the Provider limit.
+func (h *Handlers) integrationResource(row *ent.Integration, limit providerlimit.Status) (externalapi.IntegrationResource, error) {
 	cfg, err := h.integrations.Redact(row)
 	if err != nil {
 		return externalapi.IntegrationResource{}, err
@@ -242,7 +242,7 @@ func (h *Handlers) integrationResource(row *ent.Integration, limit sendlimit.Sta
 		return externalapi.IntegrationResource{}, err
 	}
 	res := mapper.IntegrationToResource(row)
-	res.SendLimit = mapper.SendLimitToStatus(limit)
+	res.ProviderLimit = mapper.ProviderLimitToStatus(limit)
 	res.Params = externalapi.IntegrationResourceParams(integrations.RawOf(view.Values))
 	res.SecretsRetiring = view.SecretsRetiring
 	res.HookUrl = h.integrations.HookURL(row)

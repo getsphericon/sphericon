@@ -1,4 +1,4 @@
-// Package sendlimit enforces an Integration's Send rate limit (ADR 0023): two token
+// Package providerlimit enforces an Integration's Provider limit (ADR 0023): two token
 // buckets, per-second and rolling 24 hours, whose state is one send_limiters row per
 // Integration in Postgres (no Redis). A reservation takes one token from both buckets
 // or from none, in a single UPDATE through the scoped client, so concurrent workers
@@ -7,7 +7,7 @@
 // Buckets are stored as a fill fraction of capacity (1 is full). Capacity and refill
 // derive from the limits passed in on every call, so a user changing a limit
 // takes effect at once, and a bucket with no limit is simply kept full.
-package sendlimit
+package providerlimit
 
 import (
 	"context"

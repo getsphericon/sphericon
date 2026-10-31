@@ -52,10 +52,13 @@ func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
-	// SES integration targeting an SES-compatible endpoint (e.g. Yandex Postbox).
+	// SES integration targeting an SES-compatible endpoint (e.g. Yandex Postbox), which
+	// takes its Provider limit.
 	created, err := c.SiteIntegrationsCreate(ctx, &siteapi.SiteCreateIntegrationInput{
-		Params: sesTopicParams,
-		Name:   "Postbox",
+		Params:       sesTopicParams,
+		Name:         "Postbox",
+		MaxPerSecond: siteapi.NewOptNilSiteMaxPerSecond(1),
+		MaxPerDay:    siteapi.NewOptNilSiteMaxPerDay(200),
 		Config: siteapi.SiteIntegrationConfigInput{
 			OneOf: siteapi.NewSiteSesConfigInputSiteIntegrationConfigInputSum(siteapi.SiteSesConfigInput{
 				Kind:            siteapi.SiteSesConfigInputKindSes,

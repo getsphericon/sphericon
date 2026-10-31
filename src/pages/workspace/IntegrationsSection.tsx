@@ -45,11 +45,16 @@ import { AUDIT_TARGET_INTEGRATION } from '../../utils/auditFilter.ts'
 import { can } from '../../utils/permissions.ts'
 import { ChangeHistoryLink } from './AuditLogSection.tsx'
 import { InboundModal } from './InboundModal.tsx'
-import { NO_LIMITS, toLimit, useSendLimitValidators } from './sendLimit.ts'
-import type { SendLimitValues } from './sendLimit.ts'
-import { SendLimitFields } from './SendLimitFields.tsx'
-import { SendLimitModal } from './SendLimitModal.tsx'
-import { SendLimitStatus } from './SendLimitStatus.tsx'
+import {
+  NO_LIMITS,
+  requiresProviderLimit,
+  toLimit,
+  useProviderLimitValidators,
+} from './providerLimit.ts'
+import type { ProviderLimitValues } from './providerLimit.ts'
+import { ProviderLimitFields } from './ProviderLimitFields.tsx'
+import { ProviderLimitModal } from './ProviderLimitModal.tsx'
+import { ProviderLimitStatus } from './ProviderLimitStatus.tsx'
 
 type ProviderKind = SiteIntegrationProvider
 
@@ -62,7 +67,7 @@ const TILES: Tile[] = ['ses', 'sesCompatible', 'smtp', 'inbox']
 
 // Flat form state; the provider-specific config object is assembled on submit
 // from whichever fields the selected provider uses.
-interface IntegrationFormValues extends SendLimitValues {
+interface IntegrationFormValues extends ProviderLimitValues {
   name: string
   provider: ProviderKind
   isDefault: boolean
@@ -140,7 +145,9 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
     siteIntegrationsListOptions({ path: { workspaceId }, query: { archived: false } }),
   )
 
-  const validateLimits = useSendLimitValidators()
+  const validateLimits = useProviderLimitValidators((values: IntegrationFormValues) =>
+    requiresProviderLimit(values.provider, values.endpoint),
+  )
   const form = useForm<IntegrationFormValues>({
     initialValues: INITIAL_VALUES,
     validate: validateLimits,
@@ -204,9 +211,9 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
   // The first provider of a Workspace is its default; later ones ask.
   const hasActive = (integrationsQuery.data ?? []).length > 0
   const records = integrationsQuery.data ?? []
-  const unlimited = records.filter((record) => record.sendLimit.warnings.includes('unlimited'))
+  const unlimited = records.filter((record) => record.providerLimit.warnings.includes('unlimited'))
   const quotaUnavailable = records.filter((record) =>
-    record.sendLimit.warnings.includes('providerQuotaUnavailable'),
+    record.providerLimit.warnings.includes('providerQuotaUnavailable'),
   )
 
   return (
@@ -236,10 +243,12 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
           key={record.id}
           color="yellow"
           variant="light"
-          title={t(($) => $.settings.integrations.limits.unlimitedTitle, { name: record.name })}
+          title={t(($) => $.settings.integrations.providerLimit.unlimitedTitle, {
+            name: record.name,
+          })}
           mb="sm"
         >
-          {t(($) => $.settings.integrations.limits.unlimitedWarning)}
+          {t(($) => $.settings.integrations.providerLimit.unlimitedWarning)}
         </Alert>
       ))}
 
@@ -248,12 +257,12 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
           key={record.id}
           color="yellow"
           variant="light"
-          title={t(($) => $.settings.integrations.limits.quotaUnavailableTitle, {
+          title={t(($) => $.settings.integrations.providerLimit.quotaUnavailableTitle, {
             name: record.name,
           })}
           mb="sm"
         >
-          {t(($) => $.settings.integrations.limits.quotaUnavailableWarning)}
+          {t(($) => $.settings.integrations.providerLimit.quotaUnavailableWarning)}
         </Alert>
       ))}
 
@@ -271,9 +280,9 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
             render: (record) => (record.isDefault ? t(($) => $.settings.integrations.default) : ''),
           },
           {
-            accessor: 'sendLimit',
-            title: t(($) => $.settings.integrations.limits.title),
-            render: (record) => <SendLimitStatus status={record.sendLimit} />,
+            accessor: 'providerLimit',
+            title: t(($) => $.settings.integrations.providerLimit.title),
+            render: (record) => <ProviderLimitStatus status={record.providerLimit} />,
           },
           {
             accessor: 'actions',
@@ -300,7 +309,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                       </Menu.Item>
                     )}
                     <Menu.Item onClick={() => setEditing(record)}>
-                      {t(($) => $.settings.integrations.limits.edit)}
+                      {t(($) => $.settings.integrations.providerLimit.edit)}
                     </Menu.Item>
                     <Menu.Item onClick={() => setInbound(record)}>
                       {t(($) => $.settings.integrations.inbound.open)}
@@ -430,6 +439,19 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                   {...form.getInputProps('from')}
                 />
 
+                {compatible ? (
+                  <>
+                    <Text c="dimmed" size="sm">
+                      {t(($) => $.settings.integrations.providerLimit.descriptionRequired)}
+                    </Text>
+                    <ProviderLimitFields
+                      perSecondProps={form.getInputProps('maxPerSecond')}
+                      perDayProps={form.getInputProps('maxPerDay')}
+                      required
+                    />
+                  </>
+                ) : null}
+
                 <Group>
                   <Button variant="subtle" onClick={toggleAdvanced}>
                     {t(($) => $.settings.integrations.advanced)}
@@ -448,10 +470,12 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
                         {...form.getInputProps('fromName')}
                       />
                     </Group>
-                    <SendLimitFields
-                      perSecondProps={form.getInputProps('maxPerSecond')}
-                      perDayProps={form.getInputProps('maxPerDay')}
-                    />
+                    {compatible ? null : (
+                      <ProviderLimitFields
+                        perSecondProps={form.getInputProps('maxPerSecond')}
+                        perDayProps={form.getInputProps('maxPerDay')}
+                      />
+                    )}
                     {hasActive ? (
                       <Checkbox
                         label={t(($) => $.settings.integrations.makeDefault)}
@@ -502,7 +526,7 @@ export function IntegrationsSection({ workspace }: { workspace: SiteWorkspaceRes
           )}
         </Modal>
       ) : null}
-      <SendLimitModal
+      <ProviderLimitModal
         workspaceId={workspaceId}
         integration={editing}
         onClose={() => setEditing(null)}

@@ -15632,7 +15632,7 @@
               }
             ],
             "nullable": true,
-            "description": "Most messages per second (1 to 10 000); omit or null for no limit"
+            "description": "Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it"
           },
           "maxPerDay": {
             "type": "integer",
@@ -15642,7 +15642,7 @@
               }
             ],
             "nullable": true,
-            "description": "Most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit"
+            "description": "Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it"
           },
           "config": {
             "$ref": "#/components/schemas/IntegrationConfigInput"
@@ -17102,7 +17102,7 @@
           "isDefault",
           "maxPerSecond",
           "maxPerDay",
-          "sendLimit",
+          "providerLimit",
           "config",
           "preset",
           "params",
@@ -17153,21 +17153,21 @@
             "type": "integer",
             "format": "int32",
             "nullable": true,
-            "description": "Send rate limit set on the Integration: most messages per second; null means none"
+            "description": "Provider limit set on the Integration: most messages per second; null means none"
           },
           "maxPerDay": {
             "type": "integer",
             "format": "int32",
             "nullable": true,
-            "description": "Send rate limit set on the Integration: most messages per rolling 24 hours; null means none"
+            "description": "Provider limit set on the Integration: most messages per rolling 24 hours; null means none"
           },
-          "sendLimit": {
+          "providerLimit": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SendLimitStatus"
+                "$ref": "#/components/schemas/ProviderLimitStatus"
               }
             ],
-            "description": "The Send rate limit as enforced and 24-hour usage"
+            "description": "The Provider limit as enforced and 24-hour usage"
           },
           "config": {
             "allOf": [
@@ -17313,14 +17313,14 @@
         "format": "int32",
         "minimum": 1,
         "maximum": 100000000,
-        "description": "A rolling 24-hour Send rate limit the caller may set"
+        "description": "A rolling 24-hour Provider limit the caller may set"
       },
       "MaxPerSecond": {
         "type": "integer",
         "format": "int32",
         "minimum": 1,
         "maximum": 10000,
-        "description": "A per-second Send rate limit the caller may set"
+        "description": "A per-second Provider limit the caller may set"
       },
       "Permission": {
         "type": "string",
@@ -17511,6 +17511,73 @@
           }
         },
         "description": "RFC 7807 Problem Details"
+      },
+      "ProviderLimitSource": {
+        "type": "string",
+        "enum": ["manual", "provider"],
+        "description": "Where an effective Provider limit comes from"
+      },
+      "ProviderLimitStatus": {
+        "type": "object",
+        "required": ["perSecond", "perDay", "sentLast24h", "warnings"],
+        "properties": {
+          "perSecond": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProviderLimitValue"
+              }
+            ],
+            "description": "Most messages per second"
+          },
+          "perDay": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProviderLimitValue"
+              }
+            ],
+            "description": "Most messages per rolling 24 hours"
+          },
+          "sentLast24h": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider accepted from this Integration in the last 24 hours"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProviderLimitWarning"
+            },
+            "description": "Reasons to review the limit; empty when there is nothing to flag"
+          }
+        },
+        "description": "The Provider limit as enforced, with the last 24 hours of usage"
+      },
+      "ProviderLimitValue": {
+        "type": "object",
+        "required": ["limit", "source"],
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "The ceiling in messages; null means this window is not limited"
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProviderLimitSource"
+              }
+            ],
+            "nullable": true,
+            "description": "Where the ceiling comes from; null when there is none"
+          }
+        },
+        "description": "One effective ceiling: the lowest of the manual and provider values, manual on a tie"
+      },
+      "ProviderLimitWarning": {
+        "type": "string",
+        "enum": ["unlimited", "providerQuotaUnavailable"],
+        "description": "A reason to look at an Integration's Provider limit"
       },
       "RateTriple": {
         "type": "object",
@@ -17986,73 +18053,6 @@
           }
         },
         "description": "Segment resource"
-      },
-      "SendLimitSource": {
-        "type": "string",
-        "enum": ["manual", "provider"],
-        "description": "Where an effective Send rate limit comes from"
-      },
-      "SendLimitStatus": {
-        "type": "object",
-        "required": ["perSecond", "perDay", "sentLast24h", "warnings"],
-        "properties": {
-          "perSecond": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SendLimitValue"
-              }
-            ],
-            "description": "Most messages per second"
-          },
-          "perDay": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SendLimitValue"
-              }
-            ],
-            "description": "Most messages per rolling 24 hours"
-          },
-          "sentLast24h": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Messages the provider accepted from this Integration in the last 24 hours"
-          },
-          "warnings": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SendLimitWarning"
-            },
-            "description": "Reasons to review the limit; empty when there is nothing to flag"
-          }
-        },
-        "description": "The Send rate limit as enforced, with the last 24 hours of usage"
-      },
-      "SendLimitValue": {
-        "type": "object",
-        "required": ["limit", "source"],
-        "properties": {
-          "limit": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true,
-            "description": "The ceiling in messages; null means this window is not limited"
-          },
-          "source": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SendLimitSource"
-              }
-            ],
-            "nullable": true,
-            "description": "Where the ceiling comes from; null when there is none"
-          }
-        },
-        "description": "One effective ceiling: the lowest of the manual and provider values, manual on a tie"
-      },
-      "SendLimitWarning": {
-        "type": "string",
-        "enum": ["unlimited", "providerQuotaUnavailable"],
-        "description": "A reason to look at an Integration's Send rate limit"
       },
       "SendScope": {
         "type": "string",
@@ -18872,7 +18872,7 @@
               }
             ],
             "nullable": true,
-            "description": "Most messages per second (1 to 10 000); null clears the limit, omit to keep"
+            "description": "Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it"
           },
           "maxPerDay": {
             "type": "integer",
@@ -18882,7 +18882,7 @@
               }
             ],
             "nullable": true,
-            "description": "Most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep"
+            "description": "Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it"
           },
           "config": {
             "allOf": [

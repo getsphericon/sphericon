@@ -11,9 +11,9 @@ import (
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
 	broadcasts "github.com/getsphericon/sphericon/internal/broadcasts"
 	integrations "github.com/getsphericon/sphericon/internal/integrations"
+	providerlimit "github.com/getsphericon/sphericon/internal/providerlimit"
 	rules "github.com/getsphericon/sphericon/internal/rules"
 	sendingdomains "github.com/getsphericon/sphericon/internal/sendingdomains"
-	sendlimit "github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
 type ConverterImpl struct{}
@@ -349,6 +349,19 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 	}
 	return externalapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) ProviderLimitToStatus(source providerlimit.Status) external.ProviderLimitStatus {
+	var externalapiProviderLimitStatus external.ProviderLimitStatus
+	externalapiProviderLimitStatus.PerSecond = c.providerlimitValueToExternalapiProviderLimitValue(source.PerSecond)
+	externalapiProviderLimitStatus.PerDay = c.providerlimitValueToExternalapiProviderLimitValue(source.PerDay)
+	externalapiProviderLimitStatus.SentLast24h = count(source.Sent24h)
+	if source.Warnings != nil {
+		externalapiProviderLimitStatus.Warnings = make([]external.ProviderLimitWarning, len(source.Warnings))
+		for i := 0; i < len(source.Warnings); i++ {
+			externalapiProviderLimitStatus.Warnings[i] = providerLimitWarning(source.Warnings[i])
+		}
+	}
+	return externalapiProviderLimitStatus
+}
 func (c *ConverterImpl) RuleDryRunToResource(source rules.DryRun) external.RuleDryRunResource {
 	var externalapiRuleDryRunResource external.RuleDryRunResource
 	externalapiRuleDryRunResource.Outcome = external.RuleDryRunOutcome(source.Outcome)
@@ -410,19 +423,6 @@ func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentR
 		externalapiSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
 	return externalapiSegmentResource
-}
-func (c *ConverterImpl) SendLimitToStatus(source sendlimit.Status) external.SendLimitStatus {
-	var externalapiSendLimitStatus external.SendLimitStatus
-	externalapiSendLimitStatus.PerSecond = c.sendlimitValueToExternalapiSendLimitValue(source.PerSecond)
-	externalapiSendLimitStatus.PerDay = c.sendlimitValueToExternalapiSendLimitValue(source.PerDay)
-	externalapiSendLimitStatus.SentLast24h = count(source.Sent24h)
-	if source.Warnings != nil {
-		externalapiSendLimitStatus.Warnings = make([]external.SendLimitWarning, len(source.Warnings))
-		for i := 0; i < len(source.Warnings); i++ {
-			externalapiSendLimitStatus.Warnings[i] = sendLimitWarning(source.Warnings[i])
-		}
-	}
-	return externalapiSendLimitStatus
 }
 func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) external.SendingDomainResource {
 	var externalapiSendingDomainResource external.SendingDomainResource
@@ -557,6 +557,12 @@ func (c *ConverterImpl) WebhookToResource(source *ent.WebhookEndpoint) external.
 	}
 	return externalapiWebhookResource
 }
+func (c *ConverterImpl) providerlimitValueToExternalapiProviderLimitValue(source providerlimit.Value) external.ProviderLimitValue {
+	var externalapiProviderLimitValue external.ProviderLimitValue
+	externalapiProviderLimitValue.Limit = nilInt32(source.Limit)
+	externalapiProviderLimitValue.Source = providerLimitSource(source.Source)
+	return externalapiProviderLimitValue
+}
 func (c *ConverterImpl) rulesPlannedActionToExternalapiRuleDryRunAction(source rules.PlannedAction) external.RuleDryRunAction {
 	var externalapiRuleDryRunAction external.RuleDryRunAction
 	externalapiRuleDryRunAction.Type = string(source.Type)
@@ -568,10 +574,4 @@ func (c *ConverterImpl) schemaCapturedHeaderToExternalapiCapturedMessageHeader(s
 	externalapiCapturedMessageHeader.Name = source.Name
 	externalapiCapturedMessageHeader.Value = source.Value
 	return externalapiCapturedMessageHeader
-}
-func (c *ConverterImpl) sendlimitValueToExternalapiSendLimitValue(source sendlimit.Value) external.SendLimitValue {
-	var externalapiSendLimitValue external.SendLimitValue
-	externalapiSendLimitValue.Limit = nilInt32(source.Limit)
-	externalapiSendLimitValue.Source = sendLimitSource(source.Source)
-	return externalapiSendLimitValue
 }

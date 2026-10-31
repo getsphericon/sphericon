@@ -1780,7 +1780,7 @@ export type SiteBroadcastProgress = {
   remainingCount: number;
   /**
    * When the last remaining recipient is expected to be sent. Null when it is not
-   * knowable: the broadcast is on hold, or it is not paced by a Send rate limit.
+   * knowable: the broadcast is on hold, or it is not paced by a Provider limit.
    */
   estimatedCompletionAt?: Timestamp | null;
 };
@@ -2533,11 +2533,11 @@ export type SiteCreateIntegrationInput = {
   enabled?: boolean;
   isDefault?: boolean;
   /**
-   * Most messages per second (1 to 10 000); omit or null for no limit
+   * Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it
    */
   maxPerSecond?: SiteMaxPerSecond | null;
   /**
-   * Most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit
+   * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it
    */
   maxPerDay?: SiteMaxPerDay | null;
   config: SiteIntegrationConfigInput;
@@ -3237,17 +3237,17 @@ export type SiteIntegrationResource = {
    */
   isDefault: boolean;
   /**
-   * Send rate limit: most messages per second; null means no per-second limit
+   * Provider limit: most messages per second; null means no per-second limit
    */
   maxPerSecond: number | null;
   /**
-   * Send rate limit: most messages per rolling 24 hours; null means no daily limit
+   * Provider limit: most messages per rolling 24 hours; null means no daily limit
    */
   maxPerDay: number | null;
   /**
-   * The Send rate limit as enforced (manual and provider-reported values) and 24-hour usage
+   * The Provider limit as enforced (manual and provider-reported values) and 24-hour usage
    */
-  sendLimit: SiteSendLimitStatus;
+  providerLimit: SiteProviderLimitStatus;
   /**
    * Provider config (secrets redacted)
    */
@@ -3486,12 +3486,12 @@ export type SiteLoginSecondFactorInput = {
 };
 
 /**
- * A rolling 24-hour Send rate limit the user may set
+ * A rolling 24-hour Provider limit the user may set
  */
 export type SiteMaxPerDay = number;
 
 /**
- * A per-second Send rate limit the user may set
+ * A per-second Provider limit the user may set
  */
 export type SiteMaxPerSecond = number;
 
@@ -4121,6 +4121,62 @@ export type SitePreviewSegmentResult = {
 };
 
 /**
+ * Where an effective Provider limit comes from
+ */
+export const SiteProviderLimitSource = { MANUAL: 'manual', PROVIDER: 'provider' } as const;
+
+/**
+ * Where an effective Provider limit comes from
+ */
+export type SiteProviderLimitSource = typeof SiteProviderLimitSource[keyof typeof SiteProviderLimitSource];
+
+/**
+ * The Provider limit as enforced, with the last 24 hours of usage
+ */
+export type SiteProviderLimitStatus = {
+  /**
+   * Most messages per second
+   */
+  perSecond: SiteProviderLimitValue;
+  /**
+   * Most messages per rolling 24 hours
+   */
+  perDay: SiteProviderLimitValue;
+  /**
+   * Messages the provider accepted from this Integration in the last 24 hours
+   */
+  sentLast24h: number;
+  /**
+   * Reasons to review the limit; empty when there is nothing to flag
+   */
+  warnings: Array<SiteProviderLimitWarning>;
+};
+
+/**
+ * One effective ceiling: the lowest of the manual and provider values, manual on a tie
+ */
+export type SiteProviderLimitValue = {
+  /**
+   * The ceiling in messages; null means this window is not limited
+   */
+  limit: number | null;
+  /**
+   * Where the ceiling comes from; null when there is none
+   */
+  source: SiteProviderLimitSource | null;
+};
+
+/**
+ * A reason to look at an Integration's Provider limit
+ */
+export const SiteProviderLimitWarning = { UNLIMITED: 'unlimited', PROVIDER_QUOTA_UNAVAILABLE: 'providerQuotaUnavailable' } as const;
+
+/**
+ * A reason to look at an Integration's Provider limit
+ */
+export type SiteProviderLimitWarning = typeof SiteProviderLimitWarning[keyof typeof SiteProviderLimitWarning];
+
+/**
  * A fresh set of Recovery codes. They are shown only in this response.
  */
 export type SiteRecoveryCodes = {
@@ -4617,62 +4673,6 @@ export type SiteSegmentResource = {
    */
   updatedAt: Timestamp;
 };
-
-/**
- * Where an effective Send rate limit comes from
- */
-export const SiteSendLimitSource = { MANUAL: 'manual', PROVIDER: 'provider' } as const;
-
-/**
- * Where an effective Send rate limit comes from
- */
-export type SiteSendLimitSource = typeof SiteSendLimitSource[keyof typeof SiteSendLimitSource];
-
-/**
- * The Send rate limit as enforced, with the last 24 hours of usage
- */
-export type SiteSendLimitStatus = {
-  /**
-   * Most messages per second
-   */
-  perSecond: SiteSendLimitValue;
-  /**
-   * Most messages per rolling 24 hours
-   */
-  perDay: SiteSendLimitValue;
-  /**
-   * Messages the provider accepted from this Integration in the last 24 hours
-   */
-  sentLast24h: number;
-  /**
-   * Reasons to review the limit; empty when there is nothing to flag
-   */
-  warnings: Array<SiteSendLimitWarning>;
-};
-
-/**
- * One effective ceiling: the lowest of the manual and provider values, manual on a tie
- */
-export type SiteSendLimitValue = {
-  /**
-   * The ceiling in messages; null means this window is not limited
-   */
-  limit: number | null;
-  /**
-   * Where the ceiling comes from; null when there is none
-   */
-  source: SiteSendLimitSource | null;
-};
-
-/**
- * A reason to look at an Integration's Send rate limit
- */
-export const SiteSendLimitWarning = { UNLIMITED: 'unlimited', PROVIDER_QUOTA_UNAVAILABLE: 'providerQuotaUnavailable' } as const;
-
-/**
- * A reason to look at an Integration's Send rate limit
- */
-export type SiteSendLimitWarning = typeof SiteSendLimitWarning[keyof typeof SiteSendLimitWarning];
 
 /**
  * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
@@ -5484,11 +5484,11 @@ export type SiteUpdateIntegrationInput = {
   enabled?: boolean;
   isDefault?: boolean;
   /**
-   * Most messages per second (1 to 10 000); null clears the limit, omit to keep
+   * Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
    */
   maxPerSecond?: SiteMaxPerSecond | null;
   /**
-   * Most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep
+   * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
    */
   maxPerDay?: SiteMaxPerDay | null;
   config?: SiteIntegrationConfigInput | null;

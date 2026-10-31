@@ -17,7 +17,7 @@ type Progress struct {
 	// Remaining counts recipients still pending.
 	Remaining int
 	// EstimatedCompletion is when the last remaining recipient is expected to go out;
-	// nil when it cannot be known (a hold, or no Send rate limit to pace by).
+	// nil when it cannot be known (a hold, or no Provider limit to pace by).
 	EstimatedCompletion *time.Time
 }
 

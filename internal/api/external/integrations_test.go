@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestExternalIntegrationsListReportsSendLimitAndUsage(t *testing.T) {
+func TestExternalIntegrationsListReportsProviderLimitAndUsage(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
@@ -37,17 +37,17 @@ func TestExternalIntegrationsListReportsSendLimitAndUsage(t *testing.T) {
 	def := list.Items[0]
 	assert.Equal(t, fixtures.IntegrationAcmeDefaultName, def.Name)
 	assert.True(t, def.IsDefault)
-	assert.Equal(t, int32(14), def.SendLimit.PerSecond.Limit.Or(0))
-	assert.Equal(t, externalapi.SendLimitSourceManual, def.SendLimit.PerSecond.Source.Or(""))
-	assert.Equal(t, int32(50000), def.SendLimit.PerDay.Limit.Or(0))
-	assert.Equal(t, int32(2), def.SendLimit.SentLast24h, "two sends in the last 24 hours; the third is older")
-	assert.Empty(t, def.SendLimit.Warnings)
+	assert.Equal(t, int32(14), def.ProviderLimit.PerSecond.Limit.Or(0))
+	assert.Equal(t, externalapi.ProviderLimitSourceManual, def.ProviderLimit.PerSecond.Source.Or(""))
+	assert.Equal(t, int32(50000), def.ProviderLimit.PerDay.Limit.Or(0))
+	assert.Equal(t, int32(2), def.ProviderLimit.SentLast24h, "two sends in the last 24 hours; the third is older")
+	assert.Empty(t, def.ProviderLimit.Warnings)
 
 	ses := list.Items[1]
-	assert.True(t, ses.SendLimit.PerSecond.Limit.Null)
-	assert.True(t, ses.SendLimit.PerSecond.Source.Null)
-	assert.Equal(t, []externalapi.SendLimitWarning{externalapi.SendLimitWarningUnlimited}, ses.SendLimit.Warnings)
-	assert.Equal(t, int32(1), ses.SendLimit.SentLast24h)
+	assert.True(t, ses.ProviderLimit.PerSecond.Limit.Null)
+	assert.True(t, ses.ProviderLimit.PerSecond.Source.Null)
+	assert.Equal(t, []externalapi.ProviderLimitWarning{externalapi.ProviderLimitWarningUnlimited}, ses.ProviderLimit.Warnings)
+	assert.Equal(t, int32(1), ses.ProviderLimit.SentLast24h)
 }
 
 func TestExternalIntegrationsListIsPaginatedAndWorkspaceScoped(t *testing.T) {
@@ -103,4 +103,28 @@ func TestExternalIntegrationsListRedactsSecrets(t *testing.T) {
 	for _, needle := range []string{"AKIAEXAMPLE", "secretAccessKey", "password"} {
 		assert.NotContains(t, string(body), needle, "credentials never appear")
 	}
+}
+
+// An SES-compatible service needs both Provider limit values on /api too (ADR 0067).
+func TestExternalIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
+	env := testhelper.Setup(t)
+	res, err := env.ExternalScoped(t, "integrations:write").IntegrationsCreate(context.Background(), &externalapi.CreateIntegrationInput{
+		Name: "Postbox",
+		Params: externalapi.NewOptCreateIntegrationInputParams(externalapi.CreateIntegrationInputParams{
+			"topic_arn": []byte(`"arn:aws:sns:eu-west-1:123456789012:acme-ses-events"`),
+		}),
+		MaxPerSecond: externalapi.NewOptNilMaxPerSecond(1),
+		Config: externalapi.IntegrationConfigInput{
+			OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
+				Kind: externalapi.SesConfigInputKindSes, Region: "ru-central1", AccessKeyId: "AKIA1234",
+				SecretAccessKey: "secret", From: "noreply@acme.test",
+				Endpoint: externalapi.NewOptNilString("https://postbox.cloud.yandex.net"),
+			}),
+		},
+	})
+	require.NoError(t, err)
+	problem, ok := res.(*externalapi.IntegrationsCreateUnprocessableEntity)
+	require.Truef(t, ok, "got %T", res)
+	assert.Contains(t, problem.Errors.Value, "maxPerDay")
+	assert.NotContains(t, problem.Errors.Value, "maxPerSecond")
 }

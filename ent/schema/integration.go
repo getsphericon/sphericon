@@ -71,7 +71,7 @@ func (Integration) Fields() []ent.Field {
 			Default(true),
 		field.Bool("is_default").
 			Default(false),
-		// Send rate limit (ADR 0023): the most messages that may leave this Integration
+		// Provider limit (ADR 0023): the most messages that may leave this Integration
 		// per second and per rolling 24 hours. Nil means no limit of that kind.
 		field.Int("max_per_second").
 			Optional().
@@ -104,7 +104,7 @@ func (Integration) Fields() []ent.Field {
 
 func (Integration) Edges() []ent.Edge {
 	return []ent.Edge{
-		// Purging an Integration (Workspace erasure) deletes its Send rate limiter state with it.
+		// Purging an Integration (Workspace erasure) deletes its Provider limit state with it.
 		edge.To("send_limiter", SendLimiter.Type).
 			Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),

@@ -1,16 +1,19 @@
 import { Badge, Group, NumberFormatter, Progress, Stack, Text } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import type { SiteSendLimitStatus, SiteSendLimitValue } from '../../generated/site/types.gen.ts'
+import type {
+  SiteProviderLimitStatus,
+  SiteProviderLimitValue,
+} from '../../generated/site/types.gen.ts'
 
-function LimitLine({ label, value }: { label: string; value: SiteSendLimitValue }) {
+function LimitLine({ label, value }: { label: string; value: SiteProviderLimitValue }) {
   const { t } = useTranslation()
   return (
     <Group gap="xs" wrap="nowrap">
       <Text size="sm">
         {label}:{' '}
         {value.limit === null ? (
-          t(($) => $.settings.integrations.limits.unlimited)
+          t(($) => $.settings.integrations.providerLimit.unlimited)
         ) : (
           <NumberFormatter value={value.limit} thousandSeparator=" " />
         )}
@@ -18,31 +21,31 @@ function LimitLine({ label, value }: { label: string; value: SiteSendLimitValue 
       {value.source ? (
         <Badge size="xs" variant="light" color={value.source === 'manual' ? 'blue' : 'grape'}>
           {value.source === 'manual'
-            ? t(($) => $.settings.integrations.limits.sourceManual)
-            : t(($) => $.settings.integrations.limits.sourceProvider)}
+            ? t(($) => $.settings.integrations.providerLimit.sourceManual)
+            : t(($) => $.settings.integrations.providerLimit.sourceProvider)}
         </Badge>
       ) : null}
     </Group>
   )
 }
 
-// The effective Send rate limit of an Integration, where each ceiling comes from and
+// The effective Provider limit of an Integration, where each ceiling comes from and
 // the last 24 hours of usage (a bar against the daily ceiling when there is one).
-export function SendLimitStatus({ status }: { status: SiteSendLimitStatus }) {
+export function ProviderLimitStatus({ status }: { status: SiteProviderLimitStatus }) {
   const { t } = useTranslation()
   const daily = status.perDay.limit
   return (
     <Stack gap={4}>
       <LimitLine
-        label={t(($) => $.settings.integrations.limits.perSecondShort)}
+        label={t(($) => $.settings.integrations.providerLimit.perSecondShort)}
         value={status.perSecond}
       />
       <LimitLine
-        label={t(($) => $.settings.integrations.limits.perDayShort)}
+        label={t(($) => $.settings.integrations.providerLimit.perDayShort)}
         value={status.perDay}
       />
       <Text size="xs" c="dimmed">
-        {t(($) => $.settings.integrations.limits.sentLast24h)}:{' '}
+        {t(($) => $.settings.integrations.providerLimit.sentLast24h)}:{' '}
         <NumberFormatter value={status.sentLast24h} thousandSeparator=" " />
         {daily === null ? null : (
           <>
@@ -55,7 +58,7 @@ export function SendLimitStatus({ status }: { status: SiteSendLimitStatus }) {
         <Progress
           size="xs"
           value={Math.min(100, (status.sentLast24h / daily) * 100)}
-          aria-label={t(($) => $.settings.integrations.limits.sentLast24h)}
+          aria-label={t(($) => $.settings.integrations.providerLimit.sentLast24h)}
         />
       )}
     </Stack>

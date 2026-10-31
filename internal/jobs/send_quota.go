@@ -10,8 +10,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/messaging"
+	"github.com/getsphericon/sphericon/internal/providerlimit"
 	"github.com/getsphericon/sphericon/internal/secrets"
-	"github.com/getsphericon/sphericon/internal/sendlimit"
 )
 
 // quotaRefreshBatchSize bounds how many Integrations one hourly tick refreshes, like
@@ -86,7 +86,7 @@ func (w *RefreshIntegrationQuotaWorker) Work(ctx context.Context, job *river.Job
 }
 
 // RefreshIntegrationQuotaByID reads one Integration's provider quota and stores it
-// (see sendlimit.RefreshQuota). The Integration may have been deleted since the
+// (see providerlimit.RefreshQuota). The Integration may have been deleted since the
 // tick queued it, which is nothing to do. Pure of the queue so tests call it directly.
 func RefreshIntegrationQuotaByID(ctx context.Context, client *ent.Client, cipher *secrets.Cipher, catalog *messaging.Catalog, id int64) error {
 	row, err := client.Integration.Get(ctx, id)
@@ -96,5 +96,5 @@ func RefreshIntegrationQuotaByID(ctx context.Context, client *ent.Client, cipher
 	if err != nil {
 		return err
 	}
-	return sendlimit.RefreshQuota(ctx, client.Scoped(row.WorkspaceID), cipher, catalog, row)
+	return providerlimit.RefreshQuota(ctx, client.Scoped(row.WorkspaceID), cipher, catalog, row)
 }

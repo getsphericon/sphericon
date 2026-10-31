@@ -1477,11 +1477,11 @@ export type CreateIntegrationInput = {
   enabled?: boolean;
   isDefault?: boolean;
   /**
-   * Most messages per second (1 to 10 000); omit or null for no limit
+   * Provider limit: most messages per second (1 to 10 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it
    */
   maxPerSecond?: MaxPerSecond | null;
   /**
-   * Most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit
+   * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); omit or null for no limit, except on an SES Integration with an `endpoint`, which requires it
    */
   maxPerDay?: MaxPerDay | null;
   config: IntegrationConfigInput;
@@ -2481,17 +2481,17 @@ export type IntegrationResource = {
    */
   isDefault: boolean;
   /**
-   * Send rate limit set on the Integration: most messages per second; null means none
+   * Provider limit set on the Integration: most messages per second; null means none
    */
   maxPerSecond: number | null;
   /**
-   * Send rate limit set on the Integration: most messages per rolling 24 hours; null means none
+   * Provider limit set on the Integration: most messages per rolling 24 hours; null means none
    */
   maxPerDay: number | null;
   /**
-   * The Send rate limit as enforced and 24-hour usage
+   * The Provider limit as enforced and 24-hour usage
    */
-  sendLimit: SendLimitStatus;
+  providerLimit: ProviderLimitStatus;
   /**
    * Provider config (secrets redacted)
    */
@@ -2605,12 +2605,12 @@ export type LintFinding = {
 };
 
 /**
- * A rolling 24-hour Send rate limit the caller may set
+ * A rolling 24-hour Provider limit the caller may set
  */
 export type MaxPerDay = number;
 
 /**
- * A per-second Send rate limit the caller may set
+ * A per-second Provider limit the caller may set
  */
 export type MaxPerSecond = number;
 
@@ -2796,6 +2796,62 @@ export type ProblemDetails = {
    */
   debug?: ProblemDebug;
 };
+
+/**
+ * Where an effective Provider limit comes from
+ */
+export const ProviderLimitSource = { MANUAL: 'manual', PROVIDER: 'provider' } as const;
+
+/**
+ * Where an effective Provider limit comes from
+ */
+export type ProviderLimitSource = typeof ProviderLimitSource[keyof typeof ProviderLimitSource];
+
+/**
+ * The Provider limit as enforced, with the last 24 hours of usage
+ */
+export type ProviderLimitStatus = {
+  /**
+   * Most messages per second
+   */
+  perSecond: ProviderLimitValue;
+  /**
+   * Most messages per rolling 24 hours
+   */
+  perDay: ProviderLimitValue;
+  /**
+   * Messages the provider accepted from this Integration in the last 24 hours
+   */
+  sentLast24h: number;
+  /**
+   * Reasons to review the limit; empty when there is nothing to flag
+   */
+  warnings: Array<ProviderLimitWarning>;
+};
+
+/**
+ * One effective ceiling: the lowest of the manual and provider values, manual on a tie
+ */
+export type ProviderLimitValue = {
+  /**
+   * The ceiling in messages; null means this window is not limited
+   */
+  limit: number | null;
+  /**
+   * Where the ceiling comes from; null when there is none
+   */
+  source: ProviderLimitSource | null;
+};
+
+/**
+ * A reason to look at an Integration's Provider limit
+ */
+export const ProviderLimitWarning = { UNLIMITED: 'unlimited', PROVIDER_QUOTA_UNAVAILABLE: 'providerQuotaUnavailable' } as const;
+
+/**
+ * A reason to look at an Integration's Provider limit
+ */
+export type ProviderLimitWarning = typeof ProviderLimitWarning[keyof typeof ProviderLimitWarning];
 
 /**
  * A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is
@@ -3145,62 +3201,6 @@ export type SegmentResource = {
    */
   updatedAt: Timestamp;
 };
-
-/**
- * Where an effective Send rate limit comes from
- */
-export const SendLimitSource = { MANUAL: 'manual', PROVIDER: 'provider' } as const;
-
-/**
- * Where an effective Send rate limit comes from
- */
-export type SendLimitSource = typeof SendLimitSource[keyof typeof SendLimitSource];
-
-/**
- * The Send rate limit as enforced, with the last 24 hours of usage
- */
-export type SendLimitStatus = {
-  /**
-   * Most messages per second
-   */
-  perSecond: SendLimitValue;
-  /**
-   * Most messages per rolling 24 hours
-   */
-  perDay: SendLimitValue;
-  /**
-   * Messages the provider accepted from this Integration in the last 24 hours
-   */
-  sentLast24h: number;
-  /**
-   * Reasons to review the limit; empty when there is nothing to flag
-   */
-  warnings: Array<SendLimitWarning>;
-};
-
-/**
- * One effective ceiling: the lowest of the manual and provider values, manual on a tie
- */
-export type SendLimitValue = {
-  /**
-   * The ceiling in messages; null means this window is not limited
-   */
-  limit: number | null;
-  /**
-   * Where the ceiling comes from; null when there is none
-   */
-  source: SendLimitSource | null;
-};
-
-/**
- * A reason to look at an Integration's Send rate limit
- */
-export const SendLimitWarning = { UNLIMITED: 'unlimited', PROVIDER_QUOTA_UNAVAILABLE: 'providerQuotaUnavailable' } as const;
-
-/**
- * A reason to look at an Integration's Send rate limit
- */
-export type SendLimitWarning = typeof SendLimitWarning[keyof typeof SendLimitWarning];
 
 /**
  * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
@@ -3769,11 +3769,11 @@ export type UpdateIntegrationInput = {
   enabled?: boolean;
   isDefault?: boolean;
   /**
-   * Most messages per second (1 to 10 000); null clears the limit, omit to keep
+   * Provider limit: most messages per second (1 to 10 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
    */
   maxPerSecond?: MaxPerSecond | null;
   /**
-   * Most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep
+   * Provider limit: most messages per rolling 24 hours (1 to 100 000 000); null clears the limit, omit to keep. An SES Integration with an `endpoint` cannot be left without it
    */
   maxPerDay?: MaxPerDay | null;
   config?: IntegrationConfigInput | null;

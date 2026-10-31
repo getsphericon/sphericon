@@ -308,9 +308,9 @@ func TestMCPSanitizesBodiesOnSave(t *testing.T) {
 	assert.Equal(t, `<p>Hi {{ first_name }}</p>`, created["body"])
 }
 
-// An agent reads the Send rate limit and 24-hour usage of the Integrations over MCP,
+// An agent reads the Provider limit and 24-hour usage of the Integrations over MCP,
 // with the same scope the /api read needs.
-func TestMCPIntegrationsListReadsSendLimitAndUsage(t *testing.T) {
+func TestMCPIntegrationsListReadsProviderLimitAndUsage(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(14).ExecX(context.Background())
 
@@ -321,20 +321,20 @@ func TestMCPIntegrationsListReadsSendLimitAndUsage(t *testing.T) {
 	require.False(t, res.IsError, text(t, res))
 	var page struct {
 		Items []struct {
-			SendLimit struct {
+			ProviderLimit struct {
 				PerSecond struct {
 					Limit  int    `json:"limit"`
 					Source string `json:"source"`
 				} `json:"perSecond"`
 				SentLast24h int `json:"sentLast24h"`
-			} `json:"sendLimit"`
+			} `json:"providerLimit"`
 		} `json:"items"`
 	}
 	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &page))
 	require.NotEmpty(t, page.Items)
-	assert.Equal(t, 14, page.Items[0].SendLimit.PerSecond.Limit)
-	assert.Equal(t, "manual", page.Items[0].SendLimit.PerSecond.Source)
-	assert.Equal(t, 2, page.Items[0].SendLimit.SentLast24h)
+	assert.Equal(t, 14, page.Items[0].ProviderLimit.PerSecond.Limit)
+	assert.Equal(t, "manual", page.Items[0].ProviderLimit.PerSecond.Source)
+	assert.Equal(t, 2, page.Items[0].ProviderLimit.SentLast24h)
 }
 
 // Erasure is irreversible: a token that can write Contacts cannot erase them through
@@ -465,6 +465,25 @@ func TestMCPIntegrationsAreManagedWithoutLeakingSecrets(t *testing.T) {
 
 	res = call(t, s, "integrations_archive", map[string]any{"id": created.ID})
 	require.False(t, res.IsError, text(t, res))
+}
+
+// An agent connecting an SES-compatible service over MCP is told it needs the Provider limit
+// (ADR 0067), as /api tells any caller.
+func TestMCPIntegrationsSesCompatibleRequiresTheProviderLimit(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, "integrations:read", "integrations:write"))
+	res := call(t, s, "integrations_create", map[string]any{
+		"name":   "Postbox",
+		"params": map[string]any{"topic_arn": "arn:aws:sns:eu-west-1:123456789012:acme-ses-events"},
+		"config": map[string]any{
+			"kind": "ses", "region": "ru-central1", "accessKeyId": "AKIA1234", "secretAccessKey": "secret",
+			"from": "a@acme.test", "endpoint": "https://postbox.cloud.yandex.net",
+		},
+	})
+	require.True(t, res.IsError)
+	assert.Contains(t, text(t, res), "HTTP 422")
+	assert.Contains(t, text(t, res), "maxPerSecond")
+	assert.Contains(t, text(t, res), "maxPerDay")
 }
 
 // An agent sets up a Sending domain over MCP: create, verify, read back. The DKIM

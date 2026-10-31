@@ -1,4 +1,4 @@
-# Send rate limiter state (ADR 0023), one row per limited Integration. Acme's is the
+# Provider limit state (ADR 0023), one row per limited Integration. Acme's is the
 # disabled SES Integration (id 2) so the default Integration (id 1) stays on a clean
 # slate for tests that exercise lazy creation; Globex's is its only Integration.
 - id: 1 # fixture: SendLimiterAcme
