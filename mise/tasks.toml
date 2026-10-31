@@ -374,14 +374,14 @@ description = "The contract decorators (typespec/lib) against their fixtures: no
 run = "node --test typespec/lib/*.test.ts"
 
 ["test:frontend"]
-description = "One-shot frontend run, logic and UI tests, with v8 coverage and thresholds (Vitest Browser Mode, headless Chromium); html report in coverage/. A pull request runs test:frontend:logic; the nightly workflow runs the whole suite as test:frontend:shard + test:frontend:merge"
+description = "One-shot frontend run, logic and UI tests, with v8 coverage and thresholds (Vitest Browser Mode, headless Chromium); html report in coverage/. A pull request runs the whole suite as test:frontend:shard + test:frontend:merge"
 run = "heavy -- pnpm exec vitest run --coverage"
 
 ["test:frontend:logic"]
-description = "The frontend's logic tests (*.test.ts), as a pull request runs them: no UI test (*.test.tsx), no coverage floor"
+description = "The frontend's logic tests (*.test.ts) alone, a quick local run: no UI test (*.test.tsx), no coverage floor"
 run = "heavy -- pnpm exec vitest run --exclude '**/*.test.tsx'"
 
-# The nightly workflow splits the frontend suite over runners: each shard writes a blob report that carries its coverage
+# The CI workflow splits the frontend suite over runners: each shard writes a blob report that carries its coverage
 # (.vitest/blob), and test:frontend:merge joins them and checks the thresholds. A shard sees a third of
 # the suite, so its own thresholds are zeroed; the merged run enforces the ones in vite.config.ts.
 ["test:frontend:shard"]
