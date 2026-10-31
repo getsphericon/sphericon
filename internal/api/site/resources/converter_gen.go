@@ -23,6 +23,8 @@ import (
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
+	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
+	analytics "github.com/getsphericon/sphericon/internal/analytics"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	automations "github.com/getsphericon/sphericon/internal/automations"
 	brandkit "github.com/getsphericon/sphericon/internal/brandkit"
@@ -43,6 +45,126 @@ import (
 
 type ConverterImpl struct{}
 
+func (c *ConverterImpl) AbuseMetricToResource(source abusewatch.Metric) site.SiteAbuseMetric {
+	var siteapiSiteAbuseMetric site.SiteAbuseMetric
+	switch source {
+	case abusewatch.MetricBounce:
+		siteapiSiteAbuseMetric = site.SiteAbuseMetricBounce
+	case abusewatch.MetricComplaint:
+		siteapiSiteAbuseMetric = site.SiteAbuseMetricComplaint
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteAbuseMetric
+}
+func (c *ConverterImpl) AbuseWarningToResource(source abusewatch.Warning) site.SiteAbuseWarning {
+	var siteapiSiteAbuseWarning site.SiteAbuseWarning
+	siteapiSiteAbuseWarning.Domain = source.Domain
+	siteapiSiteAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
+	siteapiSiteAbuseWarning.Rate = source.Rate
+	return siteapiSiteAbuseWarning
+}
+func (c *ConverterImpl) AnalyticsContactsToResource(source analytics.Contacts) site.SiteAnalyticsContacts {
+	var siteapiSiteAnalyticsContacts site.SiteAnalyticsContacts
+	siteapiSiteAnalyticsContacts.Total = count(source.Total)
+	siteapiSiteAnalyticsContacts.Active = count(source.Active)
+	siteapiSiteAnalyticsContacts.Unsubscribed = count(source.Unsubscribed)
+	siteapiSiteAnalyticsContacts.NewInRange = count(source.NewInWindow)
+	return siteapiSiteAnalyticsContacts
+}
+func (c *ConverterImpl) AnalyticsEmailToResource(source analytics.Email) site.SiteAnalyticsEmail {
+	var siteapiSiteAnalyticsEmail site.SiteAnalyticsEmail
+	siteapiSiteAnalyticsEmail.SentCount = count(source.Sent)
+	siteapiSiteAnalyticsEmail.OpenedCount = count(source.Opened)
+	siteapiSiteAnalyticsEmail.ClickedCount = count(source.Clicked)
+	siteapiSiteAnalyticsEmail.OpenRate = source.OpenRate
+	siteapiSiteAnalyticsEmail.ClickRate = source.ClickRate
+	siteapiSiteAnalyticsEmail.ClickToOpenRate = source.ClickToOpenRate
+	return siteapiSiteAnalyticsEmail
+}
+func (c *ConverterImpl) AnalyticsEventActionsToResources(source []analytics.EventAction) []site.SiteAnalyticsEventAction {
+	var siteapiSiteAnalyticsEventActionList []site.SiteAnalyticsEventAction
+	siteapiSiteAnalyticsEventActionList = make([]site.SiteAnalyticsEventAction, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteAnalyticsEventActionList[i] = c.analyticsEventActionToSiteapiSiteAnalyticsEventAction(source[i])
+	}
+	return siteapiSiteAnalyticsEventActionList
+}
+func (c *ConverterImpl) AnalyticsLinksToResources(source []analytics.LinkClicks) []site.SiteAnalyticsLink {
+	var siteapiSiteAnalyticsLinkList []site.SiteAnalyticsLink
+	siteapiSiteAnalyticsLinkList = make([]site.SiteAnalyticsLink, len(source))
+	for i := 0; i < len(source); i++ {
+		siteapiSiteAnalyticsLinkList[i] = c.analyticsLinkClicksToSiteapiSiteAnalyticsLink(source[i])
+	}
+	return siteapiSiteAnalyticsLinkList
+}
+func (c *ConverterImpl) AnalyticsNewPeopleToResource(source *analytics.NewPeople) *site.SiteNewPeopleReport {
+	var pSiteapiSiteNewPeopleReport *site.SiteNewPeopleReport
+	if source != nil {
+		var siteapiSiteNewPeopleReport site.SiteNewPeopleReport
+		siteapiSiteNewPeopleReport.Total = count((*source).Total)
+		siteapiSiteNewPeopleReport.Timeseries = make([]site.SiteNewPeoplePoint, len((*source).Series))
+		for i := 0; i < len((*source).Series); i++ {
+			siteapiSiteNewPeopleReport.Timeseries[i] = c.analyticsNewPeoplePointToSiteapiSiteNewPeoplePoint((*source).Series[i])
+		}
+		pSiteapiSiteNewPeopleReport = &siteapiSiteNewPeopleReport
+	}
+	return pSiteapiSiteNewPeopleReport
+}
+func (c *ConverterImpl) AnalyticsOpensByHourToResource(source *analytics.OpensByHour) *site.SiteAnalyticsOpensByHour {
+	var pSiteapiSiteAnalyticsOpensByHour *site.SiteAnalyticsOpensByHour
+	if source != nil {
+		var siteapiSiteAnalyticsOpensByHour site.SiteAnalyticsOpensByHour
+		siteapiSiteAnalyticsOpensByHour.Cells = make([]site.SiteAnalyticsOpensCell, len((*source).Cells))
+		for i := 0; i < len((*source).Cells); i++ {
+			siteapiSiteAnalyticsOpensByHour.Cells[i] = c.analyticsHourCellToSiteapiSiteAnalyticsOpensCell((*source).Cells[i])
+		}
+		siteapiSiteAnalyticsOpensByHour.Total = count((*source).Total)
+		pSiteapiSiteAnalyticsOpensByHour = &siteapiSiteAnalyticsOpensByHour
+	}
+	return pSiteapiSiteAnalyticsOpensByHour
+}
+func (c *ConverterImpl) AnalyticsOverviewToResource(source *analytics.Overview) *site.SiteAnalyticsOverview {
+	var pSiteapiSiteAnalyticsOverview *site.SiteAnalyticsOverview
+	if source != nil {
+		var siteapiSiteAnalyticsOverview site.SiteAnalyticsOverview
+		siteapiSiteAnalyticsOverview.Contacts = c.AnalyticsContactsToResource((*source).Contacts)
+		siteapiSiteAnalyticsOverview.Email = c.AnalyticsEmailToResource((*source).Email)
+		siteapiSiteAnalyticsOverview.Automations = c.analyticsAutomationsToSiteapiSiteAnalyticsAutomations((*source).Automations)
+		siteapiSiteAnalyticsOverview.Timeseries = make([]site.SiteAnalyticsPoint, len((*source).Series))
+		for i := 0; i < len((*source).Series); i++ {
+			siteapiSiteAnalyticsOverview.Timeseries[i] = c.analyticsPointToSiteapiSiteAnalyticsPoint((*source).Series[i])
+		}
+		// siteapiSiteAnalyticsOverview.AbuseWarning: ignore
+		pSiteapiSiteAnalyticsOverview = &siteapiSiteAnalyticsOverview
+	}
+	return pSiteapiSiteAnalyticsOverview
+}
+func (c *ConverterImpl) AnalyticsOwnerKindToResource(source linkclicks.OwnerKind) site.SiteAnalyticsOwnerKind {
+	var siteapiSiteAnalyticsOwnerKind site.SiteAnalyticsOwnerKind
+	switch source {
+	case linkclicks.OwnerAutomation:
+		siteapiSiteAnalyticsOwnerKind = site.SiteAnalyticsOwnerKindAutomation
+	case linkclicks.OwnerBroadcast:
+		siteapiSiteAnalyticsOwnerKind = site.SiteAnalyticsOwnerKindBroadcast
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSiteAnalyticsOwnerKind
+}
+func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analytics.SubscribedPeople) *site.SiteAnalyticsSubscribedPeople {
+	var pSiteapiSiteAnalyticsSubscribedPeople *site.SiteAnalyticsSubscribedPeople
+	if source != nil {
+		var siteapiSiteAnalyticsSubscribedPeople site.SiteAnalyticsSubscribedPeople
+		siteapiSiteAnalyticsSubscribedPeople.Current = count((*source).Current)
+		siteapiSiteAnalyticsSubscribedPeople.Series = make([]site.SiteAnalyticsSubscribedPoint, len((*source).Series))
+		for i := 0; i < len((*source).Series); i++ {
+			siteapiSiteAnalyticsSubscribedPeople.Series[i] = c.analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribedPoint((*source).Series[i])
+		}
+		pSiteapiSiteAnalyticsSubscribedPeople = &siteapiSiteAnalyticsSubscribedPeople
+	}
+	return pSiteapiSiteAnalyticsSubscribedPeople
+}
 func (c *ConverterImpl) AuditActorToResource(source auditapi.View) site.SiteAuditActor {
 	var siteapiSiteAuditActor site.SiteAuditActor
 	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.ActorKind)
@@ -1856,6 +1978,74 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteWorkspaceResource
+}
+func (c *ConverterImpl) analyticsAutomationsToSiteapiSiteAnalyticsAutomations(source analytics.Automations) site.SiteAnalyticsAutomations {
+	var siteapiSiteAnalyticsAutomations site.SiteAnalyticsAutomations
+	siteapiSiteAnalyticsAutomations.Total = count(source.Total)
+	siteapiSiteAnalyticsAutomations.Active = count(source.Active)
+	siteapiSiteAnalyticsAutomations.RunsActive = count(source.RunsActive)
+	siteapiSiteAnalyticsAutomations.RunsCompleted = count(source.RunsCompleted)
+	return siteapiSiteAnalyticsAutomations
+}
+func (c *ConverterImpl) analyticsEventActionToSiteapiSiteAnalyticsEventAction(source analytics.EventAction) site.SiteAnalyticsEventAction {
+	var siteapiSiteAnalyticsEventAction site.SiteAnalyticsEventAction
+	siteapiSiteAnalyticsEventAction.Action = source.Action
+	siteapiSiteAnalyticsEventAction.Count = count(source.Count)
+	siteapiSiteAnalyticsEventAction.Contacts = count(source.Contacts)
+	siteapiSiteAnalyticsEventAction.LastAt = timestamp(source.LastAt)
+	return siteapiSiteAnalyticsEventAction
+}
+func (c *ConverterImpl) analyticsHourCellToSiteapiSiteAnalyticsOpensCell(source analytics.HourCell) site.SiteAnalyticsOpensCell {
+	var siteapiSiteAnalyticsOpensCell site.SiteAnalyticsOpensCell
+	siteapiSiteAnalyticsOpensCell.Weekday = count(source.Weekday)
+	siteapiSiteAnalyticsOpensCell.Hour = count(source.Hour)
+	siteapiSiteAnalyticsOpensCell.Opens = count(source.Opens)
+	return siteapiSiteAnalyticsOpensCell
+}
+func (c *ConverterImpl) analyticsLinkClicksToSiteapiSiteAnalyticsLink(source analytics.LinkClicks) site.SiteAnalyticsLink {
+	var siteapiSiteAnalyticsLink site.SiteAnalyticsLink
+	siteapiSiteAnalyticsLink.URL = source.URL
+	siteapiSiteAnalyticsLink.Clicks = count(source.Clicks)
+	if source.Owners != nil {
+		siteapiSiteAnalyticsLink.Owners = make([]site.SiteAnalyticsLinkOwner, len(source.Owners))
+		for i := 0; i < len(source.Owners); i++ {
+			siteapiSiteAnalyticsLink.Owners[i] = c.analyticsOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source.Owners[i])
+		}
+	}
+	return siteapiSiteAnalyticsLink
+}
+func (c *ConverterImpl) analyticsNewPeoplePointToSiteapiSiteNewPeoplePoint(source analytics.NewPeoplePoint) site.SiteNewPeoplePoint {
+	var siteapiSiteNewPeoplePoint site.SiteNewPeoplePoint
+	siteapiSiteNewPeoplePoint.Date = source.Date
+	siteapiSiteNewPeoplePoint.Manual = count(source.Manual)
+	siteapiSiteNewPeoplePoint.API = count(source.API)
+	siteapiSiteNewPeoplePoint.Tracker = count(source.Tracker)
+	siteapiSiteNewPeoplePoint.Unknown = count(source.Unknown)
+	return siteapiSiteNewPeoplePoint
+}
+func (c *ConverterImpl) analyticsOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source analytics.OwnerClicks) site.SiteAnalyticsLinkOwner {
+	var siteapiSiteAnalyticsLinkOwner site.SiteAnalyticsLinkOwner
+	siteapiSiteAnalyticsLinkOwner.Kind = c.AnalyticsOwnerKindToResource(source.Kind)
+	siteapiSiteAnalyticsLinkOwner.ID = site.EntityId(source.ID)
+	siteapiSiteAnalyticsLinkOwner.Name = source.Name
+	siteapiSiteAnalyticsLinkOwner.Clicks = count(source.Clicks)
+	return siteapiSiteAnalyticsLinkOwner
+}
+func (c *ConverterImpl) analyticsPointToSiteapiSiteAnalyticsPoint(source analytics.Point) site.SiteAnalyticsPoint {
+	var siteapiSiteAnalyticsPoint site.SiteAnalyticsPoint
+	siteapiSiteAnalyticsPoint.Date = source.Date
+	siteapiSiteAnalyticsPoint.Sent = count(source.Sent)
+	siteapiSiteAnalyticsPoint.Opened = count(source.Opened)
+	siteapiSiteAnalyticsPoint.Clicked = count(source.Clicked)
+	return siteapiSiteAnalyticsPoint
+}
+func (c *ConverterImpl) analyticsSubscribedPointToSiteapiSiteAnalyticsSubscribedPoint(source analytics.SubscribedPoint) site.SiteAnalyticsSubscribedPoint {
+	var siteapiSiteAnalyticsSubscribedPoint site.SiteAnalyticsSubscribedPoint
+	siteapiSiteAnalyticsSubscribedPoint.Date = source.Date
+	siteapiSiteAnalyticsSubscribedPoint.Subscribed = count(source.Subscribed)
+	siteapiSiteAnalyticsSubscribedPoint.Unsubscribed = count(source.Unsubscribed)
+	siteapiSiteAnalyticsSubscribedPoint.Net = count(source.Net)
+	return siteapiSiteAnalyticsSubscribedPoint
 }
 func (c *ConverterImpl) linkclicksClicksToSiteapiSiteLinkClicks(source linkclicks.Clicks) site.SiteLinkClicks {
 	var siteapiSiteLinkClicks site.SiteLinkClicks

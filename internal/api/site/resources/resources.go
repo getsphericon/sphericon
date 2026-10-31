@@ -27,6 +27,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/abusewatch"
+	"github.com/getsphericon/sphericon/internal/analytics"
 	"github.com/getsphericon/sphericon/internal/auditapi"
 	"github.com/getsphericon/sphericon/internal/automations"
 	"github.com/getsphericon/sphericon/internal/brandkit"
@@ -176,6 +178,33 @@ type Converter interface {
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:map Currency ReportingCurrency
 	RevenueToResource(source *orders.WorkspaceRevenue) siteapi.SiteAnalyticsRevenue
+
+	// The analytics reports map whole from the module's report, so a field the response gains
+	// with no source fails generation. A figure the module does not hold (the abuse warning, the
+	// Event retention) is attached by the handler.
+	// goverter:useEmptyOnNil:slice
+	// goverter:map Series Timeseries
+	// goverter:ignore AbuseWarning
+	AnalyticsOverviewToResource(source *analytics.Overview) *siteapi.SiteAnalyticsOverview
+	// goverter:map NewInWindow NewInRange
+	AnalyticsContactsToResource(source analytics.Contacts) siteapi.SiteAnalyticsContacts
+	// goverter:map Sent SentCount
+	// goverter:map Opened OpenedCount
+	// goverter:map Clicked ClickedCount
+	AnalyticsEmailToResource(source analytics.Email) siteapi.SiteAnalyticsEmail
+	// goverter:useEmptyOnNil:slice
+	AnalyticsEventActionsToResources(source []analytics.EventAction) []siteapi.SiteAnalyticsEventAction
+	// goverter:useEmptyOnNil:slice
+	AnalyticsSubscribedPeopleToResource(source *analytics.SubscribedPeople) *siteapi.SiteAnalyticsSubscribedPeople
+	// goverter:useEmptyOnNil:slice
+	AnalyticsLinksToResources(source []analytics.LinkClicks) []siteapi.SiteAnalyticsLink
+	// goverter:useEmptyOnNil:slice
+	AnalyticsOpensByHourToResource(source *analytics.OpensByHour) *siteapi.SiteAnalyticsOpensByHour
+	// goverter:useEmptyOnNil:slice
+	// goverter:map Series Timeseries
+	AnalyticsNewPeopleToResource(source *analytics.NewPeople) *siteapi.SiteNewPeopleReport
+	AbuseWarningToResource(source abusewatch.Warning) siteapi.SiteAbuseWarning
+
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	// goverter:useEmptyOnNil:slice
 	EventsToResources(source []*ent.Event) []siteapi.SiteEventResource
@@ -506,6 +535,10 @@ type Converter interface {
 
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
+	// goverter:enum:transform value
+	AbuseMetricToResource(source abusewatch.Metric) siteapi.SiteAbuseMetric
+	// goverter:enum:transform value
+	AnalyticsOwnerKindToResource(source linkclicks.OwnerKind) siteapi.SiteAnalyticsOwnerKind
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) siteapi.SiteAutomationStatus
 	// goverter:enum:transform value

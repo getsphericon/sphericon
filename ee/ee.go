@@ -164,7 +164,7 @@ func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.
 	if err != nil || b.Tier == abuse.TierNone {
 		return nil, err
 	}
-	return &abusewatch.Warning{Domain: b.Domain, Metric: string(b.Metric), Rate: b.Rate()}, nil
+	return &abusewatch.Warning{Domain: b.Domain, Metric: b.Metric, Rate: b.Rate()}, nil
 }
 
 // Jobs is the Edition's river extension: the advanced-retention prune job (ADR 0014),

@@ -10,6 +10,7 @@ import (
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	staffee "github.com/getsphericon/sphericon/gen/staffee"
+	abusewatch "github.com/getsphericon/sphericon/internal/abusewatch"
 	auditapi "github.com/getsphericon/sphericon/internal/auditapi"
 	pagination "github.com/getsphericon/sphericon/internal/pagination"
 	reputation "github.com/getsphericon/sphericon/internal/reputation"
@@ -17,12 +18,12 @@ import (
 
 type StaffConverterImpl struct{}
 
-func (c *StaffConverterImpl) AbuseMetricToResource(source abuse.Metric) staffee.StaffAbuseMetric {
+func (c *StaffConverterImpl) AbuseMetricToResource(source abusewatch.Metric) staffee.StaffAbuseMetric {
 	var staffeeapiStaffAbuseMetric staffee.StaffAbuseMetric
 	switch source {
-	case abuse.Bounce:
+	case abusewatch.MetricBounce:
 		staffeeapiStaffAbuseMetric = staffee.StaffAbuseMetricBounce
-	case abuse.Complaint:
+	case abusewatch.MetricComplaint:
 		staffeeapiStaffAbuseMetric = staffee.StaffAbuseMetricComplaint
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

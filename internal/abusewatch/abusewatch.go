@@ -10,11 +10,18 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 )
 
+// Metric is the rate that breached.
+type Metric string
+
+const (
+	MetricComplaint Metric = "complaint"
+	MetricBounce    Metric = "bounce"
+)
+
 // Warning is a Sending domain in the detector's warning tier.
 type Warning struct {
 	Domain string
-	// Metric is "complaint" or "bounce".
-	Metric string
+	Metric Metric
 	// Rate is 0–1.
 	Rate float64
 }

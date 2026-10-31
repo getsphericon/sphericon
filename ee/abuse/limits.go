@@ -13,6 +13,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/abusewatch"
 	"github.com/getsphericon/sphericon/internal/reputation"
 )
 
@@ -30,12 +31,12 @@ const (
 	TierFreeze
 )
 
-// Metric is the rate that breached.
-type Metric string
+// Metric is the rate that breached. It is core's, which the /site warning carries.
+type Metric = abusewatch.Metric
 
 const (
-	Complaint Metric = "complaint"
-	Bounce    Metric = "bounce"
+	Complaint = abusewatch.MetricComplaint
+	Bounce    = abusewatch.MetricBounce
 )
 
 // Limits are the detector's thresholds in basis points (1 bp = 0.01%), so a comparison is
