@@ -27,7 +27,7 @@ func TestDomainEventsRouterDelivery(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 	ctx := context.Background()
 
-	router, err := events.NewRouter()
+	router, err := events.NewRouter(sqlDB)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(router, "router") })
 	sub, err := events.NewSubscriber(sqlDB, "capture", testhelper.PrivateOutbox())
@@ -79,7 +79,7 @@ func TestDeliveryIgnoresTransactionsOfOtherDatabases(t *testing.T) {
 	require.NoError(t, err)
 
 	sqlDB := testhelper.RealDB(t)
-	router, err := events.NewRouter()
+	router, err := events.NewRouter(sqlDB)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(router, "router") })
 	sub, err := events.NewSubscriber(sqlDB, "capture", testhelper.PrivateOutbox())

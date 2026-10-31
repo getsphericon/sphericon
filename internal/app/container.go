@@ -228,6 +228,7 @@ func (g *gauge) Shutdown() error { return g.unregister() }
 
 type (
 	outboxLagGauge  struct{ gauge }
+	deadLetterGauge struct{ gauge }
 	queueDepthGauge struct{ gauge }
 )
 
@@ -297,6 +298,14 @@ var storagePackage = do.Package(
 			return nil, err
 		}
 		return &outboxLagGauge{gauge{unregister}}, nil
+	}),
+	// The dead letter gauge reads on scrape through the shared pool.
+	do.Lazy(func(i do.Injector) (*deadLetterGauge, error) {
+		unregister, err := events.RegisterDeadLetterGauge(do.MustInvoke[*ent.Client](i))
+		if err != nil {
+			return nil, err
+		}
+		return &deadLetterGauge{gauge{unregister}}, nil
 	}),
 )
 
@@ -424,16 +433,22 @@ var editionPackage = do.Package(
 	// the migrations). The automations subscriber enrolls and the webhooks subscriber
 	// dispatches via the river client.
 	do.Lazy(func(i do.Injector) (*eventsRuntime, error) {
-		edition := do.MustInvoke[*ee.Edition](i)
-		jc := do.MustInvoke[*jobsClient](i)
-		router, err := events.NewRouter()
+		db := do.MustInvoke[Database](i).DB
+		router, err := events.NewRouter(db)
 		if err != nil {
 			return nil, err
 		}
-		if err := events.RegisterSubscribers(router, do.MustInvoke[Database](i).DB, do.MustInvoke[*ent.Client](i), jc.Client, jc.Client, edition.Webhooks(jc.Client), do.MustInvoke[*orders.Module](i), edition.Consumers); err != nil {
+		if err := events.RegisterSubscribers(router, db, do.MustInvoke[events.ConsumerHandlers](i)); err != nil {
 			return nil, err
 		}
 		return &eventsRuntime{router: router}, nil
+	}),
+	// Every consumer group's handler: the router runs them, and a replay of a group's dead
+	// letters runs that group's.
+	do.Lazy(func(i do.Injector) (events.ConsumerHandlers, error) {
+		edition := do.MustInvoke[*ee.Edition](i)
+		jc := do.MustInvoke[*jobsClient](i)
+		return events.Handlers(do.MustInvoke[*ent.Client](i), jc.Client, jc.Client, edition.Webhooks(jc.Client), do.MustInvoke[*orders.Module](i), edition.Consumers), nil
 	}),
 )
 

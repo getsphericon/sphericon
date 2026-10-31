@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/outboxdeadletter"
 	"github.com/getsphericon/sphericon/ent/outboxmessage"
 	"github.com/getsphericon/sphericon/ent/outboxoffset"
 	"github.com/getsphericon/sphericon/ent/passkey"
@@ -154,6 +155,8 @@ type Client struct {
 	OrderMovement *OrderMovementClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
+	// OutboxDeadLetter is the client for interacting with the OutboxDeadLetter builders.
+	OutboxDeadLetter *OutboxDeadLetterClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
 	OutboxMessage *OutboxMessageClient
 	// OutboxOffset is the client for interacting with the OutboxOffset builders.
@@ -260,6 +263,7 @@ func (c *Client) init() {
 	c.Order = NewOrderClient(c.config)
 	c.OrderMovement = NewOrderMovementClient(c.config)
 	c.OutboundMessage = NewOutboundMessageClient(c.config)
+	c.OutboxDeadLetter = NewOutboxDeadLetterClient(c.config)
 	c.OutboxMessage = NewOutboxMessageClient(c.config)
 	c.OutboxOffset = NewOutboxOffsetClient(c.config)
 	c.Passkey = NewPasskeyClient(c.config)
@@ -416,6 +420,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Order:                NewOrderClient(cfg),
 		OrderMovement:        NewOrderMovementClient(cfg),
 		OutboundMessage:      NewOutboundMessageClient(cfg),
+		OutboxDeadLetter:     NewOutboxDeadLetterClient(cfg),
 		OutboxMessage:        NewOutboxMessageClient(cfg),
 		OutboxOffset:         NewOutboxOffsetClient(cfg),
 		Passkey:              NewPasskeyClient(cfg),
@@ -499,6 +504,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Order:                NewOrderClient(cfg),
 		OrderMovement:        NewOrderMovementClient(cfg),
 		OutboundMessage:      NewOutboundMessageClient(cfg),
+		OutboxDeadLetter:     NewOutboxDeadLetterClient(cfg),
 		OutboxMessage:        NewOutboxMessageClient(cfg),
 		OutboxOffset:         NewOutboxOffsetClient(cfg),
 		Passkey:              NewPasskeyClient(cfg),
@@ -566,13 +572,13 @@ func (c *Client) Use(hooks ...Hook) {
 		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
 		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
 		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
-		c.OutboxMessage, c.OutboxOffset, c.Passkey, c.PasskeyChallenge,
-		c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode,
-		c.RiverJob, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
-		c.SchemaState, c.Segment, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset, c.Passkey,
+		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
+		c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring, c.RuleVersion,
+		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendingDomain,
+		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
+		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -589,13 +595,13 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
 		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
 		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
-		c.OutboxMessage, c.OutboxOffset, c.Passkey, c.PasskeyChallenge,
-		c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode,
-		c.RiverJob, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
-		c.SchemaState, c.Segment, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.Suppression, c.Tag,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.OutboxDeadLetter, c.OutboxMessage, c.OutboxOffset, c.Passkey,
+		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
+		c.RecoveryCode, c.RiverJob, c.Rule, c.RuleFiring, c.RuleVersion,
+		c.RuleVersionTrigger, c.SchemaState, c.Segment, c.SendingDomain,
+		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
+		c.Suppression, c.Tag, c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User,
+		c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -670,6 +676,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OrderMovement.mutate(ctx, m)
 	case *OutboundMessageMutation:
 		return c.OutboundMessage.mutate(ctx, m)
+	case *OutboxDeadLetterMutation:
+		return c.OutboxDeadLetter.mutate(ctx, m)
 	case *OutboxMessageMutation:
 		return c.OutboxMessage.mutate(ctx, m)
 	case *OutboxOffsetMutation:
@@ -6453,6 +6461,139 @@ func (c *OutboundMessageClient) mutate(ctx context.Context, m *OutboundMessageMu
 	}
 }
 
+// OutboxDeadLetterClient is a client for the OutboxDeadLetter schema.
+type OutboxDeadLetterClient struct {
+	config
+}
+
+// NewOutboxDeadLetterClient returns a client for the OutboxDeadLetter from the given config.
+func NewOutboxDeadLetterClient(c config) *OutboxDeadLetterClient {
+	return &OutboxDeadLetterClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `outboxdeadletter.Hooks(f(g(h())))`.
+func (c *OutboxDeadLetterClient) Use(hooks ...Hook) {
+	c.hooks.OutboxDeadLetter = append(c.hooks.OutboxDeadLetter, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `outboxdeadletter.Intercept(f(g(h())))`.
+func (c *OutboxDeadLetterClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OutboxDeadLetter = append(c.inters.OutboxDeadLetter, interceptors...)
+}
+
+// Create returns a builder for creating a OutboxDeadLetter entity.
+func (c *OutboxDeadLetterClient) Create() *OutboxDeadLetterCreate {
+	mutation := newOutboxDeadLetterMutation(c.config, OpCreate)
+	return &OutboxDeadLetterCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OutboxDeadLetter entities.
+func (c *OutboxDeadLetterClient) CreateBulk(builders ...*OutboxDeadLetterCreate) *OutboxDeadLetterCreateBulk {
+	return &OutboxDeadLetterCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OutboxDeadLetterClient) MapCreateBulk(slice any, setFunc func(*OutboxDeadLetterCreate, int)) *OutboxDeadLetterCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OutboxDeadLetterCreateBulk{err: fmt.Errorf("calling to OutboxDeadLetterClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OutboxDeadLetterCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OutboxDeadLetterCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OutboxDeadLetter.
+func (c *OutboxDeadLetterClient) Update() *OutboxDeadLetterUpdate {
+	mutation := newOutboxDeadLetterMutation(c.config, OpUpdate)
+	return &OutboxDeadLetterUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OutboxDeadLetterClient) UpdateOne(_m *OutboxDeadLetter) *OutboxDeadLetterUpdateOne {
+	mutation := newOutboxDeadLetterMutation(c.config, OpUpdateOne, withOutboxDeadLetter(_m))
+	return &OutboxDeadLetterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OutboxDeadLetterClient) UpdateOneID(id int64) *OutboxDeadLetterUpdateOne {
+	mutation := newOutboxDeadLetterMutation(c.config, OpUpdateOne, withOutboxDeadLetterID(id))
+	return &OutboxDeadLetterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OutboxDeadLetter.
+func (c *OutboxDeadLetterClient) Delete() *OutboxDeadLetterDelete {
+	mutation := newOutboxDeadLetterMutation(c.config, OpDelete)
+	return &OutboxDeadLetterDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OutboxDeadLetterClient) DeleteOne(_m *OutboxDeadLetter) *OutboxDeadLetterDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OutboxDeadLetterClient) DeleteOneID(id int64) *OutboxDeadLetterDeleteOne {
+	builder := c.Delete().Where(outboxdeadletter.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OutboxDeadLetterDeleteOne{builder}
+}
+
+// Query returns a query builder for OutboxDeadLetter.
+func (c *OutboxDeadLetterClient) Query() *OutboxDeadLetterQuery {
+	return &OutboxDeadLetterQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOutboxDeadLetter},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OutboxDeadLetter entity by its id.
+func (c *OutboxDeadLetterClient) Get(ctx context.Context, id int64) (*OutboxDeadLetter, error) {
+	return c.Query().Where(outboxdeadletter.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OutboxDeadLetterClient) GetX(ctx context.Context, id int64) *OutboxDeadLetter {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *OutboxDeadLetterClient) Hooks() []Hook {
+	return c.hooks.OutboxDeadLetter
+}
+
+// Interceptors returns the client interceptors.
+func (c *OutboxDeadLetterClient) Interceptors() []Interceptor {
+	return c.inters.OutboxDeadLetter
+}
+
+func (c *OutboxDeadLetterClient) mutate(ctx context.Context, m *OutboxDeadLetterMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OutboxDeadLetterCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OutboxDeadLetterUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OutboxDeadLetterUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OutboxDeadLetterDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OutboxDeadLetter mutation op: %q", m.Op())
+	}
+}
+
 // OutboxMessageClient is a client for the OutboxMessage schema.
 type OutboxMessageClient struct {
 	config
@@ -11880,12 +12021,12 @@ type (
 		ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
 		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
 		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxMessage,
-		OutboxOffset, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, Segment, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxDeadLetter,
+		OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge, PendingSignup,
+		PrivateRelayRange, ProviderLimiter, RecoveryCode, RiverJob, Rule, RuleFiring,
+		RuleVersion, RuleVersionTrigger, SchemaState, Segment, SendingDomain,
+		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, Suppression,
+		Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
 		Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
@@ -11894,12 +12035,12 @@ type (
 		ConsentRecord, Contact, ContactTag, CustomField, EmailTemplate, Erasure, Event,
 		HeldOrderEvent, Hold, InstanceState, Integration, Invitation, JoinDomain,
 		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxMessage,
-		OutboxOffset, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, RiverJob, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, Segment, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, Suppression, Tag,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, OutboxDeadLetter,
+		OutboxMessage, OutboxOffset, Passkey, PasskeyChallenge, PendingSignup,
+		PrivateRelayRange, ProviderLimiter, RecoveryCode, RiverJob, Rule, RuleFiring,
+		RuleVersion, RuleVersionTrigger, SchemaState, Segment, SendingDomain,
+		ServiceCredential, SignupItem, SignupSurveyResponse, StaffMember, Suppression,
+		Tag, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
 		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )

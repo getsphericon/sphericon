@@ -98,7 +98,7 @@ func runHandledDomainEvent(t *testing.T, srvAddr, contactEmail string) {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
 
-	router, err := events.NewRouter()
+	router, err := events.NewRouter(sqlDB)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(router, "router") })
 	sub, err := events.NewSubscriber(sqlDB, "label-policy", testhelper.PrivateOutbox())

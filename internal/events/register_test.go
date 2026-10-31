@@ -40,7 +40,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	ctx := context.Background()
 	const dest = "registered-bounce@example.com"
 
-	router, err := events.NewRouter()
+	router, err := events.NewRouter(sqlDB)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(router, "router") })
 	cfg, err := config.Load("test")
@@ -53,7 +53,7 @@ func TestRegisterSubscribersFansEveryEventOutToAllConsumers(t *testing.T) {
 	require.NoError(t, err)
 	reader, err := river.NewClient(riverdatabasesql.New(sqlDB), &river.Config{})
 	require.NoError(t, err)
-	require.NoError(t, events.RegisterSubscribers(router, sqlDB, client, queue, queue, queue, orders.New(), nil, testhelper.PrivateOutbox()))
+	require.NoError(t, events.RegisterSubscribers(router, sqlDB, events.Handlers(client, queue, queue, queue, orders.New(), nil), testhelper.PrivateOutbox()))
 
 	runCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)

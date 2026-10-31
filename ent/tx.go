@@ -80,6 +80,8 @@ type Tx struct {
 	OrderMovement *OrderMovementClient
 	// OutboundMessage is the client for interacting with the OutboundMessage builders.
 	OutboundMessage *OutboundMessageClient
+	// OutboxDeadLetter is the client for interacting with the OutboxDeadLetter builders.
+	OutboxDeadLetter *OutboxDeadLetterClient
 	// OutboxMessage is the client for interacting with the OutboxMessage builders.
 	OutboxMessage *OutboxMessageClient
 	// OutboxOffset is the client for interacting with the OutboxOffset builders.
@@ -306,6 +308,7 @@ func (tx *Tx) init() {
 	tx.Order = NewOrderClient(tx.config)
 	tx.OrderMovement = NewOrderMovementClient(tx.config)
 	tx.OutboundMessage = NewOutboundMessageClient(tx.config)
+	tx.OutboxDeadLetter = NewOutboxDeadLetterClient(tx.config)
 	tx.OutboxMessage = NewOutboxMessageClient(tx.config)
 	tx.OutboxOffset = NewOutboxOffsetClient(tx.config)
 	tx.Passkey = NewPasskeyClient(tx.config)
