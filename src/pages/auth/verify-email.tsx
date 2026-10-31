@@ -9,7 +9,10 @@ import { useTranslation } from 'react-i18next'
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { AnchorLink } from '../../components/RouterLink.tsx'
-import { siteAuthVerifyEmailMutation } from '../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteAuthVerifyEmailMutation,
+  siteAuthVerifyEmailMutationKey,
+} from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteAuthVerifyEmail } from '../../generated/site/sdk.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -147,7 +150,9 @@ function PasswordForm({ token }: { token: string }) {
 // signal, so one that was sent is not cut off and sent a second time.
 function Verification({ token }: { token: string }) {
   const { data } = useSuspenseQuery({
-    queryKey: ['siteAuthVerifyEmail', token],
+    // A POST has no generated query key, so its mutation key names the operation and the token.
+    // A Site Auth mutation invalidates it by that key's tag, which a static query never refetches.
+    queryKey: siteAuthVerifyEmailMutationKey({ body: { token } }),
     queryFn: async () => {
       try {
         const { data: verified } = await siteAuthVerifyEmail({

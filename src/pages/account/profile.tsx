@@ -24,7 +24,11 @@ import {
   siteUserSignOutEverywhereMutation,
   siteUserUpdateMeMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteEmailChangeInput, SiteUserResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteEmailChangeInput,
+  SiteUpdateMeInput,
+  SiteUserResource,
+} from '../../generated/site/types.gen.ts'
 import { useActionModal } from '../../hooks/useActionModal.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as loginRoute } from '../../routes/login.tsx'
@@ -38,7 +42,7 @@ import { OptionalConsentsSection } from './OptionalConsentsSection.tsx'
 function ProfileForm({ user }: { user: SiteUserResource }) {
   const { t } = useTranslation()
 
-  const form = useForm<{ name: string; timezone: string | null }>({
+  const form = useForm<Required<Pick<SiteUpdateMeInput, 'name' | 'timezone'>>>({
     initialValues: { name: user.name, timezone: user.timezone },
   })
 

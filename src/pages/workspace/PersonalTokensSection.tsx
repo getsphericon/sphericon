@@ -29,7 +29,10 @@ import {
   sitePersonalTokensGrantableScopesOptions,
   sitePersonalTokensListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { PersonalScope, SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
+import type {
+  SiteCreatePersonalTokenInput,
+  SiteWorkspaceResource,
+} from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useDateFormat } from '../../hooks/useDateFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -133,7 +136,9 @@ export function PersonalTokensSection({ workspace }: { workspace: SiteWorkspaceR
     enabled: createOpened,
   })
 
-  const form = useForm<{ name: string; scopes: PersonalScope[]; lifetime: Lifetime }>({
+  const form = useForm<
+    Pick<SiteCreatePersonalTokenInput, 'name' | 'scopes'> & { lifetime: Lifetime }
+  >({
     initialValues: { name: '', scopes: [], lifetime: 'never' },
   })
 

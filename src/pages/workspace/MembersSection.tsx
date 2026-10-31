@@ -37,7 +37,7 @@ import {
   siteUserGetMeOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
-  SiteInvitableRole,
+  SiteCreateInvitationInput,
   SiteMembershipRole,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
@@ -215,7 +215,7 @@ export function MembersSection({ workspace }: { workspace: SiteWorkspaceResource
   const canManage = can(workspace, 'members:manage')
   const canResetSecondFactor = can(workspace, 'second_factor:manage')
 
-  const form = useForm<{ email: string; role: SiteInvitableRole }>({
+  const form = useForm<SiteCreateInvitationInput>({
     initialValues: { email: '', role: 'member' },
   })
 

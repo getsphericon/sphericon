@@ -35,6 +35,7 @@ import {
   siteWebhooksUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
+  CreateWebhookInput,
   SiteWebhookEndpointResource,
   SiteWebhookFailure,
   SiteWebhookTestResult,
@@ -278,7 +279,7 @@ export function WebhooksSection({ workspaceId }: { workspaceId: string }) {
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false)
   const [testingId, setTestingId] = useState<string | null>(null)
 
-  const form = useForm<{ url: string; eventTypes: string[] }>({
+  const form = useForm<Required<Pick<CreateWebhookInput, 'url' | 'eventTypes'>>>({
     initialValues: { url: '', eventTypes: [] },
   })
 

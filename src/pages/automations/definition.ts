@@ -5,6 +5,7 @@ import * as z from 'zod'
 import type {
   SiteAutomationHttpHeader,
   SiteAutomationStep,
+  SiteAutomationVersion,
 } from '../../generated/site/types.gen.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import {
@@ -80,11 +81,10 @@ const TRIGGER_NODE_ID = 'trigger'
 
 // What the Trigger node holds: the event that enrolls a Contact, the events that end an
 // Enrollment early and the one that ends it as having reached its goal (#751).
-export interface AutomationTrigger {
-  triggerEvent: string
-  exitEvents: string[]
-  goalEvent: string | null
-}
+export type AutomationTrigger = Pick<
+  SiteAutomationVersion,
+  'triggerEvent' | 'exitEvents' | 'goalEvent'
+>
 
 // The canvas holds the exit events as one line each, the goal event as text ('' for none).
 function triggerProperties(trigger: AutomationTrigger): Record<string, unknown> {

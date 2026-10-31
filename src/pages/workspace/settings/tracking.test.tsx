@@ -5,7 +5,10 @@ import {
   handleSiteSendingDomainsList,
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
-import type { SiteSendingDomainResource } from '../../../generated/site/types.gen.ts'
+import type {
+  SiteSendingDomainResource,
+  SiteTrackingState,
+} from '../../../generated/site/types.gen.ts'
 import { Route as recentActivityRoute } from '../../../routes/workspaces/$workspaceId/analytics/recent-activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { problem } from '../../../test/problem.ts'
@@ -76,7 +79,7 @@ test('the snippet and the test command use the tracker origin, not the app origi
     .toBeInTheDocument()
 })
 
-const sendingDomain = (host: string, state: 'pending' | 'serving') =>
+const sendingDomain = (host: string, state: SiteTrackingState) =>
   ({
     id: host,
     domain: host.replace('track.', ''),
