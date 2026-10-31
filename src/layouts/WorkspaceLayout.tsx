@@ -2,8 +2,9 @@ import { Alert, Anchor, Group, Select, Text } from '@mantine/core'
 import { IconPlayerPause, IconPlus } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMatchRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useCallback, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { AppNavbar } from '../components/AppNavbar.tsx'
 import { SecondFactorBlocked, SecondFactorGraceBanner } from '../components/SecondFactorNotice.tsx'
@@ -155,24 +156,30 @@ function HoldBanner({
   )
 }
 
-// useSecondFactorRefused reports whether any query of the Workspace was refused
-// with 403 second_factor_required since the Workspace list last loaded (listedAt):
-// the server's word that the grace is over, even when this browser's clock says
-// otherwise. A reload of the list after the refusal (the requirement was turned off,
-// or the User enrolled) lifts it; a page still refused refuses again.
+// A generated query key of a Workspace's operation: its path names the Workspace.
+const workspaceQueryKey = z.tuple([z.object({ path: z.object({ workspaceId: z.string() }) })])
+
+// useSecondFactorRefused reports whether a query of the Workspace was refused with 403
+// second_factor_required since the Workspace list last loaded (listedAt): the server's word that
+// the grace is over, even when this browser's clock says otherwise. A reload of the list after
+// the refusal (the requirement was turned off, or the User enrolled) lifts it; a page still
+// refused refuses again.
 function useSecondFactorRefused(workspaceId: string, listedAt: number) {
   const queryCache = useQueryClient().getQueryCache()
-  const [refused, setRefused] = useState<{ workspaceId: string; at: number }>()
-  useEffect(
-    () =>
-      queryCache.subscribe((event) => {
-        if (event.type === 'updated' && isSecondFactorRequiredError(event.query.state.error)) {
-          setRefused({ workspaceId, at: event.query.state.errorUpdatedAt })
-        }
-      }),
-    [queryCache, workspaceId],
+  const subscribe = useCallback(
+    (onChange: () => void) => queryCache.subscribe(onChange),
+    [queryCache],
   )
-  return refused?.workspaceId === workspaceId && refused.at >= listedAt
+  return useSyncExternalStore(subscribe, () =>
+    queryCache
+      .getAll()
+      .some(
+        (query) =>
+          isSecondFactorRequiredError(query.state.error) &&
+          query.state.errorUpdatedAt >= listedAt &&
+          workspaceQueryKey.safeParse(query.queryKey).data?.[0].path.workspaceId === workspaceId,
+      ),
+  )
 }
 
 // WorkspaceLayout is the shell for workspace-scoped pages (overview, contacts,
