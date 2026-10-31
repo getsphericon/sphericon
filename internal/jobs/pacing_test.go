@@ -50,3 +50,16 @@ func TestRiverAdapterSchedulesRecipientJobsAtTheModulesTimes(t *testing.T) {
 		assert.InDelta(t, 500*time.Millisecond, times[i].Sub(times[i-1]), float64(5*time.Millisecond), "one over the rate")
 	}
 }
+
+// A plan job that fails after inserting some recipient jobs is retried, and the retry plans the
+// same recipients again: river refuses the second job of a recipient, so each has exactly one.
+func TestARetriedPlanLeavesOneJobPerRecipient(t *testing.T) {
+	e := newRiverEnv(t)
+
+	e.planBroadcast(t, fixtures.BroadcastDraftID)
+	first := len(e.recipientJobTimes(t))
+	e.planBroadcast(t, fixtures.BroadcastDraftID)
+
+	require.Positive(t, first)
+	assert.Len(t, e.recipientJobTimes(t), first)
+}
