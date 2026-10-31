@@ -203,6 +203,7 @@ namespace SitePasskeys {
 
         @body body: SitePasskey;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem
@@ -243,6 +244,7 @@ namespace SitePasskeys {
         /** The acting session reissued with the check */
         @header("Set-Cookie") setCookie: string;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
 
@@ -255,6 +257,7 @@ namespace SitePasskeys {
         @statusCode statusCode: 200;
         @body body: SitePasskey;
       }
+    | BadRequestProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
@@ -273,6 +276,7 @@ namespace SitePasskeys {
         /** The acting session reissued under the new session epoch */
         @header("Set-Cookie") setCookie: string;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem

@@ -66,6 +66,7 @@ namespace SiteMemberships {
         @statusCode statusCode: 200;
         @body body: SiteMembershipResource[];
       }
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Change a member's role (owner/admin only; owner-only to grant owner) */
@@ -78,6 +79,7 @@ namespace SiteMemberships {
     @body body: SiteUpdateMembershipInput,
   ):
     | SiteMembershipResource
+    | BadRequestProblem
     | NotFoundProblem
     | ForbiddenProblem
     | UnprocessableEntityProblem;
@@ -89,6 +91,7 @@ namespace SiteMemberships {
   @requiresPermissions(#[Permission.membersManage])
   op delete(...ResourceParameters<SiteMembershipResource>):
     | NoContentResponse
+    | BadRequestProblem
     | NotFoundProblem
     | ForbiddenProblem
     | UnprocessableEntityProblem;
@@ -102,6 +105,7 @@ namespace SiteMemberships {
   @requiresPermissions(#[Permission.secondFactorManage])
   op resetSecondFactor(...ResourceParameters<SiteMembershipResource>):
     | NoContentResponse
+    | BadRequestProblem
     | NotFoundProblem
     | ForbiddenProblem
     | UnprocessableEntityProblem;

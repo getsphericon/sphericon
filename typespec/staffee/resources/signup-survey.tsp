@@ -135,6 +135,7 @@ namespace StaffSignupSurvey {
   @route("/users/{userId}")
   op get(@path userId: EntityId):
     | StaffSignupSurveyResponseResource
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;
 }

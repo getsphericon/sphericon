@@ -139,7 +139,7 @@ func TestAcceptingAStaleOrMissingVersionIsRefusedAndRecordsNothing(t *testing.T)
 			after := currentAnswers(t, env, fixtures.MemberMaryID)
 			pending := pendingKeys(t, mary)
 
-			assert.IsType(t, &siteapi.ProblemDetails{}, res)
+			assert.IsType(t, &siteapi.SiteUserAcceptPendingUnprocessableEntity{}, res)
 			assert.Equal(t, before, after)
 			assert.Equal(t, []string{fixtures.ServiceTermsKey}, pending)
 		})

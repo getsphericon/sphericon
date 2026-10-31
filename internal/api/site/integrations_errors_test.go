@@ -37,7 +37,7 @@ func TestSiteIntegrationsErrorBranches(t *testing.T) {
 
 		nf, err := c.SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: foreign})
 		require.NoError(t, err)
-		assert.IsType(t, &siteapi.ProblemDetails{}, nf)
+		assert.IsType(t, &siteapi.SiteIntegrationsListNotFound{}, nf)
 
 		_, err = env.SiteAnonymous(t).SiteIntegrationsList(ctx, siteapi.SiteIntegrationsListParams{WorkspaceId: acme})
 		require.Error(t, err)

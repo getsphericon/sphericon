@@ -20,6 +20,18 @@ func encodeCollectEventsCreateResponse(response CollectEventsCreateRes, w http.R
 
 		return nil
 
+	case *CollectEventsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *CollectEventsCreateUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
@@ -161,6 +173,18 @@ func encodeCollectIdentifyCreateResponse(response CollectIdentifyCreateRes, w ht
 	case *CollectOkResponse:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *CollectIdentifyCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

@@ -79,6 +79,7 @@ namespace SiteSuppressions {
         @statusCode statusCode: 201;
         @body body: SiteSuppressionResource;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;

@@ -703,8 +703,20 @@ if [ -n "${usage_registry:-}" ]; then helm push "$pkg" "$usage_registry"; fi
 '''
 
 ["check:openapi"]
-description = "vacuum lints the generated OpenAPI documents (the recommended ruleset; a finding of severity error fails)"
-run = "for f in openapi/*.openapi.json; do vacuum lint --no-banner --silent --no-style --fail-severity error \"$f\" || exit 1; done"
+description = "vacuum lints the generated OpenAPI documents (the recommended ruleset, with the rules of vacuum.yaml for the surfaces our servers answer; a finding of severity error fails)"
+# The Telemetry document is the contract of a receiver outside this repository (ADR 0032): the
+# rules about what our servers answer do not apply to it.
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+for f in openapi/*.openapi.json; do
+  if [ "$f" = openapi/telemetry.openapi.json ]; then
+    vacuum lint --no-banner --silent --no-style --fail-severity error "$f"
+  else
+    vacuum lint --no-banner --silent --no-style --ruleset vacuum.yaml --fail-severity error "$f"
+  fi
+done
+'''
 
 ["check:osv"]
 description = "osv-scanner over go.mod and pnpm-lock.yaml (nightly, like govulncheck: its answer changes with the advisory database, not with the diff); the advisories that stand are in osv-scanner.toml"

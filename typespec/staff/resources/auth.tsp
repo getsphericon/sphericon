@@ -71,6 +71,7 @@ namespace StaffAuth {
         @statusCode statusCode: 200;
         @body body: StaffLoginResult;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem;
 
@@ -90,6 +91,7 @@ namespace StaffAuth {
 
         @body body: StaffResource;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem;
 

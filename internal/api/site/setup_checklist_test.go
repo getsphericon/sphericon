@@ -41,7 +41,7 @@ func TestSiteSetupChecklistHidesAForeignWorkspace(t *testing.T) {
 
 	res, err := c.SiteSetupChecklistGet(context.Background(), siteapi.SiteSetupChecklistGetParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	assert.IsType(t, &siteapi.SiteSetupChecklistGetNotFound{}, res)
 }
 
 func TestSiteSetupChecklistStates(t *testing.T) {

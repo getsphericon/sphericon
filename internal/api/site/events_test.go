@@ -80,7 +80,7 @@ func TestSiteEventsListUnknownWorkspace(t *testing.T) {
 
 	res, err := c.SiteEventsList(context.Background(), siteapi.SiteEventsListParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	assert.IsType(t, &siteapi.SiteEventsListNotFound{}, res)
 }
 
 // SiteEventsActions returns the workspace's distinct actions, sorted — the
@@ -112,5 +112,5 @@ func TestSiteEventsActionsUnknownWorkspace(t *testing.T) {
 
 	res, err := c.SiteEventsActions(context.Background(), siteapi.SiteEventsActionsParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	assert.IsType(t, &siteapi.SiteEventsActionsNotFound{}, res)
 }

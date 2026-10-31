@@ -76,6 +76,7 @@ namespace SiteOAuth {
         @statusCode statusCode: 200;
         @body body: SiteOAuthAuthorizationRequest;
       }
+    | BadRequestProblem
     | UnprocessableEntityProblem
     | NotFoundProblem;
 
@@ -86,6 +87,7 @@ namespace SiteOAuth {
         @statusCode statusCode: 200;
         @body body: SiteOAuthDecisionResult;
       }
+    | BadRequestProblem
     | UnprocessableEntityProblem
     | ForbiddenProblem
     | NotFoundProblem;

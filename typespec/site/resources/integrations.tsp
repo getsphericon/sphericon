@@ -195,6 +195,7 @@ namespace SiteIntegrations {
         @statusCode statusCode: 200;
         @body body: SiteIntegrationResource[];
       }
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Create an integration. Owners and admins only. */
@@ -210,6 +211,7 @@ namespace SiteIntegrations {
         @statusCode statusCode: 201;
         @body body: SiteIntegrationResource;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem

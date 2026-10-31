@@ -73,8 +73,16 @@ type SiteAuthSignUpRes interface {
 	siteAuthSignUpRes()
 }
 
+type SiteAuthSigninCallbackRes interface {
+	siteAuthSigninCallbackRes()
+}
+
 type SiteAuthSigninNotMeRes interface {
 	siteAuthSigninNotMeRes()
+}
+
+type SiteAuthSigninPendingDeclineRes interface {
+	siteAuthSigninPendingDeclineRes()
 }
 
 type SiteAuthSigninPendingRes interface {

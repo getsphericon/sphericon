@@ -29,7 +29,7 @@ func TestSiteAnalyticsEventsRequireOwnedWorkspace(t *testing.T) {
 
 	out, err := c.SiteAnalyticsEvents(context.Background(), siteapi.SiteAnalyticsEventsParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, out)
+	assert.IsType(t, &siteapi.SiteAnalyticsEventsNotFound{}, out)
 }
 
 func TestSiteAnalyticsEventsAreVisibleToEveryRole(t *testing.T) {
@@ -67,7 +67,7 @@ func TestSiteAnalyticsRequireOwnedWorkspace(t *testing.T) {
 
 	out, err := c.SiteAnalyticsOverview(context.Background(), siteapi.SiteAnalyticsOverviewParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, out)
+	assert.IsType(t, &siteapi.SiteAnalyticsOverviewNotFound{}, out)
 }
 
 // The handler only maps the analytics module's Overview (rules are tested in

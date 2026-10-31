@@ -68,6 +68,7 @@ namespace SiteTokens {
         @statusCode statusCode: 200;
         @body body: SiteApiTokenResource[];
       }
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Create an API token; the full secret is returned once. Owners and admins only. */
@@ -83,6 +84,7 @@ namespace SiteTokens {
         @statusCode statusCode: 201;
         @body body: SiteCreateTokenResponse;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -97,6 +99,7 @@ namespace SiteTokens {
     @body body: SiteUpdateTokenInput,
   ):
     | SiteApiTokenResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;

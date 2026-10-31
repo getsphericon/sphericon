@@ -137,6 +137,7 @@ interface SiteContacts
   ):
     | SiteContactExportDownload
     | SiteContactExportTypedDownload
+    | BadRequestProblem
     | UnprocessableEntityProblem
     | ForbiddenProblem
     | NotFoundProblem;
@@ -157,6 +158,7 @@ interface SiteContacts
     @maxLength(320) @query email: string,
   ):
     | SiteContactHoldings
+    | BadRequestProblem
     | UnprocessableEntityProblem
     | ForbiddenProblem
     | NotFoundProblem;
@@ -179,6 +181,7 @@ interface SiteContacts
     @maxLength(320) @query email: string,
   ):
     | NoContentResponse
+    | BadRequestProblem
     | UnprocessableEntityProblem
     | ForbiddenProblem
     | NotFoundProblem;

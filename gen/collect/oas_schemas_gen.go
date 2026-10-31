@@ -108,6 +108,10 @@ func (s *CollectEventInputProperties) init() CollectEventInputProperties {
 	return m
 }
 
+type CollectEventsCreateBadRequest ProblemDetails
+
+func (*CollectEventsCreateBadRequest) collectEventsCreateRes() {}
+
 // CollectEventsCreateNoContent is response for CollectEventsCreate operation.
 type CollectEventsCreateNoContent struct{}
 
@@ -168,6 +172,10 @@ func (s *CollectEventsInput) GetEvents() []CollectEventInput {
 func (s *CollectEventsInput) SetEvents(val []CollectEventInput) {
 	s.Events = val
 }
+
+type CollectIdentifyCreateBadRequest ProblemDetails
+
+func (*CollectIdentifyCreateBadRequest) collectIdentifyCreateRes() {}
 
 type CollectIdentifyCreateRequestEntityTooLarge ProblemDetails
 

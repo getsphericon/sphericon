@@ -46,6 +46,7 @@ interface WorkspaceCrudKept<
         @statusCode statusCode: 201;
         @body body: Resource;
       }
+    | BadRequestProblem
     | NotFoundProblem
     | WriteConflict
     | UnprocessableEntityProblem;

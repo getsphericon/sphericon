@@ -107,6 +107,10 @@ func requireProblem(t *testing.T, res any, status int) {
 		assert.EqualValues(t, status, p.Status.Value)
 	case *staffapi.ProblemDetailsHeaders:
 		assert.EqualValues(t, status, p.Response.Status.Value)
+	case *staffapi.StaffAuthLoginUnauthorized:
+		assert.EqualValues(t, status, p.Status.Value)
+	case *staffapi.StaffAuthSecondFactorUnauthorized:
+		assert.EqualValues(t, status, p.Status.Value)
 	default:
 		require.Failf(t, "not a problem", "got %T", res)
 	}

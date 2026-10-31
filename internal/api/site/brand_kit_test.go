@@ -221,7 +221,7 @@ func TestSiteBrandKitIsWorkspaceScoped(t *testing.T) {
 	outsider := env.SiteActor(t, fixtures.OutsiderOscarEmail)
 	res, err := outsider.SiteBrandKitGet(context.Background(), siteapi.SiteBrandKitGetParams{WorkspaceId: fixtures.VandelayPublicID})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	assert.IsType(t, &siteapi.SiteBrandKitGetNotFound{}, res)
 	assert.IsType(t, &siteapi.SiteBrandKitSaveNotFound{}, saveBrandKit(t, outsider, fixtures.VandelayPublicID, brandKitInput()))
 
 	owner := env.SiteActor(t, fixtures.VandelayOwnerArtEmail)

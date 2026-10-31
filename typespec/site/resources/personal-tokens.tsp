@@ -75,6 +75,7 @@ namespace SitePersonalTokens {
         @statusCode statusCode: 200;
         @body body: SitePersonalTokenResource[];
       }
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Mint a Personal token of the caller's own; the full secret is returned once. Any member may
@@ -105,6 +106,7 @@ namespace SitePersonalTokens {
   @requiresPermissions(#[])
   op delete(...ResourceParameters<SitePersonalTokenResource>):
     | NoContentResponse
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** The scopes the caller's Role may grant to a Personal token in the Workspace, in the
@@ -117,5 +119,6 @@ namespace SitePersonalTokens {
         @statusCode statusCode: 200;
         @body body: PersonalScope[];
       }
+    | BadRequestProblem
     | NotFoundProblem;
 }

@@ -57,7 +57,7 @@ func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAut
 // the login page with the Reason, which the SPA renders. A callback that is not for a flow
 // this browser began (no cookie, another state) is refused before the provider is asked
 // anything.
-func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.SiteAuthSigninCallbackParams) (*siteapi.SiteAuthSigninCallbackFound, error) {
+func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.SiteAuthSigninCallbackParams) (siteapi.SiteAuthSigninCallbackRes, error) {
 	if !h.signin.Has(params.Provider) {
 		return h.signinRefused(signin.Flow{}, signin.ReasonProviderUnavailable), nil
 	}

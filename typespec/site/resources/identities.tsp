@@ -56,6 +56,7 @@ namespace SiteIdentities {
         /** The flow cookie */
         @header("Set-Cookie") setCookie: string;
       }
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Unlink an identity. 409 when it would leave the User no way to sign in (no password
@@ -70,6 +71,7 @@ namespace SiteIdentities {
         /** The acting session reissued under the new session epoch */
         @header("Set-Cookie") setCookie: string;
       }
+    | BadRequestProblem
     | NotFoundProblem
     | ConflictProblem;
 }

@@ -221,9 +221,10 @@ func TestASubmitOutsideTheContractStoresNothingAndKeepsTheSurveyDue(t *testing.T
 			env := surveyOn(t)
 			newcomer := signUpForSurvey(t, env)
 
-			_, err := newcomer.SiteSignupSurveySubmit(t.Context(), in)
+			res, err := newcomer.SiteSignupSurveySubmit(t.Context(), in)
 
-			require.Error(t, err)
+			require.NoError(t, err)
+			assert.IsType(t, &siteapi.SiteSignupSurveySubmitBadRequest{}, res)
 			assert.False(t, hasResponse(t, env, surveyEmail))
 			assert.True(t, surveyDue(t, newcomer))
 		})

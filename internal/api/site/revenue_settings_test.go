@@ -103,10 +103,11 @@ func TestAWindowOutsideItsBoundsIsRefused(t *testing.T) {
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	for _, days := range []siteapi.AttributionWindowDays{0, 91} {
-		_, err := owner.SiteWorkspacesUpdateRevenueSettings(context.Background(),
+		res, err := owner.SiteWorkspacesUpdateRevenueSettings(context.Background(),
 			&siteapi.SiteUpdateRevenueSettingsInput{AttributionWindowDays: siteapi.NewOptAttributionWindowDays(days)},
 			siteapi.SiteWorkspacesUpdateRevenueSettingsParams{WorkspaceId: fixtures.AcmePublicID})
-		require.ErrorContains(t, err, "400", "days=%d", days)
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteWorkspacesUpdateRevenueSettingsBadRequest{}, res, "days=%d", days)
 	}
 
 	assert.Equal(t, siteapi.AttributionWindowDays(5), revenueSettings(t, owner).AttributionWindowDays)

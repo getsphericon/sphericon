@@ -192,6 +192,7 @@ namespace SiteAuth {
         /** The Sign-up browser cookie, absent when the install does not require verification */
         @header("Set-Cookie") setCookie?: string;
       }
+    | BadRequestProblem
     | ConflictProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;
@@ -216,6 +217,7 @@ namespace SiteAuth {
 
         @body body: SiteLoginResult;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | ForbiddenProblem
     | TooManyRequestsProblem;
@@ -238,6 +240,7 @@ namespace SiteAuth {
 
         @body body: SiteLoginResult;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem;
 
@@ -279,6 +282,7 @@ namespace SiteAuth {
         /** The flow cookie */
         @header("Set-Cookie") setCookie: string;
       }
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Where the provider sends the browser back (the redirect URI derived from the app URL).
@@ -313,15 +317,17 @@ namespace SiteAuth {
     /** The session cookie: read only when the flow is a link (it names a User), which
      * must be completed by the browser that is signed in as that User */
     @cookie("JWT") session?: string,
-  ): {
-    @statusCode statusCode: 302;
+  ):
+    | {
+        @statusCode statusCode: 302;
 
-    /** Where to go next */
-    @header("Location") location: string;
+        /** Where to go next */
+        @header("Location") location: string;
 
-    /** The session cookie on success; the expired flow cookie on a refusal */
-    @header("Set-Cookie") setCookie?: string;
-  };
+        /** The session cookie on success; the expired flow cookie on a refusal */
+        @header("Set-Cookie") setCookie?: string;
+      }
+    | BadRequestProblem;
 
   /** A pending sign-up of a Sign-in provider (ADR 0062), for the screen that asks the Sign-up
    * items. The token is the signed reference of the callback's redirect, valid for ten minutes;
@@ -356,9 +362,9 @@ namespace SiteAuth {
   @useAuth(NoAuth)
   @post
   @route("/signin-pending/decline")
-  op signinPendingDecline(
-    @body body: SiteSigninPendingDeclineInput,
-  ): NoContentResponse;
+  op signinPendingDecline(@body body: SiteSigninPendingDeclineInput):
+    | NoContentResponse
+    | BadRequestProblem;
 
   /** End the session on this browser: clears the session cookie. Answered while an
    * acceptance is pending (ADR 0062), so a gated User can sign out. */
@@ -382,6 +388,7 @@ namespace SiteAuth {
   @route("/forgot-password")
   op forgotPassword(@body body: SiteForgotPasswordInput):
     | AcceptedResponse
+    | BadRequestProblem
     | TooManyRequestsProblem;
 
   /** Set a new password from a reset token. A password outside the length rule answers 422
@@ -442,7 +449,7 @@ namespace SiteAuth {
     @cookie("SIGN_UP_BROWSER") signUpBrowser?: string,
 
     @body body: SiteResendVerificationInput,
-  ): AcceptedResponse | TooManyRequestsProblem;
+  ): AcceptedResponse | BadRequestProblem | TooManyRequestsProblem;
 
   /** Confirm an email change from the token sent to the new address. Public:
    * the link may be opened from a browser without a session. The change ends

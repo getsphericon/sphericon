@@ -5,13 +5,6 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:3000/collect' | (string & {});
 };
 
-/**
- * RFC 7807 bad request response
- */
-export type BadRequestProblem = {
-  body: ProblemDetails;
-};
-
 export type CollectEventInput = {
   visitorId: string;
   action: string;
@@ -328,6 +321,10 @@ export type CollectEventsCreateData = {
 
 export type CollectEventsCreateErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -368,6 +365,10 @@ export type CollectIdentifyCreateData = {
 };
 
 export type CollectIdentifyCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */

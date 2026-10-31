@@ -229,7 +229,7 @@ func (UnimplementedHandler) SiteAuthSignUp(ctx context.Context, req *SiteSignUpI
 // reaches the handler and gets the same redirect as any other refusal.
 //
 // GET /auth/signin/{provider}/callback
-func (UnimplementedHandler) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (r *SiteAuthSigninCallbackFound, _ error) {
+func (UnimplementedHandler) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (r SiteAuthSigninCallbackRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -261,8 +261,8 @@ func (UnimplementedHandler) SiteAuthSigninPending(ctx context.Context, params Si
 // names nothing any more.
 //
 // POST /auth/signin-pending/decline
-func (UnimplementedHandler) SiteAuthSigninPendingDecline(ctx context.Context, req *SiteSigninPendingDeclineInput) error {
-	return ht.ErrNotImplemented
+func (UnimplementedHandler) SiteAuthSigninPendingDecline(ctx context.Context, req *SiteSigninPendingDeclineInput) (r SiteAuthSigninPendingDeclineRes, _ error) {
+	return r, ht.ErrNotImplemented
 }
 
 // SiteAuthSigninPendingSubmit implements SiteAuth_signinPendingSubmit operation.

@@ -26,6 +26,18 @@ func encodeServiceHoldsClearResponse(response ServiceHoldsClearRes, w http.Respo
 
 		return nil
 
+	case *ServiceHoldsClearBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *ServiceHoldsClearUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
@@ -134,6 +146,18 @@ func encodeServiceHoldsListResponse(response ServiceHoldsListRes, w http.Respons
 
 		return nil
 
+	case *ServiceHoldsListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *ServiceHoldsListUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
@@ -233,6 +257,18 @@ func encodeServiceHoldsSetResponse(response ServiceHoldsSetRes, w http.ResponseW
 	case *HoldSetResult:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *ServiceHoldsSetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

@@ -219,6 +219,7 @@ namespace StaffWorkspaces {
   @get
   op list(...StaffWorkspaceSearch, ...PageQuery):
     | Page<StaffWorkspaceResource>
+    | BadRequestProblem
     | UnauthorizedProblem;
 
   /** One Workspace's metadata, suspension state, rates and send volume */
@@ -226,6 +227,7 @@ namespace StaffWorkspaces {
   @get
   op get(@path workspaceId: WorkspaceId):
     | StaffWorkspaceDetailResource
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;
 
@@ -235,6 +237,7 @@ namespace StaffWorkspaces {
   @post
   op suspend(@path workspaceId: WorkspaceId, @body body: StaffSuspendInput):
     | StaffSuspensionChange
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -245,6 +248,7 @@ namespace StaffWorkspaces {
   @post
   op unsuspend(@path workspaceId: WorkspaceId):
     | StaffSuspensionChange
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;
 
@@ -255,6 +259,7 @@ namespace StaffWorkspaces {
   @post
   op exempt(@path workspaceId: WorkspaceId):
     | StaffExemptionChange
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;
 
@@ -263,6 +268,7 @@ namespace StaffWorkspaces {
   @post
   op unexempt(@path workspaceId: WorkspaceId):
     | StaffExemptionChange
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;
 }

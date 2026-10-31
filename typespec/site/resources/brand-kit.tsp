@@ -89,6 +89,7 @@ namespace SiteBrandKit {
   @requiresPermissions(#[])
   op get(@path workspaceId: WorkspaceId):
     | SiteBrandKitResource
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Save the Brand kit (owner and admin only). The first save also creates the starter
@@ -99,6 +100,7 @@ namespace SiteBrandKit {
   @requiresPermissions(#[Permission.brandKitManage])
   op save(@path workspaceId: WorkspaceId, @body body: SiteSaveBrandKitInput):
     | SiteBrandKitResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -114,6 +116,7 @@ namespace SiteBrandKit {
         @statusCode statusCode: 201;
         @body body: SiteEmailTemplateResource[];
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;

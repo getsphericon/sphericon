@@ -1126,6 +1126,10 @@ func (*ProblemDetailsHeaders) serviceUserFeedListRes()         {}
 func (*ProblemDetailsHeaders) serviceWorkspaceFeedListRes()    {}
 func (*ProblemDetailsHeaders) serviceWorkspaceUsageGetRes()    {}
 
+type ServiceHoldsClearBadRequest ProblemDetails
+
+func (*ServiceHoldsClearBadRequest) serviceHoldsClearRes() {}
+
 type ServiceHoldsClearNotFound ProblemDetails
 
 func (*ServiceHoldsClearNotFound) serviceHoldsClearRes() {}
@@ -1134,6 +1138,10 @@ type ServiceHoldsClearUnauthorized ProblemDetails
 
 func (*ServiceHoldsClearUnauthorized) serviceHoldsClearRes() {}
 
+type ServiceHoldsListBadRequest ProblemDetails
+
+func (*ServiceHoldsListBadRequest) serviceHoldsListRes() {}
+
 type ServiceHoldsListNotFound ProblemDetails
 
 func (*ServiceHoldsListNotFound) serviceHoldsListRes() {}
@@ -1141,6 +1149,10 @@ func (*ServiceHoldsListNotFound) serviceHoldsListRes() {}
 type ServiceHoldsListUnauthorized ProblemDetails
 
 func (*ServiceHoldsListUnauthorized) serviceHoldsListRes() {}
+
+type ServiceHoldsSetBadRequest ProblemDetails
+
+func (*ServiceHoldsSetBadRequest) serviceHoldsSetRes() {}
 
 type ServiceHoldsSetNotFound ProblemDetails
 

@@ -250,6 +250,14 @@ func (s *ProblemDetailsHeaders) Validate() error {
 	return nil
 }
 
+func (s *ServiceHoldsClearBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ServiceHoldsClearNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -266,6 +274,14 @@ func (s *ServiceHoldsClearUnauthorized) Validate() error {
 	return nil
 }
 
+func (s *ServiceHoldsListBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ServiceHoldsListNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -275,6 +291,14 @@ func (s *ServiceHoldsListNotFound) Validate() error {
 }
 
 func (s *ServiceHoldsListUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ServiceHoldsSetBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

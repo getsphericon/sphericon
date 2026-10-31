@@ -7096,44 +7096,20 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) siteAnalyticsClicksByLinkRes()         {}
-func (*ProblemDetails) siteAnalyticsEventsRes()               {}
-func (*ProblemDetails) siteAnalyticsNewPeopleRes()            {}
-func (*ProblemDetails) siteAnalyticsOpensByHourRes()          {}
-func (*ProblemDetails) siteAnalyticsOverviewRes()             {}
-func (*ProblemDetails) siteAnalyticsRevenueRes()              {}
-func (*ProblemDetails) siteAnalyticsSubscribedPeopleRes()     {}
-func (*ProblemDetails) siteAuthConfirmEmailChangeRes()        {}
-func (*ProblemDetails) siteAuthSecondFactorRes()              {}
-func (*ProblemDetails) siteAuthSigninNotMeRes()               {}
-func (*ProblemDetails) siteAuthSigninPendingRes()             {}
-func (*ProblemDetails) siteAuthSigninStartRes()               {}
-func (*ProblemDetails) siteBrandKitGetRes()                   {}
-func (*ProblemDetails) siteCapturedMessagesDeleteAllRes()     {}
-func (*ProblemDetails) siteConnectionsDeleteRes()             {}
-func (*ProblemDetails) siteConnectionsListRes()               {}
-func (*ProblemDetails) siteEventsActionsRes()                 {}
-func (*ProblemDetails) siteEventsListRes()                    {}
-func (*ProblemDetails) siteIdentitiesLinkRes()                {}
-func (*ProblemDetails) siteInstanceGetReleaseRes()            {}
-func (*ProblemDetails) siteIntegrationsListRes()              {}
-func (*ProblemDetails) siteInvitationsListRes()               {}
-func (*ProblemDetails) siteLegalDocumentsGetRes()             {}
-func (*ProblemDetails) siteMembershipsListRes()               {}
-func (*ProblemDetails) sitePasskeyLoginBeginRes()             {}
-func (*ProblemDetails) sitePasskeyLoginFinishRes()            {}
-func (*ProblemDetails) sitePasskeysBeginCheckRes()            {}
-func (*ProblemDetails) sitePasskeysBeginRegistrationRes()     {}
-func (*ProblemDetails) sitePersonalTokensDeleteRes()          {}
-func (*ProblemDetails) sitePersonalTokensGrantableScopesRes() {}
-func (*ProblemDetails) sitePersonalTokensListRes()            {}
-func (*ProblemDetails) sitePublicInvitationsLookupRes()       {}
-func (*ProblemDetails) sitePublicUnsubscribesPerformRes()     {}
-func (*ProblemDetails) siteSchemaApplyMigrationsRes()         {}
-func (*ProblemDetails) siteSetupChecklistGetRes()             {}
-func (*ProblemDetails) siteTokensListRes()                    {}
-func (*ProblemDetails) siteUserAcceptPendingRes()             {}
-func (*ProblemDetails) siteWorkspacesGetRevenueSettingsRes()  {}
+func (*ProblemDetails) siteAuthConfirmEmailChangeRes()    {}
+func (*ProblemDetails) siteAuthForgotPasswordRes()        {}
+func (*ProblemDetails) siteAuthResendVerificationRes()    {}
+func (*ProblemDetails) siteAuthSigninCallbackRes()        {}
+func (*ProblemDetails) siteAuthSigninNotMeRes()           {}
+func (*ProblemDetails) siteAuthSigninPendingDeclineRes()  {}
+func (*ProblemDetails) siteAuthSigninPendingRes()         {}
+func (*ProblemDetails) siteInstanceGetReleaseRes()        {}
+func (*ProblemDetails) sitePasskeyLoginBeginRes()         {}
+func (*ProblemDetails) sitePasskeysBeginCheckRes()        {}
+func (*ProblemDetails) sitePasskeysBeginRegistrationRes() {}
+func (*ProblemDetails) sitePublicUnsubscribesPerformRes() {}
+func (*ProblemDetails) siteSchemaApplyMigrationsRes()     {}
+func (*ProblemDetails) siteUserDeleteUserLinkRes()        {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -7856,6 +7832,14 @@ func (s *SiteAnalyticsClicksByLink) SetEventsRetentionDays(val int32) {
 
 func (*SiteAnalyticsClicksByLink) siteAnalyticsClicksByLinkRes() {}
 
+type SiteAnalyticsClicksByLinkBadRequest ProblemDetails
+
+func (*SiteAnalyticsClicksByLinkBadRequest) siteAnalyticsClicksByLinkRes() {}
+
+type SiteAnalyticsClicksByLinkNotFound ProblemDetails
+
+func (*SiteAnalyticsClicksByLinkNotFound) siteAnalyticsClicksByLinkRes() {}
+
 // Current contact counts (point-in-time snapshot, not range-scoped).
 // Ref: #/components/schemas/SiteAnalyticsContacts
 type SiteAnalyticsContacts struct {
@@ -8060,6 +8044,14 @@ func (s *SiteAnalyticsEvents) SetActions(val []SiteAnalyticsEventAction) {
 
 func (*SiteAnalyticsEvents) siteAnalyticsEventsRes() {}
 
+type SiteAnalyticsEventsBadRequest ProblemDetails
+
+func (*SiteAnalyticsEventsBadRequest) siteAnalyticsEventsRes() {}
+
+type SiteAnalyticsEventsNotFound ProblemDetails
+
+func (*SiteAnalyticsEventsNotFound) siteAnalyticsEventsRes() {}
+
 // One clicked link with its clicks in the range, split by the Broadcast or Automation that carried it.
 // Ref: #/components/schemas/SiteAnalyticsLink
 type SiteAnalyticsLink struct {
@@ -8154,6 +8146,14 @@ func (s *SiteAnalyticsLinkOwner) SetClicks(val int32) {
 	s.Clicks = val
 }
 
+type SiteAnalyticsNewPeopleBadRequest ProblemDetails
+
+func (*SiteAnalyticsNewPeopleBadRequest) siteAnalyticsNewPeopleRes() {}
+
+type SiteAnalyticsNewPeopleNotFound ProblemDetails
+
+func (*SiteAnalyticsNewPeopleNotFound) siteAnalyticsNewPeopleRes() {}
+
 // Opens by hour report: a cell for every weekday and hour, Monday 00:00 first; machine opens are left
 // out.
 // Ref: #/components/schemas/SiteAnalyticsOpensByHour
@@ -8184,6 +8184,14 @@ func (s *SiteAnalyticsOpensByHour) SetTotal(val int32) {
 }
 
 func (*SiteAnalyticsOpensByHour) siteAnalyticsOpensByHourRes() {}
+
+type SiteAnalyticsOpensByHourBadRequest ProblemDetails
+
+func (*SiteAnalyticsOpensByHourBadRequest) siteAnalyticsOpensByHourRes() {}
+
+type SiteAnalyticsOpensByHourNotFound ProblemDetails
+
+func (*SiteAnalyticsOpensByHourNotFound) siteAnalyticsOpensByHourRes() {}
 
 // Human opens of one weekday and hour of day in the Workspace time zone.
 // Ref: #/components/schemas/SiteAnalyticsOpensCell
@@ -8290,6 +8298,14 @@ func (s *SiteAnalyticsOverview) SetAbuseWarning(val OptNilSiteAbuseWarning) {
 }
 
 func (*SiteAnalyticsOverview) siteAnalyticsOverviewRes() {}
+
+type SiteAnalyticsOverviewBadRequest ProblemDetails
+
+func (*SiteAnalyticsOverviewBadRequest) siteAnalyticsOverviewRes() {}
+
+type SiteAnalyticsOverviewNotFound ProblemDetails
+
+func (*SiteAnalyticsOverviewNotFound) siteAnalyticsOverviewRes() {}
 
 // What carried a clicked link: a Broadcast or an Automation.
 // Ref: #/components/schemas/SiteAnalyticsOwnerKind
@@ -8535,6 +8551,14 @@ func (s *SiteAnalyticsRevenue) SetSeries(val []SiteRevenuePoint) {
 
 func (*SiteAnalyticsRevenue) siteAnalyticsRevenueRes() {}
 
+type SiteAnalyticsRevenueBadRequest ProblemDetails
+
+func (*SiteAnalyticsRevenueBadRequest) siteAnalyticsRevenueRes() {}
+
+type SiteAnalyticsRevenueNotFound ProblemDetails
+
+func (*SiteAnalyticsRevenueNotFound) siteAnalyticsRevenueRes() {}
+
 // Merged schema.
 type SiteAnalyticsRevenueRange string
 
@@ -8615,6 +8639,14 @@ func (s *SiteAnalyticsSubscribedPeople) SetSeries(val []SiteAnalyticsSubscribedP
 }
 
 func (*SiteAnalyticsSubscribedPeople) siteAnalyticsSubscribedPeopleRes() {}
+
+type SiteAnalyticsSubscribedPeopleBadRequest ProblemDetails
+
+func (*SiteAnalyticsSubscribedPeopleBadRequest) siteAnalyticsSubscribedPeopleRes() {}
+
+type SiteAnalyticsSubscribedPeopleNotFound ProblemDetails
+
+func (*SiteAnalyticsSubscribedPeopleNotFound) siteAnalyticsSubscribedPeopleRes() {}
 
 // One Report day of the Subscribed people report, zero-filled across the range.
 // Ref: #/components/schemas/SiteAnalyticsSubscribedPoint
@@ -9025,6 +9057,10 @@ func (s *SiteAuditEntryResourceDiff) init() SiteAuditEntryResourceDiff {
 	return m
 }
 
+type SiteAuditExportBadRequest ProblemDetails
+
+func (*SiteAuditExportBadRequest) siteAuditExportRes() {}
+
 type SiteAuditExportForbidden ProblemDetails
 
 func (*SiteAuditExportForbidden) siteAuditExportRes() {}
@@ -9079,6 +9115,10 @@ type SiteAuditExportPaymentRequired ProblemDetails
 
 func (*SiteAuditExportPaymentRequired) siteAuditExportRes() {}
 
+type SiteAuditGetRetentionBadRequest ProblemDetails
+
+func (*SiteAuditGetRetentionBadRequest) siteAuditGetRetentionRes() {}
+
 type SiteAuditGetRetentionForbidden ProblemDetails
 
 func (*SiteAuditGetRetentionForbidden) siteAuditGetRetentionRes() {}
@@ -9126,6 +9166,10 @@ func (s *SiteAuditRetention) SetRetentionDays(val NilRetentionDays) {
 
 func (*SiteAuditRetention) siteAuditGetRetentionRes() {}
 func (*SiteAuditRetention) siteAuditSetRetentionRes() {}
+
+type SiteAuditSetRetentionBadRequest ProblemDetails
+
+func (*SiteAuditSetRetentionBadRequest) siteAuditSetRetentionRes() {}
 
 type SiteAuditSetRetentionForbidden ProblemDetails
 
@@ -9206,6 +9250,10 @@ type SiteAuthForgotPasswordAccepted struct{}
 
 func (*SiteAuthForgotPasswordAccepted) siteAuthForgotPasswordRes() {}
 
+type SiteAuthLoginBadRequest ProblemDetails
+
+func (*SiteAuthLoginBadRequest) siteAuthLoginRes() {}
+
 type SiteAuthLoginForbidden ProblemDetails
 
 func (*SiteAuthLoginForbidden) siteAuthLoginRes() {}
@@ -9247,6 +9295,14 @@ type SiteAuthResetPasswordUnprocessableEntity ProblemDetails
 
 func (*SiteAuthResetPasswordUnprocessableEntity) siteAuthResetPasswordRes() {}
 
+type SiteAuthSecondFactorBadRequest ProblemDetails
+
+func (*SiteAuthSecondFactorBadRequest) siteAuthSecondFactorRes() {}
+
+type SiteAuthSecondFactorUnauthorized ProblemDetails
+
+func (*SiteAuthSecondFactorUnauthorized) siteAuthSecondFactorRes() {}
+
 // SiteAuthSignUpAccepted is response for SiteAuthSignUp operation.
 type SiteAuthSignUpAccepted struct {
 	SetCookie OptString
@@ -9263,6 +9319,10 @@ func (s *SiteAuthSignUpAccepted) SetSetCookie(val OptString) {
 }
 
 func (*SiteAuthSignUpAccepted) siteAuthSignUpRes() {}
+
+type SiteAuthSignUpBadRequest ProblemDetails
+
+func (*SiteAuthSignUpBadRequest) siteAuthSignUpRes() {}
 
 type SiteAuthSignUpConflict ProblemDetails
 
@@ -9298,6 +9358,8 @@ func (s *SiteAuthSigninCallbackFound) SetSetCookie(val OptString) {
 	s.SetCookie = val
 }
 
+func (*SiteAuthSigninCallbackFound) siteAuthSigninCallbackRes() {}
+
 // SiteAuthSigninNotMeOK is response for SiteAuthSigninNotMe operation.
 type SiteAuthSigninNotMeOK struct{}
 
@@ -9305,6 +9367,8 @@ func (*SiteAuthSigninNotMeOK) siteAuthSigninNotMeRes() {}
 
 // SiteAuthSigninPendingDeclineNoContent is response for SiteAuthSigninPendingDecline operation.
 type SiteAuthSigninPendingDeclineNoContent struct{}
+
+func (*SiteAuthSigninPendingDeclineNoContent) siteAuthSigninPendingDeclineRes() {}
 
 type SiteAuthSigninPendingSubmitBadRequest ProblemDetails
 
@@ -9330,6 +9394,10 @@ func (*SiteAuthSigninPendingSubmitNoContent) siteAuthSigninPendingSubmitRes() {}
 type SiteAuthSigninPendingSubmitUnprocessableEntity ProblemDetails
 
 func (*SiteAuthSigninPendingSubmitUnprocessableEntity) siteAuthSigninPendingSubmitRes() {}
+
+type SiteAuthSigninStartBadRequest ProblemDetails
+
+func (*SiteAuthSigninStartBadRequest) siteAuthSigninStartRes() {}
 
 // SiteAuthSigninStartFound is response for SiteAuthSigninStart operation.
 type SiteAuthSigninStartFound struct {
@@ -9358,6 +9426,10 @@ func (s *SiteAuthSigninStartFound) SetSetCookie(val string) {
 }
 
 func (*SiteAuthSigninStartFound) siteAuthSigninStartRes() {}
+
+type SiteAuthSigninStartNotFound ProblemDetails
+
+func (*SiteAuthSigninStartNotFound) siteAuthSigninStartRes() {}
 
 type SiteAuthVerifyEmailBadRequest ProblemDetails
 
@@ -10426,6 +10498,10 @@ type SiteAutomationsArchiveNotFound ProblemDetails
 
 func (*SiteAutomationsArchiveNotFound) siteAutomationsArchiveRes() {}
 
+type SiteAutomationsCreateBadRequest ProblemDetails
+
+func (*SiteAutomationsCreateBadRequest) siteAutomationsCreateRes() {}
+
 type SiteAutomationsCreateNotFound ProblemDetails
 
 func (*SiteAutomationsCreateNotFound) siteAutomationsCreateRes() {}
@@ -10601,6 +10677,18 @@ type SiteAutomationsUpdateUnprocessableEntity ProblemDetails
 
 func (*SiteAutomationsUpdateUnprocessableEntity) siteAutomationsUpdateRes() {}
 
+type SiteBrandKitGetBadRequest ProblemDetails
+
+func (*SiteBrandKitGetBadRequest) siteBrandKitGetRes() {}
+
+type SiteBrandKitGetNotFound ProblemDetails
+
+func (*SiteBrandKitGetNotFound) siteBrandKitGetRes() {}
+
+type SiteBrandKitRecreateStarterTemplatesBadRequest ProblemDetails
+
+func (*SiteBrandKitRecreateStarterTemplatesBadRequest) siteBrandKitRecreateStarterTemplatesRes() {}
+
 type SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON []SiteEmailTemplateResource
 
 func (*SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON) siteBrandKitRecreateStarterTemplatesRes() {
@@ -10761,6 +10849,10 @@ func (s *SiteBrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
 
 func (*SiteBrandKitResource) siteBrandKitGetRes()  {}
 func (*SiteBrandKitResource) siteBrandKitSaveRes() {}
+
+type SiteBrandKitSaveBadRequest ProblemDetails
+
+func (*SiteBrandKitSaveBadRequest) siteBrandKitSaveRes() {}
 
 type SiteBrandKitSaveForbidden ProblemDetails
 
@@ -11400,6 +11492,10 @@ type SiteBroadcastsArchiveUnprocessableEntity ProblemDetails
 
 func (*SiteBroadcastsArchiveUnprocessableEntity) siteBroadcastsArchiveRes() {}
 
+type SiteBroadcastsCreateBadRequest ProblemDetails
+
+func (*SiteBroadcastsCreateBadRequest) siteBroadcastsCreateRes() {}
+
 type SiteBroadcastsCreateNotFound ProblemDetails
 
 func (*SiteBroadcastsCreateNotFound) siteBroadcastsCreateRes() {}
@@ -11981,10 +12077,18 @@ func (s *SiteCapturedMessageSurface) UnmarshalText(data []byte) error {
 	}
 }
 
+type SiteCapturedMessagesDeleteAllBadRequest ProblemDetails
+
+func (*SiteCapturedMessagesDeleteAllBadRequest) siteCapturedMessagesDeleteAllRes() {}
+
 // SiteCapturedMessagesDeleteAllNoContent is response for SiteCapturedMessagesDeleteAll operation.
 type SiteCapturedMessagesDeleteAllNoContent struct{}
 
 func (*SiteCapturedMessagesDeleteAllNoContent) siteCapturedMessagesDeleteAllRes() {}
+
+type SiteCapturedMessagesDeleteAllNotFound ProblemDetails
+
+func (*SiteCapturedMessagesDeleteAllNotFound) siteCapturedMessagesDeleteAllRes() {}
 
 type SiteCapturedMessagesDeleteBadRequest ProblemDetails
 
@@ -13196,10 +13300,26 @@ func (s *SiteConnectionResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+type SiteConnectionsDeleteBadRequest ProblemDetails
+
+func (*SiteConnectionsDeleteBadRequest) siteConnectionsDeleteRes() {}
+
 // SiteConnectionsDeleteNoContent is response for SiteConnectionsDelete operation.
 type SiteConnectionsDeleteNoContent struct{}
 
 func (*SiteConnectionsDeleteNoContent) siteConnectionsDeleteRes() {}
+
+type SiteConnectionsDeleteNotFound ProblemDetails
+
+func (*SiteConnectionsDeleteNotFound) siteConnectionsDeleteRes() {}
+
+type SiteConnectionsListBadRequest ProblemDetails
+
+func (*SiteConnectionsListBadRequest) siteConnectionsListRes() {}
+
+type SiteConnectionsListNotFound ProblemDetails
+
+func (*SiteConnectionsListNotFound) siteConnectionsListRes() {}
 
 type SiteConnectionsListOKApplicationJSON []SiteConnectionResource
 
@@ -13438,6 +13558,10 @@ func (s *SiteContactResourceCustomFields) init() SiteContactResourceCustomFields
 	return m
 }
 
+type SiteContactsCreateBadRequest ProblemDetails
+
+func (*SiteContactsCreateBadRequest) siteContactsCreateRes() {}
+
 type SiteContactsCreateConflict ProblemDetails
 
 func (*SiteContactsCreateConflict) siteContactsCreateRes() {}
@@ -13467,6 +13591,10 @@ type SiteContactsDeleteNotFound ProblemDetails
 
 func (*SiteContactsDeleteNotFound) siteContactsDeleteRes() {}
 
+type SiteContactsEraseBadRequest ProblemDetails
+
+func (*SiteContactsEraseBadRequest) siteContactsEraseRes() {}
+
 type SiteContactsEraseForbidden ProblemDetails
 
 func (*SiteContactsEraseForbidden) siteContactsEraseRes() {}
@@ -13483,6 +13611,10 @@ func (*SiteContactsEraseNotFound) siteContactsEraseRes() {}
 type SiteContactsEraseUnprocessableEntity ProblemDetails
 
 func (*SiteContactsEraseUnprocessableEntity) siteContactsEraseRes() {}
+
+type SiteContactsExportBadRequest ProblemDetails
+
+func (*SiteContactsExportBadRequest) siteContactsExportRes() {}
 
 type SiteContactsExportForbidden ProblemDetails
 
@@ -13623,6 +13755,10 @@ func (*SiteContactsListOK) siteContactsListRes() {}
 type SiteContactsListUnprocessableEntity ProblemDetails
 
 func (*SiteContactsListUnprocessableEntity) siteContactsListRes() {}
+
+type SiteContactsLookupBadRequest ProblemDetails
+
+func (*SiteContactsLookupBadRequest) siteContactsLookupRes() {}
 
 type SiteContactsLookupForbidden ProblemDetails
 
@@ -14793,6 +14929,10 @@ func (s *SiteDnsRecordType) UnmarshalText(data []byte) error {
 	}
 }
 
+type SiteDomainJoinGetBadRequest ProblemDetails
+
+func (*SiteDomainJoinGetBadRequest) siteDomainJoinGetRes() {}
+
 type SiteDomainJoinGetForbidden ProblemDetails
 
 func (*SiteDomainJoinGetForbidden) siteDomainJoinGetRes() {}
@@ -14821,6 +14961,10 @@ func (s *SiteDomainJoinResource) SetEnabled(val bool) {
 
 func (*SiteDomainJoinResource) siteDomainJoinGetRes() {}
 func (*SiteDomainJoinResource) siteDomainJoinSetRes() {}
+
+type SiteDomainJoinSetBadRequest ProblemDetails
+
+func (*SiteDomainJoinSetBadRequest) siteDomainJoinSetRes() {}
 
 type SiteDomainJoinSetForbidden ProblemDetails
 
@@ -15565,6 +15709,22 @@ func (s *SiteEventResourceProperties) init() SiteEventResourceProperties {
 	return m
 }
 
+type SiteEventsActionsBadRequest ProblemDetails
+
+func (*SiteEventsActionsBadRequest) siteEventsActionsRes() {}
+
+type SiteEventsActionsNotFound ProblemDetails
+
+func (*SiteEventsActionsNotFound) siteEventsActionsRes() {}
+
+type SiteEventsListBadRequest ProblemDetails
+
+func (*SiteEventsListBadRequest) siteEventsListRes() {}
+
+type SiteEventsListNotFound ProblemDetails
+
+func (*SiteEventsListNotFound) siteEventsListRes() {}
+
 // Paginated response.
 type SiteEventsListOK struct {
 	// List of items.
@@ -15647,6 +15807,10 @@ func (s *SiteForgotPasswordInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
 
+type SiteIdentitiesLinkBadRequest ProblemDetails
+
+func (*SiteIdentitiesLinkBadRequest) siteIdentitiesLinkRes() {}
+
 // SiteIdentitiesLinkFound is response for SiteIdentitiesLink operation.
 type SiteIdentitiesLinkFound struct {
 	Location  string
@@ -15674,6 +15838,14 @@ func (s *SiteIdentitiesLinkFound) SetSetCookie(val string) {
 }
 
 func (*SiteIdentitiesLinkFound) siteIdentitiesLinkRes() {}
+
+type SiteIdentitiesLinkNotFound ProblemDetails
+
+func (*SiteIdentitiesLinkNotFound) siteIdentitiesLinkRes() {}
+
+type SiteIdentitiesUnlinkBadRequest ProblemDetails
+
+func (*SiteIdentitiesUnlinkBadRequest) siteIdentitiesUnlinkRes() {}
 
 type SiteIdentitiesUnlinkConflict ProblemDetails
 
@@ -16223,6 +16395,10 @@ type SiteIntegrationsArchiveNotFound ProblemDetails
 
 func (*SiteIntegrationsArchiveNotFound) siteIntegrationsArchiveRes() {}
 
+type SiteIntegrationsCreateBadRequest ProblemDetails
+
+func (*SiteIntegrationsCreateBadRequest) siteIntegrationsCreateRes() {}
+
 type SiteIntegrationsCreateConflict ProblemDetails
 
 func (*SiteIntegrationsCreateConflict) siteIntegrationsCreateRes() {}
@@ -16246,6 +16422,14 @@ func (*SiteIntegrationsGetBadRequest) siteIntegrationsGetRes() {}
 type SiteIntegrationsGetNotFound ProblemDetails
 
 func (*SiteIntegrationsGetNotFound) siteIntegrationsGetRes() {}
+
+type SiteIntegrationsListBadRequest ProblemDetails
+
+func (*SiteIntegrationsListBadRequest) siteIntegrationsListRes() {}
+
+type SiteIntegrationsListNotFound ProblemDetails
+
+func (*SiteIntegrationsListNotFound) siteIntegrationsListRes() {}
 
 type SiteIntegrationsListOKApplicationJSON []SiteIntegrationResource
 
@@ -16450,6 +16634,10 @@ func (s *SiteInvitationResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+type SiteInvitationsCreateBadRequest ProblemDetails
+
+func (*SiteInvitationsCreateBadRequest) siteInvitationsCreateRes() {}
+
 type SiteInvitationsCreateConflict ProblemDetails
 
 func (*SiteInvitationsCreateConflict) siteInvitationsCreateRes() {}
@@ -16466,6 +16654,10 @@ type SiteInvitationsCreateUnprocessableEntity ProblemDetails
 
 func (*SiteInvitationsCreateUnprocessableEntity) siteInvitationsCreateRes() {}
 
+type SiteInvitationsDeleteBadRequest ProblemDetails
+
+func (*SiteInvitationsDeleteBadRequest) siteInvitationsDeleteRes() {}
+
 type SiteInvitationsDeleteForbidden ProblemDetails
 
 func (*SiteInvitationsDeleteForbidden) siteInvitationsDeleteRes() {}
@@ -16478,6 +16670,14 @@ func (*SiteInvitationsDeleteNoContent) siteInvitationsDeleteRes() {}
 type SiteInvitationsDeleteNotFound ProblemDetails
 
 func (*SiteInvitationsDeleteNotFound) siteInvitationsDeleteRes() {}
+
+type SiteInvitationsListBadRequest ProblemDetails
+
+func (*SiteInvitationsListBadRequest) siteInvitationsListRes() {}
+
+type SiteInvitationsListNotFound ProblemDetails
+
+func (*SiteInvitationsListNotFound) siteInvitationsListRes() {}
 
 type SiteInvitationsListOKApplicationJSON []SiteInvitationResource
 
@@ -16589,6 +16789,10 @@ func (s *SiteJoinDomainResource) SetUpdatedAt(val Timestamp) {
 func (*SiteJoinDomainResource) siteJoinDomainsAddRes()    {}
 func (*SiteJoinDomainResource) siteJoinDomainsVerifyRes() {}
 
+type SiteJoinDomainsAddBadRequest ProblemDetails
+
+func (*SiteJoinDomainsAddBadRequest) siteJoinDomainsAddRes() {}
+
 type SiteJoinDomainsAddConflict ProblemDetails
 
 func (*SiteJoinDomainsAddConflict) siteJoinDomainsAddRes() {}
@@ -16605,6 +16809,10 @@ type SiteJoinDomainsAddUnprocessableEntity ProblemDetails
 
 func (*SiteJoinDomainsAddUnprocessableEntity) siteJoinDomainsAddRes() {}
 
+type SiteJoinDomainsListBadRequest ProblemDetails
+
+func (*SiteJoinDomainsListBadRequest) siteJoinDomainsListRes() {}
+
 type SiteJoinDomainsListForbidden ProblemDetails
 
 func (*SiteJoinDomainsListForbidden) siteJoinDomainsListRes() {}
@@ -16616,6 +16824,10 @@ func (*SiteJoinDomainsListNotFound) siteJoinDomainsListRes() {}
 type SiteJoinDomainsListOKApplicationJSON []SiteJoinDomainResource
 
 func (*SiteJoinDomainsListOKApplicationJSON) siteJoinDomainsListRes() {}
+
+type SiteJoinDomainsRemoveBadRequest ProblemDetails
+
+func (*SiteJoinDomainsRemoveBadRequest) siteJoinDomainsRemoveRes() {}
 
 type SiteJoinDomainsRemoveForbidden ProblemDetails
 
@@ -16629,6 +16841,10 @@ func (*SiteJoinDomainsRemoveNoContent) siteJoinDomainsRemoveRes() {}
 type SiteJoinDomainsRemoveNotFound ProblemDetails
 
 func (*SiteJoinDomainsRemoveNotFound) siteJoinDomainsRemoveRes() {}
+
+type SiteJoinDomainsVerifyBadRequest ProblemDetails
+
+func (*SiteJoinDomainsVerifyBadRequest) siteJoinDomainsVerifyRes() {}
 
 type SiteJoinDomainsVerifyConflict ProblemDetails
 
@@ -16710,6 +16926,14 @@ func (s *SiteLegalDocument) SetPublishedAt(val Timestamp) {
 }
 
 func (*SiteLegalDocument) siteLegalDocumentsGetRes() {}
+
+type SiteLegalDocumentsGetBadRequest ProblemDetails
+
+func (*SiteLegalDocumentsGetBadRequest) siteLegalDocumentsGetRes() {}
+
+type SiteLegalDocumentsGetNotFound ProblemDetails
+
+func (*SiteLegalDocumentsGetNotFound) siteLegalDocumentsGetRes() {}
 
 // How often one link of a broadcast's or an automation's emails was clicked.
 // Ref: #/components/schemas/SiteLinkClicks
@@ -17160,6 +17384,10 @@ func (s *SiteMembershipSource) UnmarshalText(data []byte) error {
 	}
 }
 
+type SiteMembershipsDeleteBadRequest ProblemDetails
+
+func (*SiteMembershipsDeleteBadRequest) siteMembershipsDeleteRes() {}
+
 type SiteMembershipsDeleteForbidden ProblemDetails
 
 func (*SiteMembershipsDeleteForbidden) siteMembershipsDeleteRes() {}
@@ -17177,9 +17405,21 @@ type SiteMembershipsDeleteUnprocessableEntity ProblemDetails
 
 func (*SiteMembershipsDeleteUnprocessableEntity) siteMembershipsDeleteRes() {}
 
+type SiteMembershipsListBadRequest ProblemDetails
+
+func (*SiteMembershipsListBadRequest) siteMembershipsListRes() {}
+
+type SiteMembershipsListNotFound ProblemDetails
+
+func (*SiteMembershipsListNotFound) siteMembershipsListRes() {}
+
 type SiteMembershipsListOKApplicationJSON []SiteMembershipResource
 
 func (*SiteMembershipsListOKApplicationJSON) siteMembershipsListRes() {}
+
+type SiteMembershipsResetSecondFactorBadRequest ProblemDetails
+
+func (*SiteMembershipsResetSecondFactorBadRequest) siteMembershipsResetSecondFactorRes() {}
 
 type SiteMembershipsResetSecondFactorForbidden ProblemDetails
 
@@ -17197,6 +17437,10 @@ func (*SiteMembershipsResetSecondFactorNotFound) siteMembershipsResetSecondFacto
 type SiteMembershipsResetSecondFactorUnprocessableEntity ProblemDetails
 
 func (*SiteMembershipsResetSecondFactorUnprocessableEntity) siteMembershipsResetSecondFactorRes() {}
+
+type SiteMembershipsUpdateBadRequest ProblemDetails
+
+func (*SiteMembershipsUpdateBadRequest) siteMembershipsUpdateRes() {}
 
 type SiteMembershipsUpdateForbidden ProblemDetails
 
@@ -17472,6 +17716,10 @@ func (s *SiteOAuthAuthorizationRequestRequiredPermissions) init() SiteOAuthAutho
 	return m
 }
 
+type SiteOAuthDecideBadRequest ProblemDetails
+
+func (*SiteOAuthDecideBadRequest) siteOAuthDecideRes() {}
+
 type SiteOAuthDecideForbidden ProblemDetails
 
 func (*SiteOAuthDecideForbidden) siteOAuthDecideRes() {}
@@ -17612,6 +17860,10 @@ func (s *SiteOAuthDecisionResult) SetRedirectUrl(val string) {
 }
 
 func (*SiteOAuthDecisionResult) siteOAuthDecideRes() {}
+
+type SiteOAuthDescribeBadRequest ProblemDetails
+
+func (*SiteOAuthDescribeBadRequest) siteOAuthDescribeRes() {}
 
 type SiteOAuthDescribeNotFound ProblemDetails
 
@@ -17783,6 +18035,10 @@ func (s *SiteOptionalConsentList) GetItems() []SiteOptionalConsent {
 func (s *SiteOptionalConsentList) SetItems(val []SiteOptionalConsent) {
 	s.Items = val
 }
+
+type SiteOptionalConsentsSetBadRequest ProblemDetails
+
+func (*SiteOptionalConsentsSetBadRequest) siteOptionalConsentsSetRes() {}
 
 type SiteOptionalConsentsSetNotFound ProblemDetails
 
@@ -18525,6 +18781,14 @@ func (s *SitePasskeyLoginBegunHeaders) SetResponse(val SitePasskeyLoginBegun) {
 
 func (*SitePasskeyLoginBegunHeaders) sitePasskeyLoginBeginRes() {}
 
+type SitePasskeyLoginFinishBadRequest ProblemDetails
+
+func (*SitePasskeyLoginFinishBadRequest) sitePasskeyLoginFinishRes() {}
+
+type SitePasskeyLoginFinishUnauthorized ProblemDetails
+
+func (*SitePasskeyLoginFinishUnauthorized) sitePasskeyLoginFinishRes() {}
+
 // The browser's response to a login ceremony.
 // Ref: #/components/schemas/SitePasskeyLoginInput
 type SitePasskeyLoginInput struct {
@@ -18922,6 +19186,10 @@ func (s *SitePasskeyUserEntity) SetDisplayName(val string) {
 	s.DisplayName = val
 }
 
+type SitePasskeysFinishCheckBadRequest ProblemDetails
+
+func (*SitePasskeysFinishCheckBadRequest) sitePasskeysFinishCheckRes() {}
+
 type SitePasskeysFinishCheckForbidden ProblemDetails
 
 func (*SitePasskeysFinishCheckForbidden) sitePasskeysFinishCheckRes() {}
@@ -18947,6 +19215,10 @@ type SitePasskeysFinishCheckNotFound ProblemDetails
 
 func (*SitePasskeysFinishCheckNotFound) sitePasskeysFinishCheckRes() {}
 
+type SitePasskeysFinishRegistrationBadRequest ProblemDetails
+
+func (*SitePasskeysFinishRegistrationBadRequest) sitePasskeysFinishRegistrationRes() {}
+
 type SitePasskeysFinishRegistrationForbidden ProblemDetails
 
 func (*SitePasskeysFinishRegistrationForbidden) sitePasskeysFinishRegistrationRes() {}
@@ -18958,6 +19230,10 @@ func (*SitePasskeysFinishRegistrationNotFound) sitePasskeysFinishRegistrationRes
 type SitePasskeysFinishRegistrationUnprocessableEntity ProblemDetails
 
 func (*SitePasskeysFinishRegistrationUnprocessableEntity) sitePasskeysFinishRegistrationRes() {}
+
+type SitePasskeysRemoveBadRequest ProblemDetails
+
+func (*SitePasskeysRemoveBadRequest) sitePasskeysRemoveRes() {}
 
 type SitePasskeysRemoveConflict ProblemDetails
 
@@ -18987,6 +19263,10 @@ func (*SitePasskeysRemoveNoContent) sitePasskeysRemoveRes() {}
 type SitePasskeysRemoveNotFound ProblemDetails
 
 func (*SitePasskeysRemoveNotFound) sitePasskeysRemoveRes() {}
+
+type SitePasskeysRenameBadRequest ProblemDetails
+
+func (*SitePasskeysRenameBadRequest) sitePasskeysRenameRes() {}
 
 type SitePasskeysRenameNotFound ProblemDetails
 
@@ -19173,14 +19453,38 @@ type SitePersonalTokensCreateUnprocessableEntity ProblemDetails
 
 func (*SitePersonalTokensCreateUnprocessableEntity) sitePersonalTokensCreateRes() {}
 
+type SitePersonalTokensDeleteBadRequest ProblemDetails
+
+func (*SitePersonalTokensDeleteBadRequest) sitePersonalTokensDeleteRes() {}
+
 // SitePersonalTokensDeleteNoContent is response for SitePersonalTokensDelete operation.
 type SitePersonalTokensDeleteNoContent struct{}
 
 func (*SitePersonalTokensDeleteNoContent) sitePersonalTokensDeleteRes() {}
 
+type SitePersonalTokensDeleteNotFound ProblemDetails
+
+func (*SitePersonalTokensDeleteNotFound) sitePersonalTokensDeleteRes() {}
+
+type SitePersonalTokensGrantableScopesBadRequest ProblemDetails
+
+func (*SitePersonalTokensGrantableScopesBadRequest) sitePersonalTokensGrantableScopesRes() {}
+
+type SitePersonalTokensGrantableScopesNotFound ProblemDetails
+
+func (*SitePersonalTokensGrantableScopesNotFound) sitePersonalTokensGrantableScopesRes() {}
+
 type SitePersonalTokensGrantableScopesOKApplicationJSON []PersonalScope
 
 func (*SitePersonalTokensGrantableScopesOKApplicationJSON) sitePersonalTokensGrantableScopesRes() {}
+
+type SitePersonalTokensListBadRequest ProblemDetails
+
+func (*SitePersonalTokensListBadRequest) sitePersonalTokensListRes() {}
+
+type SitePersonalTokensListNotFound ProblemDetails
+
+func (*SitePersonalTokensListNotFound) sitePersonalTokensListRes() {}
 
 type SitePersonalTokensListOKApplicationJSON []SitePersonalTokenResource
 
@@ -19477,6 +19781,10 @@ type SitePublicConfirmationsPerformNoContent struct{}
 
 func (*SitePublicConfirmationsPerformNoContent) sitePublicConfirmationsPerformRes() {}
 
+type SitePublicInvitationsAcceptBadRequest ProblemDetails
+
+func (*SitePublicInvitationsAcceptBadRequest) sitePublicInvitationsAcceptRes() {}
+
 type SitePublicInvitationsAcceptForbidden ProblemDetails
 
 func (*SitePublicInvitationsAcceptForbidden) sitePublicInvitationsAcceptRes() {}
@@ -19497,6 +19805,14 @@ func (*SitePublicInvitationsAcceptUnauthorized) sitePublicInvitationsAcceptRes()
 type SitePublicInvitationsAcceptUnprocessableEntity ProblemDetails
 
 func (*SitePublicInvitationsAcceptUnprocessableEntity) sitePublicInvitationsAcceptRes() {}
+
+type SitePublicInvitationsLookupBadRequest ProblemDetails
+
+func (*SitePublicInvitationsLookupBadRequest) sitePublicInvitationsLookupRes() {}
+
+type SitePublicInvitationsLookupNotFound ProblemDetails
+
+func (*SitePublicInvitationsLookupNotFound) sitePublicInvitationsLookupRes() {}
 
 // SitePublicUnsubscribesPerformNoContent is response for SitePublicUnsubscribesPerform operation.
 type SitePublicUnsubscribesPerformNoContent struct{}
@@ -20507,6 +20823,10 @@ type SiteRulesArchiveNotFound ProblemDetails
 
 func (*SiteRulesArchiveNotFound) siteRulesArchiveRes() {}
 
+type SiteRulesCreateBadRequest ProblemDetails
+
+func (*SiteRulesCreateBadRequest) siteRulesCreateRes() {}
+
 type SiteRulesCreateNotFound ProblemDetails
 
 func (*SiteRulesCreateNotFound) siteRulesCreateRes() {}
@@ -20793,6 +21113,10 @@ type SiteSchemaApplyMigrationsNoContent struct{}
 
 func (*SiteSchemaApplyMigrationsNoContent) siteSchemaApplyMigrationsRes() {}
 
+type SiteSecondFactorConfirmEnrollmentBadRequest ProblemDetails
+
+func (*SiteSecondFactorConfirmEnrollmentBadRequest) siteSecondFactorConfirmEnrollmentRes() {}
+
 type SiteSecondFactorConfirmEnrollmentConflict ProblemDetails
 
 func (*SiteSecondFactorConfirmEnrollmentConflict) siteSecondFactorConfirmEnrollmentRes() {}
@@ -20835,6 +21159,10 @@ func (s *SiteSecondFactorConfirmInput) SetCurrentPassword(val OptString) {
 func (s *SiteSecondFactorConfirmInput) SetCode(val string) {
 	s.Code = val
 }
+
+type SiteSecondFactorDisableBadRequest ProblemDetails
+
+func (*SiteSecondFactorDisableBadRequest) siteSecondFactorDisableRes() {}
 
 type SiteSecondFactorDisableConflict ProblemDetails
 
@@ -20939,6 +21267,11 @@ func (s *SiteSecondFactorEnrollment) SetQrCode(val string) {
 
 func (*SiteSecondFactorEnrollment) siteSecondFactorStartEnrollmentRes() {}
 
+type SiteSecondFactorRegenerateRecoveryCodesBadRequest ProblemDetails
+
+func (*SiteSecondFactorRegenerateRecoveryCodesBadRequest) siteSecondFactorRegenerateRecoveryCodesRes() {
+}
+
 type SiteSecondFactorRegenerateRecoveryCodesConflict ProblemDetails
 
 func (*SiteSecondFactorRegenerateRecoveryCodesConflict) siteSecondFactorRegenerateRecoveryCodesRes() {
@@ -20948,6 +21281,10 @@ type SiteSecondFactorRegenerateRecoveryCodesForbidden ProblemDetails
 
 func (*SiteSecondFactorRegenerateRecoveryCodesForbidden) siteSecondFactorRegenerateRecoveryCodesRes() {
 }
+
+type SiteSecondFactorStartEnrollmentBadRequest ProblemDetails
+
+func (*SiteSecondFactorStartEnrollmentBadRequest) siteSecondFactorStartEnrollmentRes() {}
 
 type SiteSecondFactorStartEnrollmentConflict ProblemDetails
 
@@ -21214,6 +21551,10 @@ func (*SiteSegmentsArchiveBadRequest) siteSegmentsArchiveRes() {}
 type SiteSegmentsArchiveNotFound ProblemDetails
 
 func (*SiteSegmentsArchiveNotFound) siteSegmentsArchiveRes() {}
+
+type SiteSegmentsCreateBadRequest ProblemDetails
+
+func (*SiteSegmentsCreateBadRequest) siteSegmentsCreateRes() {}
 
 type SiteSegmentsCreateNotFound ProblemDetails
 
@@ -21537,6 +21878,10 @@ type SiteSendingDomainsArchiveNotFound ProblemDetails
 
 func (*SiteSendingDomainsArchiveNotFound) siteSendingDomainsArchiveRes() {}
 
+type SiteSendingDomainsCreateBadRequest ProblemDetails
+
+func (*SiteSendingDomainsCreateBadRequest) siteSendingDomainsCreateRes() {}
+
 type SiteSendingDomainsCreateConflict ProblemDetails
 
 func (*SiteSendingDomainsCreateConflict) siteSendingDomainsCreateRes() {}
@@ -21790,6 +22135,14 @@ func (s *SiteSetDomainJoinInput) GetEnabled() bool {
 func (s *SiteSetDomainJoinInput) SetEnabled(val bool) {
 	s.Enabled = val
 }
+
+type SiteSetupChecklistGetBadRequest ProblemDetails
+
+func (*SiteSetupChecklistGetBadRequest) siteSetupChecklistGetRes() {}
+
+type SiteSetupChecklistGetNotFound ProblemDetails
+
+func (*SiteSetupChecklistGetNotFound) siteSetupChecklistGetRes() {}
 
 // The Workspace's Setup checklist: a point-in-time read model, never ticked by hand.
 // Ref: #/components/schemas/SiteSetupProgress
@@ -22572,6 +22925,10 @@ func (s *SiteSignupSurveyInput) SetHeardFromOther(val OptString) {
 	s.HeardFromOther = val
 }
 
+type SiteSignupSurveySubmitBadRequest ProblemDetails
+
+func (*SiteSignupSurveySubmitBadRequest) siteSignupSurveySubmitRes() {}
+
 type SiteSignupSurveySubmitConflict ProblemDetails
 
 func (*SiteSignupSurveySubmitConflict) siteSignupSurveySubmitRes() {}
@@ -22896,6 +23253,10 @@ func (s *SiteSuppressionResource) SetUpdatedAt(val Timestamp) {
 }
 
 func (*SiteSuppressionResource) siteSuppressionsCreateRes() {}
+
+type SiteSuppressionsCreateBadRequest ProblemDetails
+
+func (*SiteSuppressionsCreateBadRequest) siteSuppressionsCreateRes() {}
 
 type SiteSuppressionsCreateForbidden ProblemDetails
 
@@ -23241,6 +23602,10 @@ type SiteTagsRemoveNotFound ProblemDetails
 
 func (*SiteTagsRemoveNotFound) siteTagsRemoveRes() {}
 
+type SiteTemplatesCreateBadRequest ProblemDetails
+
+func (*SiteTemplatesCreateBadRequest) siteTemplatesCreateRes() {}
+
 type SiteTemplatesCreateNotFound ProblemDetails
 
 func (*SiteTemplatesCreateNotFound) siteTemplatesCreateRes() {}
@@ -23393,6 +23758,10 @@ func (s *SiteTestSendBroadcastResult) SetCaptured(val bool) {
 
 func (*SiteTestSendBroadcastResult) siteBroadcastsTestSendRes() {}
 
+type SiteTokensCreateBadRequest ProblemDetails
+
+func (*SiteTokensCreateBadRequest) siteTokensCreateRes() {}
+
 type SiteTokensCreateForbidden ProblemDetails
 
 func (*SiteTokensCreateForbidden) siteTokensCreateRes() {}
@@ -23422,9 +23791,21 @@ type SiteTokensDeleteNotFound ProblemDetails
 
 func (*SiteTokensDeleteNotFound) siteTokensDeleteRes() {}
 
+type SiteTokensListBadRequest ProblemDetails
+
+func (*SiteTokensListBadRequest) siteTokensListRes() {}
+
+type SiteTokensListNotFound ProblemDetails
+
+func (*SiteTokensListNotFound) siteTokensListRes() {}
+
 type SiteTokensListOKApplicationJSON []SiteApiTokenResource
 
 func (*SiteTokensListOKApplicationJSON) siteTokensListRes() {}
+
+type SiteTokensUpdateBadRequest ProblemDetails
+
+func (*SiteTokensUpdateBadRequest) siteTokensUpdateRes() {}
 
 type SiteTokensUpdateForbidden ProblemDetails
 
@@ -24356,6 +24737,14 @@ func (s *SiteUpdateWorkspaceInput) SetPostalAddress(val OptString) {
 	s.PostalAddress = val
 }
 
+type SiteUserAcceptPendingBadRequest ProblemDetails
+
+func (*SiteUserAcceptPendingBadRequest) siteUserAcceptPendingRes() {}
+
+type SiteUserAcceptPendingUnprocessableEntity ProblemDetails
+
+func (*SiteUserAcceptPendingUnprocessableEntity) siteUserAcceptPendingRes() {}
+
 type SiteUserDeleteUserBadRequest ProblemDetails
 
 func (*SiteUserDeleteUserBadRequest) siteUserDeleteUserRes() {}
@@ -24390,6 +24779,10 @@ func (*SiteUserDeleteUserNoContent) siteUserDeleteUserRes() {}
 type SiteUserEmailChangeAccepted struct{}
 
 func (*SiteUserEmailChangeAccepted) siteUserEmailChangeRes() {}
+
+type SiteUserEmailChangeBadRequest ProblemDetails
+
+func (*SiteUserEmailChangeBadRequest) siteUserEmailChangeRes() {}
 
 type SiteUserEmailChangeForbidden ProblemDetails
 
@@ -24552,6 +24945,10 @@ func (s *SiteUserSignOutEverywhereNoContent) GetSetCookie() string {
 func (s *SiteUserSignOutEverywhereNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
 }
+
+type SiteUserUpdateMeBadRequest ProblemDetails
+
+func (*SiteUserUpdateMeBadRequest) siteUserUpdateMeRes() {}
 
 type SiteUserUpdateMeForbidden ProblemDetails
 
@@ -24985,6 +25382,10 @@ func (s *SiteWebhookTestResult) SetKind(val OptSiteWebhookErrorKind) {
 }
 
 func (*SiteWebhookTestResult) siteWebhooksTestRes() {}
+
+type SiteWebhooksCreateBadRequest ProblemDetails
+
+func (*SiteWebhooksCreateBadRequest) siteWebhooksCreateRes() {}
 
 type SiteWebhooksCreateForbidden ProblemDetails
 
@@ -25469,6 +25870,10 @@ func (s *SiteWorkspaceTimezoneInput) SetTimezone(val TimeZoneName) {
 	s.Timezone = val
 }
 
+type SiteWorkspacesAccountLinkBadRequest ProblemDetails
+
+func (*SiteWorkspacesAccountLinkBadRequest) siteWorkspacesAccountLinkRes() {}
+
 type SiteWorkspacesAccountLinkForbidden ProblemDetails
 
 func (*SiteWorkspacesAccountLinkForbidden) siteWorkspacesAccountLinkRes() {}
@@ -25477,6 +25882,10 @@ type SiteWorkspacesAccountLinkNotFound ProblemDetails
 
 func (*SiteWorkspacesAccountLinkNotFound) siteWorkspacesAccountLinkRes() {}
 
+type SiteWorkspacesCreateBadRequest ProblemDetails
+
+func (*SiteWorkspacesCreateBadRequest) siteWorkspacesCreateRes() {}
+
 type SiteWorkspacesCreateForbidden ProblemDetails
 
 func (*SiteWorkspacesCreateForbidden) siteWorkspacesCreateRes() {}
@@ -25484,6 +25893,10 @@ func (*SiteWorkspacesCreateForbidden) siteWorkspacesCreateRes() {}
 type SiteWorkspacesCreateUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesCreateUnprocessableEntity) siteWorkspacesCreateRes() {}
+
+type SiteWorkspacesDeleteBadRequest ProblemDetails
+
+func (*SiteWorkspacesDeleteBadRequest) siteWorkspacesDeleteRes() {}
 
 type SiteWorkspacesDeleteForbidden ProblemDetails
 
@@ -25496,6 +25909,18 @@ func (*SiteWorkspacesDeleteNotFound) siteWorkspacesDeleteRes() {}
 type SiteWorkspacesDeleteUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesDeleteUnprocessableEntity) siteWorkspacesDeleteRes() {}
+
+type SiteWorkspacesGetRevenueSettingsBadRequest ProblemDetails
+
+func (*SiteWorkspacesGetRevenueSettingsBadRequest) siteWorkspacesGetRevenueSettingsRes() {}
+
+type SiteWorkspacesGetRevenueSettingsNotFound ProblemDetails
+
+func (*SiteWorkspacesGetRevenueSettingsNotFound) siteWorkspacesGetRevenueSettingsRes() {}
+
+type SiteWorkspacesLeaveBadRequest ProblemDetails
+
+func (*SiteWorkspacesLeaveBadRequest) siteWorkspacesLeaveRes() {}
 
 // SiteWorkspacesLeaveNoContent is response for SiteWorkspacesLeave operation.
 type SiteWorkspacesLeaveNoContent struct{}
@@ -25510,6 +25935,11 @@ type SiteWorkspacesLeaveUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesLeaveUnprocessableEntity) siteWorkspacesLeaveRes() {}
 
+type SiteWorkspacesLiftSecondFactorRequirementBadRequest ProblemDetails
+
+func (*SiteWorkspacesLiftSecondFactorRequirementBadRequest) siteWorkspacesLiftSecondFactorRequirementRes() {
+}
+
 type SiteWorkspacesLiftSecondFactorRequirementForbidden ProblemDetails
 
 func (*SiteWorkspacesLiftSecondFactorRequirementForbidden) siteWorkspacesLiftSecondFactorRequirementRes() {
@@ -25520,6 +25950,10 @@ type SiteWorkspacesLiftSecondFactorRequirementNotFound ProblemDetails
 func (*SiteWorkspacesLiftSecondFactorRequirementNotFound) siteWorkspacesLiftSecondFactorRequirementRes() {
 }
 
+type SiteWorkspacesRequireSecondFactorBadRequest ProblemDetails
+
+func (*SiteWorkspacesRequireSecondFactorBadRequest) siteWorkspacesRequireSecondFactorRes() {}
+
 type SiteWorkspacesRequireSecondFactorForbidden ProblemDetails
 
 func (*SiteWorkspacesRequireSecondFactorForbidden) siteWorkspacesRequireSecondFactorRes() {}
@@ -25528,6 +25962,10 @@ type SiteWorkspacesRequireSecondFactorNotFound ProblemDetails
 
 func (*SiteWorkspacesRequireSecondFactorNotFound) siteWorkspacesRequireSecondFactorRes() {}
 
+type SiteWorkspacesRestoreBadRequest ProblemDetails
+
+func (*SiteWorkspacesRestoreBadRequest) siteWorkspacesRestoreRes() {}
+
 type SiteWorkspacesRestoreConflict ProblemDetails
 
 func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}
@@ -25535,6 +25973,10 @@ func (*SiteWorkspacesRestoreConflict) siteWorkspacesRestoreRes() {}
 type SiteWorkspacesRestoreNotFound ProblemDetails
 
 func (*SiteWorkspacesRestoreNotFound) siteWorkspacesRestoreRes() {}
+
+type SiteWorkspacesSetTimezoneBadRequest ProblemDetails
+
+func (*SiteWorkspacesSetTimezoneBadRequest) siteWorkspacesSetTimezoneRes() {}
 
 type SiteWorkspacesSetTimezoneForbidden ProblemDetails
 
@@ -25548,6 +25990,10 @@ type SiteWorkspacesSetTimezoneUnprocessableEntity ProblemDetails
 
 func (*SiteWorkspacesSetTimezoneUnprocessableEntity) siteWorkspacesSetTimezoneRes() {}
 
+type SiteWorkspacesUpdateBadRequest ProblemDetails
+
+func (*SiteWorkspacesUpdateBadRequest) siteWorkspacesUpdateRes() {}
+
 type SiteWorkspacesUpdateForbidden ProblemDetails
 
 func (*SiteWorkspacesUpdateForbidden) siteWorkspacesUpdateRes() {}
@@ -25555,6 +26001,10 @@ func (*SiteWorkspacesUpdateForbidden) siteWorkspacesUpdateRes() {}
 type SiteWorkspacesUpdateNotFound ProblemDetails
 
 func (*SiteWorkspacesUpdateNotFound) siteWorkspacesUpdateRes() {}
+
+type SiteWorkspacesUpdateRevenueSettingsBadRequest ProblemDetails
+
+func (*SiteWorkspacesUpdateRevenueSettingsBadRequest) siteWorkspacesUpdateRevenueSettingsRes() {}
 
 type SiteWorkspacesUpdateRevenueSettingsForbidden ProblemDetails
 

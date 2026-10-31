@@ -130,5 +130,6 @@ namespace SiteCapturedMessages {
   @requiresPermissions(#[])
   op deleteAll(...ResourceCollectionParameters<SiteCapturedMessageResource>):
     | NoContentResponse
+    | BadRequestProblem
     | NotFoundProblem;
 }

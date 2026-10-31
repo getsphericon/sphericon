@@ -27,7 +27,19 @@ func encodeSiteAnalyticsClicksByLinkResponse(response SiteAnalyticsClicksByLinkR
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAnalyticsClicksByLinkBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAnalyticsClicksByLinkNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -58,7 +70,19 @@ func encodeSiteAnalyticsEventsResponse(response SiteAnalyticsEventsRes, w http.R
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAnalyticsEventsBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAnalyticsEventsNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -89,7 +113,19 @@ func encodeSiteAnalyticsNewPeopleResponse(response SiteAnalyticsNewPeopleRes, w 
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAnalyticsNewPeopleBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAnalyticsNewPeopleNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -120,7 +156,19 @@ func encodeSiteAnalyticsOpensByHourResponse(response SiteAnalyticsOpensByHourRes
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAnalyticsOpensByHourBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAnalyticsOpensByHourNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -151,7 +199,19 @@ func encodeSiteAnalyticsOverviewResponse(response SiteAnalyticsOverviewRes, w ht
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAnalyticsOverviewBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAnalyticsOverviewNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -182,7 +242,19 @@ func encodeSiteAnalyticsRevenueResponse(response SiteAnalyticsRevenueRes, w http
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAnalyticsRevenueBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAnalyticsRevenueNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -213,7 +285,19 @@ func encodeSiteAnalyticsSubscribedPeopleResponse(response SiteAnalyticsSubscribe
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAnalyticsSubscribedPeopleBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAnalyticsSubscribedPeopleNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -258,6 +342,18 @@ func encodeSiteAuditExportResponse(response SiteAuditExportRes, w http.ResponseW
 			defer closer.Close()
 		}
 		if _, err := io.Copy(writer, response.Response); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAuditExportBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
 
@@ -309,6 +405,18 @@ func encodeSiteAuditGetRetentionResponse(response SiteAuditGetRetentionRes, w ht
 	case *SiteAuditRetention:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAuditGetRetentionBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -440,6 +548,18 @@ func encodeSiteAuditSetRetentionResponse(response SiteAuditSetRetentionRes, w ht
 
 		return nil
 
+	case *SiteAuditSetRetentionBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteAuditSetRetentionPaymentRequired:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(402)
@@ -544,6 +664,18 @@ func encodeSiteAuthForgotPasswordResponse(response SiteAuthForgotPasswordRes, w 
 
 		return nil
 
+	case *ProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *ProblemDetailsHeaders:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.Header().Set("Access-Control-Expose-Headers", "Retry-After,X-Ratelimit-Limit,X-Ratelimit-Remaining,X-Ratelimit-Reset")
@@ -642,6 +774,18 @@ func encodeSiteAuthLoginResponse(response SiteAuthLoginRes, w http.ResponseWrite
 
 		e := new(jx.Encoder)
 		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAuthLoginBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
@@ -769,6 +913,18 @@ func encodeSiteAuthResendVerificationResponse(response SiteAuthResendVerificatio
 	switch response := response.(type) {
 	case *SiteAuthResendVerificationAccepted:
 		w.WriteHeader(202)
+
+		return nil
+
+	case *ProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -912,7 +1068,19 @@ func encodeSiteAuthSecondFactorResponse(response SiteAuthSecondFactorRes, w http
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAuthSecondFactorBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAuthSecondFactorUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
 
@@ -1021,6 +1189,18 @@ func encodeSiteAuthSignUpResponse(response SiteAuthSignUpRes, w http.ResponseWri
 
 		return nil
 
+	case *SiteAuthSignUpBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteAuthSignUpConflict:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(409)
@@ -1115,42 +1295,60 @@ func encodeSiteAuthSignUpResponse(response SiteAuthSignUpRes, w http.ResponseWri
 	}
 }
 
-func encodeSiteAuthSigninCallbackResponse(response *SiteAuthSigninCallbackFound, w http.ResponseWriter, span trace.Span) error {
-	w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
-	// Encoding response headers.
-	{
-		h := uri.NewHeaderEncoder(w.Header())
-		// Encode "Location" header.
+func encodeSiteAuthSigninCallbackResponse(response SiteAuthSigninCallbackRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteAuthSigninCallbackFound:
+		w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
+		// Encoding response headers.
 		{
-			cfg := uri.HeaderParameterEncodingConfig{
-				Name:    "Location",
-				Explode: false,
-			}
-			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-				return e.EncodeValue(conv.StringToString(response.Location))
-			}); err != nil {
-				return errors.Wrap(err, "encode Location header")
-			}
-		}
-		// Encode "Set-Cookie" header.
-		{
-			cfg := uri.HeaderParameterEncodingConfig{
-				Name:    "Set-Cookie",
-				Explode: false,
-			}
-			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-				if val, ok := response.SetCookie.Get(); ok {
-					return e.EncodeValue(conv.StringToString(val))
+			h := uri.NewHeaderEncoder(w.Header())
+			// Encode "Location" header.
+			{
+				cfg := uri.HeaderParameterEncodingConfig{
+					Name:    "Location",
+					Explode: false,
 				}
-				return nil
-			}); err != nil {
-				return errors.Wrap(err, "encode Set-Cookie header")
+				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+					return e.EncodeValue(conv.StringToString(response.Location))
+				}); err != nil {
+					return errors.Wrap(err, "encode Location header")
+				}
+			}
+			// Encode "Set-Cookie" header.
+			{
+				cfg := uri.HeaderParameterEncodingConfig{
+					Name:    "Set-Cookie",
+					Explode: false,
+				}
+				if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
+					if val, ok := response.SetCookie.Get(); ok {
+						return e.EncodeValue(conv.StringToString(val))
+					}
+					return nil
+				}); err != nil {
+					return errors.Wrap(err, "encode Set-Cookie header")
+				}
 			}
 		}
-	}
-	w.WriteHeader(302)
+		w.WriteHeader(302)
 
-	return nil
+		return nil
+
+	case *ProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
 }
 
 func encodeSiteAuthSigninNotMeResponse(response SiteAuthSigninNotMeRes, w http.ResponseWriter, span trace.Span) error {
@@ -1208,10 +1406,28 @@ func encodeSiteAuthSigninPendingResponse(response SiteAuthSigninPendingRes, w ht
 	}
 }
 
-func encodeSiteAuthSigninPendingDeclineResponse(response *SiteAuthSigninPendingDeclineNoContent, w http.ResponseWriter, span trace.Span) error {
-	w.WriteHeader(204)
+func encodeSiteAuthSigninPendingDeclineResponse(response SiteAuthSigninPendingDeclineRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *SiteAuthSigninPendingDeclineNoContent:
+		w.WriteHeader(204)
 
-	return nil
+		return nil
+
+	case *ProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
 }
 
 func encodeSiteAuthSigninPendingSubmitResponse(response SiteAuthSigninPendingSubmitRes, w http.ResponseWriter, span trace.Span) error {
@@ -1316,7 +1532,19 @@ func encodeSiteAuthSigninStartResponse(response SiteAuthSigninStartRes, w http.R
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteAuthSigninStartBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAuthSigninStartNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -1573,6 +1801,18 @@ func encodeSiteAutomationsCreateResponse(response SiteAutomationsCreateRes, w ht
 	case *SiteAutomationResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteAutomationsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -2089,7 +2329,19 @@ func encodeSiteBrandKitGetResponse(response SiteBrandKitGetRes, w http.ResponseW
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteBrandKitGetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBrandKitGetNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -2111,6 +2363,18 @@ func encodeSiteBrandKitRecreateStarterTemplatesResponse(response SiteBrandKitRec
 	case *SiteBrandKitRecreateStarterTemplatesCreatedApplicationJSON:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBrandKitRecreateStarterTemplatesBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -2166,6 +2430,18 @@ func encodeSiteBrandKitSaveResponse(response SiteBrandKitSaveRes, w http.Respons
 	case *SiteBrandKitResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBrandKitSaveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -2319,6 +2595,18 @@ func encodeSiteBroadcastsCreateResponse(response SiteBroadcastsCreateRes, w http
 	case *SiteBroadcastResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteBroadcastsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -2886,7 +3174,19 @@ func encodeSiteCapturedMessagesDeleteAllResponse(response SiteCapturedMessagesDe
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteCapturedMessagesDeleteAllBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteCapturedMessagesDeleteAllNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -3008,7 +3308,19 @@ func encodeSiteConnectionsDeleteResponse(response SiteConnectionsDeleteRes, w ht
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteConnectionsDeleteBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteConnectionsDeleteNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -3039,7 +3351,19 @@ func encodeSiteConnectionsListResponse(response SiteConnectionsListRes, w http.R
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteConnectionsListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteConnectionsListNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -3061,6 +3385,18 @@ func encodeSiteContactsCreateResponse(response SiteContactsCreateRes, w http.Res
 	case *SiteContactResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteContactsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -3166,6 +3502,18 @@ func encodeSiteContactsEraseResponse(response SiteContactsEraseRes, w http.Respo
 
 		return nil
 
+	case *SiteContactsEraseBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteContactsEraseForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -3264,6 +3612,18 @@ func encodeSiteContactsExportResponse(response SiteContactsExportRes, w http.Res
 			defer closer.Close()
 		}
 		if _, err := io.Copy(writer, response.Response); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteContactsExportBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
 
@@ -3413,6 +3773,18 @@ func encodeSiteContactsLookupResponse(response SiteContactsLookupRes, w http.Res
 	case *SiteContactHoldings:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteContactsLookupBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -3587,6 +3959,18 @@ func encodeSiteDomainJoinGetResponse(response SiteDomainJoinGetRes, w http.Respo
 
 		return nil
 
+	case *SiteDomainJoinGetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteDomainJoinGetForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -3621,6 +4005,18 @@ func encodeSiteDomainJoinSetResponse(response SiteDomainJoinSetRes, w http.Respo
 	case *SiteDomainJoinResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteDomainJoinSetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -3759,7 +4155,19 @@ func encodeSiteEventsActionsResponse(response SiteEventsActionsRes, w http.Respo
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteEventsActionsBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteEventsActionsNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -3790,7 +4198,19 @@ func encodeSiteEventsListResponse(response SiteEventsListRes, w http.ResponseWri
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteEventsListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteEventsListNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -3843,7 +4263,19 @@ func encodeSiteIdentitiesLinkResponse(response SiteIdentitiesLinkRes, w http.Res
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteIdentitiesLinkBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteIdentitiesLinkNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -3894,6 +4326,18 @@ func encodeSiteIdentitiesUnlinkResponse(response SiteIdentitiesUnlinkRes, w http
 			}
 		}
 		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteIdentitiesUnlinkBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -4038,6 +4482,18 @@ func encodeSiteIntegrationsCreateResponse(response SiteIntegrationsCreateRes, w 
 
 		return nil
 
+	case *SiteIntegrationsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteIntegrationsCreateForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -4148,7 +4604,19 @@ func encodeSiteIntegrationsListResponse(response SiteIntegrationsListRes, w http
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteIntegrationsListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteIntegrationsListNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -4380,6 +4848,18 @@ func encodeSiteInvitationsCreateResponse(response SiteInvitationsCreateRes, w ht
 
 		return nil
 
+	case *SiteInvitationsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteInvitationsCreateForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -4440,6 +4920,18 @@ func encodeSiteInvitationsDeleteResponse(response SiteInvitationsDeleteRes, w ht
 
 		return nil
 
+	case *SiteInvitationsDeleteBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteInvitationsDeleteForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -4483,7 +4975,19 @@ func encodeSiteInvitationsListResponse(response SiteInvitationsListRes, w http.R
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteInvitationsListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteInvitationsListNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -4505,6 +5009,18 @@ func encodeSiteJoinDomainsAddResponse(response SiteJoinDomainsAddRes, w http.Res
 	case *SiteJoinDomainResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteJoinDomainsAddBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -4581,6 +5097,18 @@ func encodeSiteJoinDomainsListResponse(response SiteJoinDomainsListRes, w http.R
 
 		return nil
 
+	case *SiteJoinDomainsListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteJoinDomainsListForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -4614,6 +5142,18 @@ func encodeSiteJoinDomainsRemoveResponse(response SiteJoinDomainsRemoveRes, w ht
 	switch response := response.(type) {
 	case *SiteJoinDomainsRemoveNoContent:
 		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteJoinDomainsRemoveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -4651,6 +5191,18 @@ func encodeSiteJoinDomainsVerifyResponse(response SiteJoinDomainsVerifyRes, w ht
 	case *SiteJoinDomainResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteJoinDomainsVerifyBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -4727,7 +5279,19 @@ func encodeSiteLegalDocumentsGetResponse(response SiteLegalDocumentsGetRes, w ht
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteLegalDocumentsGetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteLegalDocumentsGetNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -4761,6 +5325,18 @@ func encodeSiteMembershipsDeleteResponse(response SiteMembershipsDeleteRes, w ht
 	switch response := response.(type) {
 	case *SiteMembershipsDeleteNoContent:
 		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteMembershipsDeleteBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -4819,7 +5395,19 @@ func encodeSiteMembershipsListResponse(response SiteMembershipsListRes, w http.R
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteMembershipsListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteMembershipsListNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -4840,6 +5428,18 @@ func encodeSiteMembershipsResetSecondFactorResponse(response SiteMembershipsRese
 	switch response := response.(type) {
 	case *SiteMembershipsResetSecondFactorNoContent:
 		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteMembershipsResetSecondFactorBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -4889,6 +5489,18 @@ func encodeSiteMembershipsUpdateResponse(response SiteMembershipsUpdateRes, w ht
 	case *SiteMembershipResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteMembershipsUpdateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -4953,6 +5565,18 @@ func encodeSiteOAuthDecideResponse(response SiteOAuthDecideRes, w http.ResponseW
 
 		return nil
 
+	case *SiteOAuthDecideBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteOAuthDecideForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -4999,6 +5623,18 @@ func encodeSiteOAuthDescribeResponse(response SiteOAuthDescribeRes, w http.Respo
 	case *SiteOAuthAuthorizationRequest:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteOAuthDescribeBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -5055,6 +5691,18 @@ func encodeSiteOptionalConsentsSetResponse(response SiteOptionalConsentsSetRes, 
 	case *SiteOptionalConsent:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteOptionalConsentsSetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -5175,7 +5823,19 @@ func encodeSitePasskeyLoginFinishResponse(response SitePasskeyLoginFinishRes, w 
 
 		return nil
 
-	case *ProblemDetails:
+	case *SitePasskeyLoginFinishBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SitePasskeyLoginFinishUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
 
@@ -5377,6 +6037,18 @@ func encodeSitePasskeysFinishCheckResponse(response SitePasskeysFinishCheckRes, 
 
 		return nil
 
+	case *SitePasskeysFinishCheckBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SitePasskeysFinishCheckForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -5431,6 +6103,18 @@ func encodeSitePasskeysFinishRegistrationResponse(response SitePasskeysFinishReg
 
 		e := new(jx.Encoder)
 		response.Response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SitePasskeysFinishRegistrationBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
 		if _, err := e.WriteTo(w); err != nil {
 			return errors.Wrap(err, "write")
 		}
@@ -5580,6 +6264,18 @@ func encodeSitePasskeysRemoveResponse(response SitePasskeysRemoveRes, w http.Res
 
 		return nil
 
+	case *SitePasskeysRemoveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SitePasskeysRemoveForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -5700,6 +6396,18 @@ func encodeSitePasskeysRenameResponse(response SitePasskeysRenameRes, w http.Res
 
 		return nil
 
+	case *SitePasskeysRenameBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SitePasskeysRenameNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -5803,7 +6511,19 @@ func encodeSitePersonalTokensDeleteResponse(response SitePersonalTokensDeleteRes
 
 		return nil
 
-	case *ProblemDetails:
+	case *SitePersonalTokensDeleteBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SitePersonalTokensDeleteNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -5834,7 +6554,19 @@ func encodeSitePersonalTokensGrantableScopesResponse(response SitePersonalTokens
 
 		return nil
 
-	case *ProblemDetails:
+	case *SitePersonalTokensGrantableScopesBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SitePersonalTokensGrantableScopesNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -5865,7 +6597,19 @@ func encodeSitePersonalTokensListResponse(response SitePersonalTokensListRes, w 
 
 		return nil
 
-	case *ProblemDetails:
+	case *SitePersonalTokensListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SitePersonalTokensListNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -6007,6 +6751,18 @@ func encodeSitePublicInvitationsAcceptResponse(response SitePublicInvitationsAcc
 
 		return nil
 
+	case *SitePublicInvitationsAcceptBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SitePublicInvitationsAcceptUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
@@ -6139,7 +6895,19 @@ func encodeSitePublicInvitationsLookupResponse(response SitePublicInvitationsLoo
 
 		return nil
 
-	case *ProblemDetails:
+	case *SitePublicInvitationsLookupBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SitePublicInvitationsLookupNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -6271,6 +7039,18 @@ func encodeSiteRulesCreateResponse(response SiteRulesCreateRes, w http.ResponseW
 	case *SiteRuleResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteRulesCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -6804,6 +7584,18 @@ func encodeSiteSecondFactorConfirmEnrollmentResponse(response SiteSecondFactorCo
 
 		return nil
 
+	case *SiteSecondFactorConfirmEnrollmentBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteSecondFactorConfirmEnrollmentForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -6931,6 +7723,18 @@ func encodeSiteSecondFactorDisableResponse(response SiteSecondFactorDisableRes, 
 			}
 		}
 		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteSecondFactorDisableBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -7084,6 +7888,18 @@ func encodeSiteSecondFactorRegenerateRecoveryCodesResponse(response SiteSecondFa
 
 		return nil
 
+	case *SiteSecondFactorRegenerateRecoveryCodesBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteSecondFactorRegenerateRecoveryCodesForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -7183,6 +7999,18 @@ func encodeSiteSecondFactorStartEnrollmentResponse(response SiteSecondFactorStar
 	case *SiteSecondFactorEnrollment:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteSecondFactorStartEnrollmentBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -7401,6 +8229,18 @@ func encodeSiteSegmentsCreateResponse(response SiteSegmentsCreateRes, w http.Res
 	case *SiteSegmentResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteSegmentsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -7771,6 +8611,18 @@ func encodeSiteSendingDomainsCreateResponse(response SiteSendingDomainsCreateRes
 
 		return nil
 
+	case *SiteSendingDomainsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteSendingDomainsCreateForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -8058,7 +8910,19 @@ func encodeSiteSetupChecklistGetResponse(response SiteSetupChecklistGetRes, w ht
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteSetupChecklistGetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteSetupChecklistGetNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -8079,6 +8943,18 @@ func encodeSiteSignupSurveySubmitResponse(response SiteSignupSurveySubmitRes, w 
 	switch response := response.(type) {
 	case *SiteSignupSurveySubmitNoContent:
 		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteSignupSurveySubmitBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -8181,6 +9057,18 @@ func encodeSiteSuppressionsCreateResponse(response SiteSuppressionsCreateRes, w 
 	case *SiteSuppressionResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteSuppressionsCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -8597,6 +9485,18 @@ func encodeSiteTemplatesCreateResponse(response SiteTemplatesCreateRes, w http.R
 
 		return nil
 
+	case *SiteTemplatesCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteTemplatesCreateNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -8829,6 +9729,18 @@ func encodeSiteTokensCreateResponse(response SiteTokensCreateRes, w http.Respons
 
 		return nil
 
+	case *SiteTokensCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteTokensCreateForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -8932,7 +9844,19 @@ func encodeSiteTokensListResponse(response SiteTokensListRes, w http.ResponseWri
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteTokensListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteTokensListNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -8954,6 +9878,18 @@ func encodeSiteTokensUpdateResponse(response SiteTokensUpdateRes, w http.Respons
 	case *SiteApiTokenResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteTokensUpdateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -9073,7 +10009,19 @@ func encodeSiteUserAcceptPendingResponse(response SiteUserAcceptPendingRes, w ht
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteUserAcceptPendingBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteUserAcceptPendingUnprocessableEntity:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
 
@@ -9227,6 +10175,18 @@ func encodeSiteUserDeleteUserLinkResponse(response SiteUserDeleteUserLinkRes, w 
 
 		return nil
 
+	case *ProblemDetails:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteDeleteUserProblemDetails:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(422)
@@ -9248,6 +10208,18 @@ func encodeSiteUserEmailChangeResponse(response SiteUserEmailChangeRes, w http.R
 	switch response := response.(type) {
 	case *SiteUserEmailChangeAccepted:
 		w.WriteHeader(202)
+
+		return nil
+
+	case *SiteUserEmailChangeBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -9415,6 +10387,18 @@ func encodeSiteUserUpdateMeResponse(response SiteUserUpdateMeRes, w http.Respons
 
 		return nil
 
+	case *SiteUserUpdateMeBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteUserUpdateMeForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -9514,6 +10498,18 @@ func encodeSiteWebhooksCreateResponse(response SiteWebhooksCreateRes, w http.Res
 	case *SiteWebhookEndpointResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWebhooksCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -9937,6 +10933,18 @@ func encodeSiteWorkspacesAccountLinkResponse(response SiteWorkspacesAccountLinkR
 
 		return nil
 
+	case *SiteWorkspacesAccountLinkBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteWorkspacesAccountLinkForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -9980,6 +10988,18 @@ func encodeSiteWorkspacesCreateResponse(response SiteWorkspacesCreateRes, w http
 
 		return nil
 
+	case *SiteWorkspacesCreateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteWorkspacesCreateForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -10014,6 +11034,18 @@ func encodeSiteWorkspacesDeleteResponse(response SiteWorkspacesDeleteRes, w http
 	case *SiteDeletedWorkspaceResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesDeleteBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -10078,7 +11110,19 @@ func encodeSiteWorkspacesGetRevenueSettingsResponse(response SiteWorkspacesGetRe
 
 		return nil
 
-	case *ProblemDetails:
+	case *SiteWorkspacesGetRevenueSettingsBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesGetRevenueSettingsNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
 
@@ -10099,6 +11143,18 @@ func encodeSiteWorkspacesLeaveResponse(response SiteWorkspacesLeaveRes, w http.R
 	switch response := response.(type) {
 	case *SiteWorkspacesLeaveNoContent:
 		w.WriteHeader(204)
+
+		return nil
+
+	case *SiteWorkspacesLeaveBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
 
 		return nil
 
@@ -10136,6 +11192,18 @@ func encodeSiteWorkspacesLiftSecondFactorRequirementResponse(response SiteWorksp
 	case *SiteWorkspaceResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesLiftSecondFactorRequirementBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -10222,6 +11290,18 @@ func encodeSiteWorkspacesRequireSecondFactorResponse(response SiteWorkspacesRequ
 
 		return nil
 
+	case *SiteWorkspacesRequireSecondFactorBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteWorkspacesRequireSecondFactorForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -10265,6 +11345,18 @@ func encodeSiteWorkspacesRestoreResponse(response SiteWorkspacesRestoreRes, w ht
 
 		return nil
 
+	case *SiteWorkspacesRestoreBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteWorkspacesRestoreNotFound:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(404)
@@ -10299,6 +11391,18 @@ func encodeSiteWorkspacesSetTimezoneResponse(response SiteWorkspacesSetTimezoneR
 	case *SiteWorkspaceResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesSetTimezoneBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -10363,6 +11467,18 @@ func encodeSiteWorkspacesUpdateResponse(response SiteWorkspacesUpdateRes, w http
 
 		return nil
 
+	case *SiteWorkspacesUpdateBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *SiteWorkspacesUpdateForbidden:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(403)
@@ -10409,6 +11525,18 @@ func encodeSiteWorkspacesUpdateRevenueSettingsResponse(response SiteWorkspacesUp
 	case *SiteRevenueSettingsResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *SiteWorkspacesUpdateRevenueSettingsBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

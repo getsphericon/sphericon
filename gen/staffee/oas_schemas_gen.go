@@ -1079,7 +1079,6 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 }
 
 func (*ProblemDetails) staffSignupSurveyCountsRes() {}
-func (*ProblemDetails) staffWorkspacesListRes()     {}
 
 // Validation errors grouped by field.
 type ProblemDetailsErrors map[string][]string
@@ -2336,6 +2335,10 @@ func (s *StaffSignupSurveyCounts) SetHeardFromOtherTexts(val []StaffSignupOtherT
 
 func (*StaffSignupSurveyCounts) staffSignupSurveyCountsRes() {}
 
+type StaffSignupSurveyGetBadRequest ProblemDetails
+
+func (*StaffSignupSurveyGetBadRequest) staffSignupSurveyGetRes() {}
+
 type StaffSignupSurveyGetNotFound ProblemDetails
 
 func (*StaffSignupSurveyGetNotFound) staffSignupSurveyGetRes() {}
@@ -2937,6 +2940,10 @@ func (s *StaffWorkspaceReview) UnmarshalText(data []byte) error {
 	}
 }
 
+type StaffWorkspacesExemptBadRequest ProblemDetails
+
+func (*StaffWorkspacesExemptBadRequest) staffWorkspacesExemptRes() {}
+
 type StaffWorkspacesExemptNotFound ProblemDetails
 
 func (*StaffWorkspacesExemptNotFound) staffWorkspacesExemptRes() {}
@@ -2945,6 +2952,10 @@ type StaffWorkspacesExemptUnauthorized ProblemDetails
 
 func (*StaffWorkspacesExemptUnauthorized) staffWorkspacesExemptRes() {}
 
+type StaffWorkspacesGetBadRequest ProblemDetails
+
+func (*StaffWorkspacesGetBadRequest) staffWorkspacesGetRes() {}
+
 type StaffWorkspacesGetNotFound ProblemDetails
 
 func (*StaffWorkspacesGetNotFound) staffWorkspacesGetRes() {}
@@ -2952,6 +2963,10 @@ func (*StaffWorkspacesGetNotFound) staffWorkspacesGetRes() {}
 type StaffWorkspacesGetUnauthorized ProblemDetails
 
 func (*StaffWorkspacesGetUnauthorized) staffWorkspacesGetRes() {}
+
+type StaffWorkspacesListBadRequest ProblemDetails
+
+func (*StaffWorkspacesListBadRequest) staffWorkspacesListRes() {}
 
 // Paginated response.
 type StaffWorkspacesListOK struct {
@@ -3019,6 +3034,14 @@ func (s *StaffWorkspacesListOK) SetTotalPages(val int32) {
 
 func (*StaffWorkspacesListOK) staffWorkspacesListRes() {}
 
+type StaffWorkspacesListUnauthorized ProblemDetails
+
+func (*StaffWorkspacesListUnauthorized) staffWorkspacesListRes() {}
+
+type StaffWorkspacesSuspendBadRequest ProblemDetails
+
+func (*StaffWorkspacesSuspendBadRequest) staffWorkspacesSuspendRes() {}
+
 type StaffWorkspacesSuspendNotFound ProblemDetails
 
 func (*StaffWorkspacesSuspendNotFound) staffWorkspacesSuspendRes() {}
@@ -3031,6 +3054,10 @@ type StaffWorkspacesSuspendUnprocessableEntity ProblemDetails
 
 func (*StaffWorkspacesSuspendUnprocessableEntity) staffWorkspacesSuspendRes() {}
 
+type StaffWorkspacesUnexemptBadRequest ProblemDetails
+
+func (*StaffWorkspacesUnexemptBadRequest) staffWorkspacesUnexemptRes() {}
+
 type StaffWorkspacesUnexemptNotFound ProblemDetails
 
 func (*StaffWorkspacesUnexemptNotFound) staffWorkspacesUnexemptRes() {}
@@ -3038,6 +3065,10 @@ func (*StaffWorkspacesUnexemptNotFound) staffWorkspacesUnexemptRes() {}
 type StaffWorkspacesUnexemptUnauthorized ProblemDetails
 
 func (*StaffWorkspacesUnexemptUnauthorized) staffWorkspacesUnexemptRes() {}
+
+type StaffWorkspacesUnsuspendBadRequest ProblemDetails
+
+func (*StaffWorkspacesUnsuspendBadRequest) staffWorkspacesUnsuspendRes() {}
 
 type StaffWorkspacesUnsuspendNotFound ProblemDetails
 
