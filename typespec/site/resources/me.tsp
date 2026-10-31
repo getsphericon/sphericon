@@ -152,6 +152,7 @@ namespace SiteUser {
 
         @body body: SiteUserResource;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;
@@ -163,6 +164,7 @@ namespace SiteUser {
   @route("/email-change")
   op emailChange(@body body: SiteEmailChangeInput):
     | AcceptedResponse
+    | BadRequestProblem
     | ForbiddenProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;
@@ -213,6 +215,7 @@ namespace SiteUser {
   @allowedWhileAcceptancePending
   op deleteUserLink(@body body: SiteDeleteUserLinkInput):
     | AcceptedResponse
+    | BadRequestProblem
     | SiteDeleteUserRefusedProblem;
 
   /** Accept every required acceptance pending for the User (ADR 0062): each is recorded accepted
@@ -228,5 +231,6 @@ namespace SiteUser {
         @statusCode statusCode: 200;
         @body body: SiteUserResource;
       }
+    | BadRequestProblem
     | UnprocessableEntityProblem;
 }

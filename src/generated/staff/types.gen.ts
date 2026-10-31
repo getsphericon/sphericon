@@ -5,13 +5,6 @@ export type ClientOptions = {
   baseUrl: 'http://localhost:3000/staff' | (string & {});
 };
 
-/**
- * RFC 7807 bad request response
- */
-export type BadRequestProblem = {
-  body: ProblemDetails;
-};
-
 export type EmailAddress = string;
 
 /**
@@ -602,6 +595,10 @@ export type StaffAuthLoginData = {
 
 export type StaffAuthLoginErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -655,6 +652,10 @@ export type StaffAuthSecondFactorData = {
 };
 
 export type StaffAuthSecondFactorErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -734,6 +735,10 @@ export type StaffInstanceSetTelemetryData = {
 };
 
 export type StaffInstanceSetTelemetryErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -841,6 +846,10 @@ export type StaffSignupItemsCreateData = {
 
 export type StaffSignupItemsCreateErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -869,6 +878,10 @@ export type StaffSignupItemsReorderData = {
 };
 
 export type StaffSignupItemsReorderErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -901,6 +914,10 @@ export type StaffSignupItemsGetData = {
 
 export type StaffSignupItemsGetErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -931,6 +948,10 @@ export type StaffSignupItemsUpdateData = {
 };
 
 export type StaffSignupItemsUpdateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -967,6 +988,10 @@ export type StaffSignupItemsArchiveData = {
 
 export type StaffSignupItemsArchiveErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -1002,6 +1027,10 @@ export type StaffSignupItemsSaveDraftData = {
 
 export type StaffSignupItemsSaveDraftErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -1033,6 +1062,10 @@ export type StaffSignupItemsListVersionsData = {
 
 export type StaffSignupItemsListVersionsErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -1063,6 +1096,10 @@ export type StaffSignupItemsPublishData = {
 };
 
 export type StaffSignupItemsPublishErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */

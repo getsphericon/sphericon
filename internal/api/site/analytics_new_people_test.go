@@ -26,7 +26,7 @@ func TestSiteAnalyticsNewPeopleIsRefusedForAForeignWorkspace(t *testing.T) {
 
 	out, err := c.SiteAnalyticsNewPeople(context.Background(), siteapi.SiteAnalyticsNewPeopleParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, out)
+	assert.IsType(t, &siteapi.SiteAnalyticsNewPeopleNotFound{}, out)
 }
 
 func TestEveryRoleReadsTheNewPeopleReport(t *testing.T) {

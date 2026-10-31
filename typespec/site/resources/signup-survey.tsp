@@ -106,6 +106,7 @@ namespace SiteSignupSurvey {
   @post
   op submit(@body body: SiteSignupSurveyInput):
     | NoContentResponse
+    | BadRequestProblem
     | ConflictProblem
     | UnprocessableEntityProblem
     | TooManyRequestsProblem;

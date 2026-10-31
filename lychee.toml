@@ -15,12 +15,13 @@ accept = ["200..=204", "429"]
 exclude_path = ["(^|/)CHANGELOG\\.md$", "(^|/)node_modules/", "(^|/)\\.claude/"]
 # Pages that answer a script or a GitHub runner differently from a browser: a 404 for a script
 # (GitHub, the FTC), a 403 for the runners' addresses (autoize.com) and a certificate from a CA
-# the runners do not trust (developers.mindbox.ru), and Drip's site and help center, which answer
-# 403 to a script.
+# the runners do not trust (developers.mindbox.ru), and Drip's site and help center and Brevo's
+# help center, which answer 403 to a script.
 exclude = [
   "^https://github\\.com/getsphericon/sphericon/stargazers$",
   "^https://www\\.ftc\\.gov/business-guidance/",
   "^https://autoize\\.com/",
   "^https://developers\\.mindbox\\.ru/",
   "^https://(www|help)\\.drip\\.com/",
+  "^https://help\\.brevo\\.com/",
 ]

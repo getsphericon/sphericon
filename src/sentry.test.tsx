@@ -59,9 +59,7 @@ test('a render error caught by a route boundary is reported through the root opt
     </CatchBoundary>,
   )
 
-  await vi.waitFor(() => {
-    expect(container.textContent).toBe('fallback')
-  })
+  await expect.poll(() => container.textContent).toBe('fallback')
   expect(sentry.captured).toEqual([new Error('render failed')])
 
   root.unmount()

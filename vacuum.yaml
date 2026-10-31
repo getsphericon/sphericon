@@ -1,0 +1,14 @@
+# vacuum's recommended ruleset (mise run check:openapi), with the rules of our own contract.
+extends: [[vacuum:oas, recommended]]
+rules:
+  # The Go servers decode an operation's parameters and body before its handler runs, and refuse
+  # one that does not decode (a malformed id, a body that is no JSON) with a 400. An operation that
+  # takes either declares that answer, or a client and the contract fuzz meet an undocumented status.
+  input-declares-bad-request:
+    description: An operation that takes a parameter or a body declares its 400 (BadRequestProblem)
+    severity: error
+    recommended: true
+    given: $.paths[*][?(@.requestBody || @.parameters.length > 0)].responses
+    then:
+      field: '400'
+      function: truthy

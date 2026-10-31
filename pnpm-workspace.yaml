@@ -113,6 +113,8 @@ overrides:
   js-yaml: '>=5.4.1'
   esbuild: '>=0.28.1'
   happy-dom: '>=21.0.4'
+  glob: '>=14.0.2'
+  minimatch: '>=11.0.1'
 permissions:
   '@tanstack/react-router':
     skills: true

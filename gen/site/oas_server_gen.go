@@ -167,7 +167,7 @@ type Handler interface {
 	// reaches the handler and gets the same redirect as any other refusal.
 	//
 	// GET /auth/signin/{provider}/callback
-	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error)
+	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (SiteAuthSigninCallbackRes, error)
 	// SiteAuthSigninNotMe implements SiteAuth_signinNotMe operation.
 	//
 	// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
@@ -190,7 +190,7 @@ type Handler interface {
 	// names nothing any more.
 	//
 	// POST /auth/signin-pending/decline
-	SiteAuthSigninPendingDecline(ctx context.Context, req *SiteSigninPendingDeclineInput) error
+	SiteAuthSigninPendingDecline(ctx context.Context, req *SiteSigninPendingDeclineInput) (SiteAuthSigninPendingDeclineRes, error)
 	// SiteAuthSigninPendingSubmit implements SiteAuth_signinPendingSubmit operation.
 	//
 	// Complete a pending sign-up with the answers to the Sign-up items: creates the User with its Verified

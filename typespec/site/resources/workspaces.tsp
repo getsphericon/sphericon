@@ -208,6 +208,7 @@ namespace SiteWorkspaces {
         @statusCode statusCode: 201;
         @body body: SiteWorkspaceResource;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | UnprocessableEntityProblem;
 
@@ -237,6 +238,7 @@ namespace SiteWorkspaces {
     @body body: SiteDeleteWorkspaceInput,
   ):
     | SiteDeletedWorkspaceResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -251,6 +253,7 @@ namespace SiteWorkspaces {
   @route("/deleted/{id}/restore")
   op restore(@path id: WorkspaceId):
     | SiteWorkspaceResource
+    | BadRequestProblem
     | NotFoundProblem
     | ConflictProblem;
 
@@ -263,6 +266,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[])
   op leave(@path workspaceId: WorkspaceId):
     | NoContentResponse
+    | BadRequestProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
 
@@ -276,6 +280,7 @@ namespace SiteWorkspaces {
     @body body: SiteUpdateWorkspaceInput,
   ):
     | SiteWorkspaceResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -288,6 +293,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[Permission.secondFactorManage])
   op requireSecondFactor(@path workspaceId: WorkspaceId):
     | SiteWorkspaceResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
 
@@ -301,6 +307,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[Permission.secondFactorManage])
   op liftSecondFactorRequirement(@path workspaceId: WorkspaceId):
     | SiteWorkspaceResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
 
@@ -315,6 +322,7 @@ namespace SiteWorkspaces {
     @body body: SiteWorkspaceTimezoneInput,
   ):
     | SiteWorkspaceResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -326,6 +334,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[Permission.accountLinkOpen])
   op accountLink(@path workspaceId: WorkspaceId):
     | SiteAccountLinkResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
 
@@ -336,6 +345,7 @@ namespace SiteWorkspaces {
   @requiresPermissions(#[])
   op getRevenueSettings(@path workspaceId: WorkspaceId):
     | SiteRevenueSettingsResource
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Change the Reporting currency and the Attribution window (Owner and Admin only, Permission
@@ -349,6 +359,7 @@ namespace SiteWorkspaces {
     @body body: SiteUpdateRevenueSettingsInput,
   ):
     | SiteRevenueSettingsResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;

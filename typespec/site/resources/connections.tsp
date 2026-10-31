@@ -51,6 +51,7 @@ namespace SiteConnections {
         @statusCode statusCode: 200;
         @body body: SiteConnectionResource[];
       }
+    | BadRequestProblem
     | NotFoundProblem;
 
   /** Revoke a Connection: the caller's own, or anyone's with members:manage */
@@ -60,5 +61,6 @@ namespace SiteConnections {
   @requiresPermissions(#[])
   op delete(...ResourceParameters<SiteConnectionResource>):
     | NoContentResponse
+    | BadRequestProblem
     | NotFoundProblem;
 }

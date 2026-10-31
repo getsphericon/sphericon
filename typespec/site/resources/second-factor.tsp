@@ -102,6 +102,7 @@ namespace SiteSecondFactor {
         @statusCode statusCode: 200;
         @body body: SiteSecondFactorEnrollment;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | ConflictProblem
     | TooManyRequestsProblem;
@@ -122,6 +123,7 @@ namespace SiteSecondFactor {
 
         @body body: SiteRecoveryCodes;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | ConflictProblem
     | UnprocessableEntityProblem
@@ -142,6 +144,7 @@ namespace SiteSecondFactor {
 
         @body body: SiteRecoveryCodes;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | ConflictProblem
     | TooManyRequestsProblem;
@@ -159,6 +162,7 @@ namespace SiteSecondFactor {
         /** The acting session reissued under the new session epoch */
         @header("Set-Cookie") setCookie: string;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | ConflictProblem
     | UnprocessableEntityProblem

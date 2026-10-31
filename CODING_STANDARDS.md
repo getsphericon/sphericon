@@ -200,10 +200,11 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   library stylesheets in `src/main.tsx`, and the workflow builder's, whose global resets must not
   outlive the builder: `AutomationBuilder.tsx` renders it as a `<style>` element, the one file
   `react/forbid-elements` lets one in (an override in `oxlint.config.ts`).
-- **A pull request runs the logic tests; the UI tests run nightly (rule 12).** `*.test.ts` files
-  are logic and run on every pull request (`mise run test:frontend:logic`). `*.test.tsx` files
-  render pages in Chromium: they are written only for a critical path and run, sharded, with the
-  coverage floor, in the nightly workflow. `mise run test:frontend` runs both, locally.
+- **A pull request runs the whole frontend suite (rule 12).** `*.test.ts` files are logic;
+  `*.test.tsx` files render pages in Chromium and are written only for a critical path. Both run on
+  every pull request, sharded over three runners, with the coverage floor (`test:frontend:shard`,
+  then `test:frontend:merge`). `mise run test:frontend` runs both locally, and
+  `mise run test:frontend:logic` only the logic tests, in seconds.
 - **Theming & responsiveness.** Light and dark color schemes are supported via
   `MantineProvider` (`defaultColorScheme="auto"`) + `ColorSchemeScript` in `index.html`;
   the UI must be responsive using Mantine primitives (responsive props,

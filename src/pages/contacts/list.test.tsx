@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { expect, test, vi } from 'vitest'
+import { expect, test } from 'vitest'
 
 import { handleSiteContactsList, handleSiteTagsList } from '../../generated/site/msw.gen.ts'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
@@ -104,13 +104,66 @@ test('typing in the search field puts the email in the URL search', async () => 
   worker.use(handleSiteContactsList({ body: page([ALICE, BOB], 2) }))
 
   const { screen, navigate } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  // Typing waits for the loaded list, as a person would: on a busy CI runner, a search typed
+  // before it had loaded never reached the URL.
+  await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
   await screen.getByRole('textbox', { name: 'Search by email' }).fill('bob')
 
-  await vi.waitFor(() =>
-    expect(navigate).toHaveBeenCalledWith(
-      expect.objectContaining({ search: { email: 'bob' }, replace: true }),
-    ),
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith(expect.objectContaining({ search: { email: 'bob' }, replace: true }))
+})
+
+test('clearing the search field takes the email out of the URL search', async () => {
+  worker.use(handleSiteContactsList({ body: page([BOB], 1) }))
+
+  const { screen, navigate } = await renderWithRouter(<ContactsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?email=bob`,
+  })
+  await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
+  await screen.getByRole('textbox', { name: 'Search by email' }).fill('   ')
+
+  await expect
+    .poll(() => navigate)
+    .toHaveBeenCalledWith(expect.objectContaining({ search: { email: undefined }, replace: true }))
+})
+
+test('the search field follows the URL search when back or forward changes it', async () => {
+  worker.use(handleSiteContactsList({ body: page([ALICE, BOB], 2) }))
+
+  const { screen, router } = await renderWithRouter(<ContactsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?email=bob`,
+  })
+  const field = screen.getByRole('textbox', { name: 'Search by email' })
+  await expect.element(field).toHaveValue('bob')
+
+  router.history.push(`${LIST_ROUTE.initialPath}?email=alice`)
+  await expect.element(field).toHaveValue('alice')
+
+  router.history.push(LIST_ROUTE.initialPath)
+  await expect.element(field).toHaveValue('')
+})
+
+test('the field keeps what was typed when the URL search is its trimmed text', async () => {
+  const requested: (string | null)[] = []
+  worker.use(
+    handleSiteContactsList(({ request }) => {
+      requested.push(new URL(request.url).searchParams.get('email'))
+      return HttpResponse.json(page([BOB], 1))
+    }),
   )
+
+  const { screen, router } = await renderWithRouter(<ContactsListPage />, LIST_ROUTE)
+  await expect.element(screen.getByText('bob@example.com')).toBeInTheDocument()
+  const field = screen.getByRole('textbox', { name: 'Search by email' })
+  await field.fill(' bob ')
+
+  router.history.push(`${LIST_ROUTE.initialPath}?email=bob`)
+  // The page has read the new URL search once it asks for that email's contacts.
+  await expect.poll(() => requested).toContain('bob')
+  await expect.element(field).toHaveValue(' bob ')
 })
 
 test('the email in the URL search filters the request and fills the field', async () => {

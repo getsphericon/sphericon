@@ -25,7 +25,8 @@ func TestSiteMalformedIDIsABadRequest(t *testing.T) {
 		require.NoError(t, err)
 		assert.IsType(t, &siteapi.SiteContactsGetBadRequest{}, inPath, bad)
 
-		_, err = c.SiteEventsList(ctx, siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.NewOptEntityId(123456789)})
-		assert.Error(t, err, "a malformed contactId query is refused: %s", bad)
+		inQuery, err := c.SiteEventsList(ctx, siteapi.SiteEventsListParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.NewOptEntityId(123456789)})
+		require.NoError(t, err)
+		assert.IsType(t, &siteapi.SiteEventsListBadRequest{}, inQuery, "a malformed contactId query is refused: %s", bad)
 	}
 }

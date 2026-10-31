@@ -317,7 +317,7 @@ namespace SiteAnalytics {
 
     /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
-  ): SiteAnalyticsOverview | NotFoundProblem;
+  ): SiteAnalyticsOverview | BadRequestProblem | NotFoundProblem;
 
   /** Revenue of the Workspace's Orders over the range, in its Reporting currency (ADR 0064).
    * Open to every member. */
@@ -329,7 +329,7 @@ namespace SiteAnalytics {
 
     /** Window to sum over (defaults to 30d) */
     @query range?: SiteAnalyticsRange = SiteAnalyticsRange.`30d`,
-  ): SiteAnalyticsRevenue | NotFoundProblem;
+  ): SiteAnalyticsRevenue | BadRequestProblem | NotFoundProblem;
 
   /** New people report: Contacts created per Report day, split by Contact source */
   @get
@@ -340,7 +340,7 @@ namespace SiteAnalytics {
 
     /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
-  ): SiteNewPeopleReport | NotFoundProblem;
+  ): SiteNewPeopleReport | BadRequestProblem | NotFoundProblem;
 
   /** Subscribed people report: who subscribed and unsubscribed per Report day, and how many are subscribed now */
   @get
@@ -351,7 +351,7 @@ namespace SiteAnalytics {
 
     /** Window to report over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
-  ): SiteAnalyticsSubscribedPeople | NotFoundProblem;
+  ): SiteAnalyticsSubscribedPeople | BadRequestProblem | NotFoundProblem;
 
   /** Clicks by link over the whole workspace, split by the Broadcast or Automation that carried each link */
   @get
@@ -362,7 +362,7 @@ namespace SiteAnalytics {
 
     /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
-  ): SiteAnalyticsClicksByLink | NotFoundProblem;
+  ): SiteAnalyticsClicksByLink | BadRequestProblem | NotFoundProblem;
 
   /** Human opens by hour of day and day of week in the Workspace time zone */
   @get
@@ -373,7 +373,7 @@ namespace SiteAnalytics {
 
     /** Window to aggregate over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
-  ): SiteAnalyticsOpensByHour | NotFoundProblem;
+  ): SiteAnalyticsOpensByHour | BadRequestProblem | NotFoundProblem;
 
   /** Events in the range, grouped by action */
   @get
@@ -384,5 +384,5 @@ namespace SiteAnalytics {
 
     /** Window to report over (defaults to 7d) */
     @query range?: SiteAnalyticsRange,
-  ): SiteAnalyticsEvents | NotFoundProblem;
+  ): SiteAnalyticsEvents | BadRequestProblem | NotFoundProblem;
 }

@@ -257,3 +257,39 @@ test('within takes a number of days, and a date without a day picked is blank', 
   expect(noDay.rules).toEqual([{ kind: 'date', field: 'custom:seats', operator: 'before' }])
   expect(toCondition(noDay)).toBeUndefined()
 })
+
+test('a value that is no finite number leaves a number comparison blank', () => {
+  const infinite = toDraft(compared(SiteConditionNumberOperator.LT, Number.POSITIVE_INFINITY))
+  const words = toDraft(compared(SiteConditionNumberOperator.LT, 'a few'))
+
+  expect(infinite.rules).toEqual([{ kind: 'number', field: 'custom:seats', operator: 'lt' }])
+  expect(words.rules).toEqual([{ kind: 'number', field: 'custom:seats', operator: 'lt' }])
+  expect(toCondition(words)).toBeUndefined()
+})
+
+test('within without a number of days is blank, and the draft is no Condition yet', () => {
+  const blank = toDraft(compared(dateWithinOperator, ''))
+
+  expect(blank.rules).toEqual([{ kind: 'dateWithin', field: 'custom:seats' }])
+  expect(toCondition(blank)).toBeUndefined()
+})
+
+test('a loaded moment that is no date shows no day', () => {
+  const query = toQuery(dated(SiteConditionDateOperator.BEFORE, 'not a moment'), paris)
+
+  expect(query.rules).toEqual([{ field: 'custom:renews_at', operator: 'before', value: '' }])
+})
+
+test('a combinator kept between the rules of the query builder is not a rule', () => {
+  const rule = { field: 'custom:seats', operator: SiteConditionNumberOperator.GTE, value: 1 }
+  const independent: RuleGroupType = {
+    combinator: SiteConditionCombinator.AND,
+    rules: [rule],
+  }
+  // react-querybuilder's independent combinators keep the combinator between the rules as text.
+  Reflect.set(independent, 'rules', [rule, 'and'])
+
+  expect(toDraft(independent).rules).toEqual([
+    { kind: 'number', field: 'custom:seats', operator: 'gte', value: 1 },
+  ])
+})

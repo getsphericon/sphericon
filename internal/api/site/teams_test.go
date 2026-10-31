@@ -119,7 +119,7 @@ func TestSiteInvitationExpiredRejected(t *testing.T) {
 
 	lookup, err := c.SitePublicInvitationsLookup(ctx, siteapi.SitePublicInvitationsLookupParams{Token: "inv_fixture_token_expired"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, lookup)
+	assert.IsType(t, &siteapi.SitePublicInvitationsLookupNotFound{}, lookup)
 
 	accept, err := c.SitePublicInvitationsAccept(ctx, &siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_expired"})
 	require.NoError(t, err)

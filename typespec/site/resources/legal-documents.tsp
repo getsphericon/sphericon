@@ -72,5 +72,8 @@ namespace SiteLegalDocuments {
   @allowedWhileAcceptancePending
   @get
   @route("/legal-documents/{key}")
-  op get(@path key: SignupItemKey): SiteLegalDocument | NotFoundProblem;
+  op get(@path key: SignupItemKey):
+    | SiteLegalDocument
+    | BadRequestProblem
+    | NotFoundProblem;
 }

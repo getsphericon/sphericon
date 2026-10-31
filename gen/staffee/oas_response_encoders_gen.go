@@ -55,6 +55,18 @@ func encodeStaffSignupSurveyGetResponse(response StaffSignupSurveyGetRes, w http
 
 		return nil
 
+	case *StaffSignupSurveyGetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *StaffSignupSurveyGetUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
@@ -153,6 +165,18 @@ func encodeStaffWorkspacesExemptResponse(response StaffWorkspacesExemptRes, w ht
 
 		return nil
 
+	case *StaffWorkspacesExemptBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *StaffWorkspacesExemptUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
@@ -187,6 +211,18 @@ func encodeStaffWorkspacesGetResponse(response StaffWorkspacesGetRes, w http.Res
 	case *StaffWorkspaceDetailResource:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffWorkspacesGetBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -239,7 +275,19 @@ func encodeStaffWorkspacesListResponse(response StaffWorkspacesListRes, w http.R
 
 		return nil
 
-	case *ProblemDetails:
+	case *StaffWorkspacesListBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffWorkspacesListUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
 
@@ -261,6 +309,18 @@ func encodeStaffWorkspacesSuspendResponse(response StaffWorkspacesSuspendRes, w 
 	case *StaffSuspensionChange:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffWorkspacesSuspendBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)
@@ -325,6 +385,18 @@ func encodeStaffWorkspacesUnexemptResponse(response StaffWorkspacesUnexemptRes, 
 
 		return nil
 
+	case *StaffWorkspacesUnexemptBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
 	case *StaffWorkspacesUnexemptUnauthorized:
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(401)
@@ -359,6 +431,18 @@ func encodeStaffWorkspacesUnsuspendResponse(response StaffWorkspacesUnsuspendRes
 	case *StaffSuspensionChange:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *StaffWorkspacesUnsuspendBadRequest:
+		w.Header().Set("Content-Type", "application/problem+json")
+		w.WriteHeader(400)
 
 		e := new(jx.Encoder)
 		response.Encode(e)

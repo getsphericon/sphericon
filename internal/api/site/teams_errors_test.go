@@ -27,7 +27,7 @@ func TestSiteMembershipsErrorBranches(t *testing.T) {
 	// List: foreign workspaceID is a 404, a plain member may list, anonymous is rejected.
 	nf, err := owner.SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{WorkspaceId: foreign})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, nf)
+	assert.IsType(t, &siteapi.SiteMembershipsListNotFound{}, nf)
 	listed, err := member.SiteMembershipsList(ctx, siteapi.SiteMembershipsListParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteMembershipsListOKApplicationJSON{}, listed)
@@ -92,7 +92,7 @@ func TestSiteInvitationsErrorBranches(t *testing.T) {
 	// List: scoped and authenticated; any member may read it.
 	nf, err := owner.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{WorkspaceId: foreign})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, nf)
+	assert.IsType(t, &siteapi.SiteInvitationsListNotFound{}, nf)
 	ok, err := member.SiteInvitationsList(ctx, siteapi.SiteInvitationsListParams{WorkspaceId: acme})
 	require.NoError(t, err)
 	assert.IsType(t, &siteapi.SiteInvitationsListOKApplicationJSON{}, ok)
@@ -142,7 +142,7 @@ func TestSitePublicInvitationsRejectBadInput(t *testing.T) {
 
 	unknown, err := c.SitePublicInvitationsLookup(ctx, siteapi.SitePublicInvitationsLookupParams{Token: "no-such-token"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, unknown)
+	assert.IsType(t, &siteapi.SitePublicInvitationsLookupNotFound{}, unknown)
 
 	// A brand-new invitee must supply a name and password.
 	res, err := c.SitePublicInvitationsAccept(ctx, &siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: "inv_fixture_token_acme"})

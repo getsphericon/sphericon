@@ -36,6 +36,7 @@ namespace CollectEvents {
   @post
   op create(@body body: CollectEventsInput):
     | NoContentResponse
+    | BadRequestProblem
     | UnauthorizedProblem
     | PayloadTooLargeProblem
     | TooManyRequestsProblem

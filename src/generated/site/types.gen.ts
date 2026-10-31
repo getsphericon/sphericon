@@ -6788,6 +6788,10 @@ export type SiteAuthForgotPasswordData = {
 
 export type SiteAuthForgotPasswordErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
   429: ProblemDetails;
@@ -6810,6 +6814,10 @@ export type SiteAuthLoginData = {
 };
 
 export type SiteAuthLoginErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -6885,6 +6893,10 @@ export type SitePasskeyLoginFinishData = {
 
 export type SitePasskeyLoginFinishErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -6913,6 +6925,10 @@ export type SiteAuthResendVerificationData = {
 };
 
 export type SiteAuthResendVerificationErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)
    */
@@ -6964,6 +6980,10 @@ export type SiteAuthSecondFactorData = {
 
 export type SiteAuthSecondFactorErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -6992,6 +7012,10 @@ export type SiteAuthSignUpData = {
 };
 
 export type SiteAuthSignUpErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 conflict response
    */
@@ -7101,6 +7125,15 @@ export type SiteAuthSigninPendingDeclineData = {
   url: '/auth/signin-pending/decline';
 };
 
+export type SiteAuthSigninPendingDeclineErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+};
+
+export type SiteAuthSigninPendingDeclineError = SiteAuthSigninPendingDeclineErrors[keyof SiteAuthSigninPendingDeclineErrors];
+
 export type SiteAuthSigninPendingDeclineResponses = {
   /**
    * There is no content to send for this request, but the headers may be useful.
@@ -7148,6 +7181,15 @@ export type SiteAuthSigninCallbackData = {
   url: '/auth/signin/{provider}/callback';
 };
 
+export type SiteAuthSigninCallbackErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+};
+
+export type SiteAuthSigninCallbackError = SiteAuthSigninCallbackErrors[keyof SiteAuthSigninCallbackErrors];
+
 export type SiteAuthSigninStartData = {
   body?: never;
   path: {
@@ -7169,6 +7211,10 @@ export type SiteAuthSigninStartData = {
 };
 
 export type SiteAuthSigninStartErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7286,6 +7332,10 @@ export type SitePublicInvitationsLookupData = {
 
 export type SitePublicInvitationsLookupErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7312,6 +7362,10 @@ export type SitePublicInvitationsAcceptData = {
 };
 
 export type SitePublicInvitationsAcceptErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -7354,6 +7408,10 @@ export type SiteLegalDocumentsGetData = {
 
 export type SiteLegalDocumentsGetErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7395,6 +7453,10 @@ export type SiteUserUpdateMeData = {
 
 export type SiteUserUpdateMeErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -7427,6 +7489,10 @@ export type SiteUserAcceptPendingData = {
 };
 
 export type SiteUserAcceptPendingErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 validation response
    */
@@ -7490,6 +7556,10 @@ export type SiteUserDeleteUserLinkData = {
 
 export type SiteUserDeleteUserLinkErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 validation response of User deletion
    */
   422: SiteDeleteUserProblemDetails;
@@ -7512,6 +7582,10 @@ export type SiteUserEmailChangeData = {
 };
 
 export type SiteUserEmailChangeErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -7562,6 +7636,10 @@ export type SiteIdentitiesUnlinkData = {
 
 export type SiteIdentitiesUnlinkErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7598,6 +7676,10 @@ export type SiteIdentitiesLinkData = {
 
 export type SiteIdentitiesLinkErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -7631,6 +7713,10 @@ export type SiteOptionalConsentsSetData = {
 };
 
 export type SiteOptionalConsentsSetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7702,6 +7788,10 @@ export type SitePasskeysFinishCheckData = {
 
 export type SitePasskeysFinishCheckErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -7756,6 +7846,10 @@ export type SitePasskeysFinishRegistrationData = {
 
 export type SitePasskeysFinishRegistrationErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -7795,6 +7889,10 @@ export type SitePasskeysRemoveData = {
 
 export type SitePasskeysRemoveErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -7833,6 +7931,10 @@ export type SitePasskeysRenameData = {
 };
 
 export type SitePasskeysRenameErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -7879,6 +7981,10 @@ export type SiteSecondFactorDisableData = {
 
 export type SiteSecondFactorDisableErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -7916,6 +8022,10 @@ export type SiteSecondFactorStartEnrollmentData = {
 
 export type SiteSecondFactorStartEnrollmentErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -7948,6 +8058,10 @@ export type SiteSecondFactorConfirmEnrollmentData = {
 };
 
 export type SiteSecondFactorConfirmEnrollmentErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -7985,6 +8099,10 @@ export type SiteSecondFactorRegenerateRecoveryCodesData = {
 };
 
 export type SiteSecondFactorRegenerateRecoveryCodesErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -8035,6 +8153,10 @@ export type SiteSignupSurveySubmitData = {
 
 export type SiteSignupSurveySubmitErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 conflict response
    */
   409: ProblemDetails;
@@ -8072,6 +8194,10 @@ export type SiteOAuthDescribeData = {
 
 export type SiteOAuthDescribeErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8100,6 +8226,10 @@ export type SiteOAuthDecideData = {
 };
 
 export type SiteOAuthDecideErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -8234,6 +8364,10 @@ export type SiteWorkspacesCreateData = {
 
 export type SiteWorkspacesCreateErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -8281,6 +8415,10 @@ export type SiteWorkspacesRestoreData = {
 
 export type SiteWorkspacesRestoreErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8311,6 +8449,10 @@ export type SiteWorkspacesUpdateData = {
 };
 
 export type SiteWorkspacesUpdateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -8346,6 +8488,10 @@ export type SiteWorkspacesAccountLinkData = {
 };
 
 export type SiteWorkspacesAccountLinkErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -8383,6 +8529,10 @@ export type SiteAnalyticsClicksByLinkData = {
 
 export type SiteAnalyticsClicksByLinkErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8414,6 +8564,10 @@ export type SiteAnalyticsEventsData = {
 };
 
 export type SiteAnalyticsEventsErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -8447,6 +8601,10 @@ export type SiteAnalyticsNewPeopleData = {
 
 export type SiteAnalyticsNewPeopleErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8478,6 +8636,10 @@ export type SiteAnalyticsOpensByHourData = {
 };
 
 export type SiteAnalyticsOpensByHourErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -8511,6 +8673,10 @@ export type SiteAnalyticsOverviewData = {
 
 export type SiteAnalyticsOverviewErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8543,6 +8709,10 @@ export type SiteAnalyticsRevenueData = {
 
 export type SiteAnalyticsRevenueErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -8574,6 +8744,10 @@ export type SiteAnalyticsSubscribedPeopleData = {
 };
 
 export type SiteAnalyticsSubscribedPeopleErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -8723,6 +8897,10 @@ export type SiteAuditExportData = {
 
 export type SiteAuditExportErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 payment required response: the feature needs an Enterprise license
    */
   402: ProblemDetails;
@@ -8758,6 +8936,10 @@ export type SiteAuditGetRetentionData = {
 
 export type SiteAuditGetRetentionErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 payment required response: the feature needs an Enterprise license
    */
   402: ProblemDetails;
@@ -8792,6 +8974,10 @@ export type SiteAuditSetRetentionData = {
 };
 
 export type SiteAuditSetRetentionErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 payment required response: the feature needs an Enterprise license
    */
@@ -8908,6 +9094,10 @@ export type SiteAutomationsCreateData = {
 };
 
 export type SiteAutomationsCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -9455,6 +9645,10 @@ export type SiteBrandKitGetData = {
 
 export type SiteBrandKitGetErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -9481,6 +9675,10 @@ export type SiteBrandKitSaveData = {
 };
 
 export type SiteBrandKitSaveErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -9516,6 +9714,10 @@ export type SiteBrandKitRecreateStarterTemplatesData = {
 };
 
 export type SiteBrandKitRecreateStarterTemplatesErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -9628,6 +9830,10 @@ export type SiteBroadcastsCreateData = {
 };
 
 export type SiteBroadcastsCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -10109,6 +10315,10 @@ export type SiteCapturedMessagesDeleteAllData = {
 
 export type SiteCapturedMessagesDeleteAllErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10218,6 +10428,10 @@ export type SiteConnectionsListData = {
 
 export type SiteConnectionsListErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10252,6 +10466,10 @@ export type SiteConnectionsDeleteData = {
 };
 
 export type SiteConnectionsDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -10357,6 +10575,10 @@ export type SiteContactsCreateData = {
 
 export type SiteContactsCreateErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -10400,6 +10622,10 @@ export type SiteContactsEraseData = {
 };
 
 export type SiteContactsEraseErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -10449,6 +10675,10 @@ export type SiteContactsExportData = {
 
 export type SiteContactsExportErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -10492,6 +10722,10 @@ export type SiteContactsLookupData = {
 };
 
 export type SiteContactsLookupErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -10848,6 +11082,10 @@ export type SiteWorkspacesDeleteData = {
 
 export type SiteWorkspacesDeleteErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -10883,6 +11121,10 @@ export type SiteDomainJoinGetData = {
 
 export type SiteDomainJoinGetErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -10913,6 +11155,10 @@ export type SiteDomainJoinSetData = {
 };
 
 export type SiteDomainJoinSetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -10974,6 +11220,10 @@ export type SiteEventsListData = {
 
 export type SiteEventsListErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11026,6 +11276,10 @@ export type SiteEventsActionsData = {
 
 export type SiteEventsActionsErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11062,6 +11316,10 @@ export type SiteIntegrationsListData = {
 
 export type SiteIntegrationsListErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11092,6 +11350,10 @@ export type SiteIntegrationsCreateData = {
 };
 
 export type SiteIntegrationsCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -11365,6 +11627,10 @@ export type SiteInvitationsListData = {
 
 export type SiteInvitationsListErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11395,6 +11661,10 @@ export type SiteInvitationsCreateData = {
 };
 
 export type SiteInvitationsCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -11443,6 +11713,10 @@ export type SiteInvitationsDeleteData = {
 
 export type SiteInvitationsDeleteErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -11474,6 +11748,10 @@ export type SiteJoinDomainsListData = {
 
 export type SiteJoinDomainsListErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -11504,6 +11782,10 @@ export type SiteJoinDomainsAddData = {
 };
 
 export type SiteJoinDomainsAddErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -11545,6 +11827,10 @@ export type SiteJoinDomainsRemoveData = {
 
 export type SiteJoinDomainsRemoveErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -11576,6 +11862,10 @@ export type SiteJoinDomainsVerifyData = {
 };
 
 export type SiteJoinDomainsVerifyErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -11616,6 +11906,10 @@ export type SiteWorkspacesLeaveData = {
 
 export type SiteWorkspacesLeaveErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11651,6 +11945,10 @@ export type SiteMembershipsListData = {
 
 export type SiteMembershipsListErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11685,6 +11983,10 @@ export type SiteMembershipsDeleteData = {
 };
 
 export type SiteMembershipsDeleteErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -11729,6 +12031,10 @@ export type SiteMembershipsUpdateData = {
 
 export type SiteMembershipsUpdateErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -11772,6 +12078,10 @@ export type SiteMembershipsResetSecondFactorData = {
 
 export type SiteMembershipsResetSecondFactorErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -11807,6 +12117,10 @@ export type SitePersonalTokensGrantableScopesData = {
 
 export type SitePersonalTokensGrantableScopesErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11837,6 +12151,10 @@ export type SitePersonalTokensListData = {
 };
 
 export type SitePersonalTokensListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -11916,6 +12234,10 @@ export type SitePersonalTokensDeleteData = {
 
 export type SitePersonalTokensDeleteErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11943,6 +12265,10 @@ export type SiteWorkspacesGetRevenueSettingsData = {
 
 export type SiteWorkspacesGetRevenueSettingsErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -11969,6 +12295,10 @@ export type SiteWorkspacesUpdateRevenueSettingsData = {
 };
 
 export type SiteWorkspacesUpdateRevenueSettingsErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -12081,6 +12411,10 @@ export type SiteRulesCreateData = {
 };
 
 export type SiteRulesCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -12544,6 +12878,10 @@ export type SiteWorkspacesLiftSecondFactorRequirementData = {
 
 export type SiteWorkspacesLiftSecondFactorRequirementErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -12574,6 +12912,10 @@ export type SiteWorkspacesRequireSecondFactorData = {
 };
 
 export type SiteWorkspacesRequireSecondFactorErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -12682,6 +13024,10 @@ export type SiteSegmentsCreateData = {
 };
 
 export type SiteSegmentsCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 not found response
    */
@@ -13062,6 +13408,10 @@ export type SiteSendingDomainsCreateData = {
 
 export type SiteSendingDomainsCreateErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -13279,6 +13629,10 @@ export type SiteSetupChecklistGetData = {
 
 export type SiteSetupChecklistGetErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -13382,6 +13736,10 @@ export type SiteSuppressionsCreateData = {
 };
 
 export type SiteSuppressionsCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -13637,6 +13995,10 @@ export type SiteTemplatesCreateData = {
 
 export type SiteTemplatesCreateErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -13789,6 +14151,10 @@ export type SiteWorkspacesSetTimezoneData = {
 
 export type SiteWorkspacesSetTimezoneErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 forbidden response
    */
   403: ProblemDetails;
@@ -13828,6 +14194,10 @@ export type SiteTokensListData = {
 
 export type SiteTokensListErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 not found response
    */
   404: ProblemDetails;
@@ -13858,6 +14228,10 @@ export type SiteTokensCreateData = {
 };
 
 export type SiteTokensCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -13944,6 +14318,10 @@ export type SiteTokensUpdateData = {
 };
 
 export type SiteTokensUpdateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */
@@ -14125,6 +14503,10 @@ export type SiteWebhooksCreateData = {
 };
 
 export type SiteWebhooksCreateErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 forbidden response
    */

@@ -65,13 +65,6 @@ export const zProblemDetails = z.object({
 });
 
 /**
- * RFC 7807 bad request response
- */
-export const zBadRequestProblem = z.object({
-  body: zProblemDetails
-});
-
-/**
  * RFC 7807 forbidden response
  */
 export const zForbiddenProblem = z.object({

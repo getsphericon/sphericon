@@ -4880,6 +4880,16 @@
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -5016,6 +5026,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContactExportDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }

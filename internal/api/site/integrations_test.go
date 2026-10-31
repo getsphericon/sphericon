@@ -248,7 +248,7 @@ func TestSiteIntegrationsScopedToWorkspace(t *testing.T) {
 
 	res, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	assert.IsType(t, &siteapi.SiteIntegrationsListNotFound{}, res)
 }
 
 func createSMTP(t *testing.T, c *siteapi.Client, host, password string) siteapi.EntityId {

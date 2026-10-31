@@ -907,9 +907,7 @@ func (s *ProblemDetails) SetDebug(val OptProblemDebug) {
 	s.Debug = val
 }
 
-func (*ProblemDetails) staffAuthLoginRes()                      {}
 func (*ProblemDetails) staffAuthLogoutRes()                     {}
-func (*ProblemDetails) staffAuthSecondFactorRes()               {}
 func (*ProblemDetails) staffInstanceAcknowledgeNoticeRes()      {}
 func (*ProblemDetails) staffInstanceGetStateRes()               {}
 func (*ProblemDetails) staffInstancePreviewTelemetryReportRes() {}
@@ -1056,6 +1054,14 @@ func (s *SignupItemKind) UnmarshalText(data []byte) error {
 
 type SignupItemTitle string
 
+type StaffAuthLoginBadRequest ProblemDetails
+
+func (*StaffAuthLoginBadRequest) staffAuthLoginRes() {}
+
+type StaffAuthLoginUnauthorized ProblemDetails
+
+func (*StaffAuthLoginUnauthorized) staffAuthLoginRes() {}
+
 // StaffAuthLogoutNoContent is response for StaffAuthLogout operation.
 type StaffAuthLogoutNoContent struct {
 	SetCookie string
@@ -1072,6 +1078,14 @@ func (s *StaffAuthLogoutNoContent) SetSetCookie(val string) {
 }
 
 func (*StaffAuthLogoutNoContent) staffAuthLogoutRes() {}
+
+type StaffAuthSecondFactorBadRequest ProblemDetails
+
+func (*StaffAuthSecondFactorBadRequest) staffAuthSecondFactorRes() {}
+
+type StaffAuthSecondFactorUnauthorized ProblemDetails
+
+func (*StaffAuthSecondFactorUnauthorized) staffAuthSecondFactorRes() {}
 
 // A TOTP secret awaiting its first confirming code.
 // Ref: #/components/schemas/StaffEnrolment
@@ -1126,6 +1140,10 @@ func (s *StaffInstancePreviewTelemetryReportOK) init() StaffInstancePreviewTelem
 }
 
 func (*StaffInstancePreviewTelemetryReportOK) staffInstancePreviewTelemetryReportRes() {}
+
+type StaffInstanceSetTelemetryBadRequest ProblemDetails
+
+func (*StaffInstanceSetTelemetryBadRequest) staffInstanceSetTelemetryRes() {}
 
 type StaffInstanceSetTelemetryConflict ProblemDetails
 
@@ -1855,6 +1873,10 @@ func (s *StaffSignupItemUpdate) SetMailingsConsent(val OptBool) {
 	s.MailingsConsent = val
 }
 
+type StaffSignupItemsArchiveBadRequest ProblemDetails
+
+func (*StaffSignupItemsArchiveBadRequest) staffSignupItemsArchiveRes() {}
+
 type StaffSignupItemsArchiveNotFound ProblemDetails
 
 func (*StaffSignupItemsArchiveNotFound) staffSignupItemsArchiveRes() {}
@@ -1867,6 +1889,10 @@ type StaffSignupItemsArchiveUnprocessableEntity ProblemDetails
 
 func (*StaffSignupItemsArchiveUnprocessableEntity) staffSignupItemsArchiveRes() {}
 
+type StaffSignupItemsCreateBadRequest ProblemDetails
+
+func (*StaffSignupItemsCreateBadRequest) staffSignupItemsCreateRes() {}
+
 type StaffSignupItemsCreateUnauthorized ProblemDetails
 
 func (*StaffSignupItemsCreateUnauthorized) staffSignupItemsCreateRes() {}
@@ -1874,6 +1900,10 @@ func (*StaffSignupItemsCreateUnauthorized) staffSignupItemsCreateRes() {}
 type StaffSignupItemsCreateUnprocessableEntity ProblemDetails
 
 func (*StaffSignupItemsCreateUnprocessableEntity) staffSignupItemsCreateRes() {}
+
+type StaffSignupItemsGetBadRequest ProblemDetails
+
+func (*StaffSignupItemsGetBadRequest) staffSignupItemsGetRes() {}
 
 type StaffSignupItemsGetNotFound ProblemDetails
 
@@ -1883,6 +1913,10 @@ type StaffSignupItemsGetUnauthorized ProblemDetails
 
 func (*StaffSignupItemsGetUnauthorized) staffSignupItemsGetRes() {}
 
+type StaffSignupItemsListVersionsBadRequest ProblemDetails
+
+func (*StaffSignupItemsListVersionsBadRequest) staffSignupItemsListVersionsRes() {}
+
 type StaffSignupItemsListVersionsNotFound ProblemDetails
 
 func (*StaffSignupItemsListVersionsNotFound) staffSignupItemsListVersionsRes() {}
@@ -1890,6 +1924,10 @@ func (*StaffSignupItemsListVersionsNotFound) staffSignupItemsListVersionsRes() {
 type StaffSignupItemsListVersionsUnauthorized ProblemDetails
 
 func (*StaffSignupItemsListVersionsUnauthorized) staffSignupItemsListVersionsRes() {}
+
+type StaffSignupItemsPublishBadRequest ProblemDetails
+
+func (*StaffSignupItemsPublishBadRequest) staffSignupItemsPublishRes() {}
 
 type StaffSignupItemsPublishNotFound ProblemDetails
 
@@ -1903,6 +1941,10 @@ type StaffSignupItemsPublishUnprocessableEntity ProblemDetails
 
 func (*StaffSignupItemsPublishUnprocessableEntity) staffSignupItemsPublishRes() {}
 
+type StaffSignupItemsReorderBadRequest ProblemDetails
+
+func (*StaffSignupItemsReorderBadRequest) staffSignupItemsReorderRes() {}
+
 type StaffSignupItemsReorderUnauthorized ProblemDetails
 
 func (*StaffSignupItemsReorderUnauthorized) staffSignupItemsReorderRes() {}
@@ -1911,6 +1953,10 @@ type StaffSignupItemsReorderUnprocessableEntity ProblemDetails
 
 func (*StaffSignupItemsReorderUnprocessableEntity) staffSignupItemsReorderRes() {}
 
+type StaffSignupItemsSaveDraftBadRequest ProblemDetails
+
+func (*StaffSignupItemsSaveDraftBadRequest) staffSignupItemsSaveDraftRes() {}
+
 type StaffSignupItemsSaveDraftNotFound ProblemDetails
 
 func (*StaffSignupItemsSaveDraftNotFound) staffSignupItemsSaveDraftRes() {}
@@ -1918,6 +1964,10 @@ func (*StaffSignupItemsSaveDraftNotFound) staffSignupItemsSaveDraftRes() {}
 type StaffSignupItemsSaveDraftUnauthorized ProblemDetails
 
 func (*StaffSignupItemsSaveDraftUnauthorized) staffSignupItemsSaveDraftRes() {}
+
+type StaffSignupItemsUpdateBadRequest ProblemDetails
+
+func (*StaffSignupItemsUpdateBadRequest) staffSignupItemsUpdateRes() {}
 
 type StaffSignupItemsUpdateNotFound ProblemDetails
 

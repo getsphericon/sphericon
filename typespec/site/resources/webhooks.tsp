@@ -130,6 +130,7 @@ interface SiteWebhooks {
         @statusCode statusCode: 201;
         @body body: SiteWebhookEndpointResource;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;

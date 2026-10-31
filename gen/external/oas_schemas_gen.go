@@ -5989,6 +5989,10 @@ type ContactsDeleteUnprocessableEntity ProblemDetails
 
 func (*ContactsDeleteUnprocessableEntity) contactsDeleteRes() {}
 
+type ContactsEraseByBadRequest ProblemDetails
+
+func (*ContactsEraseByBadRequest) contactsEraseByRes() {}
+
 type ContactsEraseByForbidden ProblemDetails
 
 func (*ContactsEraseByForbidden) contactsEraseByRes() {}
@@ -6009,6 +6013,10 @@ func (*ContactsEraseByUnauthorized) contactsEraseByRes() {}
 type ContactsEraseByUnprocessableEntity ProblemDetails
 
 func (*ContactsEraseByUnprocessableEntity) contactsEraseByRes() {}
+
+type ContactsExportBadRequest ProblemDetails
+
+func (*ContactsExportBadRequest) contactsExportRes() {}
 
 type ContactsExportForbidden ProblemDetails
 

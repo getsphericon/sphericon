@@ -149,6 +149,7 @@ namespace SiteAudit {
         @header contentDisposition: string;
         @body body: string;
       }
+    | BadRequestProblem
     | PaymentRequiredProblem
     | ForbiddenProblem
     | NotFoundProblem;
@@ -159,6 +160,7 @@ namespace SiteAudit {
   @requiresPermissions(#[Permission.auditConfigure])
   op getRetention(@path workspaceId: WorkspaceId):
     | SiteAuditRetention
+    | BadRequestProblem
     | PaymentRequiredProblem
     | ForbiddenProblem
     | NotFoundProblem;
@@ -172,6 +174,7 @@ namespace SiteAudit {
     @body body: SiteAuditRetention,
   ):
     | SiteAuditRetention
+    | BadRequestProblem
     | PaymentRequiredProblem
     | ForbiddenProblem
     | NotFoundProblem

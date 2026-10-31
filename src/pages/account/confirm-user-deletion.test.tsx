@@ -59,7 +59,7 @@ test('the link token and the typed email finish the deletion', async () => {
 test('a user with a second factor also sends a code', async () => {
   const bodies: unknown[] = []
   serve(bodies, true)
-  const { screen } = await renderWithRouter(<ConfirmUserDeletionPage />, linked)
+  const { screen, navigate } = await renderWithRouter(<ConfirmUserDeletionPage />, linked)
 
   await screen.getByLabelText(/^Type your email/).fill('info@getsphericon.com')
   await screen.getByLabelText(/^Second factor code/).fill('123456')
@@ -68,6 +68,9 @@ test('a user with a second factor also sends a code', async () => {
   await expect
     .poll(() => bodies)
     .toEqual([{ email: 'info@getsphericon.com', token: 'link-token', code: '123456' }])
+  // The deletion's success refetches the page's reads and leaves for the login screen; the test
+  // ends only after, so no read reaches the worker once its handlers are reset.
+  await expect.poll(() => navigate).toHaveBeenCalledWith({ to: loginRoute.to })
 })
 
 test('only a workspace the user solely owns is named in the no-restore warning', async () => {

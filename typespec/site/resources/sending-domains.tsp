@@ -143,6 +143,7 @@ interface SiteSendingDomains {
         @statusCode statusCode: 201;
         @body body: SiteSendingDomainResource;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem

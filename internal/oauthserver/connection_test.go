@@ -271,9 +271,7 @@ func TestConnectionsAreTheirUsersOrAManagersToRevoke(t *testing.T) {
 	assert.Empty(t, *maryList.(*siteapi.SiteConnectionsListOKApplicationJSON), "a member does not see another User's Connection")
 	refused, err := mary.SiteConnectionsDelete(t.Context(), siteapi.SiteConnectionsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(owners.ID)})
 	require.NoError(t, err)
-	notFound, isProblem := refused.(*siteapi.ProblemDetails)
-	require.Truef(t, isProblem, "got %T", refused)
-	assert.Equal(t, int32(http.StatusNotFound), notFound.Status.Value, "another User's Connection is not the member's to find")
+	assert.IsTypef(t, &siteapi.SiteConnectionsDeleteNotFound{}, refused, "another User's Connection is not the member's to find: got %T", refused)
 
 	admin := env.SiteActor(t, fixtures.AdminAliceEmail)
 	adminList, err := admin.SiteConnectionsList(t.Context(), params)

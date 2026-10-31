@@ -277,7 +277,7 @@ func TestOnlyAMemberOfTheWorkspaceReadsItsRevenue(t *testing.T) {
 		siteapi.SiteAnalyticsRevenueParams{WorkspaceId: fixtures.AcmePublicID})
 
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	assert.IsType(t, &siteapi.SiteAnalyticsRevenueNotFound{}, res)
 }
 
 func TestOrdersWithoutACurrencyReceivedBeforeTheChoiceAreCountedOnceItIsMade(t *testing.T) {

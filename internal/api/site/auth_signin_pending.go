@@ -95,13 +95,16 @@ func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi
 
 // SiteAuthSigninPendingDecline deletes a pending sign-up: nothing is created. A reference that
 // names nothing open any more is declined already.
-func (h *Handlers) SiteAuthSigninPendingDecline(ctx context.Context, req *siteapi.SiteSigninPendingDeclineInput) error {
+func (h *Handlers) SiteAuthSigninPendingDecline(ctx context.Context, req *siteapi.SiteSigninPendingDeclineInput) (siteapi.SiteAuthSigninPendingDeclineRes, error) {
 	pending, err := h.openPending(ctx, req.Token)
 	if errors.Is(err, accounts.ErrPendingSignupGone) {
-		return nil
+		return &siteapi.SiteAuthSigninPendingDeclineNoContent{}, nil
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return h.accounts.DeclinePendingSignup(ctx, pending.ID)
+	if err := h.accounts.DeclinePendingSignup(ctx, pending.ID); err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteAuthSigninPendingDeclineNoContent{}, nil
 }

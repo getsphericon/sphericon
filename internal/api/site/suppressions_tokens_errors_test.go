@@ -84,7 +84,7 @@ func TestSiteTokensListCreateAndRevoke(t *testing.T) {
 
 	nf, err := c.SiteTokensList(ctx, siteapi.SiteTokensListParams{WorkspaceId: foreign})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, nf)
+	assert.IsType(t, &siteapi.SiteTokensListNotFound{}, nf)
 
 	// Create with an expiry, then revoke it.
 	created, err := c.SiteTokensCreate(ctx, &siteapi.SiteCreateTokenInput{

@@ -232,6 +232,46 @@ func (s SignupItemTitle) Validate() error {
 	return nil
 }
 
+func (s *StaffAuthLoginBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffAuthLoginUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffAuthSecondFactorBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffAuthSecondFactorUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffInstanceSetTelemetryBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffInstanceSetTelemetryConflict) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -731,6 +771,14 @@ func (s *StaffSignupItemUpdate) Validate() error {
 	return nil
 }
 
+func (s *StaffSignupItemsArchiveBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffSignupItemsArchiveNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -755,6 +803,14 @@ func (s *StaffSignupItemsArchiveUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *StaffSignupItemsCreateBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffSignupItemsCreateUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -764,6 +820,14 @@ func (s *StaffSignupItemsCreateUnauthorized) Validate() error {
 }
 
 func (s *StaffSignupItemsCreateUnprocessableEntity) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffSignupItemsGetBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -787,6 +851,14 @@ func (s *StaffSignupItemsGetUnauthorized) Validate() error {
 	return nil
 }
 
+func (s *StaffSignupItemsListVersionsBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffSignupItemsListVersionsNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -796,6 +868,14 @@ func (s *StaffSignupItemsListVersionsNotFound) Validate() error {
 }
 
 func (s *StaffSignupItemsListVersionsUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffSignupItemsPublishBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -827,6 +907,14 @@ func (s *StaffSignupItemsPublishUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *StaffSignupItemsReorderBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffSignupItemsReorderUnauthorized) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -843,6 +931,14 @@ func (s *StaffSignupItemsReorderUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *StaffSignupItemsSaveDraftBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffSignupItemsSaveDraftNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -852,6 +948,14 @@ func (s *StaffSignupItemsSaveDraftNotFound) Validate() error {
 }
 
 func (s *StaffSignupItemsSaveDraftUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffSignupItemsUpdateBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

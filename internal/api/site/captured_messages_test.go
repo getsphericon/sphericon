@@ -102,8 +102,7 @@ func TestSiteCapturedMessagesAreAllDeletedForTheOwnWorkspaceOnly(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.IsType(t, &siteapi.SiteCapturedMessagesDeleteAllNoContent{}, out)
-	assert.IsType(t, &siteapi.ProblemDetails{}, denied)
-	assert.Equal(t, 404, int(denied.(*siteapi.ProblemDetails).Status.Value))
+	assert.IsType(t, &siteapi.SiteCapturedMessagesDeleteAllNotFound{}, denied)
 	own, err := mary.SiteCapturedMessagesList(t.Context(), siteapi.SiteCapturedMessagesListParams{WorkspaceId: fixtures.GlobexPublicID})
 	require.NoError(t, err)
 	assert.Empty(t, own.(*siteapi.SiteCapturedMessagesListOK).Items)

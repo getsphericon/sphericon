@@ -2,11 +2,9 @@ package collect_test
 
 import (
 	"context"
-	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/ogen-go/ogen/validate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -14,15 +12,6 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-// ogen validates the decoded body and answers 400, which the contract does not declare,
-// so the client surfaces it as an unexpected status.
-func requireRejectedByValidation(t *testing.T, err error) {
-	t.Helper()
-	var status *validate.UnexpectedStatusCodeError
-	require.ErrorAs(t, err, &status)
-	assert.Equal(t, http.StatusBadRequest, status.StatusCode)
-}
 
 func eventBatch(n int) *collectapi.CollectEventsInput {
 	batch := make([]collectapi.CollectEventInput, n)
@@ -40,8 +29,10 @@ func TestCollectEventsBatchIsCappedAt100(t *testing.T) {
 	require.NoError(t, err)
 	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, res)
 
-	_, err = env.CollectAcme(t).CollectEventsCreate(ctx, eventBatch(101))
-	requireRejectedByValidation(t, err)
+	// ogen validates the decoded body and answers the contract's 400 before a handler runs.
+	res, err = env.CollectAcme(t).CollectEventsCreate(ctx, eventBatch(101))
+	require.NoError(t, err)
+	assert.IsType(t, &collectapi.CollectEventsCreateBadRequest{}, res)
 }
 
 func TestCollectEventFieldsAreBoundedInLength(t *testing.T) {
@@ -49,18 +40,20 @@ func TestCollectEventFieldsAreBoundedInLength(t *testing.T) {
 	ctx := context.Background()
 	c := env.CollectAcme(t)
 
-	send := func(visitorID, action string) error {
-		_, err := c.CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
+	send := func(visitorID, action string) collectapi.CollectEventsCreateRes {
+		res, err := c.CollectEventsCreate(ctx, &collectapi.CollectEventsInput{
 			Events: []collectapi.CollectEventInput{{VisitorId: visitorID, Action: action}},
 		})
-		return err
+		require.NoError(t, err)
+		return res
 	}
+	rejected := &collectapi.CollectEventsCreateBadRequest{}
 
-	require.NoError(t, send(strings.Repeat("v", 255), strings.Repeat("a", 255)), "at the limit")
-	requireRejectedByValidation(t, send(strings.Repeat("v", 256), "view"))
-	requireRejectedByValidation(t, send("dev-1", strings.Repeat("a", 256)))
-	requireRejectedByValidation(t, send("", "view"))
-	requireRejectedByValidation(t, send("dev-1", ""))
+	assert.IsType(t, &collectapi.CollectEventsCreateNoContent{}, send(strings.Repeat("v", 255), strings.Repeat("a", 255)), "at the limit")
+	assert.IsType(t, rejected, send(strings.Repeat("v", 256), "view"))
+	assert.IsType(t, rejected, send("dev-1", strings.Repeat("a", 256)))
+	assert.IsType(t, rejected, send("", "view"))
+	assert.IsType(t, rejected, send("dev-1", ""))
 }
 
 func TestCollectIdentifyFieldsAreBoundedInLength(t *testing.T) {
@@ -68,27 +61,29 @@ func TestCollectIdentifyFieldsAreBoundedInLength(t *testing.T) {
 	ctx := context.Background()
 	c := env.CollectAcme(t)
 
-	identify := func(in collectapi.CollectIdentifyInput) error {
-		_, err := c.CollectIdentifyCreate(ctx, &in)
-		return err
+	identify := func(in collectapi.CollectIdentifyInput) collectapi.CollectIdentifyCreateRes {
+		res, err := c.CollectIdentifyCreate(ctx, &in)
+		require.NoError(t, err)
+		return res
 	}
-	require.NoError(t, identify(collectapi.CollectIdentifyInput{
+	rejected := &collectapi.CollectIdentifyCreateBadRequest{}
+	assert.IsType(t, &collectapi.CollectOkResponse{}, identify(collectapi.CollectIdentifyInput{
 		VisitorId: strings.Repeat("v", 255),
 		Phone:     collectapi.NewOptNilString(strings.Repeat("1", 32)),
 		SubjectId: collectapi.NewOptNilString(strings.Repeat("s", 255)),
 	}), "at the limit")
 
-	requireRejectedByValidation(t, identify(collectapi.CollectIdentifyInput{
+	assert.IsType(t, rejected, identify(collectapi.CollectIdentifyInput{
 		VisitorId: strings.Repeat("v", 256),
 		SubjectId: collectapi.NewOptNilString("crm-1"),
 	}))
-	requireRejectedByValidation(t, identify(collectapi.CollectIdentifyInput{
+	assert.IsType(t, rejected, identify(collectapi.CollectIdentifyInput{
 		VisitorId: "dev-id", Phone: collectapi.NewOptNilString(strings.Repeat("1", 33)),
 	}))
-	requireRejectedByValidation(t, identify(collectapi.CollectIdentifyInput{
+	assert.IsType(t, rejected, identify(collectapi.CollectIdentifyInput{
 		VisitorId: "dev-id", SubjectId: collectapi.NewOptNilString(strings.Repeat("s", 256)),
 	}))
-	requireRejectedByValidation(t, identify(collectapi.CollectIdentifyInput{
+	assert.IsType(t, rejected, identify(collectapi.CollectIdentifyInput{
 		VisitorId: "dev-id", Email: collectapi.NewOptNilEmailAddress(collectapi.EmailAddress(strings.Repeat("a", 321-len("@example.com")+1) + "@example.com")),
 	}))
 

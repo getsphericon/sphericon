@@ -115,6 +115,10 @@ export default defineConfig({
       },
   test: {
     testTimeout: 10_000,
+    // A UI test waits on what the page shows or did (expect.element, expect.poll), never on a
+    // delay. A real Chromium on a busy CI runner can take more than a second to render, debounce
+    // and answer, so a wait gives up after 5s (within the test's 10s), not the default 1s.
+    expect: { poll: { timeout: 5_000 } },
     // .cache holds the Go module cache, whose dependencies ship their own *.test.* files.
     // typespec/lib's tests compile TypeSpec, which needs node: `mise run test:typespec` runs them.
     exclude: [...configDefaults.exclude, '.cache/**', '.claude/**', 'typespec/**'],

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { SiteIntegrationProvider } from '../../generated/site/types.gen.ts'
 import { zMaxPerDay, zMaxPerSecond } from '../../generated/site/zod.gen.ts'
+import { boundsOf } from '../../utils/bounds.ts'
 
 // A limit field holds a number, or an empty string when the user left it blank
 // (blank means "no limit").
@@ -13,14 +14,8 @@ export interface ProviderLimitValues {
 export const NO_LIMITS: ProviderLimitValues = { maxPerSecond: '', maxPerDay: '' }
 
 // The contract's bounds (TypeSpec -> zod) are the single source for the inputs' range.
-export const PER_SECOND = {
-  min: zMaxPerSecond.minValue ?? 1,
-  max: zMaxPerSecond.maxValue ?? 1,
-}
-export const PER_DAY = {
-  min: zMaxPerDay.minValue ?? 1,
-  max: zMaxPerDay.maxValue ?? 1,
-}
+export const PER_SECOND = boundsOf(zMaxPerSecond)
+export const PER_DAY = boundsOf(zMaxPerDay)
 
 // The API field for a form value: null (no limit) for a blank input.
 export function toLimit(value: number | string): number | null {

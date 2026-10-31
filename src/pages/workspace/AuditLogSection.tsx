@@ -40,8 +40,10 @@ import { Route as auditLogRoute } from '../../routes/workspaces/$workspaceId/set
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
 import { auditQuery } from '../../utils/auditFilter.ts'
 import type { AuditFilter } from '../../utils/auditFilter.ts'
+import { boundsOf } from '../../utils/bounds.ts'
 
 const PAGE_SIZE = 25
+const RETENTION_DAYS = boundsOf(zRetentionDays)
 // The API answers 402 without an Enterprise license and 403 to a plain member; in both
 // cases the section is simply not offered.
 const HIDDEN_STATUSES = [402, 403]
@@ -307,8 +309,8 @@ function RetentionForm({ workspaceId, days }: { workspaceId: string; days: numbe
         label={t(($) => $.settings.auditLog.retentionLabel)}
         description={t(($) => $.settings.auditLog.retentionDescription)}
         placeholder={t(($) => $.settings.auditLog.retentionPlaceholder)}
-        min={zRetentionDays.minValue ?? 1}
-        max={zRetentionDays.maxValue ?? 1}
+        min={RETENTION_DAYS.min}
+        max={RETENTION_DAYS.max}
         allowDecimal={false}
         value={value}
         onChange={setValue}

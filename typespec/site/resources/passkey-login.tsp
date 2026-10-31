@@ -82,6 +82,7 @@ namespace SitePasskeyLogin {
 
         @body body: SiteLoginResult;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | TooManyRequestsProblem;
 }

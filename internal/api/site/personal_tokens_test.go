@@ -291,9 +291,7 @@ func TestPersonalTokensAreTheirUsersOrAManagersToRevoke(t *testing.T) {
 	assert.Equal(t, []siteapi.EntityId{marys.Resource.ID}, maryIDs, "a member sees only her own")
 	refused, err := mary.SitePersonalTokensDelete(t.Context(), siteapi.SitePersonalTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: alices.Resource.ID})
 	require.NoError(t, err)
-	notFound, isProblem := refused.(*siteapi.ProblemDetails)
-	require.Truef(t, isProblem, "got %#v", refused)
-	assert.EqualValues(t, http.StatusNotFound, notFound.Status.Value, "another User's Personal token is not the member's to find")
+	assert.IsTypef(t, &siteapi.SitePersonalTokensDeleteNotFound{}, refused, "another User's Personal token is not the member's to find: got %#v", refused)
 	alicesStillWorks := listContactsWith(t, env, alices.Token)
 	assert.IsType(t, &externalapi.ContactsListOK{}, alicesStillWorks)
 

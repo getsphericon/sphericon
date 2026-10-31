@@ -64,6 +64,7 @@ namespace StaffInstance {
   @route("/telemetry")
   op setTelemetry(@body body: StaffInstanceTelemetryInput):
     | StaffInstanceState
+    | BadRequestProblem
     | UnauthorizedProblem
     | ConflictProblem;
 

@@ -81,6 +81,7 @@ namespace ServiceHolds {
   @requiresServiceScopes(#[ServiceScope.holdsWrite])
   op list(@path workspaceId: WorkspaceId):
     | HoldList
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem
     | TooManyRequestsProblem;
@@ -97,6 +98,7 @@ namespace ServiceHolds {
     @body body: HoldInput,
   ):
     | HoldSetResult
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem
     | UnprocessableEntityProblem
@@ -108,6 +110,7 @@ namespace ServiceHolds {
   @requiresServiceScopes(#[ServiceScope.holdsWrite])
   op clear(@path workspaceId: WorkspaceId, @path key: string):
     | HoldClearResult
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem
     | TooManyRequestsProblem;

@@ -179,6 +179,16 @@
           "202": {
             "description": "The request has been accepted for processing, but processing has not yet completed."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "429": {
             "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
             "headers": {
@@ -259,6 +269,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteLoginResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -442,6 +462,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -530,6 +560,16 @@
         "responses": {
           "202": {
             "description": "The request has been accepted for processing, but processing has not yet completed."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "429": {
             "description": "RFC 7807 too many requests response: a rate limit was exceeded (ADR 0025)",
@@ -659,6 +699,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "RFC 7807 unauthorized response",
             "content": {
@@ -742,6 +792,16 @@
                 "description": "The Sign-up browser cookie, absent when the install does not require verification",
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -959,6 +1019,16 @@
         "responses": {
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Site Auth"],
@@ -1079,6 +1149,16 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "tags": ["Site Auth"],
@@ -1135,6 +1215,16 @@
                 "description": "The flow cookie",
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -1421,6 +1511,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -1453,6 +1553,16 @@
         "responses": {
           "200": {
             "description": "The request has succeeded."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "401": {
             "description": "RFC 7807 unauthorized response",
@@ -1583,6 +1693,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -1639,6 +1759,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteUserResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -1733,6 +1863,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteUserResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -1878,6 +2018,16 @@
           "202": {
             "description": "The request has been accepted for processing, but processing has not yet completed."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "RFC 7807 validation response of User deletion",
             "content": {
@@ -1911,6 +2061,16 @@
         "responses": {
           "202": {
             "description": "The request has been accepted for processing, but processing has not yet completed."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "403": {
             "description": "RFC 7807 forbidden response",
@@ -2037,6 +2197,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -2105,6 +2275,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -2160,6 +2340,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteOptionalConsent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -2286,6 +2476,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -2391,6 +2591,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SitePasskey"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -2508,6 +2718,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -2563,6 +2783,16 @@
                 "description": "The acting session reissued under the new session epoch",
                 "schema": {
                   "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -2694,6 +2924,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -2798,6 +3038,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -2897,6 +3147,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteRecoveryCodes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3014,6 +3274,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -3122,6 +3392,16 @@
         "responses": {
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "409": {
             "description": "RFC 7807 conflict response",
@@ -3245,6 +3525,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -3279,6 +3569,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteOAuthDecisionResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3466,6 +3766,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -3549,6 +3859,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -3594,6 +3914,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3668,6 +3998,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -3728,6 +4068,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -3774,6 +4124,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteAnalyticsEvents"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3828,6 +4188,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -3878,6 +4248,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -3924,6 +4304,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteAnalyticsOverview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3983,6 +4373,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -4029,6 +4429,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteAnalyticsSubscribedPeople"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4229,6 +4639,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "402": {
             "description": "RFC 7807 payment required response: the feature needs an Enterprise license",
             "content": {
@@ -4289,6 +4709,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "402": {
             "description": "RFC 7807 payment required response: the feature needs an Enterprise license",
             "content": {
@@ -4343,6 +4773,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteAuditRetention"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4511,6 +4951,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteAutomationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -5327,6 +5777,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -5361,6 +5821,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteBrandKitResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -5434,6 +5904,16 @@
                   "items": {
                     "$ref": "#/components/schemas/SiteEmailTemplateResource"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -5582,6 +6062,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteBroadcastResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -6301,6 +6791,16 @@
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -6426,6 +6926,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -6456,6 +6966,16 @@
         "responses": {
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "404": {
             "description": "RFC 7807 not found response",
@@ -6585,6 +7105,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -6653,6 +7183,16 @@
         "responses": {
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "403": {
             "description": "RFC 7807 forbidden response",
@@ -6743,6 +7283,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -6805,6 +7355,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteContactHoldings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -7358,6 +7918,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -7429,6 +7999,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -7473,6 +8053,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteDomainJoinResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -7609,6 +8199,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -7640,6 +8240,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteEventActionsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -7685,6 +8295,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -7714,6 +8334,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteIntegrationResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8124,6 +8754,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -8153,6 +8793,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteCreateInvitationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8228,6 +8878,16 @@
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -8281,6 +8941,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -8325,6 +8995,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteJoinDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8410,6 +9090,16 @@
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -8464,6 +9154,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteJoinDomainResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8531,6 +9231,16 @@
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -8579,6 +9289,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -8613,6 +9333,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteMembershipResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8676,6 +9406,16 @@
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -8726,6 +9466,16 @@
         "responses": {
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           },
           "403": {
             "description": "RFC 7807 forbidden response",
@@ -8790,6 +9540,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -8824,6 +9584,16 @@
                   "items": {
                     "$ref": "#/components/schemas/SitePersonalTokenResource"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8932,6 +9702,16 @@
           "204": {
             "description": "There is no content to send for this request, but the headers may be useful."
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -8972,6 +9752,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -9006,6 +9796,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteRevenueSettingsResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -9164,6 +9964,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteRuleResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -9804,6 +10614,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -9848,6 +10668,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -9987,6 +10817,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteSegmentResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -10529,6 +11369,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -10851,6 +11701,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -10882,6 +11742,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteSuppressionResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -11343,6 +12213,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -11556,6 +12436,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "RFC 7807 forbidden response",
             "content": {
@@ -11624,6 +12514,16 @@
               }
             }
           },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "RFC 7807 not found response",
             "content": {
@@ -11653,6 +12553,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteCreateTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -11721,6 +12631,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteApiTokenResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -12027,6 +12947,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SiteWebhookEndpointResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RFC 7807 bad request response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }

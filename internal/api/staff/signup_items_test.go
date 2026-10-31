@@ -158,9 +158,7 @@ func TestAnAddedItemWithoutAPublishedVersionIsListedInTheConsoleButNotToVisitors
 	assert.EqualValues(t, "Terms of service", added.Title)
 	visible := h.visibleItems(t)
 	assert.Empty(t, visible, "an item without a published version is not asked")
-	page, ok := h.publicDocument(t, "terms").(*siteapi.ProblemDetails)
-	require.True(t, ok, "a draft has no public page")
-	assert.EqualValues(t, http.StatusNotFound, page.Status.Value)
+	assert.IsType(t, &siteapi.SiteLegalDocumentsGetNotFound{}, h.publicDocument(t, "terms"), "a draft has no public page")
 }
 
 // The acceptance path of #736: a Staff member without a License key adds an item, writes a draft,

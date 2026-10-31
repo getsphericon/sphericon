@@ -926,6 +926,10 @@ export type StaffSignupSurveyGetData = {
 
 export type StaffSignupSurveyGetErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -972,6 +976,10 @@ export type StaffWorkspacesListData = {
 };
 
 export type StaffWorkspacesListErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -1020,6 +1028,10 @@ export type StaffWorkspacesGetData = {
 };
 
 export type StaffWorkspacesGetErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -1096,6 +1108,10 @@ export type StaffWorkspacesExemptData = {
 
 export type StaffWorkspacesExemptErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -1126,6 +1142,10 @@ export type StaffWorkspacesSuspendData = {
 };
 
 export type StaffWorkspacesSuspendErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */
@@ -1162,6 +1182,10 @@ export type StaffWorkspacesUnexemptData = {
 
 export type StaffWorkspacesUnexemptErrors = {
   /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
+  /**
    * RFC 7807 unauthorized response
    */
   401: ProblemDetails;
@@ -1192,6 +1216,10 @@ export type StaffWorkspacesUnsuspendData = {
 };
 
 export type StaffWorkspacesUnsuspendErrors = {
+  /**
+   * RFC 7807 bad request response
+   */
+  400: ProblemDetails;
   /**
    * RFC 7807 unauthorized response
    */

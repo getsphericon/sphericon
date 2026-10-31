@@ -116,6 +116,7 @@ namespace StaffSignupItems {
         @statusCode statusCode: 201;
         @body body: StaffSignupItemResource;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | UnprocessableEntityProblem;
 
@@ -125,6 +126,7 @@ namespace StaffSignupItems {
   @route("/order")
   op reorder(@body body: StaffSignupItemOrder):
     | StaffSignupItemList
+    | BadRequestProblem
     | UnauthorizedProblem
     | UnprocessableEntityProblem;
 
@@ -133,6 +135,7 @@ namespace StaffSignupItems {
   @route("/{id}")
   op get(@path id: EntityId):
     | StaffSignupItemResource
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;
 
@@ -142,6 +145,7 @@ namespace StaffSignupItems {
   @route("/{id}")
   op update(@path id: EntityId, @body body: StaffSignupItemUpdate):
     | StaffSignupItemResource
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -154,6 +158,7 @@ namespace StaffSignupItems {
   @route("/{id}/archive")
   op archive(@path id: EntityId):
     | StaffSignupItemResource
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
@@ -164,6 +169,7 @@ namespace StaffSignupItems {
   @route("/{id}/versions")
   op listVersions(@path id: EntityId):
     | StaffLegalDocumentVersionList
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;
 
@@ -173,6 +179,7 @@ namespace StaffSignupItems {
   @route("/{id}/draft")
   op saveDraft(@path id: EntityId, @body body: StaffLegalDocumentDraftInput):
     | StaffSignupItemResource
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem;
 
@@ -186,6 +193,7 @@ namespace StaffSignupItems {
         @statusCode statusCode: 201;
         @body body: StaffSignupItemResource;
       }
+    | BadRequestProblem
     | UnauthorizedProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;

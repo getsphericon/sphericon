@@ -44,5 +44,8 @@ namespace SiteSetupChecklist {
   /** The Workspace's Setup checklist */
   @get
   @requiresPermissions(#[])
-  op get(@path workspaceId: WorkspaceId): SiteSetupProgress | NotFoundProblem;
+  op get(@path workspaceId: WorkspaceId):
+    | SiteSetupProgress
+    | BadRequestProblem
+    | NotFoundProblem;
 }

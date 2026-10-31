@@ -57,11 +57,11 @@ function fetchSpies() {
 test('a mutation refreshes the queries of its own tag and no others', async () => {
   const fetches = fetchSpies()
   const screen = await renderWithProviders(<Harness fetches={fetches} />)
-  await vi.waitFor(() => expect(fetches.tags).toHaveBeenCalledTimes(1))
+  await expect.poll(() => fetches.tags).toHaveBeenCalledTimes(1)
 
   await screen.getByRole('button', { name: SAVE }).click()
 
-  await vi.waitFor(() => expect(fetches.segments).toHaveBeenCalledTimes(2))
+  await expect.poll(() => fetches.segments).toHaveBeenCalledTimes(2)
   expect(fetches.templates).toHaveBeenCalledTimes(1)
   expect(fetches.tags).toHaveBeenCalledTimes(1)
 })
@@ -71,11 +71,11 @@ test('a listed query of another resource is refreshed too', async () => {
   const screen = await renderWithProviders(
     <Harness fetches={fetches} invalidate={[templatesKey]} />,
   )
-  await vi.waitFor(() => expect(fetches.tags).toHaveBeenCalledTimes(1))
+  await expect.poll(() => fetches.tags).toHaveBeenCalledTimes(1)
 
   await screen.getByRole('button', { name: SAVE }).click()
 
-  await vi.waitFor(() => expect(fetches.templates).toHaveBeenCalledTimes(2))
+  await expect.poll(() => fetches.templates).toHaveBeenCalledTimes(2)
   expect(fetches.segments).toHaveBeenCalledTimes(2)
   expect(fetches.tags).toHaveBeenCalledTimes(1)
 })
@@ -86,10 +86,10 @@ test('invalidate false refreshes nothing', async () => {
   const screen = await renderWithProviders(
     <Harness fetches={fetches} invalidate={false} onDone={onDone} />,
   )
-  await vi.waitFor(() => expect(fetches.tags).toHaveBeenCalledTimes(1))
+  await expect.poll(() => fetches.tags).toHaveBeenCalledTimes(1)
 
   await screen.getByRole('button', { name: SAVE }).click()
 
-  await vi.waitFor(() => expect(onDone).toHaveBeenCalledTimes(1))
+  await expect.poll(() => onDone).toHaveBeenCalledTimes(1)
   expect(fetches.segments).toHaveBeenCalledTimes(1)
 })

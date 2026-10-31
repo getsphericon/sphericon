@@ -76,7 +76,7 @@ func TestSiteTokensWorkspaceNotFound(t *testing.T) {
 
 	res, err := c.SiteTokensList(context.Background(), siteapi.SiteTokensListParams{WorkspaceId: "NoSuchWs"})
 	require.NoError(t, err)
-	assert.IsType(t, &siteapi.ProblemDetails{}, res)
+	assert.IsType(t, &siteapi.SiteTokensListNotFound{}, res)
 }
 
 func TestSiteTokensNeedAnOwnerOrAdmin(t *testing.T) {

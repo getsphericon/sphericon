@@ -3497,7 +3497,7 @@ func (s *Server) handleSiteAuthSigninCallbackRequest(args [1]string, argsEscaped
 
 	var rawBody []byte
 
-	var response *SiteAuthSigninCallbackFound
+	var response SiteAuthSigninCallbackRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3538,7 +3538,7 @@ func (s *Server) handleSiteAuthSigninCallbackRequest(args [1]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = SiteAuthSigninCallbackParams
-			Response = *SiteAuthSigninCallbackFound
+			Response = SiteAuthSigninCallbackRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3956,7 +3956,7 @@ func (s *Server) handleSiteAuthSigninPendingDeclineRequest(args [0]string, argsE
 		}
 	}()
 
-	var response *SiteAuthSigninPendingDeclineNoContent
+	var response SiteAuthSigninPendingDeclineRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -3972,7 +3972,7 @@ func (s *Server) handleSiteAuthSigninPendingDeclineRequest(args [0]string, argsE
 		type (
 			Request  = *SiteSigninPendingDeclineInput
 			Params   = struct{}
-			Response = *SiteAuthSigninPendingDeclineNoContent
+			Response = SiteAuthSigninPendingDeclineRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -3983,12 +3983,12 @@ func (s *Server) handleSiteAuthSigninPendingDeclineRequest(args [0]string, argsE
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				err = s.h.SiteAuthSigninPendingDecline(ctx, request)
+				response, err = s.h.SiteAuthSigninPendingDecline(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		err = s.h.SiteAuthSigninPendingDecline(ctx, request)
+		response, err = s.h.SiteAuthSigninPendingDecline(ctx, request)
 	}
 	if err != nil {
 		defer recordError("Internal", err)

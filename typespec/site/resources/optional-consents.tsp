@@ -72,6 +72,7 @@ namespace SiteOptionalConsents {
         @statusCode statusCode: 200;
         @body body: SiteOptionalConsent;
       }
+    | BadRequestProblem
     | NotFoundProblem
     | UnprocessableEntityProblem;
 }

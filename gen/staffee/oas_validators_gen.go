@@ -733,6 +733,14 @@ func (s *StaffSignupSurveyCounts) Validate() error {
 	return nil
 }
 
+func (s *StaffSignupSurveyGetBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffSignupSurveyGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1081,6 +1089,14 @@ func (s StaffWorkspaceReview) Validate() error {
 	}
 }
 
+func (s *StaffWorkspacesExemptBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffWorkspacesExemptNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1097,6 +1113,14 @@ func (s *StaffWorkspacesExemptUnauthorized) Validate() error {
 	return nil
 }
 
+func (s *StaffWorkspacesGetBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffWorkspacesGetNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1106,6 +1130,14 @@ func (s *StaffWorkspacesGetNotFound) Validate() error {
 }
 
 func (s *StaffWorkspacesGetUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffWorkspacesListBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err
@@ -1153,6 +1185,22 @@ func (s *StaffWorkspacesListOK) Validate() error {
 	return nil
 }
 
+func (s *StaffWorkspacesListUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffWorkspacesSuspendBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffWorkspacesSuspendNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1177,6 +1225,14 @@ func (s *StaffWorkspacesSuspendUnprocessableEntity) Validate() error {
 	return nil
 }
 
+func (s *StaffWorkspacesUnexemptBadRequest) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StaffWorkspacesUnexemptNotFound) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
@@ -1186,6 +1242,14 @@ func (s *StaffWorkspacesUnexemptNotFound) Validate() error {
 }
 
 func (s *StaffWorkspacesUnexemptUnauthorized) Validate() error {
+	alias := (*ProblemDetails)(s)
+	if err := alias.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *StaffWorkspacesUnsuspendBadRequest) Validate() error {
 	alias := (*ProblemDetails)(s)
 	if err := alias.Validate(); err != nil {
 		return err

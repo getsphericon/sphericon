@@ -46,6 +46,7 @@ namespace SiteJoinDomains {
   @requiresPermissions(#[Permission.joinDomainsManage])
   op list(@path workspaceId: WorkspaceId):
     | SiteJoinDomainResource[]
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
 
@@ -59,6 +60,7 @@ namespace SiteJoinDomains {
         @statusCode statusCode: 201;
         @body body: SiteJoinDomainResource;
       }
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem
@@ -73,6 +75,7 @@ namespace SiteJoinDomains {
   @requiresPermissions(#[Permission.joinDomainsManage])
   op verify(@path workspaceId: WorkspaceId, @path id: EntityId):
     | SiteJoinDomainResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem
     | ConflictProblem
@@ -84,6 +87,7 @@ namespace SiteJoinDomains {
   @requiresPermissions(#[Permission.joinDomainsManage])
   op remove(@path workspaceId: WorkspaceId, @path id: EntityId):
     | NoContentResponse
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
 }
@@ -109,6 +113,7 @@ namespace SiteDomainJoin {
   @requiresPermissions(#[Permission.joinDomainsManage])
   op get(@path workspaceId: WorkspaceId):
     | SiteDomainJoinResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
 
@@ -118,6 +123,7 @@ namespace SiteDomainJoin {
   @requiresPermissions(#[Permission.joinDomainsManage])
   op set(@path workspaceId: WorkspaceId, @body body: SiteSetDomainJoinInput):
     | SiteDomainJoinResource
+    | BadRequestProblem
     | ForbiddenProblem
     | NotFoundProblem;
 }

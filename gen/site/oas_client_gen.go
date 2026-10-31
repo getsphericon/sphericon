@@ -188,7 +188,7 @@ type Invoker interface {
 	// reaches the handler and gets the same redirect as any other refusal.
 	//
 	// GET /auth/signin/{provider}/callback
-	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error)
+	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (SiteAuthSigninCallbackRes, error)
 	// SiteAuthSigninNotMe invokes SiteAuth_signinNotMe operation.
 	//
 	// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
@@ -211,7 +211,7 @@ type Invoker interface {
 	// names nothing any more.
 	//
 	// POST /auth/signin-pending/decline
-	SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) error
+	SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (SiteAuthSigninPendingDeclineRes, error)
 	// SiteAuthSigninPendingSubmit invokes SiteAuth_signinPendingSubmit operation.
 	//
 	// Complete a pending sign-up with the answers to the Sign-up items: creates the User with its Verified
@@ -4238,12 +4238,12 @@ func (c *Client) sendSiteAuthSignUp(ctx context.Context, request *SiteSignUpInpu
 // reaches the handler and gets the same redirect as any other refusal.
 //
 // GET /auth/signin/{provider}/callback
-func (c *Client) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error) {
+func (c *Client) SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (SiteAuthSigninCallbackRes, error) {
 	res, err := c.sendSiteAuthSigninCallback(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (res *SiteAuthSigninCallbackFound, err error) {
+func (c *Client) sendSiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (res SiteAuthSigninCallbackRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signinCallback"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -4613,12 +4613,12 @@ func (c *Client) sendSiteAuthSigninPending(ctx context.Context, params SiteAuthS
 // names nothing any more.
 //
 // POST /auth/signin-pending/decline
-func (c *Client) SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) error {
-	_, err := c.sendSiteAuthSigninPendingDecline(ctx, request)
-	return err
+func (c *Client) SiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (SiteAuthSigninPendingDeclineRes, error) {
+	res, err := c.sendSiteAuthSigninPendingDecline(ctx, request)
+	return res, err
 }
 
-func (c *Client) sendSiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (res *SiteAuthSigninPendingDeclineNoContent, err error) {
+func (c *Client) sendSiteAuthSigninPendingDecline(ctx context.Context, request *SiteSigninPendingDeclineInput) (res SiteAuthSigninPendingDeclineRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAuth_signinPendingDecline"),
 		semconv.HTTPRequestMethodKey.String("POST"),
