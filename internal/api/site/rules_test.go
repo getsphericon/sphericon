@@ -163,6 +163,31 @@ func TestSiteTriggerLeafIsAcceptedInARuleAndRefusedInASegment(t *testing.T) {
 	assert.IsType(t, &siteapi.SiteSegmentsCreateUnprocessableEntity{}, segment)
 }
 
+// A Rule compares a number property of its Event; a date leaf on a property is refused, since an
+// Event's properties have no type.
+func TestSiteRuleConditionComparesATriggerNumber(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	create := func(leaf string) siteapi.SiteRulesCreateRes {
+		t.Helper()
+		def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
+		out, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+			Name: "Promoters", TriggerEvents: []string{"nps_submitted"},
+			Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "promoter")},
+			Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
+		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
+		require.NoError(t, err)
+		return out
+	}
+
+	promoters := create(`{"kind":"number","field":"trigger:score","operator":"gte","value":9}`)
+	dated := create(`{"kind":"dateWithin","field":"trigger:at","withinDays":7}`)
+
+	assert.IsType(t, &siteapi.SiteRuleResource{}, promoters)
+	assert.IsType(t, &siteapi.SiteRulesCreateUnprocessableEntity{}, dated)
+}
+
 // A Rule's Condition counts Events as a Segment's does, and refuses the same counts.
 func TestSiteRuleConditionCountsEvents(t *testing.T) {
 	env := testhelper.Setup(t)

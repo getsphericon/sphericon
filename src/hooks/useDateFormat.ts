@@ -6,16 +6,21 @@ import { formatDate, formatDateTime } from '../utils/datetime.ts'
 
 type DateInput = Parameters<typeof formatDateTime>[0]
 
-// useDateFormat formats instants in the User time zone (ADR 0068). It reads the profile from the
-// cache and never fetches it: a signed-in page's guard has loaded it, and where there is none (a
-// public page, the Staff console) or the User chose no zone, the browser's zone holds. A saved
-// zone re-renders every caller through the cache.
-export function useDateFormat() {
-  const timeZone = useQuery({
+// useTimeZone is the User time zone (ADR 0068), or undefined for the browser's. It reads the
+// profile from the cache and never fetches it: a signed-in page's guard has loaded it, and where
+// there is none (a public page, the Staff console) or the User chose no zone, the browser's zone
+// holds. A saved zone re-renders every caller through the cache.
+export function useTimeZone(): string | undefined {
+  return useQuery({
     ...siteUserGetMeOptions(),
     enabled: false,
     select: (me) => me.timezone ?? undefined,
   }).data
+}
+
+// useDateFormat formats instants in the User time zone.
+export function useDateFormat() {
+  const timeZone = useTimeZone()
 
   return useMemo(
     () => ({

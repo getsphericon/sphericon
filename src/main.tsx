@@ -16,6 +16,7 @@ staffeeClient.setConfig({ baseUrl: '/staff' })
 
 import '@mantine/core/styles.css'
 import '@mantine/charts/styles.css'
+import '@mantine/dates/styles.css'
 import '@mantine/notifications/styles.css'
 import 'mantine-datatable/styles.css'
 import '@react-email/editor/themes/default.css'

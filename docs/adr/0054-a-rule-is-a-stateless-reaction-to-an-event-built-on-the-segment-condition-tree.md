@@ -12,6 +12,13 @@ status: accepted
 > Rule exists when its Condition is evaluated, and an `event` leaf counting the Trigger event's
 > action counts it. `trigger:<key>` leaves still read the properties the envelope carries.
 
+> **Amended by #750:** a `number` leaf (`gt`, `gte`, `lt`, `lte` against a JSON number) compares a
+> `trigger:<key>` property as well as a number Custom field, and its operators are a second shared
+> table: a jsonpath filter on the SQL side and a Go comparison on the Event side, with a test running
+> the same cases, negated or not, through both. A property that is not a number (text, a boolean,
+> null, a list) makes the leaf false. The `date` and `dateWithin` leaves take only a datetime Custom
+> field: an Event's properties have no type.
+
 A Workspace could react to an Event only by building an Automation: a sequence with an
 Enrollment, a version and a once-ever fence, even to "tag a Contact who clicked this link" or "tell
 the CRM". A **Rule** is the light primitive for that: when any of its Trigger events is recorded for

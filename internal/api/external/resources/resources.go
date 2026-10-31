@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -155,6 +156,7 @@ type Converter interface {
 	// goverter:map DiscardedAt ArchivedAt
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource
+	// goverter:map Type RuleOperators | customFieldRuleOperators
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
 	TagToResource(source *ent.Tag) externalapi.TagResource
 	// The contract names the discarded state "archived" (ADR 0049). The live version and the
@@ -650,4 +652,10 @@ func optNilContactSource(v *contact.Source) externalapi.OptNilContactExportSourc
 		return externalapi.OptNilContactExportSource{}
 	}
 	return externalapi.NewOptNilContactExportSource(externalapi.ContactExportSource(*v))
+}
+
+// customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the
+// Condition's table, listed so a client offers what the server takes.
+func customFieldRuleOperators(t customfield.Type) []externalapi.ConditionOperator {
+	return lo.Map(condition.RuleOperators(t), func(op string, _ int) externalapi.ConditionOperator { return externalapi.ConditionOperator(op) })
 }

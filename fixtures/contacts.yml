@@ -986,13 +986,77 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 5550 # fixture: DunderPreviewTarget
   email: preview-target@dunder.test
-  custom_fields: '{"plan":"preview-pro"}'
+  custom_fields: '{"plan":"preview-pro","seats":12,"renews_at":"{{daysAgo 2}}"}'
   workspace_id: 60
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5551 # fixture: DunderEventPreview
   email: ev-prev@dunder.test
   workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Wonka (workspace 62): the number and date leaves (#750). score holds a number, a number as text,
+# a boolean, null, a list or nothing; seen_at a moment with an offset (past or to come), text, a bare
+# date, a date-time without an offset or nothing. WonkaNone has no custom_fields at all.
+- id: 5570 # fixture: WonkaTen
+  email: ten@wonka.test
+  custom_fields: '{"score":10,"seen_at":"{{daysAgo 3}}","plan":"pro"}'
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5571 # fixture: WonkaNineAndAHalf
+  email: nine@wonka.test
+  custom_fields: '{"score":9.5,"seen_at":"{{daysAgo 10}}"}'
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5572 # fixture: WonkaMinus
+  email: minus@wonka.test
+  custom_fields: '{"score":-2.5,"seen_at":"{{daysAgo 40}}"}'
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5573 # fixture: WonkaText
+  email: text@wonka.test
+  custom_fields: '{"score":"10","seen_at":"soon"}'
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5574 # fixture: WonkaFlag
+  email: flag@wonka.test
+  custom_fields: '{"score":true,"seen_at":"2026-01-01"}'
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5575 # fixture: WonkaNull
+  email: null@wonka.test
+  custom_fields: '{"score":null,"seen_at":"2026-01-01 00:00:00"}'
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5576 # fixture: WonkaList
+  email: list@wonka.test
+  custom_fields: '{"score":[10],"seen_at":"{{daysAhead 2}}"}'
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5577 # fixture: WonkaNone
+  email: none@wonka.test
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# A moment as JavaScript and RFC 3339 write UTC (a trailing Z), and one with fractional seconds and
+# another offset: 2019-12-31 22:00:00.5 UTC.
+- id: 5578 # fixture: WonkaZulu
+  email: zulu@wonka.test
+  custom_fields: '{"score":1,"seen_at":"2020-01-01T00:00:00Z"}'
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5579 # fixture: WonkaOffset
+  email: offset@wonka.test
+  custom_fields: '{"seen_at":"2020-01-01T00:00:00.5+02:00"}'
+  workspace_id: 62
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 

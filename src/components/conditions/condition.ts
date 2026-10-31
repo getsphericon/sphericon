@@ -4,15 +4,21 @@ import * as z from 'zod'
 
 import {
   SiteConditionCombinator,
+  SiteConditionDateOperator,
   SiteConditionEventOperator,
+  SiteConditionNumberOperator,
   SiteConditionOperator,
 } from '../../generated/site/types.gen.ts'
 import type {
+  SiteConditionDateLeaf,
+  SiteConditionDateWithinLeaf,
   SiteConditionEventLeaf,
   SiteConditionGroup,
   SiteConditionLeaf,
+  SiteConditionNumberLeaf,
 } from '../../generated/site/types.gen.ts'
 import { zSiteConditionEventLeaf, zSiteConditionGroup } from '../../generated/site/zod.gen.ts'
+import { dayOf, nextDay, startOfDay } from '../../utils/datetime.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 
 // A Segment is always a rule: the empty group matches every contact.
@@ -77,38 +83,116 @@ function toEventRule(leaf: SiteConditionEventLeaf): RuleType {
   }
 }
 
+// A date-within leaf is edited as the builder operator "within" on a datetime field, its value the
+// number of days; the API has no operator for it, only the leaf's kind.
+export const dateWithinOperator = 'within'
+
 // react-querybuilder edits a plain {combinator, rules} tree; the API's tree adds the `kind`
 // discriminator and types operators and combinators. toQuery loads a Condition into the builder
-// once; the builder keeps its own state from then on, and toDraft reads it back.
-export function toQuery(group: SiteConditionGroup): RuleGroupType {
+// once; the builder keeps its own state from then on, and toDraft reads it back. timeZone is the
+// User time zone the days of before and after are read in (ADR 0068), undefined for the browser's.
+export function toQuery(group: SiteConditionGroup, timeZone?: string): RuleGroupType {
   return {
     combinator: group.combinator,
     ...(group.not === undefined ? {} : { not: group.not }),
     rules: group.rules.map((node) => {
       if (node.kind === 'group') {
-        return toQuery(node)
+        return toQuery(node, timeZone)
       }
       if (node.kind === 'event') {
         return toEventRule(node)
+      }
+      if (node.kind === 'number') {
+        return { field: node.field, operator: node.operator, value: node.value }
+      }
+      if (node.kind === 'date') {
+        return { field: node.field, operator: node.operator, value: dayOfSide(node, timeZone) }
+      }
+      if (node.kind === 'dateWithin') {
+        return { field: node.field, operator: dateWithinOperator, value: node.withinDays }
       }
       return { field: node.field, operator: node.operator, value: node.value ?? '' }
     }),
   }
 }
 
-// A Condition as the builder holds it: an event count the user has not typed yet stays blank, and
-// is never filled with a default. toCondition tells a complete draft from one still being edited.
+// The builder picks a day for before and after, and a day is whole on both sides: before D is
+// before the start of D, after D is from the start of the next day, both in the User time zone. The
+// API's before is strictly earlier than `at` and its after at or later, so the two split time there.
+const zDay = z.iso.date()
+
+function momentOfSide(operator: SiteConditionDateOperator, value: unknown, timeZone?: string) {
+  const day = zDay.safeParse(value)
+  if (!day.success) {
+    return undefined
+  }
+  const from = operator === SiteConditionDateOperator.AFTER ? nextDay(day.data) : day.data
+  return startOfDay(from, timeZone)
+}
+
+// The day a loaded leaf shows: the one `at` starts for before, the one it ends for after.
+function dayOfSide(leaf: SiteConditionDateLeaf, timeZone?: string): string {
+  const at = Date.parse(leaf.at)
+  if (Number.isNaN(at)) {
+    return ''
+  }
+  const lastOfDay = leaf.operator === SiteConditionDateOperator.AFTER ? at - 1 : at
+  return dayOf(lastOfDay, timeZone)
+}
+
+// A Condition as the builder holds it: an event count, a number, a day or a window the user has not
+// typed yet stays blank, and is never filled with a default. toCondition tells a complete draft
+// from one still being edited.
 type EventLeafDraft = Omit<SiteConditionEventLeaf, 'times'> &
   Partial<Pick<SiteConditionEventLeaf, 'times'>>
-type NodeDraft = SiteConditionLeaf | EventLeafDraft | ConditionDraft
+type NumberLeafDraft = Omit<SiteConditionNumberLeaf, 'value'> &
+  Partial<Pick<SiteConditionNumberLeaf, 'value'>>
+type DateLeafDraft = Omit<SiteConditionDateLeaf, 'at'> & Partial<Pick<SiteConditionDateLeaf, 'at'>>
+type DateWithinLeafDraft = Omit<SiteConditionDateWithinLeaf, 'withinDays'> &
+  Partial<Pick<SiteConditionDateWithinLeaf, 'withinDays'>>
+type NodeDraft =
+  | SiteConditionLeaf
+  | EventLeafDraft
+  | NumberLeafDraft
+  | DateLeafDraft
+  | DateWithinLeafDraft
+  | ConditionDraft
 export type ConditionDraft = Omit<SiteConditionGroup, 'rules'> & { rules: NodeDraft[] }
 
 const operatorByName = new Map<string, SiteConditionOperator>(
   Object.values(SiteConditionOperator).map((operator) => [operator, operator]),
 )
+const numberOperatorByName = new Map<string, SiteConditionNumberOperator>(
+  Object.values(SiteConditionNumberOperator).map((operator) => [operator, operator]),
+)
+const dateOperatorByName = new Map<string, SiteConditionDateOperator>(
+  Object.values(SiteConditionDateOperator).map((operator) => [operator, operator]),
+)
 const combinatorByName = new Map<string, SiteConditionCombinator>(
   Object.values(SiteConditionCombinator).map((combinator) => [combinator, combinator]),
 )
+
+// numberOf reads a builder value as a number: a number input gives one, a value kept from a text
+// operator may be its text. Blank, or anything else, is no number.
+function numberOf(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined
+  }
+  if (typeof value !== 'string' || value.trim() === '') {
+    return undefined
+  }
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+// textOf reads a builder value as a rule leaf's text: a number input on a number field gives a
+// number, which the leaf holds as its text.
+function textOf(value: unknown): string {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+  return typeof value === 'string' ? value : ''
+}
 
 function boundOf(rule: RuleType, count: EventCount) {
   const operator = eventOperatorByName.get(rule.operator)
@@ -128,25 +212,49 @@ function toEventLeaf(action: string, rule: RuleType): EventLeafDraft[] {
   return [{ kind: 'event', action, ...bound, ...span }]
 }
 
-function toLeaf(rule: RuleType): NodeDraft[] {
+function toTypedLeaf(rule: RuleType, timeZone?: string): NodeDraft | undefined {
+  const compared = numberOperatorByName.get(rule.operator)
+  if (compared !== undefined) {
+    const value = numberOf(rule.value)
+    return {
+      kind: 'number',
+      field: rule.field,
+      operator: compared,
+      ...(value === undefined ? {} : { value }),
+    }
+  }
+  const side = dateOperatorByName.get(rule.operator)
+  if (side !== undefined) {
+    const at = momentOfSide(side, rule.value, timeZone)
+    return { kind: 'date', field: rule.field, operator: side, ...(at === undefined ? {} : { at }) }
+  }
+  if (rule.operator === dateWithinOperator) {
+    const withinDays = numberOf(rule.value)
+    return {
+      kind: 'dateWithin',
+      field: rule.field,
+      ...(withinDays === undefined ? {} : { withinDays }),
+    }
+  }
+  return undefined
+}
+
+function toLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
   if (rule.field.startsWith(eventFieldPrefix)) {
     return toEventLeaf(rule.field.slice(eventFieldPrefix.length), rule)
+  }
+  const typed = toTypedLeaf(rule, timeZone)
+  if (typed !== undefined) {
+    return [typed]
   }
   const operator = operatorByName.get(rule.operator)
   if (!operator) {
     return []
   }
-  return [
-    {
-      kind: 'rule',
-      field: rule.field,
-      operator,
-      value: typeof rule.value === 'string' ? rule.value : '',
-    },
-  ]
+  return [{ kind: 'rule', field: rule.field, operator, value: textOf(rule.value) }]
 }
 
-export function toDraft(query: RuleGroupType): ConditionDraft {
+export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft {
   return {
     kind: 'group',
     combinator: combinatorByName.get(query.combinator) ?? SiteConditionCombinator.AND,
@@ -156,22 +264,22 @@ export function toDraft(query: RuleGroupType): ConditionDraft {
         return []
       }
       if (isRuleGroupType(node)) {
-        return [toDraft(node)]
+        return [toDraft(node, timeZone)]
       }
-      return toLeaf(node)
+      return toLeaf(node, timeZone)
     }),
   }
 }
 
-// toCondition is the draft as the API's Condition, or undefined while a count is blank: the
-// generated schema decides.
+// toCondition is the draft as the API's Condition, or undefined while a count, a number, a day or
+// a window is blank: the generated schema decides.
 export function toCondition(draft: ConditionDraft): SiteConditionGroup | undefined {
   const parsed = zSiteConditionGroup.safeParse(draft)
   return parsed.success ? parsed.data : undefined
 }
 
 // The form holds a rule group as JSON text (jsonText); validated by the generated schema, so a
-// draft with a blank count is refused on submit.
+// draft with a blank count, number, day or window is refused on submit.
 export const conditionCodec: z.ZodType<SiteConditionGroup, string> =
   jsonText.pipe(zSiteConditionGroup)
 

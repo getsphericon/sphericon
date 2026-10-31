@@ -187,3 +187,10 @@
   reporting_currency: USD
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Number and date leaves over typed Custom fields, with values of every other JSON type (#750).
+- id: 62 # fixture: Wonka
+  name: Wonka
+  public_id: WonkaW62
+  collect_key: omck_test_wonka_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

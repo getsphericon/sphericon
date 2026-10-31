@@ -14933,6 +14933,63 @@
         "enum": ["and", "or"],
         "description": "How a condition group combines its entries"
       },
+      "ConditionDateLeaf": {
+        "type": "object",
+        "required": ["kind", "field", "operator", "at"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it tests: \"custom:<key>\" for a datetime custom field"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionDateOperator"
+              }
+            ],
+            "description": "Which side of `at` the moment is on"
+          },
+          "at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "The moment the field's is compared with"
+          }
+        },
+        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date\nwithout a time, a date-time without an offset or a value that is not a date-time makes the leaf\nfalse."
+      },
+      "ConditionDateOperator": {
+        "type": "string",
+        "enum": ["before", "after"],
+        "description": "Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the\ntwo split time at `at`"
+      },
+      "ConditionDateWithinLeaf": {
+        "type": "object",
+        "required": ["kind", "field", "withinDays"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["dateWithin"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it tests: \"custom:<key>\" for a datetime custom field"
+          },
+          "withinDays": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "The window, in days back from now"
+          }
+        },
+        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis within the last `withinDays` days up to now, so a moment still to come is not within. Only a\ndate-time with a UTC offset is a moment, as for the date leaf."
+      },
       "ConditionEventLeaf": {
         "type": "object",
         "required": ["kind", "action", "operator", "times"],
@@ -15013,7 +15070,7 @@
           },
           "field": {
             "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"trigger:<key>\"\n(a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the\ntext operators, and is false when the Event lacks the key or holds a value that is not text)"
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone), \"tag\", \"custom:<key>\" for a custom field of the workspace, or \"trigger:<key>\"\n(a property of the Event that fired a rule: valid only in a rule, refused in a segment, takes the\ntext operators, and is false when the Event lacks the key or holds a value that is not text; a\nnumber property is compared by a number leaf)"
           },
           "operator": {
             "allOf": [
@@ -15040,6 +15097,15 @@
             "$ref": "#/components/schemas/ConditionEventLeaf"
           },
           {
+            "$ref": "#/components/schemas/ConditionNumberLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/ConditionDateLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/ConditionDateWithinLeaf"
+          },
+          {
             "$ref": "#/components/schemas/ConditionGroup"
           }
         ],
@@ -15048,15 +15114,51 @@
           "mapping": {
             "rule": "#/components/schemas/ConditionLeaf",
             "event": "#/components/schemas/ConditionEventLeaf",
+            "number": "#/components/schemas/ConditionNumberLeaf",
+            "date": "#/components/schemas/ConditionDateLeaf",
+            "dateWithin": "#/components/schemas/ConditionDateWithinLeaf",
             "group": "#/components/schemas/ConditionGroup"
           }
         },
-        "description": "A leaf (a test of a field, or an event count) or a nested group inside a condition group,\ndiscriminated by `kind`."
+        "description": "A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested\ngroup inside a condition group, discriminated by `kind`."
+      },
+      "ConditionNumberLeaf": {
+        "type": "object",
+        "required": ["kind", "field", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["number"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it compares: \"custom:<key>\" for a number custom field, or \"trigger:<key>\""
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionNumberOperator"
+              }
+            ],
+            "description": "How the field compares with `value`"
+          },
+          "value": {
+            "type": "number",
+            "format": "double",
+            "description": "The number the field is compared with"
+          }
+        },
+        "description": "A comparison of a number: a custom field of the workspace whose type is number\n(\"custom:<key>\"), or a property of the Event that fired a rule (\"trigger:<key>\", valid only in a\nrule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the\nleaf false."
+      },
+      "ConditionNumberOperator": {
+        "type": "string",
+        "enum": ["gt", "gte", "lt", "lte"],
+        "description": "How a number leaf compares the field with `value`: greater than, greater than or equal,\nless than, or less than or equal"
       },
       "ConditionOperator": {
         "type": "string",
         "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
-        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; a custom field takes eq, neq, contains and notNull; the tag field takes has and\ndoesNotHave."
+        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag field takes has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
       },
       "ContactBatchItemResult": {
         "type": "object",
@@ -16201,7 +16303,7 @@
       },
       "CustomFieldResource": {
         "type": "object",
-        "required": ["id", "key", "name", "type", "createdAt", "updatedAt"],
+        "required": ["id", "key", "name", "type", "ruleOperators", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -16228,6 +16330,13 @@
               }
             ],
             "description": "Inferred value type"
+          },
+          "ruleOperators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConditionOperator"
+            },
+            "description": "The operators a rule leaf on this field takes, by its type"
           },
           "createdAt": {
             "allOf": [

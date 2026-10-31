@@ -31,6 +31,22 @@ export function formatDate(value: DateInput, timeZone?: string): string {
   return inZone(value, timeZone).format('L')
 }
 
+// The instant a calendar day ("2026-03-01") begins in the zone, as an ISO timestamp.
+export function startOfDay(day: string, timeZone?: string): string {
+  const start = timeZone === undefined ? dayjs(day) : dayjs.tz(day, timeZone)
+  return start.toISOString()
+}
+
+// The calendar day after day.
+export function nextDay(day: string): string {
+  return dayjs.utc(day).add(1, 'day').format('YYYY-MM-DD')
+}
+
+// The calendar day ("2026-03-01") the instant falls on in the zone.
+export function dayOf(value: DateInput, timeZone?: string): string {
+  return inZone(value, timeZone).format('YYYY-MM-DD')
+}
+
 // A date spelled out ("October 30, 2026"), for a sentence rather than a table cell.
 export function formatLongDate(value: DateInput): string {
   return dayjs(value).format('LL')

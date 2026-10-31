@@ -303,6 +303,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.
 		externalapiCustomFieldResource.Key = (*source).Key
 		externalapiCustomFieldResource.Name = (*source).Name
 		externalapiCustomFieldResource.Type = external.CustomFieldType((*source).Type)
+		externalapiCustomFieldResource.RuleOperators = customFieldRuleOperators((*source).Type)
 		externalapiCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

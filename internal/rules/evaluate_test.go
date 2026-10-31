@@ -182,6 +182,34 @@ func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 	assert.Equal(t, 0, fire("p-none", nil))
 }
 
+// "nps_submitted with score >= 9" (RulePromoters): a number leaf on the Event's property fires for
+// a score of 9 or more, whichever way the number was decoded, and not for a lower one or a number
+// as text.
+func TestEvaluateComparesANumberProperty(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := rules.New(env.Cipher, env.Bus)
+	fire := func(sourceID string, score any) int {
+		fired, err := m.Evaluate(ctx, s, rules.Event{
+			ContactID: fixtures.ContactAliceID, Action: "nps_submitted", SourceID: sourceID,
+			RecordedAt: time.Now(), Properties: map[string]any{"score": score},
+		})
+		require.NoError(t, err)
+		return len(fired)
+	}
+
+	collected := fire("nps-collected", json.Number("10"))
+	stored := fire("nps-stored", 9.0)
+	detractor := fire("nps-low", 6.0)
+	text := fire("nps-text", "10")
+
+	assert.Equal(t, 1, collected)
+	assert.Equal(t, 1, stored)
+	assert.Equal(t, 0, detractor)
+	assert.Equal(t, 0, text)
+}
+
 // evaluateAtOnce is the evaluation queue run in place: it hands the Event to the module as the
 // evaluation job does.
 type evaluateAtOnce struct {

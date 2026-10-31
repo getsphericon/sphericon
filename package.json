@@ -30,6 +30,7 @@
     "@jsonforms/react": "^3.8.0",
     "@mantine/charts": "^9.7.4",
     "@mantine/core": "^9.7.4",
+    "@mantine/dates": "^9.7.4",
     "@mantine/form": "^9.7.4",
     "@mantine/hooks": "^9.7.4",
     "@mantine/modals": "^9.7.4",

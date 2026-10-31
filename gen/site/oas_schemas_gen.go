@@ -12120,6 +12120,214 @@ func (s *SiteConditionCombinator) UnmarshalText(data []byte) error {
 	}
 }
 
+// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is before
+// or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date without a time,
+// a date-time without an offset or a value that is not a date-time makes the leaf false.
+// Ref: #/components/schemas/SiteConditionDateLeaf
+type SiteConditionDateLeaf struct {
+	Kind SiteConditionDateLeafKind `json:"kind"`
+	// What it tests: "custom:" for a datetime custom field.
+	Field string `json:"field"`
+	// Which side of `at` the moment is on.
+	Operator SiteConditionDateOperator `json:"operator"`
+	// The moment the field's is compared with.
+	At Timestamp `json:"at"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteConditionDateLeaf) GetKind() SiteConditionDateLeafKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *SiteConditionDateLeaf) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *SiteConditionDateLeaf) GetOperator() SiteConditionDateOperator {
+	return s.Operator
+}
+
+// GetAt returns the value of At.
+func (s *SiteConditionDateLeaf) GetAt() Timestamp {
+	return s.At
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteConditionDateLeaf) SetKind(val SiteConditionDateLeafKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *SiteConditionDateLeaf) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *SiteConditionDateLeaf) SetOperator(val SiteConditionDateOperator) {
+	s.Operator = val
+}
+
+// SetAt sets the value of At.
+func (s *SiteConditionDateLeaf) SetAt(val Timestamp) {
+	s.At = val
+}
+
+type SiteConditionDateLeafKind string
+
+const (
+	SiteConditionDateLeafKindDate SiteConditionDateLeafKind = "date"
+)
+
+// AllValues returns all SiteConditionDateLeafKind values.
+func (SiteConditionDateLeafKind) AllValues() []SiteConditionDateLeafKind {
+	return []SiteConditionDateLeafKind{
+		SiteConditionDateLeafKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConditionDateLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConditionDateLeafKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConditionDateLeafKind) UnmarshalText(data []byte) error {
+	switch SiteConditionDateLeafKind(data) {
+	case SiteConditionDateLeafKindDate:
+		*s = SiteConditionDateLeafKindDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the two
+// split time at `at`.
+// Ref: #/components/schemas/SiteConditionDateOperator
+type SiteConditionDateOperator string
+
+const (
+	SiteConditionDateOperatorBefore SiteConditionDateOperator = "before"
+	SiteConditionDateOperatorAfter  SiteConditionDateOperator = "after"
+)
+
+// AllValues returns all SiteConditionDateOperator values.
+func (SiteConditionDateOperator) AllValues() []SiteConditionDateOperator {
+	return []SiteConditionDateOperator{
+		SiteConditionDateOperatorBefore,
+		SiteConditionDateOperatorAfter,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConditionDateOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConditionDateOperatorBefore:
+		return []byte(s), nil
+	case SiteConditionDateOperatorAfter:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConditionDateOperator) UnmarshalText(data []byte) error {
+	switch SiteConditionDateOperator(data) {
+	case SiteConditionDateOperatorBefore:
+		*s = SiteConditionDateOperatorBefore
+		return nil
+	case SiteConditionDateOperatorAfter:
+		*s = SiteConditionDateOperatorAfter
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is within
+// the last `withinDays` days up to now, so a moment still to come is not within. Only a date-time with
+// a UTC offset is a moment, as for the date leaf.
+// Ref: #/components/schemas/SiteConditionDateWithinLeaf
+type SiteConditionDateWithinLeaf struct {
+	Kind SiteConditionDateWithinLeafKind `json:"kind"`
+	// What it tests: "custom:" for a datetime custom field.
+	Field string `json:"field"`
+	// The window, in days back from now.
+	WithinDays int32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteConditionDateWithinLeaf) GetKind() SiteConditionDateWithinLeafKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *SiteConditionDateWithinLeaf) GetField() string {
+	return s.Field
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *SiteConditionDateWithinLeaf) GetWithinDays() int32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteConditionDateWithinLeaf) SetKind(val SiteConditionDateWithinLeafKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *SiteConditionDateWithinLeaf) SetField(val string) {
+	s.Field = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *SiteConditionDateWithinLeaf) SetWithinDays(val int32) {
+	s.WithinDays = val
+}
+
+type SiteConditionDateWithinLeafKind string
+
+const (
+	SiteConditionDateWithinLeafKindDateWithin SiteConditionDateWithinLeafKind = "dateWithin"
+)
+
+// AllValues returns all SiteConditionDateWithinLeafKind values.
+func (SiteConditionDateWithinLeafKind) AllValues() []SiteConditionDateWithinLeafKind {
+	return []SiteConditionDateWithinLeafKind{
+		SiteConditionDateWithinLeafKindDateWithin,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConditionDateWithinLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConditionDateWithinLeafKindDateWithin:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConditionDateWithinLeafKind) UnmarshalText(data []byte) error {
+	switch SiteConditionDateWithinLeafKind(data) {
+	case SiteConditionDateWithinLeafKindDateWithin:
+		*s = SiteConditionDateWithinLeafKindDateWithin
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A test of how many times a contact performed an Event action, over all time or within the last
 // `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
 // Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
@@ -12358,7 +12566,8 @@ type SiteConditionLeaf struct {
 	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone),
 	// "tag", "custom:" for a custom field of the workspace, or "trigger:" (a property of the Event that
 	// fired a rule: valid only in a rule, refused in a segment, takes the text operators, and is false
-	// when the Event lacks the key or holds a value that is not text).
+	// when the Event lacks the key or holds a value that is not text; a number property is compared by a
+	// number leaf).
 	Field string `json:"field"`
 	// How the field is tested.
 	Operator SiteConditionOperator `json:"operator"`
@@ -12440,8 +12649,8 @@ func (s *SiteConditionLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// A leaf (a test of a field, or an event count) or a nested group inside a condition group,
-// discriminated by `kind`.
+// A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested group
+// inside a condition group, discriminated by `kind`.
 // Ref: #/components/schemas/SiteConditionNode
 type SiteConditionNode struct {
 	OneOf SiteConditionNodeSum
@@ -12460,10 +12669,13 @@ func (s *SiteConditionNode) SetOneOf(val SiteConditionNodeSum) {
 // SiteConditionNodeSum represents sum type.
 type SiteConditionNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                   SiteConditionNodeSumType
-	SiteConditionLeaf      SiteConditionLeaf
-	SiteConditionEventLeaf SiteConditionEventLeaf
-	SiteConditionGroup     SiteConditionGroup
+	Type                        SiteConditionNodeSumType
+	SiteConditionLeaf           SiteConditionLeaf
+	SiteConditionEventLeaf      SiteConditionEventLeaf
+	SiteConditionNumberLeaf     SiteConditionNumberLeaf
+	SiteConditionDateLeaf       SiteConditionDateLeaf
+	SiteConditionDateWithinLeaf SiteConditionDateWithinLeaf
+	SiteConditionGroup          SiteConditionGroup
 }
 
 // SiteConditionNodeSumType is oneOf type of SiteConditionNodeSum.
@@ -12471,9 +12683,12 @@ type SiteConditionNodeSumType string
 
 // Possible values for SiteConditionNodeSumType.
 const (
-	SiteConditionLeafSiteConditionNodeSum      SiteConditionNodeSumType = "rule"
-	SiteConditionEventLeafSiteConditionNodeSum SiteConditionNodeSumType = "event"
-	SiteConditionGroupSiteConditionNodeSum     SiteConditionNodeSumType = "group"
+	SiteConditionLeafSiteConditionNodeSum           SiteConditionNodeSumType = "rule"
+	SiteConditionEventLeafSiteConditionNodeSum      SiteConditionNodeSumType = "event"
+	SiteConditionNumberLeafSiteConditionNodeSum     SiteConditionNodeSumType = "number"
+	SiteConditionDateLeafSiteConditionNodeSum       SiteConditionNodeSumType = "date"
+	SiteConditionDateWithinLeafSiteConditionNodeSum SiteConditionNodeSumType = "dateWithin"
+	SiteConditionGroupSiteConditionNodeSum          SiteConditionNodeSumType = "group"
 )
 
 // IsSiteConditionLeaf reports whether SiteConditionNodeSum is SiteConditionLeaf.
@@ -12484,6 +12699,21 @@ func (s SiteConditionNodeSum) IsSiteConditionLeaf() bool {
 // IsSiteConditionEventLeaf reports whether SiteConditionNodeSum is SiteConditionEventLeaf.
 func (s SiteConditionNodeSum) IsSiteConditionEventLeaf() bool {
 	return s.Type == SiteConditionEventLeafSiteConditionNodeSum
+}
+
+// IsSiteConditionNumberLeaf reports whether SiteConditionNodeSum is SiteConditionNumberLeaf.
+func (s SiteConditionNodeSum) IsSiteConditionNumberLeaf() bool {
+	return s.Type == SiteConditionNumberLeafSiteConditionNodeSum
+}
+
+// IsSiteConditionDateLeaf reports whether SiteConditionNodeSum is SiteConditionDateLeaf.
+func (s SiteConditionNodeSum) IsSiteConditionDateLeaf() bool {
+	return s.Type == SiteConditionDateLeafSiteConditionNodeSum
+}
+
+// IsSiteConditionDateWithinLeaf reports whether SiteConditionNodeSum is SiteConditionDateWithinLeaf.
+func (s SiteConditionNodeSum) IsSiteConditionDateWithinLeaf() bool {
+	return s.Type == SiteConditionDateWithinLeafSiteConditionNodeSum
 }
 
 // IsSiteConditionGroup reports whether SiteConditionNodeSum is SiteConditionGroup.
@@ -12533,6 +12763,69 @@ func NewSiteConditionEventLeafSiteConditionNodeSum(v SiteConditionEventLeaf) Sit
 	return s
 }
 
+// SetSiteConditionNumberLeaf sets SiteConditionNodeSum to SiteConditionNumberLeaf.
+func (s *SiteConditionNodeSum) SetSiteConditionNumberLeaf(v SiteConditionNumberLeaf) {
+	s.Type = SiteConditionNumberLeafSiteConditionNodeSum
+	s.SiteConditionNumberLeaf = v
+}
+
+// GetSiteConditionNumberLeaf returns SiteConditionNumberLeaf and true boolean if SiteConditionNodeSum is SiteConditionNumberLeaf.
+func (s SiteConditionNodeSum) GetSiteConditionNumberLeaf() (v SiteConditionNumberLeaf, ok bool) {
+	if !s.IsSiteConditionNumberLeaf() {
+		return v, false
+	}
+	return s.SiteConditionNumberLeaf, true
+}
+
+// NewSiteConditionNumberLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionNumberLeaf.
+func NewSiteConditionNumberLeafSiteConditionNodeSum(v SiteConditionNumberLeaf) SiteConditionNodeSum {
+	var s SiteConditionNodeSum
+	s.SetSiteConditionNumberLeaf(v)
+	return s
+}
+
+// SetSiteConditionDateLeaf sets SiteConditionNodeSum to SiteConditionDateLeaf.
+func (s *SiteConditionNodeSum) SetSiteConditionDateLeaf(v SiteConditionDateLeaf) {
+	s.Type = SiteConditionDateLeafSiteConditionNodeSum
+	s.SiteConditionDateLeaf = v
+}
+
+// GetSiteConditionDateLeaf returns SiteConditionDateLeaf and true boolean if SiteConditionNodeSum is SiteConditionDateLeaf.
+func (s SiteConditionNodeSum) GetSiteConditionDateLeaf() (v SiteConditionDateLeaf, ok bool) {
+	if !s.IsSiteConditionDateLeaf() {
+		return v, false
+	}
+	return s.SiteConditionDateLeaf, true
+}
+
+// NewSiteConditionDateLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionDateLeaf.
+func NewSiteConditionDateLeafSiteConditionNodeSum(v SiteConditionDateLeaf) SiteConditionNodeSum {
+	var s SiteConditionNodeSum
+	s.SetSiteConditionDateLeaf(v)
+	return s
+}
+
+// SetSiteConditionDateWithinLeaf sets SiteConditionNodeSum to SiteConditionDateWithinLeaf.
+func (s *SiteConditionNodeSum) SetSiteConditionDateWithinLeaf(v SiteConditionDateWithinLeaf) {
+	s.Type = SiteConditionDateWithinLeafSiteConditionNodeSum
+	s.SiteConditionDateWithinLeaf = v
+}
+
+// GetSiteConditionDateWithinLeaf returns SiteConditionDateWithinLeaf and true boolean if SiteConditionNodeSum is SiteConditionDateWithinLeaf.
+func (s SiteConditionNodeSum) GetSiteConditionDateWithinLeaf() (v SiteConditionDateWithinLeaf, ok bool) {
+	if !s.IsSiteConditionDateWithinLeaf() {
+		return v, false
+	}
+	return s.SiteConditionDateWithinLeaf, true
+}
+
+// NewSiteConditionDateWithinLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionDateWithinLeaf.
+func NewSiteConditionDateWithinLeafSiteConditionNodeSum(v SiteConditionDateWithinLeaf) SiteConditionNodeSum {
+	var s SiteConditionNodeSum
+	s.SetSiteConditionDateWithinLeaf(v)
+	return s
+}
+
 // SetSiteConditionGroup sets SiteConditionNodeSum to SiteConditionGroup.
 func (s *SiteConditionNodeSum) SetSiteConditionGroup(v SiteConditionGroup) {
 	s.Type = SiteConditionGroupSiteConditionNodeSum
@@ -12554,8 +12847,156 @@ func NewSiteConditionGroupSiteConditionNodeSum(v SiteConditionGroup) SiteConditi
 	return s
 }
 
+// A comparison of a number: a custom field of the workspace whose type is number ("custom:"), or a
+// property of the Event that fired a rule ("trigger:", valid only in a rule). A missing key, or a
+// value that is not a number (text, a boolean, null, a list), makes the leaf false.
+// Ref: #/components/schemas/SiteConditionNumberLeaf
+type SiteConditionNumberLeaf struct {
+	Kind SiteConditionNumberLeafKind `json:"kind"`
+	// What it compares: "custom:" for a number custom field, or "trigger:".
+	Field string `json:"field"`
+	// How the field compares with `value`.
+	Operator SiteConditionNumberOperator `json:"operator"`
+	// The number the field is compared with.
+	Value float64 `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SiteConditionNumberLeaf) GetKind() SiteConditionNumberLeafKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *SiteConditionNumberLeaf) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *SiteConditionNumberLeaf) GetOperator() SiteConditionNumberOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *SiteConditionNumberLeaf) GetValue() float64 {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *SiteConditionNumberLeaf) SetKind(val SiteConditionNumberLeafKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *SiteConditionNumberLeaf) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *SiteConditionNumberLeaf) SetOperator(val SiteConditionNumberOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *SiteConditionNumberLeaf) SetValue(val float64) {
+	s.Value = val
+}
+
+type SiteConditionNumberLeafKind string
+
+const (
+	SiteConditionNumberLeafKindNumber SiteConditionNumberLeafKind = "number"
+)
+
+// AllValues returns all SiteConditionNumberLeafKind values.
+func (SiteConditionNumberLeafKind) AllValues() []SiteConditionNumberLeafKind {
+	return []SiteConditionNumberLeafKind{
+		SiteConditionNumberLeafKindNumber,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConditionNumberLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConditionNumberLeafKindNumber:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConditionNumberLeafKind) UnmarshalText(data []byte) error {
+	switch SiteConditionNumberLeafKind(data) {
+	case SiteConditionNumberLeafKindNumber:
+		*s = SiteConditionNumberLeafKindNumber
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How a number leaf compares the field with `value`: greater than, greater than or equal, less than,
+// or less than or equal.
+// Ref: #/components/schemas/SiteConditionNumberOperator
+type SiteConditionNumberOperator string
+
+const (
+	SiteConditionNumberOperatorGt  SiteConditionNumberOperator = "gt"
+	SiteConditionNumberOperatorGte SiteConditionNumberOperator = "gte"
+	SiteConditionNumberOperatorLt  SiteConditionNumberOperator = "lt"
+	SiteConditionNumberOperatorLte SiteConditionNumberOperator = "lte"
+)
+
+// AllValues returns all SiteConditionNumberOperator values.
+func (SiteConditionNumberOperator) AllValues() []SiteConditionNumberOperator {
+	return []SiteConditionNumberOperator{
+		SiteConditionNumberOperatorGt,
+		SiteConditionNumberOperatorGte,
+		SiteConditionNumberOperatorLt,
+		SiteConditionNumberOperatorLte,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SiteConditionNumberOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case SiteConditionNumberOperatorGt:
+		return []byte(s), nil
+	case SiteConditionNumberOperatorGte:
+		return []byte(s), nil
+	case SiteConditionNumberOperatorLt:
+		return []byte(s), nil
+	case SiteConditionNumberOperatorLte:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SiteConditionNumberOperator) UnmarshalText(data []byte) error {
+	switch SiteConditionNumberOperator(data) {
+	case SiteConditionNumberOperatorGt:
+		*s = SiteConditionNumberOperatorGt
+		return nil
+	case SiteConditionNumberOperatorGte:
+		*s = SiteConditionNumberOperatorGte
+		return nil
+	case SiteConditionNumberOperatorLt:
+		*s = SiteConditionNumberOperatorLt
+		return nil
+	case SiteConditionNumberOperatorLte:
+		*s = SiteConditionNumberOperatorLte
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
-// a custom field takes eq, neq, contains and notNull; the tag field takes has and doesNotHave.
+// the tag field takes has and doesNotHave; a custom field takes the operators of its type, which the
+// custom field lists as `ruleOperators` (a number custom field is also compared by a number leaf, a
+// datetime one tested by the date leaves).
 // Ref: #/components/schemas/SiteConditionOperator
 type SiteConditionOperator string
 
@@ -13724,6 +14165,8 @@ type SiteCustomFieldResource struct {
 	Name string `json:"name"`
 	// Inferred value type.
 	Type SiteCustomFieldType `json:"type"`
+	// The operators a rule leaf on this field takes, by its type.
+	RuleOperators []SiteConditionOperator `json:"ruleOperators"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -13748,6 +14191,11 @@ func (s *SiteCustomFieldResource) GetName() string {
 // GetType returns the value of Type.
 func (s *SiteCustomFieldResource) GetType() SiteCustomFieldType {
 	return s.Type
+}
+
+// GetRuleOperators returns the value of RuleOperators.
+func (s *SiteCustomFieldResource) GetRuleOperators() []SiteConditionOperator {
+	return s.RuleOperators
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -13778,6 +14226,11 @@ func (s *SiteCustomFieldResource) SetName(val string) {
 // SetType sets the value of Type.
 func (s *SiteCustomFieldResource) SetType(val SiteCustomFieldType) {
 	s.Type = val
+}
+
+// SetRuleOperators sets the value of RuleOperators.
+func (s *SiteCustomFieldResource) SetRuleOperators(val []SiteConditionOperator) {
+	s.RuleOperators = val
 }
 
 // SetCreatedAt sets the value of CreatedAt.

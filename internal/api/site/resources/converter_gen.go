@@ -310,6 +310,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) site.Site
 		siteapiSiteCustomFieldResource.Key = (*source).Key
 		siteapiSiteCustomFieldResource.Name = (*source).Name
 		siteapiSiteCustomFieldResource.Type = site.SiteCustomFieldType((*source).Type)
+		siteapiSiteCustomFieldResource.RuleOperators = customFieldRuleOperators((*source).Type)
 		siteapiSiteCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

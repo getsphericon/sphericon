@@ -116,6 +116,42 @@
   workspace_id: 60
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+- id: 5506
+  key: 'seats'
+  name: 'Seats'
+  type: number
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5507
+  key: 'renews_at'
+  name: 'Renews at'
+  type: datetime
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+# Wonka (workspace 62): a number, a datetime and a string field for the number and date leaves.
+- id: 5570 # fixture: CustomFieldWonkaScore
+  key: 'score'
+  name: 'Score'
+  type: number
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5571 # fixture: CustomFieldWonkaSeenAt
+  key: 'seen_at'
+  name: 'Seen at'
+  type: datetime
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5572 # fixture: CustomFieldWonkaPlan
+  key: 'plan'
+  name: 'Plan'
+  type: string
+  workspace_id: 62
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 
 # --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
 - id: 21001
