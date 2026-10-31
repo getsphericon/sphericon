@@ -1,62 +1,57 @@
-import "@typespec/openapi";
-
-using TypeSpec.OpenAPI;
+import "../lib/main.tsp";
 
 namespace Sphericon;
 
-// MCP projection overrides (ADR 0016). Every /api operation becomes an MCP tool
-// at /mcp unless it carries `x-mcp: { hidden: true }`; `x-mcp: { name }` overrides
-// the default tool name (the operation id in snake_case, e.g. `contacts_list`).
+// MCP projection overrides (ADR 0016), declared with `@mcp` (typespec/lib), which writes the
+// operation's `x-mcp` extension. Every /api operation becomes an MCP tool at /mcp unless it
+// carries `@mcp(#{ hidden: true })`; `name` overrides the default tool name (the operation id
+// in snake_case, e.g. `contacts_list`).
 
 // API token management is never an agent capability.
-@@extension(Auth.tokensCreate, "x-mcp", #{ hidden: true });
-@@extension(Auth.tokensList, "x-mcp", #{ hidden: true });
-@@extension(Auth.tokensDelete, "x-mcp", #{ hidden: true });
-@@extension(Auth.tokensBootstrap, "x-mcp", #{ hidden: true });
+@@mcp(Auth.tokensCreate, #{ hidden: true });
+@@mcp(Auth.tokensList, #{ hidden: true });
+@@mcp(Auth.tokensDelete, #{ hidden: true });
+@@mcp(Auth.tokensBootstrap, #{ hidden: true });
 
 // Regenerating an Integration's hook key breaks a working URL and needs a person (ADR 0037).
-@@extension(Integrations.regenerateKey, "x-mcp", #{ hidden: true });
+@@mcp(Integrations.regenerateKey, #{ hidden: true });
 
 // Deleting every Captured message in one call needs a person (ADR 0058).
-@@extension(CapturedMessages.deleteAll, "x-mcp", #{ hidden: true });
+@@mcp(CapturedMessages.deleteAll, #{ hidden: true });
 
 // The Audit log is never an agent capability (ADR 0016, ADR 0022).
-@@extension(AuditEntries.list, "x-mcp", #{ hidden: true });
+@@mcp(AuditEntries.list, #{ hidden: true });
 
 // An Export stream is a bulk feed, never an agent capability (ADR 0016, ADR 0045).
-@@extension(Export.events, "x-mcp", #{ hidden: true });
-@@extension(Export.contacts, "x-mcp", #{ hidden: true });
-@@extension(Export.messages, "x-mcp", #{ hidden: true });
-@@extension(Export.audit, "x-mcp", #{ hidden: true });
-@@extension(Export.erasures, "x-mcp", #{ hidden: true });
+@@mcp(Export.events, #{ hidden: true });
+@@mcp(Export.contacts, #{ hidden: true });
+@@mcp(Export.messages, #{ hidden: true });
+@@mcp(Export.audit, #{ hidden: true });
+@@mcp(Export.erasures, #{ hidden: true });
 
 // Names in sphericon vocabulary where the default would read poorly.
-@@extension(Auth.meGet, "x-mcp", #{ name: "whoami" });
-@@extension(Events.create, "x-mcp", #{ name: "events_record" });
-@@extension(EventActions.list, "x-mcp", #{ name: "events_actions_list" });
-@@extension(ContactsBatch.upsert, "x-mcp", #{ name: "contacts_upsert_batch" });
-@@extension(EventsBatch.submit, "x-mcp", #{ name: "events_record_batch" });
+@@mcp(Auth.meGet, #{ name: "whoami" });
+@@mcp(Events.create, #{ name: "events_record" });
+@@mcp(EventActions.list, #{ name: "events_actions_list" });
+@@mcp(ContactsBatch.upsert, #{ name: "contacts_upsert_batch" });
+@@mcp(EventsBatch.submit, #{ name: "events_record_batch" });
 
-@@extension(EmailLint.lint, "x-mcp", #{ name: "email_lint" });
-@@extension(EmailSchema.get, "x-mcp", #{ name: "email_schema" });
-@@extension(BrandKit.get, "x-mcp", #{ name: "brand_get" });
+@@mcp(EmailLint.lint, #{ name: "email_lint" });
+@@mcp(EmailSchema.get, #{ name: "email_schema" });
+@@mcp(BrandKit.get, #{ name: "brand_get" });
 
 // Read-only reference data (ADR 0016).
-@@extension(CustomFields.list, "x-mcp", #{ name: "custom_fields_list" });
-@@extension(SendingDomains.list, "x-mcp", #{ name: "sending_domains_list" });
-@@extension(Integrations.list, "x-mcp", #{ name: "integrations_list" });
-@@extension(Presets.list, "x-mcp", #{ name: "presets_list" });
-@@extension(
-  SendingDomainRates.list,
-  "x-mcp",
-  #{ name: "sending_domains_rates" }
-);
+@@mcp(CustomFields.list, #{ name: "custom_fields_list" });
+@@mcp(SendingDomains.list, #{ name: "sending_domains_list" });
+@@mcp(Integrations.list, #{ name: "integrations_list" });
+@@mcp(Presets.list, #{ name: "presets_list" });
+@@mcp(SendingDomainRates.list, #{ name: "sending_domains_rates" });
 
 // Send is a second lock (ADR 0016): send-class tools are listed over MCP, and
 // callable, only for tokens that also carry the `mcp:send` scope (ADR 0065). Deactivating
 // an Automation or a Rule only stops new Enrollments or Firings, so it stays an authoring tool.
-@@extension(Automations.publish, "x-mcp", #{ send: true });
-@@extension(Rules.publish, "x-mcp", #{ send: true });
-@@extension(Emails.send, "x-mcp", #{ send: true });
-@@extension(Broadcasts.schedule, "x-mcp", #{ send: true });
-@@extension(Broadcasts.unschedule, "x-mcp", #{ send: true });
+@@mcp(Automations.publish, #{ send: true });
+@@mcp(Rules.publish, #{ send: true });
+@@mcp(Emails.send, #{ send: true });
+@@mcp(Broadcasts.schedule, #{ send: true });
+@@mcp(Broadcasts.unschedule, #{ send: true });

@@ -205,7 +205,7 @@ interface Rules
   /** Archive a Rule: it leaves the list and acts on nothing (an active one is deactivated), and keeps its Firings. It can be restored, inactive. */
   @action("archive")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  @requiresScopes(#[ApiTokenScope.automationsWrite])
   archive(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
@@ -217,7 +217,7 @@ interface Rules
   /** Restore an archived Rule to the list, inactive */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  @requiresScopes(#[ApiTokenScope.automationsWrite])
   unarchive(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
@@ -229,7 +229,7 @@ interface Rules
   /** Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version. Needs the automations:publish scope. */
   @action("publish")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsPublish])
+  @requiresScopes(#[ApiTokenScope.automationsPublish])
   publish(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
@@ -242,7 +242,7 @@ interface Rules
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope. */
   @action("revert")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  @requiresScopes(#[ApiTokenScope.automationsWrite])
   revert(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
@@ -255,7 +255,7 @@ interface Rules
   /** Dry-run a Rule on a stored Event: whether it would fire and which Actions would run. Writes and runs nothing. Needs the automations:read scope. */
   @action("dry-run")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsRead])
+  @requiresScopes(#[ApiTokenScope.automationsRead])
   dryRun(...ResourceParameters<RuleResource>, @body body: DryRunRuleInput):
     | RuleDryRunResource
     | BadRequestProblem
@@ -267,7 +267,7 @@ interface Rules
   /** Deactivate a Rule: it stops firing. Needs the automations:write scope. */
   @action("deactivate")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  @requiresScopes(#[ApiTokenScope.automationsWrite])
   deactivate(...ResourceParameters<RuleResource>):
     | RuleResource
     | BadRequestProblem
@@ -309,7 +309,7 @@ model RuleFiringResource {
 namespace RuleFirings {
   /** List a Rule's Firings, newest first. Needs the automations:read scope. */
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.automationsRead])
+  @requiresScopes(#[ApiTokenScope.automationsRead])
   op list(@path ruleId: EntityId, ...PageQuery):
     | Page<RuleFiringResource>
     | BadRequestProblem

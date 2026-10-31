@@ -21,15 +21,15 @@ model SiteBrandKitResource {
   backgroundColor: string;
 
   /** Font of headings: a CSS font-family list of web-safe families */
-  @extension("x-untrusted", true)
+  @untrusted
   headingFont: string;
 
   /** Font of body text: a CSS font-family list of web-safe families */
-  @extension("x-untrusted", true)
+  @untrusted
   bodyFont: string;
 
   /** Address (http or https) of the logo image; empty for none */
-  @extension("x-untrusted", true)
+  @untrusted
   logoUrl: string;
 
   /** Color of the text on a button, `#rrggbb` */
@@ -39,7 +39,7 @@ model SiteBrandKitResource {
   buttonRadius: int32;
 
   /** Plain text printed under the starter messages, at most 500 characters; empty for none */
-  @extension("x-untrusted", true)
+  @untrusted
   footerText: string;
 
   /** When the Brand kit was last saved; absent while it is not saved */
@@ -86,7 +86,7 @@ model SiteSaveBrandKitInput {
 namespace SiteBrandKit {
   /** Read the Brand kit. Every member may read it. */
   @get
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op get(@path workspaceId: WorkspaceId):
     | SiteBrandKitResource
     | NotFoundProblem;
@@ -96,7 +96,7 @@ namespace SiteBrandKit {
    * save creates none and changes no message already written. A change is recorded as an Audit
    * entry. */
   @put
-  @extension("x-required-permissions", #[Permission.brandKitManage])
+  @requiresPermissions(#[Permission.brandKitManage])
   op save(@path workspaceId: WorkspaceId, @body body: SiteSaveBrandKitInput):
     | SiteBrandKitResource
     | ForbiddenProblem
@@ -108,7 +108,7 @@ namespace SiteBrandKit {
    * until the Brand kit has been saved. */
   @post
   @route("/starter-templates")
-  @extension("x-required-permissions", #[Permission.brandKitManage])
+  @requiresPermissions(#[Permission.brandKitManage])
   op recreateStarterTemplates(@path workspaceId: WorkspaceId):
     | {
         @statusCode statusCode: 201;

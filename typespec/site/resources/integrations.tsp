@@ -186,7 +186,7 @@ namespace SiteIntegrations {
   @listsResource(SiteIntegrationResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(
     ...ResourceCollectionParameters<SiteIntegrationResource>,
     ...SiteIntegrationsListFilter,
@@ -201,7 +201,7 @@ namespace SiteIntegrations {
   @createsResource(SiteIntegrationResource)
   @post
   @autoRoute
-  @extension("x-required-permissions", #[Permission.integrationsManage])
+  @requiresPermissions(#[Permission.integrationsManage])
   op create(
     ...ResourceCollectionParameters<SiteIntegrationResource>,
     @body body: CreateIntegrationInput,
@@ -219,7 +219,7 @@ namespace SiteIntegrations {
   @readsResource(SiteIntegrationResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op get(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
     | BadRequestProblem
@@ -229,7 +229,7 @@ namespace SiteIntegrations {
   @updatesResource(SiteIntegrationResource)
   @put
   @autoRoute
-  @extension("x-required-permissions", #[Permission.integrationsManage])
+  @requiresPermissions(#[Permission.integrationsManage])
   op update(
     ...ResourceParameters<SiteIntegrationResource>,
     @body body: UpdateIntegrationInput,
@@ -245,7 +245,7 @@ namespace SiteIntegrations {
   @action("regenerate-key")
   @post
   @autoRoute
-  @extension("x-required-permissions", #[Permission.integrationsManage])
+  @requiresPermissions(#[Permission.integrationsManage])
   op regenerateKey(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
     | BadRequestProblem
@@ -256,7 +256,7 @@ namespace SiteIntegrations {
   @action("archive")
   @post
   @autoRoute
-  @extension("x-required-permissions", #[Permission.integrationsManage])
+  @requiresPermissions(#[Permission.integrationsManage])
   op archive(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
     | BadRequestProblem
@@ -268,7 +268,7 @@ namespace SiteIntegrations {
   @action("unarchive")
   @post
   @autoRoute
-  @extension("x-required-permissions", #[Permission.integrationsManage])
+  @requiresPermissions(#[Permission.integrationsManage])
   op unarchive(...ResourceParameters<SiteIntegrationResource>):
     | SiteIntegrationResource
     | BadRequestProblem

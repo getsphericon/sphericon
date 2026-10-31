@@ -346,7 +346,7 @@ interface Automations
   /** Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be restored, inactive. Refused with 409 while it has active enrollments (`usedBy` carries their count). */
   @action("archive")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  @requiresScopes(#[ApiTokenScope.automationsWrite])
   archive(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
@@ -359,7 +359,7 @@ interface Automations
   /** Restore an archived automation to the list, inactive: only publish makes it enroll again */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  @requiresScopes(#[ApiTokenScope.automationsWrite])
   unarchive(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
@@ -371,7 +371,7 @@ interface Automations
   /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. Needs the automations:publish scope. */
   @action("publish")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsPublish])
+  @requiresScopes(#[ApiTokenScope.automationsPublish])
   publish(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
@@ -384,7 +384,7 @@ interface Automations
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. Needs the automations:write scope. */
   @action("revert")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  @requiresScopes(#[ApiTokenScope.automationsWrite])
   revert(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
@@ -401,7 +401,7 @@ interface Automations
   @action("report")
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsRead])
+  @requiresScopes(#[ApiTokenScope.automationsRead])
   report(
     ...ResourceParameters<AutomationResource>,
 
@@ -418,7 +418,7 @@ interface Automations
   /** Deactivate an automation (stops new enrollments; in-flight ones finish). Needs the automations:write scope. */
   @action("deactivate")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.automationsWrite])
+  @requiresScopes(#[ApiTokenScope.automationsWrite])
   deactivate(...ResourceParameters<AutomationResource>):
     | AutomationResource
     | BadRequestProblem
@@ -430,10 +430,7 @@ interface Automations
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(AutomationResource, "dry-run-http-step")
   @autoRoute
-  @extension(
-    "x-required-scopes",
-    #[ApiTokenScope.automationsWrite, ApiTokenScope.contactsRead]
-  )
+  @requiresScopes(#[ApiTokenScope.automationsWrite, ApiTokenScope.contactsRead])
   dryRunHttpStep(
     ...ResourceCollectionParameters<AutomationResource>,
     @body body: DryRunHttpStepInput,

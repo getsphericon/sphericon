@@ -43,6 +43,6 @@ model SiteSetupProgress {
 namespace SiteSetupChecklist {
   /** The Workspace's Setup checklist */
   @get
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op get(@path workspaceId: WorkspaceId): SiteSetupProgress | NotFoundProblem;
 }

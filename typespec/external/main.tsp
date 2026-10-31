@@ -58,4 +58,5 @@ using TypeSpec.Versioning;
 @server("http://localhost:3000/api", "Local development API")
 @useAuth(BearerAuth)
 @versioned(Versions)
+@everyOperationDeclares("scopes")
 namespace Sphericon;

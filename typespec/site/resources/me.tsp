@@ -132,7 +132,7 @@ model SiteDeleteUserRefusedProblem is Response<422> {
 namespace SiteUser {
   /** Get the authenticated user's profile */
   @get
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   op getMe(): {
     @statusCode statusCode: 200;
     @body body: SiteUserResource;
@@ -190,7 +190,7 @@ namespace SiteUser {
    * window does not block. */
   @post
   @route("/delete")
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   op deleteUser(@body body: SiteDeleteUserInput):
     | {
         @statusCode statusCode: 204;
@@ -210,7 +210,7 @@ namespace SiteUser {
    * it instead. */
   @post
   @route("/delete/link")
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   op deleteUserLink(@body body: SiteDeleteUserLinkInput):
     | AcceptedResponse
     | SiteDeleteUserRefusedProblem;
@@ -222,7 +222,7 @@ namespace SiteUser {
    * With nothing pending it records nothing. */
   @post
   @route("/acceptances")
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   op acceptPending(@body body: SiteAcceptPendingInput):
     | {
         @statusCode statusCode: 200;

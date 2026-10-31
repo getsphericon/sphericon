@@ -226,7 +226,7 @@ interface SiteAutomations
    */
   @action("archive")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   archive(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -236,7 +236,7 @@ interface SiteAutomations
   /** Restore an archived automation to the list, inactive: only publish makes it enroll again */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   unarchive(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -248,7 +248,7 @@ interface SiteAutomations
    */
   @action("publish")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   publish(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -258,7 +258,7 @@ interface SiteAutomations
   /** Drop the draft: the live version is again the latest. 422 when there is no draft or nothing is live. */
   @action("revert")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   revert(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -268,7 +268,7 @@ interface SiteAutomations
   /** Deactivate an automation (stops new enrollments) */
   @action("deactivate")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   deactivate(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | BadRequestProblem
@@ -277,7 +277,7 @@ interface SiteAutomations
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(SiteAutomationResource, "dry-run-http-step")
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   dryRunHttpStep(
     ...ResourceCollectionParameters<SiteAutomationResource>,
     @body body: SiteDryRunHttpStepInput,
@@ -401,7 +401,7 @@ namespace SiteAutomationReports {
    * The results are read from its enrollments for the chosen period and the one before it.
    */
   @get
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op get(
     @path workspaceId: WorkspaceId,
     @path automationId: EntityId,
@@ -412,8 +412,8 @@ namespace SiteAutomationReports {
   ): SiteAutomationReport | BadRequestProblem | NotFoundProblem;
 }
 
-@@extension(SiteAutomations.create, "x-required-permissions", #[]);
-@@extension(SiteAutomations.delete, "x-required-permissions", #[]);
-@@extension(SiteAutomations.get, "x-required-permissions", #[]);
-@@extension(SiteAutomations.list, "x-required-permissions", #[]);
-@@extension(SiteAutomations.update, "x-required-permissions", #[]);
+@@requiresPermissions(SiteAutomations.create, #[]);
+@@requiresPermissions(SiteAutomations.delete, #[]);
+@@requiresPermissions(SiteAutomations.get, #[]);
+@@requiresPermissions(SiteAutomations.list, #[]);
+@@requiresPermissions(SiteAutomations.update, #[]);

@@ -108,7 +108,7 @@ model AuditFilter {
 namespace AuditEntries {
   /** List the Workspace's Audit log, newest first (Enterprise; needs the `audit:read` scope) */
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.auditRead])
+  @requiresScopes(#[ApiTokenScope.auditRead])
   op list(
     ...AuditFilter,
 

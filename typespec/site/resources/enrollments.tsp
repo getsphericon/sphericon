@@ -71,7 +71,7 @@ model SiteEnrollmentResource {
 namespace SiteEnrollments {
   /** List an Automation's Enrollments, newest first */
   @get
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(
     @path workspaceId: WorkspaceId,
     @path automationId: EntityId,
@@ -84,7 +84,7 @@ namespace SiteEnrollments {
   /** Get one Enrollment of an Automation */
   @get
   @route("/{enrollmentId}")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op get(
     @path workspaceId: WorkspaceId,
     @path automationId: EntityId,

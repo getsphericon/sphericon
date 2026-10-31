@@ -45,7 +45,7 @@ namespace SiteConnections {
   @listsResource(SiteConnectionResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(...ResourceCollectionParameters<SiteConnectionResource>):
     | {
         @statusCode statusCode: 200;
@@ -57,7 +57,7 @@ namespace SiteConnections {
   @deletesResource(SiteConnectionResource)
   @delete
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op delete(...ResourceParameters<SiteConnectionResource>):
     | NoContentResponse
     | NotFoundProblem;

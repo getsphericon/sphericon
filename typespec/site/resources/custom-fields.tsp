@@ -49,7 +49,7 @@ namespace SiteCustomFields {
   @listsResource(SiteCustomFieldResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(...ResourceCollectionParameters<SiteCustomFieldResource>):
     | Page<SiteCustomFieldResource>
     | BadRequestProblem

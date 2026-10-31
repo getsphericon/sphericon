@@ -10,7 +10,7 @@ model TagResource {
   id: EntityId;
 
   /** The label; unique per workspace */
-  @extension("x-untrusted", true)
+  @untrusted
   name: string;
 
   /** Creation timestamp */
@@ -22,7 +22,7 @@ namespace Tags {
   /** List the workspace's tags */
   @route("/tags")
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.contactsRead])
+  @requiresScopes(#[ApiTokenScope.contactsRead])
   op list(...PageQuery):
     | Page<TagResource>
     | BadRequestProblem
@@ -34,7 +34,7 @@ namespace Tags {
   /** List the tags a contact has */
   @route("/contacts/{contactId}/tags")
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.contactsRead])
+  @requiresScopes(#[ApiTokenScope.contactsRead])
   op listForContact(@path contactId: EntityId, ...PageQuery):
     | Page<TagResource>
     | BadRequestProblem
@@ -47,7 +47,7 @@ namespace Tags {
   /** Apply a tag to a contact, creating the tag on first use. Idempotent. */
   @route("/contacts/{contactId}/tags")
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
+  @requiresScopes(#[ApiTokenScope.contactsWrite])
   op apply(@path contactId: EntityId, @body body: ApplyTagInput):
     | TagResource
     | BadRequestProblem
@@ -60,7 +60,7 @@ namespace Tags {
   /** Delete a tag from the catalogue, unless a segment rule or an automation step names it. The 409 names the users. */
   @route("/tags/{id}")
   @delete
-  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
+  @requiresScopes(#[ApiTokenScope.contactsWrite])
   op delete(@path id: EntityId):
     | NoContentResponse
     | BadRequestProblem
@@ -73,7 +73,7 @@ namespace Tags {
   /** Remove a tag from a contact. Idempotent; the tag stays in the catalogue. */
   @route("/contacts/{contactId}/tags/{name}")
   @delete
-  @extension("x-required-scopes", #[ApiTokenScope.contactsWrite])
+  @requiresScopes(#[ApiTokenScope.contactsWrite])
   op remove(@path contactId: EntityId, @path name: string):
     | NoContentResponse
     | BadRequestProblem

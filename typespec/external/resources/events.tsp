@@ -10,7 +10,7 @@ model EventInput {
   subjectId: string;
 
   /** Event action */
-  @extension("x-untrusted", true)
+  @untrusted
   action: string;
 
   /** Email address associated with the event */
@@ -20,7 +20,7 @@ model EventInput {
   phone?: string | null;
 
   /** Event properties */
-  @extension("x-untrusted", true)
+  @untrusted
   properties?: Record<unknown> | null;
 
   /** Event occurrence timestamp */
@@ -85,7 +85,7 @@ model RecordEventsBatchResult {
 /** Distinct event action */
 model EventActionResource {
   /** Event action */
-  @extension("x-untrusted", true)
+  @untrusted
   action: string;
 }
 
@@ -94,7 +94,7 @@ model EventActionResource {
 namespace Events {
   /** Record events in batch */
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.eventsWrite])
+  @requiresScopes(#[ApiTokenScope.eventsWrite])
   op create(@body body: RecordEventsInput):
     | NoContentResponse
     | UnauthorizedProblem
@@ -110,7 +110,7 @@ namespace Events {
 namespace EventActions {
   /** List unique event actions */
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.eventsRead])
+  @requiresScopes(#[ApiTokenScope.eventsRead])
   op list(...PageQuery):
     | Page<EventActionResource>
     | BadRequestProblem
@@ -125,7 +125,7 @@ namespace EventActions {
 namespace EventsBatch {
   /** Record up to 1000 events; a failing item does not affect the others */
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.eventsWrite])
+  @requiresScopes(#[ApiTokenScope.eventsWrite])
   op submit(@body body: RecordEventsBatchInput):
     | RecordEventsBatchResult
     | UnauthorizedProblem

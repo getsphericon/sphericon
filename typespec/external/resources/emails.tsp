@@ -79,7 +79,7 @@ namespace EmailLint {
    * and not neither (422).
    */
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.templatesRead])
+  @requiresScopes(#[ApiTokenScope.templatesRead])
   op lint(@body body: LintEmailInput):
     | LintEmailResult
     | UnauthorizedProblem
@@ -144,7 +144,7 @@ namespace EmailSchema {
    * the document as `doc` on a Template, Broadcast or Automation email step.
    */
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.templatesRead])
+  @requiresScopes(#[ApiTokenScope.templatesRead])
   op get():
     | EmailSchemaResult
     | UnauthorizedProblem
@@ -166,7 +166,7 @@ namespace Emails {
    * is still in flight returns 409.
    */
   @post
-  @extension("x-required-scopes", #[ApiTokenScope.emailsSend])
+  @requiresScopes(#[ApiTokenScope.emailsSend])
   op send(
     @body body: SendTransactionalEmailInput,
 

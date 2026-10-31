@@ -57,7 +57,7 @@ namespace SiteInvitations {
   @listsResource(SiteInvitationResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(...ResourceCollectionParameters<SiteInvitationResource>):
     | {
         @statusCode statusCode: 200;
@@ -69,7 +69,7 @@ namespace SiteInvitations {
   @createsResource(SiteInvitationResource)
   @post
   @autoRoute
-  @extension("x-required-permissions", #[Permission.membersManage])
+  @requiresPermissions(#[Permission.membersManage])
   op create(
     ...ResourceCollectionParameters<SiteInvitationResource>,
     @body body: SiteCreateInvitationInput,
@@ -87,7 +87,7 @@ namespace SiteInvitations {
   @deletesResource(SiteInvitationResource)
   @delete
   @autoRoute
-  @extension("x-required-permissions", #[Permission.membersManage])
+  @requiresPermissions(#[Permission.membersManage])
   op delete(...ResourceParameters<SiteInvitationResource>):
     | NoContentResponse
     | NotFoundProblem

@@ -125,7 +125,7 @@ interface SiteContacts
    */
   @collectionAction(SiteContactResource, "export")
   @autoRoute
-  @extension("x-required-permissions", #[Permission.contactsExport])
+  @requiresPermissions(#[Permission.contactsExport])
   export(
     ...ResourceCollectionParameters<SiteContactResource>,
 
@@ -149,7 +149,7 @@ interface SiteContacts
   @get
   @collectionAction(SiteContactResource, "lookup")
   @autoRoute
-  @extension("x-required-permissions", #[Permission.contactsErase])
+  @requiresPermissions(#[Permission.contactsErase])
   lookup(
     ...ResourceCollectionParameters<SiteContactResource>,
 
@@ -171,7 +171,7 @@ interface SiteContacts
   @delete
   @collectionAction(SiteContactResource, "erase")
   @autoRoute
-  @extension("x-required-permissions", #[Permission.contactsErase])
+  @requiresPermissions(#[Permission.contactsErase])
   erase(
     ...ResourceCollectionParameters<SiteContactResource>,
 
@@ -189,12 +189,8 @@ interface SiteContacts
   "Erase a contact (GDPR Art. 17): its personal data is removed, delivery records are anonymized and its opt-outs survive. Owner or admin only."
 );
 
-@@extension(SiteContacts.create, "x-required-permissions", #[]);
-@@extension(
-  SiteContacts.delete,
-  "x-required-permissions",
-  #[Permission.contactsErase]
-);
-@@extension(SiteContacts.get, "x-required-permissions", #[]);
-@@extension(SiteContacts.list, "x-required-permissions", #[]);
-@@extension(SiteContacts.update, "x-required-permissions", #[]);
+@@requiresPermissions(SiteContacts.create, #[]);
+@@requiresPermissions(SiteContacts.delete, #[Permission.contactsErase]);
+@@requiresPermissions(SiteContacts.get, #[]);
+@@requiresPermissions(SiteContacts.list, #[]);
+@@requiresPermissions(SiteContacts.update, #[]);

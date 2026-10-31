@@ -61,7 +61,7 @@ namespace Export {
    */
   @get
   @route("/audit")
-  @extension("x-required-scopes", #[ApiTokenScope.exportRead])
+  @requiresScopes(#[ApiTokenScope.exportRead])
   op audit(...ExportPageQuery):
     | ExportPage
     | BadRequestProblem

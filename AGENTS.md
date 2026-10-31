@@ -67,7 +67,8 @@ Run a single Go test (arguments after `--` go to `go test`; the default is `./..
 mise run test -- ./internal/api/site -run TestSiteContactsRequireAuth
 ```
 
-Frontend tests: `mise run test:watch`.
+Frontend tests: `mise run test:watch`. The TypeSpec contract decorators (`typespec/lib`, ADR 0069):
+`mise run test:typespec`.
 
 Rules for writing tests (what to assert, no direct SQL, no manual cleanup) are in `CODING_STANDARDS.md`.
 

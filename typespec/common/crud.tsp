@@ -180,7 +180,7 @@ interface ExternalCrudKept<
   @listsResource(Resource)
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ReadScope])
+  @requiresScopes(#[ReadScope])
   list(...ResourceCollectionParameters<Resource>, ...PageQuery, ...ListFilter):
     | Page<Resource>
     | BadRequestProblem
@@ -193,7 +193,7 @@ interface ExternalCrudKept<
   @createsResource(Resource)
   @post
   @autoRoute
-  @extension("x-required-scopes", #[WriteScope])
+  @requiresScopes(#[WriteScope])
   create(...ResourceCollectionParameters<Resource>, @body body: CreateInput):
     | {
         @statusCode statusCode: 201;
@@ -210,7 +210,7 @@ interface ExternalCrudKept<
   @readsResource(Resource)
   @get
   @autoRoute
-  @extension("x-required-scopes", #[ReadScope])
+  @requiresScopes(#[ReadScope])
   get(...ResourceParameters<Resource>):
     | Resource
     | BadRequestProblem
@@ -223,7 +223,7 @@ interface ExternalCrudKept<
   @updatesResource(Resource)
   @put
   @autoRoute
-  @extension("x-required-scopes", #[WriteScope])
+  @requiresScopes(#[WriteScope])
   update(...ResourceParameters<Resource>, @body body: UpdateInput):
     | Resource
     | BadRequestProblem
@@ -257,7 +257,7 @@ interface ExternalCrudArchivable<
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")
   @autoRoute
-  @extension("x-required-scopes", #[WriteScope])
+  @requiresScopes(#[WriteScope])
   archive(...ResourceParameters<Resource>):
     | Resource
     | BadRequestProblem
@@ -270,7 +270,7 @@ interface ExternalCrudArchivable<
   /** Restore an archived resource */
   @action("unarchive")
   @autoRoute
-  @extension("x-required-scopes", #[WriteScope])
+  @requiresScopes(#[WriteScope])
   unarchive(...ResourceParameters<Resource>):
     | Resource
     | BadRequestProblem
@@ -306,7 +306,7 @@ interface ExternalCrud<
   @deletesResource(Resource)
   @delete
   @autoRoute
-  @extension("x-required-scopes", #[DeleteScope])
+  @requiresScopes(#[DeleteScope])
   delete(...ResourceParameters<Resource>):
     | NoContentResponse
     | BadRequestProblem

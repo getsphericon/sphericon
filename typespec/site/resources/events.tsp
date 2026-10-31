@@ -46,7 +46,7 @@ namespace SiteEvents {
   @listsResource(SiteEventResource)
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op list(
     ...ResourceCollectionParameters<SiteEventResource>,
     ...PageQuery,
@@ -68,7 +68,7 @@ namespace SiteEvents {
   @collectionAction(SiteEventResource, "actions")
   @get
   @autoRoute
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op actions(...ResourceCollectionParameters<SiteEventResource>):
     | SiteEventActionsResult
     | NotFoundProblem;

@@ -108,7 +108,7 @@ interface Webhooks
   /** Replace the endpoint's signing secret; the old one stops verifying at once. The new secret is never returned here: read it in the app. Needs the webhooks:regenerate scope. */
   @action("regenerate-secret")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.webhooksRegenerate])
+  @requiresScopes(#[ApiTokenScope.webhooksRegenerate])
   regenerateSecret(...ResourceParameters<WebhookResource>):
     | WebhookResource
     | BadRequestProblem
@@ -120,7 +120,7 @@ interface Webhooks
   /** Send a sample event of the chosen type, signed as a real delivery, and return the receiver's answer. Does not change the endpoint's failure state. Needs the webhooks:test scope. */
   @action("test")
   @autoRoute
-  @extension("x-required-scopes", #[ApiTokenScope.webhooksTest])
+  @requiresScopes(#[ApiTokenScope.webhooksTest])
   test(...ResourceParameters<WebhookResource>, @body body: TestWebhookInput):
     | WebhookTestResult
     | BadRequestProblem

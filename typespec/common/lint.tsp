@@ -37,10 +37,10 @@ model LintFinding {
   message: string;
 
   /** The element it is about, as a short tag description such as `<img src="…">` */
-  @extension("x-untrusted", true)
+  @untrusted
   element?: string;
 
   /** The offending value or the parser's reason, such as `#ff0000` or `3.2:1, needs 4.5:1` */
-  @extension("x-untrusted", true)
+  @untrusted
   detail?: string;
 }

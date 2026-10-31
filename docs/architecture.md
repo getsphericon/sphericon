@@ -18,9 +18,9 @@ coding standards in `CODING_STANDARDS.md`.
   - `/site/*` — frontend SPA API. Auth: **JWT cookie** (issued by the `login` operation through `auth.Sessions`, ADR 0020). Handlers in `internal/api/site`.
   - `/api/*` — external/public API. Auth: **Bearer api-token** (workspace-scoped). Handlers in `internal/api/external`.
     Every operation names the scopes a token needs in `auth.ExternalOperationScopes`, generated from the
-    `@extension("x-required-scopes", #[ApiTokenScope.…])` on each TypeSpec operation and checked by
+    `@requiresScopes(#[ApiTokenScope.…])` on each TypeSpec operation and checked by
     `ExternalSecurityHandler.HandleBearerAuth` before the handler runs (ADR 0061): a missing declaration fails
-    generation, no entry = refused to all, a valid token without a scope = 403, and 401 only for a missing,
+    `tsp compile`, no entry = refused to all, a valid token without a scope = 403, and 401 only for a missing,
     invalid, revoked or expired token. No handler checks a scope; /mcp inherits the check, as each tool call is
     dispatched to /api with the caller's token.
   - `/collect/*` — tracking ingestion from customer sites. Auth: **x-collect-key** header. Handlers in `internal/api/collect`.
@@ -41,7 +41,7 @@ coding standards in `CODING_STANDARDS.md`.
     the internal listener** (`SPHERICON_INTERNAL_ADDR`, opt-in, ADR 0018 style; `NewInternal` mounts `/service` only with
     the `staff` license and always serves the core `GET /tls/ask`): the public mux answers 404 for it.
     Handlers and security handler in `ee/staff` (`service.go`); every operation names its scopes in
-    `ServiceOperationScopes`, generated from the `@extension("x-required-scopes", #[ServiceScope.…])` on each TypeSpec operation (an empty list = any valid credential; a missing declaration fails generation; no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
+    `ServiceOperationScopes`, generated from the `@requiresServiceScopes(#[ServiceScope.…])` on each TypeSpec operation (an empty list = any valid credential; a missing declaration fails `tsp compile`; no entry = refused to all). Tests: `env.Internal`, `env.ServiceClient`,
     `env.IssueServiceCredential`.
 - **Sign-in sequence**: `internal/login` (ADR 0020) is the one core module for the password and
   second steps and for `Prove` (the password check behind second-factor and profile actions):
@@ -112,14 +112,14 @@ only caller of their writes (`forbidigo`).
      admits the User (`accounts.Accounts.Admit`, `internal/accounts/admission.go`, the one decision
      of both surfaces): it refuses first a User with a required acceptance pending (403
      `acceptance_pending`, ADR 0062) unless the operation is marked
-     `x-allowed-while-acceptance-pending` in TypeSpec, the one list of what a gated User may call;
+     `@allowedWhileAcceptancePending` in TypeSpec, the one list of what a gated User may call;
      an unmarked operation is refused, the mark lifts only the gate (a Workspace's operation still
      applies the Two-factor requirement and its Permissions), it only declares on an anonymous
-     operation, and a mark that is not `true` fails generation. On an operation of a Workspace it
+     operation. On an operation of a Workspace it
      then refuses a User the Two-factor requirement withholds (403 `second_factor_required`,
-     ADR 0020) unless the operation is marked `x-allowed-while-withheld` (only lifting the
+     ADR 0020) unless the operation is marked `@allowedWhileWithheld` (only lifting the
      requirement), and last applies the Permissions the operation declares in TypeSpec
-     (`x-required-permissions`, generated into `operationAccess`). Two operations name their
+     (`@requiresPermissions`, generated into `operationAccess`). Two operations name their
      Workspace elsewhere and call `accounts.Accounts.Scope` themselves: `SiteOAuthDecide` (in its
      body, then `accounts.Accounts.Admit` as the middleware does) and `SiteWorkspacesCreate` /
      `SiteWorkspacesRestore` (a Workspace that was not live before);

@@ -216,7 +216,7 @@ namespace SiteWorkspaces {
    * account deletion form (ADR 0062). */
   @get
   @route("/deleted")
-  @extension("x-allowed-while-acceptance-pending", true)
+  @allowedWhileAcceptancePending
   op listDeleted(): {
     @statusCode statusCode: 200;
     @body body: SiteDeletedWorkspaceResource[];
@@ -230,8 +230,8 @@ namespace SiteWorkspaces {
    * applies. */
   @post
   @route("/{workspaceId}/delete")
-  @extension("x-required-permissions", #[Permission.workspaceDelete])
-  @extension("x-allowed-while-acceptance-pending", true)
+  @requiresPermissions(#[Permission.workspaceDelete])
+  @allowedWhileAcceptancePending
   op delete(
     @path workspaceId: WorkspaceId,
     @body body: SiteDeleteWorkspaceInput,
@@ -260,7 +260,7 @@ namespace SiteWorkspaces {
    * entry with the caller as actor. */
   @post
   @route("/{workspaceId}/leave")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op leave(@path workspaceId: WorkspaceId):
     | NoContentResponse
     | NotFoundProblem
@@ -270,7 +270,7 @@ namespace SiteWorkspaces {
    * never changes. */
   @put
   @route("/{workspaceId}")
-  @extension("x-required-permissions", #[Permission.workspaceUpdate])
+  @requiresPermissions(#[Permission.workspaceUpdate])
   op update(
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateWorkspaceInput,
@@ -285,7 +285,7 @@ namespace SiteWorkspaces {
    * the original start, so no one's grace restarts. A change is recorded as an Audit entry. */
   @put
   @route("/{workspaceId}/second-factor-requirement")
-  @extension("x-required-permissions", #[Permission.secondFactorManage])
+  @requiresPermissions(#[Permission.secondFactorManage])
   op requireSecondFactor(@path workspaceId: WorkspaceId):
     | SiteWorkspaceResource
     | ForbiddenProblem
@@ -297,8 +297,8 @@ namespace SiteWorkspaces {
    * as an Audit entry. */
   @delete
   @route("/{workspaceId}/second-factor-requirement")
-  @extension("x-allowed-while-withheld", true)
-  @extension("x-required-permissions", #[Permission.secondFactorManage])
+  @allowedWhileWithheld
+  @requiresPermissions(#[Permission.secondFactorManage])
   op liftSecondFactorRequirement(@path workspaceId: WorkspaceId):
     | SiteWorkspaceResource
     | ForbiddenProblem
@@ -309,7 +309,7 @@ namespace SiteWorkspaces {
    * to all history at once. */
   @put
   @route("/{workspaceId}/timezone")
-  @extension("x-required-permissions", #[Permission.workspaceTimezone])
+  @requiresPermissions(#[Permission.workspaceTimezone])
   op setTimezone(
     @path workspaceId: WorkspaceId,
     @body body: SiteWorkspaceTimezoneInput,
@@ -323,7 +323,7 @@ namespace SiteWorkspaces {
    * Account link configured. */
   @post
   @route("/{workspaceId}/account-link")
-  @extension("x-required-permissions", #[Permission.accountLinkOpen])
+  @requiresPermissions(#[Permission.accountLinkOpen])
   op accountLink(@path workspaceId: WorkspaceId):
     | SiteAccountLinkResource
     | ForbiddenProblem
@@ -333,7 +333,7 @@ namespace SiteWorkspaces {
    * Attribution window. Open to every member. */
   @get
   @route("/{workspaceId}/revenue-settings")
-  @extension("x-required-permissions", #[])
+  @requiresPermissions(#[])
   op getRevenueSettings(@path workspaceId: WorkspaceId):
     | SiteRevenueSettingsResource
     | NotFoundProblem;
@@ -343,7 +343,7 @@ namespace SiteWorkspaces {
    * outside its bounds. Every change is recorded as an Audit entry naming who changed what. */
   @put
   @route("/{workspaceId}/revenue-settings")
-  @extension("x-required-permissions", #[Permission.revenueConfigure])
+  @requiresPermissions(#[Permission.revenueConfigure])
   op updateRevenueSettings(
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateRevenueSettingsInput,

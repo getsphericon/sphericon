@@ -18,11 +18,11 @@ model CustomFieldResource {
   id: EntityId;
 
   /** Machine key, how values are addressed in custom fields and segment conditions */
-  @extension("x-untrusted", true)
+  @untrusted
   key: string;
 
   /** Display name */
-  @extension("x-untrusted", true)
+  @untrusted
   name: string;
 
   /** Inferred value type */
@@ -146,7 +146,7 @@ model SendingDomainRatesResource {
 namespace CustomFields {
   /** List the workspace's custom field definitions */
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.customFieldsRead])
+  @requiresScopes(#[ApiTokenScope.customFieldsRead])
   op list():
     | Page<CustomFieldResource>
     | UnauthorizedProblem
@@ -159,7 +159,7 @@ namespace CustomFields {
 namespace SendingDomainRates {
   /** Complaint and bounce rates per sending domain over a trailing window */
   @get
-  @extension("x-required-scopes", #[ApiTokenScope.sendingDomainsRead])
+  @requiresScopes(#[ApiTokenScope.sendingDomainsRead])
   op list(
     /** Trailing window in days (1 to 90) */
     @query
