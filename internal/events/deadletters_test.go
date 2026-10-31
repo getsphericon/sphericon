@@ -68,9 +68,14 @@ func TestAFailingHandlerDeadLettersTheEventAndItsGroupMovesOn(t *testing.T) {
 			require.NoError(t, json.Unmarshal(letters[0].Payload, &env))
 			assert.Equal(t, events.NameContactCreated, env.Name)
 
-			replayed, err := events.ReplayDeadLetters(ctx, client, "flaky", func(*message.Message) error { return nil })
+			var replayedTo string
+			replayed, err := events.ReplayDeadLetters(ctx, client, "flaky", func(msg *message.Message) error {
+				replayedTo = msg.Metadata.Get(events.MetadataConsumerGroup) + " " + emailOf(msg)
+				return nil
+			})
 			require.NoError(t, err)
 			assert.Equal(t, 1, replayed)
+			assert.Equal(t, "flaky "+poisonEmail, replayedTo, "the replay hands the handler the message as it was")
 			assert.Zero(t, client.OutboxDeadLetter.Query().CountX(ctx))
 		})
 	}

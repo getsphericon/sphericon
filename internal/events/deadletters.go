@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -108,6 +109,12 @@ func ReplayDeadLetters(ctx context.Context, client *ent.Client, group string, ha
 	}
 	for i, l := range letters {
 		msg := message.NewMessage(l.UUID, l.Payload)
+		// The message is rebuilt whole: its metadata may carry the envelope's header.
+		if len(l.Metadata) > 0 {
+			if err := json.Unmarshal(l.Metadata, &msg.Metadata); err != nil {
+				return i, fmt.Errorf("dead letter %s metadata: %w", l.UUID, err)
+			}
+		}
 		msg.SetContext(ctx)
 		if err := handle(msg); err != nil {
 			return i, fmt.Errorf("replay dead letter %s of %s: %w", l.UUID, group, err)
